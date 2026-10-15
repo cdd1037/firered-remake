@@ -35,7 +35,7 @@ public partial class CampaignView
         // Catalog admission belongs to the current rules; these shared pixels depend only on
         // the exact inherited TM39/CASE source definitions, not the regional profile name.
         PewterMachineRules.ValidateCatalog(catalog);
-        if (machine.Catalog.Profile != PewterMachineRules.Profile || machine.Catalog.SourceCommit != catalog.SourceCommit ||
+        if (machine.Catalog.Profile != PewterMachineRules.Profile ||
             Game.Application.CanonicalJson.Hash(machine.Catalog.TmCase) != Game.Application.CanonicalJson.Hash(catalog.TmCase) ||
             Game.Application.CanonicalJson.Hash(machine.Catalog.Tm39) != Game.Application.CanonicalJson.Hash(catalog.Tm39))
             throw new InvalidDataException("Machine presentation source definitions differ.");
@@ -44,10 +44,9 @@ public partial class CampaignView
         foreach (var icon in machine.Icons)
         {
             string id = icon.Item == PewterMachineRules.TmCaseId ? MachineCaseIcon : MachineIcon;
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretPewterMachines.IconRgba(icon));
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("pewter-machines", icon));
             _questPocketTextures.Add(id, ImageTexture.CreateFromImage(image));
-            document = document with { Assets = document.Assets.Add(new(id, icon.PngPath, icon.Width, icon.Height,
-                position.X, position.Y, icon.PngSha256, icon.RgbaSha256)) };
+            document = document with { Assets = document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,                position.X,position.Y)) };
         }
         var item = machine.Catalog.TmCase;
         document = document with { Items = document.Items.Add(new(item.Item.Id.Value, item.Item.SourceItemSymbol,
@@ -195,7 +194,6 @@ public partial class CampaignView
         }
         return true;
     }
-
 
     private void DrawMtMoonMachineList() =>
         DrawMachineList(MachineStacks, _machineCursor, MachineListStart, MachineListVisibleCount);

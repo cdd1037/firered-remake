@@ -4,40 +4,31 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "path": "src/battle_script_commands.c",
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3"
+      "path": "src/battle_script_commands.c"
     },
     {
-      "path": "src/battle_util.c",
-      "sha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720"
+      "path": "src/battle_util.c"
     },
     {
-      "path": "src/battle_main.c",
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/battle_ai_switch_items.c",
-      "sha256": "dad37604fd92c7540f82a360b14db083f5eb1a91878763e6992666ab2f6e947d"
+      "path": "src/battle_ai_switch_items.c"
     },
     {
-      "path": "src/pokemon.c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "src/random.c",
-      "sha256": "e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2"
+      "path": "src/random.c"
     },
     {
-      "path": "data/battle_scripts_1.s",
-      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034"
+      "path": "data/battle_scripts_1.s"
     },
     {
-      "path": "src/data/battle_moves.h",
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+      "path": "src/data/battle_moves.h"
     },
     {
-      "path": "src/data/pokemon/pokedex_entries.h",
-      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+      "path": "src/data/pokemon/pokedex_entries.h"
     }
   ]
 }

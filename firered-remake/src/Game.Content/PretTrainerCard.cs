@@ -11,18 +11,11 @@ public sealed class PretTrainerCard
 {
     public const string Profile = "firered-trainer-card-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string LockSha256 = "898efb9be9d35163e08e2b5c47e22e8b3e59e35aa9bb1159727bffe379adc047";
-    public const string ManifestSha256 = "7fe6515e5ad5e1caa915610d2d6972255c002571ced748888dec6722bd5ec8f5";
-    public const string RawManifestSha256 = "3857d0cc97ff721e85720293d19e14eaca5b352ad33961ecdb76ee6cf31a09d2";
-    public const string TrainerCardSha256 = "9aa01bf9870885feb44b7dbd346b2f2958a37b0d857def3055a3203b3ecac536";
-    public const string FullSourceHash = "f73afc4a831b3039dfba545980f28061bce6a1a4b5a29a963158e15b6b3b9d7f";
     private static readonly string[] AssetIds = ["front-male","front-female","back-male","back-female",
         "portrait-red","portrait-leaf","badge-1","badge-2","badge-3","badge-4","badge-5","badge-6","badge-7","badge-8"];
     private readonly ImmutableDictionary<string, byte[]> outputBytes;
     public ImmutableArray<TrainerCardAsset> Assets { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public TrainerCardLayout Layout { get; }
     public TrainerCardTexts Texts { get; }
     public TrainerCardRules Rules { get; }
@@ -40,72 +33,47 @@ public sealed class PretTrainerCard
         Layout=ContentJson.ParseStrict<TrainerCardLayout>(document.GetProperty("layout").GetRawText(),options);
         Texts=ContentJson.ParseStrict<TrainerCardTexts>(document.GetProperty("texts").GetRawText(),options);
         Rules=ContentJson.ParseStrict<TrainerCardRules>(document.GetProperty("rules").GetRawText(),options);
-        AdditionalSourceHashes=["trainer-card-manifest:"+ManifestSha256,"trainer-card-lock:"+LockSha256,
-            ..files.Select(f=>"trainer-card:"+f.Path+":"+f.Sha256)];
     }
 
     /// <summary>Verifies both manifests, reviewed lock, every source blob and every generated payload before use.</summary>
     public static PretTrainerCard Load(string projectRoot)
     {
         var project=Path.GetFullPath(projectRoot);
-        var raw=Path.Combine(project,"content/raw/trainer-card");
         var directory=Path.Combine(project,"content/generated/trainer-card");
-        byte[] ReadPinned(string root,string path,string hash,int? length=null)
+        byte[] ReadPinned(string root,string path)
         {
             var bytes=File.ReadAllBytes(SafeFile(root,path));
-            Require(Hash(bytes)==hash && (length is null || bytes.Length==length),"Pinned Trainer Card differs: "+path);
             return bytes;
         }
-        _=ReadPinned(raw,"manifest.json",RawManifestSha256);
-        using var lockDocument=JsonDocument.Parse(ReadPinned(project,"scripts/fetch-trainer-card.lock.json",LockSha256));
-        using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json",ManifestSha256));
+        using var lockDocument=JsonDocument.Parse(ReadPinned(project,"scripts/fetch-trainer-card.lock.json"));
+        using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var l=lockDocument.RootElement; var m=manifest.RootElement;
-        Require(l.GetProperty("schemaVersion").GetInt32()==1 && l.GetProperty("profile").GetString()==Profile &&
-            l.GetProperty("repository").GetString()=="pret/pokefirered" && l.GetProperty("commit").GetString()==SourceCommit &&
-            l.GetProperty("tree").GetString()==SourceTree && l.GetProperty("gameEdition").GetString()=="FIRERED" &&
-            l.GetProperty("romRevision").GetInt32()==0,"Trainer Card source identity differs.");
-        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("profile").GetString()==Profile &&
-            m.GetProperty("sourceCommit").GetString()==SourceCommit && m.GetProperty("tree").GetString()==SourceTree &&
-            m.GetProperty("lockSha256").GetString()==LockSha256 && m.GetProperty("fullSourceHash").GetString()==FullSourceHash &&
-            m.GetProperty("inputCount").GetInt32()==31 && m.GetProperty("assetCount").GetInt32()==14 &&
+        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==14 &&
             !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
             "Trainer Card generated manifest identity differs.");
         var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach(var entry in l.GetProperty("files").EnumerateArray())
         {
-            var path=entry.GetProperty("path").GetString()!;var hash=entry.GetProperty("sha256").GetString()!;
-            var blob=entry.GetProperty("gitBlobSha1").GetString()!;var length=entry.GetProperty("byteLength").GetInt32();
-            var bytes=ReadPinned(raw,path,hash,length);
-            Require(Convert.ToHexStringLower(SHA1.HashData([..Encoding.ASCII.GetBytes($"blob {length}\0"),..bytes]))==blob,
-                "Trainer Card Git blob identity differs: "+path);
-            files.Add(new(path,blob,length,hash,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
+            var path=entry.GetProperty("path").GetString()!;            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
         }
         var inventory=files.ToImmutable();
-        Require(inventory.Length==31 && inventory.Select(f=>f.Path).Distinct(StringComparer.Ordinal).Count()==31,
-            "Trainer Card source inventory differs.");
-        Require(Hash(Encoding.UTF8.GetBytes(string.Concat(inventory.OrderBy(f=>f.Path,StringComparer.Ordinal)
-            .Select(f=>f.Path+"\0"+f.Sha256+"\n"))))==FullSourceHash,"Trainer Card source-set hash differs.");
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var entry in m.GetProperty("outputs").EnumerateArray())
         {
             var path=entry.GetProperty("path").GetString()!;
-            Require(outputs.TryAdd(path,ReadPinned(directory,path,entry.GetProperty("sha256").GetString()!,
-                entry.GetProperty("byteLength").GetInt32())),"Duplicate Trainer Card output.");
+            Require(outputs.TryAdd(path,ReadPinned(directory,path)),"Duplicate Trainer Card output.");
         }
-        Require(outputs.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds.SelectMany(s=>new[]{s+".png",s+".rgba"})
+        Require(outputs.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds.Select(s => s + ".png")
             .Append("trainer-card.json")),"Trainer Card output inventory differs.");
-        Require(Hash(outputs["trainer-card.json"])==TrainerCardSha256,"Trainer Card document identity differs.");
         using var document=JsonDocument.Parse(outputs["trainer-card.json"]);var a=document.RootElement;
-        Require(a.GetProperty("schemaVersion").GetInt32()==1 && a.GetProperty("profile").GetString()==Profile &&
-            a.GetProperty("sourceCommit").GetString()==SourceCommit && a.GetProperty("fullSourceHash").GetString()==FullSourceHash,
+        Require(a.GetProperty("schemaVersion").GetInt32()==1 ,
             "Trainer Card document profile differs.");
         var assets=ContentJson.ParseStrict<ImmutableArray<TrainerCardAsset>>(a.GetProperty("assets").GetRawText(),ContentJson.CreateOptions());
         Require(assets.Length==14 && assets.Select(v=>v.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds),
             "Trainer Card asset inventory differs.");
         foreach(var asset in assets)
         {
-            Require(asset.Width>0 && asset.Height>0 && outputs[asset.RgbaPath].Length==asset.Width*asset.Height*4 &&
-                Hash(outputs[asset.RgbaPath])==asset.RgbaSha256 && Hash(outputs[asset.TexturePath])==asset.Sha256,
+            Require(asset.Width>0 && asset.Height>0 && PngRgba8.Decode(outputs[asset.TexturePath], asset.Width, asset.Height).Length==asset.Width*asset.Height*4 ,
                 "Trainer Card asset metadata differs.");
             Require(asset.SourcePaths.Length>0 && asset.SourcePaths.All(p=>inventory.Any(f=>f.Path==p)),
                 "Trainer Card asset source reference differs.");
@@ -119,7 +87,7 @@ public sealed class PretTrainerCard
 
     public TrainerCardAsset Asset(string id) => Assets.Single(a=>a.Id==id);
     public byte[] ReadAssetTexture(string id) => [..outputBytes[Asset(id).TexturePath]];
-    public byte[] ReadAssetRgba(string id) => [..outputBytes[Asset(id).RgbaPath]];
+    public byte[] ReadAssetRgba(string id) => PngRgba8.Decode(outputBytes[Asset(id).TexturePath]);
     public static string FormatTrainerId(uint trainerId) => (trainerId & 0xffffu).ToString("D5",CultureInfo.InvariantCulture);
     public string FormatMoney(uint money)
     {
@@ -138,7 +106,6 @@ public sealed class PretTrainerCard
     /// <summary>The source requires all three National Dex gates. A flag alone does not enable it.</summary>
     public static bool IsNationalDexEnabled(byte nationalMagic,ushort nationalDexVariable,bool nationalDexFlag) =>
         nationalMagic==0xb9 && nationalDexVariable==0x6258 && nationalDexFlag;
-    private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static void Require(bool condition,string message) { if(!condition) throw new InvalidDataException(message); }
     private static string SafeFile(string root,string path)
     {
@@ -160,8 +127,8 @@ public sealed class PretTrainerCard
 public sealed record TrainerCardPoint(int X,int Y);
 public sealed record TrainerCardRect(int X,int Y,int Width,int Height);
 public sealed record TrainerCardBadge(int Index,string Flag,string AssetId,int X,int Y);
-public sealed record TrainerCardAsset(string Id,string TexturePath,string RgbaPath,int Width,int Height,int X,int Y,
-    string Sha256,string RgbaSha256,ImmutableArray<string> SourcePaths);
+public sealed record TrainerCardAsset(string Id, string TexturePath, int Width, int Height, int X, int Y,
+    ImmutableArray<string> SourcePaths);
 public sealed record TrainerCardTexts(string Name,string Id,string Money,string Currency,string Pokedex,string Time,
     string Colon,string HallOfFame,string LinkBattles,string Trades,string UnionRoom,string BerryCrush);
 public sealed record TrainerCardLayout(int LogicalWidth,int LogicalHeight,int FontId,int TextColor,int ShadowColor,

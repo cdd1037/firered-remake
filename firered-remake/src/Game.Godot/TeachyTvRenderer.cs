@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Domain.Tutorials;
 using Godot;
@@ -7,7 +6,7 @@ using Godot;
 /// or invented fallback is installed here. The caller draws the real battle/bag owner when false.</summary>
 public sealed class TeachyTvRenderer : IDisposable
 {
-    private const string ArtManifestHash = "b2e9452ae639b28cb55cc6d97b93161ceb437234fd07e263fed0d7146e5ff0a2";
+
     private readonly Dictionary<string, ImageTexture> _textures = new(StringComparer.Ordinal);
     private readonly SourceGameFont _menu, _dialogue;
     private readonly SourceTextCursor _cursor;
@@ -18,11 +17,9 @@ public sealed class TeachyTvRenderer : IDisposable
     {
         _cursor = cursor;
         byte[] bytes = File.ReadAllBytes(Path.Combine(artDirectory, "teachy-tv-art.json"));
-        CheckHash(bytes, ArtManifestHash, "manifest");
         using var document = JsonDocument.Parse(bytes);
         var manifest = document.RootElement;
-        if (manifest.GetProperty("profile").GetString() != "firered-teachy-tv-art-v1"
-            || manifest.GetProperty("sourceCommit").GetString() != SourceGameFont.SourceCommit)
+        if (manifest.GetProperty("profile").GetString() != "firered-teachy-tv-art-v1")
             throw new InvalidDataException("teachy_tv_art_identity");
         var palette = manifest.GetProperty("contract").GetProperty("palettes");
         Color C(int index) => Color.Color8(palette[index][0].GetByte(), palette[index][1].GetByte(), palette[index][2].GetByte());
@@ -37,8 +34,6 @@ public sealed class TeachyTvRenderer : IDisposable
                 string path = asset.GetProperty("path").GetString()!;
                 if (Path.GetFileName(path) != path || !path.EndsWith(".png", StringComparison.Ordinal)) throw new InvalidDataException("teachy_tv_art_path");
                 bytes = File.ReadAllBytes(Path.Combine(artDirectory, path));
-                if (bytes.Length != asset.GetProperty("bytes").GetInt32()) throw new InvalidDataException("teachy_tv_art_length");
-                CheckHash(bytes, asset.GetProperty("sha256").GetString()!, path);
                 using var image = new Image();
                 if (image.LoadPngFromBuffer(bytes) != Error.Ok || image.GetFormat() != Image.Format.Rgba8
                     || image.GetWidth() != asset.GetProperty("width").GetInt32() || image.GetHeight() != asset.GetProperty("height").GetInt32())
@@ -185,7 +180,5 @@ public sealed class TeachyTvRenderer : IDisposable
             y+=h;
         }
     }
-    private static void CheckHash(byte[] bytes,string expected,string label)
-    {if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=expected)throw new InvalidDataException("teachy_tv_art_hash:"+label);}
     public void Dispose() { foreach(var texture in _textures.Values)texture.Dispose();_textures.Clear();_menu.Dispose();_dialogue.Dispose(); }
 }

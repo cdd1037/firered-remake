@@ -4,7 +4,7 @@ source "$(dirname "$0")/env.sh"
 cd "$ROOT"
 export FIRERED_EVIDENCE="$ROOT/evidence/pallet-runtime.json"
 export FIRERED_REFERENCE_ROOT="$ROOT/content/generated/pallet"
-export FIRERED_REFERENCE_SOURCE="$ROOT/content/raw/pallet"
+export FIRERED_REFERENCE_SOURCE="$ROOT/content/raw/pokefirered/037335f4"
 : > "$ROOT/evidence/pallet-runtime.jsonl"
 if [[ "${1:-}" == "export" ]]; then
   unset DOTNET_ROOT

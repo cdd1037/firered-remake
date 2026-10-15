@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using Game.Content;
 using Game.Domain.Pokemon;
 using Godot;
@@ -19,7 +18,7 @@ public sealed class SourceMailScreen : IDisposable
         if (_textures.TryGetValue(id, out var existing)) return existing;
         var asset = _content.Assets[id]; using var image = new Image();
         if (image.LoadPngFromBuffer(_content.PngFiles[id]) != Error.Ok || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height ||
-            image.GetFormat() != Image.Format.Rgba8 || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
+            image.GetFormat() != Image.Format.Rgba8)
             throw new InvalidDataException("mail_original_pixels:" + id);
         var texture = ImageTexture.CreateFromImage(image); _textures.Add(id, texture); return texture;
     }
@@ -36,8 +35,7 @@ public sealed class SourceMailScreen : IDisposable
     {
         const string id = "easy-chat-special-glyphs";
         var asset = _content.Assets[id]; using var original = new Image();
-        if (original.LoadPngFromBuffer(_content.PngFiles[id]) != Error.Ok ||
-            Convert.ToHexStringLower(SHA256.HashData(original.GetData())) != asset.RgbaSha256)
+        if (original.LoadPngFromBuffer(_content.PngFiles[id]) != Error.Ok)
             throw new InvalidDataException("mail_special_glyph_pixels");
         var pixels = original.GetData();
         var sourceForeground = _content.EasyChat.GetProperty("textRgb").EnumerateArray().Select(c => c.GetByte()).ToArray();

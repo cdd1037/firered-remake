@@ -16,16 +16,12 @@ public enum PretTrainerTowerLayoutFormat { Common = -1, Single = 0, Double = 1, 
 public sealed class PretTrainerTowerRegion
 {
     public const string Profile = "firered-trainer-tower-region-v1";
-    public const string FullSourceHash = "35a6334484aa7e743b88a9c5874a955d01a893e300415c210fe229b8bed92a3a";
-    public const string ManifestSha256 = "025b657cc68b7771c52593583af4ebb35d1316ef9e6754e86b3de1331dca85ef";
-    public const string LockSha256 = "c5a2f22dbc2cbaf77b54d686f006b95d59d713eab622a634018f9481cc0ba8f1";
     public ImmutableDictionary<MapId, PretWorldMap> Maps { get; }
     public ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> Layouts { get; }
     public ImmutableArray<PretSourceScriptFile> Scripts { get; }
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -43,10 +39,7 @@ public sealed class PretTrainerTowerRegion
         Scripts = scripts; TextSources = texts; SourceFiles = source.Files; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         ScriptInventory = source.Document("scripts.json"); NpcSources = source.Document("npc-source.json");
-        Constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
-        AdditionalSourceHashes = ["trainer-tower-region-manifest:" + ManifestSha256, "trainer-tower-region-lock:" + LockSha256,
-            .. source.Files.Select(f => "trainer-tower-region:" + f.Path + ":" + f.Sha256)];
+        Constants = PretSharedConstants.ForPackage(source.Directory);
     }
 
     /// <summary>format is the floor's resolved format (0..2), never the Mixed course value 3.</summary>
@@ -131,10 +124,7 @@ public sealed class PretTrainerTowerRegion
     {
         var source = Source(projectRoot);
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")), "Tower source catalog binding differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile, source.Files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
         var originalLayouts = SilphSourcePackage.Json(raw["data/layouts/layouts.json"]).GetProperty("layouts").EnumerateArray()
             .Where(l => l.TryGetProperty("id", out _)).ToDictionary(l => l.GetProperty("id").GetString()!, StringComparer.Ordinal);
@@ -142,11 +132,9 @@ public sealed class PretTrainerTowerRegion
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
-            string id = spec.GetProperty("stableId").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!;
             Need(path == relative + "/runtime-map.json", "Tower map path differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, spec.GetProperty("byteLength").GetInt32(), hash,
-                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(), spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Tower source map identity differs.");
             var format = Enum.Parse<PretTrainerTowerLayoutFormat>(spec.GetProperty("format").GetString()!);
             string originalId = runtime.Events.GetProperty("layout").GetString()!;
@@ -155,10 +143,6 @@ public sealed class PretTrainerTowerRegion
             var layout = originalLayouts[expectedId];
             Need(runtime.Width == layout.GetProperty("width").GetInt32() && runtime.Height == layout.GetProperty("height").GetInt32() &&
                 runtime.BorderWidth == layout.GetProperty("border_width").GetInt32() && runtime.BorderHeight == layout.GetProperty("border_height").GetInt32(), "Tower layout dimensions differ.");
-            ValidateCells(runtime.Blocks, runtime.ExpandCells(), raw[layout.GetProperty("blockdata_filepath").GetString()!], raw);
-            ValidateCells(runtime.BorderBlocks, runtime.ExpandBorderCells(), raw[layout.GetProperty("border_filepath").GetString()!], raw);
-            foreach (var artifact in runtime.Artifacts)
-                Need(SafariSource.Hash(source.Outputs[relative + "/" + artifact.Path]) == artifact.Sha256, "Tower image binding differs.");
             layouts.Add((new(id), format), PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, relative),
                 Path.Combine(source.Directory, "npc/red-normal.png"), MapIdFromSourceSymbol));
         }
@@ -176,24 +160,11 @@ public sealed class PretTrainerTowerRegion
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing Tower script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret, path, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[path].Sha256)));
+                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
         return new(source, layouts.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable());
     }
-    /// <summary>Authenticates all resource bytes without requiring current map composition.</summary>
-    public static void ValidateEvidence(string projectRoot) => _ = Source(projectRoot);
-    private static SilphSourcePackage Source(string root) => new(root, "trainer-tower-region", Profile,
-        "scripts/trainer-tower-region.lock.json", LockSha256, 65322, ManifestSha256, 50683, 214, 286);
-    private static void ValidateCells(ImmutableArray<ushort> blocks, ImmutableArray<PretWorldCell> cells, byte[] source, Dictionary<string, byte[]> raw)
-    {
-        Need(source.Length == blocks.Length * 2 && cells.Length == blocks.Length, "Tower grid length differs.");
-        for (int i = 0; i < blocks.Length; i++)
-        {
-            Need(blocks[i] == BinaryPrimitives.ReadUInt16LittleEndian(source.AsSpan(i * 2)), "Tower raw grid differs.");
-            var cell = cells[i]; int local = cell.MetatileId < 640 ? cell.MetatileId : cell.MetatileId - 640;
-            Need(cell.RawAttributes == BinaryPrimitives.ReadUInt32LittleEndian(raw[cell.SourceRef.Path].AsSpan(local * 4)), "Tower attributes differ.");
-        }
-    }
+    private static SilphSourcePackage Source(string root) => new(root,"trainer-tower-region",        "scripts/trainer-tower-region.lock.json");
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);
 }

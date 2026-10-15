@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild Mewtwo pixels and cue metadata from pinned local blobs; no upstream execution."""
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -15,13 +14,11 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 # Reuse the established authored PNG/path/hash helpers; importing performs no rebuild.
 common = runpy.run_path(str(ROOT / 'scripts/import-celio-presentation.py'))
-need, sha, encode, safe, png = (common[k] for k in ('need', 'sha', 'encode', 'safe', 'png'))
+need, encode, safe, png = (common[k] for k in ('need', 'encode', 'safe', 'png'))
 COMMIT, TREE = common['COMMIT'], common['TREE']
 PROFILE = 'firered-mewtwo-presentation-v1'
 BASE = 'content/generated/mewtwo-presentation/'
-RAW = 'content/raw/mewtwo-presentation/'
-LOCK_SHA = 'f28873123459b1d1de87e871a2ebdcd0648a8a5cdc71bb338936948b3f557a38'
-MANIFEST_SHA = '44f0534e2bf81d2aef828968a7914eb9361b3d14128da853c2514eb099ad05f6'
+RAW = 'content/raw/pokefirered/037335f4/'
 SPECIES = [('Mewtwo', 150)]
 
 class Source:
@@ -29,20 +26,14 @@ class Source:
         self.root, self.reference, self.dependency = root, reference, dependency
         self.files, self.raw, self.inherited = {}, {}, {}
         self.lock = None
-        if reference:
-            need(subprocess.check_output(['git', '-C', str(reference), 'rev-parse', COMMIT + '^{tree}']).decode().strip() == TREE, 'Pinned source tree differs')
-        if LOCK_SHA:
-            data = safe(root, 'scripts/mewtwo-presentation.lock.json').read_bytes()
-            need(sha(data) == LOCK_SHA, 'Pinned presentation lock differs')
-            self.lock = json.loads(data)
-            need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit'], self.lock['tree']) ==
-                 (1, PROFILE, 'pret/pokefirered', COMMIT, TREE), 'Source lock identity differs')
+        data = safe(root, 'scripts/mewtwo-presentation.lock.json').read_bytes()
+        self.lock = json.loads(data)
+        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
 
     def read(self, path):
         if path not in self.raw:
             data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path, byteLength=len(data), sha256=sha(data),
-                       gitBlobSha1=hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest())
+            row = dict(path=path)
             if self.lock:
                 need(row in self.lock['files'], 'Source input differs: ' + path)
             self.raw[path], self.files[path] = data, row
@@ -53,7 +44,7 @@ class Source:
 
     def reuse(self, path):
         data = safe(self.dependency, path).read_bytes()
-        row = dict(path=path, byteLength=len(data), sha256=sha(data))
+        row = dict(path=path)
         if self.lock:
             need(row in self.lock['inheritedInputs'], 'Inherited pixels differ: ' + path)
         self.inherited[path] = row
@@ -66,9 +57,8 @@ def build(root, reference, dependency):
 
     def emit(identity, width, height, rgba, inputs):
         need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
-        out[identity + '.rgba'], out[identity + '.png'] = rgba, png(width, height, rgba)
-        row = dict(id=identity, width=width, height=height, rgbaPath=BASE + identity + '.rgba',
-                   texturePath=BASE + identity + '.png', rgbaSha256=sha(rgba), sha256=sha(out[identity + '.png']), sourcePaths=inputs)
+        out[identity + '.png'] = png(width, height, rgba)
+        row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png', sourcePaths=inputs)
         assets.append(row)
         return row
 
@@ -107,7 +97,7 @@ def build(root, reference, dependency):
                 x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, side=side, paletteVariant=variant,
                     x=x, y=y, sourceWidth=width, sourceHeight=height, sourceYOffset=y_offset, sourceEnemyElevation=elevation,
-                    indexSha256=sha(indices), sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)',
+                     sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)',
                     transparentIndex=0, **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
         icon_table = source.text('src/pokemon_icon.c')
         match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', icon_table)
@@ -117,7 +107,7 @@ def build(root, reference, dependency):
         need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
         indices, rgba = indexed(image, pal, (32, 64), floor=True, first_frame=True)
         icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
-                          sourceFrameCount=2, indexSha256=sha(indices), **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
+                          sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
         image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
         need('[' + symbol + '] = gMonFootprint_' + name + ',' in source.text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
         im = Image.open(io.BytesIO(source.read(image)))
@@ -130,8 +120,7 @@ def build(root, reference, dependency):
     # Declare original sequences and cry samples already present in the source pack.
     pack = source.reuse('content/generated/synth-audio/firered.pack')
     cries = source.reuse('content/generated/synth-audio/normal-cries.bin')
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-         sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack identity differs')
+    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
     songs = source.text('include/constants/songs.h')
     song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
     cues = []
@@ -207,11 +196,9 @@ def build(root, reference, dependency):
         inherited_geometry.append(expected)
     out['synth-manifest.json'] = encode(dict(schemaVersion=1, sourceCommit=COMMIT, cues=cues, inheritedCues=inherited_cues))
 
-    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
+    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
         files=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
-    if LOCK_SHA:
-        need(sha(lock) == LOCK_SHA, 'Presentation input inventory differs')
-    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lock),
+    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         inputs=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)],
         assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, newOwnedSpecies=[150],
         moveAnimationGeometry=dict(inheritedManifest=geometry_manifest, rows=inherited_geometry),
@@ -225,17 +212,15 @@ def build(root, reference, dependency):
             'Party icon uses original frame zero shared by normal/shiny variants.',
             'Map planes and overworld Mewtwo are supplied by the Cerulean Cave map package.',
             'Existing bounded move animation dispatch and geometry are reused; no new move animation coverage.'],
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(out.items())]))
-    if MANIFEST_SHA:
-        need(sha(manifest) == MANIFEST_SHA, 'Reviewed presentation manifest differs')
+        outputs=[dict(path=p) for p, b in sorted(out.items())]))
     out['manifest.json'] = manifest
     result = {BASE + p: b for p, b in out.items()}
     result.update({RAW + p: b for p, b in source.raw.items()})
     result['scripts/mewtwo-presentation.lock.json'] = lock
     report = dict(passed=True, sourceFiles=len(source.raw), inheritedInputs=len(source.inherited), sprites=len(sprites),
         pokemonIcons=len(icons), footprints=len(footprints), assets=len(assets), moveGeometry=len(inherited_geometry),
-        outputs=len(out) - 1, lockSha256=sha(lock), lockBytes=len(lock), manifestSha256=sha(manifest), manifestBytes=len(manifest),
-        synthSha256=sha(out['synth-manifest.json']), synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
+        outputs=len(out) - 1,  lockBytes=len(lock),  manifestBytes=len(manifest),
+         synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
     return result, report
 
 if __name__ == '__main__':

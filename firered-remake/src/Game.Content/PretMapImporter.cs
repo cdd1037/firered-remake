@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -28,16 +27,13 @@ public sealed record PretMapStructure(int SchemaVersion, bool IsPlayable,
 
 public static class PretMapImporter
 {
-    // Pure, read-only parsing. The caller must establish the source's identity independently.
+    // Pure, read-only parsing of the supplied map and source location.
     // This never reads paths, follows includes, invokes upstream tools, or creates a playable map.
     public static PretMapStructure ImportStructure(string json, SourceRef source)
     {
         var diagnostics = ContentValidator.ValidateSource(source, "$.sourceRef").ToList();
         if (diagnostics.Count != 0) throw new ContentValidationException(diagnostics);
         if (json is null) throw ContentJson.Error("json_null", "$", "Map JSON is required.");
-        var actualHash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
-        if (source.Sha256 is not null && source.Sha256 != actualHash)
-            throw ContentJson.Error("source_hash_mismatch", "$.sourceRef.sha256", "Input bytes do not match the expected SHA-256.");
         var map = ContentJson.ParseStrict<PretMapInput>(json, ContentJson.CreateOptions(JsonNamingPolicy.SnakeCaseLower));
         void Error(string code, string path, string message) => diagnostics.Add(new(code, path, message));
         void Symbol(string? value, string path)
@@ -130,7 +126,7 @@ public static class PretMapImporter
             [new("layout_unresolved", "$.layout", "Dimensions, grid bytes, tilesets, rendering and collision were not imported."),
              new("scripts_unconverted", "$.object_events", "Source script symbols are inventory only; no scripts or native specials were converted."),
              new("external_references_unresolved", "$.connections", "Other maps, warp indices, graphics, constants and flags require pinned-catalog resolution."),
-             new("source_identity_external", "$.sourceRef", "A matching input hash is not proof of upstream provenance; verify it against source-lock/tree metadata.")]);
+             new("source_description_only", "$.sourceRef", "Source location describes the input; it does not make this structure playable.")]);
     }
 
     public static string ToCanonicalJson(PretMapStructure structure)
@@ -138,15 +134,11 @@ public static class PretMapImporter
         ArgumentNullException.ThrowIfNull(structure);
         // Revalidate even if a caller constructed or modified the public record manually.
         var input = JsonSerializer.Serialize(structure.Map, ContentJson.CreateOptions(JsonNamingPolicy.SnakeCaseLower));
-        // Original source hash is for the original input bytes, not a re-serialized map.
         var originalSourceErrors = ContentValidator.ValidateSource(structure.SourceRef, "$.sourceRef");
         if (originalSourceErrors.Count != 0) throw new ContentValidationException(originalSourceErrors);
         if (structure.ReferencedScriptSymbols.IsDefault || structure.Limitations.IsDefault)
             throw ContentJson.Error("structure_claim", "$", "Explicit structure metadata arrays are required.");
-        var source = structure.SourceRef with { Sha256 = null };
-        if (source.Kind == SourceKind.Pret)
-            source = source with { Sha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(input))) };
-        var validated = ImportStructure(input, source);
+        var validated = ImportStructure(input, structure.SourceRef);
         if (structure.IsPlayable || structure.ScriptConversionAttempted || structure.LayoutResolved || structure.SchemaVersion != 1 ||
             !structure.ReferencedScriptSymbols.SequenceEqual(validated.ReferencedScriptSymbols) || !structure.Limitations.SequenceEqual(validated.Limitations))
             throw ContentJson.Error("structure_claim", "$", "Structure-only import metadata has been changed or misrepresented.");

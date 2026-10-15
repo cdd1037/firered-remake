@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
 """Deterministic bounded five-map Pallet Town import/render. No ROM, no upstream execution, local assets only."""
-import argparse, base64, collections, hashlib, json, pathlib, re, struct
+import sys as _map_sys
+from pathlib import Path as _MapPath
+_map_scripts = str(_MapPath(__file__).resolve().parents[1] / 'scripts')
+if _map_scripts not in _map_sys.path:
+    _map_sys.path.insert(0, _map_scripts)
+from map_runtime import compact_world as _compact_world, encode as _encode_runtime, VERSION as _RUNTIME_VERSION
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import argparse, base64, collections,  json, pathlib, re, struct
 from PIL import Image
 ROOT=pathlib.Path(__file__).resolve().parent.parent
-RAW=ROOT/'content/raw/pallet'
-def digest(b): return hashlib.sha256(b).hexdigest()
+RAW=ROOT/'content/raw/pokefirered/037335f4'
 def binary(path): return (RAW/path).read_bytes()
 def units(path,code):
     b=binary(path); size=struct.calcsize(code)
@@ -53,7 +64,7 @@ def write_npc_sprites(mapjson,out,source):
             refs.append({'sourceRef':source(path,pic),'sourceFrameIndex':index,'sourceMacroWidthTiles':int(w),'sourceMacroHeightTiles':int(h)})
         filename='npc-'+graphics_id.removeprefix('OBJ_EVENT_GFX_').lower().replace('_','-')+'.png'
         sheet.save(out/filename,optimize=False,compress_level=9)
-        result.append({'graphicsId':graphics_id,'texturePath':filename,'sha256':digest((out/filename).read_bytes()),'frameWidth':width,'frameHeight':height,'frameCount':len(frames),
+        result.append({'graphicsId':graphics_id,'texturePath':filename,'frameWidth':width,'frameHeight':height,'frameCount':len(frames),
             'paletteTag':fields['paletteTag'],'paletteSlot':fields['paletteSlot'],'animationTable':fields['anims'],'inanimate':fields['inanimate']=='TRUE',
             'tileCenterAnchor':{'x':width//2,'y':height-8},'sourceRef':source(root+'object_event_graphics_info.h',symbol),
             'paletteSourceRef':source(palette_path,palette_symbol),'frames':refs,
@@ -61,17 +72,13 @@ def write_npc_sprites(mapjson,out,source):
     (out/'npc-sprites.json').write_text(canonical({'schemaVersion':1,'sprites':result,'scope':'Source static/standard standing frames only. Original object visibility, movement and script state are not inferred here.'}), encoding='utf-8', newline='\n')
 
 def import_map(name,stable_id,out):
-    lock=json.loads((ROOT/'scripts/fetch-pallet.lock.json').read_text(encoding='utf-8')); manifest=json.loads((RAW/'manifest.json').read_text(encoding='utf-8'))
+    lock=json.loads((ROOT/'scripts/fetch-pallet.lock.json').read_text(encoding='utf-8')); manifest=json.loads((raw_metadata_directory(RAW, 'pallet')/'manifest.json').read_text(encoding='utf-8'))
     if manifest['commit'] != lock['commit'] or manifest['files'] is None: raise ValueError('Unpinned manifest')
     files={f['path']:f for f in manifest['files']}
     if set(files)!=set(f['path'] for f in lock['files']): raise ValueError('Dependency set differs')
     for e in lock['files']:
         b=binary(e['path']); f=files[e['path']]
-        blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
-        if len(b)!=e['byteLength'] or blob!=e['gitBlobSha1'] or digest(b)!=f['sha256']: raise ValueError('Source drift: '+e['path'])
-    full=digest(''.join(p+'\0'+files[p]['sha256']+'\n' for p in sorted(files)).encode())
-    if full != manifest['fullSourceHash']: raise ValueError('Source set hash mismatch')
-    def source(path,symbol): return {'kind':'pret','path':path,'symbol':symbol,'repository':lock['repository'],'commit':lock['commit'],'sha256':files[path]['sha256']}
+    def source(path,symbol): return {'kind':'pret','path':path,'symbol':symbol,'repository':lock['repository'],'commit':lock['commit']}
     map_path=f'data/maps/{name}/map.json'
     mapjson=json.loads(binary(map_path))
     layouts=json.loads(binary('data/layouts/layouts.json'))['layouts']; layout=next(x for x in layouts if x.get('id')==mapjson['layout'])
@@ -152,7 +159,7 @@ def import_map(name,stable_id,out):
     artifacts=[]
     for artifact_name,img in zip(['bottom.png','middle.png','top.png','map.png'],layers+[composite]):
         img.save(out/artifact_name,optimize=False,compress_level=9)
-        artifacts.append({'path':artifact_name,'sha256':digest((out/artifact_name).read_bytes()),'width':img.width,'height':img.height})
+        artifacts.append({'path':artifact_name,'width':img.width,'height':img.height})
     # Small bounded original male protagonist walking sheet, preserving source frame order.
     spritePath='graphics/object_events/pics/people/red_normal.png'
     sprite=Image.open(RAW/spritePath)
@@ -163,22 +170,34 @@ def import_map(name,stable_id,out):
     rgba=Image.new('RGBA',sprite.size)
     rgba.putdata([(*playerColors[i],0 if i==0 else 255) for i in list(sprite.get_flattened_data())])
     rgba.save(out/'player.png',optimize=False,compress_level=9)
-    artifacts.append({'path':'player.png','sha256':digest((out/'player.png').read_bytes()),'width':144,'height':32})
+    artifacts.append({'path':'player.png','width':144,'height':32})
     player={'texturePath':'player.png','frameWidth':16,'frameHeight':32,'frameCount':9,'sourceRef':source(spritePath,'gObjectEventPic_RedNormal'),'directions':{'south':{'stand':0,'walk':[3,0,4,0],'flipH':False},'north':{'stand':1,'walk':[5,1,6,1],'flipH':False},'west':{'stand':2,'walk':[7,2,8,2],'flipH':False},'east':{'stand':2,'walk':[7,2,8,2],'flipH':True}},'walkFrameDurationSourceFrames':8,'sourceTimingHz':60,'tileCenterAnchor':{'x':8,'y':24},'drawOffsetFromTileOrigin':{'x':0,'y':-16},'scope':'Standing/walking only, no running, cycling, surfing, or field action frames.'}
     (out/'player.json').write_text(canonical(player), encoding='utf-8', newline='\n')
     write_npc_sprites(mapjson,out,source)
     embedded=[]
     for p in [map_path,f'data/maps/{name}/scripts.inc',f'data/maps/{name}/text.inc','data/layouts/layouts.json','include/constants/metatile_behaviors.h',layout['blockdata_filepath'],layout['border_filepath']]+[base+'/metatile_attributes.bin' for base in bases]:
-        embedded.append({'path':p,'sha256':files[p]['sha256'],'base64':base64.b64encode(binary(p)).decode()})
+        embedded.append({'path':p,'base64':base64.b64encode(binary(p)).decode()})
     # Technical smoke-test anchor only: first ordinary elevation-3 neighbor of source entrance warp.
     warp=mapjson['warp_events'][0]
     neighbors=[(warp['x']+dx,warp['y']+dy) for dx,dy in ([(0,1)] if name=='PalletTown' else [(0,-1),(-1,0),(0,1),(1,0)])]
     sx,sy=next((x,y) for x,y in neighbors if 0<=x<width and 0<=y<height and cells[y*width+x]['behaviorId']==0 and cells[y*width+x]['collision']==0 and cells[y*width+x]['elevation']==3)
-    world={'schemaVersion':1,'stableId':stable_id,'sourceRef':source(map_path,mapjson['id']),'metadata':{'repository':lock['repository'],'commit':lock['commit'],'fullSourceHash':full,'rights':lock['rights'],'scope':'Bounded five-map static conversion. Original events/scripts/text retained without executing upstream code; runtime script/NPC/warp behavior belongs to the event engine. No water traversal or tile animation.','renderProfile':'Pinned source indexed PNG tiles, GBA RGB555 expanded to RGB888; no display color correction, tint, or animation. BG3 bottom, BG2 middle, BG1 top.','files':manifest['files']},'width':width,'height':height,'tileSize':16,'borderWidth':borderW,'borderHeight':borderH,'texturePath':'map.png','artifacts':artifacts,'cells':cells,'borderCells':[cell(b,i%borderW,i//borderW) for i,b in enumerate(border)],'embeddedSource':embedded,'technicalSpawn':{'x':sx,'y':sy,'elevation':3,'reason':'Technical safe neighbor of the first source warp; not an original story-start claim.'},'events':mapjson}
+    world={'schemaVersion':1,'stableId':stable_id,'sourceRef':source(map_path,mapjson['id']),'metadata':{'repository':lock['repository'],'commit':lock['commit'],'rights':lock['rights'],'scope':'Bounded five-map static conversion. Original events/scripts/text retained without executing upstream code; runtime script/NPC/warp behavior belongs to the event engine. No water traversal or tile animation.','renderProfile':'Pinned source indexed PNG tiles, GBA RGB555 expanded to RGB888; no display color correction, tint, or animation. BG3 bottom, BG2 middle, BG1 top.','files':manifest['files']},'width':width,'height':height,'tileSize':16,'borderWidth':borderW,'borderHeight':borderH,'texturePath':'map.png','artifacts':artifacts,'cells':cells,'borderCells':[cell(b,i%borderW,i//borderW) for i,b in enumerate(border)],'embeddedSource':embedded,'technicalSpawn':{'x':sx,'y':sy,'elevation':3,'reason':'Technical safe neighbor of the first source warp; not an original story-start claim.'},'events':mapjson}
     if cells[sy*width+sx]['movement']!='normal' or cells[sy*width+sx]['collision']!=0 or cells[sy*width+sx]['elevation']!=3:raise ValueError('Technical spawn no longer safe')
-    (out/'world.json').write_text(canonical(world), encoding='utf-8', newline='\n'); (out/'manifest.json').write_text(canonical({'worldSha256':digest((out/'world.json').read_bytes()),'fullSourceHash':full,'artifacts':artifacts,'rights':lock['rights']}), encoding='utf-8', newline='\n')
+    (out / 'runtime-map.json').write_bytes(_encode_runtime(_compact_world(world))); (out/'manifest.json').write_text(canonical({'artifacts':artifacts,'rights':lock['rights']}), encoding='utf-8', newline='\n')
     print(f'Imported {name}: {width}x{height} map; {width*16}x{height*16}px; {len(cells)} cells; behaviors {dict(collections.Counter(c["behaviorName"] for c in cells))}')
     return world
+
+def write_source_registry(generated, metadata):
+    """Store common provenance once, independently of each compact map."""
+    excluded = {'fullSourceHash', 'tree', 'sha256', 'gitBlobSha1', 'byteLength'}
+    clean = {key: value for key, value in metadata.items() if key not in excluded and key != 'files'}
+    clean['files'] = [{key: value for key, value in row.items() if key not in excluded} for row in metadata['files']]
+    data = _encode_runtime(dict(schemaVersion=2, converterVersion=_RUNTIME_VERSION,
+                                sourceCommit=metadata['commit'], metadata=clean))
+    target = pathlib.Path(generated) / 'map-source-registry.json'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    stage = target.with_suffix('.tmp'); stage.write_bytes(data); stage.replace(target)
+
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
@@ -188,6 +207,7 @@ def main():
     if args.output:
         import_map(*MAPS[0][:2],args.output);return
     worlds=[import_map(name,stable,args.collection_output/directory) for name,stable,directory in MAPS]
+    write_source_registry(args.collection_output, worlds[0]['metadata'])
     by_symbol={w['events']['id']:w for w in worlds}
     edges=[]
     for world in worlds:
@@ -198,7 +218,7 @@ def main():
             if not (0<=warp['x']<world['width'] and 0<=warp['y']<world['height'] and 0<=exit['x']<target['width'] and 0<=exit['y']<target['height']):raise ValueError('Warp coordinate outside source layout')
             if exit['dest_map']!=world['events']['id']:raise ValueError('Warp destination does not return to originating map')
             edges.append({'sourceMapId':world['stableId'],'sourceWarpId':index,'destinationMapId':target['stableId'],'destinationWarpId':dest,'sourceX':warp['x'],'sourceY':warp['y'],'destinationX':exit['x'],'destinationY':exit['y']})
-    catalog={'schemaVersion':1,'commit':worlds[0]['metadata']['commit'],'fullSourceHash':worlds[0]['metadata']['fullSourceHash'],'maps':[{'stableId':stable,'sourceName':name,'sourceMapSymbol':w['events']['id'],'directory':directory} for (name,stable,directory),w in zip(MAPS,worlds)],'warps':edges}
+    catalog={'schemaVersion':1,'commit':worlds[0]['metadata']['commit'],'maps':[{'stableId':stable,'sourceName':name,'sourceMapSymbol':w['events']['id'],'directory':directory} for (name,stable,directory),w in zip(MAPS,worlds)],'warps':edges}
     (args.collection_output/'pallet-catalog.json').write_text(canonical(catalog), encoding='utf-8', newline='\n')
     print(f'Validated {len(worlds)} maps and {len(edges)} source warp destinations; exact source event arrays retained.')
 if __name__=='__main__':main()

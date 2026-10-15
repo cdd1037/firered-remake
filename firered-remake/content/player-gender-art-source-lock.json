@@ -2,88 +2,48 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 189,
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
-      "path": "graphics/object_events/palettes/player.pal",
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c"
+      "path": "graphics/object_events/palettes/player.pal"
     },
     {
-      "byteLength": 682,
-      "gitBlobSha1": "31ad04085392f53a2b64e9a97aa06ed115401646",
-      "path": "graphics/object_events/pics/people/green_normal.png",
-      "sha256": "1229935843ebeb349176fe0c0dad579fdb855c5b89ecad8a22cbb9096581e1df"
+      "path": "graphics/object_events/pics/people/green_normal.png"
     },
     {
-      "byteLength": 742,
-      "gitBlobSha1": "377224e2f5c6bca2ff5d762f22fc214a6982f772",
-      "path": "graphics/object_events/pics/people/red_normal.png",
-      "sha256": "94eb37499a8bd663f47a0767c34b93569cf0c222a9906852943016e3a771054d"
+      "path": "graphics/object_events/pics/people/red_normal.png"
     },
     {
-      "byteLength": 7965,
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
-      "path": "include/constants/event_objects.h",
-      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947"
+      "path": "include/constants/event_objects.h"
     },
     {
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "path": "include/constants/global.h",
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      "path": "include/constants/global.h"
     },
     {
-      "byteLength": 37750,
-      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d",
-      "path": "src/data/object_events/object_event_anims.h",
-      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e"
+      "path": "src/data/object_events/object_event_anims.h"
     },
     {
-      "byteLength": 23522,
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
-      "path": "src/data/object_events/object_event_graphics.h",
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec"
+      "path": "src/data/object_events/object_event_graphics.h"
     },
     {
-      "byteLength": 97115,
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
-      "path": "src/data/object_events/object_event_graphics_info.h",
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512"
+      "path": "src/data/object_events/object_event_graphics_info.h"
     },
     {
-      "byteLength": 23651,
-      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
-      "path": "src/data/object_events/object_event_graphics_info_pointers.h",
-      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c"
+      "path": "src/data/object_events/object_event_graphics_info_pointers.h"
     },
     {
-      "byteLength": 82763,
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
-      "path": "src/data/object_events/object_event_pic_tables.h",
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995"
+      "path": "src/data/object_events/object_event_pic_tables.h"
     },
     {
-      "byteLength": 326145,
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
-      "path": "src/event_object_movement.c",
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254"
+      "path": "src/event_object_movement.c"
     },
     {
-      "byteLength": 67969,
-      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
-      "path": "src/field_player_avatar.c",
-      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e"
+      "path": "src/field_player_avatar.c"
     },
     {
-      "byteLength": 18570,
-      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
-      "path": "tools/gbagfx/gfx.c",
-      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+      "path": "tools/gbagfx/gfx.c"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-player-gender-art-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

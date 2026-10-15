@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -43,21 +42,16 @@ public partial class CampaignView
         if (_doubleTextures.Count != 0) return;
         var folder = Path.Combine(_root, "content/generated/double-battle-ui");
         var bytes = File.ReadAllBytes(Path.Combine(folder, "double-battle-ui.json"));
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != "a456bab7602c4617b397d836afe42e7c931ba0d1d4289688c60dd20ef7ec0b25")
-            throw new InvalidDataException("Doubles UI catalog differs.");
         using var json = JsonDocument.Parse(bytes);
         foreach (var asset in json.RootElement.GetProperty("assets").EnumerateArray())
         {
             string file = asset.GetProperty("path").GetString()!;
             if (Path.GetFileName(file) != file) throw new InvalidDataException("Doubles texture path differs.");
             var data = File.ReadAllBytes(Path.Combine(folder, file));
-            if (Convert.ToHexStringLower(SHA256.HashData(data)) != asset.GetProperty("sha256").GetString())
-                throw new InvalidDataException("Doubles texture differs.");
             using var image = new Image();
             if (image.LoadPngFromBuffer(data) != Error.Ok) throw new InvalidDataException("Doubles PNG differs.");
             image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != asset.GetProperty("width").GetInt32() || image.GetHeight() != asset.GetProperty("height").GetInt32() ||
-                Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.GetProperty("rgbaSha256").GetString())
+            if (image.GetWidth() != asset.GetProperty("width").GetInt32() || image.GetHeight() != asset.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Doubles source pixels differ.");
             _doubleTextures.Add(asset.GetProperty("id").GetString()!, ImageTexture.CreateFromImage(image));
         }

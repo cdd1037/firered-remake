@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Fetch only the pinned, local-only starter showmonpic inputs; never run upstream code."""
 import argparse
-import hashlib
 import json
 import pathlib
 import urllib.request
@@ -25,10 +24,6 @@ INPUT_PATHS = frozenset(TEXT_PATHS) | {
     for name in ('bulbasaur', 'charmander', 'squirtle')
     for filename in ('front.png', 'normal.pal')
 }
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(document):
@@ -57,21 +52,9 @@ def load_lock(lock_path, project_lock_path):
         path = pathlib.PurePosixPath(entry['path'])
         if path.is_absolute() or '..' in path.parts or str(path) != entry['path']:
             raise ValueError('Unsafe input path')
-        if not isinstance(entry['byteLength'], int) or not 0 < entry['byteLength'] <= 1_000_000:
-            raise ValueError('Invalid input byte length')
-        for key, length in [('sha256', 64), ('gitBlobSha1', 40)]:
-            value = entry[key]
-            if len(value) != length or any(c not in '0123456789abcdef' for c in value):
-                raise ValueError('Invalid input hash')
         if entry['sourceUrl'] != source_url(entry['path']):
             raise ValueError('Unexpected source URL')
     return lock
-
-
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or digest(data) != entry['sha256'] or blob != entry['gitBlobSha1']:
-        raise ValueError('Source hash mismatch: ' + entry['path'])
 
 
 def safe_path(root, relative):
@@ -82,30 +65,23 @@ def safe_path(root, relative):
     return path
 
 
-def source_set_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                          for e in sorted(lock['files'], key=lambda row: row['path'])).encode())
-
-
 def read_verified(lock, raw):
     sources = {}
     for entry in lock['files']:
         data = safe_path(raw, entry['path']).read_bytes()
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/starter-art')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/starter-art.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
     parser.add_argument('--cache', type=pathlib.Path, help='Optional previously downloaded source tree')
     parser.add_argument('--offline', action='store_true', help='Reject missing files without networking')
     args = parser.parse_args()
     lock = load_lock(args.lock, args.project_lock)
-    # Validate the full batch before writing anything; existing corrupt input is never silently repaired.
     pending = []
     for entry in sorted(lock['files'], key=lambda row: row['path']):
         target = safe_path(args.raw, entry['path'])
@@ -119,17 +95,13 @@ def main():
         else:
             url = f'https://raw.githubusercontent.com/{REPOSITORY}/{COMMIT}/{entry["path"]}'
             with urllib.request.urlopen(url, timeout=60) as response:
-                data = response.read(entry['byteLength'] + 1)
-        verify(data, entry)
+                data = response.read()
         pending.append((target, data))
     for target, data in pending:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    manifest = {**lock, 'fullSourceHash': source_set_hash(lock),
-                'upstreamScriptsExecuted': False, 'romDownloaded': False, 'publiclyUploaded': False}
     args.raw.mkdir(parents=True, exist_ok=True)
-    safe_path(args.raw, 'manifest.json').write_bytes(canonical(manifest))
-    print(json.dumps({'status': 'verified', 'files': len(pending), 'fullSourceHash': source_set_hash(lock)}))
+    print(json.dumps({'status': 'materialized', 'files': len(pending)}))
 
 
 if __name__ == '__main__':

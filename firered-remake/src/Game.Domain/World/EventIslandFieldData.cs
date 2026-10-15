@@ -4,7 +4,7 @@ using Game.Domain.Ids;
 namespace Game.Domain.World;
 
 /// <summary>Original event-island declarations. Application owns admission and persistent state.</summary>
-public sealed record EventIslandFieldSource(string Path, string Symbol, string Sha256);
+public sealed record EventIslandFieldSource(string Path, string Symbol);
 public sealed record EventIslandMapHeader(MapId Map, string Music, string Weather, string MapType,
     bool AllowCycling, bool AllowEscaping, bool AllowRunning, bool RequiresFlash, bool ShowMapName,
     int FloorNumber, string BattleScene, bool HasRandomEncounterHeader, EventIslandFieldSource Source);

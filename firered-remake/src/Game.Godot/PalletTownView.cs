@@ -31,15 +31,15 @@ public partial class PalletTownView:Node2D
             Texture2D Load(string path)=>ImageTexture.CreateFromImage(Image.LoadFromFile(path));
             _bottom=Load(_map.BottomTexturePath);_middle=Load(_map.MiddleTexturePath);_top=Load(_map.TopTexturePath);_player=Load(_map.PlayerTexturePath);
             var rawRoot=OS.GetEnvironment("FIRERED_REFERENCE_SOURCE");
-            SourceRef Ref(string file,string symbol){var evidence=_map.Metadata.Files.Single(f=>f.Path==file);return new(SourceKind.Pret,file,symbol,_map.Metadata.Repository,_map.Metadata.Commit,evidence.Sha256);}
+            SourceRef Ref(string file,string symbol){var evidence=_map.Metadata.Files.Single(f=>f.Path==file);return new(SourceKind.Pret,file,symbol,_map.Metadata.Repository,_map.Metadata.Commit);}
             const string scripts="data/maps/PalletTown/scripts.inc", texts="data/maps/PalletTown/text.inc";
             _dialogues=PretDialogueImporter.Import(System.IO.File.ReadAllText(System.IO.Path.Combine(rawRoot,scripts)),System.IO.File.ReadAllText(System.IO.Path.Combine(rawRoot,texts)),Ref(scripts,"PalletTown_MapScripts"),Ref(texts,"PalletTown_Text"));
             var spawn=_map.TechnicalSpawn;
-            _session=new(_map,new(_map.Id,spawn.X,spawn.Y,spawn.Elevation,Direction.South),_map.Metadata.FullSourceHash,Interaction,_dialogues.Programs);
+            _session=new(_map,new(_map.Id,spawn.X,spawn.Y,spawn.Elevation,Direction.South),PretWorldMap.FullSourceHash,Interaction,_dialogues.Programs);
             _visualPosition=new(spawn.X*16,spawn.Y*16);_fromPosition=_visualPosition;
             _savePath=ProjectSettings.GlobalizePath("user://pallet-reference-save.json");
             _evidence=OS.GetEnvironment("FIRERED_EVIDENCE");
-            Write("ready",new{map=_map.Id.Value,_map.Width,_map.Height,sourceHash=_map.Metadata.FullSourceHash,supportedReadOnlyScripts=_dialogues.Programs.Count,unimplementedScripts=_dialogues.UnsupportedScripts.Length,spawn,scope="static source map, basic walking, supported read-only signs; no main story, NPCs, warps or connections"});
+            Write("ready",new{map=_map.Id.Value,_map.Width,_map.Height,sourceHash=PretWorldMap.FullSourceHash,supportedReadOnlyScripts=_dialogues.Programs.Count,unimplementedScripts=_dialogues.UnsupportedScripts.Length,spawn,scope="static source map, basic walking, supported read-only signs; no main story, NPCs, warps or connections"});
             QueueRedraw();
         }
         catch(Exception ex){GD.PushError(ex.ToString());GetTree().Quit(19);}
@@ -89,11 +89,11 @@ public partial class PalletTownView:Node2D
                 {
                     if(_session.State.Dialogue is not null)throw new InvalidOperationException("对话中不能存读档");
                     var storage=new SaveService(new LocalSaveStorage());
-                    if(key.Keycode==Key.F5){storage.Save(_savePath,_session.State,_sequence,ReferenceWorldSession.Rules,_map.Metadata.FullSourceHash,_session.ValidateSave);_status="存档成功";Write("saved",new{hash=CanonicalJson.Hash(_session.State)});}
+                    if(key.Keycode==Key.F5){storage.Save(_savePath,_session.State,_sequence,ReferenceWorldSession.Rules,PretWorldMap.FullSourceHash,_session.ValidateSave);_status="存档成功";Write("saved",new{hash=CanonicalJson.Hash(_session.State)});}
                     else
                     {
-                        var loaded=storage.Load<ReferenceWorldState>(_savePath,ReferenceWorldSession.Rules,_map.Metadata.FullSourceHash,_session.ValidateSave);
-                        _session=new(_map,loaded.State.World.Player,_map.Metadata.FullSourceHash,Interaction,_dialogues.Programs,loaded.State);
+                        var loaded=storage.Load<ReferenceWorldState>(_savePath,ReferenceWorldSession.Rules,PretWorldMap.FullSourceHash,_session.ValidateSave);
+                        _session=new(_map,loaded.State.World.Player,PretWorldMap.FullSourceHash,Interaction,_dialogues.Programs,loaded.State);
                         _visualPosition=new(loaded.State.World.Player.X*16,loaded.State.World.Player.Y*16);_fromPosition=_visualPosition;_motionTime=1;
                         _status=loaded.Source.EndsWith(".bak",StringComparison.Ordinal)?"已从备份恢复":"读档成功";Write("loaded",new{hash=CanonicalJson.Hash(_session.State),loaded.Source});
                     }

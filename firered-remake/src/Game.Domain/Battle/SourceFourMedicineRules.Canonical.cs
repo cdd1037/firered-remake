@@ -46,7 +46,7 @@ public static partial class SourceFourMedicineRules
         SourceTrainerItemPreparation Fail(string error) => new(new(frame,[],[],error),null);
         if (SourceFourActionTurns.ValidateCapability(mechanics.Catalog,frame) is { } invalid) return Fail(invalid);
         if (ValidateSelectionPhase(frame,expectedRevision,actor,BattleSide.Opponent) is { } error) return Fail(error);
-        if (items.Find(item) is not { IsFixedEffect: true } definition || !SourceBattleItemDefinitionProof.IsAuthentic(definition))
+        if (items.Find(item) is not { IsFixedEffect: true } definition || !SourceBattleItemCatalog.SupportsFixedEffect(definition))
             return Fail("source_item_trainer_definition");
         // Source trainer item categories never select PP, revival, infatuation or reusable instruments.
         if (definition.Reusable || (definition.EffectBytes[4] & 0x58) != 0 || (definition.EffectBytes[0] & 0x80) != 0)

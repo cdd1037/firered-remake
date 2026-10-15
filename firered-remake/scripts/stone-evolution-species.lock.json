@@ -1,23 +1,15 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-stone-evolution-species-v1",
-  "importerSha256": "6658851f2dff5d195bed9c61218cf280217358fd4c349fc0fbbc91d613a6062d",
   "files": [
     {
-      "path": "content/generated/stone-evolution-species/machines.json",
-      "byteLength": 135923,
-      "sha256": "333dc352f5e9fc491c05a333250142cb5c5e24ed4c525240fc864629621fb2ab"
+      "path": "content/generated/stone-evolution-species/machines.json"
     },
     {
-      "path": "content/generated/stone-evolution-species/pokemon.json",
-      "byteLength": 987,
-      "sha256": "43ce70520ebb5d4629285acaea21f4acec81ea9c59885876dc8400efdc97c490"
+      "path": "content/generated/stone-evolution-species/pokemon.json"
     },
     {
-      "path": "content/generated/stone-evolution-species/source-input-hashes.json",
-      "byteLength": 2700,
-      "sha256": "3778a3452b34913410ec4acce9f4dfcbb7a2d28de6410b3a3a7f9a27a073013f"
+      "path": "content/generated/stone-evolution-species/source-input-hashes.json"
     }
   ]
 }

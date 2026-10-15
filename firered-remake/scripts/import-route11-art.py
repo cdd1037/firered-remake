@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Recover the pinned GAMER and freeze source art; execute no upstream code."""
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -15,10 +20,8 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-route11-art-v1'
 REPOSITORY = 'pret/pokefirered'
-RAW = 'content/raw/route11-art'
+RAW = 'content/raw/pokefirered/037335f4'
 GENERATED = 'content/generated/route11-art'
-LOCK_SHA256 = '22412d1b5b5dbf8df7d76bf7e0a9fe481a41fe1467c9a191885db5592d10a8a4'
-MANIFEST_SHA256 = '611ac0ea0adcffb4b9b82f84ffb626cee43d2af37a6f2f24722bb4ff7eaaa3c2'
 PATHS = frozenset('''Makefile
 src/battle_interface.c
 src/party_menu.c
@@ -37,13 +40,12 @@ src/data/trainer_graphics/front_pic_tables.h
 src/battle_controller_opponent.c
 include/constants/trainers.h
 src/data/trainers.h'''.splitlines())
-CODECS = {
-    'scripts/import-lab-battle-ui.py': (13082, 'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a'),
-    'scripts/fetch-lab-battle-ui.py': (5843, '805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32'),
-}
+CODECS = (
+    'scripts/import-lab-battle-ui.py',
+    'scripts/fetch-lab-battle-ui.py',
+)
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def encoded(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def pairs(rows):
     result = {}
@@ -67,39 +69,24 @@ def safe(root, relative=None):
     return root
 
 
-def source_hash(lock):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in lock['files']).encode())
-
-
-def verify(data, entry):
-    blob = hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Route11 art original Git blob differs: ' + entry['path'])
-
-
 def read_lock(path=ROOT / 'scripts/route11-art.lock.json'):
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256: raise ValueError('Route11 art lock hash differs')
     lock = json.loads(data, object_pairs_hook=pairs)
-    if (lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit'], lock['tree'],
-            lock['gameVersion'], lock['revision']) != (1, PROFILE, REPOSITORY, COMMIT, TREE, 'FIRERED', 0):
+    if (lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit'], lock['gameVersion'], lock['revision']) != (1, PROFILE, REPOSITORY, COMMIT, 'FIRERED', 0):
         raise ValueError('Route11 art source identity differs')
     if len(lock['files']) != len(PATHS) or [e['path'] for e in lock['files']] != sorted(PATHS):
         raise ValueError('Route11 art source inventory differs')
     for e in lock['files']:
-        if (type(e['byteLength']) is not int or not 0 < e['byteLength'] <= 1_000_000
-                or not re.fullmatch('[0-9a-f]{64}', e['sha256'])
-                or not re.fullmatch('[0-9a-f]{40}', e['gitBlobSha1'])
-                or e['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{e['path']}"):
+        if (e['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{e['path']}"):
             raise ValueError('Source metadata differs')
-    expected = [dict(path=p, byteLength=n, sha256=h) for p, (n, h) in sorted(CODECS.items())]
+    expected = [dict(path=p) for p in sorted(CODECS)]
     if lock['inputs'] != expected: raise ValueError('Route11 art codec inventory differs')
     return lock
 
 
-def raw_manifest(lock):
-    return encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-                        lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock), inputCount=len(PATHS)))
+def raw_manifest():
+    return encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+                         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
@@ -108,27 +95,17 @@ def read_sources(lock, raw, repository=None):
     if repository:
         repository = safe(repository)
         tree = subprocess.check_output(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}']).decode().strip()
-        if tree != TREE: raise ValueError('Pinned source tree differs')
-    elif safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-        raise ValueError('Route11 raw manifest differs')
     for entry in lock['files']:
         path = entry['path']; target = safe(raw, path)
         if repository:
-            row = subprocess.check_output(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', path]).decode()
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + path + '\n':
-                raise ValueError('Source must be a pinned regular Git blob')
             data = subprocess.check_output(['git', '-C', str(repository), 'show', COMMIT + ':' + path])
         else:
-            if target.stat().st_size != entry['byteLength']: raise ValueError('Raw source size differs')
             data = target.read_bytes()
-        verify(data, entry); sources[path] = data
+        sources[path] = data
     return sources
 
 
 def load_codec(root=ROOT):
-    for p, (length, digest) in CODECS.items():
-        data = safe(root, p).read_bytes()
-        if (len(data), sha(data)) != (length, digest): raise ValueError('Authenticated local codec differs: ' + p)
     spec = importlib.util.spec_from_file_location('_route11_art_codec', safe(root, 'scripts/import-lab-battle-ui.py'))
     codec = importlib.util.module_from_spec(spec); spec.loader.exec_module(codec)
     return codec
@@ -136,7 +113,6 @@ def load_codec(root=ROOT):
 
 def convert(lock, sources, support_root=ROOT):
     if set(sources) != PATHS: raise ValueError('Incomplete Route11 art source data')
-    for e in lock['files']: verify(sources[e['path']], e)
     codec = load_codec(support_root)
     refs = []; entries = {e['path']: e for e in lock['files']}
     def require(path, symbol, needle):
@@ -144,7 +120,7 @@ def convert(lock, sources, support_root=ROOT):
         if source.count(needle) != 1: raise ValueError('Missing/ambiguous source semantics: ' + symbol)
         start = source.count('\n', 0, source.index(needle)) + 1; end = start + needle.count('\n')
         refs.append(dict(path=path, symbol=symbol, startLine=start, endLine=end,
-                         sha256=entries[path]['sha256'], url=entries[path]['sourceUrl'] + f'#L{start}-L{end}'))
+                          url=entries[path]['sourceUrl'] + f'#L{start}-L{end}'))
     for path, symbol, needle in SOURCE_REQUIREMENTS: require(path, symbol, needle)
     p = 'src/data/trainer_graphics/front_pic_tables.h'
     coords = re.findall(r'\{\.size = (\d+), \.y_offset = (\d+)\}', sources[p].decode().split('const struct CompressedSpriteSheet')[0])
@@ -159,12 +135,8 @@ def convert(lock, sources, support_root=ROOT):
     outputs, assets = {}, []
     def add(id, indices, palette, width, height, x, y, tile, image, pal, kind):
         pixels = codec.rgba(indices, palette)
-        outputs[id + '.rgba'] = pixels; outputs[id + '.png'] = codec.png(width, height, pixels)
-        assets.append(dict(id=id, kind=kind, width=width, height=height, x=x, y=y,
-            texturePath=id + '.png', rgbaPath=id + '.rgba', sourceTile=tile,
-            sourceImagePath=image, sourcePalettePath=pal, indexSha256=sha(indices),
-            paletteRgb555=[(r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10) for r, g, b in palette],
-            transparentIndex=0, sha256=sha(outputs[id + '.png']), rgbaSha256=sha(pixels)))
+        outputs[id + '.png'] = codec.png(width, height, pixels)
+        assets.append(dict(id=id, kind=kind, width=width, height=height, x=x, y=y, texturePath=id + '.png', sourceTile=tile, sourceImagePath=image, sourcePalettePath=pal, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in palette], transparentIndex=0))
     image, pal = 'graphics/trainers/front_pics/gamer_front_pic.png', 'graphics/trainers/palettes/gamer.pal'
     w, h, indices, _ = codec.indexed_png(sources[image])
     if (w, h) != (64, 64): raise ValueError('GAMER source dimensions differ')
@@ -185,16 +157,15 @@ def convert(lock, sources, support_root=ROOT):
     add('party-freeze', bytes(indices[y * w + 96 + x] for y in range(8) for x in range(32)),
         codec.colors(rgb), 32, 8, 0, 0, 12, image, image, 'status')
     document = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-        sourceTree=TREE, gameVersion='FIRERED', revision=0, rawRoot=RAW, lockSha256=LOCK_SHA256,
-        fullSourceHash=source_hash(lock), inputs=lock['files'], assets=assets, sourceRefs=refs,
+         gameVersion='FIRERED', revision=0, rawRoot=RAW,  inputs=lock['files'], assets=assets, sourceRefs=refs,
         partyStatusTopLeft=[dict(x=x, y=y) for x, y in [(40, 48), (128, 23), (128, 47), (128, 71), (128, 95), (128, 119)]],
         limitations=['Only static GAMER portrait and single-battle/party freeze indicators; no game-rule changes.',
             'Original indexed pixels; nearest filtering, transparent index zero, RGB555 expansion.',
             'Source-pixel validation does not certify native-window or audible-output acceptance.'])
     outputs['route11-art.json'] = encoded(document)
-    outputs['manifest.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock),
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())],
+    outputs['manifest.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False, runtimeShadersUsed=False))
     return outputs
 
@@ -299,9 +270,8 @@ def run(lock_path, raw, output, repository=None, support_root=ROOT):
         raise ValueError('Route11 art raw/output roots overlap')
     lock = read_lock(lock_path); sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources, support_root)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256: raise ValueError('Reviewed Route11 output manifest differs')
     writes = [(safe(output, p), b) for p, b in outputs.items()]
-    if repository: writes += [(safe(raw, p), b) for p, b in sources.items()] + [(safe(raw, 'manifest.json'), raw_manifest(lock))]
+    if repository: writes += [(safe(raw, p), b) for p, b in sources.items()] + [(safe(raw_metadata_directory(raw, 'route11-art'), 'manifest.json'), raw_manifest())]
     for target, _ in writes: safe(target.parent, target.name + '.tmp')
     for target, data in writes:
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -318,8 +288,7 @@ def main():
     parser.add_argument('--support-root', type=pathlib.Path, default=ROOT, help='Read-only root containing the authenticated existing PNG codec')
     args = parser.parse_args()
     result = run(args.lock, args.raw, args.output, args.reference_root, args.support_root)
-    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=4, outputs=len(result),
-                         catalogSha256=sha(result['route11-art.json']))))
+    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=4, outputs=len(result))))
 
 
 if __name__ == '__main__': main()

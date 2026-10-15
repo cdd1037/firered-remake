@@ -1,137 +1,84 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-trainer-tower-audio-v1",
   "files": [
     {
-      "path": "content/generated/trainer-tower-audio/manifest.json",
-      "byteLength": 14328,
-      "sha256": "89d5f7187531942af8e5b68a6678e37d452f4b4a89dbc8c48618265811cc6c92"
+      "path": "content/generated/trainer-tower-audio/manifest.json"
     },
     {
-      "path": "content/generated/trainer-tower-audio/synth-manifest.json",
-      "byteLength": 7506,
-      "sha256": "9c32d45626b5d88e838cee1085b468a5240ed63c2045a07524b8c4fce5d1a5d4"
+      "path": "content/generated/trainer-tower-audio/synth-manifest.json"
     },
     {
-      "path": "content/raw/trainer-tower-audio/include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+      "path": "content/raw/pokefirered/037335f4/include/constants/songs.h"
     },
     {
-      "path": "content/raw/trainer-tower-audio/include/constants/sound.h",
-      "byteLength": 2051,
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2"
+      "path": "content/raw/pokefirered/037335f4/include/constants/sound.h"
     },
     {
-      "path": "content/raw/trainer-tower-audio/include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "content/raw/pokefirered/037335f4/include/constants/species.h"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/cry_tables.inc",
-      "byteLength": 16533,
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+      "path": "content/raw/pokefirered/037335f4/sound/cry_tables.inc"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/ampharos.wav",
-      "byteLength": 8272,
-      "sha256": "8f509020f0fb77fabea2306b95ce849d23e6cd1f4a0586f21794c692e82036b6"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/ampharos.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/blissey.wav",
-      "byteLength": 8310,
-      "sha256": "48cfb3415230a5a4ab3b12f18b2716f579473c82626373ac0312c98983622f41"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/blissey.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/corsola.wav",
-      "byteLength": 6470,
-      "sha256": "a8d287778ddee3bd54cfb7fb62bf447baa7aba10933e72a337b9507231aa6f07"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/corsola.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/dunsparce.wav",
-      "byteLength": 7956,
-      "sha256": "37e14e53b8ede47993ff4a30c66114185a0ddc645f74f6ba9271aa8cc5b71774"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/dunsparce.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/espeon.wav",
-      "byteLength": 9860,
-      "sha256": "85e2d9360c2d0514dfbed828fa2296819c60f689df642dbece13c6d315941242"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/espeon.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/feraligatr.wav",
-      "byteLength": 12742,
-      "sha256": "87e45c810985dbea44ebc9c024e2f396e304fc481bd3cdf78cdc1570e82958ec"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/feraligatr.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/flareon.wav",
-      "byteLength": 7778,
-      "sha256": "a6742253762449e4943d826d08d460ee6449e706d11210a47f5aef47c9f58d4d"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/flareon.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/granbull.wav",
-      "byteLength": 11812,
-      "sha256": "71282962a90ebf5db07c0f8dc4c33cb0eb7e3e08a4ffcaff8bfa7855eb0a277c"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/granbull.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/ledian.wav",
-      "byteLength": 4246,
-      "sha256": "8f32d03b93190911aa4daec5711261cd817472809384288f3d8d834a3d704ca6"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/ledian.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/magby.wav",
-      "byteLength": 7250,
-      "sha256": "4a7731e8e8559ac018ce4f8ffd30274de473a361841c386e373561a3033d068c"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/magby.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/mantine.wav",
-      "byteLength": 7916,
-      "sha256": "abf039a6262e6b32616ae2a688927d73ad72c046388cfd21baaf2da1c82a9754"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/mantine.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/politoed.wav",
-      "byteLength": 9144,
-      "sha256": "6a23e4bbc69ea53d38f6c704150d94094f74ddede4f2affbc04781750295c405"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/politoed.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/poliwrath.wav",
-      "byteLength": 5612,
-      "sha256": "da2469659bc2790f3327fae357849178a05db5d5761fd56d7e5f0535722d13dd"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/poliwrath.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/porygon2.wav",
-      "byteLength": 7886,
-      "sha256": "a1336d619ff5e74ec4e5625824ad25eb71cdd5548440c84166b85c98b11d49ef"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/porygon2.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/qwilfish.wav",
-      "byteLength": 5840,
-      "sha256": "2257e2ebbc2f6f93b2cfd537934ea362909e3f608f65e95e91bb21d70f132f04"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/qwilfish.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/smoochum.wav",
-      "byteLength": 5892,
-      "sha256": "5d726d952ab1179dd44694001f8be657cbf16a97c75e2735b42a7d024ed89a86"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/smoochum.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/togepi.wav",
-      "byteLength": 5492,
-      "sha256": "da04ed64453d35083e508af0c267d9040268630cc58504966c5273ac1c91d24a"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/togepi.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/direct_sound_samples/cries/vaporeon.wav",
-      "byteLength": 11048,
-      "sha256": "685ef55ff63626304726495e6852cae6ad899f0992a2a52344ad302f91c6ec4e"
+      "path": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/vaporeon.wav"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+      "path": "content/raw/pokefirered/037335f4/sound/song_table.inc"
     },
     {
-      "path": "content/raw/trainer-tower-audio/sound/songs/midi/mus_trainer_tower.mid",
-      "byteLength": 7602,
-      "sha256": "5edce3bdd6668174c3633d6cff1c72c939889487df9f583f05093dd103331fed"
+      "path": "content/raw/pokefirered/037335f4/sound/songs/midi/mus_trainer_tower.mid"
     }
   ]
 }

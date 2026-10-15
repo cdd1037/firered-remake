@@ -19,7 +19,6 @@ public static class RenewableHiddenItemRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourcePath = "src/renewable_hidden_items.c";
-    public const string SourceSha256 = "62ec167c060a50d58d250c22516a1b34abeb134adec20cd5adc73782eef7118c";
     public const string CounterVariable = "VAR_RENEWABLE_ITEM_STEP_COUNTER";
     public const int StepThreshold = 1500;
 

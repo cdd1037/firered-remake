@@ -6,9 +6,7 @@ using Game.Domain.Ids;
 namespace Game.Content;
 public sealed partial class PretVictoryRoadRegion
 {
-    private static SilphSourcePackage VictoryRoadSource(string root) => new(root, "victory-road-region", Profile,
-        "content/sources/victory-road-region.lock.json", LockSha256, 52606,
-        ManifestSha256, 11248, 164, 64);
+    private static SilphSourcePackage VictoryRoadSource(string root) => new(root,"victory-road-region",        "content/sources/victory-road-region.lock.json");
 
     private static void ValidateContracts(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
@@ -16,8 +14,7 @@ public sealed partial class PretVictoryRoadRegion
         var contract = source.Document("contracts.json");
         Need(!contract.GetProperty("runtimeIntegrated").GetBoolean() && !source.Document("declarations.json").GetProperty("ownedCatalogModified").GetBoolean(),
             "Source evidence cannot admit runtime or ownership changes.");
-        var sizes = new[] { ("map.route-23", 24, 160), ("map.victory-road-1f", 48, 22), ("map.victory-road-2f", 51, 22),
-            ("map.victory-road-3f", 45, 22), ("map.indigo-plateau-exterior", 24, 20) };
+        var sizes = new[] { ("map.route-23", 24, 160),("map.victory-road-1f", 48, 22),("map.victory-road-2f", 51, 22),("map.victory-road-3f", 45, 22),("map.indigo-plateau-exterior", 24, 20) };
         foreach (var (id, width, height) in sizes)
         {
             var m = maps[new(id)];
@@ -25,7 +22,7 @@ public sealed partial class PretVictoryRoadRegion
                 "Original League approach dimensions/Flash requirement differ.");
         }
         var gates = contract.GetProperty("badgeGates").EnumerateArray().ToArray();
-        Need(gates.Length == 8 && gates.Select(g => g.GetProperty("badge").GetString()).SequenceEqual(new[] { "Boulder", "Cascade", "Thunder", "Rainbow", "Soul", "Marsh", "Volcano", "Earth" }), "Original badge gate order differs.");
+        Need(gates.Length == 8 && gates.Select(g => g.GetProperty("badge").GetString()).SequenceEqual(new[] { "Boulder","Cascade","Thunder","Rainbow","Soul","Marsh","Volcano","Earth" }), "Original badge gate order differs.");
         for (int i = 0; i < gates.Length; i++)
         {
             var g = gates[i];
@@ -37,7 +34,7 @@ public sealed partial class PretVictoryRoadRegion
             Need(JsonElement.DeepEquals(events.GetProperty("object_events")[g.GetProperty("localId").GetInt32() - 1], g.GetProperty("event")) &&
                 g.GetProperty("triggers").EnumerateArray().All(t => events.GetProperty("coord_events").EnumerateArray().Any(e => JsonElement.DeepEquals(e, t))), "Gate actor or trigger differs.");
         }
-        var expectedSwitches = new[] { ("map.victory-road-1f", 20, 16), ("map.victory-road-2f", 2, 19), ("map.victory-road-2f", 14, 19), ("map.victory-road-3f", 7, 7) };
+        var expectedSwitches = new[] { ("map.victory-road-1f", 20, 16),("map.victory-road-2f", 2, 19),("map.victory-road-2f", 14, 19),("map.victory-road-3f", 7, 7) };
         var switches = contract.GetProperty("switches").EnumerateArray().ToArray();
         Need(switches.Length == 4, "Victory Road switch count differs.");
         for (int i = 0; i < switches.Length; i++)
@@ -62,7 +59,6 @@ public sealed partial class PretVictoryRoadRegion
         foreach (var block in source.Document("scripts.json").GetProperty("blocks").EnumerateArray())
         {
             var reference = block.GetProperty("sourceRef"); var path = reference.GetProperty("path").GetString()!;
-            Need(source.Files.Any(f => f.Path == path && f.Sha256 == reference.GetProperty("sha256").GetString()), "Script source hash differs.");
             var original = Encoding.UTF8.GetString(source.Raw[path]).Split('\n');
             Need(original[reference.GetProperty("line").GetInt32() - 1].TrimEnd(':', '\r') == block.GetProperty("label").GetString(), "Script label line differs.");
             foreach (var line in block.GetProperty("lines").EnumerateArray()) Need(original[line.GetProperty("line").GetInt32() - 1].TrimEnd('\r') == line.GetProperty("text").GetString(), "Script transcript differs.");

@@ -23,15 +23,14 @@ public partial class SynthSourceAudioPlayer
         }
         var extension = JsonSerializer.Deserialize<SynthManifest>(art.Files[PretGiftEggPresentation.Base + "synth-manifest.json"], options)
             ?? throw new InvalidDataException("GiftEgg synth extension missing.");
-        if (extension.SchemaVersion != 1 || extension.SourceCommit != PretGiftEggPresentation.SourceCommit ||
+        if (extension.SchemaVersion != 1 ||
             !extension.Cues.Select(c => c.Species).SequenceEqual(new[] { 198, 176 }))
             throw new InvalidDataException("GiftEgg source cue inventory differs.");
         foreach (var normal in extension.Cues)
         {
             string name = art.DexEntries[normal.Species].Name;
             if (normal.Id != "CRY_" + name + "_NORMAL" || normal.CryMode != 0 || normal.SourcePlayer != 4 || normal.Priority != 10 ||
-                normal.SourceSymbol != "SPECIES_" + name || normal.SourcePath != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" ||
-                normal.SourceCommit != PretGiftEggPresentation.SourceCommit || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
+                normal.SourceSymbol != "SPECIES_" + name || normal.SourcePath != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
                 _catalog.ContainsKey(normal.Id))
                 throw new InvalidDataException("GiftEgg normal source cue binding differs.");
         }

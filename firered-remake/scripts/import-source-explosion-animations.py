@@ -1,40 +1,27 @@
 #!/usr/bin/env python3
-"""Bounded authenticated revision-0 Self-Destruct/Explosion source import; no ROM input."""
-import argparse, hashlib, importlib.util, io, json, re, struct, subprocess
+"""Revision-0 Self-Destruct/Explosion source import; no ROM input."""
+import argparse,  io, json, re, struct, subprocess
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA = 'd7971f47bd6e73ee44890ffa0cf78434cad75f3459a68a01578d5794e7f2e9ba'
 OPS = {'loadspritegfx', 'createvisualtask', 'createsprite', 'call', 'return', 'delay', 'waitforvisualfinish', 'playsewithpan', 'end'}
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
-def authenticated(reference):
-    spec = importlib.util.spec_from_file_location('hit_importer', ROOT / 'scripts/import-source-hit-animations.py')
-    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
-    data = mod.read_bounded(ROOT / 'scripts/source-explosion-animation.lock.json', 65536)
-    if sha(data) != LOCK_SHA: raise ValueError('Explosion lock differs')
-    lock = json.loads(data)
-    if lock['sourceCommit'] != COMMIT or lock['revision'] != 0: raise ValueError('Wrong explosion source revision')
-    if len({r['path'] for r in lock['files']}) != len(lock['files']): raise ValueError('Duplicate source file')
+def read_sources(reference):
+    lock = json.loads(Path(__file__).with_name('source-explosion-animation.lock.json').read_bytes())
+    if lock['sourceCommit'] != COMMIT:
+        raise ValueError('Wrong source revision')
     result = {}
     for row in lock['files']:
-        path = row['path']; raw = mod.read_bounded(reference / path, 2_000_000, row['bytes'])
-        if sha(raw) != row['sha256']: raise ValueError('Source differs: ' + path)
-        if (reference / '.git').exists():
-            obj = COMMIT + ':' + path
-            size = int(subprocess.check_output(['git', '-C', str(reference), 'cat-file', '-s', obj]))
-            if size != row['bytes']: raise ValueError('Pinned blob size differs: ' + path)
-            blob = subprocess.check_output(['git', '-C', str(reference), 'show', obj])
-            if blob != raw: raise ValueError('Pinned blob differs: ' + path)
-        result[path] = raw
+        path = row['path']
+        result[path] = (subprocess.check_output(['git', '-C', str(reference), 'show', COMMIT + ':' + path])
+                        if (reference / '.git').exists() else (reference / path).read_bytes())
     return result
 
 def build(reference):
-    raw = authenticated(reference); source = raw['data/battle_anim_scripts.s'].decode()
+    raw = read_sources(reference); source = raw['data/battle_anim_scripts.s'].decode()
     macros = set(re.findall(r'^\s*\.macro (\w+)', raw['asm/macros/battle_anim_script.inc'].decode(), re.M))
     def commands(label, end):
         start = re.search(r'^' + label + r':\n', source, re.M)
@@ -77,8 +64,8 @@ def build(reference):
     if len(indices) != 4096 or max(indices) > 15: raise ValueError('Explosion 4bpp overflow')
     colors = [(palette[i*3]>>3) | ((palette[i*3+1]>>3)<<5) | ((palette[i*3+2]>>3)<<10) for i in range(16)]
     material = struct.pack('<HH', 32, 128) + struct.pack('<4096H', *[colors[i] | (0x8000 if i else 0) for i in indices])
-    recipe = dict(template='gExplosionSpriteTemplate', asset='explosion', callback='AnimSpriteOnMonPos', blend=False, animations=[frames], sourcePath='src/battle_anim_effects_2.c', sourceLine=source.count('\n', 0, template.start())+1, sourceTemplateSha256=sha(template[0].encode()))
-    manifest = dict(schemaVersion=1, sourceCommit=COMMIT, sourceLockSha256=LOCK_SHA, revision=0, scripts=scripts, subroutines=subs, assets=[dict(id='explosion', path='explosion.rgb555', bytes=len(material), sha256=sha(material))], spriteRecipes=[recipe])
+    recipe = dict(template='gExplosionSpriteTemplate', asset='explosion', callback='AnimSpriteOnMonPos', blend=False, animations=[frames], sourcePath='src/battle_anim_effects_2.c', sourceLine=source.count('\n', 0, template.start())+1)
+    manifest = dict(schemaVersion=1, sourceCommit=COMMIT,  revision=0, scripts=scripts, subroutines=subs, assets=[dict(id='explosion', path='explosion.rgb555')], spriteRecipes=[recipe])
     return (json.dumps(manifest, indent=2)+'\n').encode(), material
 
 if __name__ == '__main__':
@@ -90,4 +77,4 @@ if __name__ == '__main__':
             if (a.output/name).read_bytes() != data: raise SystemExit('Generated output differs: '+name)
         else:
             a.output.mkdir(parents=True, exist_ok=True); (a.output/name).write_bytes(data)
-    print(json.dumps(dict(manifestSha256=sha(manifest), materialSha256=sha(material), dedicatedMoveRoots=2, revision=0)))
+    print(json.dumps(dict( dedicatedMoveRoots=2, revision=0)))

@@ -24,9 +24,7 @@ public partial class CampaignView
         {
             var asset=art.Asset(item.AssetId);
             using var image=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,art.ReadRgba(asset.Id));
-            if(_earlyItemIcons.TryGetValue(new(item.Id),out var existing))
-            {using var old=existing.GetImage();old.Convert(Image.Format.Rgba8);if(!old.GetData().SequenceEqual(image.GetData()))throw new InvalidDataException("First-Sevii item icon differs.");}
-            else _earlyItemIcons.Add(new(item.Id),(ImageTexture)SceneTextures.FromImage(image));
+            if(!(_earlyItemIcons.TryGetValue(new(item.Id),out var existing)))_earlyItemIcons.Add(new(item.Id),(ImageTexture)SceneTextures.FromImage(image));
             if(item.Pocket!="POCKET_KEY_ITEMS")continue;
             var document=_questPocketUi??throw new InvalidDataException("First-Sevii key-item pocket missing.");
             if(document.Items.Any(i=>i.Id==item.Id))throw new InvalidDataException("Duplicated first-Sevii key item.");
@@ -35,11 +33,11 @@ public partial class CampaignView
             _questPocketUi=document with
             {
                 Items=document.Items.Add(new(item.Id,item.Symbol,item.Name,item.Description,asset.Id,item.FieldUseFunction)),
-                Assets=document.Assets.Add(new(asset.Id,PretFirstSeviiPresentation.GeneratedDirectory+asset.PngPath,asset.Width,asset.Height,position.X,position.Y,asset.PngSha256,asset.RgbaSha256))
+                Assets=document.Assets.Add(new(asset.Id,PretFirstSeviiPresentation.GeneratedDirectory+asset.TexturePath,asset.Width,asset.Height,position.X,position.Y))
             };
         }
-        Write("firstSeviiPresentation",new{FirstSeviiPresentationIdentity.ManifestSha256,trainerTeams=art.Document.Trainers.Length,trainerPortraits=art.Document.Portraits.Length,itemIcons=art.Document.Items.Length,
-            newSpecies=0,originalFerryAssets=true,physicalAudioVerified=false});
+        Write("firstSeviiPresentation",new{trainerTeams=art.Document.Trainers.Length,trainerPortraits=art.Document.Portraits.Length,itemIcons=art.Document.Items.Length,
+        originalFerryAssets=true,physicalAudioVerified=false});
     }
     private FirstSeviiPresentationTrainer? FirstSeviiTrainer(string? id)=>id is null?null:_firstSeviiPresentation?.Document.Trainers.SingleOrDefault(t=>t.Id==id);
     private string? VisibleFirstSeviiTrainerClass()=>FirstSeviiTrainer(_session.State.ForestTrainerBattle?.Trainer.Value)?.ClassName;

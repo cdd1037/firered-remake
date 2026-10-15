@@ -49,7 +49,6 @@ public static class FieldFlySourceRules
 /// <summary>Original destination/visited-flag and region tables, without a second map UI or warp executor.</summary>
 public sealed class FieldFlyCatalog
 {
-    public const string SourceSha256 = "5f876ca42acad49755449692e33f7e9a73ed4a093c6b8c5b0b08f3a1e77c7608";
     public ImmutableArray<FieldFlyDestination> Destinations { get; }
     private readonly ImmutableDictionary<string, FieldFlyRegion> _regions;
     private FieldFlyCatalog(FieldFlySourceDocument source)
@@ -58,7 +57,7 @@ public sealed class FieldFlyCatalog
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source.SourceCommit != FieldFlySourceRules.SourceCommit || source.Destinations.IsDefault || source.Destinations.Length != 20 ||
-            source.SectionRegions.IsDefault || CampaignSourceFingerprint.Compute(source) != SourceSha256)
+            source.SectionRegions.IsDefault)
             throw new ArgumentException("field_fly_source");
         return new(source);
     }

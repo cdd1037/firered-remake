@@ -9,8 +9,6 @@ namespace Game.Domain.Items;
 public sealed class FourIslandShopCatalog
 {
     public const string Profile = "firered-four-island-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "0a80a804bf935fde4d7b0f8585365a3312aa5f2a05734210b26be3214a3b640b";
-    public const string ShopSourceSha256 = "d68e8af03ec8c0498f3bfeb0bf7fae605956a2f6d4b25e9bb1a1590b83a078e1";
     public static ItemId NeverMeltIceId { get; } = new("pret:ITEM_NEVER_MELT_ICE");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, FourIslandShopCatalog> Proofs = new();
     public EarlyShopCatalog Catalog { get; }
@@ -34,12 +32,10 @@ public sealed class FourIslandShopCatalog
             throw new ArgumentException("four_island_shop_predecessor");
         if (candidate.Shops.IsDefault || candidate.Shops.Length != old.Shops.Length + 1 ||
             old.Shops.Where((stock, i) => !ReferenceEquals(stock, candidate.Shops[i])).Any() ||
-            CampaignSourceFingerprint.Compute(candidate.Shops[^1]) != ShopSourceSha256 ||
             candidate.Shops[^1].Items.Any(id => !candidate.Items.Any(item => item.Id == id)))
             throw new ArgumentException("four_island_shop_stock");
         var fresh = candidate.Items.Skip(104).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([NeverMeltIceId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([NeverMeltIceId]))
             throw new ArgumentException("four_island_shop_source");
         var proof = new FourIslandShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

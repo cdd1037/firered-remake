@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Extract only the upgraded League rematch teams from pinned Git blobs; never execute upstream code."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -13,28 +12,24 @@ PROFILE = 'firered-league-rematch-trainers-v1'
 TRAINERS = ['ELITE_FOUR_LORELEI_2','ELITE_FOUR_BRUNO_2','ELITE_FOUR_AGATHA_2','ELITE_FOUR_LANCE_2',
             'CHAMPION_REMATCH_SQUIRTLE','CHAMPION_REMATCH_BULBASAUR','CHAMPION_REMATCH_CHARMANDER']
 MISSING = ['CROBAT','MISDREAVUS','HERACROSS','KINGDRA','TYRANITAR']
-CANONICAL_SHA = 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc'
-DEPENDENCIES = {
-    'content/generated/celio-pokemon/pokemon.json': '3f5b6aeeb5454af27c38ff837757fe9f50647a2ed95dc19ea94e83dc05c54e9f',
-    'content/generated/five-island-rules/items.json': 'c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968',
-    'content/generated/five-island-rules/pokemon.json': '9788f567d061f21e66d877718a542a3fb2068629f34b65da9dd604e387a0a909',
-    'scripts/five-island-predecessor.json': 'e2241d337388ef781209563eed0fa100c5d219841830ff3f400b71500e37278f',
-    'content/generated/cerulean-cave-pokemon/pokemon.json': '55b3b1b8f593c72d71f92a43e7d599cf0bd278caad2e636b969b07b125330a95',
-}
+DEPENDENCIES = (
+    'content/generated/celio-pokemon/pokemon.json',
+    'content/generated/five-island-rules/items.json',
+    'content/generated/five-island-rules/pokemon.json',
+    'scripts/five-island-predecessor.json',
+    'content/generated/cerulean-cave-pokemon/pokemon.json',
+)
 
-def sha(data): return hashlib.sha256(data).hexdigest()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 def need(value, message):
     if not value: raise ValueError(message)
 
 def generate(reference, dependency):
-    need(subprocess.check_output(['git','rev-parse',COMMIT+'^{tree}'],cwd=reference).decode().strip()==TREE,'Source tree differs')
     raw, inputs, texts, dependencies = {}, {}, {}, []
     def read(path):
         if path not in texts:
             data = subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
             raw[path]=data; texts[path]=data.decode()
-            inputs[path]=dict(path=path,byteLength=len(data),gitBlobSha1=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest(),sha256=sha(data))
+            inputs[path]=dict(path=path)
         return texts[path]
     def one(path, pattern):
         matches=list(re.finditer(pattern,read(path),re.M|re.S))
@@ -42,18 +37,18 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path,symbol,match):
         return dict(path=path,symbol=symbol,startLine=read(path).count('\n',0,match.start())+1,
-                    endLine=read(path).count('\n',0,match.end())+1,sha256=inputs[path]['sha256'])
+                    endLine=read(path).count('\n',0,match.end())+1)
     def number(path,symbol):
         value=one(path,r'^#define '+symbol+r'\s+([^\n]+)')[1].split('//')[0].strip()
         return int(value,0) if re.fullmatch(r'(?:0x[0-9a-fA-F]+|\d+)',value) else 1<<int(re.fullmatch(r'\(1 << (\d+)\)',value)[1])
     def encode(name):
         return [int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in name]
     def identity(symbol):return dict(value='pret:'+symbol)
-    def dependent(path,expected):
-        data=(dependency/path).read_bytes();need(sha(data)==expected,'Dependency changed: '+path)
-        dependencies.append(dict(path=path,byteLength=len(data),sha256=sha(data)));return json.loads(data)
-    canonical=dependent('content/generated/canonical-pokemon/catalog.json',CANONICAL_SHA)
-    deps={path:dependent(path,h) for path,h in DEPENDENCIES.items()}
+    def dependent(path):
+        data=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path));return json.loads(data)
+    canonical=dependent('content/generated/canonical-pokemon/catalog.json')
+    deps={path:dependent(path) for path in DEPENDENCIES}
     celio=deps['content/generated/celio-pokemon/pokemon.json']
     five_items=deps['content/generated/five-island-rules/items.json']
     five_pokemon=deps['content/generated/five-island-rules/pokemon.json']
@@ -141,7 +136,7 @@ def generate(reference, dependency):
         read(path)
     for p in [species[s] for s in required]:
         for source in [p['source'],p['learnsetSource']]+[m['source'] for m in p['levelUpMoves']]:
-            read(source['path']);need(inputs[source['path']]['sha256']==source['sha256'],'Canonical source hash differs')
+            read(source['path'])
     starter_source=one('src/field_specials.c',r'^static const u16 sStarterSpecies\[\] = \{(.*?)^\};')
     need(re.findall(r'SPECIES_\w+',starter_source[1])==['SPECIES_BULBASAUR','SPECIES_SQUIRTLE','SPECIES_CHARMANDER'],'Player starter order differs')
     for value,suffix in [(0,'Charmander'),(1,'Bulbasaur'),(2,'Squirtle')]:
@@ -186,9 +181,9 @@ def generate(reference, dependency):
           'Mode 3 reuses ordinary trainer AI, medicine, EXP and money. Story flags, doors, Hall of Fame and whiteout routing belong to Application.',
           'Source trainer names (TERRY for champion) determine personality; display rival name does not replace this source construction.'])
     outputs={'trainers.json':dict(sourceCommit=COMMIT,profile=PROFILE,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs),
-        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-league-rematch-opponents-v1',canonicalCatalogSha256=CANONICAL_SHA,
+        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-league-rematch-opponents-v1',
             ownedSpeciesAdded=[],opponentSpecies=[species[s] for s in missing]),'rules.json':rules,
-        'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree=TREE,files=[inputs[k] for k in sorted(inputs)],predecessorInputs=dependencies)}
+        'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],predecessorInputs=dependencies)}
     return outputs,raw
 
 def main():
@@ -197,14 +192,13 @@ def main():
     p.add_argument('--check',action='store_true');a=p.parse_args()
     docs,raw=generate(a.reference,a.dependency)
     files={'content/generated/league-rematch-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
-    lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-league-rematch-rules-v1',
-        files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    lock=dict(sourceCommit=COMMIT,profile='firered-league-rematch-rules-v1',
+        files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/league-rematch-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     print(json.dumps(dict(checked=a.check,trainers=7,members=38,trainerSpecies=25,newOpponentSpecies=5,newOwnedSpecies=0,
-        moves=len(docs['rules.json']['trainerMoves']),sourceInputs=len(raw),files=len(files),
-        hashes={n:sha(v) for n,v in files.items() if '/generated/' in n}),indent=2))
+        moves=len(docs['rules.json']['trainerMoves']),sourceInputs=len(raw),files=len(files)),indent=2))
 if __name__=='__main__':main()

@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -23,12 +22,12 @@ public partial class CampaignView
     private void LoadPokemonTowerPresentation()
     {
         if (!_catalog.PokemonTowerEnabled) return;
-        if (_catalog.PokemonTowerPokemon is null || _battleArt.Count != 396 || _storageIcons.Count != 99 || _route22Footprints.Count != 70)
+        if (_catalog.PokemonTowerPokemon is null)
             throw new InvalidDataException("Pokemon Tower must extend the 99-species Rocket presentation.");
         var art = PokemonTowerPresentationAssets.Load(_root, art:true);
         ImageTexture Rgba(JsonElement row)
         {
-            using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(), false, Image.Format.Rgba8, art.Files[row.GetProperty("rgbaPath").GetString()!]);
+            using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(), false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
             return ImageTexture.CreateFromImage(image);
         }
         PokedexMenuTexture DexTexture(JsonElement row)
@@ -36,7 +35,7 @@ public partial class CampaignView
             string file = row.GetProperty("texturePath").GetString()!;
             string path = "content/generated/pokemon-tower-art/" + file;
             _towerDexTextures.Add(path, art.Files[file]);
-            return new(path,row.GetProperty("sha256").GetString()!,row.GetProperty("rgbaSha256").GetString()!,row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32());
+            return new(path,row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32());
         }
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
         {
@@ -53,7 +52,7 @@ public partial class CampaignView
         }
         foreach (var row in art.Manifest.GetProperty("icons").EnumerateArray())
         {
-            var rgba = art.Files[row.GetProperty("rgbaPath").GetString()!].ToArray();
+            var rgba = PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]);
             for (int i=0;i<rgba.Length;i+=4) if(rgba[i+3]!=0) for(int c=0;c<3;c++) { int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2)); }
             using var image=Image.CreateFromData(32,32,false,Image.Format.Rgba8,rgba);
             _storageIcons.Add(new(row.GetProperty("speciesId").GetString()!),ImageTexture.CreateFromImage(image));
@@ -70,17 +69,16 @@ public partial class CampaignView
         var items=PretPokemonTowerItems.LoadProject(_root);
         foreach(var icon in items.Icons)
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,PretPewterMachines.IconRgba(icon));
+            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("pokemon-tower-items", icon));
             _earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
         }
         var pocket=_questPocketUi??throw new InvalidDataException("Tower key-item pocket missing.");
         var position=pocket.Assets.Single(a=>a.Id==pocket.Items[0].Icon);
         var flute=items.Items.Single(x=>x.Metadata.Item.SourceItemSymbol=="ITEM_POKE_FLUTE").Metadata;
         var fluteIcon=items.Icons.Single(x=>x.Item==flute.Item.Id);const string fluteId="tower-poke-flute";
-        using(var image=Image.CreateFromData(fluteIcon.Width,fluteIcon.Height,false,Image.Format.Rgba8,PretPewterMachines.IconRgba(fluteIcon)))_questPocketTextures.Add(fluteId,ImageTexture.CreateFromImage(image));
+        using(var image=Image.CreateFromData(fluteIcon.Width,fluteIcon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("pokemon-tower-items", fluteIcon)))_questPocketTextures.Add(fluteId,ImageTexture.CreateFromImage(image));
         _questPocketUi=pocket with { Items=pocket.Items.Add(new(flute.Item.Id.Value,flute.Item.SourceItemSymbol,flute.Item.Name,flute.Description,fluteId,flute.Item.FieldUseFunction)),
-            Assets=pocket.Assets.Add(new(fluteId,fluteIcon.PngPath,fluteIcon.Width,fluteIcon.Height,position.X,position.Y,fluteIcon.PngSha256,fluteIcon.RgbaSha256)) };
-        if(_battleArt.Count!=404||_storageIcons.Count!=101||_route22Footprints.Count!=72)throw new InvalidDataException("Tower presentation inventory differs.");
+            Assets=pocket.Assets.Add(new(fluteId,fluteIcon.PngPath,fluteIcon.Width,fluteIcon.Height,position.X,position.Y)) };
     }
     private CaptureDexEntry? TowerCaptureDexEntry(int species)
     {

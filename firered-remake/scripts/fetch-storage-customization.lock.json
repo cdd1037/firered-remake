@@ -2,322 +2,165 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
-      "path": "charmap.txt",
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      "path": "charmap.txt"
     },
     {
-      "byteLength": 362,
-      "gitBlobSha1": "0b62c124efe249bb972c63683e021a6f4373c633",
-      "path": "graphics/misc/markings2.png",
-      "sha256": "e040af40808ec619a7aed5f1a8e091c927b49c577f2423044cb1b4d10d4cf368"
+      "path": "graphics/misc/markings2.png"
     },
     {
-      "byteLength": 502,
-      "gitBlobSha1": "048b0228001699ab1efca212ff3f67c034ed79e2",
-      "path": "graphics/misc/mon_markings.png",
-      "sha256": "e56fba8d712bf5055c22342d00eaa2d11fa437664571df468cc4028603dbf6db"
+      "path": "graphics/misc/mon_markings.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "aa2a97d9419613332d180a19ea3d225c5dfc7967",
-      "path": "graphics/pokemon_storage/wallpapers/beach/tilemap.bin",
-      "sha256": "1d1439e38d70769139b9a8cdda28eebf7d31e168ef8447ff5865f750247c08d4"
+      "path": "graphics/pokemon_storage/wallpapers/beach/tilemap.bin"
     },
     {
-      "byteLength": 885,
-      "gitBlobSha1": "fcabb6cc27c2e107af89196cccd86d048604760a",
-      "path": "graphics/pokemon_storage/wallpapers/beach/tiles.png",
-      "sha256": "64badb4c2f1a226d6bb78081ff1778486546c5408ec1f7dbcc48f958b299357d"
+      "path": "graphics/pokemon_storage/wallpapers/beach/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "e8cec86f60c01df5c03237203bb578cf0cd41718",
-      "path": "graphics/pokemon_storage/wallpapers/cave/tilemap.bin",
-      "sha256": "8ac44c36c550b0aba7f3486b8d2bf9be65f2d30029e6e91e0d44363d299e8ef2"
+      "path": "graphics/pokemon_storage/wallpapers/cave/tilemap.bin"
     },
     {
-      "byteLength": 771,
-      "gitBlobSha1": "28890b95342cd8515af638922fd367e986ddb875",
-      "path": "graphics/pokemon_storage/wallpapers/cave/tiles.png",
-      "sha256": "53577909ada971fe293f440c0cdcc47b9856c97a44405bea3f4e98977558892c"
+      "path": "graphics/pokemon_storage/wallpapers/cave/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "8274f44a44925b8f783f445c62f1e2a311a3a860",
-      "path": "graphics/pokemon_storage/wallpapers/city/tilemap.bin",
-      "sha256": "76d7db99941acb2b2a0884ac6236db79024022f37305a9c184a6d7c6e6f3f99a"
+      "path": "graphics/pokemon_storage/wallpapers/city/tilemap.bin"
     },
     {
-      "byteLength": 536,
-      "gitBlobSha1": "48588ef6ddbef5559a94733c96020caf5a53c7d1",
-      "path": "graphics/pokemon_storage/wallpapers/city/tiles.png",
-      "sha256": "f83eaeea908deddb1479579f33f307200fd390f2fd0668b2143c1d008b925d39"
+      "path": "graphics/pokemon_storage/wallpapers/city/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "ce256ff379ac46feb6370b8c4c54cc88c57acd45",
-      "path": "graphics/pokemon_storage/wallpapers/crag/tilemap.bin",
-      "sha256": "52b0da406791c803c193b0f4889b4722ce6f3264b9a7024eebb501a82e9064b2"
+      "path": "graphics/pokemon_storage/wallpapers/crag/tilemap.bin"
     },
     {
-      "byteLength": 770,
-      "gitBlobSha1": "f47111a9e66abb31c58d95db382fed1ee1ff6549",
-      "path": "graphics/pokemon_storage/wallpapers/crag/tiles.png",
-      "sha256": "f94445eddec91d68fca1859ff91117cd9912e125d8394ccba8058d86386066ab"
+      "path": "graphics/pokemon_storage/wallpapers/crag/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "75207eaf589cd9f046a563e8892b5de907b0657f",
-      "path": "graphics/pokemon_storage/wallpapers/desert/tilemap.bin",
-      "sha256": "b27e7d09c7ca8bc9b9848a91c8cba7da670e750993f67e173aa10bb08369cda6"
+      "path": "graphics/pokemon_storage/wallpapers/desert/tilemap.bin"
     },
     {
-      "byteLength": 686,
-      "gitBlobSha1": "4e6dcec04780490cf1a7ef5174da6e628aab7097",
-      "path": "graphics/pokemon_storage/wallpapers/desert/tiles.png",
-      "sha256": "ae76269f9ceeaa1360079a3f87f3f1855aa56d502c778efc9d9de30865238e8c"
+      "path": "graphics/pokemon_storage/wallpapers/desert/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "005155f6cb5860f34783960e3759c451250d9568",
-      "path": "graphics/pokemon_storage/wallpapers/forest/tilemap.bin",
-      "sha256": "88683558e797ea721978fba2b7c528ad33b2b44e0b53f2dcaec4307fc7f91616"
+      "path": "graphics/pokemon_storage/wallpapers/forest/tilemap.bin"
     },
     {
-      "byteLength": 721,
-      "gitBlobSha1": "e305ce6079ded5576600ecc7c70fe919fdc6c297",
-      "path": "graphics/pokemon_storage/wallpapers/forest/tiles.png",
-      "sha256": "fc8f20243a1dd2fbcbd86647e77395c84a428689c2c25918152d6c9525969aed"
+      "path": "graphics/pokemon_storage/wallpapers/forest/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "fa9596d9b5a753e9639075d9f98b630622b50b79",
-      "path": "graphics/pokemon_storage/wallpapers/pokecenter/tilemap.bin",
-      "sha256": "b02a61791fcbbda882435895c9e4318d112bec5c74be6d9187e4a419b7af1031"
+      "path": "graphics/pokemon_storage/wallpapers/pokecenter/tilemap.bin"
     },
     {
-      "byteLength": 734,
-      "gitBlobSha1": "182ac6a5a39f486b4b65070c4182f1fe6d8f7366",
-      "path": "graphics/pokemon_storage/wallpapers/pokecenter/tiles.png",
-      "sha256": "19d61010c429c6f8741440fd587d960f70aa550461d990e45dec0be211c44608"
+      "path": "graphics/pokemon_storage/wallpapers/pokecenter/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "ff2736df7ba9fa2564c3b522bd782ec7f5ca6c90",
-      "path": "graphics/pokemon_storage/wallpapers/river/tilemap.bin",
-      "sha256": "e2aa140fd50ec05ca824e8cb2aa7ffef9833617732fa28669ab0a5ae5c529671"
+      "path": "graphics/pokemon_storage/wallpapers/river/tilemap.bin"
     },
     {
-      "byteLength": 656,
-      "gitBlobSha1": "ab475829573e41ffb287ec16cf0686efbd51f6be",
-      "path": "graphics/pokemon_storage/wallpapers/river/tiles.png",
-      "sha256": "dc2641e39f0ab69117a1b020b393e203c99260e54309e8f11090fba2807ebba3"
+      "path": "graphics/pokemon_storage/wallpapers/river/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "4d166b7a9587aa8245e1837bf18ec8c4c9cce6f9",
-      "path": "graphics/pokemon_storage/wallpapers/savanna/tilemap.bin",
-      "sha256": "2495427bd5d6da077e4d8efa0cfd2ba512c6ff7b5f3bc3b9b19bbea0cba213a5"
+      "path": "graphics/pokemon_storage/wallpapers/savanna/tilemap.bin"
     },
     {
-      "byteLength": 562,
-      "gitBlobSha1": "6eb0971093b8833c8a9add68f6d8ea8cf21c67da",
-      "path": "graphics/pokemon_storage/wallpapers/savanna/tiles.png",
-      "sha256": "474917bc63159f782afc9f735fefea0ba0a76fe48ad0fa2a71f5207e383da98c"
+      "path": "graphics/pokemon_storage/wallpapers/savanna/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "c6be345de0579e318c7214c3b8454876e3defe3e",
-      "path": "graphics/pokemon_storage/wallpapers/seafloor/tilemap.bin",
-      "sha256": "77cdd461eea78578f59848df98b1baf4b98d7bd590f34e4e5060703c247f49f4"
+      "path": "graphics/pokemon_storage/wallpapers/seafloor/tilemap.bin"
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "e662d247c5d49541d15696140be76919628e6730",
-      "path": "graphics/pokemon_storage/wallpapers/seafloor/tiles.png",
-      "sha256": "031b268f24d6e260cfc77c203b30d11a81f2c5aae8a5a3adb2851c2fc7f5fe57"
+      "path": "graphics/pokemon_storage/wallpapers/seafloor/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "5ed0ca513f71d146edcdc6a9f46075bf86a6d664",
-      "path": "graphics/pokemon_storage/wallpapers/simple/tilemap.bin",
-      "sha256": "d207e6ed493f489c0ae958da4c2e9f146ece4979c0fa86790ab0f88aba75ae5f"
+      "path": "graphics/pokemon_storage/wallpapers/simple/tilemap.bin"
     },
     {
-      "byteLength": 400,
-      "gitBlobSha1": "daefeed49d04bfd591efe6dcf72df528d4999e94",
-      "path": "graphics/pokemon_storage/wallpapers/simple/tiles.png",
-      "sha256": "c2108a675de9c66b8a0c98c1b4bb724febab0adcdbb3d9d3665072a8b68699d6"
+      "path": "graphics/pokemon_storage/wallpapers/simple/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "e2c553b2ab8030202b2eb9fb3f5f1549381b1aeb",
-      "path": "graphics/pokemon_storage/wallpapers/sky/tilemap.bin",
-      "sha256": "e78574802f5a36862da3e46336ec46432dbb37a2bcffe52afbda0e0a964f2571"
+      "path": "graphics/pokemon_storage/wallpapers/sky/tilemap.bin"
     },
     {
-      "byteLength": 682,
-      "gitBlobSha1": "d2a425b099e9cfd6a31fe7a0229b593d15d4da33",
-      "path": "graphics/pokemon_storage/wallpapers/sky/tiles.png",
-      "sha256": "7581d89d6698810d9e3a4587f037a23d0dbaf2c72ca2aecbad82d752574c6861"
+      "path": "graphics/pokemon_storage/wallpapers/sky/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "3e8253ade7645a1cedb52cc13fa2fd77d846e6e2",
-      "path": "graphics/pokemon_storage/wallpapers/snow/tilemap.bin",
-      "sha256": "398a6a487fc98c479ed92775cea8aa202ddf2cf0c67a29cbafae4cf1517ec4ef"
+      "path": "graphics/pokemon_storage/wallpapers/snow/tilemap.bin"
     },
     {
-      "byteLength": 671,
-      "gitBlobSha1": "531effeeb4fb6aa69fd8c8763a20564afb16bacc",
-      "path": "graphics/pokemon_storage/wallpapers/snow/tiles.png",
-      "sha256": "c18f05a8fee6e0e095f155817372604facc4244fcce8968e8ed51c46bc5b0d45"
+      "path": "graphics/pokemon_storage/wallpapers/snow/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "c821577475debffd9d2d1225f13be77007125f2b",
-      "path": "graphics/pokemon_storage/wallpapers/stars/tilemap.bin",
-      "sha256": "536dbb2db08b5d5e43c562c4268644b68aa041d0188f10a4558fa7f0825f8dae"
+      "path": "graphics/pokemon_storage/wallpapers/stars/tilemap.bin"
     },
     {
-      "byteLength": 624,
-      "gitBlobSha1": "611228a53f28da8bf2fa2b3cf67d49f299d8aaa9",
-      "path": "graphics/pokemon_storage/wallpapers/stars/tiles.png",
-      "sha256": "e59d41220378ff4622fc2096e7437428cafe58ea4d4efa73652d3101c24b78d7"
+      "path": "graphics/pokemon_storage/wallpapers/stars/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "ce537f626e4d60c63eb8dd3f6aa03765d931c170",
-      "path": "graphics/pokemon_storage/wallpapers/tiles/tilemap.bin",
-      "sha256": "a066b70f4501f2d3502d5edb29d48481894e1b13fadbf4ddc4cfb2bed0c8637a"
+      "path": "graphics/pokemon_storage/wallpapers/tiles/tilemap.bin"
     },
     {
-      "byteLength": 502,
-      "gitBlobSha1": "6247b5561250e09f384465c34ecee734115abdbe",
-      "path": "graphics/pokemon_storage/wallpapers/tiles/tiles.png",
-      "sha256": "aae2f524175990b74d8ef418757c22d7e60b30b88db0c246936b3d29fb8b78ae"
+      "path": "graphics/pokemon_storage/wallpapers/tiles/tiles.png"
     },
     {
-      "byteLength": 720,
-      "gitBlobSha1": "5d7102e09fdf9b988e75cd9b2f5f8fceef2e0466",
-      "path": "graphics/pokemon_storage/wallpapers/volcano/tilemap.bin",
-      "sha256": "be96801319c5f3b8e9b7857c3d2185c8fba2104a372f69ac5af784970d56f5e3"
+      "path": "graphics/pokemon_storage/wallpapers/volcano/tilemap.bin"
     },
     {
-      "byteLength": 749,
-      "gitBlobSha1": "d4d0bf8a067228c584df59aa213a4287a6a18b66",
-      "path": "graphics/pokemon_storage/wallpapers/volcano/tiles.png",
-      "sha256": "54b73e16cb6c207c2b8827a676f71e5376137f5f740ac0d179fb6575592b56e8"
+      "path": "graphics/pokemon_storage/wallpapers/volcano/tiles.png"
     },
     {
-      "byteLength": 14859,
-      "gitBlobSha1": "39b952cd45b6a34eb98318a76aa531fcafff134d",
-      "path": "graphics_file_rules.mk",
-      "sha256": "bd56e518ab9527f844642230673ce27a5bae73c7208d917d3288b073859fb685"
+      "path": "graphics_file_rules.mk"
     },
     {
-      "byteLength": 1311,
-      "gitBlobSha1": "d52a1d7456f9222581166101855fafa0e0cc27a8",
-      "path": "include/mon_markings.h",
-      "sha256": "f46eff51af7dcf274b1bdba9a666eab891993e6645c688bc4b7fa4b493024cf4"
+      "path": "include/mon_markings.h"
     },
     {
-      "byteLength": 16352,
-      "gitBlobSha1": "414dc41767295aed38f299e8495c5e2f8d25ddc9",
-      "path": "include/pokemon.h",
-      "sha256": "a6881fee07ae10f57ebf3ec7af1cabd2e900d8ba8d3da644313c087d16e1617e"
+      "path": "include/pokemon.h"
     },
     {
-      "byteLength": 1837,
-      "gitBlobSha1": "745e9d8b7f278e82e3e9052aec2d80d4e7f92260",
-      "path": "include/pokemon_storage_system.h",
-      "sha256": "d98c839ab2eeaa0e6c16e4ffdee53d404b074c6ffffa76384f26bd00ceffd537"
+      "path": "include/pokemon_storage_system.h"
     },
     {
-      "byteLength": 15497,
-      "gitBlobSha1": "9bd3434a2838349f922886f6874c52faa1014e8a",
-      "path": "include/pokemon_storage_system_internal.h",
-      "sha256": "29028503a377cf3bd081b44badf58b041965464da6101a0a7200095f28155a0e"
+      "path": "include/pokemon_storage_system_internal.h"
     },
     {
-      "byteLength": 31836,
-      "gitBlobSha1": "aa11ae01f87242edecc5656bb6649b04e319357a",
-      "path": "src/bg.c",
-      "sha256": "4813ff7fb1b9bcc952d3973d05a46d31c9fee57342c7957165a76a136ccd57da"
+      "path": "src/bg.c"
     },
     {
-      "byteLength": 61782,
-      "gitBlobSha1": "efa5a951e7ecca5ba6c22d17ca9dfe86a0284d07",
-      "path": "src/daycare.c",
-      "sha256": "3509b363c4cadd7bb9de83fe288b49a8decc76d53d8b600c81b557ba052173ba"
+      "path": "src/daycare.c"
     },
     {
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
-      "path": "src/graphics.c",
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3"
+      "path": "src/graphics.c"
     },
     {
-      "byteLength": 15450,
-      "gitBlobSha1": "1500be9598b373f2c50192cfd1cf5732a57fec03",
-      "path": "src/mon_markings.c",
-      "sha256": "1b8ce34a98efb94e9a09de2820c41b4b72e5339f36c5d14a6267d0fbc305721b"
+      "path": "src/mon_markings.c"
     },
     {
-      "byteLength": 69462,
-      "gitBlobSha1": "deef7054a11e4793ebfdb5e2710f9fc056540546",
-      "path": "src/naming_screen.c",
-      "sha256": "fbed8534a89a801f357fa04cfcbe91798fb80a4a1e24b127ad76eef0454bea13"
+      "path": "src/naming_screen.c"
     },
     {
-      "byteLength": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "path": "src/pokemon.c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "byteLength": 4838,
-      "gitBlobSha1": "1ac8a86dc232d0019147925db2964c803ab18c97",
-      "path": "src/pokemon_storage_system.c",
-      "sha256": "ebb9e603740f0268e3662e21a18aa30acd3b43f96d6d20abd5d6bd4bb874ff4a"
+      "path": "src/pokemon_storage_system.c"
     },
     {
-      "byteLength": 61175,
-      "gitBlobSha1": "ed09bdb6524ab3deadd611da0a54f9837a2c8278",
-      "path": "src/pokemon_storage_system_data.c",
-      "sha256": "08dea49153f98ecec05e8ad52d9673da0d6f8fe4ffb472e50f5f6bc157adef83"
+      "path": "src/pokemon_storage_system_data.c"
     },
     {
-      "byteLength": 50208,
-      "gitBlobSha1": "046f82d9c6178d9457ee2e63c8952310fc96b93a",
-      "path": "src/pokemon_storage_system_graphics.c",
-      "sha256": "b50c3b7c0f5e9a2678df6204a6d217671ad62e3eac35d162e2af5d423a7aa75a"
+      "path": "src/pokemon_storage_system_graphics.c"
     },
     {
-      "byteLength": 20632,
-      "gitBlobSha1": "93678028e936f5401fc38277ad8bb34b1c63c6c7",
-      "path": "src/pokemon_storage_system_menu.c",
-      "sha256": "4d2a4e128a1d0b516dbd1e7f804d8d1443f4eaa957503cbac86e4a87add3cbaa"
+      "path": "src/pokemon_storage_system_menu.c"
     },
     {
-      "byteLength": 77841,
-      "gitBlobSha1": "fdc5250c347a304547f613b5ed8685157341345a",
-      "path": "src/pokemon_storage_system_tasks.c",
-      "sha256": "ac9e5037b244339c48a930cecbeb07a4cea20086c9347bdf9536164be8d74188"
+      "path": "src/pokemon_storage_system_tasks.c"
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
-      "path": "src/strings.c",
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      "path": "src/strings.c"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-storage-customization-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

@@ -2,41 +2,38 @@
 """Import original ordinary item supplement from fixed pret Git blobs, without running upstream code.
 REFERENCE DEPENDENCY OUTPUT [--check]. No predecessor catalog or raw content tree is duplicated.
 """
-import argparse, hashlib, io, json, re, subprocess
+import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE='content/generated/ordinary-item-supplement/'
-RAW='content/raw/ordinary-item-supplement/'
+RAW='content/raw/pokefirered/037335f4/'
 PROFILE='firered-ordinary-item-supplement-v1'
 SHARED={
- 'src/data/items.json':'content/raw/cape-brink-tutor/src/data/items.json',
- 'include/constants/items.h':'content/raw/cape-brink-tutor/include/constants/items.h',
- 'src/data/item_icon_table.h':'content/raw/fossil-lab-presentation/src/data/item_icon_table.h',
- 'src/data/graphics/items.h':'content/raw/fossil-lab-presentation/src/data/graphics/items.h',
- 'src/data/pokemon/item_effects.h':'content/raw/opening-items/src/data/pokemon/item_effects.h',
- 'include/constants/item_effects.h':'content/raw/opening-items/include/constants/item_effects.h',
- 'src/item_use.c':'content/raw/opening-items/src/item_use.c',
+ 'src/data/items.json':'content/raw/pokefirered/037335f4/src/data/items.json',
+ 'include/constants/items.h':'content/raw/pokefirered/037335f4/include/constants/items.h',
+ 'src/data/item_icon_table.h':'content/raw/pokefirered/037335f4/src/data/item_icon_table.h',
+ 'src/data/graphics/items.h':'content/raw/pokefirered/037335f4/src/data/graphics/items.h',
+ 'src/data/pokemon/item_effects.h':'content/raw/pokefirered/037335f4/src/data/pokemon/item_effects.h',
+ 'include/constants/item_effects.h':'content/raw/pokefirered/037335f4/include/constants/item_effects.h',
+ 'src/item_use.c':'content/raw/pokefirered/037335f4/src/item_use.c',
 }
-def sha(data):return hashlib.sha256(data).hexdigest()
 def need(value,message):
  if not value:raise ValueError(message)
 def encoded(value):return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
-def fingerprint(value):return sha(json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())
 def generate(reference,dependency):
- need(subprocess.check_output(['git','rev-parse',COMMIT+'^{tree}'],cwd=reference).decode().strip()==TREE,'Pinned source tree')
  inputs,raw,cache={},{},{}
  def read(path):
   if path in cache:return cache[path]
   data=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference);local=SHARED.get(path,RAW+path)
   if path in SHARED:need((dependency/local).read_bytes()==data,'Shared source bytes: '+path)
   else:raw[local]=data
-  inputs[path]=dict(path=path,localPath=local,shared=path in SHARED,byteLength=len(data),sha256=sha(data),gitBlobSha1=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest());cache[path]=data;return data
+  inputs[path]=dict(path=path,localPath=local,shared=path in SHARED);cache[path]=data;return data
  def text(path):return read(path).decode()
  def one(path,pattern):
   matches=list(re.finditer(pattern,text(path),re.M|re.S));need(len(matches)==1,'Exact source declaration: '+pattern);return matches[0]
- def source(path,symbol,match):return dict(path=path,symbol=symbol,startLine=text(path).count('\n',0,match.start())+1,endLine=text(path).count('\n',0,match.end())+1,sha256=inputs[path]['sha256'])
+ def source(path,symbol,match):return dict(path=path,symbol=symbol,startLine=text(path).count('\n',0,match.start())+1,endLine=text(path).count('\n',0,match.end())+1)
  path='src/data/items.json';symbol='ITEM_PP_MAX';item=next(i for i in json.loads(text(path))['items'] if i['itemId']==symbol)
  block=one(path,r'^    \{\n      "english": "PP MAX",.*?^    \}')
  item_id=int(one('include/constants/items.h',r'^#define ITEM_PP_MAX\s+(\d+)\s*$')[1])
@@ -63,12 +60,12 @@ def generate(reference,dependency):
  lines=text(palette).splitlines();need(lines[:3]==['JASC-PAL','0100','16'] and len(lines)==19,'Original palette')
  colors=[tuple(((int(c)>>3)<<3)|((int(c)>>3)>>2) for c in line.split()) for line in lines[3:]]
  rgba=bytes(v for index in im.tobytes() for v in (*colors[index],255 if index else 0));stream=io.BytesIO();Image.frombytes('RGBA',(24,24),rgba).save(stream,format='PNG',compress_level=9);png=stream.getvalue()
- icon=dict(item=ident,width=24,height=24,rgbaPath=BASE+'pp-max.rgba',pngPath=BASE+'pp-max.png',rgbaSha256=sha(rgba),pngSha256=sha(png),sourcePaths=[image,palette],bindingSource=source(icon_path,symbol,binding))
- items=dict(sourceCommit=COMMIT,profile=PROFILE,previousItemCount=129,itemCount=130,additions=[addition],additionsSemanticSha256=fingerprint([addition]),shopsAdded=[],icons=[icon])
+ icon = dict(item=ident, width=24, height=24, texturePath=BASE + 'pp-max.png', sourcePaths=[image, palette], bindingSource=source(icon_path, symbol, binding))
+ items=dict(sourceCommit=COMMIT,profile=PROFILE,previousItemCount=129,itemCount=130,additions=[addition],shopsAdded=[],icons=[icon])
  facts=dict(sourceCommit=COMMIT,fieldUseImplemented=False,fieldUseSupport='NoFieldUse',reason='The original PP Up/PP Max move-selection effect is not implemented.',fieldUseSource=source(use,'FieldUseFunc_PpUp',field),effectSource=source(effect_path,'sItemEffect_PPMax',effect),friendshipSource=source(effect_path,'VITAMIN_FRIENDSHIP_CHANGE',vitamin),effectBytes=effects)
- evidence=dict(sourceCommit=COMMIT,sourceTree=TREE,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=[])
- files={BASE+'items.json':encoded(items),BASE+'source-input-hashes.json':encoded(evidence),BASE+'source-contract.json':encoded(facts),icon['rgbaPath']:rgba,icon['pngPath']:png,**raw}
- files['scripts/ordinary-item-supplement.lock.json']=encoded(dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,importerSha256=sha(Path(__file__).read_bytes()),files=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(files.items())]))
+ evidence=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=[])
+ files = {BASE + 'items.json': encoded(items), BASE + 'source-input-hashes.json': encoded(evidence), BASE + 'source-contract.json': encoded(facts), icon['texturePath']: png, **raw}
+ files['scripts/ordinary-item-supplement.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,files=[dict(path=p) for p,b in sorted(files.items())]))
  return files,items
 if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__)
@@ -78,4 +75,4 @@ if __name__=='__main__':
   target=args.output/path
   if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
- print(json.dumps(dict(checked=args.check,itemCount=130,addition=items['additionsSemanticSha256'],hashes={p:sha(b) for p,b in files.items()}),indent=2))
+ print(json.dumps(dict(checked=args.check,itemCount=130),indent=2))

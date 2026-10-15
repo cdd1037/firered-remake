@@ -102,7 +102,7 @@ public static partial class SourceFourTrainerAi
         if (actor.Value >= frame.BattlerCount || actor.Side != BattleSide.Opponent || frame.Get(actor).Body is null || frame.Get(actor).Member is null)
             return "source_four_trainer_switch_actor";
         if (stale != SourceTrainerEncounterPolicy.NoMove && stale != WildBattleRules.StruggleMove &&
-            (!catalog.Moves.TryGetValue(stale, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))
+            (!catalog.Moves.TryGetValue(stale, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
             return "source_four_trainer_switch_stale_move";
         if (prepared.IsDefault) return null;
         var actors = new HashSet<BattlerSlot>(); var incoming = new HashSet<PartyMemberKey>();

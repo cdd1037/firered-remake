@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Three distinct original move roots sharing battler trace callbacks; no duplicated art."""
-import argparse,hashlib,importlib.util,json,re,subprocess
+import argparse,importlib.util,json,re,subprocess
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 spec=importlib.util.spec_from_file_location('hit_importer',ROOT/'scripts/import-source-hit-animations.py')
@@ -21,7 +21,7 @@ def build(reference):
    if op=='end':break
   if not rows or len(rows)>32 or rows[-1]['op']!='end':raise ValueError('Unbounded trace root')
   scripts.append(dict(moveId=move,label='Move_'+name,commands=rows,dependencies=dict(commands=sorted({r['op'] for r in rows}),sprites=sorted({r['args'][0] for r in rows if r['op']=='createsprite'}),tasks=sorted({r['args'][0] for r in rows if r['op']=='createvisualtask'}),sounds=sorted({r['args'][0] for r in rows if r['op']=='playsewithpan'}))))
- manifest=dict(schemaVersion=1,sourceCommit=COMMIT,sourceLockSha256=hit.LOCK_SHA,baseManifestSha256=hit.sha(hit.build(reference)['source-hit-animations']['manifest.json']),scripts=scripts)
+ manifest=dict(schemaVersion=1,sourceCommit=COMMIT,scripts=scripts)
  # Bind the original imported assets and sine table, including their per-file hashes.
  return (json.dumps(manifest,indent=2)+'\n').encode()
 if __name__=='__main__':
@@ -31,4 +31,4 @@ if __name__=='__main__':
  else:
   if out.exists():raise SystemExit('Refuse existing generated pack')
   a.output.mkdir(parents=True,exist_ok=True);out.write_bytes(data)
- print(json.dumps(dict(passed=True,sourceCommit=COMMIT,roots=3,bytes=len(data),sha256=hit.sha(data))))
+ print(json.dumps(dict(passed=True,sourceCommit=COMMIT,roots=3,bytes=len(data))))

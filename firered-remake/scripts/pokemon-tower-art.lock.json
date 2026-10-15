@@ -5,190 +5,111 @@
   "files": [
     {
       "path": "graphics/pokemon/gastly/front.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/gastly/front.png",
-      "byteLength": 772,
-      "sha256": "2ba311e52f218c49733642e8aaed45d240a1597f59f09f04b4231f6f47c10e03",
-      "gitBlobSha1": "444ac485a83ee7fc74fb540c01922833eb7e8635"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/front.png"
     },
     {
       "path": "graphics/pokemon/gastly/back.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/gastly/back.png",
-      "byteLength": 613,
-      "sha256": "9e2f46ef5b32d9acb8ec9fbfbec8a11ba60762f962e9fb7e6a44e2ddf750daed",
-      "gitBlobSha1": "3ff1badde4394788d650180ac6864f2912946b8a"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/back.png"
     },
     {
       "path": "graphics/pokemon/gastly/normal.pal",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/gastly/normal.pal",
-      "byteLength": 190,
-      "sha256": "e98a0f2b151433e9268f70749ce3577e737bd19c1a330e666af967fe3f952650",
-      "gitBlobSha1": "6098ec1956fcfecd612164385f6208ad22f90348"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/normal.pal"
     },
     {
       "path": "graphics/pokemon/gastly/shiny.pal",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/gastly/shiny.pal",
-      "byteLength": 190,
-      "sha256": "9563420ef51068a64ff80938430fb7c293e7f30bf9e70864e7c41f189e531dc7",
-      "gitBlobSha1": "350cb8abf95c4e1309a689071dca2d633b975257"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/shiny.pal"
     },
     {
       "path": "graphics/pokemon/gastly/icon.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/gastly/icon.png",
-      "byteLength": 442,
-      "sha256": "0e0f9dd12b2432cdfc19d124da6d2b552f6e72fd0c564cbd6cd44b675095efe8",
-      "gitBlobSha1": "6a33a8ab556f235631701309a6ea600c6abe8917"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/icon.png"
     },
     {
       "path": "graphics/pokemon/gastly/footprint.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/gastly/footprint.png",
-      "byteLength": 71,
-      "sha256": "f1af7d14815a83e5a6923a3eed19138584301c927c10058a5dd29318177931d1",
-      "gitBlobSha1": "c7ccf57f373ce23b1fe41fe7de4a616bbf5c2cc2"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/footprint.png"
     },
     {
       "path": "graphics/pokemon/haunter/front.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/haunter/front.png",
-      "byteLength": 806,
-      "sha256": "f671f2cf9b8b4f918da115aaaf3e0e09ef66f02387c9e9b554661ae21e20e350",
-      "gitBlobSha1": "db6c294394d8c7c0c6f926d278c24384cc4bdf3a"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/front.png"
     },
     {
       "path": "graphics/pokemon/haunter/back.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/haunter/back.png",
-      "byteLength": 612,
-      "sha256": "baf9418cfd4bbc3845413ab73b3beedcbd34a96042ba0d8d771cb07bec824666",
-      "gitBlobSha1": "ee4740636a8301815e4bc361b08963c3a001cc76"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/back.png"
     },
     {
       "path": "graphics/pokemon/haunter/normal.pal",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/haunter/normal.pal",
-      "byteLength": 187,
-      "sha256": "05bc9bf72e34c2a2bf022efbb7e6068ed7c7f64c050e7b6fba0ff38d961533d6",
-      "gitBlobSha1": "5f1f2573befa593c71affd129ed4916038d77393"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/normal.pal"
     },
     {
       "path": "graphics/pokemon/haunter/shiny.pal",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/haunter/shiny.pal",
-      "byteLength": 189,
-      "sha256": "6b84a43d22b3d675071f55bd70f9d90d5db1323ee9bfd704dd9acd2f6c9ba05b",
-      "gitBlobSha1": "d6cab258899c8947fc4506a6f226d85a7ab893d7"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/shiny.pal"
     },
     {
       "path": "graphics/pokemon/haunter/icon.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/haunter/icon.png",
-      "byteLength": 485,
-      "sha256": "75b56b64a4934e4cb8f7bd6ad45f3ea0e3a249bcb4df223d9cf414b1dcd93c96",
-      "gitBlobSha1": "aac3e15f80834c6a332769fe408add67c45fb354"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/icon.png"
     },
     {
       "path": "graphics/pokemon/haunter/footprint.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/haunter/footprint.png",
-      "byteLength": 71,
-      "sha256": "f1af7d14815a83e5a6923a3eed19138584301c927c10058a5dd29318177931d1",
-      "gitBlobSha1": "c7ccf57f373ce23b1fe41fe7de4a616bbf5c2cc2"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/footprint.png"
     },
     {
       "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal",
-      "localPath": "content/raw/pokemon-tower-region/graphics/pokemon/icon_palettes/icon_palette_2.pal",
-      "byteLength": 196,
-      "sha256": "58079a7948d90d8bba96d0e2642e26e86bc54fc29d1dadaadb1a5f5fd63dd4f0",
-      "gitBlobSha1": "30463baeb10d395e5c5e41e97373a5619c3c6d27"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/icon_palettes/icon_palette_2.pal"
     },
     {
       "path": "graphics/pokedex/kanto_dex_bgpals.pal",
-      "localPath": "content/raw/rocktunnel-pokemon/graphics/pokedex/kanto_dex_bgpals.pal",
-      "byteLength": 2004,
-      "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf",
-      "gitBlobSha1": "b719d111f73ad26966817ebb64a72cf0e369a2a5"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokedex/kanto_dex_bgpals.pal"
     },
     {
       "path": "src/pokemon_icon.c",
-      "localPath": "content/raw/pokemon-tower-region/src/pokemon_icon.c",
-      "byteLength": 45145,
-      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967",
-      "gitBlobSha1": "037b1bfa82189906b205fe1a50a9276a4e2041e6"
+      "localPath": "content/raw/pokefirered/037335f4/src/pokemon_icon.c"
     },
     {
       "path": "src/data/graphics/pokemon.h",
-      "localPath": "content/raw/pokemon-tower-region/src/data/graphics/pokemon.h",
-      "byteLength": 214609,
-      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5",
-      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/graphics/pokemon.h"
     },
     {
       "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
-      "localPath": "content/raw/rocktunnel-pokemon/src/data/pokemon_graphics/front_pic_coordinates.h",
-      "byteLength": 44879,
-      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f",
-      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/front_pic_coordinates.h"
     },
     {
       "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
-      "localPath": "content/raw/rocktunnel-pokemon/src/data/pokemon_graphics/back_pic_coordinates.h",
-      "byteLength": 44872,
-      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab",
-      "gitBlobSha1": "17f818f458434bc6c35cb7f10acd7776a36e9c22"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/back_pic_coordinates.h"
     },
     {
       "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
-      "localPath": "content/raw/rocktunnel-pokemon/src/data/pokemon_graphics/enemy_mon_elevation.h",
-      "byteLength": 1834,
-      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1",
-      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/enemy_mon_elevation.h"
     },
     {
       "path": "src/data/pokemon_graphics/footprint_table.h",
-      "localPath": "content/raw/rocktunnel-pokemon/src/data/pokemon_graphics/footprint_table.h",
-      "byteLength": 19857,
-      "sha256": "90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70",
-      "gitBlobSha1": "86ca067901f96aee2b1aed81912bac4f7e84c99b"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/footprint_table.h"
     },
     {
       "path": "graphics/trainers/front_pics/channeler_front_pic.png",
-      "localPath": "content/raw/pokemon-tower-region/graphics/trainers/front_pics/channeler_front_pic.png",
-      "byteLength": 834,
-      "sha256": "138d565d374659853fe3626ae274dc8468a90890a2d25c8e430ffe892b051856",
-      "gitBlobSha1": "79ba41f8a501deb99cae510a908e0fa4152eaff8"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/trainers/front_pics/channeler_front_pic.png"
     },
     {
       "path": "graphics/trainers/palettes/channeler.pal",
-      "localPath": "content/raw/pokemon-tower-region/graphics/trainers/palettes/channeler.pal",
-      "byteLength": 186,
-      "sha256": "4723b4f40d817fd1e79c4c0fae6b117771fd47ab47ec75831f6dc130b40a0100",
-      "gitBlobSha1": "97e0eaf11732e0a64d2f63e7bac6690d1b02f35e"
+      "localPath": "content/raw/pokefirered/037335f4/graphics/trainers/palettes/channeler.pal"
     },
     {
       "path": "src/data/graphics/trainers.h",
-      "localPath": "content/raw/pokemon-tower-region/src/data/graphics/trainers.h",
-      "byteLength": 34300,
-      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
-      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/graphics/trainers.h"
     },
     {
       "path": "src/data/trainer_graphics/front_pic_tables.h",
-      "localPath": "content/raw/pokemon-tower-region/src/data/trainer_graphics/front_pic_tables.h",
-      "byteLength": 24042,
-      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f",
-      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/trainer_graphics/front_pic_tables.h"
     },
     {
       "path": "src/data/trainers.h",
-      "localPath": "content/raw/pokemon-tower-region/src/data/trainers.h",
-      "byteLength": 302118,
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc",
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538"
+      "localPath": "content/raw/pokefirered/037335f4/src/data/trainers.h"
     }
   ],
   "inputs": [
     {
-      "path": "scripts/import-lab-battle-ui.py",
-      "byteLength": 13082,
-      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+      "path": "scripts/import-lab-battle-ui.py"
     },
     {
-      "path": "scripts/fetch-lab-battle-ui.py",
-      "byteLength": 5843,
-      "sha256": "805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"
+      "path": "scripts/fetch-lab-battle-ui.py"
     }
   ]
 }

@@ -17,7 +17,7 @@ internal abstract partial class SourceRecipeContext
             // Swords Dance is owned by the basic-stat recipe; the historical Fuchsia
             // delegate is a thin adapter to that same result script.
             if (!HasStatRecoveryRecipe(move.Effect)) return;
-            if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
+            if (Invocation is null || !SourceMoveDefinitionRules.IsValid(move))
                 throw new SourceRecipeUnsupported("called_stat_recovery_source_definition");
             handled = true;
             var targetSide = Invocation.Target;

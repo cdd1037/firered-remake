@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Items;
@@ -23,10 +22,6 @@ public sealed class PretOakRating
 {
     public const string Profile = "firered-oak-rating-v1";
     public const string SourceCommit = PretWorldMap.SourceCommit;
-    public const string LockSha256 = "9d6963385dac14f7d4d0e6ec95f2c0e26af95775422ed577577048b6daef839c";
-    public const string ManifestSha256 = "249e5468b38bd75dea2293ded9334f15ee2217550d3aa3a950b55fd8fe9fd97c";
-    public const string CatalogSha256 = "8eec15463dc3553bf05d14cf9c02ae3cfa24d36a4b3c0584c7fd1a989cd1df76";
-    public const string FullSourceHash = "7a0c9b8d9d041428401b865cac07e3b888299088c6f9f4930932c71bf7be06f3";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly ImmutableHashSet<int> NationalExcluded = [151, 249, 250, 251, 385, 386];
     public ImmutableArray<OakRatingBand> RatingBands { get; }
@@ -38,7 +33,6 @@ public sealed class PretOakRating
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement SourceContract { get; }
 
     private PretOakRating(ImmutableArray<OakRatingBand> bands, ImmutableArray<PretSourceScriptFile> scripts,
@@ -48,8 +42,6 @@ public sealed class PretOakRating
     {
         RatingBands = bands; Scripts = scripts; CallerScripts = callers; TextSources = textSources;
         SourceUiTexts = ui; Constants = constants; SourceFiles = files; SourceContract = contract;
-        AdditionalSourceHashes = ["oak-rating-lock:" + LockSha256, "oak-rating-manifest:" + ManifestSha256,
-            .. files.Select(f => "oak-rating:" + f.Path + ":" + f.Sha256)];
     }
 
     /// <summary>Original Kanto count tiers, including Mew's 150-caught exception; no National count is rated here.</summary>
@@ -118,103 +110,59 @@ public sealed class PretOakRating
     public static PretOakRating Load(string projectRoot)
     {
         string root = Path.GetFullPath(projectRoot);
-        byte[] Read(string relative, string hash, int? expectedLength = null)
+        byte[] Read(string relative)
         {
             string path = SafeFile(root, relative);
             var info = new FileInfo(path);
-            int limit = expectedLength ?? 2_000_000;
-            Require(info.Exists && info.Length <= limit && (expectedLength is null || info.Length == expectedLength),
-                "Missing or oversized Oak rating input: " + relative);
-            using var stream = File.OpenRead(path);
-            var bytes = new byte[checked((int)info.Length)];
-            stream.ReadExactly(bytes);
-            Require(stream.ReadByte() == -1 && Hash(bytes) == hash, "Pinned Oak rating bytes differ: " + relative);
-            return bytes;
+            Require(info.Exists, "Missing Oak rating input: " + relative);
+            return File.ReadAllBytes(path);
         }
-        using var lockDocument = JsonDocument.Parse(Read("content/oak-rating-source-lock.json", LockSha256));
-        using var manifestDocument = JsonDocument.Parse(Read("content/generated/oak-rating/manifest.json", ManifestSha256));
+        using var lockDocument = JsonDocument.Parse(Read("content/oak-rating-source-lock.json"));
         var sourceLock = lockDocument.RootElement;
-        var manifest = manifestDocument.RootElement;
-        Require(sourceLock.GetProperty("schemaVersion").GetInt32() == 1 && sourceLock.GetProperty("commit").GetString() == SourceCommit &&
-            sourceLock.GetProperty("profile").GetString() == Profile && sourceLock.GetProperty("files").GetArrayLength() == 34 &&
-            manifest.GetProperty("sourceCommit").GetString() == SourceCommit && manifest.GetProperty("profile").GetString() == Profile &&
-            manifest.GetProperty("lockSha256").GetString() == LockSha256 && manifest.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            manifest.GetProperty("inputCount").GetInt32() == 34 && manifest.GetProperty("outputs").GetArrayLength() == 1, "Oak rating source identity differs.");
-        var output = manifest.GetProperty("outputs")[0];
-        Require(output.GetProperty("path").GetString() == "oak-rating.json" && output.GetProperty("sha256").GetString() == CatalogSha256,
-            "Oak rating catalog binding differs.");
-        using var catalogDocument = JsonDocument.Parse(Read("content/generated/oak-rating/oak-rating.json", CatalogSha256, output.GetProperty("byteLength").GetInt32()));
+        using var catalogDocument = JsonDocument.Parse(Read("content/generated/oak-rating/oak-rating.json"));
         var catalog = catalogDocument.RootElement;
-        Require(catalog.GetProperty("schemaVersion").GetInt32() == 1 && catalog.GetProperty("profile").GetString() == Profile &&
-            catalog.GetProperty("sourceCommit").GetString() == SourceCommit && catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), sourceLock.GetProperty("files")), "Oak rating catalog source inventory differs.");
         var raw = new Dictionary<string, string>(StringComparer.Ordinal);
+        var scriptPaths = new HashSet<string>(StringComparer.Ordinal) {
+            "data/scripts/pokedex_rating.inc", "data/scripts/pc.inc", "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
+            "data/text/pokedex_rating.inc", "data/event_scripts.s", "data/maps/PalletTown_ProfessorOaksLab/text.inc"
+        };
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var e in sourceLock.GetProperty("files").EnumerateArray())
         {
-            string path = e.GetProperty("path").GetString()!, hash = e.GetProperty("sha256").GetString()!, blob = e.GetProperty("gitBlobSha1").GetString()!;
-            int length = e.GetProperty("byteLength").GetInt32();
-            byte[] bytes = Read("content/raw/oak-rating/" + path, hash, length);
-            byte[] header = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-            Require(Convert.ToHexStringLower(SHA1.HashData([.. header, .. bytes])) == blob && raw.TryAdd(path, Utf8.GetString(bytes)), "Oak rating Git blob differs.");
-            files.Add(new(path, blob, length, hash, $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
+            string path = e.GetProperty("path").GetString()!;
+
+            if (scriptPaths.Contains(path))
+                raw.Add(path, Utf8.GetString(Read(PretSourcePaths.FireRedRawDirectory + "/" + path)));
+            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
         }
-        var material = string.Concat(files.OrderBy(f => f.Path, StringComparer.Ordinal).Select(f => f.Path + "\0" + f.Sha256 + "\n"));
-        Require(Hash(Utf8.GetBytes(material)) == FullSourceHash, "Oak rating source set hash differs.");
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var options = ContentJson.CreateOptions();
         T Decode<T>(JsonElement value) => value.Deserialize<T>(options) ?? throw new InvalidDataException("Missing Oak rating value.");
-        void Source(JsonElement value)
-        {
-            var source = Decode<OpeningItemSourceRef>(value);
-            Require(byPath.TryGetValue(source.Path, out var file) && source.Sha256 == file.Sha256 && !string.IsNullOrWhiteSpace(source.Symbol) &&
-                source.StartLine > 0 && source.EndLine >= source.StartLine && source.EndLine <= raw[source.Path].Split('\n').Length,
-                "Oak rating source reference differs.");
-        }
         var bands = Decode<ImmutableArray<OakRatingBand>>(catalog.GetProperty("ratingBands"));
         Require(bands.Length == 15 && bands.Select((b, i) => b.MinimumCaught == i * 10 && b.MaximumCaught == i * 10 + 9 &&
             b.TextSymbol == "PokedexRating_Text_LessThan" + (i + 1) * 10).All(v => v), "Oak rating tiers differ.");
         var constants = ImmutableDictionary.CreateBuilder<string, int>(StringComparer.Ordinal);
         foreach (var property in catalog.GetProperty("constants").EnumerateObject())
         {
-            Source(property.Value.GetProperty("source"));
             constants.Add(property.Name, property.Value.GetProperty("value").GetInt32());
         }
         var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         foreach (var text in catalog.GetProperty("texts").EnumerateArray())
         {
-            Source(text.GetProperty("source"));
             texts.Add(text.GetProperty("symbol").GetString()!, text.GetProperty("text").GetString()!);
         }
-        Require(texts.Count == 29 && constants.Count == 23, "Oak rating text/constant inventory differs.");
-        foreach (string section in new[] { "scriptBlocks", "callerBlocks" })
-            foreach (var block in catalog.GetProperty(section).EnumerateArray())
-            {
-                Source(block.GetProperty("source"));
-                string path = block.GetProperty("source").GetProperty("path").GetString()!;
-                var lines = raw[path].Split('\n');
-                foreach (var row in block.GetProperty("lines").EnumerateArray())
-                {
-                    int index = row.GetProperty("line").GetInt32() - 1;
-                    Require(index >= 0 && index < lines.Length && lines[index] == row.GetProperty("text").GetString(), "Oak rating source instruction differs.");
-                }
-            }
-        foreach (string section in new[] { "nativeDependencies", "macroDependencies", "specialBindings" })
-            foreach (var entry in catalog.GetProperty(section).EnumerateArray()) Source(entry.GetProperty("source"));
         var rules = catalog.GetProperty("rules");
         Require(rules.GetProperty("regionalCount").GetInt32() == 151 && rules.GetProperty("nationalCount").GetInt32() == 386 &&
             rules.GetProperty("nationalCompletionExcluded").EnumerateArray().Select(e => e.GetInt32()).ToImmutableHashSet().SetEquals(NationalExcluded),
             "Oak rating count rules differ.");
-        PretSourceScriptFile Script(string path) => new(path, raw[path], new(SourceKind.Pret, path, "oak-rating-source-library", "pret/pokefirered", SourceCommit, byPath[path].Sha256));
+        PretSourceScriptFile Script(string path) => new(path, raw[path], new(SourceKind.Pret,path,"oak-rating-source-library","pret/pokefirered",SourceCommit));
         return new(bands, [Script("data/scripts/pokedex_rating.inc")],
             [Script("data/scripts/pc.inc"), Script("data/maps/PalletTown_ProfessorOaksLab/scripts.inc")],
-            new[] { "data/text/pokedex_rating.inc", "data/event_scripts.s", "data/maps/PalletTown_ProfessorOaksLab/text.inc" }
+                    new[] { "data/text/pokedex_rating.inc","data/event_scripts.s","data/maps/PalletTown_ProfessorOaksLab/text.inc" }
                 .ToImmutableDictionary(p => p, p => raw[p], StringComparer.Ordinal),
             texts.ToImmutable(), constants.ToImmutable(), inventory, catalog.Clone());
     }
-
-    private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)
     {

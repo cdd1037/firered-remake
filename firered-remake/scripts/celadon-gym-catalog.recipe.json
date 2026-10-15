@@ -1,1 +1,87 @@
-{"dependencies":[{"path":"content/generated/bill-pokemon/catalog.json","sha256":"d6603614ef0d893d232cd65253720a27880dcbe5c0e2d7f3687374ce2ec50a35"},{"path":"content/generated/celadon-approach-items/celadon-approach-machines.json","sha256":"f7a0c24f1a7b9b0f883554da2269530081974b91cc4645f6c219568ab0762e77"},{"path":"content/generated/celadon-approach-pokemon/catalog.json","sha256":"2aa2c855e87ed71d9fcd93d9b6b1c1206916f8f796c45b6facfb7633e2dc5c12"},{"path":"content/generated/cerulean-pokemon/catalog.json","sha256":"5f0e4405eb73e1c9606cbd2f42344734545de36ad2182876420af5c45e443bea"},{"path":"content/generated/forest-pokemon/catalog.json","sha256":"28a1ba2a4d0a846331e67b3c80641afaeffb85e7a6acc2833f6fa51bb228c866"},{"path":"content/generated/mtmoon-pokemon/catalog.json","sha256":"c4ada1a6494c13c9e6fd3c2199c8a6ee6642611914139fd2bbd3e99f02c35b03"},{"path":"content/generated/old-man-tutorial/catalog.json","sha256":"e2114f5049580c8e19a4ec101d6bd523adb1056d665f3cda4a9d8534d112b80f"},{"path":"content/generated/pewter-pokemon/catalog.json","sha256":"b9ae60e66619eadc6e45843e3212ea8cc1381be79142f5ccd316dde5f1986fb8"},{"path":"content/generated/pokedex-menu/pokedex-menu.json","sha256":"7b4b6c54230ebd8e0a588a5a8d7d0fce43c68fa1da7a16a91c08d286bdf29806"},{"path":"content/generated/rocktunnel-pokemon/catalog.json","sha256":"c5f6546f323d0de76c5344be4ea7a6b919058681f50519da508959a41ebff09a"},{"path":"content/generated/route1-pokemon/catalog.json","sha256":"81da3d737a389c783f7d6351cdefcdfd4ed830114bc437672a952b4e0fb0e06f"},{"path":"content/generated/route11-pokemon/catalog.json","sha256":"5454c434eaa2c02ff5b8667ae2ac19cec45f9fbacb5d93fc1712471b91933678"},{"path":"content/generated/route22-pokemon/catalog.json","sha256":"5b2dca5c7ba34ef5584062635fb14220538400e01516bf14ee99fde8c7558f1f"},{"path":"content/generated/route3-pokemon/catalog.json","sha256":"fc4a834b216acbc4490a8b38302031dc100b7b8fdfc94b48d6d968e730880efe"},{"path":"content/generated/ssanne-pokemon/catalog.json","sha256":"5d49c84e8ed5a13fcc0e3a2d1a16901dff7df4f3da421984aa93ade7680ec947"},{"path":"content/generated/vermilion-pokemon/catalog.json","sha256":"2d60aa60296d468738cc4fa2f20541d9ad77ed7d78915e8bef8fa2679c0b3008"},{"path":"scripts/fetch-lab-battle-ui.py","sha256":"805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"},{"path":"scripts/fetch-starter-art.py","sha256":"fa196aad124426638f0384e875d13675713d18d88b828b41e04fb970cf106b5c"},{"path":"scripts/import-capture-dex.py","sha256":"f44b22a5c51ffeacdca49ff4f4eec7c8398d32d7eb45c708fcb404fc6309651f"},{"path":"scripts/import-forest-capture-dex.py","sha256":"7df9afb21c1c62437e4a5e597e468d9c9cde132a006f9cf9b04f9dc9f87f8c0d"},{"path":"scripts/import-lab-battle-ui.py","sha256":"b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"},{"path":"scripts/import-rocktunnel-pokemon.py","sha256":"805d81ed73de6c4a042146438fdb0a79760f3e1baf9485e9037eb0044fb595a0"},{"path":"scripts/import-route1-battle-art.py","sha256":"061b3ba4014e275e737392b3a47e743b23a094c3abf5592a0e45561c905b88ec"},{"path":"scripts/import-route22-pokemon.py","sha256":"d9fc9f2b6e9bad05a24cafd63d5fb8753c58917e142fb2f30f8c86dbc982c093"},{"path":"scripts/import-route3-pokemon.py","sha256":"91e670ca9fad465a0132a7f472c61252ea4ed813ce5054002aa6078739b48451"},{"path":"scripts/import-starter-art.py","sha256":"04344df3e959a902d0fa4c818efa8b28f04f2f2d55e01a9df757d87c7a250c1e"},{"path":"scripts/import-storage-art.py","sha256":"5b7be8de1b89915c3f9d8d276287abab71feeda1d8e9d25b22c6c93a2e05fa09"}],"locks":{"celadon-gym-items":"6afc793bb163e5da94214c76db2dfd95a754752a6fa51a0be8aada1738660df0","celadon-gym-pokemon":"298a3f2de294974a4bd0ad40be60f6b8983e0b217a54452355501bd5cbb4298a"},"manifests":{"celadon-gym-items":"656f0ba94edcb3202cdea90a054ad1c29e287e62152a4a925e22451f5a16b63c","celadon-gym-pokemon":"c7180712967fb4f180c57dddc69cd9fe1c6c42fe2b75a6004ff8b0f362a7ff4d"},"schemaVersion":1,"sourceCommit":"037335f4c725d7c9aecdac87066f2002b4bd7e14"}
+{
+  "dependencies": [
+    {
+      "path": "content/generated/bill-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/celadon-approach-items/celadon-approach-machines.json"
+    },
+    {
+      "path": "content/generated/celadon-approach-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/cerulean-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/forest-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/mtmoon-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/old-man-tutorial/catalog.json"
+    },
+    {
+      "path": "content/generated/pewter-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/pokedex-menu/pokedex-menu.json"
+    },
+    {
+      "path": "content/generated/rocktunnel-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/route1-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/route11-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/route22-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/route3-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/ssanne-pokemon/catalog.json"
+    },
+    {
+      "path": "content/generated/vermilion-pokemon/catalog.json"
+    },
+    {
+      "path": "scripts/fetch-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/fetch-starter-art.py"
+    },
+    {
+      "path": "scripts/import-capture-dex.py"
+    },
+    {
+      "path": "scripts/import-forest-capture-dex.py"
+    },
+    {
+      "path": "scripts/import-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/import-rocktunnel-pokemon.py"
+    },
+    {
+      "path": "scripts/import-route1-battle-art.py"
+    },
+    {
+      "path": "scripts/import-route22-pokemon.py"
+    },
+    {
+      "path": "scripts/import-route3-pokemon.py"
+    },
+    {
+      "path": "scripts/import-starter-art.py"
+    },
+    {
+      "path": "scripts/import-storage-art.py"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+}

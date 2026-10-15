@@ -13,7 +13,6 @@ public static class FirstSeviiHypnoBattleContract
 {
     public const string ScriptEntry="ThreeIsland_BerryForest_EventScript_Lostelle";
     public const string SourcePath="data/maps/ThreeIsland_BerryForest/scripts.inc";
-    public const string SourceSha256="e716d5252078b670652939fe883fc8b6db45af0273e4183c82ee3939985a9342";
     public const int SourceLine=10, Level=30, SourceBattleTypeFlags=1<<17;
     public static PokemonCreationResult Create(CinnabarOwnedPokemonCatalog owned,uint playerTrainerId,RngState rng)
     {

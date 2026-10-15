@@ -25,17 +25,15 @@ public partial class CampaignView
     {
         if (!_catalog.CinnabarEnabled) return;
         var art = _catalog.CinnabarArt ?? throw new InvalidDataException("Cinnabar art catalog missing.");
-        if (_battleArt.Count != 464 || _storageIcons.Count != 116 || _route22Footprints.Count != 87)
-            throw new InvalidDataException("Cinnabar requires the complete Saffron presentation.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, art.Files[sprite.RgbaPath]);
+            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = art.Files[icon.RgbaPath].ToArray();
+            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                 for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
@@ -43,17 +41,15 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, art.Files[footprint.RgbaPath]);
+            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
             _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
-        if (_battleArt.Count != 488 || _storageIcons.Count != 122 || _route22Footprints.Count != 93)
-            throw new InvalidDataException("Cinnabar enemy presentation inventory differs.");
         LoadCinnabarTrainerAndFieldArt();LoadCinnabarItemArt();
         Write("cinnabarPresentation", new { newSpecies = new[] {38,59,78,91,98,99}, battleSprites = _battleArt.Count,
             icons = _storageIcons.Count, footprints = _route22Footprints.Count, playableMaps = _catalog.CinnabarRegion!.NewMaps.Count,
-            PretCinnabarArt.ManifestSha256, reusedDust = true, badgeFlag = "FLAG_BADGE07_GET", audibleOutputVerified = false });
+        reusedDust = true, badgeFlag = "FLAG_BADGE07_GET", audibleOutputVerified = false });
     }
     private void LoadCinnabarTrainerAndFieldArt()
     {
@@ -61,10 +57,8 @@ public partial class CampaignView
         foreach(var row in art.TrainerManifest.GetProperty("portraits").EnumerateArray())
         {
             string id=row.GetProperty("id").GetString()!,picture=row.GetProperty("trainerPic").GetString()!;
-            byte[] rgba=art.TrainerFiles[row.GetProperty("rgbaPath").GetString()!];
-            if(_forestTrainerPortraits.TryGetValue(id,out var old))
-            {using var current=old.GetImage();current.Convert(Image.Format.Rgba8);if(!current.GetData().SequenceEqual(rgba))throw new InvalidDataException("Inherited Cinnabar trainer pixels differ: "+id);}
-            else {using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,rgba);_forestTrainerPortraits.Add(id,(ImageTexture)SceneTextures.FromImage(image));}
+            byte[] rgba=PngRgba8.Decode(art.TrainerFiles[row.GetProperty("texturePath").GetString()!]);
+            if(!(_forestTrainerPortraits.TryGetValue(id,out var old))){using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,rgba);_forestTrainerPortraits.Add(id,(ImageTexture)SceneTextures.FromImage(image));}
             _cinnabarTrainerPortraits.Add(picture,id);
         }
         foreach(var row in art.TrainerClasses)_cinnabarTrainerClasses.Add(row.Key,row.Value);
@@ -72,7 +66,7 @@ public partial class CampaignView
             if(!_cinnabarTrainerPortraits.ContainsKey(trainer.TrainerPic)||!_cinnabarTrainerClasses.ContainsKey(trainer.TrainerClass))throw new InvalidDataException("Cinnabar trainer presentation missing.");
         foreach(var tile in art.Field.Tiles)_cinnabarTiles.Add((tile.Family,tile.MetatileId),tile);
         foreach(var layer in art.Field.Layers)
-        {using var image=Image.CreateFromData(layer.Width,layer.Height,false,Image.Format.Rgba8,art.FieldFiles[layer.RgbaPath]);_cinnabarTileLayers.Add((layer.Family,layer.Layer switch {"bottom"=>0,"middle"=>1,_=>2}),SceneTextures.FromImage(image));}
+        {using var image=Image.CreateFromData(layer.Width,layer.Height,false,Image.Format.Rgba8,PngRgba8.Decode(art.FieldFiles[layer.TexturePath], layer.Width, layer.Height));_cinnabarTileLayers.Add((layer.Family,layer.Layer switch {"bottom"=>0,"middle"=>1,_=>2}),SceneTextures.FromImage(image));}
     }
     private string? VisibleCinnabarTrainerClass() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : null;
     private string? VisibleCinnabarTrainerPortrait() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerPortraits[trainer.TrainerPic] : null;

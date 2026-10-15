@@ -117,7 +117,7 @@ def widths(text, name):
     return result
 
 
-def level_prefix_outputs(lock, sources, foreground, shadow):
+def level_prefix_outputs( sources, foreground, shadow):
     """One explicitly needed extended symbol; preserve the original English atlas/catalog unchanged."""
     if not re.search(r'^LV_2\s*=\s*F9 05\s*$', sources['charmap.txt'].decode(), re.M):
         raise ValueError('Source LV_2 mapping differs')
@@ -133,15 +133,15 @@ def level_prefix_outputs(lock, sources, foreground, shadow):
     rgba = bytes(channel for role in roles for channel in ([0, 0, 0, 0], foreground, shadow)[role])
     png = encode_png(rgba, 8, 13)
     catalog = dict(schemaVersion=1, profile='firered-healthbox-lv2-v1', sourceCommit=inputs.COMMIT,
-        fullSourceHash=inputs.source_set_hash(lock), face='small', sourceFontId=0,
+         face='small', sourceFontId=0,
         sourceToken='LV_2', sourceBytes=[0xF9, 0x05], sourceGlyphId=0x105, codepoint=0xE000,
         width=8, height=13, advance=8, baseline=13, texturePath='level-prefix-small.png',
-        pngSha256=inputs.digest(png), rgbaSha256=inputs.digest(rgba), roleSha256=inputs.digest(roles),
+
         limitation='Only the healthbox LV_2 symbol, exposed as a presentation-only private-use character; no general control-code parser.')
     outputs = {'level-prefix-small.png': png, 'level-prefix.json': inputs.canonical(catalog)}
     outputs['level-prefix-manifest.json'] = inputs.canonical(dict(schemaVersion=1, profile=catalog['profile'],
-        sourceCommit=inputs.COMMIT, fullSourceHash=inputs.source_set_hash(lock),
-        outputs=[dict(path=path, byteLength=len(data), sha256=inputs.digest(data)) for path, data in sorted(outputs.items())],
+        sourceCommit=inputs.COMMIT,
+        outputs=[dict(path=path) for path, data in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
     return outputs
 
@@ -190,18 +190,17 @@ def convert(lock, sources):
                         at = ((y + gy) * 256 + x + gx) * 4
                         rgba[at:at + 4] = bytes(foreground if role == 1 else shadow)
             locations[gid] = dict(sourceGlyphId=gid, x=x, y=y, width=advance, height=height,
-                                  advance=advance, roleSha256=inputs.digest(roles))
+                                  advance=advance)
         filename = name + '.png'
         outputs[filename] = encode_png(rgba, 256, atlas_height)
         fonts.append(dict(id=name, sourceFontId=2 if name == 'normal' else 0,
             pixelSize=height, baseline=height, glyphHeight=height,
             defaultLineStep=height, dialogueLineStep=height + 1, menuLineStep=16,
             latinLetterSpacing=0, texturePath=filename, textureWidth=256, textureHeight=atlas_height,
-            pngSha256=inputs.digest(outputs[filename]), rgbaSha256=inputs.digest(rgba),
-            sourceIndexSha256=inputs.digest(source), sourceWidthTableSha256=inputs.digest(bytes(advances)),
+
             glyphs=[dict(character=ch, codepoint=ord(ch), **locations[gid]) for ch, gid in sorted(chars.items(), key=lambda item: ord(item[0]))]))
     catalog = dict(schemaVersion=1, profile=inputs.PROFILE, sourceCommit=inputs.COMMIT,
-        fullSourceHash=inputs.source_set_hash(lock), foregroundRgba=foreground, shadowRgba=shadow,
+         foregroundRgba=foreground, shadowRgba=shadow,
         maleForegroundRgba=colors[8], femaleForegroundRgba=colors[4], fonts=fonts,
         fallback=dict(character='?', sourceGlyphId=0xAC, policy='Explicit replacement with diagnostic; system font fallback disabled'),
         limitations=['English quoted one-byte charmap entries plus four named arrows only; no control-code interpreter.',
@@ -211,17 +210,17 @@ def convert(lock, sources):
                      'Local reference only; source and generated assets must not be publicly distributed.'])
     outputs['source-font.json'] = inputs.canonical(catalog)
     outputs['manifest.json'] = inputs.canonical(dict(schemaVersion=1, profile=inputs.PROFILE,
-        commit=inputs.COMMIT, fullSourceHash=inputs.source_set_hash(lock), inputs=lock['files'],
-        outputs=[dict(path=path, byteLength=len(data), sha256=inputs.digest(data)) for path, data in sorted(outputs.items())],
+        commit=inputs.COMMIT,  inputs=lock['files'],
+        outputs=[dict(path=path) for path, data in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
     # This companion has a separate profile/manifest, leaving every byte of the original v1 assets intact.
-    outputs.update(level_prefix_outputs(lock, sources, foreground, shadow))
+    outputs.update(level_prefix_outputs( sources, foreground, shadow))
     return outputs
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/source-font')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/source-font')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/source-font.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
@@ -238,7 +237,7 @@ def main():
         temporary = inputs.safe_path(args.out, filename + '.tmp')
         temporary.write_bytes(data)
         temporary.replace(path)
-    print(json.dumps(dict(status='imported', fonts=2, outputFiles=len(outputs), fullSourceHash=inputs.source_set_hash(lock))))
+    print(json.dumps(dict(status='imported', fonts=2, outputFiles=len(outputs))))
 
 
 if __name__ == '__main__':

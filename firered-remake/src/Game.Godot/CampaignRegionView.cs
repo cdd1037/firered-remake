@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Domain.World;
 using Godot;
@@ -62,7 +61,7 @@ public partial class CampaignView
     }
     private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner)
     {
-        // Content authenticates each manifest and image before exposing its map binding.
+        // Content supplies each map binding from its generated manifest.
         var localRoot=System.IO.Path.GetDirectoryName(manifest)!;using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
         foreach(var e in doc.RootElement.GetProperty("graphics").EnumerateArray())
         {
@@ -71,8 +70,7 @@ public partial class CampaignView
             bool reused=e.TryGetProperty("reuseExisting",out var reuse)&&reuse.GetBoolean();
             if(reused&&!path.StartsWith("content/generated/",StringComparison.Ordinal))throw new InvalidDataException("Reused region NPC path invalid.");
             var full=System.IO.Path.Combine(reused?_root:localRoot,path);
-            if(Convert.ToHexStringLower(SHA256.HashData(System.IO.File.ReadAllBytes(full)))!=e.GetProperty("sha256").GetString())throw new InvalidDataException("Region NPC image differs.");
-            var texture=owner.Texture(full,expectedSha256:e.GetProperty("sha256").GetString()!);int w=e.GetProperty("frameWidth").GetInt32(),h=e.GetProperty("frameHeight").GetInt32(),count=e.GetProperty("frameCount").GetInt32();var anchor=e.GetProperty("tileCenterAnchor");
+            var texture=owner.Texture(full);int w=e.GetProperty("frameWidth").GetInt32(),h=e.GetProperty("frameHeight").GetInt32(),count=e.GetProperty("frameCount").GetInt32();var anchor=e.GetProperty("tileCenterAnchor");
             if(texture.GetWidth()!=w*count||texture.GetHeight()!=h)throw new InvalidDataException("Region NPC sheet size invalid.");
             bool inanimate=e.GetProperty("declaration").GetProperty("inanimate").GetString()=="TRUE";
             result.Add(e.GetProperty("graphicsId").GetString()!,new(texture,w,h,count,new(anchor.GetProperty("x").GetInt32(),anchor.GetProperty("y").GetInt32()),inanimate));

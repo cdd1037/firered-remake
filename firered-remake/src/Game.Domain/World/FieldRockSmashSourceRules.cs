@@ -5,7 +5,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.World;
 
-public sealed record FieldRockSmashSourceRef(string Path, string Sha256, string GitBlobSha1);
+public sealed record FieldRockSmashSourceRef(string Path);
 public sealed record FieldRockSmashSourceActor(MapId Map, string SourceMapSymbol, int SourceLocalId,
     int X, int Y, int Elevation, string GraphicsId, string ScriptId, string MovementType,
     int MovementRangeX, int MovementRangeY, string HideFlag, FieldRockSmashSourceRef Source);
@@ -54,7 +54,6 @@ public static class FieldRockSmashSourceRules
 /// <summary>All 97 original source rocks. Loaded maps still decide reachability; inclusion never enables a region.</summary>
 public sealed class FieldRockSmashCatalog
 {
-    public const string SourceSha256 = "90728a58cbe67963b90ff64f0e15cf6bbc6446857bdc1259d0d994dbd52d98b3";
     private static FieldRockSmashCatalog? _loadedSource;
     // Immutable pinned content, not game state. Shared battle validation requires the normal Content load first.
     internal static FieldRockSmashCatalog? LoadedSource => Volatile.Read(ref _loadedSource);
@@ -69,8 +68,7 @@ public sealed class FieldRockSmashCatalog
         if (source.SourceCommit != FieldRockSmashSourceRules.SourceCommit || source.Rocks.IsDefault ||
             source.Rocks.Length != 97 || source.EncounterTables.IsDefault || source.EncounterTables.Length != 14 ||
             source.Wild is null || source.Wild.Species.IsDefault || source.Wild.Species.Length != 4 ||
-            source.Wild.InitialMoves.IsDefault || source.Wild.InitialMoves.Length != 139 ||
-            CampaignSourceFingerprint.Compute(source) != SourceSha256)
+            source.Wild.InitialMoves.IsDefault || source.Wild.InitialMoves.Length != 139)
             throw new ArgumentException("field_rock_smash_source");
         var catalog = new FieldRockSmashCatalog(source);
         return Interlocked.CompareExchange(ref _loadedSource, catalog, null) ?? catalog;

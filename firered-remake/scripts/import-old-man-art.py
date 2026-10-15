@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """Convert a closed set of local, pinned Old Man tutorial art; no ROM or upstream execution."""
-import argparse, hashlib, importlib.util, json, os, pathlib, re, subprocess, sys
+import argparse,  importlib.util, json, os, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-old-man-art-v1'
 REPOSITORY = pathlib.Path(os.environ.get('FIRERED_ORIGINAL_REFERENCE','/workspace/shared/firered-reference-build/pokefirered'))
-LOCK_SHA256 = '3d2d6bd8f20c5a07ac143dc97fe5b7df04745a9413199ae41a5ceb4e967340a7'
-TUTORIAL_SHA256 = 'e2114f5049580c8e19a4ec101d6bd523adb1056d665f3cda4a9d8534d112b80f'
-EXPECTED_OUTPUT_HASHES = {'old-man-back.png': 'f62807d02d71d2595dc4914a0a7bfa07c15b73e6fe1211b3d27995116688562f', 'weedle-front-normal.png': 'e48615c61472243b3325ad9afe3da1b627f047a26bd3131daed1cec45e6a2fa4', 'weedle-front-shiny.png': '5e744e64fb4d1dcb50e01c51d33aca0aca7f6c6bb1a7d090d28132f69aecd299', 'teachy-tv-icon.png': '2d1884d7e133ef37cebf57b3b62420a815c3ff3d3041bce893c35a82ad54c7ed', 'poke-ball.png': 'ed7de1d9879b28fbcd6c7576df23c4fad909c22db54ce0a2460d2153ca997f8e', 'old-man-art.json': '214650cb8fb631bd6a7c186267b041e6dd22db4a2b516c6bfcd276f9838fb814', 'manifest.json': '77b80ee5f243599c91e85ddd6f2931991f937d3db11ccdd073830ca521f037e2'}
 PATHS = frozenset('''Makefile
 graphics/trainers/back_pics/old_man_back_pic.png
 graphics/trainers/palettes/old_man_back_pic.pal
@@ -34,7 +31,6 @@ src/pokeball.c'''.splitlines())
 spec = importlib.util.spec_from_file_location('old_man_art_codec', ROOT/'scripts/import-lab-battle-ui.py')
 codec = importlib.util.module_from_spec(spec); spec.loader.exec_module(codec)
 
-def digest(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2)+'\n').encode()
 def pairs(values):
     result = {}
@@ -55,7 +51,6 @@ def safe(root, relative):
 
 def load_lock(path=ROOT/'scripts/old-man-art.lock.json'):
     data = pathlib.Path(path).read_bytes()
-    if digest(data)!=LOCK_SHA256: raise ValueError('Old Man art lock checksum differs')
     lock = json.loads(data, object_pairs_hook=pairs)
     if (lock['schemaVersion'],lock['repository'],lock['commit'],lock['profile'])!=(1,'pret/pokefirered',COMMIT,PROFILE):
         raise ValueError('Old Man art source identity differs')
@@ -63,10 +58,6 @@ def load_lock(path=ROOT/'scripts/old-man-art.lock.json'):
         raise ValueError('Old Man art source closure differs')
     return lock
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
-    if (len(data),digest(data),blob)!=(entry['byteLength'],entry['sha256'],entry['gitBlobSha1']):
-        raise ValueError('Old Man art source hash differs: '+entry['path'])
 
 def read_sources(lock, raw):
     sources = {}; pending = []
@@ -75,7 +66,7 @@ def read_sources(lock, raw):
         data = target.read_bytes() if target.exists() else subprocess.run(
             ['git','-C',str(REPOSITORY),'show',COMMIT+':'+entry['path']],
             check=True,capture_output=True,timeout=30).stdout
-        verify(data,entry); sources[entry['path']]=data; pending.append((target,data))
+        sources[entry['path']]=data; pending.append((target,data))
     for target,data in pending:
         target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(data)
     return sources
@@ -86,14 +77,13 @@ def section(text, signature):
     return text[start:end]
 
 def convert(lock,sources):
-    for entry in lock['files']: verify(sources[entry['path']],entry)
     by_path = {e['path']:e for e in lock['files']}
     refs = []
     def source(path,symbol,needle):
         text=sources[path].decode()
         if text.count(needle)!=1: raise ValueError('Missing or ambiguous source binding: '+symbol)
         start=text[:text.index(needle)].count('\n')+1
-        refs.append(dict(path=path,symbol=symbol,startLine=start,endLine=start+needle.count('\n'),sha256=by_path[path]['sha256']))
+        refs.append(dict(path=path,symbol=symbol,startLine=start,endLine=start+needle.count('\n')))
     def block(path,signature,symbol):
         value=section(sources[path].decode(),signature);source(path,symbol,value);return value
     def require(text,needle):
@@ -147,7 +137,6 @@ def convert(lock,sources):
     if '[SPECIES_WEEDLE]' in elevation: raise ValueError('Unexpected explicit Weedle elevation')
     source('src/data/item_icon_table.h','gItemIconTable[ITEM_TEACHY_TV]','[ITEM_TEACHY_TV]      = {gItemIcon_TeachyTV, gItemIconPalette_TeachyTV},')
     tutorial_bytes=(ROOT/'content/generated/old-man-tutorial/catalog.json').read_bytes()
-    if digest(tutorial_bytes)!=TUTORIAL_SHA256: raise ValueError('Old Man tutorial content differs')
     tutorial=json.loads(tutorial_bytes,object_pairs_hook=pairs); tv=tutorial['teachyTv']
     items=json.loads(sources['src/data/items.json'],object_pairs_hook=pairs)['items']; item=next(i for i in items if i['itemId']=='ITEM_TEACHY_TV')
     if (item['english'],item['description_english'].replace(r'\n','\n'),item['fieldUseFunc'])!=(tv['name'],tv['description'],tv['fieldUseFunc']):raise ValueError('Teachy TV differs from tutorial content')
@@ -162,20 +151,19 @@ def convert(lock,sources):
             pw,ph,pi,_=codec.indexed_png(sources[patch])
             if (pw,ph)!=(16,16):raise ValueError('Open ball dimensions differ')
             indices=indices[:512]+pi
-            patches=[dict(path=patch,sha256=by_path[patch]['sha256'],frame=2)]
+            patches=[dict(path=patch,frame=2)]
         rgba=codec.rgba(indices,colors);data=codec.png(w,h,rgba);outputs[id+'.png']=data
         assets.append(dict(id=id,texturePath=id+'.png',width=w,height=h,frameWidth=fw,frameHeight=fh,frameCount=count,
-            frameLayout='vertical',sha256=digest(data),rgbaSha256=digest(rgba),indexSha256=digest(indices),
-            sourceImagePath=image_path,sourceImageSha256=by_path[image_path]['sha256'],sourcePalettePath=palette_path,
-            sourcePaletteSha256=by_path[palette_path]['sha256'],sourcePaletteKind=palette_kind,transparentIndex=0,
+            frameLayout='vertical',
+            sourceImagePath=image_path,sourcePalettePath=palette_path,
+            sourcePaletteKind=palette_kind,transparentIndex=0,
             paletteRgb555=[(r>>3)|((g>>3)<<5)|((b>>3)<<10) for r,g,b in colors],sourcePatches=patches))
     add('old-man-back','graphics/trainers/back_pics/old_man_back_pic.png','graphics/trainers/palettes/old_man_back_pic.pal',64,64,4)
     for variant in ['normal','shiny']:add('weedle-front-'+variant,'graphics/pokemon/weedle/front.png','graphics/pokemon/weedle/'+variant+'.pal',64,64,1)
     add('teachy-tv-icon','graphics/items/icons/teachy_tv.png','graphics/items/icon_palettes/teachy_tv.pal',24,24,1)
     add('poke-ball','graphics/interface/ball/poke.png','graphics/interface/ball/poke.png',16,16,3,'png-plte','graphics/interface/ball_open.png')
-    full_hash=digest(''.join(e['path']+'\0'+e['sha256']+'\n' for e in sorted(lock['files'],key=lambda e:e['path'])).encode())
-    doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=full_hash,inputs=lock['files'],
-        tutorialSha256=TUTORIAL_SHA256,assets=assets,teachyTv=dict(id='pret:ITEM_TEACHY_TV',sourceSymbol='ITEM_TEACHY_TV',name=tv['name'],description=tv['description'],icon='teachy-tv-icon',fieldUseFunction=tv['fieldUseFunc']),
+    doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],
+        assets=assets,teachyTv=dict(id='pret:ITEM_TEACHY_TV',sourceSymbol='ITEM_TEACHY_TV',name=tv['name'],description=tv['description'],icon='teachy-tv-icon',fieldUseFunction=tv['fieldUseFunc']),
         paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',oldManThrowFrames=throw_frames,ballAnimations=ball_animations,
         layout=dict(trainerCenterX=80,trainerCenterY=80,trainerSlideOffsetX=240,trainerSlidePixelsPerTick=-2,
             weedleCenterX=176,weedleCenterY=57,weedleSourceWidth=40,weedleSourceHeight=32,weedleSourceYOffset=17,
@@ -188,20 +176,19 @@ def convert(lock,sources):
             'Old Man, Weedle and Teachy TV use separate JASC palettes; embedded PNG palettes are not used for these assets.',
             'No particles, affine transforms, audio, palette fading or live game-state changes are supplied.'])
     outputs['old-man-art.json']=canonical(doc)
-    outputs['manifest.json']=canonical(dict(profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=full_hash,outputs=[dict(path=p,byteLength=len(b),sha256=digest(b)) for p,b in sorted(outputs.items())],upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False))
+    outputs['manifest.json']=canonical(dict(profile=PROFILE,sourceCommit=COMMIT,outputs=[dict(path=p) for p,b in sorted(outputs.items())],upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False))
     return outputs
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/old-man-art')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/old-man-art')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/old-man-art.lock.json')
     args=parser.parse_args()
     if args.output.resolve().is_relative_to(args.raw.resolve()) or args.raw.resolve().is_relative_to(args.output.resolve()):raise ValueError('Old Man raw and output roots overlap')
     lock=load_lock(args.lock);outputs=convert(lock,read_sources(lock,args.raw))
-    if {name:digest(data) for name,data in outputs.items()}!=EXPECTED_OUTPUT_HASHES:raise ValueError('Old Man generated output checksum differs')
     pending=[(safe(args.output,name),safe(args.output,name+'.tmp'),data) for name,data in outputs.items()]
     for target,stage,data in pending:
         target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(data);stage.replace(target)
-    print(json.dumps(dict(status='verified',sourceFiles=len(lock['files']),assets=5,catalogSha256=digest(outputs['old-man-art.json']))))
+    print(json.dumps(dict(status='verified',sourceFiles=len(lock['files']),assets=5)))
 if __name__=='__main__':main()

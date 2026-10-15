@@ -10,24 +10,30 @@ public partial class CampaignView
     private int _shopCursor, _shopQuantity = 1, _shopConfirm, _fieldMedicineTarget;
     private string? _shopKey, _shopNotice;
     private bool _fieldMedicineTargetOpen;
+    private byte[] ReadItemIconRgba(string package, PretPewterMachineIcon icon)
+    {
+        PretPewterMachines.ValidateIcon(icon);
+        var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated", package, icon.PngPath));
+        return PretPewterMachines.IconRgba(icon, bytes);
+    }
     private void LoadShopPresentation()
     {
         if (_catalog.EarlyShopDocument is not { } document) return;
         foreach (var icon in document.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretEarlyShop.IconRgba(icon));
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretEarlyShop.IconRgba(icon, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/early-shop", icon.PngPath))));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
         if (_catalog.CeruleanEnabled)
         {
             var icon = PretCeruleanItems.LoadProject(_root).Icon;
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretPewterMachines.IconRgba(icon));
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("cerulean-items", icon));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
         foreach (var icon in _catalog.NpcTradeElyssa.Items.Icons)
         {
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
-                _catalog.NpcTradeElyssa.IconFiles[icon.RgbaPath]);
+                PngRgba8.Decode(_catalog.NpcTradeElyssa.IconFiles[icon.TexturePath], icon.Width, icon.Height));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
         LoadPokeDollIcon();
@@ -40,7 +46,7 @@ public partial class CampaignView
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
-                _catalog.NpcTradeMail.AssetFiles[icon.RgbaPath]);
+                PngRgba8.Decode(_catalog.NpcTradeMail.AssetFiles[icon.TexturePath], icon.Width, icon.Height));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
         LoadMailStationeryIcons();

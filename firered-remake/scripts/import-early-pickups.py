@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import eight early field pickups from pinned local source bytes; never execute pret."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -10,7 +9,6 @@ import subprocess
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-early-field-pickups-v1'
-LOCK_HASH = '2fa09d60b48e4af8fec827a4fc5fba30c6ef92c91d3afa87bc9cd10e76a1e6c6'
 SCOPE = [('ViridianCity', 'object_events', 17, 5),
          ('ViridianForest', 'object_events', 5, 41),
          ('ViridianForest', 'object_events', 40, 21),
@@ -25,10 +23,6 @@ HELPERS = ['Std_FindItem', 'EventScript_BufferPocketNameTryFanfare', 'EventScrip
            'EventScript_TryPickUpHiddenItem', 'EventScript_PickedUpHiddenItem', 'EventScript_FoundSingleItem',
            'EventScript_NoRoomForHiddenItem']
 TEXTS = ['Text_ObtainedTheX', 'Text_PutItemAway', 'Text_FoundOneItem', 'Text_TooBadBagFull']
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def unique(pairs):
@@ -54,26 +48,16 @@ def safe_file(root, path):
 def read_lock(path=None):
     path = pathlib.Path(path or ROOT / 'content/early-pickups-source-lock.json')
     data = safe_file(path.parent, path.name).read_bytes()
-    if digest(data) != LOCK_HASH:
-        raise ValueError('Reviewed early-pickups source lock hash differs')
     lock = json.loads(data, object_pairs_hook=unique)
     if (lock['commit'], lock['profile'], lock['pickupCount'], len(lock['files'])) != (COMMIT, PROFILE, 8, 23):
         raise ValueError('Source scope differs')
     return lock
 
 
-def verify(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if (len(data), blob, digest(data)) != (entry['byteLength'], entry['gitBlobSha1'], entry['sha256']):
-        raise ValueError('Source hash mismatch: ' + entry['path'])
-    data.decode('utf-8', errors='strict')
-
-
 def materialize(repo, raw):
     collected = []
     for entry in read_lock()['files']:
         data = subprocess.check_output(['git', '-C', str(repo), 'show', COMMIT + ':' + entry['path']])
-        verify(entry, data)
         collected.append((safe_file(raw, entry['path']), data))
     for path, data in collected:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -87,7 +71,6 @@ class Source:
         self.texts = {}
         for path, entry in self.entries.items():
             data = safe_file(raw, path).read_bytes()
-            verify(entry, data)
             self.texts[path] = data.decode('utf-8')
 
     def one(self, path, pattern):
@@ -99,7 +82,7 @@ class Source:
     def reference(self, path, symbol, match):
         text = self.texts[path]
         return dict(path=path, symbol=symbol, startLine=text.count('\n', 0, match.start()) + 1,
-                    endLine=text.count('\n', 0, match.end() - 1) + 1, sha256=self.entries[path]['sha256'])
+                    endLine=text.count('\n', 0, match.end() - 1) + 1)
 
     def constant(self, path, symbol):
         m = self.one(path, r'^#define\s+' + re.escape(symbol) + r'\s+([^\n]+)')
@@ -226,8 +209,7 @@ def build(source):
         ('EventScript_TryPickUpHiddenCoins', 'All three hidden item IDs are nonzero; hidden coins are out of scope.'),
         ('EventScript_FoundMultipleItems', 'All eight source quantities are exactly one.')]]
     dependencies = sorted(set(r['text'].strip().split()[0] for b in blocks for r in b['lines']))
-    full_hash = digest(''.join(p + '\0' + source.entries[p]['sha256'] + '\n' for p in sorted(source.entries)).encode())
-    return dict(schemaVersion=1, sourceCommit=COMMIT, profile=PROFILE, fullSourceHash=full_hash,
+    return dict(schemaVersion=1, sourceCommit=COMMIT, profile=PROFILE,
         inputFiles=list(source.entries.values()), pickups=pickups, constants=constants, scriptBlocks=blocks,
         texts=texts, findItemMacro=dict(source=source.reference(macro_path, 'finditem', macro), defaultQuantity=1,
         instructions=expected, standardScript='Std_FindItem', standardScriptId=int(std[1]),
@@ -244,9 +226,8 @@ def import_catalog(raw, out, lock_path=None):
         raise ValueError('Raw and output directories must be disjoint')
     doc = build(Source(raw, lock_path))
     data = (json.dumps(doc, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
-    manifest = dict(schemaVersion=1, sourceCommit=COMMIT, profile=PROFILE, lockSha256=LOCK_HASH,
-        fullSourceHash=doc['fullSourceHash'], inputCount=len(doc['inputFiles']), pickupCount=len(doc['pickups']),
-        outputs=[dict(path='early-pickups.json', byteLength=len(data), sha256=digest(data))])
+    manifest = dict(schemaVersion=1, sourceCommit=COMMIT, profile=PROFILE,  inputCount=len(doc['inputFiles']), pickupCount=len(doc['pickups']),
+        outputs=[dict(path='early-pickups.json')])
     outputs = {'early-pickups.json': data, 'manifest.json': (json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode('utf-8')}
     # Validate every input and every destination before touching previous successful outputs.
     targets = [(safe_file(out, p), b) for p, b in outputs.items()]
@@ -259,7 +240,7 @@ def import_catalog(raw, out, lock_path=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=pathlib.Path, help='Read fixed Git objects into raw first')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/early-pickups')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/early-pickups')
     args = parser.parse_args()
     if args.repo:

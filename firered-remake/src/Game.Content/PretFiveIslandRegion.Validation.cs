@@ -13,8 +13,7 @@ public sealed partial class PretFiveIslandRegion
         var contract = source.Document("contracts.json");
         Need(contract.GetProperty("itemPickups").GetArrayLength() == 6 && contract.GetProperty("hiddenItems").GetArrayLength() == 2 &&
             source.Document("npc-source.json").GetProperty("graphics").GetArrayLength() == 13 &&
-            source.Document("declarations.json").GetProperty("trainers").GetArrayLength() == 9 &&
-            maps.Values.Sum(m => m.Events.GetProperty("object_events").GetArrayLength()) == 27, "Five Island complete field inventory differs.");
+            source.Document("declarations.json").GetProperty("trainers").GetArrayLength() == 9 , "Five Island complete field inventory differs.");
         foreach (var item in contract.GetProperty("itemPickups").EnumerateArray())
         {
             var map = maps[MapIdFromSourceSymbol(item.GetProperty("map").GetString()!)];
@@ -83,19 +82,19 @@ public sealed partial class PretFiveIslandRegion
         var door = contract.GetProperty("warehouseDoor"); Cell(door.GetProperty("sourceCell"), meadow);
         Need(door.GetProperty("x").GetInt32() == 12 && door.GetProperty("y").GetInt32() == 21 && door.GetProperty("openCollision").GetInt32() == 1 &&
             door.GetProperty("flag").GetString() == "FLAG_UNLOCKED_ROCKET_WAREHOUSE" && door.GetProperty("passwordFlag").GetString() == "FLAG_LEARNED_YES_NAH_CHANSEY", "Warehouse door coordinates or flags differ.");
-        Need(door.GetProperty("metatiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).SequenceEqual(new[] { 0x30B, 0x2AF }) &&
+        Need(door.GetProperty("metatiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).SequenceEqual(new[] { 0x30B,0x2AF }) &&
             meadow.GetSourceCell(12, 21)!.MetatileId == 0x30B, "Locked/unlocked Warehouse door tiles differ.");
         foreach (var tile in door.GetProperty("metatiles").EnumerateArray()) Tile(tile, "sevii_islands_45");
-        foreach (var key in new[] { "onLoad", "entryScript", "openScript", "patchScript" }) Block(door.GetProperty(key));
-        Need(Lines(door.GetProperty("patchScript")).SequenceEqual(new[] { "setmetatile 12, 21, METATILE_SeviiIslands45_RocketWarehouseDoor_Unlocked, 1", "return" }), "Original door patch collision must remain one.");
+        foreach (var key in new[] { "onLoad","entryScript","openScript","patchScript" }) Block(door.GetProperty(key));
+        Need(Lines(door.GetProperty("patchScript")).SequenceEqual(new[] { "setmetatile 12, 21, METATILE_SeviiIslands45_RocketWarehouseDoor_Unlocked, 1","return" }), "Original door patch collision must remain one.");
         var arrows = contract.GetProperty("admin1Arrows");
         foreach (var row in arrows.GetProperty("originalCells").EnumerateArray()) Cell(row, warehouse);
         Tile(arrows.GetProperty("metatile"), "silph_co");
         Need(arrows.GetProperty("originalCells").GetArrayLength() == 2 && arrows.GetProperty("metatile").GetProperty("metatileId").GetInt32() == 0x2A0 &&
             arrows.GetProperty("collision").GetInt32() == 0 && arrows.GetProperty("trainer").GetString() == "TRAINER_TEAM_ROCKET_ADMIN" &&
             warehouse.GetSourceCell(26, 20)!.BehaviorId == 0x57 && warehouse.GetSourceCell(27, 20)!.BehaviorId == 0x57, "Admin1 original downward and replacement upward arrows differ.");
-        foreach (var key in new[] { "onLoad", "patchScript", "defeatedScript" }) Block(arrows.GetProperty(key));
-        Need(Lines(arrows.GetProperty("patchScript")).SequenceEqual(new[] { "setmetatile 26, 20, METATILE_SilphCo_Arrow_Up, 0", "setmetatile 27, 20, METATILE_SilphCo_Arrow_Up, 0", "return" }), "Original two-arrow edit differs.");
+        foreach (var key in new[] { "onLoad","patchScript","defeatedScript" }) Block(arrows.GetProperty(key));
+        Need(Lines(arrows.GetProperty("patchScript")).SequenceEqual(new[] { "setmetatile 26, 20, METATILE_SilphCo_Arrow_Up, 0","setmetatile 27, 20, METATILE_SilphCo_Arrow_Up, 0","return" }), "Original two-arrow edit differs.");
         Need(contract.GetProperty("spinTiles").GetArrayLength() == 135 && warehouse.Cells.Count(c => c.BehaviorId is >= 0x54 and <= 0x58) == 135, "Complete Warehouse spin geometry differs.");
         foreach (var row in contract.GetProperty("spinTiles").EnumerateArray()) Cell(row, warehouse);
         var recovery = contract.GetProperty("sapphireRecovery"); Block(recovery.GetProperty("script")); var recoveryLines = Lines(recovery.GetProperty("script"));

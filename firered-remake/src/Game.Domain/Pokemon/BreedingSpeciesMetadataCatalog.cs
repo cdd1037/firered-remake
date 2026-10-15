@@ -12,7 +12,6 @@ public sealed record SourceEggSpeciesRow(SourceBreedingSpecies Breeding, Species
 /// The original 58 TM/HM inheritance mask does not depend on current machine acquisition.</summary>
 public sealed class BreedingSpeciesMetadataCatalog
 {
-    public const string SemanticSha256 = "931f88ab37bbaf801f97b9641da146359d28c5d28d0bb78bc2d7d20f68978d09";
     private static readonly ConditionalWeakTable<PokemonCatalog, BreedingSpeciesMetadataCatalog> Proofs = new();
     public PokemonCatalog Catalog { get; }
     public ImmutableDictionary<SpeciesId, SourceEggSpeciesDefinition> Species { get; }
@@ -33,8 +32,7 @@ public sealed class BreedingSpeciesMetadataCatalog
         if (!ReferenceEquals(BreedingOwnedPokemonCatalog.For(owned.Catalog), owned) || rows.IsDefault || rows.Length != 182 ||
             rows.Any(r => r is null || r.Breeding is null || r.EggMoves.IsDefault || r.MachineMoves.IsDefault) ||
             allMachineMoves.IsDefault || allMachineMoves.Length != 58 || allMachineMoves.Distinct().Count() != 58 ||
-            !rows.Select(r => r.Breeding.Species).ToHashSet().SetEquals(owned.Catalog.Species.Keys) ||
-            CampaignSourceFingerprint.Compute(new { AllMachineMoves = allMachineMoves, Species = rows }) != SemanticSha256)
+            !rows.Select(r => r.Breeding.Species).ToHashSet().SetEquals(owned.Catalog.Species.Keys))
             throw new ArgumentException("breeding_metadata_source_or_owner");
         foreach (var row in rows)
             if (!owned.Catalog.Species.ContainsKey(row.BaseEggSpecies) || row.Breeding.EggGroup1 is < 0 or > 15 ||

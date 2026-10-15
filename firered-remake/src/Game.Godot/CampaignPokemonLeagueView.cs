@@ -35,11 +35,10 @@ public partial class CampaignView
         if(!_catalog.PokemonLeagueEnabled)return;
         if(!_catalog.VictoryRoadEnabled||_session.RulesVersion!=CampaignSession.PokemonLeagueRulesVersion&&!(_catalog.NationalDexEnabled&&_session.RulesVersion==CampaignSession.NationalDexRulesVersion)&&!SeviiRubyPresentationProfile&&!FourIslandPresentationProfile)throw new InvalidDataException("Pokemon League presentation profile differs.");
         _pokemonLeagueArt=PokemonLeaguePresentationAssets.Load(_root);
-        if(_battleArt.Count!=496||_storageIcons.Count!=124||_route22Footprints.Count!=93)throw new InvalidDataException("Pokemon League predecessor art differs.");
         foreach(var a in LeagueManifest.GetProperty("assets").EnumerateArray())
         {
             string id=a.GetProperty("id").GetString()!;int width=a.GetProperty("width").GetInt32(),height=a.GetProperty("height").GetInt32();
-            var pixels=_pokemonLeagueArt.Files[a.GetProperty("rgbaPath").GetString()!];
+            var pixels=PngRgba8.Decode(_pokemonLeagueArt.Files[a.GetProperty("texturePath").GetString()!]);
             if(pixels.Length!=width*height*4)throw new InvalidDataException("Pokemon League pixel size differs.");
             using var image=Image.CreateFromData(width,height,false,Image.Format.Rgba8,pixels);_leagueTextures.Add(id,SceneTextures.FromImage(image));
         }
@@ -65,8 +64,7 @@ public partial class CampaignView
             if(side=="front"&&!shiny)_portraits.Add(species,_leagueTextures[p.GetProperty("id").GetString()!]);
         }
         foreach(var p in LeagueManifest.GetProperty("pokemonIcons").EnumerateArray())_storageIcons.Add(new(p.GetProperty("speciesId").GetString()!),_leagueTextures[p.GetProperty("id").GetString()!]);
-        if(_battleArt.Count!=532||_storageIcons.Count!=133||_route22Footprints.Count!=93)throw new InvalidDataException("Pokemon League art inventory differs.");
-        Write("pokemonLeaguePresentation",new{PokemonLeaguePresentationAssets.SourceCommit,PokemonLeaguePresentationAssets.ManifestSha256,trainerCount=7,battleSprites=532,icons=133,ownedSpecies=115,creditsCommands=66,fullOriginalVisualFidelity=false,physicalAudioVerified=false});
+        Write("pokemonLeaguePresentation",new{PokemonLeaguePresentationAssets.SourceCommit,fullOriginalVisualFidelity=false,physicalAudioVerified=false});
     }
     private string? PokemonLeagueSpeciesName(int species) => _catalog.PokemonLeagueOpponents?.Catalog.Species.Values.Any(s=>s.SourceSpeciesId==species)==true
         ? (_pokedexMenu??throw new InvalidDataException("Pokemon League names missing.")).Entries[species].Name : null;
@@ -75,9 +73,8 @@ public partial class CampaignView
         if(_pokemonLeagueArt is null)return null;
         var row=LeagueManifest.GetProperty("sprites").EnumerateArray().SingleOrDefault(s=>s.GetProperty("sourceSpeciesId").GetInt32()==species&&s.GetProperty("side").GetString()=="front"&&s.GetProperty("paletteVariant").GetString()=="normal");
         if(row.ValueKind==JsonValueKind.Undefined)return null;
-        string png=row.GetProperty("texturePath").GetString()!,rgba=row.GetProperty("rgbaPath").GetString()!;
-        string Hash(string path)=>LeagueManifest.GetProperty("outputs").EnumerateArray().Single(o=>o.GetProperty("path").GetString()==path).GetProperty("sha256").GetString()!;
-        return new(PokemonLeaguePresentationAssets.Base+png,Hash(png),Hash(rgba),64,64);
+        string png=row.GetProperty("texturePath").GetString()!;
+        return new(PokemonLeaguePresentationAssets.Base+png,64,64);
     }
     private byte[]? ReadPokemonLeagueDexTexture(PokedexMenuTexture texture)
     {

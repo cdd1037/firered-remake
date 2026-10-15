@@ -73,7 +73,7 @@ void Atomic(WildBattleState state, WildBattleSourceEndTurnCursor? cursor, string
 using var vectors = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "source-vectors.json")));
 Test("pinned runtime and nonempty independent source phase vectors", () => {
     Check(Environment.Version.Major == 10 && catalog.Species.Count == 107, "runtime10 and genuine bounded roster");
-    Check(vectors.RootElement.GetProperty("sourceCommit").GetString() == MetronomeSourceMoveDefinition.SourceCommit, "fixed source commit");
+    Check(vectors.RootElement.GetProperty("sourceCommit").GetString() == PokemonFactory.SourceCommit, "fixed source commit");
     Check(vectors.RootElement.GetProperty("fieldOrder").GetArrayLength() == 9, "nine source field steps");
     Check(vectors.RootElement.GetProperty("battlerOrder").GetArrayLength() == 19, "nineteen source battler steps");
 });
@@ -352,5 +352,5 @@ Test("invalid phase cursor state and overflow reject with exact state cursor RNG
     var historical = WildBattleRules.ResolveMove(catalog, valid, 0);
     Check(!historical.Succeeded && ReferenceEquals(historical.State, valid) && historical.Events.IsEmpty && historical.Trace.IsEmpty, "ordinary historical v1 still rejects extension");
 });
-Console.WriteLine(JsonSerializer.Serialize(new { suite = "source-end-turn-phases", groups, checks, failures, runtime = Environment.Version.ToString(), sourceCommit = MetronomeSourceMoveDefinition.SourceCommit, completeTurn = false, application = false }));
+Console.WriteLine(JsonSerializer.Serialize(new { suite = "source-end-turn-phases",groups,checks,failures,runtime = Environment.Version.ToString(),sourceCommit = PokemonFactory.SourceCommit,completeTurn = false,application = false }));
 if (groups < 21 || checks == 0 || failures > 0) Environment.Exit(1);

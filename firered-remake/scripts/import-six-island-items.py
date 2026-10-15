@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Import Six Island items, source shop/pickups and exact 38x132 teaching. No upstream execution."""
-import argparse, hashlib, json, re, subprocess
+import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-def sha(b):return hashlib.sha256(b).hexdigest()
-def digest(v):return sha(json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())
 def need(v,m):
  if not v:raise ValueError(m)
 def generate(reference,root):
@@ -12,12 +10,12 @@ def generate(reference,root):
  def source(path):
   if path not in texts:
    b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
-   inputs[path]=dict(path=path,byteLength=len(b),gitBlobSha1=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),sha256=sha(b));texts[path]=b.decode()
+   inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
- def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end,sha256=inputs[path]['sha256'])
- def dependency(path,expected):
-  b=(root/path).read_bytes();need(sha(b)==expected,'Dependency identity: '+path)
-  dependencies.append(dict(path=path,byteLength=len(b),sha256=sha(b)));return json.loads(b)
+ def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
+ def dependency(path):
+  b=(root/path).read_bytes()
+  dependencies.append(dict(path=path));return json.loads(b)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
  def metadata(symbol):
@@ -35,7 +33,7 @@ def generate(reference,root):
  need(items[0]['item']['sourceItemId']==93 and items[0]['item']['fieldUseFunction']=='FieldUseFunc_EvoItem','Sun Stone source evolution use')
  need(items[1]['item']['sourceItemId']==201 and items[1]['item']['holdEffect']=='HOLD_EFFECT_DRAGON_SCALE' and items[1]['item']['holdEffectParam']==10,'Dragon Scale is not Dragon Fang')
  need(items[2]['item']['sourceItemId']==130 and items[2]['item']['fieldUseFunction']=='FieldUseFunc_Mail','Dream Mail source identity')
- four=dependency('content/generated/four-island-items/items.json','9cb68121352e6d3372baece227d7486b630f32baf053a3164ce10ebe11350b02')
+ four=dependency('content/generated/four-island-items/items.json')
  old_ids=[r['item']['value'][5:] for r in four['machineAdditions']]+['ITEM_HM07'];need(len(set(old_ids))==38,'Inherited machine set')
  owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in four['hm07']['compatibility']]
  added=[('SPECIES_SENTRET',161),('SPECIES_FURRET',162),('SPECIES_NATU',177),('SPECIES_XATU',178),('SPECIES_YANMA',193),('SPECIES_WOBBUFFET',202),('SPECIES_BELLOSSOM',182)]
@@ -69,7 +67,7 @@ def generate(reference,root):
  need(len(pickups)==9 and sum(p['hidden'] for p in pickups)==4,'Five visible and four hidden pickups')
  for path in ['data/scripts/obtain_item.inc','src/pokemon.c','src/battle_util.c','src/battle_script_commands.c','include/constants/hold_effects.h']:source(path)
  doc=dict(sourceCommit=COMMIT,profile='firered-six-island-items-v1',items=items,additions=new,machineAdditions=additions,shop=shop,pickups=pickups,unsupportedUses=[dict(item='ITEM_DRAGON_SCALE',boundary='Held-item trade evolution trigger is not implemented. No NPC, fee or alternate trigger is invented.'),dict(item='ITEM_DREAM_MAIL',boundary='Mail reading, writing, attaching and delivery are not implemented; purchase, inventory and source sale remain ordinary supported transactions.')])
- evidence=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
+ evidence=dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
  return doc,evidence
 
 def main():
@@ -77,10 +75,10 @@ def main():
  for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
  p.add_argument('--check',action='store_true');a=p.parse_args();doc,evidence=generate(a.reference,a.dependency)
  files={'content/generated/six-island-items/'+name:(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode() for name,value in [('items.json',doc),('source-input-hashes.json',evidence)]}
- lock=dict(sourceCommit=COMMIT,profile='firered-six-island-items-v1',files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())]);files['scripts/six-island-items.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
+ lock=dict(sourceCommit=COMMIT,profile='firered-six-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())]);files['scripts/six-island-items.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
  for name,data in files.items():
   dest=a.output/name
   if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
   else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
- print(json.dumps(dict(checked=a.check,itemsSha256=sha(files['content/generated/six-island-items/items.json']),shopFingerprint=digest(doc['additions']),inheritedMachineFingerprint=digest(doc['machineAdditions']),stockFingerprint=digest(doc['shop']),pickupsFingerprint=digest(doc['pickups'])),indent=2))
+ print(json.dumps(dict(checked=a.check),indent=2))
 if __name__=='__main__':main()

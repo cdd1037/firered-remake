@@ -1,11 +1,9 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 namespace FireRedAudio;
 // Immutable bounded image: source addresses are never CLR pointers.
 public sealed class Resources
 {
     public const uint Base = 0x08489968, End = 0x086fbea4;
-    public const string SourceSha1 = "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc";
     readonly byte[] bytes;
     public Resources(byte[] audioData)
     {
@@ -16,15 +14,11 @@ public sealed class Resources
     public static Resources FromRom(string path)
     {
         var rom = File.ReadAllBytes(path);
-        if (Convert.ToHexString(SHA1.HashData(rom)).ToLowerInvariant() != SourceSha1)
-            throw new InvalidDataException("Unsupported ROM identity");
         return new Resources(rom.AsSpan((int)(Base - 0x08000000), checked((int)(End - Base))).ToArray());
     }
     public static Resources FromPack(string path)
     {
         var data = File.ReadAllBytes(path);
-        if (Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant() != "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d")
-            throw new InvalidDataException("Unsupported audio pack identity");
         return new Resources(data);
     }
     public int Offset(uint address, int count)

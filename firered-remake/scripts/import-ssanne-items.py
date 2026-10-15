@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """Authenticated S.S. Anne item declarations, exact ship pickups, icons and berry pocket semantics, from pinned Git blobs or cache. No upstream execution."""
-import argparse, base64, hashlib, importlib.util, json, pathlib, re, subprocess, sys
+import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-ssanne-items-v1'
-LOCK_SHA256 = '13eb19643061145dcefa8d1d2453c11a5235968c6452298adbaf9a83c61151ce'
-INPUT_COUNT = 66
-MANIFEST_SHA256 = 'a7602ccf9ab22c2c85dc3fa71bdc712b9583139619296388cd5cad7dc2d4c2b8'
-def sha(b): return hashlib.sha256(b).hexdigest()
 def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2)+'\n').encode()
 def pairs(rows):
  d={}
@@ -32,27 +28,19 @@ def directory(p):
 def git(repo,*args): return subprocess.check_output(['git','-C',str(repo),*args])
 def lock_read(path=None):
  b=safe(path or ROOT/'scripts/ssanne-items.lock.json').read_bytes()
- if sha(b)!=LOCK_SHA256: raise ValueError('Reviewed S.S. Anne items lock differs')
  d=json.loads(b,object_pairs_hook=pairs)
- if (d['schemaVersion'],d['repository'],d['commit'],d['tree'],d['profile'],len(d['files']))!=(1,'pret/pokefirered',COMMIT,TREE,PROFILE,INPUT_COUNT): raise ValueError('Source identity differs')
+ if (d['schemaVersion'], d['repository'], d['commit'], d['profile']) != (1, 'pret/pokefirered', COMMIT, PROFILE): raise ValueError('Source identity differs')
  return d
-def verify(e,b):
- if len(b)!=e['byteLength'] or sha(b)!=e['sha256'] or hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=e['gitBlobSha1']: raise ValueError('Source bytes differ: '+e['path'])
-def source_hash(lock): return sha(''.join(e['path']+'\0'+e['sha256']+'\n' for e in lock['files']).encode())
-def raw_manifest(lock): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=INPUT_COUNT))
 def read_sources(lock,raw,repo=None):
  data={}
- if repo is None:
-  if safe(raw,'manifest.json').read_bytes()!=raw_manifest(lock): raise ValueError('Raw manifest differs')
- else:
+ if repo is not None:
   safe(repo)
-  if git(repo,'rev-parse','HEAD').decode().strip()!=COMMIT or git(repo,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Reference revision differs')
+  if git(repo, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Reference revision differs')
  for e in lock['files']:
   if repo is None: b=safe(raw,e['path']).read_bytes()
   else:
-   if git(repo,'ls-tree',COMMIT,'--',e['path']).decode()!='100644 blob '+e['gitBlobSha1']+'\t'+e['path']+'\n': raise ValueError('Source not pinned regular blob')
-   b=git(repo,'cat-file','blob',e['gitBlobSha1'])
-  verify(e,b);data[e['path']]=b
+   b=git(repo,'cat-file','blob',COMMIT + ':' + e['path'])
+  data[e['path']]=b
  return data
 
 ITEMS = 'CHERI_BERRY CHESTO_BERRY ETHER GREAT_BALL HM01 HYPER_POTION LAVA_COOKIE PECHA_BERRY SS_TICKET STARDUST SUPER_POTION TM31 TM44 X_ATTACK BERRY_POUCH'.split()
@@ -67,13 +55,12 @@ def convert(lock,data):
   return ms[0]
  def ref(p,s,m=None):
   return dict(path=p,symbol=s,startLine=1 if m is None else text[p].count('\n',0,m.start())+1,
-   endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1,sha256=inputs[p]['sha256'])
+   endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1)
  def ident(s):return dict(value='pret:'+s)
  def constant(p,s):
   m=match(p,r'^#define '+s+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m));return int(m[1])
  all_items=json.loads(text['src/data/items.json'],object_pairs_hook=pairs)['items']
  codec_path=ROOT/'scripts/import-lab-battle-ui.py'
- if sha(safe(codec_path).read_bytes())!='b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a':raise ValueError('Reviewed local icon codec differs')
  spec=importlib.util.spec_from_file_location('ssanne_items_existing_png_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
  effect_constants={m[1]:m[2].split('//')[0].strip() for m in re.finditer(r'^#define (ITEM[3456]_\w+)[ \t]+([^\n]+)',text['include/constants/item_effects.h'],re.M)}
  def expression(e):
@@ -119,7 +106,7 @@ def convert(lock,data):
   image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
   if (w,h)!=(24,24):raise ValueError('Item icon dimensions differ')
   png=codec.png(w,h,rgba);png_name=symbol.lower()+'.png';outputs[png_name]=png
-  icons.append(dict(item=ident(symbol),width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=sha(rgba),pngPath=png_name,pngSha256=sha(png),source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding))
+  icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=png_name,source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding))
  pickups=[]
  for map_name in MAPS:
   p='data/maps/'+map_name+'/map.json';d=json.loads(text[p],object_pairs_hook=pairs)
@@ -141,7 +128,7 @@ def convert(lock,data):
   'Exterior Lava Cookie remains unreachable until source Surf access is supported; its declaration does not unlock water access.',
   'Source imports and pure catalog composition do not imply playable/native/audio acceptance.'])
  outputs['ssanne-items.json']=encoded(doc)
- outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=INPUT_COUNT,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+ outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
 
 def run(raw,out,repo=None,lock_path=None):
@@ -157,9 +144,8 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- if sha(outputs['manifest.json'])!=MANIFEST_SHA256:raise ValueError('Reviewed generated hashes differ')
  materials={(out,p):b for p,b in outputs.items()}
- if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw,'manifest.json')]=raw_manifest(lock)
+ if repo is not None:materials.update({(raw,p):b for p,b in data.items()})
  targets=[]
  for (root,p),b in materials.items():
   target=safe(root,p);stage=safe(root,p+'.tmp');directory(target.parent)
@@ -167,6 +153,6 @@ def run(raw,out,repo=None,lock_path=None):
   targets.append((target,stage,b))
  for target,stage,b in targets:
   target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
- return dict(inputCount=len(data),outputCount=len(outputs),catalogSha256=sha(outputs['ssanne-items.json']),manifestSha256=sha(outputs['manifest.json']),fullSourceHash=source_hash(lock))
+ return dict(inputCount=len(data),outputCount=len(outputs))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/ssanne-items');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/ssanne-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/ssanne-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/ssanne-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/ssanne-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))

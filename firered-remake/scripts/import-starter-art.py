@@ -125,7 +125,7 @@ def rgba_png(rgba):
 def reference(lock, sources, path, symbol, needle=None):
     entry = next(entry for entry in lock['files'] if entry['path'] == path)
     result = dict(kind='pret', repository=inputs.REPOSITORY, commit=inputs.COMMIT,
-                  path=path, symbol=symbol, sha256=entry['sha256'], url=entry['sourceUrl'])
+                  path=path, symbol=symbol,  url=entry['sourceUrl'])
     if needle is not None:
         text = sources[path].decode('utf-8')
         if text.count(needle) != 1:
@@ -189,15 +189,14 @@ def convert(lock, sources):
         left, top = min(i % 64 for i in opaque), min(i // 64 for i in opaque)
         right, bottom = max(i % 64 for i in opaque) + 1, max(i // 64 for i in opaque) + 1
         sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, texturePath=filename,
-                            sha256=inputs.digest(outputs[filename]), rgbaSha256=inputs.digest(rgba),
-                            indexSha256=inputs.digest(indices), width=64, height=64,
+                             width=64, height=64,
                             frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0,
                             frames=[{'index': 0, 'x': 0, 'y': 0, 'width': 64, 'height': 64}],
                             alphaBounds={'x': left, 'y': top, 'width': right-left, 'height': bottom-top},
                             transparentIndex=0, paletteVariant='normal', paletteRgb555=words,
                             paletteExpansion='floor(rgb5 * 255 / 31)', sourceRefs=refs))
     catalog = dict(schemaVersion=1, profile=inputs.PROFILE, repository=inputs.REPOSITORY,
-                   sourceCommit=inputs.COMMIT, fullSourceHash=inputs.source_set_hash(lock),
+                   sourceCommit=inputs.COMMIT,
                    display=display, sprites=sprites,
                    limitations=[
                        'Three species only; a single normal front frame per species, not general Pokemon animations.',
@@ -207,8 +206,8 @@ def convert(lock, sources):
                    ])
     outputs['starter-art.json'] = inputs.canonical(catalog)
     manifest = dict(schemaVersion=1, profile=inputs.PROFILE, repository=inputs.REPOSITORY, commit=inputs.COMMIT,
-                    fullSourceHash=inputs.source_set_hash(lock), inputs=lock['files'],
-                    outputs=[dict(path=path, byteLength=len(data), sha256=inputs.digest(data))
+                     inputs=lock['files'],
+                    outputs=[dict(path=path)
                              for path, data in sorted(outputs.items())],
                     counts={'species': 3, 'frames': 3}, pngEncoding='RGBA8 filter-0 one stored DEFLATE block',
                     upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False)
@@ -218,7 +217,7 @@ def convert(lock, sources):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/starter-art')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/starter-art')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/starter-art.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
@@ -235,8 +234,7 @@ def main():
         stage.write_bytes(data)
         stage.replace(target)
     print(json.dumps({'status': 'imported', 'sprites': 3, 'frames': 3,
-                      'catalog': str(args.output / 'starter-art.json'),
-                      'fullSourceHash': inputs.source_set_hash(lock)}))
+                      'catalog': str(args.output / 'starter-art.json')}))
 
 
 if __name__ == '__main__':

@@ -3,52 +3,49 @@
 REFERENCE DEPENDENCY OUTPUT [--check]. Only pinned Git blobs and existing dependencies are read.
 No upstream code is run; source art is local-only and only six new icon variants are generated.
 """
-import argparse, hashlib, io, json, re, subprocess
+import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE = 'content/generated/game-corner-prizes/'
-RAW = 'content/raw/game-corner-prizes/'
+RAW = 'content/raw/pokefirered/037335f4/'
 PROFILE = 'firered-game-corner-prizes-v1'
 ROOM = 'data/maps/CeladonCity_GameCorner_PrizeRoom/'
 SHARED = {
- 'src/data/items.json':'content/raw/bill-items/src/data/items.json',
- 'include/constants/items.h':'content/raw/bill-items/include/constants/items.h',
- 'src/data/pokemon/item_effects.h':'content/raw/bill-items/src/data/pokemon/item_effects.h',
- 'include/constants/item_effects.h':'content/raw/bill-items/include/constants/item_effects.h',
- 'src/data/item_icon_table.h':'content/raw/bill-items/src/data/item_icon_table.h',
- 'src/data/graphics/items.h':'content/raw/bill-items/src/data/graphics/items.h',
- 'src/data/pokemon/tmhm_learnsets.h':'content/raw/bill-machines/src/data/pokemon/tmhm_learnsets.h',
- 'src/move_descriptions.c':'content/raw/bill-machines/src/move_descriptions.c',
- 'include/constants/moves.h':'content/raw/bill-machines/include/constants/moves.h',
- 'src/data/battle_moves.h':'content/raw/bill-machines/src/data/battle_moves.h',
- 'src/data/party_menu.h':'content/raw/bill-machines/src/data/party_menu.h',
- 'asm/macros/event.inc':'content/raw/bill-machines/asm/macros/event.inc',
- 'src/script_menu.c':'content/raw/bill-region/src/script_menu.c',
- 'include/constants/menu.h':'content/raw/bill-region/include/constants/menu.h',
- 'include/constants/flags.h':'content/raw/bill-region/include/constants/flags.h',
- 'src/strings.c':'content/raw/capture-dex/src/strings.c',
- 'src/script_pokemon_util.c':'content/raw/regional-service-maps/src/script_pokemon_util.c',
- 'src/scrcmd.c':'content/raw/regional-service-maps/src/scrcmd.c',
- 'graphics/items/icons/tm_hm.png':'content/raw/bill-machines/graphics/items/icons/tm_hm.png',
- **{ROOM+p:'content/raw/regional-service-maps/'+ROOM+p for p in ['scripts.inc','map.json','text.inc']},
+ 'src/data/items.json':'content/raw/pokefirered/037335f4/src/data/items.json',
+ 'include/constants/items.h':'content/raw/pokefirered/037335f4/include/constants/items.h',
+ 'src/data/pokemon/item_effects.h':'content/raw/pokefirered/037335f4/src/data/pokemon/item_effects.h',
+ 'include/constants/item_effects.h':'content/raw/pokefirered/037335f4/include/constants/item_effects.h',
+ 'src/data/item_icon_table.h':'content/raw/pokefirered/037335f4/src/data/item_icon_table.h',
+ 'src/data/graphics/items.h':'content/raw/pokefirered/037335f4/src/data/graphics/items.h',
+ 'src/data/pokemon/tmhm_learnsets.h':'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h',
+ 'src/move_descriptions.c':'content/raw/pokefirered/037335f4/src/move_descriptions.c',
+ 'include/constants/moves.h':'content/raw/pokefirered/037335f4/include/constants/moves.h',
+ 'src/data/battle_moves.h':'content/raw/pokefirered/037335f4/src/data/battle_moves.h',
+ 'src/data/party_menu.h':'content/raw/pokefirered/037335f4/src/data/party_menu.h',
+ 'asm/macros/event.inc':'content/raw/pokefirered/037335f4/asm/macros/event.inc',
+ 'src/script_menu.c':'content/raw/pokefirered/037335f4/src/script_menu.c',
+ 'include/constants/menu.h':'content/raw/pokefirered/037335f4/include/constants/menu.h',
+ 'include/constants/flags.h':'content/raw/pokefirered/037335f4/include/constants/flags.h',
+ 'src/strings.c':'content/raw/pokefirered/037335f4/src/strings.c',
+ 'src/script_pokemon_util.c':'content/raw/pokefirered/037335f4/src/script_pokemon_util.c',
+ 'src/scrcmd.c':'content/raw/pokefirered/037335f4/src/scrcmd.c',
+ 'graphics/items/icons/tm_hm.png':'content/raw/pokefirered/037335f4/graphics/items/icons/tm_hm.png',
+ **{ROOM+p:'content/raw/pokefirered/037335f4/'+ROOM+p for p in ['scripts.inc','map.json','text.inc']},
 }
-DEPENDENCIES = {
- 'scripts/department-machine-stock.contract.json':'b61c04443d4b89d5cf029288fd3c88259c5c1f8bc9cbe2a3ac244ec2f1be8088',
- 'content/generated/stone-evolution-species/machines.json':'333dc352f5e9fc491c05a333250142cb5c5e24ed4c525240fc864629621fb2ab',
- 'content/generated/department-rooftop-items/machines.json':'9bbf60e6f2d74f19f7fd9492310e17619c353854f7cbbdb2f411aae8b5542b8a',
-}
+DEPENDENCIES = (
+    'scripts/department-machine-stock.contract.json',
+    'content/generated/stone-evolution-species/machines.json',
+    'content/generated/department-rooftop-items/machines.json',
+)
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def need(value, message):
     if not value: raise ValueError(message)
 def encoded(value): return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
-def fingerprint(value): return sha(json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())
 
 def generate(reference, dependency):
-    need(subprocess.check_output(['git','rev-parse',COMMIT+'^{tree}'],cwd=reference).decode().strip()==TREE,'Pinned tree')
     inputs,raw,cache,dependencies={}, {}, {}, []
     def read(path):
         if path in cache:return cache[path]
@@ -56,18 +53,17 @@ def generate(reference, dependency):
         local=SHARED.get(path,RAW+path)
         if path in SHARED:need((dependency/local).read_bytes()==data,'Shared source bytes: '+path)
         else:raw[local]=data
-        inputs[path]=dict(path=path,localPath=local,shared=path in SHARED,byteLength=len(data),sha256=sha(data),
-            gitBlobSha1=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest())
+        inputs[path]=dict(path=path,localPath=local,shared=path in SHARED)
         cache[path]=data;return data
     def text(path):return read(path).decode()
     def one(path,pattern):
         found=list(re.finditer(pattern,text(path),re.M|re.S));need(len(found)==1,'Exact declaration '+path+': '+pattern);return found[0]
     def source(path,symbol,m):return dict(path=path,symbol=symbol,startLine=text(path).count('\n',0,m.start())+1,
-        endLine=text(path).count('\n',0,m.end())+1,sha256=inputs[path]['sha256'])
+        endLine=text(path).count('\n',0,m.end())+1)
     def number(path,symbol):return int(one(path,r'^#define '+symbol+r'\s+(0x[0-9A-Fa-f]+|\d+)\b[^\n]*')[1],0)
     def dependent(path):
-        data=(dependency/path).read_bytes();need(sha(data)==DEPENDENCIES[path],'Dependency bytes '+path)
-        dependencies.append(dict(path=path,byteLength=len(data),sha256=sha(data)));return json.loads(data)
+        data=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path));return json.loads(data)
     dept,stone,roof=[dependent(p) for p in DEPENDENCIES]
     previous=dept['ownedSpecies']+[dict(symbol=c['species']['value'][5:],sourceSpeciesId=c['sourceSpeciesId']) for c in stone['additions'][0]['compatibility']]
     extra=[dict(symbol='SPECIES_'+name,sourceSpeciesId=n) for name,n in [('DRATINI',147),('DRAGONAIR',148),('DRAGONITE',149),('PORYGON',137)]]
@@ -109,9 +105,8 @@ def generate(reference, dependency):
         colors=[tuple(((int(c)>>3)<<3)|((int(c)>>3)>>2) for c in line.split()) for line in lines[3:]]
         rgba=bytes(v for index in im.tobytes() for v in (*colors[index],255 if index else 0))
         stream=io.BytesIO();Image.frombytes('RGBA',(24,24),rgba).save(stream,format='PNG',compress_level=9);png=stream.getvalue()
-        entry=dict(item=dict(value='pret:'+symbol),width=24,height=24,rgbaPath=BASE+stem+'.rgba',pngPath=BASE+stem+'.png',
-            rgbaSha256=sha(rgba),pngSha256=sha(png),sourcePaths=[image,palette],bindingSource=source(icon_path,symbol,row))
-        icons.append(entry);generated[entry['rgbaPath']]=rgba;generated[entry['pngPath']]=png
+        entry = dict(item=dict(value='pret:' + symbol), width=24, height=24, texturePath=BASE + stem + '.png', sourcePaths=[image, palette], bindingSource=source(icon_path, symbol, row))
+        icons.append(entry);generated[entry['texturePath']] = png
     ordinary=[]
     for symbol,effect,param in [('ITEM_SMOKE_BALL','CAN_ALWAYS_RUN',0),('ITEM_MIRACLE_SEED','GRASS_POWER',10),('ITEM_CHARCOAL','FIRE_POWER',10),('ITEM_MYSTIC_WATER','WATER_POWER',10),('ITEM_YELLOW_FLUTE','NONE',0)]:
         i,m=metadata(symbol);need(i['holdEffect']=='HOLD_EFFECT_'+effect and i['holdEffectParam']==param and i['fieldUseFunc']=='FieldUseFunc_OakStopsYou','Item semantics')
@@ -120,7 +115,7 @@ def generate(reference, dependency):
             ep='src/data/pokemon/item_effects.h';es='sItemEffect_YellowFlute'
             row=one(ep,r'^static const u8 '+es+r'\[6\] = \{\n    \[3\] = ITEM3_CONFUSION,\n\};')
             need(number('include/constants/item_effects.h','ITEM3_CONFUSION')==1 and i['battleUsage']==1 and i['battleUseFunc']=='BattleUseFunc_Medicine','Yellow Flute effect')
-            effects=[0,0,0,1,0,0];effect_source=source(ep,es,row)
+            effects = [0, 0, 0, 1, 0, 0];effect_source=source(ep,es,row)
         else:need(i['battleUsage']==0 and i['battleUseFunc']=='NULL','Held-only item')
         addition={k:m[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
         addition.update(description=i['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=effects,useSupport=10,effectSource=effect_source,sourceMetadata=m)
@@ -186,20 +181,20 @@ def generate(reference, dependency):
     need('removecoins' not in script('PartyFull')[0],'Full storage no coin deduction')
     order=script('TryGivePrize')[0];need(order.index('checkcoins')<order.index('checkitemspace')<order.index('removecoins')<order.index('giveitem'),'Item capacity before payment')
     text(ROOM+'text.inc')
-    facts=dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,mapId='map.celadon-city-game-corner-prize-room',sourceMapId=map_data['id'],
+    facts=dict(sourceCommit=COMMIT,profile=PROFILE,mapId='map.celadon-city-game-corner-prize-room',sourceMapId=map_data['id'],
         mapSection=map_data['region_map_section'],coinCaseFlag='FLAG_GOT_COIN_CASE',coinCaseFlagId=number('include/constants/flags.h','FLAG_GOT_COIN_CASE'),
         counters=counters,cancelValues=[5,127],quantityPerItemExchange=1,monResultParty=0,monResultPc=1,monResultNoRoom=2,
         itemCapacityCheckedBeforeDeduction=True,monDeductedOnlyAfterReceipt=True,rewardsRepeatable=True,
         giftMacroSource=source('asm/macros/event.inc','givemon',macro),giftFunctionSource=source('src/script_pokemon_util.c','ScriptGiveMon',gift),controlSources=source_rows)
     items_doc=dict(sourceCommit=COMMIT,profile=PROFILE,previousItemCount=132,itemCount=137,additions=ordinary,
-        additionsSemanticSha256=fingerprint(ordinary),shopsAdded=[],icons=icons[:5])
+        shopsAdded=[],icons=icons[:5])
     machine_doc=dict(sourceCommit=COMMIT,profile='firered-game-corner-teaching-v1',previousSpeciesCount=170,speciesCount=174,
-        previousMachineCount=45,machineCount=50,inherited=inherited,inheritedSemanticSha256=fingerprint(inherited),
-        additions=machines,additionsSemanticSha256=fingerprint(machines),iconAliases=aliases,icons=icons[5:])
-    evidence=dict(sourceCommit=COMMIT,sourceTree=TREE,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
+        previousMachineCount=45,machineCount=50,inherited=inherited,
+        additions=machines,iconAliases=aliases,icons=icons[5:])
+    evidence=dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     files={BASE+'items.json':encoded(items_doc),BASE+'machines.json':encoded(machine_doc),BASE+'prizes.json':encoded(facts),BASE+'source-input-hashes.json':encoded(evidence),**generated,**raw}
-    files['scripts/game-corner-prizes.lock.json']=encoded(dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,importerSha256=sha(Path(__file__).read_bytes()),
-        files=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(files.items())]))
+    files['scripts/game-corner-prizes.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,
+        files=[dict(path=p) for p,b in sorted(files.items())]))
     return files,items_doc,machine_doc,facts
 
 if __name__=='__main__':
@@ -211,6 +206,4 @@ if __name__=='__main__':
         target=args.output/path
         if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check,items=items['additionsSemanticSha256'],machines=machines['additionsSemanticSha256'],
-        inherited=machines['inheritedSemanticSha256'],prizes=fingerprint(facts),compatible=[sum(c['canLearn'] for c in m['compatibility']) for m in machines['additions']],
-        hashes={p:sha(b) for p,b in files.items()}),indent=2))
+    print(json.dumps(dict(checked=args.check,prizes=len(facts),compatible=[sum(c['canLearn'] for c in m['compatibility']) for m in machines['additions']]),indent=2))

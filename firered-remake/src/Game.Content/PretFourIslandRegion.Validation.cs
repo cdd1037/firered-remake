@@ -109,7 +109,7 @@ public sealed partial class PretFourIslandRegion
                 row.GetProperty("allowEscaping").GetBoolean() == map.Events.GetProperty("allow_escaping").GetBoolean() &&
                 row.GetProperty("allowRunning").GetBoolean() == map.Events.GetProperty("allow_running").GetBoolean(), "Source movement header differs.");
         }
-        Need(new[] { upper, lower, entrance, maps[new("map.four-island-icefall-cave-back")] }.All(m =>
+        Need(new[] { upper,lower,entrance,maps[new("map.four-island-icefall-cave-back")] }.All(m =>
             m.Events.GetProperty("allow_cycling").GetBoolean() && m.Events.GetProperty("allow_escaping").GetBoolean()), "Original cave cycling or Escape Rope permission removed.");
     }
 }

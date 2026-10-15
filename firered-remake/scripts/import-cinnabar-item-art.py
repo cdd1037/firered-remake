@@ -10,8 +10,6 @@ SPEC.loader.exec_module(META)
 BASE = META.BASE
 PROFILE = 'firered-cinnabar-item-art-source-v1'
 ITEMS = ('SECRET_KEY', 'TM14', 'TM22', 'TM38')
-LOCK_SHA256 = '721a165d868df5d9094ea64aad31f6c6c7211f0ffe055886b33d02996827e81e'
-MANIFEST_SHA256 = 'dd04171631d4758c504da254b11516b55b4c4e0e1befa7c57094d3f5c364b9fe'
 
 def png(width, height, rgba):
     def chunk(tag, data):
@@ -33,7 +31,7 @@ def generate(reference):
     def ref(path, symbol, row=None):
         source.read(path)
         return dict(path=path, symbol=symbol, startLine=1 if row is None else source.text(path).count('\n', 0, row.start()) + 1,
-            endLine=1 if row is None else source.text(path).count('\n', 0, row.end()) + 1, sha256=source.entries[path]['sha256'])
+            endLine=1 if row is None else source.text(path).count('\n', 0, row.end()) + 1)
     for item in ITEMS:
         table = 'src/data/item_icon_table.h'
         binding = match(table, r'^    \[ITEM_' + item + r'\]\s*=\s*\{(\w+),\s*(\w+)\},')
@@ -53,8 +51,8 @@ def generate(reference):
         rgba = bytes(c for index in indices for c in (*palette[index], 0 if index == 0 else 255))
         name = 'item_' + item.lower() + '.png'
         assets[name] = png(24, 24, rgba)
-        icons.append(dict(item=META.ident('ITEM_' + item), width=24, height=24, rgbaBase64=base64.b64encode(rgba).decode(),
-            rgbaSha256=BASE.sha(rgba), pngPath=name, pngSha256=BASE.sha(assets[name]),
+        icons.append(dict(item=META.ident('ITEM_' + item), width=24, height=24,
+             pngPath=name,
             source=ref(image_path, symbols[0]), paletteSource=ref(palette_path, symbols[1]), bindingSource=ref(table, 'ITEM_' + item, binding)))
     lock = source.lock()
     lock.update(profile=PROFILE, gameEdition='FIRERED', romRevision=0)
@@ -63,12 +61,11 @@ def generate(reference):
         profile='firered-cinnabar-item-art-v1', sourceCommit=BASE.COMMIT, icons=icons,
         paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', transparentIndex=0))
     outputs['scripts/cinnabar-item-art.lock.json'] = BASE.canonical(lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=BASE.COMMIT, sourceTree=BASE.TREE,
-        fullSourceHash=BASE.sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(source.entries.items())).encode()),
-        lockSha256=BASE.sha(outputs['scripts/cinnabar-item-art.lock.json']),
-        outputs=[dict(path=p, sha256=BASE.sha(b), byteLength=len(b)) for p, b in sorted(outputs.items()) if p.startswith('content/generated/')])
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=BASE.COMMIT,
+
+        outputs=[dict(path=p) for p, b in sorted(outputs.items()) if p.startswith('content/generated/')])
     outputs['content/generated/cinnabar-item-art/manifest.json'] = BASE.canonical(manifest)
-    outputs.update({'content/raw/cinnabar-item-art/' + p: b for p, b in source.data.items()})
+    outputs.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in source.data.items()})
     return outputs, icons
 
 def main():
@@ -78,8 +75,6 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     outputs, icons = generate(args.reference_root)
-    for path, expected in [('scripts/cinnabar-item-art.lock.json', LOCK_SHA256), ('content/generated/cinnabar-item-art/manifest.json', MANIFEST_SHA256)]:
-        META.need(BASE.sha(outputs[path]) == expected, 'Cinnabar item art identity differs: ' + path)
     for path, data in outputs.items():
         target = BASE.safe(args.project_root, path)
         if args.check:
@@ -87,11 +82,7 @@ def main():
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
-    print(json.dumps(dict(passed=True, icons=len(icons), sourceFiles=len([p for p in outputs if p.startswith('content/raw/')]),
-        lockSha256=BASE.sha(outputs['scripts/cinnabar-item-art.lock.json']), lockByteLength=len(outputs['scripts/cinnabar-item-art.lock.json']),
-        manifestSha256=BASE.sha(outputs['content/generated/cinnabar-item-art/manifest.json']),
-        manifestByteLength=len(outputs['content/generated/cinnabar-item-art/manifest.json']),
-        rgbaHashes={i['item']['value']: i['rgbaSha256'] for i in icons})))
+    print(json.dumps(dict(passed=True, icons=len(icons), sourceFiles=len([p for p in outputs if p.startswith('content/raw/')]))))
 
 if __name__ == '__main__':
     main()

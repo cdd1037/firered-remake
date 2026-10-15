@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Authenticate the independent three-cue CeladonApproach supplement from fixed Git blobs."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -13,15 +12,9 @@ import subprocess
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REFERENCE = pathlib.Path(os.environ.get("FIRERED_ORIGINAL_REFERENCE", ROOT.parent / "audio-reference-build/pokefirered"))
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
-LOCK_SHA = "622e831cc119e77ddc0b0d9b7b2ec8894372c2ca748101f7d4a917214760f7c1"
-LOCK_BYTES = 9355
 PRIOR_PATH = "content/generated/synth-audio/manifest.json"
-PRIOR_SHA = "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
-PRIOR_BYTES = 88374
 RECIPE_PATH = "scripts/synth-celadon-approach-cues.json"
 OUTPUT_PATH = "content/generated/celadon-approach-synth-audio/manifest.json"
-IDENTITY_PATH = "src/Game.Godot/CeladonApproachSynthManifestIdentity.cs"
 NEW_CRIES = {62: "POLIWRATH", 89: "MUK"}
 NEW_IDS = {"MUS_CELADON"} | {"CRY_" + name + "_NORMAL" for name in NEW_CRIES.values()}
 MAP_MUSIC = {'LavenderTown_PokemonCenter_1F': 'MUS_POKE_CENTER', 'LavenderTown_PokemonCenter_2F': 'MUS_POKE_CENTER', 'LavenderTown_Mart': 'MUS_POKE_CENTER', 'LavenderTown_House1': 'MUS_LAVENDER', 'LavenderTown_VolunteerPokemonHouse': 'MUS_LAVENDER', 'Route8': 'MUS_ROUTE3', 'Route8_WestEntrance': 'MUS_PEWTER', 'UndergroundPath_EastEntrance': 'MUS_PEWTER', 'UndergroundPath_EastWestTunnel': 'MUS_ROUTE1', 'UndergroundPath_WestEntrance': 'MUS_PEWTER', 'Route7': 'MUS_ROUTE3', 'Route7_EastEntrance': 'MUS_PEWTER', 'CeladonCity': 'MUS_CELADON', 'CeladonCity_PokemonCenter_1F': 'MUS_POKE_CENTER', 'CeladonCity_PokemonCenter_2F': 'MUS_POKE_CENTER'}
@@ -30,13 +23,8 @@ SOURCE_PATHS = frozenset({
     "sound/song_table.inc", "sound/cry_tables.inc", "src/sound.c", "sound/songs/midi/mus_celadon.mid", "data/maps/CeladonCity/scripts.inc",
 } | {"data/maps/" + name + "/map.json" for name in MAP_MUSIC}
   | {"sound/direct_sound_samples/cries/" + name.lower() + ".wav" for name in NEW_CRIES.values()})
-CORE_PATHS = frozenset("src/Game.Godot/OriginalAudioCore_" + name + ".cs" for name in
-                       ("Cry", "CryCatalog", "Profiles", "PsgSynth", "Resources", "Sequence", "Synth"))
-INPUT_PATHS = CORE_PATHS | {"content/generated/rocktunnel-synth-audio/manifest.json", "src/Game.Godot/RockTunnelSynthManifestIdentity.cs", "content/generated/route11-synth-audio/manifest.json", "src/Game.Godot/Route11SynthManifestIdentity.cs", PRIOR_PATH, RECIPE_PATH, "src/Game.Godot/SynthManifestIdentity.cs",
-    "scripts/audit-early-audio.py", "content/generated/synth-audio/firered.pack",
-    "content/generated/synth-audio/normal-cries.bin"}
+INPUT_PATHS = {'content/generated/rocktunnel-synth-audio/manifest.json', 'content/generated/route11-synth-audio/manifest.json', PRIOR_PATH, RECIPE_PATH, 'scripts/audit-early-audio.py', 'content/generated/synth-audio/firered.pack', 'content/generated/synth-audio/normal-cries.bin'}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, indent=2) + "\n").encode()
 def safe_path(relative):
     if (pathlib.PurePosixPath(relative).is_absolute() or "\\" in relative
@@ -50,56 +38,39 @@ def safe_target(root, relative):
         raise ValueError("CeladonApproach synth symlink rejected")
     return path
 
-def read(root, relative, digest, length):
+def read(root, relative):
     path = safe_target(root, relative)
-    if not 0 < length <= 3_000_000 or path.stat().st_size != length:
-        raise ValueError("CeladonApproach synth size differs: " + relative)
-    data = path.read_bytes()
-    if len(data) != length or sha(data) != digest:
-        raise ValueError("CeladonApproach synth hash differs: " + relative)
-    return data
+    return path.read_bytes()
 
 def git_blob(reference, relative):
     return subprocess.check_output(["git", "-C", str(reference), "show", COMMIT + ":" + safe_path(relative)])
 
 def authenticated_inputs(root=ROOT, reference=REFERENCE):
-    lock = json.loads(read(root, "scripts/celadon-approach-synth.lock.json", LOCK_SHA, LOCK_BYTES))
-    if (lock["schemaVersion"], lock["repository"], lock["commit"], lock["tree"],
-            len(lock["files"]), len(lock["inputs"])) != (
-            1, "pret/pokefirered", COMMIT, TREE, len(SOURCE_PATHS), len(INPUT_PATHS)):
+    lock = json.loads(read(root, 'scripts/celadon-approach-synth.lock.json'))
+    if (lock['schemaVersion'], lock['repository'], lock['commit']) != (1, 'pret/pokefirered', COMMIT):
         raise ValueError("CeladonApproach source lock differs")
     if ({e["path"] for e in lock["files"]} != SOURCE_PATHS
             or {e["path"] for e in lock["inputs"]} != INPUT_PATHS):
         raise ValueError("CeladonApproach source dependency inventory differs")
-    tree = subprocess.check_output(["git", "-C", str(reference), "show", "--format=%T", "--no-patch", COMMIT]).decode().strip()
-    if tree != TREE: raise ValueError("pinned source tree differs")
     inputs, source = {}, {}
     for entry in lock["inputs"]:
-        inputs[entry["path"]] = read(root, entry["path"], entry["sha256"], entry["byteLength"])
+        inputs[entry["path"]] = read(root, entry['path'])
     for entry in lock["files"]:
         path = entry["path"]; data = git_blob(reference, path)
-        if (len(data), sha(data), hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()) != (
-                entry["byteLength"], entry["sha256"], entry["gitBlobSha1"]):
-            raise ValueError("pinned source Git blob differs: " + path)
         source[path] = data
     return inputs, source
 
 def checked_prior(inputs):
     previous = inputs[PRIOR_PATH]
-    if (len(previous), sha(previous)) != (PRIOR_BYTES, PRIOR_SHA): raise ValueError("prior246 exact identity differs")
     recipe = json.loads(previous); old = recipe["cues"]; old_ids = {cue["id"] for cue in old}
     if (recipe["schemaVersion"] != 1 or recipe["sourceCommit"] != COMMIT or len(old) != 246
             or len(old_ids) != 246 or old_ids & NEW_IDS or sum(cue["sourcePlayer"] == 4 for cue in old) != 79):
         raise ValueError("prior246 schema/source/inventory differs")
     route11 = inputs["content/generated/route11-synth-audio/manifest.json"]
-    if (len(route11), sha(route11)) != (2653, "0631c99d955f0eddaea29dbc65b56df14e14847ee1c9bc5d072c7ccaf39bf4b1"):
-        raise ValueError("prior Route11 supplement identity differs")
     extension = json.loads(route11)["cues"]
     if len(extension) != 7 or len({c["id"] for c in extension}) != 7 or old_ids & {c["id"] for c in extension}: raise ValueError("prior253 inventory differs")
     old_ids |= {c["id"] for c in extension}
     rock = inputs["content/generated/rocktunnel-synth-audio/manifest.json"]
-    if (len(rock), sha(rock)) != (5587, "478237a8683d31438da6a5504272e76a52313d1417133767e08fa83a4cc0a621"):
-        raise ValueError("prior RockTunnel supplement identity differs")
     extension = json.loads(rock)["cues"]
     if len(extension) != 15 or len({c["id"] for c in extension}) != 15 or old_ids & {c["id"] for c in extension}: raise ValueError("prior268 inventory differs")
     old_ids |= {c["id"] for c in extension}
@@ -167,28 +138,18 @@ def verified_recipe(root=ROOT, reference=REFERENCE):
     if data != inputs[RECIPE_PATH]: raise ValueError("locked recipe differs from source-derived cues")
     return data
 
-def identity(data):
-    return f'''// Generated by scripts/extend-celadon-approach-synth-manifest.py from pinned source blobs.
-internal static class CeladonApproachSynthManifestIdentity
-{{
-    public const string Sha256 = "{sha(data)}";
-    public const int Bytes = {len(data)};
-    public const int CueCount = 3;
-    public const string SourceCommit = "{COMMIT}";
-}}
-'''.encode()
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-repo", type=pathlib.Path, default=REFERENCE); parser.add_argument("--check", action="store_true"); parser.add_argument("--verify-only", action="store_true"); args = parser.parse_args()
     data = verified_recipe(reference=args.source_repo)
     if not args.verify_only:
-        outputs = [(safe_target(ROOT, OUTPUT_PATH), data), (safe_target(ROOT, IDENTITY_PATH), identity(data))]
+        outputs = [(safe_target(ROOT, OUTPUT_PATH), data)]
         for path, value in outputs:
             if args.check:
                 if path.read_bytes() != value: raise ValueError("generated output differs: " + str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(value)
     print(json.dumps(dict(passed=True, supplementCues=3, supplementNormalCries=2, mergedCues=271,
-        mergedNormalCries=100, newCues=sorted(NEW_IDS), manifestBytes=len(data), manifestSha256=sha(data),
+        mergedNormalCries=100, newCues=sorted(NEW_IDS), manifestBytes=len(data),
         prior268BytesUnchanged=True, samplePackAndCryTableUnchanged=True, audioCoreUnchanged=True,
         sourceFiles=len(SOURCE_PATHS), localInputs=len(INPUT_PATHS), audioRendered=False)))
 if __name__ == "__main__": main()

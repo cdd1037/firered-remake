@@ -11,7 +11,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteConditionalHit(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         int slot, PokemonMoveDefinition move, string purpose)
     {
-        if (!HasConditionalHitRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasConditionalHitRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_conditional_hit_definition");
         var user = Get(actor);
         // These script prefixes precede EffectHit. In particular a Substitute broken

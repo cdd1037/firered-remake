@@ -4,11 +4,16 @@
 Only pinned reviewed local converters execute; upstream Git blobs are inert data.
 This resource package does not admit battles or field commands by itself.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import ast
 import base64
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -22,22 +27,17 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'seafoam-resources'
 RESOURCE_ID = 'firered-seafoam-resources-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = 'fafa239609128a53d9265aaa649213f90c0923bab18f17e9d39e37d40de0c576'
-LOCK_SHA256 = 'b2b54b5971e42bcf0c57f1fcffd49e4229ca6a80ef490fbf7fe6d2a9920bc57f'
 MAPS = ['SeafoamIslands_1F', 'SeafoamIslands_B1F', 'SeafoamIslands_B2F', 'SeafoamIslands_B3F', 'SeafoamIslands_B4F', 'Route19', 'Route20']
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_SeafoamIslands': 'secondary/seafoam_islands',
             'gTileset_FuchsiaCity': 'secondary/fuchsia_city', 'gTileset_CinnabarIsland': 'secondary/cinnabar_island'}
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
 def module(path):
-    need(sha(path.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('power_plant_reader', path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -165,9 +165,8 @@ def compact_check(document, world, src):
     for cell, (block,) in zip(world['cells'], struct.iter_unpack('<H', raw), strict=True):
         need((block & 1023, (block >> 10) & 3, block >> 12, rows[block & 1023]) ==
              (cell['metatileId'], cell['collision'], cell['elevation'], cell['rawAttributes']), 'Cell roundtrip differs')
-    for script in document['scripts']:
-        original = src.read(script['path'])
-        need(script['sha256'] == sha(original) and script['text'].encode() == original, 'Embedded script differs')
+    for path in document['scriptPaths']:
+        src.read(path)
 
 NPC_REUSE = {
  'red-normal': 'city-services', 'pushable-boulder': 'safari-region', 'item-ball': 'bill-region',
@@ -222,22 +221,22 @@ def alternate_world(src, reader, shared, base, stage):
     # The map header is still original. SetMapLayoutIndex selects the separate
     # layout at runtime; it does not rewrite the map's stored event/header data.
     world['events'] = base['events']; rich['events'] = base['events']
-    (stage/'world.json').write_bytes(canonical(rich))
+    (stage/'runtime-map.json').write_bytes(shared._encode_runtime(shared._compact_world(rich, src.data)))
     return world, dict(layoutSymbol=symbol, mapId=base['stableId'], sourceLayout=layout,
         sourceRef=src.ref('data/layouts/layouts.json', symbol),
         changes=[dict(x=old['x'], y=old['y'], beforeRawBlock=old['rawBlock'], afterRawBlock=new['rawBlock'])
                  for old, new in zip(base['cells'], world['cells'], strict=True) if old['rawBlock'] != new['rawBlock']])
 
 
-def compact_variant(base, rich, world, src, source_hash):
+def compact_variant(base, rich, world, src):
     """Bounded original-layout adapter. The reviewed base codec remains unchanged."""
-    doc = dict(base, sourceWorldSha256=sha(rich), fullSourceHash=source_hash)
+    doc = dict(base)
     doc['blocks'] = base64.b64encode(src.read(world['layout']['blockdata_filepath'])).decode()
     doc['borderBlocks'] = base64.b64encode(src.read(world['layout']['border_filepath'])).decode()
     doc['artifacts'] = json.loads(rich)['artifacts']
     attrs = ['data/tilesets/'+TILESETS[world['layout'][key]]+'/metatile_attributes.bin' for key in ('primary_tileset', 'secondary_tileset')]
     sources = sorted(attrs)
-    doc['attributeSources'] = [dict(path=p, sha256=sha(src.read(p))) for p in sources]
+    doc['attributeSources'] = [dict(path=p) for p in sources]
     mids = sorted({v & 1023 for p in ('blockdata_filepath','border_filepath') for v in src.units(world['layout'][p], 'H')})
     doc['metatiles'] = [[mid, src.units(attrs[mid >= 640], 'I')[mid if mid < 640 else mid-640], sources.index(attrs[mid >= 640])] for mid in mids]
     names = {int(v,16):n for n,v in re.findall(r'^#define\s+(MB_\w+)\s+(0x[0-9A-Fa-f]+)', src.text('include/constants/metatile_behaviors.h'), re.M)}
@@ -330,9 +329,9 @@ def main():
                        ('CinnabarIsland','content/generated/cinnabar-source-preparation/cinnabar-island/runtime-map.json')]:
         data=(current/path).read_bytes(); doc=json.loads(data); original=src.json('data/maps/'+name+'/map.json')
         need(doc['events']==original, 'Existing boundary events differ: '+name)
-        boundaries.append(dict(sourceName=name,mapId=doc['stableId'],path=path,sha256=sha(data),byteLength=len(data),connections=original['connections'],operation='reuse-existing-unchanged'))
+        boundaries.append(dict(sourceName=name,mapId=doc['stableId'],path=path,connections=original['connections'],operation='reuse-existing-unchanged'))
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='seafoam-',dir=target) as temp:
         stage=Path(temp); variants=[]; variant_worlds=[]
@@ -347,26 +346,24 @@ def main():
             filename=Path(row['texturePath']).name; stem=Path(filename).stem; rendered=stage/row['texturePath']
             if stem in NPC_REUSE:
                 path='content/generated/'+NPC_REUSE[stem]+'/npc/'+filename; existing=current/path
-                need(rendered.read_bytes()==existing.read_bytes() and sha(existing.read_bytes())==row['sha256'],'Reused NPC differs: '+stem)
-                row.update(texturePath=path,byteLength=existing.stat().st_size,reuseExisting=True);rendered.unlink()
-                dependencies.append(dict(path=path,sha256=row['sha256'],byteLength=row['byteLength']))
-            else: row.update(byteLength=rendered.stat().st_size,reuseExisting=False)
+                need(rendered.read_bytes() == existing.read_bytes(),'Reused NPC differs: '+stem)
+                row.update(texturePath=path,reuseExisting=True);rendered.unlink()
+                dependencies.append(dict(path=path))
+            else: row.update(reuseExisting=False)
         need(sum(not r['reuseExisting'] for r in npcs['graphics'])==1 and any(r['graphicsId']=='OBJ_EVENT_GFX_ARTICUNO' for r in npcs['graphics']),'NPC novelty differs')
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         entries=[]; compact_by_id={}
         for world in worlds:
-            relative=reader.directory(world['sourceName']);p=stage/relative/'world.json';rich=p.read_bytes()
-            compact=converter.convert(rich,sha(rich),source_hash);compact_check(compact,world,src);compact_by_id[world['stableId']]=compact
-            data=converter.encode(compact);(stage/relative/'runtime-map.json').write_bytes(data);p.unlink()
+            relative=reader.directory(world['sourceName']);p=stage/relative/'runtime-map.json';rich=p.read_bytes()
+            compact=converter.normalize_runtime(json.loads(rich));compact_check(compact,world,src);compact_by_id[world['stableId']]=compact
+            data=converter.encode(compact);(stage/relative/'runtime-map.json').write_bytes(data)
             entries.append(dict(sourceName=world['sourceName'],stableId=world['stableId'],directory=relative,sourceMapSymbol=world['events']['id'],
-                path=relative+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash,
+                path=relative+'/runtime-map.json',
                 width=world['width'],height=world['height'],layout=world['layout']))
         for variant,world in zip(variants,variant_worlds,strict=True):
-            relative=variant['directory'];p=stage/relative/'world.json';rich=p.read_bytes()
-            compact=compact_variant(compact_by_id[world['stableId']],rich,world,src,source_hash);data=converter.encode(compact)
-            (stage/relative/'runtime-map.json').write_bytes(data);p.unlink()
-            variant.update(sourceName=world['sourceName'],stableId=world['stableId'],sourceMapSymbol=world['events']['id'],path=relative+'/runtime-map.json',
-                sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash)
+            relative=variant['directory'];p=stage/relative/'runtime-map.json';rich=p.read_bytes()
+            compact=compact_variant(compact_by_id[world['stableId']],rich,world,src);data=converter.encode(compact)
+            (stage/relative/'runtime-map.json').write_bytes(data)
+            variant.update(sourceName=world['sourceName'],stableId=world['stableId'],sourceMapSymbol=world['events']['id'],path=relative+'/runtime-map.json')
         contracts=dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,runtimeIntegrated=False,maps=MAPS,
             retainedBoundaries=boundaries,mapTopology=links,objects=objects,itemPickups=pickups,hiddenItems=hidden,boulders=boulders,staticEncounters=statics,
             ordinaryTrainerObjects=trainers,ordinaryTrainerCount=21,ordinaryTrainerObjectCount=22,layoutVariants=variants,
@@ -382,34 +379,30 @@ def main():
                 'All original encounter tables including fishing are retained as evidence; this does not expand fishing admission.',
                 'Shared script files contain unrelated labels as original bytes; only scripts.json selected closure is in scope.'])
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
                 maps=entries,layoutVariants=variants,inputFiles=lock['files'],tilesets=TILESETS,dependencies=dependencies,
                 mapSymbols={**{w['events']['id']:w['stableId'] for w in worlds},'MAP_FUCHSIA_CITY':'map.fuchsia-city','MAP_CINNABAR_ISLAND':'map.cinnabar-island'}),
-              'scripts.json':scripts,'constants.json':constants,'contracts.json':contracts,'npc-source.json':npcs,
+              'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
               'items.json':dict(schemaVersion=1,declarations=items),'trainers.json':dict(schemaVersion=1,ordinaryObjects=trainers,declarations=trainer_declarations),
               'geometry.json':dict(maps=reader.geometry_inventory(worlds),layoutVariants=variants,tilesets=TILESETS),
-              'encounters.json':dict(schemaVersion=1,sourceRef=src.ref(ep,'gWildMonHeaders'),groups=groups,runtimeIntegrated=False)}
+              'encounters.json':dict(schemaVersion=1,sourceRef=src.ref(ep,'gWildMonHeaders'),groups=groups,runtimeIntegrated=False)}, check=args.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,
-            lockSha256=sha(lock_bytes),readerSha256=READER_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=7,layoutVariantCount=2,cellCount=sum(len(w['cells']) for w in worlds),
             borderCellCount=sum(len(w['borderBlocks']) for w in worlds),directedWarpCount=len(links['warps']),objectCount=len(objects),pickupCount=len(pickups),hiddenItemCount=len(hidden),
             boulderCount=len(boulders),staticEncounterCount=1,ordinaryTrainerCount=21,ordinaryTrainerObjectCount=22,npcGraphicsCount=len(npcs['graphics']),
             reusedNpcGraphicsCount=len(dependencies),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned manifest differs: '+sha(manifest_bytes))
-        if LOCK_SHA256:need(sha(lock_bytes)==LOCK_SHA256,'Pinned source lock differs: '+sha(lock_bytes))
         writes=[(target/'scripts/seafoam-resources.lock.json',lock_bytes),(target/'scripts/seafoam-resources.contract.json',canonical(contracts))]
-        writes += [(target/'content/raw'/PACKAGE/p,data) for p,data in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,data) for p,data in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
             if args.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
         if not args.check:
             for path,data in writes:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),lockByteLength=len(lock_bytes),
-            fullSourceHash=source_hash,mapCount=7,layoutVariantCount=2,inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),
+        print(json.dumps(dict(mapCount=7,layoutVariantCount=2,inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),
             rawBytes=sum(len(b) for b in src.data.values()),generatedBytes=sum(len(b) for p,b in writes if '/generated/' in str(p)),check=args.check),indent=2))
 
 

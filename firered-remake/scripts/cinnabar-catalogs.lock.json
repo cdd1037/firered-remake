@@ -2,235 +2,159 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      ]
     },
     {
-      "byteLength": 23967,
-      "gitBlobSha1": "19bdcfeca350e31393111f0dbed95a9ecd7acbda",
       "path": "data/maps/CinnabarIsland_Gym/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "e7576dbee7d5b44f6e03c363c062bfdfae2a40adf4273a13461e35a70ff5ad5e"
+      ]
     },
     {
-      "byteLength": 1017,
-      "gitBlobSha1": "7e2a67e52e21131a5058957f39ad6840a55447cc",
       "path": "data/maps/PokemonMansion_1F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f9d6da663e5580e97def94c944d5a3472b6f4e822caa562a95b615f1e448fd03"
+      ]
     },
     {
-      "byteLength": 879,
-      "gitBlobSha1": "b2f686148094bf40f8b1f1451b9ad7c1f1fb7411",
       "path": "data/maps/PokemonMansion_2F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "562a72b9965ec681851f0095ece4d7153131792cc972389fb0446bac4de7432e"
+      ]
     },
     {
-      "byteLength": 981,
-      "gitBlobSha1": "83dd077dd024f2b296d25c01ba5a122f288e40e1",
       "path": "data/maps/PokemonMansion_3F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "da06fb1af43eecb922cdf5b70e8776366397b7b6456cd855871f182e00bc3ec7"
+      ]
     },
     {
-      "byteLength": 983,
-      "gitBlobSha1": "d4429afe17530bb289aa42c0a4ca61210edd0e63",
       "path": "data/maps/PokemonMansion_B1F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7ac39b6051667cd7eb05c05bb0c4b47483445080f4fc36560cee96d35676cd26"
+      ]
     },
     {
-      "byteLength": 129141,
-      "gitBlobSha1": "5ec6ef8f48493d5fac53600557bc8105fcb2fe67",
       "path": "data/scripts/trainers.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945"
+      ]
     },
     {
-      "byteLength": 21838,
-      "gitBlobSha1": "3771ef33a1fec9aacad85d29ebc96c962cf59261",
       "path": "include/battle.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "bf64a16fb4e660f8a326eb352a511bb9e8fd54a74ebb03e328c08d5a23e5d8fa"
+      ]
     },
     {
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
       "path": "include/constants/battle.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      ]
     },
     {
-      "byteLength": 1436,
-      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
       "path": "include/constants/battle_ai.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+      ]
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
       "path": "include/constants/battle_setup.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+      ]
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
       "path": "include/constants/items.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      ]
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
       "path": "include/constants/moves.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      ]
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
       "path": "include/constants/opponents.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      ]
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      ]
     },
     {
-      "byteLength": 20887,
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
       "path": "include/constants/trainers.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+      ]
     },
     {
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
       "path": "src/battle_main.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      ]
     },
     {
-      "byteLength": 12282,
-      "gitBlobSha1": "c9b0cf716d6e25cfa054e988115af60f61bd206e",
       "path": "src/data/pokemon/evolution.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+      ]
     },
     {
-      "byteLength": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
       "path": "src/data/pokemon/level_up_learnset_pointers.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      ]
     },
     {
-      "byteLength": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
       "path": "src/data/pokemon/level_up_learnsets.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      ]
     },
     {
-      "byteLength": 342600,
-      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2",
       "path": "src/data/pokemon/species_info.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+      ]
     },
     {
-      "byteLength": 559340,
-      "gitBlobSha1": "0aa21e85be2f970536c8ed901c556013c16327e5",
       "path": "src/data/pokemon/tmhm_learnsets.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+      ]
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
       "path": "src/data/text/species_names.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      ]
     },
     {
-      "byteLength": 242256,
-      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
       "path": "src/data/trainer_parties.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+      ]
     },
     {
-      "byteLength": 302118,
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
       "path": "src/data/trainers.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+      ]
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-cinnabar-catalogs-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

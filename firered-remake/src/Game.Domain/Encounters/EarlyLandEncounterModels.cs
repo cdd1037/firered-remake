@@ -7,7 +7,7 @@ namespace Game.Domain.Encounters;
 
 /// <summary>Typed table supplied by authenticated Content. Domain checks structure, not file authenticity.</summary>
 public sealed record EarlyLandEncounterTable(MapId Map, string SourceCommit, string SourcePath,
-    string SourceSymbol, string SourceSha256, int RawEncounterRate, ImmutableArray<EarlyLandEncounterSlot> Slots);
+    string SourceSymbol, int RawEncounterRate, ImmutableArray<EarlyLandEncounterSlot> Slots);
 public sealed record EarlyLandEncounterSlot(int Index, SpeciesId Species, byte MinimumLevel, byte MaximumLevel, int Weight);
 public sealed record EarlyLandEncounterCandidate(MapId Map, int Slot, SpeciesId Species, byte Level);
 public sealed record PendingEarlyLandEncounter(EarlyLandEncounterCandidate Candidate, byte MetatileBehavior);

@@ -19,20 +19,15 @@ public sealed record SeviiRubyItemContent(ImmutableArray<PewterMachineItem> Item
 /// <summary>Authenticated Ruby keys/HM06 and eight ordinary pickups. The Ruby object executes its original bespoke script.</summary>
 public static class PretSeviiRubyItems
 {
-    public const string ItemsSha256 = "326a7f7800403a980d6cb77e066cf91b5d79fc2743520382798d79ecb794db9d";
     public static SeviiRubyItemContent Load(PretSeviiRubyRegion region, SeviiRubyOwnedPokemonCatalog pokemon,
         EarlyShopCatalog previousShop, PewterMachineCatalog previousMachines, PretStoryCompilation scripts)
     {
         var path = Path.Combine(Path.GetDirectoryName(region.GeneratedDirectory)!, "sevii-ruby-items", "items.json");
         var bytes = File.ReadAllBytes(path);
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != ItemsSha256)
-            throw new InvalidDataException("sevii_ruby_items_source");
         var document = JsonSerializer.Deserialize<SeviiRubyItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
             ?? throw new InvalidDataException("sevii_ruby_items_missing");
-        if (document.SourceCommit != PokemonFactory.SourceCommit || document.Profile != "firered-sevii-ruby-items-v1" ||
-            document.Items.Length != 5 || document.Additions.Length != 4 || document.MachineAdditions.Length != 36)
+        if (            document.Items.Length != 5 || document.Additions.Length != 4 || document.MachineAdditions.Length != 36)
             throw new InvalidDataException("sevii_ruby_items_scope");
         foreach (var item in document.Items)
         {
@@ -41,19 +36,16 @@ public static class PretSeviiRubyItems
                 declaration.GetProperty("pocket").GetString() != item.Item.Pocket ||
                 declaration.GetProperty("importance").GetInt32() != item.Item.Importance ||
                 declaration.GetProperty("registrability").GetInt32() != item.Item.Registrability ||
-                region.Constants[item.Item.SourceItemSymbol] != item.Item.SourceItemId ||
-                region.SourceFiles.Single(f => f.Path == item.Item.Source.Path).Sha256 != item.Item.Source.Sha256)
+                region.Constants[item.Item.SourceItemSymbol] != item.Item.SourceItemId )
                 throw new InvalidDataException("sevii_ruby_item_declaration");
         }
         var shopProof = VictoryRoadShopCatalog.For(previousShop) ?? throw new InvalidDataException("sevii_ruby_items_shop_predecessor");
         var shop = SeviiRubyShopCatalog.Authenticate(shopProof, previousShop with {
-            Profile = SeviiRubyShopCatalog.Profile, Items = previousShop.Items.AddRange(document.Additions) });
+            Profile = SeviiRubyShopCatalog.Profile,Items = previousShop.Items.AddRange(document.Additions) });
         var machineProof = VictoryRoadMachineCatalog.For(previousMachines) ?? throw new InvalidDataException("sevii_ruby_items_machine_predecessor");
         var additions = document.MachineAdditions.ToDictionary(m => m.Item);
         var machines = SeviiRubyMachineCatalog.Authenticate(machineProof, pokemon, previousMachines with {
-            Profile = SeviiRubyMachineCatalog.Profile,
-            Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),
-            AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
+            Profile = SeviiRubyMachineCatalog.Profile,Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
                 Compatibility = m.Compatibility.AddRange(additions[m.Machine.Item.Id].Compatibility)
             }).Append(document.Hm06).ToImmutableArray() });
         return new(document.Items, Pickups(region, shop.Catalog, scripts), shop, machines);
@@ -103,7 +95,7 @@ public static class PretSeviiRubyItems
                 region.Constants[itemSymbol] != item.SourceItemId || quantity != 1)
                 throw new InvalidDataException("sevii_ruby_pickup_event");
             if (!hidden && (scripts.FindProgram(script) is not {} program || !program.Instructions.Any(i =>
-                    i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000", itemSymbol }))))
+                    i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000",itemSymbol }))))
                 throw new InvalidDataException("sevii_ruby_pickup_program");
             result.Add(new("sevii-ruby:" + flag, symbol, hidden, localId, sourceEvent.GetProperty("x").GetInt32(),
                 sourceEvent.GetProperty("y").GetInt32(), sourceEvent.GetProperty("elevation").GetInt32(), script, itemSymbol,

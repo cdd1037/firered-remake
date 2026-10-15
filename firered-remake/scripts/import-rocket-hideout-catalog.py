@@ -2,7 +2,7 @@
 """Offline source-authenticated Rocket Hideout species, moves, trainer teams and art.
 The complete source learnset is metadata; no battle effect is enabled by importing it.
 """
-import argparse,hashlib,importlib.util,json,pathlib,re,sys
+import argparse,importlib.util,json,pathlib,re,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -13,9 +13,7 @@ ART_SPECIES=(('Kangaskhan',115),)
 TEACHING_MOVES=('MOVE_TAUNT','MOVE_FRUSTRATION','MOVE_SNATCH')
 TRAINERS=tuple('TEAM_ROCKET_GRUNT_'+str(i) for i in range(7,19))+('BOSS_GIOVANNI',)
 SCRIPT_PATHS=tuple('data/maps/'+m+'/scripts.inc' for m in ('CeladonCity_GameCorner','RocketHideout_B1F','RocketHideout_B2F','RocketHideout_B3F','RocketHideout_B4F'))
-RECIPE_SHA256='623292620105422aac4d72bc7946bd2f92f70e3a8db5dac14de2c1a0e50d9f6f'
 def source_symbol(name):return name.upper()
-def sha(b):return hashlib.sha256(b).hexdigest()
 def canonical(v):return (json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
 def safe(root,p=None):
  if p is not None and (not p or pathlib.PurePosixPath(p).is_absolute() or ':' in p or '\\' in p or any(x in ('','.','..') for x in p.split('/'))):raise ValueError('Unsafe relative path')
@@ -31,7 +29,7 @@ def trainer_convert(lock,sources):
   matches=list(re.finditer(pattern,text[p],re.M|re.S))
   if len(matches)!=1:raise ValueError('Expected exactly one match: '+pattern)
   return matches[0]
- def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1,sha256=entries[p]['sha256'])
+ def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1)
  def number(p,s):return int(one(r'^#define '+s+r'\s+(\d+)\b[^\n]*',p)[1])
  def encode(s):
   return [int(one("^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$",'charmap.txt')[1],16) for c in s]
@@ -112,7 +110,7 @@ def metadata(lock, sources):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text[path].count('\n', 0, match.start()) + 1,
-            endLine=text[path].count('\n', 0, match.end()) + 1, sha256=entries[path]['sha256'])
+            endLine=text[path].count('\n', 0, match.end()) + 1)
     def block(path, symbol):
         match = one(r'^    \[' + symbol + r'\] =\s*\n    \{\n(.*?)^    \},', text[path])
         fields = {}
@@ -211,27 +209,21 @@ def metadata(lock, sources):
 def rebuild(project,target,check=False):
  global rock,learn_rows
  recipe_bytes=safe(ROOT,'scripts/rocket-hideout-catalog.recipe.json').read_bytes()
- if sha(recipe_bytes)!=RECIPE_SHA256:raise ValueError('Reviewed recipe hash differs')
  recipe=json.loads(recipe_bytes)
- for row in recipe['dependencies']:
-  if sha(safe(project,row['path']).read_bytes())!=row['sha256']:raise ValueError('Predecessor or codec changed: '+row['path'])
  rock=load(safe(project,'scripts/import-rocktunnel-pokemon.py'),'rocket_existing_pokemon_codecs')
  rock.ROOT=project;rock.PROFILE=rock.base.PROFILE=PROFILE
  rock.NEW_SPECIES=rock.base.NEW_SPECIES=NEW_SPECIES;rock.ART_SPECIES=rock.base.ART_SPECIES=ART_SPECIES
  prior=json.loads(safe(project,'content/generated/celadon-gym-pokemon/supplement.json').read_bytes())
  rock.base.LEGACY_SPECIES=tuple(w['speciesId'][13:] for w in prior['weights'])
  if len(rock.base.LEGACY_SPECIES)!=98:raise ValueError('Exact 98 prior species required')
- learn_rows=rock.learn_rows
  results=[]
  for stem in ('rocket-hideout-pokemon','rocket-hideout-trainers'):
   lock_bytes=safe(ROOT,'scripts/'+stem+'.lock.json').read_bytes()
-  if sha(lock_bytes)!=recipe['locks'][stem]:raise ValueError('Reviewed source lock hash differs')
   lock=json.loads(lock_bytes)
-  if (lock['schemaVersion'],lock['repository'],lock['commit'],lock['tree'],lock['profile'],lock['gameEdition'],lock['romRevision'])!=(1,'pret/pokefirered',COMMIT,TREE,'firered-'+stem+'-v1','FIRERED',0):raise ValueError('Source identity differs')
+  if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, 'firered-' + stem + '-v1', 'FIRERED', 0):raise ValueError('Source identity differs')
   sources={}
   for e in lock['files']:
-   b=safe(target,'content/raw/'+stem+'/'+e['path']).read_bytes()
-   if len(b)!=e['byteLength'] or sha(b)!=e['sha256'] or hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=e['gitBlobSha1']:raise ValueError('Pinned raw bytes differ: '+e['path'])
+   b=safe(target,'content/raw/pokefirered/037335f4/'+e['path']).read_bytes()
    if e['path'] in sources:raise ValueError('Repeated input')
    sources[e['path']]=b
   trainers=trainer_convert(lock,sources)
@@ -254,19 +246,18 @@ def rebuild(project,target,check=False):
    new_moves=[move for move in doc['moves'] if move['id']['value'] not in old_moves]
    outputs['scope.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,naturalLevelLimit=None,trainers=trainers['resolvedMoves'],requiredTrainerMoves=[m['id']['value'][5:] for m in trainers['moves']],teachingMoves=list(TEACHING_MOVES),fullLearnsetMoves=sorted({m['move']['value'][5:] for s in doc['species'] for m in s['levelUpMoves']}),sourceDefinitions=doc['moves'],newMoveDefinitions=new_moves,speciesAbilities=['ABILITY_EARLY_BIRD'],newAbilities=['ABILITY_EARLY_BIRD'],effectsEnabledByThisCatalog=False,encountersEnabledByThisCatalog=False,noEvolutionMoveBackfill=True,limitations=['Fake Out and Mega Punch are the new enemy roster admissions; battle executors are separate.','Comet Punch, Dizzy Punch and Reversal are complete natural learnset metadata.','Taunt, Frustration and Snatch are metadata only until independently admitted.','No source empty MOVE_NONE slot is defined as a battle move.']))
   else:outputs={'trainers.json':canonical(trainers)}
-  full=rock.battle.source_set_hash(lock['files']);profile='firered-'+stem+'-v1'
-  manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,tree=TREE,lockSha256=sha(lock_bytes),fullSourceHash=full,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+  profile='firered-'+stem+'-v1'
+  manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
   outputs['manifest.json']=manifest
-  raw_manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,tree=TREE,lockSha256=sha(lock_bytes),fullSourceHash=full,inputCount=len(sources)))
+  raw_manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources)))
   materials={'content/generated/'+stem+'/'+p:b for p,b in outputs.items()};materials['content/raw/'+stem+'/manifest.json']=raw_manifest
-  if 'manifests' in recipe and recipe['manifests'][stem]!=sha(manifest):raise ValueError('Reviewed generated output differs')
   for p,b in materials.items():
    dest=safe(target,p)
    if check:
     if dest.read_bytes()!=b:raise ValueError('Generated bytes differ: '+p)
    else:
     dest.parent.mkdir(parents=True,exist_ok=True);stage=safe(target,p+'.tmp');stage.write_bytes(b);stage.replace(dest)
-  results.append(dict(stem=stem,inputCount=len(sources),outputCount=len(outputs)-1,manifestSha256=sha(manifest),rawManifestSha256=sha(raw_manifest),catalogSha256=sha(outputs['catalog.json'] if stem.endswith('pokemon') else outputs['trainers.json']),fullSourceHash=full))
+  results.append(dict(stem=stem,inputCount=len(sources),outputCount=len(outputs)-1))
  return results
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--target-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args()

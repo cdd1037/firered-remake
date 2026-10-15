@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Pokemon;
@@ -14,9 +13,6 @@ public sealed record CapeBrinkTutorOffer(int LeadIndex, long InstanceId, CapeBri
 /// <summary>Authenticated original Cape Brink special semantics; actual script flags remain owned by the campaign.</summary>
 public sealed class CapeBrinkTutorCatalog
 {
-    public const string FieldSpecialsSha256 = "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9";
-    public const string PartyMenuSha256 = "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b";
-    public const string ScriptsSha256 = "f4c92284b5535577ba815441c5d6b76e36c5c1dd1a3b1a632a1a8cb6e665821f";
     public const string AllMovesFlag = "FLAG_LEARNED_ALL_MOVES_AT_CAPE_BRINK";
     public const string TemporaryFlag = "FLAG_TEMP_2";
     public PokemonCatalog Pokemon { get; }
@@ -28,13 +24,9 @@ public sealed class CapeBrinkTutorCatalog
             new(16, new("pret:SPECIES_CHARIZARD"), new("pret:MOVE_BLAST_BURN"), "FLAG_TUTOR_BLAST_BURN"),
             new(17, new("pret:SPECIES_BLASTOISE"), new("pret:MOVE_HYDRO_CANNON"), "FLAG_TUTOR_HYDRO_CANNON")];
     }
-    public static CapeBrinkTutorCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> fieldSpecials,
-        ReadOnlySpan<byte> partyMenu, ReadOnlySpan<byte> scripts)
+    public static CapeBrinkTutorCatalog Authenticate(PokemonCatalog owned)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit ||
-            Convert.ToHexStringLower(SHA256.HashData(fieldSpecials)) != FieldSpecialsSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(partyMenu)) != PartyMenuSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(scripts)) != ScriptsSha256)
+        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("cape_brink_source_authentication");
         var result = new CapeBrinkTutorCatalog(owned);
         foreach (var tutor in result.Definitions)

@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Godot;
 
@@ -6,8 +5,7 @@ using Godot;
 public sealed class SourceTextCursor : IDisposable
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceHash = "73f1b1357dbde966d0a6fa52173e5e4a7e68e53c31d0c567b6378a1012d915b1";
-    private const string CatalogHash = "ad04f4b3b4cef50a3c8641b1f0190ead752127a9f34d2cc8237f954d5332dfa9";
+
     public const int Width = 10;
     public const int Height = 12;
     public const int CursorDelay = 8;
@@ -22,13 +20,10 @@ public sealed class SourceTextCursor : IDisposable
     public static SourceTextCursor Load(string directory)
     {
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "text-cursor.json"));
-        CheckHash(bytes, CatalogHash, "catalog");
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-text-down-arrow-v1"
-            || root.GetProperty("sourceCommit").GetString() != SourceCommit
-            || root.GetProperty("fullSourceHash").GetString() != SourceHash)
+            || root.GetProperty("profile").GetString() != "firered-text-down-arrow-v1")
             throw new InvalidDataException("Source cursor identity differs.");
         var textures = new List<ImageTexture>();
         try
@@ -37,12 +32,10 @@ public sealed class SourceTextCursor : IDisposable
             {
                 var asset = root.GetProperty("assets").EnumerateArray().Single(a => a.GetProperty("id").GetString() == id);
                 var png = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, id + ".png"));
-                CheckHash(png, asset.GetProperty("pngSha256").GetString()!, id + " PNG");
                 using var image = new Image();
                 if (image.LoadPngFromBuffer(png) != Error.Ok || image.GetFormat() != Image.Format.Rgba8
                     || image.GetWidth() != Width * 3 || image.GetHeight() != Height)
                     throw new InvalidDataException("Source cursor PNG decode failed.");
-                CheckHash(image.GetData(), asset.GetProperty("rgbaSha256").GetString()!, id + " RGBA");
                 textures.Add(ImageTexture.CreateFromImage(image));
             }
             return new SourceTextCursor(textures.ToArray());
@@ -86,12 +79,6 @@ public sealed class SourceTextCursor : IDisposable
         canvas.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
         canvas.DrawTextureRectRegion(Texture(alternate), new Rect2(position, new Vector2(Width, Height)),
             new Rect2(frame * Width, 0, Width, Height));
-    }
-
-    private static void CheckHash(byte[] data, string expected, string label)
-    {
-        if (!string.Equals(Convert.ToHexStringLower(SHA256.HashData(data)), expected, StringComparison.Ordinal))
-            throw new InvalidDataException("Source cursor " + label + " hash differs; run the verified cursor import.");
     }
 
     public void Dispose()

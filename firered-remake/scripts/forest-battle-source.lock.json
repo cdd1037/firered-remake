@@ -3,76 +3,40 @@
   "repository": "https://github.com/pret/pokefirered",
   "files": [
     {
-      "path": "src/battle_main.c",
-      "byteLength": 171904,
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428"
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/battle_util.c",
-      "byteLength": 136791,
-      "sha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
-      "gitBlobSha1": "bb66a0144b6144a72e1d9b22321c541e22302f7e"
+      "path": "src/battle_util.c"
     },
     {
-      "path": "src/battle_script_commands.c",
-      "byteLength": 355862,
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
-      "gitBlobSha1": "67f90a37044db87091b2174f78fe1e31ad2ef10d"
+      "path": "src/battle_script_commands.c"
     },
     {
-      "path": "src/battle_controller_player.c",
-      "byteLength": 116151,
-      "sha256": "1fc12b9ed3e5f598eb1fc3761db3d57d44b5b68d6e432042d13d1679d76efa05",
-      "gitBlobSha1": "d8e1fe71e4e06303476313c15ab371fee1f82139"
+      "path": "src/battle_controller_player.c"
     },
     {
-      "path": "src/battle_controller_opponent.c",
-      "byteLength": 73524,
-      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98",
-      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0"
+      "path": "src/battle_controller_opponent.c"
     },
     {
-      "path": "src/pokemon.c",
-      "byteLength": 221865,
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "src/data/battle_moves.h",
-      "byteLength": 121457,
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134"
+      "path": "src/data/battle_moves.h"
     },
     {
-      "path": "src/data/pokemon/species_info.h",
-      "byteLength": 342600,
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e",
-      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2"
+      "path": "src/data/pokemon/species_info.h"
     },
     {
-      "path": "data/battle_scripts_1.s",
-      "byteLength": 138642,
-      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034",
-      "gitBlobSha1": "8aa0a1004033e40df8222107b60cc72fa85d9b8f"
+      "path": "data/battle_scripts_1.s"
     },
     {
-      "path": "include/constants/pokemon.h",
-      "byteLength": 10894,
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
-      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b"
+      "path": "include/constants/pokemon.h"
     },
     {
-      "path": "include/constants/battle.h",
-      "byteLength": 16440,
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1"
+      "path": "include/constants/battle.h"
     },
     {
-      "path": "src/battle_util2.c",
-      "byteLength": 3901,
-      "sha256": "0e41d0db402bc2a64f6b0dac7c8ec56e49055c6b58a4c0dfef8db87148b37c8c",
-      "gitBlobSha1": "8a5fbccf67942b9bc55d460cea07a2744c9a2b14"
+      "path": "src/battle_util2.c"
     }
   ]
 }

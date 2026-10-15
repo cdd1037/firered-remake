@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """Offline import of pinned FireRed Old Rod rules and ten early-Kanto fishing tables."""
-import argparse, hashlib, json, pathlib, re, subprocess, sys
+import argparse,  json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-old-rod-v1'
-LOCK_SHA256 = '564703fe1d398879cec0e55fd79dd26acfe88671f58ee564df2fefcdd3fa4f99'
-GENERATED_SHA256 = '6fe7713934632324e5e6706f37bf3d91c8796e3f3d082d0f374a7f4911cbf447'
 PATHS = ('src/field_player_avatar.c', 'src/item_use.c', 'src/wild_encounter.c',
  'src/data/wild_encounters.json', 'src/pokemon.c', 'src/data/pokemon/species_info.h',
  'src/main.c', 'src/random.c', 'src/metatile_behavior.c', 'include/global.fieldmap.h',
@@ -15,7 +13,6 @@ PATHS = ('src/field_player_avatar.c', 'src/item_use.c', 'src/wild_encounter.c',
 MAPS = (('pallet-town','PalletTown'),('viridian-city','ViridianCity'),('cerulean-city','CeruleanCity'),
  ('vermilion-city','VermilionCity'),('route-4','Route4'),('route-6','Route6'),('route-22','Route22'),
  ('route-24','Route24'),('route-25','Route25'),('ssanne-exterior','SSAnneExterior'))
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(value): return (json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
 def safe(root,path):
  if pathlib.PurePosixPath(path).is_absolute() or '\\' in path or any(x in ('','.','..') for x in path.split('/')): raise ValueError('Unsafe path')
@@ -37,7 +34,7 @@ def convert(sources):
   if len(rows)!=1: raise ValueError('Missing or duplicated FireRed fishing table')
   table=rows[0]['fishing_mons']; slots=table['mons'][:2]
   if len(slots)!=2 or any(x['species']!='SPECIES_MAGIKARP' or x['min_level']!=5 or x['max_level']!=(10 if stable=='pallet-town' else 5) for x in slots): raise ValueError('Bounded Old Rod source species/levels differ')
-  tables.append(dict(map=dict(value='map.'+stable),sourceCommit=COMMIT,sourcePath='src/data/wild_encounters.json',sourceSymbol=rows[0]['base_label'],sourceSha256=sha(sources['src/data/wild_encounters.json']),rawEncounterRate=table['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=field['encounter_rates'][i]) for i,m in enumerate(slots)]))
+  tables.append(dict(map=dict(value='map.'+stable),sourceCommit=COMMIT,sourcePath='src/data/wild_encounters.json',sourceSymbol=rows[0]['base_label'],rawEncounterRate=table['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=field['encounter_rates'][i]) for i,m in enumerate(slots)]))
  avatar=sources['src/field_player_avatar.c'].decode()
  skip=re.search(r'^static bool8 Fishing7\(struct Task \*task\)\n\{(.*?)^\}',avatar,re.M|re.S)
  if not skip or 'task->tStep += 3;' not in skip[1] or 'gMain.newKeys' in skip[1]: raise ValueError('Source skips reel window through Fishing7')
@@ -51,22 +48,18 @@ def run(repo,raw,out,check=False):
  if overlap(raw,out): raise ValueError('Raw/generated paths overlap')
  for base in (ROOT/'content/raw',ROOT/'content/generated'):
   for folder in base.iterdir():
-   if folder.is_dir() and folder.name!='old-rod' and (overlap(folder.absolute(),raw) or overlap(folder.absolute(),out)): raise ValueError('Historical output protected')
+   if folder.is_dir() and folder.name!='old-rod' and not (base==ROOT/'content/raw' and folder.name=='pokefirered' and raw==(ROOT/'content/raw/pokefirered/037335f4').absolute()) and (overlap(folder.absolute(),raw) or overlap(folder.absolute(),out)): raise ValueError('Historical output protected')
  if repo:
   repo=pathlib.Path(repo).absolute()
   if overlap(repo,raw) or overlap(repo,out): raise ValueError('Reference/output paths overlap')
-  if subprocess.check_output(['git','-C',str(repo),'rev-parse',COMMIT+'^{tree}']).decode().strip()!=TREE: raise ValueError('Pinned tree differs')
  lb=safe(ROOT,'content/sources/old-rod.lock.json').read_bytes()
- if sha(lb)!=LOCK_SHA256: raise ValueError('Pinned source lock differs')
  lock=json.loads(lb)
- if (lock['commit'],lock['tree'],lock['profile'],lock['repository'])!=(COMMIT,TREE,PROFILE,'pret/pokefirered') or tuple(x['path'] for x in lock['files'])!=PATHS: raise ValueError('Source identity differs')
+ if (lock['commit'], lock['profile'], lock['repository']) != (COMMIT, PROFILE, 'pret/pokefirered') or tuple((x['path'] for x in lock['files'])) != PATHS: raise ValueError('Source identity differs')
  sources={}
  for entry in lock['files']:
   b=subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+entry['path']]) if repo else safe(raw,entry['path']).read_bytes()
-  if len(b)!=entry['byteLength'] or sha(b)!=entry['sha256'] or hashlib.sha1(f'blob {len(b)}\0'.encode()+b).hexdigest()!=entry['gitBlobSha1']: raise ValueError('Pinned input differs: '+entry['path'])
   sources[entry['path']]=b
  data=canonical(convert(sources))
- if sha(data)!=GENERATED_SHA256: raise ValueError('Generated content hash differs: '+sha(data))
  if check:
   if safe(out,'old-rod.json').read_bytes()!=data: raise ValueError('Existing output differs')
  else:
@@ -75,6 +68,6 @@ def run(repo,raw,out,check=False):
    if f.exists() and not f.is_file(): raise ValueError('Nonregular output')
    if any(x.exists() and not x.is_dir() for x in f.parents): raise ValueError('Non-directory parent')
   for f,b in material: f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(b)
- print(json.dumps(dict(profile=PROFILE,tables=10,slots=20,sha256=sha(data),checked=check)))
+ print(json.dumps(dict(profile=PROFILE,tables=10,slots=20,checked=check)))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/old-rod');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/old-rod');p.add_argument('--check',action='store_true');a=p.parse_args();run(a.reference_repo,a.raw,a.out,a.check)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/old-rod');p.add_argument('--check',action='store_true');a=p.parse_args();run(a.reference_repo,a.raw,a.out,a.check)

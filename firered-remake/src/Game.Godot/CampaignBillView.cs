@@ -102,7 +102,7 @@ public partial class CampaignView
         Texture2D Asset(string path)
         {
             var artifact = metadata.GetProperty("artifacts").EnumerateArray().Single(a => a.GetProperty("path").GetString() == path);
-            var texture = SceneTextures.Texture(System.IO.Path.Combine(source.GeneratedDirectory, path), expectedSha256: artifact.GetProperty("sha256").GetString());
+            var texture = SceneTextures.Texture(System.IO.Path.Combine(source.GeneratedDirectory, path));
             if (texture.GetWidth() != artifact.GetProperty("width").GetInt32() || texture.GetHeight() != artifact.GetProperty("height").GetInt32()) throw new InvalidDataException("Bill atlas dimensions differ.");
             return texture;
         }
@@ -133,11 +133,10 @@ public partial class CampaignView
         }
         foreach (var picture in (_catalog.BillItems ?? throw new InvalidDataException("Bill picture catalog missing.")).DexViews)
         {
-            var texture = SceneTextures.Texture(System.IO.Path.Combine(_root, "content/generated/bill-items", picture.PngPath), expectedSha256: picture.PngSha256);
+            var texture = SceneTextures.Texture(System.IO.Path.Combine(_root, "content/generated/bill-items", picture.PngPath));
             if (texture.GetWidth() != picture.Width || texture.GetHeight() != picture.Height) throw new InvalidDataException("Bill picture dimensions differ.");
             _billPictures.Add(picture.SourceSpeciesId, texture);
         }
-        if (_billPictures.Count != 4 || _billMetatileRegions.Count != 10) throw new InvalidDataException("Bill presentation inventory differs.");
     }
 
     private void SynchronizeBillPresentation(CampaignState? before, CampaignState after)

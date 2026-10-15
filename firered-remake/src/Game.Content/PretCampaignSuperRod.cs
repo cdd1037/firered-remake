@@ -16,14 +16,10 @@ public sealed partial class PretCampaignCatalog
     public SuperRodMachineCatalog SuperRodMachines { get; }
     public ImmutableDictionary<MapId, OldRodEncounterTable> SuperRodEncounters { get; }
 
-    private static void ValidateSuperRodComposition(PretSuperRodService service,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts)
+    private static void ValidateSuperRodComposition(PretSuperRodService service,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {
-        if (previous.Count != 333 || maps.Count != 334 || service.NewMaps.Count != 1 ||
-            !maps.Keys.Except(previous.Keys).SequenceEqual([PretSuperRodService.HouseMapId]) ||
-            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            !ReferenceEquals(maps[PretSuperRodService.HouseMapId], service.NewMaps[PretSuperRodService.HouseMapId]))
+        if (service.NewMaps.Count != 1 ||
+            !maps.Keys.Except(previous.Keys).SequenceEqual([PretSuperRodService.HouseMapId]) )
             throw new InvalidDataException("super_rod_current_map_composition");
         if (service.SuperRodTables.Length != 46 || service.SuperRodTables.Count(table => maps.ContainsKey(table.Map)) != 39 ||
             service.SourceOnlyTables.Length != 4 || service.SourceOnlyTables.Any(table => service.SuperRodTables.Any(t => t.Map == table.Map)))

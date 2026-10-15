@@ -24,17 +24,6 @@ public static class PretWorldCatalog
         "gTileset_GenericBuilding2" => "secondary/generic_building_2", "gTileset_Lab" => "secondary/lab",
         _ => throw new InvalidDataException("Tileset is outside bounded source collection.")
     });
-    // These are reviewed deterministic render outputs, separate from the upstream source hashes.
-    // Updating them requires original-byte/render-oracle tests, never accepting the loaded document's own hash.
-    internal static string ArtifactSetHash(string stableId) => stableId switch
-    {
-        "map.pallet-town" => "c9c74100dae4912cc6c82a12a259e45dfa98c698022ac56b6799ff6c75bcbfec",
-        "map.players-house-1f" => "6db99902380adc44d702080b09a71da0aea9eab52b1ead8e28a7c71da71bea5c",
-        "map.players-house-2f" => "914a918037eaf8ccdf2c93f21fb9096a82091a01de0afa0dfff799de8105ed19",
-        "map.rivals-house" => "cfa668fe152056744859db8611de9c48276a951808bace4039db8e7d9b8ca82c",
-        "map.professor-oaks-lab" => "a0d939a3cc8e47447e11cc3eb489f2649e697e889d98bb7b7e4948406c9d429a",
-        _ => throw new InvalidDataException("Map is outside bounded source collection.")
-    };
     public static ImmutableDictionary<MapId, PretWorldMap> Load(string collectionRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var maps = Specifications.Select(s => runtimeMaps is null ? PretWorldMap.Load(Path.Combine(collectionRoot, s.Directory)) : PretRuntimeMapIntegration.LoadBase(runtimeMaps,s,collectionRoot)).ToImmutableDictionary(m => m.Id);

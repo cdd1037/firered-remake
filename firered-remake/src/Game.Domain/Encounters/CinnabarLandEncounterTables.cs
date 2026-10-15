@@ -15,7 +15,6 @@ public static class CinnabarLandEncounterTables
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = All.SelectMany(t => t.Slots).Select(s => s.Species).Distinct().ToImmutableArray();
     public static bool IsCave(MapId map) => All.Any(t => t.Map == map && map.Value.StartsWith("map.pokemon-mansion-", StringComparison.Ordinal));
     private static EarlyLandEncounterTable Create(string map, string symbol, int rate, (string Species, byte Level)[] rows) =>
-        new(new("map." + map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol,
-            "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c", rate,
+        new(new("map." + map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol, rate,
             rows.Select((s,i) => new EarlyLandEncounterSlot(i,new("pret:SPECIES_"+s.Species),s.Level,s.Level,EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

@@ -6,7 +6,6 @@ the runtime crops source frames and composes tilemap layers, never baked variant
 """
 import argparse
 import binascii
-import hashlib
 import io
 import json
 import os
@@ -21,17 +20,13 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-fame-checker-presentation-v1'
 BASE = 'content/generated/fame-checker-presentation/'
-RAW = 'content/raw/fame-checker-presentation/'
+RAW = 'content/raw/pokefirered/037335f4/'
 LOCK = 'scripts/fame-checker-presentation.lock.json'
 
 
 def need(ok, message):
     if not ok:
         raise ValueError(message)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def encoded(value):
@@ -64,7 +59,6 @@ def generate(reference):
     env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_NO_REPLACE_OBJECTS='1', GIT_OPTIONAL_LOCKS='0')
     def git(*args):
         return subprocess.check_output(['git', '--no-replace-objects', '--no-optional-locks', '-C', str(reference), *args], env=env)
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'Pinned source tree differs')
     tree = {}
     for row in git('ls-tree', '-rz', COMMIT).split(b'\0'):
         if row:
@@ -75,9 +69,8 @@ def generate(reference):
         if path not in sources:
             need(path in tree and tree[path][:2] == ['100644', 'blob'], 'Source is not a regular blob: ' + path)
             data = git('cat-file', 'blob', tree[path][2])
-            need(hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest() == tree[path][2], 'Source Git blob differs')
             sources[path] = data
-            inputs[path] = dict(path=path, rawPath=RAW + path, byteLength=len(data), sha256=sha(data), gitBlobSha1=tree[path][2])
+            inputs[path] = dict(path=path, rawPath=RAW + path)
         return sources[path]
     def text(path):
         return source(path).decode()
@@ -114,12 +107,9 @@ def generate(reference):
         colors = embedded if colors is None else colors
         need(len(colors) >= 16, 'Source sprite palette too short')
         pixels = rgba(indices, colors)
-        outputs[identifier + '.rgba'] = pixels
         outputs[identifier + '.png'] = png(width, height, pixels)
         outputs[identifier + '.indices'] = indices
-        assets.append(dict(id=identifier, width=width, height=height, rgbaPath=BASE + identifier + '.rgba',
-                           texturePath=BASE + identifier + '.png', indicesPath=BASE + identifier + '.indices',
-                           sourcePath=path, transparentIndex=0, **metadata))
+        assets.append(dict(id=identifier, width=width, height=height, texturePath=BASE + identifier + '.png', indicesPath=BASE + identifier + '.indices', sourcePath=path, transparentIndex=0, **metadata))
         return width, height
 
     code = text('src/fame_checker.c')
@@ -287,13 +277,9 @@ def generate(reference):
             x += width
         identifier = 'help-' + mode
         pixels = rgba(indices, palettes['text'])
-        outputs[identifier + '.rgba'] = pixels
         outputs[identifier + '.png'] = png(240, 16, pixels)
         outputs[identifier + '.indices'] = bytes(indices)
-        assets.append(dict(id=identifier, width=240, height=16, rgbaPath=BASE + identifier + '.rgba',
-                           texturePath=BASE + identifier + '.png', indicesPath=BASE + identifier + '.indices',
-                           sourcePaths=['src/strings.c','src/text.c','graphics/fonts/latin_small.png','graphics/fonts/keypad_icons.png'],
-                           transparentIndex=0))
+        assets.append(dict(id=identifier, width=240, height=16, texturePath=BASE + identifier + '.png', indicesPath=BASE + identifier + '.indices', sourcePaths=['src/strings.c', 'src/text.c', 'graphics/fonts/latin_small.png', 'graphics/fonts/keypad_icons.png'], transparentIndex=0))
         help_rows.append(dict(mode=mode, sourceSymbol=symbol, sourceText=value, assetId=identifier,
                               x=236-total, y=0, width=total, font='FONT_SMALL', colorIndices=[0,1,2], keypad=tokens))
     outputs['background.indices'] = bytes(bi[(y + dy) * bw + x + dx]
@@ -350,12 +336,12 @@ def generate(reference):
         cue['sourceId'] = int(re.search(r'^#define\s+' + cue['sourceSymbol'] + r'\s+(\d+)\b', text('include/constants/songs.h'), re.M)[1])
     outputs['layout.json'] = encoded(layout)
     outputs['palettes.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, palettes=palettes))
-    source_lock = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
+    source_lock = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                        inputs=[inputs[p] for p in sorted(inputs)], policy='Pinned source blobs only; no ROM, native reference execution, or PCM')
     lock = encoded(source_lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lock),
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                     assets=assets, portraits=portraits, factIconSymbols=facts, objectIcons=icon_rows, audio=dict(cues=cues),
-                    outputs=[dict(path=p, byteLength=len(d), sha256=sha(d)) for p, d in sorted(outputs.items())])
+                    outputs=[dict(path=p) for p, d in sorted(outputs.items())])
     result = {RAW + p: d for p, d in sources.items()}
     result.update({BASE + p: d for p, d in outputs.items()})
     result[BASE + 'manifest.json'] = encoded(manifest)
@@ -377,8 +363,8 @@ def main():
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(expected)
-    print(json.dumps(dict(files=len(data), bytes=sum(map(len, data.values())), lockSha256=sha(data[LOCK]),
-                          lockBytes=len(data[LOCK]), manifestSha256=sha(data[BASE + 'manifest.json']),
+    print(json.dumps(dict(files=len(data), bytes=sum(map(len, data.values())),
+                          lockBytes=len(data[LOCK]),
                           manifestBytes=len(data[BASE + 'manifest.json']), checked=args.check), sort_keys=True))
 
 

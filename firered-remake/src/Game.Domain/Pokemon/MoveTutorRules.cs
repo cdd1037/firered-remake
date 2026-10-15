@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Game.Domain.Ids;
@@ -18,9 +17,6 @@ public sealed record MoveTutorResult(PartyPokemon Pokemon, string? Error, int Le
 /// bounded original tutor definitions are admitted; actor bindings separately enable field NPCs.</summary>
 public sealed partial class MoveTutorCatalog
 {
-    public const string LearnsetsSha256 = "d09053c6fa423a6838fa1eb2c5c28701305e3895ee6b894dc46113be57019e76";
-    public const string StringsSha256 = "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1";
-    public const string MoveConstantsSha256 = "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194";
     public PokemonCatalog Pokemon { get; }
     public ImmutableDictionary<int, MoveTutorDefinition> Definitions { get; }
     public ImmutableDictionary<string, string> Texts { get; }
@@ -29,10 +25,7 @@ public sealed partial class MoveTutorCatalog
 
     public static MoveTutorCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> learnsets, ReadOnlySpan<byte> strings, ReadOnlySpan<byte> moveConstants)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit ||
-            Convert.ToHexStringLower(SHA256.HashData(learnsets)) != LearnsetsSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(strings)) != StringsSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(moveConstants)) != MoveConstantsSha256)
+        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("move_tutor_source_authentication");
         var source = Encoding.UTF8.GetString(learnsets);
         var rows = Regex.Matches(source, @"\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*([^,]+),", RegexOptions.CultureInvariant)

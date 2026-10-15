@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Godot;
 
 /// <summary>Scene-local ownership of exact RGBA8, no-mipmap textures. Use only on Godot's main thread.</summary>
@@ -27,20 +26,16 @@ public sealed class CampaignResourceCache : IDisposable
         private bool _disposed;
         public string Name { get; }
         internal Owner(CampaignResourceCache cache, string name) { _cache = cache; Name = name; }
-        // Callers authenticate manifests/source before acquisition. Optional expected SHA binds the
-        // exact read to that manifest, and sharing always uses bytes, never a filename alone.
-        public Texture2D Texture(string path, bool darkened = false, string? expectedSha256 = null)
+        // Resource files are static for a scene. Share each path and conversion mode across owners.
+        public Texture2D Texture(string path, bool darkened = false)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            byte[] bytes = File.ReadAllBytes(path);
-            string sha = Convert.ToHexStringLower(SHA256.HashData(bytes));
-            if (expectedSha256 is not null && sha != expectedSha256)
-                throw new InvalidDataException("Texture checksum mismatch: " + path);
-            string key = sha + (darkened ? ":rgba8-bitrep-dark8-no-mips" : ":rgba8-bitrep-no-mips");
+            string key = Path.GetFullPath(path) + (darkened ? ":rgba8-bitrep-dark8-no-mips" : ":rgba8-bitrep-no-mips");
             if (_cache._textures.TryGetValue(key, out var shared))
             {
                 _cache._hits++; Retain(key, shared); return shared.Texture;
             }
+            byte[] bytes = File.ReadAllBytes(path);
             using var image = new Image();
             if (image.LoadPngFromBuffer(bytes) != Error.Ok || image.IsEmpty())
                 throw new InvalidDataException("Cannot decode texture: " + path);

@@ -22,25 +22,18 @@ public sealed partial class PretCampaignCatalog
     public bool SupportsTeleportPads(MapId map)=>SilphEnabled&&SilphRegion!.NewMaps.ContainsKey(map)&&map.Value.StartsWith("map.silph-co-",StringComparison.Ordinal)||
         SaffronGymEnabled&&map.Value=="map.saffron-city-gym"&&SaffronGymRegion!.NewMaps.ContainsKey(map);
 
-    private static void AppendSaffronGymSources(PretSaffronGymRegion region,PretSaffronGymItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,
-        Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendSaffronGymSources(PretSaffronGymRegion region,PretSaffronGymItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var paths=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var source in region.Scripts)
         {
             if(paths.TryGetValue(source.Path,out var prior))
-            {if(prior.SourceRef.Sha256!=source.SourceRef.Sha256||prior.Text!=source.Text)throw new InvalidDataException("saffron_gym_source_conflict: "+source.Path);continue;}
+            {if(prior.Text!=source.Text)throw new InvalidDataException("saffron_gym_source_conflict: "+source.Path);continue;}
             paths.Add(source.Path,source);sources.Add(source);
             if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
         }
         foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
         MergeRegionalServiceConstants(constants,region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);hashes.AddRange(items.AdditionalSourceHashes);
-        hashes.Add("saffron-gym-opponents:"+PretSaffronGymPokemon.GeneratedSha256);
-        hashes.Add("saffron-gym-trainers:"+PretSaffronGymTrainers.GeneratedSha256);
-        hashes.Add("saffron-gym-items:"+PretSaffronGymItems.GeneratedSha256);
-        hashes.Add("saffron-gym-machines:"+PretSaffronGymMachines.GeneratedSha256);
-        hashes.Add("saffron-gym-campaign:"+SaffronGymContentProfile);
     }
     private static EarlyShopCatalog ComposeSaffronGymShop(EarlyShopCatalog previous,PretSaffronGymRegion region,PretSaffronGymItemsDocument items)
     {

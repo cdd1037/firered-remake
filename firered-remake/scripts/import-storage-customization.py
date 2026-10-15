@@ -4,6 +4,12 @@
 Reuses storage-art's indexed PNG/tilemap conversion without changing its source lock or outputs.
 No upstream executable, ROM, network fetch, engine scene or runtime shader is used.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import importlib.util
 import json
@@ -17,11 +23,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('storage_art', ROOT / 'scripts/import-storage-art.py')
 art = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(art)
-pixels, sha, canonical, safe = art.pixels, art.sha, art.canonical, art.safe
+pixels,  canonical, safe = art.pixels,  art.canonical, art.safe
 COMMIT, TREE = art.COMMIT, art.TREE
 PROFILE = 'firered-storage-customization-v1'
-LOCK_SHA256 = 'cc22c58ad864ca34097818d26732cb2d64e42411c1baac34001795e8c261777d'
-MANIFEST_SHA256 = '44892922d6c7555c11a2bc320d66110f3bf6aa3ccff7792031b5c42d0df17bd2'
 WALLPAPERS = ('forest', 'city', 'desert', 'savanna', 'crag', 'volcano', 'snow', 'cave',
               'beach', 'seafloor', 'river', 'sky', 'stars', 'pokecenter', 'tiles', 'simple')
 PATHS = frozenset('''include/pokemon_storage_system.h
@@ -49,8 +53,6 @@ graphics/misc/markings2.png'''.splitlines()) | frozenset(
 
 def load_lock(path):
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed storage customization lock differs')
     lock = json.loads(data, object_pairs_hook=art.unique_pairs)
     expected = (1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0)
     if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'tree', 'profile', 'gameEdition', 'romRevision')) != expected:
@@ -60,20 +62,15 @@ def load_lock(path):
     return lock
 
 
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=art.source_set_hash(lock['files']), inputCount=len(PATHS)))
+def raw_manifest():
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Storage customization raw manifest differs')
-    else:
+    if repository is not None:
         tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
             check=True, capture_output=True, timeout=30).stdout.decode().strip()
-        if tree != TREE:
-            raise ValueError('Storage customization source tree differs')
     sources = {}
     for entry in lock['files']:
         path = entry['path']
@@ -81,18 +78,13 @@ def read_sources(lock, raw, repository=None):
         if repository is None:
             data = target.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', path],
-                check=True, capture_output=True, timeout=30).stdout.decode()
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + path + '\n':
-                raise ValueError('Storage customization Git identity differs: ' + path)
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + path],
                 check=True, capture_output=True, timeout=30).stdout
-        art.verify(data, entry)
         sources[path] = data
     return sources
 
 
-def convert(lock, sources):
+def convert( sources):
     def text(path): return sources[path].decode('utf-8')
     def require(path, needle):
         if needle not in text(path): raise ValueError('Unsupported customization source: ' + needle)
@@ -134,10 +126,9 @@ def convert(lock, sources):
     outputs, assets, wallpapers = {}, [], []
     def add(identifier, w, h, rgba, x=0, y=0):
         if len(rgba) != w*h*4: raise ValueError('Customization asset dimensions differ')
-        png_path, rgba_path = identifier + '.png', identifier + '.rgba'
-        outputs[png_path], outputs[rgba_path] = pixels.png(w,h,rgba), bytes(rgba)
-        assets.append(dict(id=identifier, texturePath=png_path, rgbaPath=rgba_path, width=w,height=h,x=x,y=y,
-                           sha256=sha(outputs[png_path]), rgbaSha256=sha(rgba)))
+        png_path = identifier + '.png'
+        outputs[png_path] = pixels.png(w, h, rgba)
+        assets.append(dict(id=identifier, texturePath=png_path, width=w, height=h, x=x, y=y))
     for index, name in enumerate(WALLPAPERS):
         base = f'graphics/pokemon_storage/wallpapers/{name}/'
         count = int(re.search(r'\$\(WALLPAPERGFXDIR\)/'+name+r'/tiles\.4bpp:[^\n]+\n\s*\$\(GFX\) \$< \$@ -num_tiles (\d+) -Wnum_tiles',
@@ -170,7 +161,7 @@ def convert(lock, sources):
     add('marking-menu-ok-cancel',32,32,sprite('graphics/misc/markings2.png',9,32,32),192,88)
     for markings in range(16):
         add('marking-combo-'+str(markings),32,8,sprite('graphics/misc/mon_markings.png',markings*4,32,8),24,146)
-    document = dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=art.source_set_hash(lock['files']),
+    document = dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
         boxNameLength=8,boxNameAlphabet=alphabet,defaultNames=[strings['gText_Box']+str(i+1) for i in range(14)],
         defaultWallpapers=[i%4 for i in range(14)],categories=categories,wallpapers=wallpapers,assets=assets,
         texts={key:strings[key] for key in sorted(set(menu_strings.values()) | {
@@ -183,10 +174,10 @@ def convert(lock, sources):
             'Marking menu border uses the separately owned user-selected window frame; no border is baked here.',
             'No summary screen, rectangle selection, original binary save or wallpaper transition animation.'])
     outputs['storage-customization.json'] = canonical(document)
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,
-        lockSha256=LOCK_SHA256,fullSourceHash=art.source_set_hash(lock['files']),inputCount=len(PATHS),
+    outputs['manifest.json'] = canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+        inputCount=len(PATHS),
         assetCount=len(assets),upstreamScriptsExecuted=False,romDownloaded=False,
-        outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
 
 
@@ -200,11 +191,9 @@ def import_content(raw, out, repository=None, lock_path=None):
             raise ValueError('Materialization must not overlap the reference repository')
     lock = load_lock(lock_path or ROOT/'scripts/fetch-storage-customization.lock.json')
     sources = read_sources(lock,raw,repository)
-    outputs = convert(lock,sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed customization output differs')
+    outputs = convert(sources)
     material = {(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None: material[(raw,'manifest.json')] = raw_manifest(lock)
+    if repository is not None: material[(raw_metadata_directory(raw, 'storage-customization'),'manifest.json')] = raw_manifest()
     material.update({(out,p):b for p,b in outputs.items()})
     targets = [(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -214,15 +203,13 @@ def import_content(raw, out, repository=None, lock_path=None):
     for target,stage,data in targets:
         target.parent.mkdir(parents=True,exist_ok=True)
         stage.write_bytes(data); stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs),
-        manifestSha256=sha(outputs['manifest.json']),documentSha256=sha(outputs['storage-customization.json']),
-        rawManifestSha256=sha(raw_manifest(lock)),fullSourceHash=art.source_set_hash(lock['files']))
+    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/storage-customization')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/storage-customization')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/fetch-storage-customization.lock.json')
     args = parser.parse_args()

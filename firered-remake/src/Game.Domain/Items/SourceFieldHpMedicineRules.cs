@@ -20,7 +20,7 @@ public static class SourceFieldHpMedicineRules
         try{EarlyShopInventoryRules.ValidateCatalog(catalog);}
         catch(Exception error) when(error is ArgumentException or NotSupportedException){return null;}
         var admitted=EarlyShopInventoryRules.Find(catalog,item);var source=sourceItems.Find(item);
-        if(admitted is null||source is null||!SourceBattleItemDefinitionProof.IsAuthentic(source)||source.Reusable||
+        if(admitted is null||source is null||!SourceBattleItemCatalog.SupportsFixedEffect(source)||source.Reusable||
             admitted.SourceItemSymbol!=source.Symbol||admitted.SourceItemId!=source.SourceItemId||admitted.Name!=source.Name||
             admitted.Pocket!=source.Pocket||admitted.Pocket is not("POCKET_ITEMS" or "POCKET_BERRY_POUCH")||
             admitted.Type!="ITEM_TYPE_PARTY_MENU"||admitted.FieldUseFunction!="FieldUseFunc_Medicine"||

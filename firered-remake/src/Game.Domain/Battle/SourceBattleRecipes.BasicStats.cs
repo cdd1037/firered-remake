@@ -16,7 +16,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteBasicStat(BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose, ref bool handled)
     {
         if (!HasBasicStatRecipe(move.Effect)) return;
-        if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
+        if (Invocation is null || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("basic_stat_source_definition");
         handled = true;
         var target = move.Target == "MOVE_TARGET_USER" ? actor : Invocation.Target;

@@ -1,23 +1,15 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-super-rod-species-v1",
-  "importerSha256": "1e34df2349d0683ef92825649e9cf82e18c63d35735bb0975e5702065a45686e",
   "files": [
     {
-      "path": "content/generated/super-rod-species/machines.json",
-      "byteLength": 22902,
-      "sha256": "efec45a3d9ecfe83a8808ae4e6b5761ba5c9466ad0ad0b6ee0665d980cbf6bf5"
+      "path": "content/generated/super-rod-species/machines.json"
     },
     {
-      "path": "content/generated/super-rod-species/pokemon.json",
-      "byteLength": 787,
-      "sha256": "8294dc3ad4142e91f92f3a9bd67924c335822b10fe77b38310e133ae80e2544a"
+      "path": "content/generated/super-rod-species/pokemon.json"
     },
     {
-      "path": "content/generated/super-rod-species/source-input-hashes.json",
-      "byteLength": 2495,
-      "sha256": "e7a6fdf9141b33d5df2ac8c2f610a2fc6486a17fb6b2a2e5bb8fbb246aee6d25"
+      "path": "content/generated/super-rod-species/source-input-hashes.json"
     }
   ]
 }

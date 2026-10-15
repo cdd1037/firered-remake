@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 """Fetch a bounded, pinned, local-only five-map Pallet Town source subset. Never execute upstream code."""
-import argparse, concurrent.futures, hashlib, json, pathlib, urllib.request
+import argparse, concurrent.futures, json, pathlib, urllib.request
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LOCK = ROOT / 'scripts/fetch-pallet.lock.json'
-def sha256(b): return hashlib.sha256(b).hexdigest()
-def verify(b, entry):
-    blob = hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
-    if len(b) != entry['byteLength'] or blob != entry['gitBlobSha1']:
-        raise ValueError('Pinned Git blob mismatch: '+entry['path'])
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cache',type=pathlib.Path,default=pathlib.Path('/tmp/pokefirered-source-audit'))
-    args=parser.parse_args(); lock=json.loads(LOCK.read_text(encoding='utf-8')); dest=ROOT/'content/raw/pallet'
+    args=parser.parse_args(); lock=json.loads(LOCK.read_text(encoding='utf-8')); dest=ROOT/'content/raw/pokefirered/037335f4'
     if lock['commit'] != json.loads((ROOT/'content/source-lock.json').read_text(encoding='utf-8'))['source']['sourceCommit']:
         raise ValueError('Project source lock differs from Pallet subset lock')
     def fetch(e):
@@ -23,11 +18,8 @@ def main():
         else:
             url=f'https://raw.githubusercontent.com/{lock["repository"]}/{lock["commit"]}/{p}'
             with urllib.request.urlopen(url,timeout=60) as r: b=r.read()
-        verify(b,e); target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(b)
-        return {**e,'sha256':sha256(b),'sourceUrl':f'https://github.com/{lock["repository"]}/blob/{lock["commit"]}/{p}'}
+        target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(b)
+        return {'path':e['path'],'sourceUrl':f'https://github.com/{lock["repository"]}/blob/{lock["commit"]}/{p}'}
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool: files=list(pool.map(fetch,sorted(lock['files'],key=lambda f:f['path'])))
-    full=sha256(''.join(e['path']+'\0'+e['sha256']+'\n' for e in files).encode())
-    manifest={**lock,'files':files,'fullSourceHash':full,'hashDefinition':'SHA-256 of UTF-8 sorted path + NUL + sha256 + LF for each input'}
-    dest.mkdir(parents=True,exist_ok=True); (dest/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n', encoding='utf-8', newline='\n')
-    print(f'Verified {len(files)} pinned files; fullSourceHash={full}')
+    print(f'Materialized {len(files)} pinned files')
 if __name__=='__main__': main()

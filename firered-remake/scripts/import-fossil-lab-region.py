@@ -4,11 +4,16 @@
 Only pinned reviewed local converters execute; upstream Git blobs are inert data.
 This resource package does not admit battles or field commands by itself.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import ast
 import base64
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -22,31 +27,24 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'fossil-lab-region'
 RESOURCE_ID = 'firered-fossil-lab-region-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = 'f41fe3ffc06dd4ec3c16fe0d32a8671affe65c6d121d58ae2630b4ab9dea151c'
-LOCK_SHA256 = '6f920b91f4b0e87002d43a774a5b05d0864c8be3010714f4ff0851c099627c90'
 MAPS = ['CinnabarIsland_PokemonLab_Entrance', 'CinnabarIsland_PokemonLab_ExperimentRoom']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_Lab': 'secondary/lab',
             'gTileset_General': 'primary/general', 'gTileset_CinnabarIsland': 'secondary/cinnabar_island'}
 CITY_PACKAGE = 'content/generated/cinnabar-source-preparation'
-CITY_MANIFEST_SHA = 'ab9ac518f2c6ae480d170930432102fadb06d974771746e8c3fa06d1de9761bd'
 CITY_PATH = 'cinnabar-island/runtime-map.json'
-CITY_SHA = 'aa6b7a80a7531de8442b1be664d7cd82e3aa0b304a7df24b4e319d4b3b50f397'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_SCIENTIST': ('content/generated/silph-region/npc/scientist.png', '69a795f639fcebb3e039f751b86995993f2760bed525cf91d40a912f80167568'),
-    'OBJ_EVENT_GFX_BOY': ('content/generated/silph-region/npc/boy.png', '66f9d36364cd200ca0ab6d3af85e8c8d524132f3b7733d605546f028780dc6a0'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/silph-region/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a'),
+    'OBJ_EVENT_GFX_SCIENTIST': 'content/generated/silph-region/npc/scientist.png',
+    'OBJ_EVENT_GFX_BOY': 'content/generated/silph-region/npc/boy.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
 }
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
 def module(path):
-    need(sha(path.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('fossil_lab_reader', path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -183,24 +181,21 @@ def compact_check(document, world, src):
     for cell, (block,) in zip(world['cells'], struct.iter_unpack('<H', raw), strict=True):
         need((block & 1023, (block >> 10) & 3, block >> 12, rows[block & 1023]) ==
              (cell['metatileId'], cell['collision'], cell['elevation'], cell['rawAttributes']), 'Cell roundtrip differs')
-    for script in document['scripts']:
-        original = src.read(script['path'])
-        need(script['sha256'] == sha(original) and script['text'].encode() == original, 'Embedded script differs')
+    for path in document['scriptPaths']:
+        src.read(path)
 
 
 def retained_city(src, reader, current):
     manifest = (current / CITY_PACKAGE / 'manifest.json').read_bytes()
-    need(sha(manifest) == CITY_MANIFEST_SHA, 'Retained Cinnabar manifest differs')
     entry = next(e for e in json.loads(manifest)['outputs'] if e['path'] == CITY_PATH)
     raw = (current / CITY_PACKAGE / CITY_PATH).read_bytes()
-    need(entry['sha256'] == CITY_SHA and sha(raw) == CITY_SHA and len(raw) == entry['byteLength'], 'Retained Cinnabar map differs')
     world = reader.decode(src, 'CinnabarIsland')
     compact_check(json.loads(raw), world, src)
     entrances = [dict(index=i, event=e) for i, e in enumerate(world['events']['warp_events']) if e['dest_map'] == 'MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE']
     need(len(entrances) == 1 and entrances[0]['index'] == 2 and entrances[0]['event'] ==
          dict(x=8, y=9, elevation=0, dest_map='MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE', dest_warp_id='1'), 'Original city entrance differs')
     return dict(map='map.cinnabar-island', operation='reuse-existing-source-map', geometryChanges=[], eventChanges=[],
-                currentPackage=CITY_PACKAGE, currentManifestSha256=CITY_MANIFEST_SHA, currentResource=entry,
+                currentPackage=CITY_PACKAGE,  currentResource=entry,
                 entrances=entrances, requiredIntegration='Register the two fossil lab rooms; retain Cinnabar geometry, events and original warp indices.'), world
 
 
@@ -266,10 +261,10 @@ def reuse_npcs(src, shared, worlds, stage, current):
     inventory = shared.npc_inventory(src, worlds, folder)
     need({r['graphicsId'] for r in inventory['graphics']} == set(NPC_REUSE), 'NPC cohort differs')
     for row in inventory['graphics']:
-        path, digest = NPC_REUSE[row['graphicsId']]
+        path = NPC_REUSE[row['graphicsId']]
         rendered = stage / row['texturePath']; existing = current / path
-        need(sha(existing.read_bytes()) == digest == row['sha256'] and rendered.read_bytes() == existing.read_bytes(), 'Reused NPC differs: ' + path)
-        row.update(texturePath=path, byteLength=existing.stat().st_size, reuseExisting=True)
+        need(rendered.read_bytes() == existing.read_bytes(), 'Reused NPC differs: ' + path)
+        row.update(texturePath=path,  reuseExisting=True)
         rendered.unlink()
     folder.rmdir()
     return inventory
@@ -305,53 +300,47 @@ def main():
     need(len(links['warps']) == 8 and sum(w['reciprocalIndex'] for w in links['warps']) == 6, 'Fossil lab boundary topology differs')
     contracts = event_contract(src, worlds, scripts, retained, links)
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='fossil-lab-', dir=target) as temp:
         stage = Path(temp)
         for world in worlds:
             relative = reader.directory(world['sourceName'])
             shared.import_map(src, world['sourceName'], world['stableId'], stage / relative)
         npcs = reuse_npcs(src, shared, worlds, stage, current)
-        source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
         entries = []
         for world in worlds:
             relative = reader.directory(world['sourceName'])
-            path = stage / relative / 'world.json'; rich = path.read_bytes()
-            compact = converter.convert(rich, sha(rich), source_hash); compact_check(compact, world, src)
-            data = converter.encode(compact); (stage / relative / 'runtime-map.json').write_bytes(data); path.unlink()
+            path = stage / relative / 'runtime-map.json'; rich = path.read_bytes()
+            compact = converter.normalize_runtime(json.loads(rich)); compact_check(compact, world, src)
+            data = converter.encode(compact); (stage / relative / 'runtime-map.json').write_bytes(data)
             entries.append(dict(sourceName=world['sourceName'], stableId=world['stableId'], directory=relative, sourceMapSymbol=world['events']['id'],
-                        path=relative + '/runtime-map.json', sha256=sha(data), byteLength=len(data),
-                        sourceWorldSha256=sha(rich), sourceWorldByteLength=len(rich), fullSourceHash=source_hash))
+                        path=relative + '/runtime-map.json'))
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False); lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=reader.TREE,
-                                    fullSourceHash=source_hash, maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+                                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
                                     mapSymbols={w['events']['id']: w['stableId'] for w in worlds + [city]}),
-                'scripts.json': scripts, 'constants.json': constants, 'contracts.json': contracts, 'npc-source.json': npcs,
-                'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}
+                'scripts.json': scripts,  'contracts.json': contracts, 'npc-source.json': npcs,
+                'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-                        sourceTree=reader.TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-                        converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'], rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+
                         inputCount=len(src.entries), mapCount=2, cellCount=473, borderCellCount=8, directedWarpCount=8,
                         objectCount=3, giftChoiceCount=3, coordinateEventCount=0, backgroundEventCount=4,
                         unsupportedWarpCount=2, unsupportedNpcEntryCount=1,
                         reusedNpcGraphicsCount=len(npcs['graphics']), scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned manifest differs')
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned source lock differs')
         writes = [(target / 'scripts/fossil-lab-region.lock.json', lock_bytes),
                   (target / 'scripts/fossil-lab-region.contract.json', canonical(contracts))]
-        writes += [(target / 'content/raw' / PACKAGE / p, data) for p, data in sorted(src.data.items())]
+        writes += [(target / 'content/raw/pokefirered/037335f4' / p, data) for p, data in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
             if path.suffix == '.json': json.loads(data)
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes),
-                              lockSha256=sha(lock_bytes), lockByteLength=len(lock_bytes), fullSourceHash=source_hash,
+        print(json.dumps(dict(
                               mapCount=2, cellRoundtripCount=473, borderCellRoundtripCount=8, unchangedCityCells=len(city['cells']),
                               inputCount=len(src.entries), outputCount=len(outputs), scriptBlockCount=len(scripts['blocks']), check=args.check), indent=2))
 

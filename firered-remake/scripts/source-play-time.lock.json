@@ -2,54 +2,34 @@
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "path": "src/play_time.c",
-      "sha256": "6444dec627a94218a9ee72d4e8c0ebb1fe66262d8f93fd1cc5de66cb5c9e4baf",
-      "byteLength": 1628
+      "path": "src/play_time.c"
     },
     {
-      "path": "include/play_time.h",
-      "sha256": "4c2e75a1e22efc019f1fea39a3f466a158b3d214004e9f916cd6fc45b40b3128",
-      "byteLength": 276
+      "path": "include/play_time.h"
     },
     {
-      "path": "src/main.c",
-      "sha256": "0bfa6c662b1cbd49bd31020b6c2509208004611e6701ad64badce22eca371139",
-      "byteLength": 11699
+      "path": "src/main.c"
     },
     {
-      "path": "src/overworld.c",
-      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
-      "byteLength": 103643
+      "path": "src/overworld.c"
     },
     {
-      "path": "src/new_game.c",
-      "sha256": "55f03492ea90ee853550a40008089d44ca59c28cb47b8aa10aa2494e8d8608cc",
-      "byteLength": 4328
+      "path": "src/new_game.c"
     },
     {
-      "path": "src/post_battle_event_funcs.c",
-      "sha256": "37070b4bf6fe839d2e78dc4a921225488f95e1a26c266b8666972b56eec66bc3",
-      "byteLength": 2420
+      "path": "src/post_battle_event_funcs.c"
     },
     {
-      "path": "src/trainer_card.c",
-      "sha256": "54c39013c4bd42a9b14d8a375b7d04aec80a6448dbb1ca2a7dba4f58d7821f60",
-      "byteLength": 67579
+      "path": "src/trainer_card.c"
     },
     {
-      "path": "include/global.h",
-      "sha256": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429",
-      "byteLength": 25663
+      "path": "include/global.h"
     },
     {
-      "path": "src/trainer_fan_club.c",
-      "sha256": "a0676e06e8b41041e8e7a093e4e9376e75baf00ae90bed44878e5aad6cb6524f",
-      "byteLength": 9460
+      "path": "src/trainer_fan_club.c"
     },
     {
-      "path": "data/scripts/hall_of_fame.inc",
-      "sha256": "c47616f23fe35a6c11228143a4277c86b4e4b9a803378389f8b9c30bce10e6c4",
-      "byteLength": 1182
+      "path": "data/scripts/hall_of_fame.inc"
     }
   ]
 }

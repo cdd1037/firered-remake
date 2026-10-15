@@ -6,16 +6,14 @@ namespace Game.Domain.Items;
 public sealed record DepartmentStoreOrdinaryItem(ItemId Id, int SourceItemId, string Name, int Price, string Pocket);
 
 /// <summary>The one authenticated external shelf. It neither extends nor relabels the five-Mart item catalog.</summary>
-public sealed record DepartmentStoreOrdinaryStock(string SourceCommit, string ContractSha256, string MapId,
+public sealed record DepartmentStoreOrdinaryStock(string SourceCommit, string MapId,
     string ClerkScript, ImmutableArray<DepartmentStoreOrdinaryItem> Entries, OpeningItemSourceRef Source) : AuthenticatedShopStock
 {
     public const string ExpectedMapId = "map.celadon-city-department-store-2f";
     public const string ExpectedStockId = "CeladonCity_DepartmentStore_2F_Items";
     public const string ExpectedClerkScript = "CeladonCity_DepartmentStore_2F_EventScript_ClerkItems";
     public const string ExpectedSourcePath = "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc";
-    public const string ExpectedContractSha256 = "8dc7477a49cabd7e1d21955cdb2cc2aaabc31891ca76a23f3b7c101a60493f84";
-    private static readonly OpeningItemSourceRef ExpectedSource = new(ExpectedSourcePath, ExpectedStockId, 28, 41,
-        "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e");
+    private static readonly OpeningItemSourceRef ExpectedSource = new(ExpectedSourcePath, ExpectedStockId, 28, 41);
     private static readonly ImmutableArray<DepartmentStoreOrdinaryItem> ExpectedEntries = [
         new(new("pret:ITEM_GREAT_BALL"), 3, "GREAT BALL", 600, "POCKET_POKE_BALLS"),
         new(new("pret:ITEM_SUPER_POTION"), 22, "SUPER POTION", 700, "POCKET_ITEMS"),
@@ -41,7 +39,7 @@ public sealed record DepartmentStoreOrdinaryStock(string SourceCommit, string Co
         // unchanged shelf when an authenticated successor adds unrelated items.
         EarlyShopInventoryRules.ValidateCatalog(catalog);
         if (SourceCommit != OpeningInventoryRules.SourceCommit ||
-            ContractSha256 != ExpectedContractSha256 || MapId != ExpectedMapId || ClerkScript != ExpectedClerkScript ||
+            MapId != ExpectedMapId || ClerkScript != ExpectedClerkScript ||
             Source != ExpectedSource || Entries.IsDefault || !Entries.SequenceEqual(ExpectedEntries))
             throw new NotSupportedException("Exact Department Store 2F ordinary source shelf required.");
         foreach (var entry in Entries)

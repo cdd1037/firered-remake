@@ -1,5 +1,7 @@
 # Project refactor: current integration and historical evidence
 
+2026-10-15 资源认证专项精简见 [本轮结果](deep-simplification-20261015.md)。它替代下文历史验收中关于逐文件来源 hash、冻结数量和运行时认证链的要求；保留实际玩法与存档边界。
+
 **Status, 2026-10-13: the bounded R1–R4 implementation and maintained acceptance gates are complete; final source synchronization is the remaining delivery action.** Current composition has one public loader; ordinary singles/doubles have one authoritative lifecycle; current Application trainer/field/item wiring is consolidated; superseded runtime/tooling owners are physically retired. The final Moon/Sun Stone ownership boundary also passes. Historical candidate cohorts, the combined battle gate and the final affected-item gate are identified separately below. This closes the defined deep refactor, not every possible future cleanup or all remaining game content. See [the final bounded result](#2026-10-13-final-bounded-refactor-result).
 
 Commit `8940b9b` completed only the four bounded changes listed below, source synchronization and the stage10 backup. Earlier wording describing the overall refactor as completed at that commit was too broad. Preserve those results as evidence of their original slice.

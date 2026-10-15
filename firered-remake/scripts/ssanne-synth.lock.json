@@ -2,809 +2,395 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "priorManifest": {
-    "byteLength": 79802,
-    "sha256": "8e7606644bb4384213c0bdbae8f9ad7bf41159f1bcda2db102e91bb0dbf2b7fe",
     "cueCount": 222
   },
   "files": [
     {
-      "path": "asm/macros/battle_anim_script.inc",
-      "byteLength": 4279,
-      "sha256": "cb193c567289983c26ed8acaa8dd64501c64c7e088e28995c49439333b52b27c",
-      "gitBlobSha1": "15c48c39f5860efe132e782c22a6cedb0f8d5ac3"
+      "path": "asm/macros/battle_anim_script.inc"
     },
     {
-      "path": "data/battle_anim_scripts.s",
-      "byteLength": 406484,
-      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
-      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068"
+      "path": "data/battle_anim_scripts.s"
     },
     {
-      "path": "data/event_scripts.s",
-      "byteLength": 55643,
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0"
+      "path": "data/event_scripts.s"
     },
     {
-      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc",
-      "byteLength": 13179,
-      "sha256": "f89afcf65a3fd4d6e7f71acc628d42b02dd34a5b6eeb37443206bdb7a85b2ced",
-      "gitBlobSha1": "8e8a4ee1a2d2a7956ebac41f6718abd536431336"
+      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Corridor/map.json",
-      "byteLength": 3071,
-      "sha256": "5e38eb169c99c7cf0bc571702fc761a93e9e9475c5a1d2774ca98e3bed443940",
-      "gitBlobSha1": "45bd8e6063b352b0a7dea8421deec6f6d752d944"
+      "path": "data/maps/SSAnne_1F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Corridor/scripts.inc",
-      "byteLength": 263,
-      "sha256": "617c700483eab06eaef21bf22db6e12fdf233fc54ae41abaf2903c24c0e9b02f",
-      "gitBlobSha1": "e90a83d0bff9b76adf2cf2b859a298c182c51a50"
+      "path": "data/maps/SSAnne_1F_Corridor/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Corridor/text.inc",
-      "byteLength": 479,
-      "sha256": "0c121f830d88aa5d6e23ed40a9a257dd11d7520d3536b72cd128745e3de8d0f5",
-      "gitBlobSha1": "d643e20c5d26c88fe69599bbd8f28bf6864ed6e2"
+      "path": "data/maps/SSAnne_1F_Corridor/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room1/map.json",
-      "byteLength": 1088,
-      "sha256": "73b8d0c04f3015ff4e01d2ad59484913a17ae63af9977bdb8c190bc112eb5ea7",
-      "gitBlobSha1": "a74f0215e1e2a5f59252b8ca5e7813cb7f15f473"
+      "path": "data/maps/SSAnne_1F_Room1/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room1/scripts.inc",
-      "byteLength": 146,
-      "sha256": "267af63ca18edff4ed07cfdd9a80bf9e911b66adc261a5bcdfa9261f65d49996",
-      "gitBlobSha1": "560e4603e12cd9d6e73d4f97261cbbd2a5fde786"
+      "path": "data/maps/SSAnne_1F_Room1/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room1/text.inc",
-      "byteLength": 204,
-      "sha256": "183b6a2c7315dc1e68d27ce021824c3e617bf8d20cfdbf1954b955ffd33bf0ff",
-      "gitBlobSha1": "47ec9c6032aa2bbf9034c7a31de1a85b45b256db"
+      "path": "data/maps/SSAnne_1F_Room1/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room2/map.json",
-      "byteLength": 2315,
-      "sha256": "c2711d8c2de8213e5fd8d6fcb89ccb9875a878529f4a29b0b5f31d941a7576c3",
-      "gitBlobSha1": "3681c1b971d979984b1fa541534cfe294aff3759"
+      "path": "data/maps/SSAnne_1F_Room2/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room2/scripts.inc",
-      "byteLength": 562,
-      "sha256": "1c0b1f88866fffeca852aadf2f47b54cd4b1a1eea6b0d9e538422f947b7cb9fc",
-      "gitBlobSha1": "ae1cc71e48d4725d81a6e4d269d9488c12f978fc"
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room2/text.inc",
-      "byteLength": 883,
-      "sha256": "945776f9cbfff96e19b2fbae7a5cb8611a89ab8d2de67bccd53cbb518524b476",
-      "gitBlobSha1": "46840b54d84e4d0ea9bcc6f7811cfb40e62aa6b7"
+      "path": "data/maps/SSAnne_1F_Room2/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room3/map.json",
-      "byteLength": 1920,
-      "sha256": "c61e4204a41797fb2a75dfe22601ae1dd253b0b25572a91c268d4f1c79c8d308",
-      "gitBlobSha1": "1523f12596911c53ec54eb5aa7b874107095038b"
+      "path": "data/maps/SSAnne_1F_Room3/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room3/scripts.inc",
-      "byteLength": 446,
-      "sha256": "f29fa9f74d6d779e60489776b7afecc47d2bde4680e29922c045cc0d40e24262",
-      "gitBlobSha1": "3f3beb86cf3af179f47752a21ed07be739b80cc3"
+      "path": "data/maps/SSAnne_1F_Room3/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room3/text.inc",
-      "byteLength": 337,
-      "sha256": "0e777c6a0f5afc0ca877dda95a07c462818fcbd99485b7d58cbcc7672f724939",
-      "gitBlobSha1": "0efe214325402f1d70aa076cec180026e23bb4e7"
+      "path": "data/maps/SSAnne_1F_Room3/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room4/map.json",
-      "byteLength": 1074,
-      "sha256": "875debfa9a9f3b689829a5985f3cb90c86220bb9bb5657dd4340173d1841262b",
-      "gitBlobSha1": "08de2fce80e31dd15a13323935a1e359d9dc4e26"
+      "path": "data/maps/SSAnne_1F_Room4/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room4/scripts.inc",
-      "byteLength": 365,
-      "sha256": "f0a6b057d917d946edec1540694fefda7647515d05fab92addcf804afe6b6a20",
-      "gitBlobSha1": "2af139b97473e96dcb0361ce2e89ec26a8405e01"
+      "path": "data/maps/SSAnne_1F_Room4/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room4/text.inc",
-      "byteLength": 244,
-      "sha256": "92d74079ad23dcaab13e2a302780ee61b4521e8f3c34adfb508cd34ffcd9ca0d",
-      "gitBlobSha1": "3c3932d6955b4cc7d0cf95c92e5bfaa1d49b3f63"
+      "path": "data/maps/SSAnne_1F_Room4/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room5/map.json",
-      "byteLength": 1074,
-      "sha256": "60fd6f0adc2f7907611713b511f0607d7e69afb39523343110b7e34bccfc8471",
-      "gitBlobSha1": "a796b3aa7949477922fca6ad1a2610e85fada24b"
+      "path": "data/maps/SSAnne_1F_Room5/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room5/scripts.inc",
-      "byteLength": 261,
-      "sha256": "ba9b8618fc9c72dac6acc97cf23208c669fca5b26c5b3b0a71c1565bd847ba0f",
-      "gitBlobSha1": "1ce15d72c146b89962f72927070f87073d0ddfd3"
+      "path": "data/maps/SSAnne_1F_Room5/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room5/text.inc",
-      "byteLength": 336,
-      "sha256": "3c96e8a1f2ffb4717b5c78edfd6de90238bdd03de60146442ed67610b29396f7",
-      "gitBlobSha1": "ece1b8e3a7bfc12f185db036769d8fe88522614d"
+      "path": "data/maps/SSAnne_1F_Room5/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room6/map.json",
-      "byteLength": 1069,
-      "sha256": "0315f7aa57c6e7b20dc0cbd4c7f588f502554b3c8b674629540223de142a9d62",
-      "gitBlobSha1": "2b19578a05ebc32fda3ed713f9ca1ca77df51858"
+      "path": "data/maps/SSAnne_1F_Room6/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room6/scripts.inc",
-      "byteLength": 659,
-      "sha256": "0548e56b2b4cb37a68908aa9b5203297a6160e30b3e0ba83c73530a1a2e62daa",
-      "gitBlobSha1": "7024b8273641eadfb49cc57f93dc43ee3e27def0"
+      "path": "data/maps/SSAnne_1F_Room6/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room6/text.inc",
-      "byteLength": 568,
-      "sha256": "ece78587741b8bc1b9521a38f9347fad45b066902c68b7ec9a49ef88a25a3b4b",
-      "gitBlobSha1": "c3851beece3a86ec746e9a6514a6cb153963094f"
+      "path": "data/maps/SSAnne_1F_Room6/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room7/map.json",
-      "byteLength": 1076,
-      "sha256": "d52c89114d37af0877b74b6a09f5c48d8632d0cc14601ef467af9be33273b0b2",
-      "gitBlobSha1": "92dd20902647272fdd1683518a013adc7f7d7234"
+      "path": "data/maps/SSAnne_1F_Room7/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room7/scripts.inc",
-      "byteLength": 261,
-      "sha256": "45f24708777b2c0099c649ab5f344854e94aebaa7709cd81a5eaafbf68c1ab69",
-      "gitBlobSha1": "480c81e3505f603eab8cc023287763c61e7017e6"
+      "path": "data/maps/SSAnne_1F_Room7/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room7/text.inc",
-      "byteLength": 343,
-      "sha256": "8d2a80e04ae4099c62023aa64c6eaa543bfbb9166522528ce5c6d1db6ac572cb",
-      "gitBlobSha1": "69682e8455e60b32cdc6ae5f5abe656215570df8"
+      "path": "data/maps/SSAnne_1F_Room7/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Corridor/map.json",
-      "byteLength": 3282,
-      "sha256": "f01af2f316a184b89145a21e0fbb4d31b9222279c95f55a84cfc05a296313bb7",
-      "gitBlobSha1": "56a20bb69da3418c9ebcc4e460eb189f1c821d16"
+      "path": "data/maps/SSAnne_2F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
-      "byteLength": 4381,
-      "sha256": "91d88d8000a96abfc7b8a41fd925c11663a0a00a706e56e2bf0784a03e073a6d",
-      "gitBlobSha1": "280960b9b4adc6a682ce2e7b0d76cc847c6b746c"
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Corridor/text.inc",
-      "byteLength": 1317,
-      "sha256": "aba3e73338b710f039f5044af4a488a753aef6f5d4cd7a01ea0cbf81da6410b4",
-      "gitBlobSha1": "45e2754bacb0f241048720ef1d3a5d65ef84e0f0"
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room1/map.json",
-      "byteLength": 1076,
-      "sha256": "dc549fa707c381bed030d207fc0be18c9fe461cfed0fb7346d0ddffd0f24c7f0",
-      "gitBlobSha1": "9bf965c753781bb52ede9ec948990f1d01e8df2c"
+      "path": "data/maps/SSAnne_2F_Room1/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room1/scripts.inc",
-      "byteLength": 300,
-      "sha256": "d535b319067b4cd33cec04921cef50f979c603ebbfef70cce65a050503ab334f",
-      "gitBlobSha1": "06292bc3cac39f261bf9b2401f827a4630fccf4d"
+      "path": "data/maps/SSAnne_2F_Room1/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room1/text.inc",
-      "byteLength": 242,
-      "sha256": "cdef62b45942211c9642f643fafa94587223fd8169031b10585e999302f90eca",
-      "gitBlobSha1": "38de125dfee20c95dc5c3c94e9f88989bfcd336b"
+      "path": "data/maps/SSAnne_2F_Room1/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room2/map.json",
-      "byteLength": 1918,
-      "sha256": "0006381f503e0ad2e3f62a40b6a4cf5c15ebc4625c80e25d0c1676a9362cabd2",
-      "gitBlobSha1": "0809ce8172a95f6e8d677af33980ff0ece9f97a6"
+      "path": "data/maps/SSAnne_2F_Room2/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room2/scripts.inc",
-      "byteLength": 474,
-      "sha256": "ef0212a41d9f1d6a9fef2a5cf0bf648d380bbe675259cf8b46879e3d47b63997",
-      "gitBlobSha1": "76d31608cdf6f40ffb7cb8668bf5c520d055973c"
+      "path": "data/maps/SSAnne_2F_Room2/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room2/text.inc",
-      "byteLength": 607,
-      "sha256": "a66a9af310a781b4722118fbb89c98c9616667cf6d150018e9e88501fd892d9e",
-      "gitBlobSha1": "65df9dc7a0e31d1835b57737327ff60fbd5f64f2"
+      "path": "data/maps/SSAnne_2F_Room2/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room3/map.json",
-      "byteLength": 1491,
-      "sha256": "54402e0926fc1ef63c8955944a4c7643f7ec9e33d7e2c8ce73a478aca3330dd1",
-      "gitBlobSha1": "c1dce2a6d1fdf252a329aa9e24f6ab0d6921e8d7"
+      "path": "data/maps/SSAnne_2F_Room3/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room3/scripts.inc",
-      "byteLength": 251,
-      "sha256": "d2b1badcc36db847c9277a49f7a3ec24296c12b71976ea76983faf725322b3de",
-      "gitBlobSha1": "a0b1908300832935c5472878023907aa3127c028"
+      "path": "data/maps/SSAnne_2F_Room3/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room3/text.inc",
-      "byteLength": 422,
-      "sha256": "93689012043129710277d88c6d124e69b222665555f408f07302dff56cf658e6",
-      "gitBlobSha1": "5e0d13edff0fce93e395b93c58d9b106e315df00"
+      "path": "data/maps/SSAnne_2F_Room3/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room4/map.json",
-      "byteLength": 1914,
-      "sha256": "d2ff41a019082575957a94df125fdeea787872d3cf2bacbcbb5a9e71d4e3f49a",
-      "gitBlobSha1": "ee878da6330b674c53abf80a4d27e4e164558385"
+      "path": "data/maps/SSAnne_2F_Room4/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room4/scripts.inc",
-      "byteLength": 464,
-      "sha256": "70b8449b3978651c822c13f1348a98f8e592dc317007b754fed88ecc5e29728e",
-      "gitBlobSha1": "30a5e580297dce41d320a174b0ca0e2878e7947c"
+      "path": "data/maps/SSAnne_2F_Room4/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room4/text.inc",
-      "byteLength": 616,
-      "sha256": "6b22e7fc7d792c2adbba699f6f710ec4eb61b82a1882e9b3200288b65dc289b9",
-      "gitBlobSha1": "feffbde9ec1e10eef2e8a1810197addae63643af"
+      "path": "data/maps/SSAnne_2F_Room4/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room5/map.json",
-      "byteLength": 1485,
-      "sha256": "d19834601be2c5c81632af5f0adf8e88743d1e1ef2d2f03f4fd450a845f77569",
-      "gitBlobSha1": "f982577f841666b58d09870e41986e049309a2a2"
+      "path": "data/maps/SSAnne_2F_Room5/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room5/scripts.inc",
-      "byteLength": 263,
-      "sha256": "25ae26e6fc2f05f6bd275ed520219bb82d38df34fc4df65c99284f2498477977",
-      "gitBlobSha1": "427ea57fbde065e3575f076aca6a9e9512765ebc"
+      "path": "data/maps/SSAnne_2F_Room5/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room5/text.inc",
-      "byteLength": 380,
-      "sha256": "d21ff97b53ac5f18e3e963fdaab5f3bc5b71f65259a779ec1a8327312e2b9097",
-      "gitBlobSha1": "2cc8cde4dceae97804a785eb4171e0db5910eb71"
+      "path": "data/maps/SSAnne_2F_Room5/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room6/map.json",
-      "byteLength": 1473,
-      "sha256": "74e8f753087458b9a8307d5f115c79b7e460500e218f472bbf80401129093a02",
-      "gitBlobSha1": "9b199c30a90afa0722fdbfd15cffbfa8a6363a64"
+      "path": "data/maps/SSAnne_2F_Room6/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room6/scripts.inc",
-      "byteLength": 248,
-      "sha256": "f0d430e954824f305e897d7a4a51e8f6dd8ff75fe64bec977560a28ddc839dba",
-      "gitBlobSha1": "50e1fe9cb122b262ddfe0421994588a7e9cdad23"
+      "path": "data/maps/SSAnne_2F_Room6/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room6/text.inc",
-      "byteLength": 221,
-      "sha256": "4193a72649755fd79502d0f848db7061269c5e57e3069fc4b868136f42b76139",
-      "gitBlobSha1": "ef84d3276d905165400de3dc1bbb6ce384d55cd7"
+      "path": "data/maps/SSAnne_2F_Room6/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_3F_Corridor/map.json",
-      "byteLength": 1351,
-      "sha256": "5abe650c1c590ced0e5a8336a70f82e2327ace45a62c246319d616e3a6c6ca6a",
-      "gitBlobSha1": "4c7259290f846a246045851a359efa51bf30e9ae"
+      "path": "data/maps/SSAnne_3F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_3F_Corridor/scripts.inc",
-      "byteLength": 155,
-      "sha256": "3504a321dfcbbe1dcb28c43bed156ef0a86bce2fa03d5ae1528659c9ab42c636",
-      "gitBlobSha1": "ac67eeadb9841d2d2ea593119ec2dfe93b309f05"
+      "path": "data/maps/SSAnne_3F_Corridor/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_3F_Corridor/text.inc",
-      "byteLength": 214,
-      "sha256": "cc5dc313fa2f25f07b181f3f062028cf4716309711a027a1b099f45980e92964",
-      "gitBlobSha1": "ae92664258de2413ce72a813eb58c5c51ecd3dc3"
+      "path": "data/maps/SSAnne_3F_Corridor/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Corridor/map.json",
-      "byteLength": 1585,
-      "sha256": "d461b347e81b72229e2869fcc6122c4fe2cb9880d79a2dc548450a4e77201797",
-      "gitBlobSha1": "fa64ecb132a33ddbca665440e22dc02019818427"
+      "path": "data/maps/SSAnne_B1F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Corridor/scripts.inc",
-      "byteLength": 42,
-      "sha256": "1445e8dd86982567dcda3cf8f8305b8c73bdb5601c5f05ec651c6db2b48a613e",
-      "gitBlobSha1": "dc68fb91fb91e73b7e17f8e9fb698d27d25689d6"
+      "path": "data/maps/SSAnne_B1F_Corridor/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room1/map.json",
-      "byteLength": 1479,
-      "sha256": "7b2e8e622aafe5fe6f2ff78df98cf6bf01e0c96f4d8ae3a0131be9699c94344b",
-      "gitBlobSha1": "254074b367b970cd39d43efb5aa54e1fb108666a"
+      "path": "data/maps/SSAnne_B1F_Room1/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc",
-      "byteLength": 490,
-      "sha256": "b0d06b2fd885fe10474d9184e68e376c25efcb128bfcadcc7461e46c08fca8a5",
-      "gitBlobSha1": "482276ed3ee7085475a27b176345d84859b876e9"
+      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
-      "byteLength": 777,
-      "sha256": "6026bf8226d9d62619419efde24f079ffadbd2b58dc7f93e6cd3fc138469a922",
-      "gitBlobSha1": "c14d6a450a1369b869364c2b3b2ea1b46f0a00ed"
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room2/map.json",
-      "byteLength": 1512,
-      "sha256": "63224893d6625b292254bf5de4d61772ecb48f43e95738abf51aed11fe54a823",
-      "gitBlobSha1": "edbedddbe7fb59130dc86bbdb70fcef844cc3380"
+      "path": "data/maps/SSAnne_B1F_Room2/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc",
-      "byteLength": 253,
-      "sha256": "400ec4e21f5c00af7bb85eda4ccb0123beabc8401368d03049d0aba268652cf5",
-      "gitBlobSha1": "0892143861af90b06993b98db4b9c6f11a682363"
+      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room2/text.inc",
-      "byteLength": 283,
-      "sha256": "5fcf5f155ead516747cf71f8cf9700ebcb1b0421872322e9691253d3f65cd1ce",
-      "gitBlobSha1": "969ab0e280e18846664201ae3ab21d6d315187ef"
+      "path": "data/maps/SSAnne_B1F_Room2/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room3/map.json",
-      "byteLength": 1513,
-      "sha256": "dac6bc49a289fd673f555d540f7498ee87d962a660cdac8ccb66302cdf89ddfc",
-      "gitBlobSha1": "f46cc525a726bfffb3cade5271d3649c87e0dcb4"
+      "path": "data/maps/SSAnne_B1F_Room3/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc",
-      "byteLength": 258,
-      "sha256": "4e88c5f66d0fbf3ee0f038154c6aeaf24daa3353c83f3daeb11ad8ef1165b1a6",
-      "gitBlobSha1": "f29f1a403d3b25d827bf4d951c550dd5514d2cbf"
+      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room3/text.inc",
-      "byteLength": 303,
-      "sha256": "ec522b9f396d2743a0d74ef9a8ae9081a31bfc2ebd321ecb0d98b81212ab9b45",
-      "gitBlobSha1": "6ce4f3f86ad233d4402a2869838e01e6ab6e56a8"
+      "path": "data/maps/SSAnne_B1F_Room3/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room4/map.json",
-      "byteLength": 1482,
-      "sha256": "628c81e6abe7f7ffc270fbdc42b6cc3d65b8af95a18475cb413a57404c613e29",
-      "gitBlobSha1": "d57823eb43f80a5d0fcdecb951f3dac379edcf50"
+      "path": "data/maps/SSAnne_B1F_Room4/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc",
-      "byteLength": 492,
-      "sha256": "433a64c1faff18e2bc0cea86bcf46c39b84429422826a6244c1d041c05b4ff6c",
-      "gitBlobSha1": "e1fde84a4cbcbeaab7824e6f0d40fe736e3808a6"
+      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
-      "byteLength": 634,
-      "sha256": "598b54e533cf0ceea15e7f9638c57a95265d32afb3274e65d70a2ef271b03802",
-      "gitBlobSha1": "cd4e6ba8304350afe81cba551208f63e4004fc95"
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room5/map.json",
-      "byteLength": 1922,
-      "sha256": "5dedef6a108304fc0c9bb510d8357b0aea55e8f5c96b270abec1e8ae22a8ad86",
-      "gitBlobSha1": "dce8aff5154979e17248ab4a24f9ab04a74b5f5f"
+      "path": "data/maps/SSAnne_B1F_Room5/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room5/scripts.inc",
-      "byteLength": 327,
-      "sha256": "4c32196a0dc4b85b672a906631464d676834c24d5b62d51e35369427a69e2b29",
-      "gitBlobSha1": "8cd94e4eab46bf57f8a6d6f19772a4a96e6d0681"
+      "path": "data/maps/SSAnne_B1F_Room5/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room5/text.inc",
-      "byteLength": 249,
-      "sha256": "a4e36f4a0deb327bfa8655b403c89c7b3896532c36aec9d296bb6bf85b58db17",
-      "gitBlobSha1": "03709658159e083ef8ff77a45392b946472ca74f"
+      "path": "data/maps/SSAnne_B1F_Room5/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_CaptainsOffice/map.json",
-      "byteLength": 1747,
-      "sha256": "aaf2356e01c1f2f5cdf79d6309513cbcd07a627cb442eb7aac2a5a782fdc9970",
-      "gitBlobSha1": "9d7417e62ff0ce98f176d9bac632ecadb2aacbcc"
+      "path": "data/maps/SSAnne_CaptainsOffice/map.json"
     },
     {
-      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
-      "byteLength": 1457,
-      "sha256": "6effe02479f7263830c238b90c906b7809cd5830613b885118176a770edb88aa",
-      "gitBlobSha1": "1a18816a0ceac8ff133da201b43648cba8215dd7"
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
-      "byteLength": 1792,
-      "sha256": "6c3f3204b7184be7613f801aed5742092267552fe460ad457f3c6fdd95ae844d",
-      "gitBlobSha1": "8d98bfdf5d7ec0c39d32656db43105521b99a459"
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_Deck/map.json",
-      "byteLength": 2814,
-      "sha256": "f73efcf1ae6de12e4c0a5c9c704c8274b485bf0232b45e06cbe69b6468d04be1",
-      "gitBlobSha1": "193652c1e4e3902b75cc750e3f3d31e2e306e96a"
+      "path": "data/maps/SSAnne_Deck/map.json"
     },
     {
-      "path": "data/maps/SSAnne_Deck/scripts.inc",
-      "byteLength": 730,
-      "sha256": "d0c43eaca14a4b9b334cfcda1ecbfb241e39dbef9fdbbf0c2c732e5a45156b2e",
-      "gitBlobSha1": "10360fbbe1fe938d1cc1d449cafcaccc16c0128d"
+      "path": "data/maps/SSAnne_Deck/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_Deck/text.inc",
-      "byteLength": 981,
-      "sha256": "51b609f32b2e1e7ece1aa25b419c4bfa3e0b4fb4cd79da1170d46411740e211b",
-      "gitBlobSha1": "51827d3a7f781d54fb8826c730129b3a8fa3d2e4"
+      "path": "data/maps/SSAnne_Deck/text.inc"
     },
     {
-      "path": "data/maps/SSAnne_Exterior/map.json",
-      "byteLength": 1863,
-      "sha256": "b61c2239d951708715a265802796df7c18adaeff8a277e90db1fe341d7c1c543",
-      "gitBlobSha1": "1402b883371019e00e94973b267afaf7bf48a0fa"
+      "path": "data/maps/SSAnne_Exterior/map.json"
     },
     {
-      "path": "data/maps/SSAnne_Exterior/scripts.inc",
-      "byteLength": 1401,
-      "sha256": "9d6464b9972ff2744d35e69124484829253f28706f5b07a0b3fb23c2fe00c3e1",
-      "gitBlobSha1": "4f6d2fd0a349041e2b41c5eb0a5c8ac4b4f73dac"
+      "path": "data/maps/SSAnne_Exterior/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_Kitchen/map.json",
-      "byteLength": 4618,
-      "sha256": "30e2de2146a0009c7dfb6d1f0140ee67f9aead914c0988bd6887e50528a41726",
-      "gitBlobSha1": "1566589d7c5aa66ee16b5c6684237f171d29b868"
+      "path": "data/maps/SSAnne_Kitchen/map.json"
     },
     {
-      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
-      "byteLength": 1290,
-      "sha256": "699cc7e5a81af4144467dbaa7c0aa2f380e2cd0ad214293220e90ba962f1d5b8",
-      "gitBlobSha1": "f90554c8815b1693deef70a13714309667fee5fc"
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc"
     },
     {
-      "path": "data/maps/SSAnne_Kitchen/text.inc",
-      "byteLength": 1452,
-      "sha256": "d689843d40e5fd7897b8686ab20132887d75d0e4d7fc4a511a5cd3f9981d1239",
-      "gitBlobSha1": "95df017a5d9f8d6efea8e4d2917891634c7e0dd0"
+      "path": "data/maps/SSAnne_Kitchen/text.inc"
     },
     {
-      "path": "data/maps/VermilionCity/scripts.inc",
-      "byteLength": 8180,
-      "sha256": "f6b97403b5ba7b183e00c60052155b4515fac4037945c08a734e65c25fde3465",
-      "gitBlobSha1": "580560a5deca74cca9feacf052c589cd8b0afcde"
+      "path": "data/maps/VermilionCity/scripts.inc"
     },
     {
-      "path": "data/maps/VermilionCity/text.inc",
-      "byteLength": 4368,
-      "sha256": "748a83870add7a7d2ff50c1afad1fe1c410842acf84ded75f7c6b3174b63371f",
-      "gitBlobSha1": "befc4a35664c61ee992c38ecf0e7445e972a3c08"
+      "path": "data/maps/VermilionCity/text.inc"
     },
     {
-      "path": "data/scripts/field_moves.inc",
-      "byteLength": 7082,
-      "sha256": "8f1c7850d777b97ceb8779e3b2cb4a30562cd647e3c03192261fb917a42a9bb6",
-      "gitBlobSha1": "fc2998f1aed8b11482d87e51cfe9e51fa9dd630c"
+      "path": "data/scripts/field_moves.inc"
     },
     {
-      "path": "data/scripts/item_ball_scripts.inc",
-      "byteLength": 12171,
-      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c",
-      "gitBlobSha1": "25233baa0794d0511f01638676eb4c7803c957e8"
+      "path": "data/scripts/item_ball_scripts.inc"
     },
     {
-      "path": "data/scripts/movement.inc",
-      "byteLength": 1147,
-      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64",
-      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5"
+      "path": "data/scripts/movement.inc"
     },
     {
-      "path": "data/scripts/obtain_item.inc",
-      "byteLength": 5866,
-      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d",
-      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9"
+      "path": "data/scripts/obtain_item.inc"
     },
     {
-      "path": "data/scripts/pc.inc",
-      "byteLength": 2483,
-      "sha256": "9e2d8abcd0e8e96ca1ac8b63c7021b552a6f441ea181e24471340a9d2f0b9e99",
-      "gitBlobSha1": "77cf55e6faf1108048781d2e574e85302201287d"
+      "path": "data/scripts/pc.inc"
     },
     {
-      "path": "data/scripts/pkmn_center_nurse.inc",
-      "byteLength": 2127,
-      "sha256": "169773893bdcab47f6bfe083b72f24246ef1613723f876ff96a3ff9cd7a6e8be",
-      "gitBlobSha1": "507c8a4980bc7431117721d46b0118a6a71c1f80"
+      "path": "data/scripts/pkmn_center_nurse.inc"
     },
     {
-      "path": "data/scripts/pokedex_rating.inc",
-      "byteLength": 2621,
-      "sha256": "1296caff62f2ee448b5b5f5b2e08ab9e710307c463673a997282326666ec92e5",
-      "gitBlobSha1": "6a4ed07511f68b0af8e9e60ce4515b85dac5bc73"
+      "path": "data/scripts/pokedex_rating.inc"
     },
     {
-      "path": "data/scripts/seagallop.inc",
-      "byteLength": 6010,
-      "sha256": "112de39a1e7fabc0ef46a884271c58f4ae0025cd7dc1b9a956158fb1b3cf17a3",
-      "gitBlobSha1": "242b42023f713e386d2885a9e106d2b8eb7fd758"
+      "path": "data/scripts/seagallop.inc"
     },
     {
-      "path": "data/scripts/std_msgbox.inc",
-      "byteLength": 1040,
-      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431",
-      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde"
+      "path": "data/scripts/std_msgbox.inc"
     },
     {
-      "path": "data/scripts/trainer_battle.inc",
-      "byteLength": 3768,
-      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c",
-      "gitBlobSha1": "c3e4371962dae55fedfd0b5c2f02068a1f8cf0e7"
+      "path": "data/scripts/trainer_battle.inc"
     },
     {
-      "path": "data/scripts/white_out.inc",
-      "byteLength": 1627,
-      "sha256": "b69a9eaf6cb7ca27fffae11bb005a881d1d140d34e2a03b89cab7b8046ff9d1e",
-      "gitBlobSha1": "ff4feb66f0822b61a8815b69196800855d31e14e"
+      "path": "data/scripts/white_out.inc"
     },
     {
-      "path": "data/text/obtain_item.inc",
-      "byteLength": 1065,
-      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813",
-      "gitBlobSha1": "8d2708166d4d21da3a6c20282e0ebf244ca0d57e"
+      "path": "data/text/obtain_item.inc"
     },
     {
-      "path": "data/text/pc.inc",
-      "byteLength": 370,
-      "sha256": "bc20a171a70aaf9a4173c042f1e2206037d871a0191a41fecdd18d3845aad189",
-      "gitBlobSha1": "2bf09b34338dba5a94da30b214ba83781ca5220d"
+      "path": "data/text/pc.inc"
     },
     {
-      "path": "data/text/pokedex_rating.inc",
-      "byteLength": 3759,
-      "sha256": "02375e8e33a2940c2d5ee64c1196497d29e4475f5bc2ef40a338d59a161d1cc0",
-      "gitBlobSha1": "3aa1080aa2174a8f6479e235bcdf73bddab78521"
+      "path": "data/text/pokedex_rating.inc"
     },
     {
-      "path": "data/text/seagallop.inc",
-      "byteLength": 216,
-      "sha256": "acbbdb670f32ee992fb379110375deb41eeb9fece31fab992dc95562e4390a50",
-      "gitBlobSha1": "a4cc2f604d4ad2cc23bb6215d64e5bab134944ee"
+      "path": "data/text/seagallop.inc"
     },
     {
-      "path": "data/text/white_out.inc",
-      "byteLength": 1688,
-      "sha256": "3a93c033309a4c987fc707fd8549f4d1c248df83773abde472596992ee1da42f",
-      "gitBlobSha1": "1d00c1e10a37ced4b6fc2810a51e83a702311c72"
+      "path": "data/text/white_out.inc"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "sound/cry_tables.inc",
-      "byteLength": 16533,
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "path": "sound/direct_sound_samples/cries/growlithe.wav",
-      "byteLength": 6726,
-      "sha256": "88f03e5dd9922cfd4546501b6e70b4a8e65eb25f7d0580dbd231552f14b29de1",
-      "gitBlobSha1": "96ea21385a9f83a52a1a0cd628e1a6e5dd520b92"
+      "path": "sound/direct_sound_samples/cries/growlithe.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/machoke.wav",
-      "byteLength": 6812,
-      "sha256": "3d80ae4cfa4047a7cbfe6737845aa6de67023faaf654d572e5755f849b7fbd54",
-      "gitBlobSha1": "de76612e3565adbc02caa4f436f8029806858836"
+      "path": "sound/direct_sound_samples/cries/machoke.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/ponyta.wav",
-      "byteLength": 7554,
-      "sha256": "2e6b1eee2f172ec0de1c7423774881a34cec0b681a06ca578e678bd11d4332d2",
-      "gitBlobSha1": "bfa5b06ef3d64d072ac25a48899c248ef02d814d"
+      "path": "sound/direct_sound_samples/cries/ponyta.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/tentacool.wav",
-      "byteLength": 7992,
-      "sha256": "3f73cefac2c28b3e48a6992f58d82afc65a76fb983a5744214161342900071a9",
-      "gitBlobSha1": "f35d2a6252bdfdab4857f3cede6b186178ca7c9c"
+      "path": "sound/direct_sound_samples/cries/tentacool.wav"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/mus_ss_anne.mid",
-      "byteLength": 12601,
-      "sha256": "e58d69c7dd1669dd5cfae568368add7dcf1bbd82cf979ff27c6fd71141c4fd89",
-      "gitBlobSha1": "b843ca364e94c67b9af4d634c0c1503b35534c67"
+      "path": "sound/songs/midi/mus_ss_anne.mid"
     },
     {
-      "path": "sound/songs/midi/mus_surf.mid",
-      "byteLength": 6050,
-      "sha256": "45e84dd5237b79c7039ca6c8e071dc2f0e47552725fbb8616c5619eddb9d14d8",
-      "gitBlobSha1": "3ac684ac24e27525f15c169380060433ebfd3133"
+      "path": "sound/songs/midi/mus_surf.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_brick_break.mid",
-      "byteLength": 276,
-      "sha256": "b86e27dd8abcf2a2b9b81806dd355d3fa99c730d4f10ea7a6f08f091713c130c",
-      "gitBlobSha1": "8c4b9d3c04b2bbf2da87719954636d0005137836"
+      "path": "sound/songs/midi/se_m_brick_break.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_confuse_ray.mid",
-      "byteLength": 280,
-      "sha256": "2baf95683d033d482435874962c0b1ecfee8866fa4d05b478b1543f2550fc3ca",
-      "gitBlobSha1": "4ad9b70d9ed9f7057ccda1d2cc81e4b1f6007a9b"
+      "path": "sound/songs/midi/se_m_confuse_ray.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_cut.mid",
-      "byteLength": 247,
-      "sha256": "53cb388934324764c9a0b7597e7c4e4d6793f9adf0566fc71ba496d4d33b7207",
-      "gitBlobSha1": "2f1b4e05924790f1fdd782fc6d5b8106fa35e82d"
+      "path": "sound/songs/midi/se_m_cut.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_detect.mid",
-      "byteLength": 240,
-      "sha256": "671ffce8bb7d51e2ee4059db5912d8d380197e21aba62657eeb6d9a73a38b222",
-      "gitBlobSha1": "946f76b36407614f87eb62f9c7a8b46e0fec292b"
+      "path": "sound/songs/midi/se_m_detect.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_dizzy_punch.mid",
-      "byteLength": 192,
-      "sha256": "d791838ea440a9c31dc18a2c29f73c1ecba3667a1920a3f86d7bddef992821a5",
-      "gitBlobSha1": "efbb0bef6a80b504df2fdf48a4805a793ede9939"
+      "path": "sound/songs/midi/se_m_dizzy_punch.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_dragon_rage.mid",
-      "byteLength": 356,
-      "sha256": "a60b51c46367cf348c2ea37c373b1d3b4f877713e357b67bd9ac0068ca8c4911",
-      "gitBlobSha1": "91b6137a1eaf581a60733a9f229c81516a91f502"
+      "path": "sound/songs/midi/se_m_dragon_rage.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_psybeam.mid",
-      "byteLength": 274,
-      "sha256": "00c758328d3e8b187467ccf77ef3f57630d35e74587de11243cd2f99972ca7fd",
-      "gitBlobSha1": "d792e779213d97b5e5688ea53d10f2fc94465fd1"
+      "path": "sound/songs/midi/se_m_psybeam.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_sky_uppercut.mid",
-      "byteLength": 240,
-      "sha256": "1fd705781dbba2fc7343316aaddaa30e92b6eab409529ef1ce38eb6a80dae7b7",
-      "gitBlobSha1": "b7d313d3ada428f8475bef62ae4a20e55f051d45"
+      "path": "sound/songs/midi/se_m_sky_uppercut.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_snore.mid",
-      "byteLength": 249,
-      "sha256": "df86fcb82fbcb8751b3386a1a9ba9f6919e33e3d4aa91254da09f3099c3b9d48",
-      "gitBlobSha1": "5f5797847d00f376c9799b473ad3a6b1eda4ef65"
+      "path": "sound/songs/midi/se_m_snore.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_vital_throw.mid",
-      "byteLength": 173,
-      "sha256": "80def20d1f6c3175986938df5fb9b10da11a86c70afa5f1da0faf292b818e273",
-      "gitBlobSha1": "d626455cad8a2b26f50c5dbd8ab0c44b36d69578"
+      "path": "sound/songs/midi/se_m_vital_throw.mid"
     },
     {
-      "path": "sound/songs/midi/se_ss_anne_horn.mid",
-      "byteLength": 322,
-      "sha256": "1751d5e7e659599e13da4b51ed37d78a3e4d19790d2a020b0002765315cb3ddc",
-      "gitBlobSha1": "6dbe2f08e4fbad5f75588957dbd4ad2f58b879ec"
+      "path": "sound/songs/midi/se_ss_anne_horn.mid"
     },
     {
-      "path": "src/ss_anne.c",
-      "byteLength": 5239,
-      "sha256": "74e4a83b6dc053a0d4807fb56515b35ae2bbf3e4db68ba0adbf0249f51ba10cf",
-      "gitBlobSha1": "71335915a3fc90b224e2839c89fb1f81407f75bc"
+      "path": "src/ss_anne.c"
     }
   ],
   "inputs": [
     {
-      "path": "scripts/synth-ssanne-cues.json",
-      "byteLength": 85897,
-      "sha256": "1eecd6907457d13ac6f67afc8ee47bc377a85757c8c75bbbbd73c95fc3cf29ed"
+      "path": "scripts/synth-ssanne-cues.json"
     },
     {
-      "path": "content/generated/synth-audio/firered.pack",
-      "byteLength": 2565436,
-      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+      "path": "content/generated/synth-audio/firered.pack"
     },
     {
-      "path": "content/generated/synth-audio/normal-cries.bin",
-      "byteLength": 6188,
-      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+      "path": "content/generated/synth-audio/normal-cries.bin"
     },
     {
-      "path": "content/generated/ssanne-region/ssanne-catalog.json",
-      "byteLength": 109341,
-      "sha256": "17f9ed5f795dd088136cd7fbf8b6fd777f649b87898f0172e20d656999e065fc"
+      "path": "content/generated/ssanne-region/ssanne-catalog.json"
     },
     {
-      "path": "content/generated/ssanne-region/scripts.json",
-      "byteLength": 402109,
-      "sha256": "6cfdf18079301a2c78564caf359febcb67551d87319526a8a51e2f23dac798b2"
+      "path": "content/generated/ssanne-region/scripts.json"
     },
     {
-      "path": "content/generated/ssanne-pokemon/catalog.json",
-      "byteLength": 151703,
-      "sha256": "5d49c84e8ed5a13fcc0e3a2d1a16901dff7df4f3da421984aa93ade7680ec947"
+      "path": "content/generated/ssanne-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/ssanne-pokemon/scope.json",
-      "byteLength": 94912,
-      "sha256": "d8e290f659e8d88cb2f4dc8e205a67ad96b46ac30d316c4031acd439013d3c4a"
+      "path": "content/generated/ssanne-pokemon/scope.json"
     },
     {
-      "path": "content/generated/ssanne-pokemon/supplement.json",
-      "byteLength": 38867,
-      "sha256": "84f15b99910754b3ba2f14373d8418dbb8693ed1b1d5800e60477e0e746d4390"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
-      "byteLength": 4642,
-      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
-      "byteLength": 2705,
-      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
-      "byteLength": 2372,
-      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
-      "byteLength": 4767,
-      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
-      "byteLength": 2676,
-      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
-      "byteLength": 9512,
-      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
-      "byteLength": 37803,
-      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+      "path": "content/generated/ssanne-pokemon/supplement.json"
     }
   ]
 }

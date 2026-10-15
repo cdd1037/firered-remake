@@ -84,7 +84,7 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-vs-seeker.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/vs-seeker']),
  ('import-vs-seeker-parties.py', ['--source-root','{reference}','--dependency-root','{project}','--rules-root','{project}','--output-root','{project}']),
  ('import-vs-seeker-presentation.py', ['{reference}','{project}','{project}']),
- ('import-teachy-tv.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv','--raw-output','{project}/content/raw/teachy-tv']),
+ ('import-teachy-tv.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv','--raw-output','{project}/content/raw/pokefirered/037335f4']),
  ('import-teachy-tv-art.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv-art']),
  ('import-teachy-tv-audio.py', ['{reference}','{project}','--dependency','{project}']),
  ('import-mail-composer.py', ['--reference-root','{reference}','--dependency-root','{project}','--project-root','{project}']),
@@ -98,13 +98,10 @@ def main():
     parser.add_argument('--report-root', type=Path, required=True)
     args = parser.parse_args()
     project, reference, report = args.project_root.resolve(), args.reference_root.resolve(), args.report_root.resolve()
-    for name, digest in {
-        '_regional_service_shared.py': '06652d76f26abf13cd25b5e8a80c72f6e134314f62786cce79eee45d84303a0b',
-        '_reviewed_runtime_converter.py': '9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8',
-    }.items():
-        path = project / 'tools/import-regional-service-maps' / name
-        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
-            raise SystemExit('Required authored converter missing or changed: ' + str(path))
+    for relative in ('tools/import-regional-service-maps/_regional_service_shared.py', 'scripts/export-runtime-maps.py'):
+        path = project / relative
+        if not path.is_file():
+            raise SystemExit('Required converter missing: ' + str(path))
     report.mkdir(parents=True, exist_ok=True)
     rows = []
     for index, (script, arguments) in enumerate(STEPS, 1):

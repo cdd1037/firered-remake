@@ -44,7 +44,7 @@ public static class CeruleanTrainerActionAi
         var last = input.LastLandedMove is null || input.LastLandedMove.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || slots?.Doubles != true && input.LastLandedMove.Value.Value == "pret:MOVE_STRUGGLE" ? null :
             catalog.Moves.GetValueOrDefault(input.LastLandedMove.Value);
         if (input.LastLandedMove is { } lastId && lastId.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" or "pret:MOVE_STRUGGLE") &&
-            (last is null || !(slots is not null ? MetronomeSourceMoveDefinition.Matches(last) : rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, last) : route11Rules ? Route11BattleScope.ValidDefinition(last) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(last) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(last) : vermilionRules ? VermilionBattleScope.ValidDefinition(last) : billRules ? BillBattleScope.ValidDefinition(last) : CeruleanBattleScope.ValidDefinition(last)))) return Fault("cerulean_switch_last_move");
+            (last is null || !(slots is not null ? SourceMoveDefinitionRules.IsValid(last) : rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, last) : route11Rules ? Route11BattleScope.ValidDefinition(last) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(last) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(last) : vermilionRules ? VermilionBattleScope.ValidDefinition(last) : billRules ? BillBattleScope.ValidDefinition(last) : CeruleanBattleScope.ValidDefinition(last)))) return Fault("cerulean_switch_last_move");
         var current = rng; var trace = ImmutableArray.CreateBuilder<RandomTrace>();
         int Draw(string purpose,int bound)
         {

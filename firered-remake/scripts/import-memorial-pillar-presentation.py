@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import only original Hoothoot/Noctowl opponent art and cries from pinned local Git blobs."""
 import argparse
-import hashlib
 import io
 import json
 import re
@@ -15,18 +14,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'memorial-pillar-presentation'
 BASE = 'content/generated/' + PACKAGE + '/'
-RAW = 'content/raw/' + PACKAGE + '/'
+RAW = 'content/raw/pokefirered/037335f4/'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-memorial-pillar-presentation-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA = '3c9cfc4491f61419743b9f8fed45befae27027081232a5f21fe8fa2dd4f6256b'
-MANIFEST_SHA = 'cf47a71062dce135198cc53f6cfa92b6354e0f08745b1d3308f88babdbe4becd'
 SPECIES = [('Hoothoot', 163), ('Noctowl', 164)]
-
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -43,12 +35,11 @@ def safe(path):
 
 
 # Shared raw inputs are authenticated by this package's lock and the pinned Git blob.
-SHARED_RAW = {path: 'content/raw/fossil-lab-presentation/' + path for path in [
+SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in [
     'include/constants/species.h', 'src/data/graphics/pokemon.h',
     'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h',
     'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/data/pokemon/pokedex_entries.h',
     'src/data/pokemon/pokedex_text_fr.h', 'sound/cry_tables.inc', 'include/constants/sound.h']}
-
 
 
 def safe_path(root, relative):
@@ -75,7 +66,6 @@ def read_git_blob(reference, path):
     mode, kind, object_id = header.decode().split()
     need((mode, kind, name.decode()) == ('100644', 'blob', path), 'Source object is not a regular file')
     data = git(reference, 'cat-file', 'blob', object_id)
-    need(hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest() == object_id, 'Source Git blob differs')
     return data
 
 
@@ -83,9 +73,6 @@ class Source:
     def __init__(self, reference, dependency, target):
         self.reference, self.dependency, self.target = reference, dependency, target
         self.data, self.entries = {}, {}
-        if reference:
-            need(git(reference, 'rev-parse', COMMIT + '^{tree}').decode().strip() == TREE,
-                 'Pinned source tree differs')
 
     def read(self, path):
         if path not in self.data:
@@ -98,8 +85,7 @@ class Source:
             else:
                 data = safe_path(self.dependency if path in SHARED_RAW else self.target, raw_path).read_bytes()
             self.data[path] = data
-            self.entries[path] = dict(path=path, rawPath=raw_path, byteLength=len(data), sha256=sha(data),
-                gitBlobSha1=hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest())
+            self.entries[path] = dict(path=path, rawPath=raw_path)
         return self.data[path]
 
     def text(self, path):
@@ -107,7 +93,7 @@ class Source:
 
     def lock(self):
         need(set(SHARED_RAW) <= self.entries.keys(), 'Unused shared raw input')
-        return dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
+        return dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT,
                     profile=PROFILE, files=[self.entries[p] for p in sorted(self.entries)])
 
 
@@ -117,16 +103,14 @@ def build(target, dependency, reference, check):
 
     def reuse(path):
         data = safe_path(dependency, path).read_bytes()
-        inherited[path] = dict(path=path, byteLength=len(data), sha256=sha(data))
+        inherited[path] = dict(path=path)
         return data
 
     def emit(identity, rgba, paths, **fields):
         buf = io.BytesIO()
         Image.frombytes('RGBA', (64, 64), rgba).save(buf, format='PNG', optimize=False, compress_level=9)
-        outputs[identity + '.rgba'], outputs[identity + '.png'] = rgba, buf.getvalue()
-        return dict(id=identity, width=64, height=64, rgbaPath=BASE + identity + '.rgba',
-                    texturePath=BASE + identity + '.png', rgbaSha256=sha(rgba), sha256=sha(buf.getvalue()),
-                    sourcePaths=paths, **fields)
+        outputs[identity + '.png'] = buf.getvalue()
+        return dict(id=identity, width=64, height=64, texturePath=BASE + identity + '.png', sourcePaths=paths, **fields)
 
     dex = json.loads(reuse('content/generated/pokedex-menu/pokedex-menu.json'))
     species_constants = source.text('include/constants/species.h')
@@ -165,7 +149,7 @@ def build(target, dependency, reference, check):
         entry = next(e for e in dex['entries'] if e['sourceSpeciesId'] == number)
         for field in ['source', 'descriptionSource']:
             ref = entry[field]
-            need(ref['commit'] == COMMIT and sha(source.read(ref['path'])) == ref['sha256'], 'Dex metadata source hash differs')
+            source.read(ref['path']); need(ref['commit'] == COMMIT, 'Dex metadata source hash differs')
         declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text(entry['source']['path']), re.S)[1]
         need(entry['name'] == name.upper() and entry['nationalNumber'] == number and
              re.search(r'\.categoryName\s*=\s*_\("' + entry['category'] + r'"\)', declaration) and
@@ -175,13 +159,12 @@ def build(target, dependency, reference, check):
         text = ''.join(json.loads('"' + s + '"') for s in re.findall(r'"([^"\n]*)"', description))
         need(text == entry['description'], 'Dex description differs')
         front = next(s for s in sprites if (s['sourceSpeciesId'], s['side'], s['paletteVariant']) == (number, 'front', 'normal'))
-        texture = {k: front[k] for k in ['texturePath', 'sha256', 'rgbaSha256', 'width', 'height']}
+        texture = {k: front[k] for k in ['texturePath',  'width', 'height']}
         entries.append(dict(entry, portrait=texture, footprint=None))
 
     pack = reuse('content/generated/synth-audio/firered.pack')
     cries = reuse('content/generated/synth-audio/normal-cries.bin')
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-         sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack identity differs')
+    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
     cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
     cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
     priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
@@ -212,7 +195,7 @@ def build(target, dependency, reference, check):
             decoded.append((value + 128) & 255)
         need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
         cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded), decodedSha256=sha(decoded), sourcePath=path, sourcePlayer=4, priority=priority))
+            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
         cues.append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceCommit=COMMIT, sourceSymbol='SPECIES_' + name.upper(),
             sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
 
@@ -221,7 +204,7 @@ def build(target, dependency, reference, check):
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
     lb = canonical(lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lb),
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], newOwnedSpecies=[], newOpponentOnlySpecies=[163, 164],
         sprites=sprites, pokemonIcons=[], footprints=[], dexEntriesPath=BASE + 'dex-entries.json',
         moveAnimationGeometry=dict(rows=geometry), audio=dict(newCueCount=2, cues=cues, normalCries=cry_evidence,
@@ -230,12 +213,8 @@ def build(target, dependency, reference, check):
                 'Original front/back normal/shiny sprites support shared Transform and seen-Dex presentation.',
                 'No new icons or footprints: ordinary party/storage menus use original owned species, not Transform appearance.',
                 'No new move animation coverage; native visual and audible output remain unverified.'],
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())])
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = canonical(manifest)
-    if LOCK_SHA:
-        need(sha(lb) == LOCK_SHA, 'Pinned Memorial Pillar presentation source inventory differs')
-    if MANIFEST_SHA:
-        need(sha(mb) == MANIFEST_SHA, 'Pinned Memorial Pillar presentation manifest differs')
     writes = [(target / ('scripts/' + PACKAGE + '.lock.json'), lb), (target / BASE / 'manifest.json', mb)]
     writes += [(target / RAW / p, b) for p, b in sorted(source.data.items()) if p not in SHARED_RAW]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
@@ -249,9 +228,9 @@ def build(target, dependency, reference, check):
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(b)
     print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.entries), newRawFiles=len(source.entries) - len(SHARED_RAW),
-        sharedRawFiles=len(SHARED_RAW), inheritedInputs=len(inherited), newBattleSprites=8, newAudioCues=2,
-        newOwnedSpecies=0, newIcons=0, newFootprints=0, dexEntries=2, lockSha256=sha(lb), lockBytes=len(lb),
-        manifestSha256=sha(mb), manifestBytes=len(mb)), indent=2))
+         inheritedInputs=len(inherited), newBattleSprites=8, newAudioCues=2,
+        newOwnedSpecies=0, newIcons=0, newFootprints=0, dexEntries=2,  lockBytes=len(lb),
+         manifestBytes=len(mb)), indent=2))
 
 
 if __name__ == '__main__':

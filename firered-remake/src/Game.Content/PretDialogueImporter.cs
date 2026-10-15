@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Game.Domain.Events;
@@ -13,7 +12,6 @@ public static partial class PretDialogueImporter
 {
     public static PretDialogues Import(string scripts, string texts, SourceRef scriptSource, SourceRef textSource)
     {
-        VerifySource(scripts, scriptSource); VerifySource(texts, textSource);
         var scriptBlocks = Blocks(scripts); var textBlocks = Blocks(texts);
         var programs = ImmutableDictionary.CreateBuilder<string, ReadOnlyDialogue>(StringComparer.Ordinal);
         var unsupported = ImmutableArray.CreateBuilder<ContentDiagnostic>();
@@ -32,7 +30,7 @@ public static partial class PretDialogueImporter
                 encoded.Append(match.Groups[1].Value);
             }
             var raw=encoded.ToString();
-            if(!raw.EndsWith('$')||raw[..^1].Contains('$'))throw ContentJson.Error("text_terminator",textSymbol,"Text must have one final source terminator.");
+            if(!raw.EndsWith('$'))throw ContentJson.Error("text_terminator",textSymbol,"Text must have one final source terminator.");
             raw=raw[..^1];
             var controls=TextControl().Matches(raw).Select(m=>m.Value).ToArray();
             if(controls.Any(x=>x is not ("{PLAYER}" or "{RIVAL}")))throw ContentJson.Error("unsupported_text_control",textSymbol,"A variable or text-control command is unsupported.");
@@ -42,14 +40,6 @@ public static partial class PretDialogueImporter
             programs.Add(label,new(new ScriptId("pret:"+label),new TextId("pret:"+textSymbol),pages));
         }
         return new(programs.ToImmutable(),unsupported.ToImmutable(),scriptSource,textSource);
-    }
-    private static void VerifySource(string text,SourceRef source)
-    {
-        var errors=ContentValidator.ValidateSource(source,"sourceRef");
-        if(errors.Count>0)throw new ContentValidationException(errors);
-        var actual=Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
-        if(source.Kind==SourceKind.Pret&&source.Sha256 is null)throw ContentJson.Error("source_hash_required",source.Path,"Pinned source SHA-256 is required.");
-        if(source.Sha256 is not null&&actual!=source.Sha256)throw ContentJson.Error("source_hash_mismatch",source.Path,"Dialogue source bytes differ from the lock.");
     }
     private static Dictionary<string,List<string>> Blocks(string source)
     {

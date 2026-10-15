@@ -14,16 +14,13 @@ public sealed partial class PretCampaignCatalog
     public SurfOwnedPokemonCatalog? SurfOwnership { get; }
     public bool SurfEnabled=>SurfOwnership is not null;
     public IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters { get; }
-    private static void AppendSurfSources(PretSurfScripts surf,List<PretSourceScriptFile> sources,List<string> texts,
-        Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendSurfSources(PretSurfScripts surf,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.SingleOrDefault(s=>s.Path==surf.Script.Path);
         if(prior is not null && prior!=surf.Script)throw new InvalidDataException("surf_source_conflict");
         if(prior is null)sources.Add(surf.Script);
         if(!texts.Contains(surf.Text,StringComparer.Ordinal))texts.Add(surf.Text);
-        MergeRegionalServiceConstants(constants,surf.Constants);hashes.AddRange(surf.AdditionalSourceHashes);
-        hashes.Add("surf-campaign:"+SurfContentProfile);
-    }
+        MergeRegionalServiceConstants(constants,surf.Constants);    }
     // The source assembler places these three labels contiguously. The general compiler
     // represents one program per label, so the successor explicitly includes the original
     // fallthrough suffix instead of depending on dictionary order or inventing instructions.

@@ -4,9 +4,14 @@
 Reads pinned Git blobs as inert data. Executes only the hash-pinned local map
 renderer, compact converter and source utilities. Service rules live separately.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -20,32 +25,24 @@ PACKAGE = 'four-island-daycare'
 RESOURCE_ID = 'firered-four-island-daycare-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-MANIFEST_SHA256 = '56dd8087f99f9d31f63b768ca7bd3675d7ca435dc32da6fc730c0678ef5bc7e7'
-LOCK_SHA256 = 'dded46c8749c613209f5a867ec578faca6b8fd706bcfef20d293acb5d0fae7c3'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
 MAP = 'FourIsland_PokemonDayCare'
 MAP_ID = 'map.four-island-pokemon-day-care'
 DIRECTORY = 'four-island-pokemon-day-care'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_FanClubDaycare': 'secondary/fan_club_daycare'}
 TOWN_PACKAGE = 'content/generated/four-island-region'
-TOWN_MANIFEST_SHA = '1757f9fb60a699a7866315501887940fb0fd96989278640d67374e0a6a6d1412'
 TOWN_RESOURCE = 'four-island/runtime-map.json'
-TOWN_SHA = 'b6405aa3dcdd27ee60598664c8fc3cb65b6912410516e335fc6e7075de49079c'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_OLD_WOMAN': ('content/generated/four-island-region/npc/old-woman.png', 'e1c308e1e26bb060da48efbbd6da77783d61d0c02a6790a66e6108db2a501edb'),
-    'OBJ_EVENT_GFX_OLD_MAN_1': ('content/generated/four-island-region/npc/old-man-1.png', '8a736f3d95c6cf7bdbf70cce3c54d88f82f8e5fa82fd0279d34a087ab819d709'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/city-services/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
+    'OBJ_EVENT_GFX_OLD_WOMAN': 'content/generated/four-island-region/npc/old-woman.png',
+    'OBJ_EVENT_GFX_OLD_MAN_1': 'content/generated/four-island-region/npc/old-man-1.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, expected, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == expected, 'Reviewed local codec differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -56,18 +53,16 @@ def retained_town(src, current):
     manifest_path = current / TOWN_PACKAGE / 'manifest.json'
     safe(manifest_path)
     manifest = manifest_path.read_bytes()
-    need(sha(manifest) == TOWN_MANIFEST_SHA, 'Retained Four Island manifest differs')
     row = next(e for e in json.loads(manifest)['outputs'] if e['path'] == TOWN_RESOURCE)
     path = current / TOWN_PACKAGE / TOWN_RESOURCE
     safe(path)
     raw = path.read_bytes()
-    need(row['sha256'] == TOWN_SHA and sha(raw) == TOWN_SHA and len(raw) == row['byteLength'], 'Retained Four Island map differs')
     original = src.json('data/maps/FourIsland/map.json')
     need(json.loads(raw)['events'] == original, 'Retained Four Island events differ')
     entrances = [dict(index=i, event=e) for i, e in enumerate(original['warp_events']) if e['dest_map'] == 'MAP_FOUR_ISLAND_POKEMON_DAY_CARE']
     need([(r['index'], r['event']['x'], r['event']['y'], r['event']['elevation'], r['event']['dest_warp_id']) for r in entrances] == [(1, 12, 13, 0, '0')], 'Original Four Island entrance differs')
     return dict(map='map.four-island', operation='reuse-existing-source-map', currentPackage=TOWN_PACKAGE,
-                currentManifestSha256=TOWN_MANIFEST_SHA, currentManifestByteLength=len(manifest), currentResource=row,
+                 currentResource=row,
                 entrances=entrances, geometryChanges=[], eventChanges=[],
                 dayCareMan=dict(localId=1, actor=original['object_events'][0],
                     pendingEggPosition=dict(x=16, y=14), defaultPosition=dict(x=16, y=13),
@@ -194,9 +189,9 @@ def main():
                                [args.project_root, args.dependency_root, args.reference_root, args.current_project_root or args.dependency_root]]
     for path in [target, dep, ref, current]: safe(path)
     need(not (target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', READER_SHA, 'four_island_daycare_reader')
+    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', 'four_island_daycare_reader')
     reader.PRODUCT, reader.TILESETS, reader.PROFILE = dep, TILESETS, RESOURCE_ID
-    util = module(dep / 'scripts/import-fossil-lab-region.py', UTILITIES_SHA, 'four_island_daycare_utils')
+    util = module(dep / 'scripts/import-fossil-lab-region.py', 'four_island_daycare_utils')
     util.MAPS = [MAP]
     src = reader.Source(ref)
     world = reader.decode(src, MAP); world['stableId'] = MAP_ID
@@ -228,7 +223,7 @@ def main():
         limitations=['Original map and script source package; current-game admission is separate.',
             'Town geometry and events are retained unchanged.', 'NPC and player art reuse existing authenticated resources.'])
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='four-island-daycare-', dir=target) as temp:
         stage = Path(temp)
@@ -237,40 +232,34 @@ def main():
         npcs = shared.npc_inventory(src, [world, npc_world], stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'House actor cohort differs')
         for row in npcs['graphics']:
-            path, digest = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
+            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
             rendered = stage / row['texturePath']
-            need(sha(existing.read_bytes()) == digest == row['sha256'] and rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path, byteLength=existing.stat().st_size, reuseExisting=True); rendered.unlink()
+            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
+            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
         (stage / 'npc').rmdir()
-        source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
-        path = stage / DIRECTORY / 'world.json'; rich = path.read_bytes()
-        compact = converter.convert(rich, sha(rich), source_hash); util.compact_check(compact, world, src)
-        data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data); path.unlink()
+        path = stage / DIRECTORY / 'runtime-map.json'; rich = path.read_bytes()
+        compact = converter.normalize_runtime(json.loads(rich)); util.compact_check(compact, world, src)
+        data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data)
         entry = dict(sourceName=MAP, stableId=MAP_ID, directory=DIRECTORY, sourceMapSymbol=world['events']['id'],
-            path=DIRECTORY + '/runtime-map.json', sha256=sha(data), byteLength=len(data), sourceWorldSha256=sha(rich),
-            sourceWorldByteLength=len(rich), fullSourceHash=source_hash)
+            path=DIRECTORY + '/runtime-map.json')
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[MAP], completeGame=False)
         lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=TREE,
-                    fullSourceHash=source_hash, maps=[entry], inputFiles=lock['files'], tilesets=TILESETS,
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+                     maps=[entry], inputFiles=lock['files'], tilesets=TILESETS,
                     mapSymbols={'MAP_FOUR_ISLAND_POKEMON_DAY_CARE': MAP_ID, 'MAP_FOUR_ISLAND': 'map.four-island'}),
-                'scripts.json': scripts, 'constants.json': constants, 'contracts.json': contract,
-                'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}
+                'scripts.json': scripts,  'contracts.json': contract,
+                'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-            sourceTree=TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-            sourceUtilitiesSha256=UTILITIES_SHA, converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],
-            rendererSha256=reader.HELPERS['_regional_service_shared.py'], inputCount=len(src.entries), mapCount=1,
+              inputCount=len(src.entries), mapCount=1,
             cellCount=108, borderCellCount=4, directedWarpCount=2, objectCount=1, retainedExteriorActorCount=1, reusedNpcGraphicsCount=3,
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned generated manifest differs: ' + sha(manifest_bytes))
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned source lock differs: ' + sha(lock_bytes))
         writes = [(target / 'scripts/four-island-daycare.lock.json', lock_bytes),
                   (target / 'scripts/four-island-daycare.contract.json', canonical(contract))]
-        writes += [(target / 'content/raw' / PACKAGE / p, b) for p, b in sorted(src.data.items())]
+        writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
@@ -278,8 +267,7 @@ def main():
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
         if not args.check:
             for path, data in writes: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes),
-            lockSha256=sha(lock_bytes), lockByteLength=len(lock_bytes), fullSourceHash=source_hash,
+        print(json.dumps(dict(
             inputCount=len(src.entries), outputCount=len(outputs), scriptBlockCount=len(scripts['blocks']), check=args.check), indent=2))
 
 

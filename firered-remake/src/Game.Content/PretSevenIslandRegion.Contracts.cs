@@ -13,7 +13,7 @@ public sealed partial class PretSevenIslandRegion
         var contract = source.Document("contracts.json");
         var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var pickups = ImmutableArray.CreateBuilder<SevenIslandPickup>();
-        foreach (string kind in new[] { "itemPickups", "hiddenItems" })
+        foreach (string kind in new[] { "itemPickups","hiddenItems" })
         foreach (var row in contract.GetProperty(kind).EnumerateArray())
         {
             bool hidden = kind == "hiddenItems", renewable = row.GetProperty("renewable").GetBoolean();
@@ -24,7 +24,7 @@ public sealed partial class PretSevenIslandRegion
                 new("pret:" + item), item, constants[item], row.GetProperty("quantity").GetInt32(), flag, constants[flag], hidden,
                 hidden && e.GetProperty("underfoot").GetBoolean(), hidden ? null : row.GetProperty("localId").GetInt32(), hidden ? null : e.GetProperty("script").GetString(),
                 renewable, renewable ? row.GetProperty("renewalRarity").GetString() : null, renewable ? row.GetProperty("renewalIndex").GetInt32() : null,
-                new(path, flag, files[path].Sha256)));
+                new(path, flag)));
         }
         var key = contract.GetProperty("tanobyKey");
         var switches = key.GetProperty("switches").EnumerateArray().Select(r =>
@@ -58,7 +58,7 @@ public sealed partial class PretSevenIslandRegion
         var contract = source.Document("contracts.json");
         Need(contract.GetProperty("itemPickups").GetArrayLength() == 4 && contract.GetProperty("hiddenItems").GetArrayLength() == 9 &&
             maps.Values.Sum(m => m.Events.GetProperty("object_events").GetArrayLength()) == 59, "Seven Island object/pickup scope differs.");
-        foreach (string kind in new[] { "itemPickups", "hiddenItems" })
+        foreach (string kind in new[] { "itemPickups","hiddenItems" })
         foreach (var row in contract.GetProperty(kind).EnumerateArray())
         {
             var map = maps[MapIdFromSourceSymbol(row.GetProperty("map").GetString()!)]; var e = row.GetProperty("event"); bool hidden = kind == "hiddenItems";
@@ -87,7 +87,7 @@ public sealed partial class PretSevenIslandRegion
             external.GetProperty("warps").EnumerateArray().Select(w => w.GetProperty("source").GetProperty("dest_map").GetString()).ToHashSet().SetEquals(
                 ["MAP_TRAINER_TOWER_LOBBY", "MAP_SEVEN_ISLAND_HOUSE_ROOM2", "MAP_SEVEN_ISLAND_POKEMON_CENTER_2F"]), "Unsupported Seven Island boundary changed.");
         var key = contract.GetProperty("tanobyKey"); var keyMap = maps[MapIdFromSourceSymbol(key.GetProperty("map").GetString()!)];
-        var expected = new[] { (7, 2), (4, 4), (10, 4), (5, 6), (9, 6), (5, 8), (9, 8) };
+        var expected = new[] { (7, 2),(4, 4),(10, 4),(5, 6),(9, 6),(5, 8),(9, 8) };
         Need(key.GetProperty("switches").GetArrayLength() == 7 && key.GetProperty("boulders").GetArrayLength() == 7 &&
             key.GetProperty("solvedFlag").GetString() == "FLAG_SYS_UNLOCKED_TANOBY_RUINS" && key.GetProperty("countVariable").GetString() == "VAR_TEMP_8", "Tanoby puzzle scope differs.");
         for (int i = 0; i < 7; i++)
@@ -98,12 +98,11 @@ public sealed partial class PretSevenIslandRegion
                 row.GetProperty("pressedValue").GetInt32() == 100 && JsonElement.DeepEquals(key.GetProperty("boulders")[i].GetProperty("event"), keyMap.Events.GetProperty("object_events")[i]), "Tanoby boulder/switch source changed.");
         }
         var renewal = contract.GetProperty("renewableHiddenItems");
-        Need(renewal.GetProperty("stepThreshold").GetInt32() == RenewableHiddenItemRules.StepThreshold && renewal.GetProperty("originalGlobalGroupCount").GetInt32() == RenewableHiddenItemRules.Groups.Length &&
-            source.Files.Single(f => f.Path == RenewableHiddenItemRules.SourcePath).Sha256 == RenewableHiddenItemRules.SourceSha256, "Global renewal source/1500-step policy differs.");
+        Need(renewal.GetProperty("stepThreshold").GetInt32() == RenewableHiddenItemRules.StepThreshold && renewal.GetProperty("originalGlobalGroupCount").GetInt32() == RenewableHiddenItemRules.Groups.Length , "Global renewal source/1500-step policy differs.");
         foreach (var row in renewal.GetProperty("groups").EnumerateArray())
         {
             var group = RenewableHiddenItemRules.Groups.Single(g => g.MapSymbol == row.GetProperty("map").GetString());
-            foreach (var (name, flags) in new[] { ("rare", group.Rare), ("uncommon", group.Uncommon), ("common", group.Common) })
+            foreach (var (name, flags) in new[] { ("rare", group.Rare),("uncommon", group.Uncommon),("common", group.Common) })
                 Need(row.GetProperty(name).EnumerateArray().Select(x => x.GetString()).SequenceEqual(flags), "Renewable source group or ordering differs.");
         }
         Need(contract.GetProperty("hiddenItems").EnumerateArray().Count(x => x.GetProperty("renewable").GetBoolean()) == 6, "Six renewable items required.");

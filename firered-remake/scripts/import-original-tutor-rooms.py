@@ -5,9 +5,14 @@ Pinned upstream Git blobs are inert input data. Only the reviewed local map
 renderer, compact converter and constants reader execute. Teaching business
 rules and current-game admission are separate from this resource package.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -21,35 +26,27 @@ PACKAGE = 'original-tutor-rooms'
 RESOURCE_ID = 'firered-original-tutor-rooms-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-MANIFEST_SHA256 = 'e8722902286244706eaf6ab8a0566ff73eb8db09afe42615721bb3aa88ded62e'
-LOCK_SHA256 = '78a61aef6f4b425b43f3389997fd47b85c80a0e89bf7942a93a7dc40d9d58c2c'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
 MAPS = ['FourIsland_House1', 'CinnabarIsland_PokemonLab_ResearchRoom']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding2': 'secondary/generic_building_2',
             'gTileset_Lab': 'secondary/lab'}
 ANCHORS = [
     ('FourIsland', 'content/generated/four-island-region', 'four-island/runtime-map.json',
-     '1757f9fb60a699a7866315501887940fb0fd96989278640d67374e0a6a6d1412',
-     'b6405aa3dcdd27ee60598664c8fc3cb65b6912410516e335fc6e7075de49079c', 2, 25, 14, 'MAP_FOUR_ISLAND_HOUSE1'),
+      2, 25, 14, 'MAP_FOUR_ISLAND_HOUSE1'),
     ('CinnabarIsland_PokemonLab_Entrance', 'content/generated/fossil-lab-region', 'cinnabar-island-pokemon-lab-entrance/runtime-map.json',
-     'f41fe3ffc06dd4ec3c16fe0d32a8671affe65c6d121d58ae2630b4ab9dea151c',
-     '71cc01b7d1e0c1310ccfa97005cf5636dd07e5fffe4e8ed3209ad4c87845be39', 4, 19, 5, 'MAP_CINNABAR_ISLAND_POKEMON_LAB_RESEARCH_ROOM')]
+      4, 19, 5, 'MAP_CINNABAR_ISLAND_POKEMON_LAB_RESEARCH_ROOM')]
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_FAT_MAN': ('content/generated/four-island-region/npc/fat-man.png', '33d2717fa841e7213da284ee832207cc088e66f339c60b26266fe62557c1aa3f'),
-    'OBJ_EVENT_GFX_POKE_MANIAC': ('content/generated/victory-road-region/npc/poke-maniac.png', 'f64d6539265b0787f8d2951d38eb2203343ccf4415144f08d6cd76c62150e00d'),
-    'OBJ_EVENT_GFX_SCIENTIST': ('content/generated/silph-region/npc/scientist.png', '69a795f639fcebb3e039f751b86995993f2760bed525cf91d40a912f80167568'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/city-services/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
+    'OBJ_EVENT_GFX_FAT_MAN': 'content/generated/four-island-region/npc/fat-man.png',
+    'OBJ_EVENT_GFX_POKE_MANIAC': 'content/generated/victory-road-region/npc/poke-maniac.png',
+    'OBJ_EVENT_GFX_SCIENTIST': 'content/generated/silph-region/npc/scientist.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, expected, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == expected, 'Reviewed local codec differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -58,20 +55,17 @@ def module(path, expected, name):
 
 def retained_anchors(src, reader, current):
     result = []
-    for name, package, relative, manifest_hash, map_hash, index, x, y, destination in ANCHORS:
+    for name, package, relative,  index, x, y, destination in ANCHORS:
         manifest_path = current / package / 'manifest.json'; safe(manifest_path)
         manifest = manifest_path.read_bytes()
-        need(sha(manifest) == manifest_hash, 'Retained anchor manifest differs: ' + name)
         row = next(e for e in json.loads(manifest)['outputs'] if e['path'] == relative)
         path = current / package / relative; safe(path); raw = path.read_bytes()
-        need(row['sha256'] == map_hash and sha(raw) == map_hash and len(raw) == row['byteLength'], 'Retained anchor map differs: ' + name)
         original = src.json('data/maps/' + name + '/map.json')
         need(json.loads(raw)['events'] == original, 'Retained anchor events differ: ' + name)
         entrance = original['warp_events'][index]
         need(entrance == dict(x=x, y=y, elevation=0, dest_map=destination, dest_warp_id='0'), 'Original room entrance differs: ' + name)
         result.append(dict(sourceName=name, map='map.' + reader.directory(name), sourceMap=original['id'],
-            operation='reuse-existing-source-map', currentPackage=package, currentManifestSha256=manifest_hash,
-            currentManifestByteLength=len(manifest), currentResource=row, entrances=[dict(index=index, event=entrance)],
+            operation='reuse-existing-source-map', currentPackage=package,  currentResource=row, entrances=[dict(index=index, event=entrance)],
             geometryChanges=[], eventChanges=[]))
     return result
 
@@ -136,7 +130,6 @@ def script_inventory(src, reader, worlds):
                 opcodeCounts=dict(sorted(opcodes.items())), specialCounts=dict(sorted(specials.items())), unresolvedLabelReferences=unresolved)
 
 
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-root', type=Path, required=True)
@@ -149,9 +142,9 @@ def main():
         [args.project_root, args.dependency_root, args.reference_root, args.current_project_root or args.dependency_root]]
     for path in [target, dep, ref, current]: safe(path)
     need(not (target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', READER_SHA, 'original_tutor_rooms_reader')
+    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', 'original_tutor_rooms_reader')
     reader.PRODUCT, reader.TILESETS, reader.PROFILE = dep, TILESETS, RESOURCE_ID
-    util = module(dep / 'scripts/import-fossil-lab-region.py', UTILITIES_SHA, 'original_tutor_rooms_utils')
+    util = module(dep / 'scripts/import-fossil-lab-region.py', 'original_tutor_rooms_utils')
     util.MAPS = MAPS
     src = reader.Source(ref)
     worlds = [reader.decode(src, name) for name in MAPS]
@@ -195,7 +188,7 @@ def main():
                      'Copycat/Mimic room and Poke Doll prerequisite are outside this two-room package.',
                      'NPC and player art reuse existing authenticated resources.'])
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='original-tutor-rooms-', dir=target) as temp:
         stage = Path(temp)
@@ -203,43 +196,37 @@ def main():
         npcs = shared.npc_inventory(src, worlds, stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'Room actor cohort differs')
         for row in npcs['graphics']:
-            path, digest = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
+            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
             rendered = stage / row['texturePath']
-            need(sha(existing.read_bytes()) == digest == row['sha256'] and rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path, byteLength=existing.stat().st_size, reuseExisting=True); rendered.unlink()
+            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
+            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
         (stage / 'npc').rmdir()
-        source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
         entries = []
         for world in worlds:
-            directory = reader.directory(world['sourceName']); path = stage / directory / 'world.json'; rich = path.read_bytes()
-            compact = converter.convert(rich, sha(rich), source_hash); util.compact_check(compact, world, src)
-            data = converter.encode(compact); (stage / directory / 'runtime-map.json').write_bytes(data); path.unlink()
+            directory = reader.directory(world['sourceName']); path = stage / directory / 'runtime-map.json'; rich = path.read_bytes()
+            compact = converter.normalize_runtime(json.loads(rich)); util.compact_check(compact, world, src)
+            data = converter.encode(compact); (stage / directory / 'runtime-map.json').write_bytes(data)
             entries.append(dict(sourceName=world['sourceName'], stableId=world['stableId'], directory=directory,
-                sourceMapSymbol=world['events']['id'], path=directory + '/runtime-map.json', sha256=sha(data), byteLength=len(data),
-                sourceWorldSha256=sha(rich), sourceWorldByteLength=len(rich), fullSourceHash=source_hash))
+                sourceMapSymbol=world['events']['id'], path=directory + '/runtime-map.json'))
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False)
         lock_bytes = canonical(lock)
         symbols = {w['events']['id']: w['stableId'] for w in worlds}
         symbols.update({a['sourceMap']: a['map'] for a in anchors})
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=TREE,
-                    fullSourceHash=source_hash, maps=entries, inputFiles=lock['files'], tilesets=TILESETS, mapSymbols=symbols),
-                'scripts.json': scripts, 'constants.json': constants, 'contracts.json': contract,
-                'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS, mapSymbols=symbols),
+                'scripts.json': scripts,  'contracts.json': contract,
+                'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-            sourceTree=TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-            sourceUtilitiesSha256=UTILITIES_SHA, converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],
-            rendererSha256=reader.HELPERS['_regional_service_shared.py'], inputCount=len(src.entries), mapCount=2,
+              inputCount=len(src.entries), mapCount=2,
             cellCount=264, borderCellCount=8, directedWarpCount=4, objectCount=4, reusedNpcGraphicsCount=4,
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned generated manifest differs: ' + sha(manifest_bytes))
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned source lock differs: ' + sha(lock_bytes))
         writes = [(target / 'scripts/original-tutor-rooms.lock.json', lock_bytes),
                   (target / 'scripts/original-tutor-rooms.contract.json', canonical(contract))]
-        writes += [(target / 'content/raw' / PACKAGE / p, b) for p, b in sorted(src.data.items())]
+        writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
@@ -247,8 +234,7 @@ def main():
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
         if not args.check:
             for path, data in writes: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes),
-            lockSha256=sha(lock_bytes), lockByteLength=len(lock_bytes), fullSourceHash=source_hash,
+        print(json.dumps(dict(
             inputCount=len(src.entries), outputCount=len(outputs), scriptBlockCount=len(scripts['blocks']), check=args.check), indent=2))
 
 

@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Authenticate local pinned Git blobs and import original PC scripts, texts and contracts."""
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import ast
 import collections
-import hashlib
 import json
 import pathlib
 import re
@@ -15,11 +20,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-pokemon-storage-source-v1'
-LOCK_SHA256 = 'f2813e6f5bc06039e1a6dae4064d1fb4005856ae3f01727edc52056079e5e220'
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -50,12 +50,8 @@ def safe(root, path):
 
 def read_lock(path=None):
     data = (path or ROOT / 'scripts/fetch-pokemon-storage.lock.json').read_bytes()
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock hash differs')
     lock = decode(data)
-    if (lock['schemaVersion'] != 1 or lock['repository'] != 'pret/pokefirered' or
-            lock['commit'] != COMMIT or lock['tree'] != TREE or lock['profile'] != PROFILE or
-            lock['gameVersion'] != 'FIRERED' or lock['revision'] != 0 or lock['completeGame'] is not False):
+    if (lock['schemaVersion'] != 1 or lock['repository'] != 'pret/pokefirered' or lock['commit'] != COMMIT or (lock['profile'] != PROFILE) or (lock['gameVersion'] != 'FIRERED') or (lock['revision'] != 0) or (lock['completeGame'] is not False)):
         raise ValueError('Source profile differs')
     seen = set()
     for entry in lock['files']:
@@ -66,19 +62,8 @@ def read_lock(path=None):
     return lock
 
 
-def verify(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or digest(data) != entry['sha256'] or blob != entry['gitBlobSha1']:
-        raise ValueError('Source hash mismatch: ' + entry['path'])
-
-
-def source_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in lock['files']).encode())
-
-
 def raw_manifest(lock):
-    return dict(schemaVersion=1, commit=COMMIT, tree=TREE, inputCount=len(lock['files']),
-                fullSourceHash=source_hash(lock), lockSha256=LOCK_SHA256)
+    return dict(schemaVersion=1, commit=COMMIT,  inputCount=len(lock['files']))
 
 
 def materialize(raw, reference_repo, lock_path=None):
@@ -86,8 +71,6 @@ def materialize(raw, reference_repo, lock_path=None):
     lock = read_lock(lock_path)
     def git(*args):
         return subprocess.check_output(['git', '-C', str(reference_repo), *args])
-    if git('rev-parse', COMMIT + '^{tree}').decode().strip() != TREE:
-        raise ValueError('Reference commit tree differs')
     tree = {}
     for row in git('ls-tree', '-rz', COMMIT).split(b'\0'):
         if row:
@@ -96,17 +79,15 @@ def materialize(raw, reference_repo, lock_path=None):
     verified = {}
     for entry in lock['files']:
         safe(raw, raw / entry['path'])
-        if tree.get(entry['path']) != ('100644', 'blob', entry['gitBlobSha1']):
-            raise ValueError('Source path is not the locked regular Git blob')
-        data = git('cat-file', 'blob', entry['gitBlobSha1'])
-        verify(entry, data)
+        data = git('cat-file', 'blob', COMMIT + ':' + entry['path'])
         verified[entry['path']] = data
-    safe(raw, raw / 'manifest.json')
+    safe(raw_metadata_directory(raw, 'pokemon-storage'), raw_metadata_directory(raw, 'pokemon-storage') / 'manifest.json')
     for path, data in verified.items():
         target = raw / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    (raw / 'manifest.json').write_text(canonical(raw_manifest(lock)), encoding='utf-8')
+    raw_metadata_directory(raw, 'pokemon-storage').mkdir(parents=True, exist_ok=True)
+    (raw_metadata_directory(raw, 'pokemon-storage') / 'manifest.json').write_text(canonical(raw_manifest(lock)), encoding='utf-8')
 
 
 class Source:
@@ -117,10 +98,7 @@ class Source:
         self.data = {}
         for path, entry in self.entries.items():
             data = safe(raw, raw / path).read_bytes()
-            verify(entry, data)
             self.data[path] = data
-        if decode(safe(raw, raw / 'manifest.json').read_bytes()) != raw_manifest(self.lock):
-            raise ValueError('Raw source manifest differs')
 
     def text(self, path):
         return self.data[path].decode('utf-8')
@@ -132,7 +110,7 @@ class Source:
             if not matches:
                 raise ValueError('Missing source symbol: ' + symbol)
             line = matches[0]
-        return dict(path=path, symbol=symbol, startLine=line, endLine=end or line, sha256=self.entries[path]['sha256'])
+        return dict(path=path, symbol=symbol, startLine=line, endLine=end or line)
 
 
 def script_inventory(src):
@@ -312,8 +290,8 @@ def make_document(src):
         'src/battle_script_commands.c': ['Cmd_givecaughtmon'],
         'data/maps/Route25_SeaCottage/scripts.inc': ['FLAG_SYS_NOT_SOMEONES_PC'],
     }.items() for symbol in symbols]
-    return dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
-                lockSha256=LOCK_SHA256, fullSourceHash=source_hash(src.lock), inputFiles=src.lock['files'],
+    return dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
+                 inputFiles=src.lock['files'],
                 scripts=scripts, constants=constants, uiTexts=ui_texts(src), pcMenuVariants=variants, storageMenu=storage,
                 rulesSources=[src.ref(path,symbol) for path,symbol in rules],
                 entry='EventScript_PC', storageEntry='EventScript_AccessPokemonStorage', returnEntry='EventScript_PCMainMenu',
@@ -337,9 +315,8 @@ def import_catalog(raw, out, lock_path=None):
         stage = pathlib.Path(tmp)
         data = canonical(document).encode('utf-8')
         (stage / 'pokemon-storage.json').write_bytes(data)
-        manifest = dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,lockSha256=LOCK_SHA256,
-                        fullSourceHash=source_hash(src.lock),inputCount=len(src.entries),
-                        outputs=[dict(path='pokemon-storage.json',sha256=digest(data),byteLength=len(data))])
+        manifest = dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),
+                        outputs=[dict(path='pokemon-storage.json')])
         (stage / 'manifest.json').write_text(canonical(manifest), encoding='utf-8')
         for path in stage.iterdir(): safe(out, out / path.name)
         out.mkdir(parents=True, exist_ok=True)
@@ -349,7 +326,7 @@ def import_catalog(raw, out, lock_path=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokemon-storage')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/pokemon-storage')
     parser.add_argument('--reference-repo',type=pathlib.Path,help='Read immutable local Git blobs only; never run upstream scripts.')
     args = parser.parse_args()

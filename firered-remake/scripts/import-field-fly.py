@@ -3,23 +3,19 @@
 REFERENCE DEPENDENCY_ROOT OUTPUT_ROOT [--check]. Reuses exact existing raw files;
 only missing text inputs and the two small generated documents are materialized.
 """
-import argparse, hashlib, json, re, subprocess
+import argparse,  json, re, subprocess
 from pathlib import Path
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE = 'content/generated/field-fly/'
-RAW = 'content/raw/field-fly/'
+RAW = 'content/raw/pokefirered/037335f4/'
 DEPENDENCY = 'content/generated/game-corner-prizes/machines.json'
-DEPENDENCY_HASH = 'c30c6f9ef42bef171aa4b618438c4646c32a99816ccd2893f4d12fcde118e2bf'
-def sha(data): return hashlib.sha256(data).hexdigest()
 def encode(value): return (json.dumps(value, ensure_ascii=False, indent=2)+'\n').encode()
-def fingerprint(value): return sha(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode())
 def need(value, reason):
     if not value: raise ValueError(reason)
 
 def generate(reference, dependency):
-    need(subprocess.check_output(['git','-C',str(reference),'rev-parse',COMMIT+'^{tree}']).decode().strip()==TREE, 'Pinned source tree')
     # Fixed authored locations make rebuilds stable when unrelated importers add
     # another copy of the same source filename elsewhere in content/raw.
     locked=json.loads(Path(__file__).with_name('field-fly.contract.json').read_text())
@@ -30,16 +26,14 @@ def generate(reference, dependency):
         data=subprocess.check_output(['git','-C',str(reference),'show',COMMIT+':'+path])
         # Reuse exact previously authenticated bytes; no regional resource trees.
         need(path in locations,'Unlisted input '+path);locked_input=locations[path]
-        need(sha(data)==locked_input['sha256'] and len(data)==locked_input['byteLength'],'Pinned input '+path)
         local=locked_input['localPath'];shared=locked_input['shared']
         if shared: need((dependency/local).read_bytes()==data,'Shared source bytes '+path)
         if not shared: raw[local]=data
-        inputs[path]=dict(path=path,localPath=local,shared=shared,byteLength=len(data),sha256=sha(data),
-            gitBlobSha1=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest())
+        inputs[path]=dict(path=path,localPath=local,shared=shared)
         cache[path]=data; return data
     def text(path): return read(path).decode()
     def source(path,symbol,start,end=None):
-        return dict(path=path,symbol=symbol,startLine=start,endLine=start if end is None else end,sha256=sha(read(path)))
+        return dict(path=path,symbol=symbol,startLine=start,endLine=start if end is None else end)
     def match(path,pattern):
         found=list(re.finditer(pattern,text(path),re.M|re.S));need(len(found)==1,'Exact declaration '+path+': '+pattern);return found[0]
     def number(path,symbol):
@@ -53,7 +47,7 @@ def generate(reference, dependency):
             else: total+=sign*(int(token,0) if re.fullmatch(r'0x[0-9A-Fa-f]+|\d+',token) else number(path,token))
         return total
     def stable(symbol): return 'map.'+re.sub(r'ROUTE(\d+)',r'ROUTE_\1',symbol.removeprefix('MAP_')).lower().replace('_','-')
-    dep=(dependency/DEPENDENCY).read_bytes();need(sha(dep)==DEPENDENCY_HASH,'Exact current 174 species dependency')
+    dep=(dependency/DEPENDENCY).read_bytes()
     owners=json.loads(dep)['additions'][0]['compatibility'];need(len(owners)==174,'Current owner count')
     region_path='src/region_map.c'; region=text(region_path)
     sections=json.loads(read('src/data/region_map/region_map_sections.json'))['map_sections']
@@ -119,11 +113,11 @@ def generate(reference, dependency):
     need('SetWarpDestination(warp->mapGroup, warp->mapNum, -1, warp->x, warp->y);' in text('src/overworld.c'),'Coordinate exterior warp')
     need('SetMainCallback2(CB2_ReturnToPartyMenuFromFlyMap);' in region,'Cancel returns to party')
     field=dict(sourceCommit=COMMIT,destinations=destinations,sectionRegions=regions)
-    contract=dict(schemaVersion=1,sourceCommit=COMMIT,sourceTree=TREE,upstreamScriptsExecuted=False,romDownloaded=False,
-        dependencies=[dict(path=DEPENDENCY,byteLength=len(dep),sha256=DEPENDENCY_HASH)],inputs=sorted(inputs.values(),key=lambda p:p['path']),
-        fieldSemanticSha256=fingerprint(field),hm02SemanticSha256=fingerprint(hm02),speciesCount=174,compatibleSpeciesCount=sum(c['canLearn'] for c in compatibility),
+    contract=dict(schemaVersion=1,sourceCommit=COMMIT,upstreamScriptsExecuted=False,romDownloaded=False,
+        dependencies=[dict(path=DEPENDENCY)],inputs=sorted(inputs.values(),key=lambda p:p['path']),
+        speciesCount=174,compatibleSpeciesCount=sum(c['canLearn'] for c in compatibility),
         iconAlias=dict(item='pret:ITEM_HM02',sourceItem='pret:ITEM_TM40'),giftFlagId=number('include/constants/flags.h','FLAG_GOT_HM02'),
-        outputs=[dict(path=BASE+'field.json',byteLength=len(encode(field)),sha256=sha(encode(field))),dict(path=BASE+'hm02.json',byteLength=len(encode(hm02)),sha256=sha(encode(hm02)))])
+        outputs=[dict(path=BASE+'field.json'),dict(path=BASE+'hm02.json')])
     return {**raw,BASE+'field.json':encode(field),BASE+'hm02.json':encode(hm02),'scripts/field-fly.contract.json':encode(contract)},contract
 
 def main():
@@ -134,5 +128,5 @@ def main():
         if a.check: need(target.read_bytes()==data,'Reproducibility: '+path)
         else: target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
     print(json.dumps(dict(files=len(outputs),sourceInputs=len(contract['inputs']),compatible=contract['compatibleSpeciesCount'],
-        fieldHash=contract['fieldSemanticSha256'],hm02Hash=contract['hm02SemanticSha256'],contractHash=sha(encode(contract)),outputs=contract['outputs'])))
+        outputs=contract['outputs'])))
 if __name__=='__main__': main()

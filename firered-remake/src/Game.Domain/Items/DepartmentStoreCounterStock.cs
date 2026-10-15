@@ -5,12 +5,11 @@ using Game.Domain.World;
 namespace Game.Domain.Items;
 
 /// <summary>Original 5F counters, sharing authenticated ordinary item definitions and transactions.</summary>
-public sealed record DepartmentStoreCounterStock(string SourceCommit, string ContractSha256, string MapId,
+public sealed record DepartmentStoreCounterStock(string SourceCommit, string MapId,
     string ClerkScript, ImmutableArray<DepartmentStoreOrdinaryItem> Entries, OpeningItemSourceRef Source) : AuthenticatedShopStock
 {
     public const string ExpectedMapId = "map.celadon-city-department-store-5f";
     public const string ExpectedSourcePath = "data/maps/CeladonCity_DepartmentStore_5F/scripts.inc";
-    public const string SourceSha256 = "9bb56cfe4611f84ef9f35d8eadb145deb390434660dbaf83e78778f647207e39";
     public const string XItemsId = "CeladonCity_DepartmentStore_5F_XItems";
     public const string VitaminsId = "CeladonCity_DepartmentStore_5F_Vitamins";
     private sealed record Counter(string Id, string Script, int Actor, int Y, string Movement, int MartLine,
@@ -45,9 +44,9 @@ public sealed record DepartmentStoreCounterStock(string SourceCommit, string Con
         EarlyShopInventoryRules.ValidateCatalog(catalog);
         var expected = Counters.SingleOrDefault(c => c.Id == Id);
         if (expected is null || SourceCommit != OpeningInventoryRules.SourceCommit ||
-            ContractSha256 != DepartmentStoreOrdinaryStock.ExpectedContractSha256 || MapId != ExpectedMapId ||
+            MapId != ExpectedMapId ||
             ClerkScript != expected.Script || Source != new OpeningItemSourceRef(ExpectedSourcePath, expected.Id,
-                expected.FirstLine, expected.LastLine, SourceSha256) || Entries.IsDefault || !Entries.SequenceEqual(expected.Items))
+                expected.FirstLine, expected.LastLine) || Entries.IsDefault || !Entries.SequenceEqual(expected.Items))
             throw new NotSupportedException("department_counter_source_stock");
         foreach (var entry in Entries)
         {

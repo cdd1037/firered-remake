@@ -3,337 +3,226 @@
   "completeGame": false,
   "files": [
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      ]
     },
     {
-      "byteLength": 63891,
-      "gitBlobSha1": "982b79d2d5f9be1e3c94eac09f0215d3afd7493a",
       "path": "include/constants/easy_chat.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1e101455bcec956bd8243da12eb74156cef5795d7a7d5cd9753001b5bff4d91c"
+      ]
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
       "path": "include/constants/moves.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      ]
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      ]
     },
     {
-      "byteLength": 12567,
-      "gitBlobSha1": "26fe74ed09ff3ab6ea58002fbd15384610baf34c",
       "path": "src/data/easy_chat/easy_chat_group_actions.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7b29eaac9dc5532705f22a7364702851de9fba3e2b347fa4b0bb87a1541b4fcf"
+      ]
     },
     {
-      "byteLength": 5999,
-      "gitBlobSha1": "612f41c641fe60cd8feec3e031d9b772ce1c62bc",
       "path": "src/data/easy_chat/easy_chat_group_adjectives.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "3cd30f9de36cff7ee8d68d20a7e9424df95a65755063bfe60b96bfc001622be0"
+      ]
     },
     {
-      "byteLength": 10296,
-      "gitBlobSha1": "11d01bee2b8f703e722319cc9d386a426421da82",
       "path": "src/data/easy_chat/easy_chat_group_battle.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "670408f25d7ea2fd57a6c1f6fb4c1079aea411170340a74a99c9e7b2a3257115"
+      ]
     },
     {
-      "byteLength": 11276,
-      "gitBlobSha1": "cfb47a725b0c64586c36c6ca7597185143a8fc86",
       "path": "src/data/easy_chat/easy_chat_group_conditions.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "450e70af131106dd990f2fffe89ae7c7d957f682fda9e77d65bcd634e44b806e"
+      ]
     },
     {
-      "byteLength": 10898,
-      "gitBlobSha1": "40087762163525e36db919f4835a876def12b5da",
       "path": "src/data/easy_chat/easy_chat_group_endings.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f2bbca29c87a062d00afd68ed7be1ba0243594e57d11151b2e192360ce8da6b9"
+      ]
     },
     {
-      "byteLength": 4655,
-      "gitBlobSha1": "30151b312d4b6c16032fc6115ba401626872be58",
       "path": "src/data/easy_chat/easy_chat_group_events.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "be06342e968ca13c49e0a1eed521fdc1122c6fd79791ebc410d3c1f2c5c551c3"
+      ]
     },
     {
-      "byteLength": 11229,
-      "gitBlobSha1": "32eee14deb7fb72e388858f9ed70f9c13dcd782b",
       "path": "src/data/easy_chat/easy_chat_group_feelings.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c008b73871e970066334314d2af1a7345713784f3c9d7c87a9ad66ef0cc195ed"
+      ]
     },
     {
-      "byteLength": 6938,
-      "gitBlobSha1": "0483adb74a0ef96fef7871028fa6f772140480ce",
       "path": "src/data/easy_chat/easy_chat_group_greetings.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "5e98a7a42378330c593fa87aa52b90f3d3c69496881aa31c2b7d8f6ea5876710"
+      ]
     },
     {
-      "byteLength": 8805,
-      "gitBlobSha1": "12ef3ceb7a0335b7ac0a9ba311619cb550a12f88",
       "path": "src/data/easy_chat/easy_chat_group_hobbies.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0ef021e9ffc90e1dfd6d629baf3a8a2bb3f0baf83144fd88c9253c161bfc242c"
+      ]
     },
     {
-      "byteLength": 7387,
-      "gitBlobSha1": "1265f88b9499e00f6c36b980c92dcf9444df7114",
       "path": "src/data/easy_chat/easy_chat_group_lifestyle.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "e84903101f570ef26fba6187558b28b4673cde61a6330e4413467933ecda909b"
+      ]
     },
     {
-      "byteLength": 6776,
-      "gitBlobSha1": "d4ffb8a5e3422142ceecd19b4d165407a6a08fa4",
       "path": "src/data/easy_chat/easy_chat_group_misc.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "fc8e62b466c72f62808fc5240114b609ffbb8bc198e8396cac39e09e0065b048"
+      ]
     },
     {
-      "byteLength": 3084,
-      "gitBlobSha1": "cb58fb2b7512c4cc4296573419685db58062f989",
       "path": "src/data/easy_chat/easy_chat_group_move_1.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c453d4e66c7e6cb377b669d163dccd2bbce3b45f793edf4573666c8681846af5"
+      ]
     },
     {
-      "byteLength": 4095,
-      "gitBlobSha1": "c4358efdaefd7421f7e1130c9cd7f639b4c53977",
       "path": "src/data/easy_chat/easy_chat_group_move_2.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "49a14a1c279e630b09e52ef8b322d8b411c424bc2f5dd38944865eef7937d0ce"
+      ]
     },
     {
-      "byteLength": 11944,
-      "gitBlobSha1": "3ae1de4fe479e7b50f91ec460157a7041d700b28",
       "path": "src/data/easy_chat/easy_chat_group_people.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c381b6a9a84cada311eddc99e6d7d5541e500a038a2fc17cef865b95840666a3"
+      ]
     },
     {
-      "byteLength": 4313,
-      "gitBlobSha1": "e3f54c19e37f9f4332c0fea57ff6ec13116d435b",
       "path": "src/data/easy_chat/easy_chat_group_pokemon.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1480757a8d38f8ce183501e7fe097d079a0f2f4dda54809379b5ea063dfc46d6"
+      ]
     },
     {
-      "byteLength": 4642,
-      "gitBlobSha1": "26211eec526e3f35b5be74edd90045a9ea99b384",
       "path": "src/data/easy_chat/easy_chat_group_pokemon2.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "41629bdc92cad5da62b83083b616dbe95483243b43c2acd367861fa787c3bd80"
+      ]
     },
     {
-      "byteLength": 9737,
-      "gitBlobSha1": "f76c7e06a24e1176109ae8253596ac0f72ac1d6f",
       "path": "src/data/easy_chat/easy_chat_group_speech.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4b9527df8a0f133a8a78a5529aefe05a6eb90156b51087630ecb4838fa6582d7"
+      ]
     },
     {
-      "byteLength": 18354,
-      "gitBlobSha1": "e9317dfd491b242cccc812c3cb88176a04c46474",
       "path": "src/data/easy_chat/easy_chat_group_status.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f96b8126cdb6d0dc81f5d8959aa2347700023dc9fe130c933d418989e2be99a9"
+      ]
     },
     {
-      "byteLength": 7320,
-      "gitBlobSha1": "45d24c6f16ef9d89607561117e150e53d5f75813",
       "path": "src/data/easy_chat/easy_chat_group_time.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "84314368ae05730aab8c6e8c24db85e50a5d34f70e4905d105b02f52ea4c8129"
+      ]
     },
     {
-      "byteLength": 4268,
-      "gitBlobSha1": "cee304fe07d17ec7a490951fb9ca407e3372f201",
       "path": "src/data/easy_chat/easy_chat_group_trainer.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "72b8e549fb408f0ac63cc168a0044eb3de0fd0af55758aa2d4c89a722f6f7eb5"
+      ]
     },
     {
-      "byteLength": 5482,
-      "gitBlobSha1": "24fa6bffa2d3f68e9c9cb9cd11e26ee54a444278",
       "path": "src/data/easy_chat/easy_chat_group_trendy_saying.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "29fd30dd9141c7b2e80103df41d77810fabe114ce0a0e8f6575e745107a45853"
+      ]
     },
     {
-      "byteLength": 10139,
-      "gitBlobSha1": "e58b86894007200633503e965d54e9fe16fcc56c",
       "path": "src/data/easy_chat/easy_chat_group_voices.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "3fca9a615ec6b1448b6d0bac14c7fb8e388db1369517aa593cdf6888f21cfb5e"
+      ]
     },
     {
-      "byteLength": 3612,
-      "gitBlobSha1": "3620982051ba3813b2e27d68265f0e298b823d65",
       "path": "src/data/easy_chat/easy_chat_groups.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "8937481ad53e4234c8871b876cf3018cbcc4cf020789db1de835ed37b3cdda2a"
+      ]
     },
     {
-      "byteLength": 47184,
-      "gitBlobSha1": "cfb81cc3d79b44d3906e4c32efa5e6e48f0f5592",
       "path": "src/data/easy_chat/easy_chat_words_by_letter.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "65801e961edfe3164eabf28fa06ee1f73818dcb681fd3d20b1ceaf171d52b36d"
+      ]
     },
     {
-      "byteLength": 15252,
-      "gitBlobSha1": "d63ddb871e07fab66ffcaf8ec051e86b54e1fe71",
       "path": "src/data/text/move_names.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d45a00ae94f33e294dd2fa742db1397fe1559fcf42ae553c8983f92d384b6bef"
+      ]
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
       "path": "src/data/text/species_names.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      ]
     },
     {
-      "byteLength": 18854,
-      "gitBlobSha1": "4a08a1afbd92bbe8ff7d3d48f46513eb1556b4b4",
       "path": "src/easy_chat.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1ec5c2e3b49ae192ffc692b839b5d80f2813544cbd7f76deb5f85e92bac99719"
+      ]
     },
     {
-      "byteLength": 36383,
-      "gitBlobSha1": "6951da8e86b47fb397f1cfd42f9d50fb30e3c9fe",
       "path": "src/easy_chat_2.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c595fc819c1f0903fa26e16c19ba7317ead7bcdff2fce7d9d6700b91828c3c79"
+      ]
     },
     {
-      "byteLength": 5037,
-      "gitBlobSha1": "d949240e44c0c84f8b6924a27b357e4bc1fe7db7",
       "path": "src/keyboard_text.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "a052b69b03737fece1d2a3f9964251fc4ef4dfe9eaa23d8fd9131d25eaa31685"
+      ]
     },
     {
-      "byteLength": 4853,
-      "gitBlobSha1": "9bff74b6dcabe1e56e5cb7c592a8a08979e2899f",
       "path": "src/mail_data.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b2ff299f10da19be3dc2ad9ea55d06f0e8f2794dd02d96116b6fa00e60ec3856"
+      ]
     },
     {
-      "byteLength": 211085,
-      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223",
       "path": "src/party_menu.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b"
+      ]
     },
     {
-      "byteLength": 45145,
-      "gitBlobSha1": "037b1bfa82189906b205fe1a50a9276a4e2041e6",
       "path": "src/pokemon_icon.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967"
+      ]
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
       "path": "src/strings.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      ]
     }
   ],
   "gameVersion": "FIRERED",
@@ -341,6 +230,5 @@
   "profile": "firered-mail-composer-v1",
   "repository": "pret/pokefirered",
   "revision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

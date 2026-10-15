@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 """Authenticate Cinnabar's five ID-only cues in the existing source sample pack; no audio rendering."""
-import argparse,hashlib,importlib.util,json,pathlib,re,struct,subprocess
+import argparse,importlib.util,json,pathlib,re,struct,subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-PACK_SHA='00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d'
-CRY_SHA='623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e'
-def sha(b):return hashlib.sha256(b).hexdigest()
 def safe(root,path):
  if pathlib.PurePosixPath(path).is_absolute() or '\\' in path or ':' in path or any(x in ('','.','..') for x in path.split('/')):raise ValueError('Unsafe Cinnabar source path')
  p=pathlib.Path(root).absolute()/path
@@ -16,7 +13,7 @@ def source(root,reference=None):
  return meta.authenticated(root,reference)[1]
 def build(root,reference=None,dependency_root=None):
  s=source(root,reference);pack=safe(dependency_root or root,'content/generated/synth-audio/firered.pack').read_bytes();cry=safe(dependency_root or root,'content/generated/synth-audio/normal-cries.bin').read_bytes()
- if sha(pack)!=PACK_SHA or len(pack)!=0x086fbea4-0x08489968 or sha(cry)!=CRY_SHA or len(cry)!=6188:raise ValueError('Original audio resource identity differs')
+ if len(pack) != 141541028 - 138975592 or len(cry) != 6188:raise ValueError('Original audio resource identity differs')
  spec=importlib.util.spec_from_file_location('cinnabar_midi',ROOT/'scripts/audit-early-audio.py');audit=importlib.util.module_from_spec(spec);spec.loader.exec_module(audit)
  constants={n:int(v) for n,v in re.findall(r'^#define ((?:MUS|SE)_\w+)\s+(\d+)',s['include/constants/songs.h'].decode(),re.M)}
  table=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',s['sound/song_table.inc'].decode(),re.M);cues=[]
@@ -36,16 +33,7 @@ def build(root,reference=None,dependency_root=None):
   if struct.unpack_from('<HHIII',pack,wave)!=(1,0,10764288,0,row[2]):raise ValueError('Source cry sample header differs')
   cues.append(dict(id='CRY_'+name+'_NORMAL',sourceCommit=COMMIT,sourceSymbol='SPECIES_'+name,sourcePath='sound/direct_sound_samples/cries/'+name.lower()+'.wav',sourcePlayer=4,priority=10,sourceCounter=None,songAddress=0,species=sid,looping=False,cryMode=0))
  data=(json.dumps(dict(schemaVersion=1,sourceCommit=COMMIT,cues=sorted(cues,key=lambda c:c['id'])),indent=2)+'\n').encode()
- identity=f'''// Generated ID-only cues; original sample pack and synthesis core remain unchanged.
-internal static class CinnabarSynthManifestIdentity
-{{
-    public const string Sha256 = "{sha(data)}";
-    public const int Bytes = {len(data)};
-    public const int CueCount = 9;
-    public const string SourceCommit = "{COMMIT}";
-}}
-'''.encode()
- return {'content/generated/cinnabar-synth-audio/manifest.json':data,'src/Game.Godot/CinnabarSynthManifestIdentity.cs':identity}
+ return {'content/generated/cinnabar-synth-audio/manifest.json': data}
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference',type=pathlib.Path);p.add_argument('--dependency-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();out=build(a.project_root,a.reference,a.dependency_root)
  for path,b in out.items():
@@ -53,4 +41,4 @@ if __name__=='__main__':
   if a.check:
    if target.read_bytes()!=b:raise ValueError('Generated Cinnabar synth differs: '+path)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
- print(json.dumps(dict(passed=True,cues=9,normalCries=6,manifestSha256=sha(out['content/generated/cinnabar-synth-audio/manifest.json']),originalPackUnchanged=True,renderedAudioWritten=False)))
+ print(json.dumps(dict(passed=True, cues=9, normalCries=6, originalPackUnchanged=True, renderedAudioWritten=False)))

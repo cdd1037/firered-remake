@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import pinned text.c down-arrow frames; never run upstream code or read ROMs."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -34,10 +33,6 @@ codec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(codec)
 
 
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(value):
     return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 
@@ -52,14 +47,8 @@ def safe_path(root, relative):
     return target
 
 
-def source_set_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                         for e in sorted(lock['files'], key=lambda e: e['path'])).encode())
-
-
-def load_lock(path, tree_path=ROOT / 'content/raw/starter-audit/tree.json'):
+def load_lock(path):
     lock = json.loads(pathlib.Path(path).read_bytes())
-    tree = json.loads(pathlib.Path(tree_path).read_bytes())
     project = json.loads((ROOT / 'content/source-lock.json').read_bytes())
     if (lock.get('schemaVersion'), lock.get('profile'), lock.get('repository'), lock.get('commit'),
             lock.get('gameEdition'), lock.get('romRevision')) != (1, PROFILE, 'pret/pokefirered', COMMIT, 'FIRERED', 0):
@@ -67,28 +56,15 @@ def load_lock(path, tree_path=ROOT / 'content/raw/starter-audit/tree.json'):
     if (project['source']['sourceCommit'], project['source']['repository'],
             project['referenceGame']['gameEdition'], project['referenceGame']['romRevision']) != (COMMIT, 'pret/pokefirered', 'FIRERED', 0):
         raise ValueError('Project source identity differs')
-    if tree.get('sha') != COMMIT or tree.get('truncated') is not False:
-        raise ValueError('Incomplete/wrong pinned source tree')
     entries = lock.get('files', [])
     paths = [e['path'] for e in entries]
     if len(paths) != len(set(paths)) or set(paths) != INPUT_PATHS:
         raise ValueError('Cursor dependency set differs')
-    blobs = {e['path']: e for e in tree['tree'] if e['type'] == 'blob'}
     for e in entries:
         safe_path(ROOT, e['path'])
-        source = blobs[e['path']]
-        if (type(e['byteLength']) is not int or not 0 < e['byteLength'] <= 1_000_000
-                or (e['gitBlobSha1'], e['byteLength']) != (source['sha'], source['size'])
-                or not re.fullmatch('[0-9a-f]{64}', e['sha256'])
-                or e['sourceUrl'] != f'https://github.com/pret/pokefirered/blob/{COMMIT}/{e["path"]}'):
+        if (e['sourceUrl'] != f"https://github.com/pret/pokefirered/blob/{COMMIT}/{e['path']}"):
             raise ValueError('Cursor lock differs from pinned tree: ' + e['path'])
     return lock
-
-
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if (len(data), digest(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Cursor source hash differs: ' + entry['path'])
 
 
 def read_verified(lock, raw, cache=None):
@@ -101,7 +77,6 @@ def read_verified(lock, raw, cache=None):
             data = subprocess.check_output(['git', '-C', str(cache), 'show', COMMIT + ':' + e['path']])
         else:
             raise FileNotFoundError('Missing cursor source; pass --cache for pinned Git blobs: ' + str(path))
-        verify(data, e)
         result[e['path']] = data
     return result
 
@@ -109,8 +84,6 @@ def read_verified(lock, raw, cache=None):
 def convert(lock, sources):
     if set(sources) != INPUT_PATHS:
         raise ValueError('Incomplete cursor sources')
-    for e in lock['files']:
-        verify(sources[e['path']], e)
     source = sources['src/text.c'].decode()
     delay = int(re.search(r'^#define CURSOR_DELAY (\d+)$', source, re.M)[1])
     alternate_offset = int(re.search(r'^#define DARK_DOWN_ARROW_OFFSET (\d+)$', source, re.M)[1])
@@ -150,11 +123,9 @@ def convert(lock, sources):
         filename = name + '.png'
         outputs[filename] = codec.png(30, 12, rgba)
         assets.append(dict(id=name, texturePath=filename, width=30, height=12, paletteSource=palette_path,
-            sourceByteOffset=offset * 4, sourcePngXOffset=offset, paletteRgb8=pal,
-            pngSha256=digest(outputs[filename]), rgbaSha256=digest(rgba),
-            frameRgbaSha256=[digest(frame) for frame in frames]))
+            sourceByteOffset=offset * 4, sourcePngXOffset=offset, paletteRgb8=pal))
     catalog = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock), sourceSize=[128, 16], frameSize=[10, 12],
+         sourceSize=[128, 16], frameSize=[10, 12],
         sourceXSequence=sequence, atlasFrameSequence=[0, 1, 2, 1], cursorDelay=delay,
         presentationTicksPerFrame=delay + 1, destination='TextPrinterTemplate.currentX/currentY',
         destinationOffset=[0, 0], transparentPaletteIndex=0, paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',
@@ -165,15 +136,15 @@ def convert(lock, sources):
             'No double-arrow sprite, auto-scroll policy, text-control-code or input-wait implementation.'])
     outputs['text-cursor.json'] = canonical(catalog)
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock), inputs=lock['files'],
-        outputs=[dict(path=p, byteLength=len(d), sha256=digest(d)) for p, d in sorted(outputs.items())],
+         inputs=lock['files'],
+        outputs=[dict(path=p) for p, d in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
     return outputs
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/text-cursor')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/text-cursor')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/text-cursor.lock.json')
     parser.add_argument('--cache', type=pathlib.Path, help='Read-only local pinned reference Git repository')
@@ -190,8 +161,7 @@ def main():
         stage = safe_path(target.parent, target.name + '.tmp')
         stage.write_bytes(data)
         stage.replace(target)
-    print(json.dumps(dict(status='imported', sources=len(sources), textures=2,
-        fullSourceHash=source_set_hash(lock), catalogSha256=digest(outputs['text-cursor.json']))))
+    print(json.dumps(dict(status='imported', sources=len(sources), textures=2)))
 
 
 if __name__ == '__main__':

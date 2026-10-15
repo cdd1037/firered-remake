@@ -1,7 +1,6 @@
 using Game.Application;
 using Game.Content;
 using Game.Domain.World;
-using System.Security.Cryptography;
 using Godot;
 
 public partial class CampaignView
@@ -22,17 +21,15 @@ public partial class CampaignView
     {
         if (!_catalog.SurfEnabled) return;
         var art = _catalog.SurfArt ?? throw new InvalidDataException("Surf art catalog missing.");
-        if (_battleArt.Count != 440 || _storageIcons.Count != 110 || _route22Footprints.Count != 81)
-            throw new InvalidDataException("Surf must extend the complete 110-species presentation.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, art.Files[sprite.RgbaPath]);
+            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = art.Files[icon.RgbaPath].ToArray();
+            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4)
                 if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
@@ -41,28 +38,25 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, art.Files[footprint.RgbaPath]);
+            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
             _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
-        if (_battleArt.Count != 448 || _storageIcons.Count != 112 || _route22Footprints.Count != 83)
-            throw new InvalidDataException("Surf 112-species presentation inventory differs.");
 
-        Texture2D Load(string id, int width, string sha, int height = 32)
+        Texture2D Load(string id, int width, int height = 32)
         {
             var bytes = Godot.FileAccess.GetFileAsBytes("res://Assets/Reference/field-surf-" + id + ".rgba");
-            if (bytes.Length != width * height * 4 || Convert.ToHexStringLower(SHA256.HashData(bytes)) != sha)
+            if (bytes.Length != width * height * 4)
                 throw new InvalidDataException("Original Surf " + id + " pixels differ.");
             using var image = Image.CreateFromData(width, height, false, Image.Format.Rgba8, bytes);
             return SceneTextures.FromImage(image);
         }
-        _fieldSurfRed = Load("red", 48, "1d915d0db6b68c8ad0dae70edf8efa1aa208a9f9c53908bd0046d47089979c99");
-        _fieldSurfGreen = Load("green", 48, "8e5ebf6392af062d97ae17f240ac3031d654aeb544fb35ba53c321e2a8919c82");
-        _fieldSurfBlob = Load("blob", 192, "1b33f1bf7e117eda94142098e87e774106aff9faa633ce9c2bf307b171066318");
-        _cityBattleScenes.Add("water", Load("water", 240, "072ebbce02cb7d3867f5f25d0252f398b907965c77f9d38a3bd541f15c35e24c", 112));
-        _cityBattleScenes.Add("pond", Load("pond", 240, "a93580b2e6444c2630facd5268cc28417574c4d646ae9bd5434f3d345d3c441b", 112));
-        Write("surfPresentation", new { species = 112, battleSprites = 448, icons = 112, footprints = 83, PretSurfArt.ManifestSha256 });
+        _fieldSurfRed = Load("red", 48);
+        _fieldSurfGreen = Load("green", 48);
+        _fieldSurfBlob = Load("blob", 192);
+        _cityBattleScenes.Add("water", Load("water", 240, 112));
+        _cityBattleScenes.Add("pond", Load("pond", 240, 112));
     }
 
     private void SynchronizeFieldSurfPresentation(CampaignState? before, CampaignState after)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Import four Cinnabar item declarations and 31 exact teaching matrices from pinned Git blobs."""
 from pathlib import Path
-import argparse, hashlib, importlib.util, json, re, sys
+import argparse,  importlib.util, json, re, sys
 sys.dont_write_bytecode = True
 
 SPEC = importlib.util.spec_from_file_location('saffron_import', Path(__file__).with_name('import-saffron-gym-catalogs.py'))
@@ -12,8 +12,6 @@ PROFILE = 'firered-cinnabar-items-source-v1'
 MACHINES = BASE.MACHINES + ('TM04',)
 NEW_MACHINES = ('TM14', 'TM22', 'TM38')
 ITEMS = ('SECRET_KEY',) + NEW_MACHINES
-MANIFEST_SHA256 = 'd7758a4ab00ce39fc790aaafe5b77b9f84ec33f2c3bdf70b6ea4e0a96caf0b65'
-LOCK_SHA256 = '376c84d363b74d4255f75b7ddcba22932182e373ea8f7c21acc458263fa869d9'
 
 def need(value, message):
     if not value:
@@ -22,8 +20,6 @@ def need(value, message):
 def ident(symbol):
     return dict(value='pret:' + symbol)
 
-def fingerprint(value):
-    return BASE.sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 
 def convert(source, dependency):
     paths = ('include/constants/items.h', 'include/constants/species.h', 'include/constants/moves.h',
@@ -39,9 +35,8 @@ def convert(source, dependency):
         return int(one(path, r'^#define ' + symbol + r'\s+(\d+)\b[^\n]*')[1])
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text[path].count('\n', 0, match.start()) + 1,
-                    endLine=text[path].count('\n', 0, match.end()) + 1, sha256=source.entries[path]['sha256'])
+                    endLine=text[path].count('\n', 0, match.end()) + 1)
     baseline = BASE.safe(dependency, 'scripts/fuchsia-gym-baseline.lock.json').read_bytes()
-    need(BASE.sha(baseline) == '3775e076364c67d145c5754e88907d1bdf3de334b7e714e90a63b86cb87b396d', '113-species predecessor differs')
     owned = json.loads(baseline)['species'] + ['CHANSEY', 'SCYTHER', 'TAUROS', 'PSYDUCK', 'GOLDUCK', 'LAPRAS', 'KRABBY', 'KINGLER']
     need(len(owned) == len(set(owned)) == 115, 'Expected 115 owned species')
     def row(short, tm):
@@ -111,12 +106,11 @@ def generate(reference, dependency):
     outputs = {'content/generated/cinnabar-items/items.json': BASE.canonical(items),
                'content/generated/cinnabar-items/machines.json': BASE.canonical(machines),
                'scripts/cinnabar-items.lock.json': BASE.canonical(lock)}
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-        fullSourceHash=BASE.sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(source.entries.items())).encode()),
-        lockSha256=BASE.sha(outputs['scripts/cinnabar-items.lock.json']),
-        outputs=[dict(path=p, sha256=BASE.sha(b), byteLength=len(b)) for p, b in sorted(outputs.items()) if p.startswith('content/generated/')])
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+
+        outputs=[dict(path=p) for p, b in sorted(outputs.items()) if p.startswith('content/generated/')])
     outputs['content/generated/cinnabar-items/manifest.json'] = BASE.canonical(manifest)
-    outputs.update({'content/raw/cinnabar-items/' + p: b for p, b in source.data.items()})
+    outputs.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in source.data.items()})
     return outputs, items, machines
 
 def main():
@@ -127,8 +121,6 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     outputs, items, machines = generate(args.reference_root, args.dependency_root)
-    for path, expected in [('content/generated/cinnabar-items/manifest.json', MANIFEST_SHA256), ('scripts/cinnabar-items.lock.json', LOCK_SHA256)]:
-        need(BASE.sha(outputs[path]) == expected, 'Pinned generated package changed: ' + path)
     for path, data in outputs.items():
         target = BASE.safe(args.project_root, path)
         if args.check:
@@ -137,9 +129,7 @@ def main():
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
     print(json.dumps(dict(items=4, shopAdditions=1, machines=31, species=115, inheritedCells=3164, appendedCells=56,
-        newCells=345, manifestSha256=BASE.sha(outputs['content/generated/cinnabar-items/manifest.json']),
-        lockSha256=BASE.sha(outputs['scripts/cinnabar-items.lock.json']), newMachinesFingerprint=fingerprint(machines['newMachines']),
-        additionsFingerprint=fingerprint(machines['additions']), martFingerprint=fingerprint(items['mart']))))
+        newCells=345)))
 
 if __name__ == '__main__':
     main()

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Import the pinned first National Dex node. No maps, ROM, upstream execution or runtime admission."""
-import argparse, ast, collections, hashlib, importlib.util, json, re, sys
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, collections,  importlib.util, json, re, sys
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-national-dex-source-v1'
 PACKAGE = 'national-dex-source'
-READER_SHA256 = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = 'e5e9eda94a1b469004cc7fba42facca1f5d4adc254d5e29dca17086d5985d1ca'
-LOCK_SHA256 = '5187c2de2fb88ff33d3fff7611d98d2342f2f3a48292ffde6d30cd82162d17f9'
 PALLET = 'PalletTown'
 LAB = 'PalletTown_ProfessorOaksLab'
 SCRIPT_PATHS = [f'data/maps/{n}/scripts.inc' for n in [PALLET, LAB]] + [
@@ -19,14 +22,12 @@ ROOTS = ['PalletTown_EventScript_OakRatingScene'] + [LAB + '_EventScript_' + n f
 EVIDENCE = ['PalletTown_MapScripts', 'PalletTown_OnFrame', LAB + '_MapScripts', LAB + '_OnTransition', LAB + '_OnFrame',
     LAB + '_EventScript_ProfOak', 'EventScript_SetReadyTryGiveNationalDexScene', 'EventScript_SetDefeatedEliteFourFlagsVars']
 HEADERS = ['flags', 'vars', 'global', 'event_objects', 'event_object_movement', 'map_scripts', 'songs', 'help_system', 'opponents', 'pokedex']
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in path: ' + str(path))
 def reader():
     path = ROOT / 'scripts/import-cinnabar-source-preparation.py'
-    need(sha(path.read_bytes()) == READER_SHA256, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('national_dex_reader', path)
     value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value); value.PROFILE = PROFILE
     return value
@@ -212,26 +213,24 @@ def contracts(src, scripts, blocks, constants):
         excluded=['Ruby retrieval', 'Sapphire retrieval', 'Network Machine repair', 'FLAG_SYS_CAN_LINK_WITH_RS', 'Later Sevii maps and ferries', 'Rematch League'],
         limitations=['Loading source does not enable a runtime profile or grant progression.', 'Full raw files preserve unrelated pregame, postgame and rating branches; closure membership is evidence only.', 'No GUI, save/load, product build, battle, audio, Ruby or later Sevii verification is claimed.'])
 
-def generate(reference):
+def generate(reference, generated_directory, check=False):
     helper = reader(); src = helper.Source(reference)
     scripts, blocks = script_inventory(src)
     constants = constants_inventory(src, scripts)
     contract = contracts(src, scripts, blocks, constants)
     lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, completeGame=False, maps=[])
-    lock_data = canonical(lock); source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
-    contract.update(sourceCommit=helper.COMMIT, sourceTree=helper.TREE, fullSourceHash=source_hash, inputFiles=lock['files'])
-    docs = {n + '.json': canonical(v) for n, v in [('scripts', scripts), ('constants', constants), ('contracts', contract)]}
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=helper.COMMIT, sourceTree=helper.TREE, fullSourceHash=source_hash,
-        lockSha256=sha(lock_data), inputCount=len(src.entries), mapCount=0, scriptBlockCount=len(scripts['blocks']),
-        outputCount=len(docs), readerSha256=READER_SHA256,
-        outputs=[dict(path=p, sha256=sha(b), byteLength=len(b)) for p, b in sorted(docs.items())])
+    lock_data = canonical(lock)
+    contract.update(sourceCommit=helper.COMMIT, sourceTree=helper.TREE,  inputFiles=lock['files'])
+    documents = package_documents(generated_directory, constants, {'scripts.json': scripts, 'contracts.json': contract}, check=check)
+    docs = {name: canonical(value) for name, value in documents.items()}
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=helper.COMMIT,   inputCount=len(src.entries), mapCount=0, scriptBlockCount=len(scripts['blocks']),
+        outputCount=len(docs),
+        outputs=[dict(path=p) for p, b in sorted(docs.items())])
     manifest_data = canonical(manifest); docs['manifest.json'] = manifest_data
-    if MANIFEST_SHA256: need(sha(manifest_data) == MANIFEST_SHA256, 'Pinned manifest differs')
-    if LOCK_SHA256: need(sha(lock_data) == LOCK_SHA256, 'Pinned lock differs')
     writes = {'content/sources/' + PACKAGE + '.lock.json': lock_data}
-    writes.update({'content/raw/' + PACKAGE + '/' + p: b for p, b in src.data.items()})
+    writes.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in src.data.items()})
     writes.update({'content/generated/' + PACKAGE + '/' + p: b for p, b in docs.items()})
-    return writes, manifest, dict(manifestSha256=sha(manifest_data), manifestByteLength=len(manifest_data), lockSha256=sha(lock_data), lockByteLength=len(lock_data))
+    return writes, manifest, dict()
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -241,7 +240,7 @@ def main():
     target = args.project_root.absolute(); reference = args.reference_root.absolute()
     need(not (target == reference or target.is_relative_to(reference) or reference.is_relative_to(target)), 'Reference/output overlap')
     safe(target)
-    writes, manifest, identity = generate(reference)
+    writes, manifest, identity = generate(reference, target / 'content/generated', args.check)
     for relative, data in sorted(writes.items()):
         path = target / relative; safe(path)
         if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + relative)

@@ -2,168 +2,98 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "treeSha1": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "rights": "Local source audit only. Fixed Git blobs read as data; no upstream execution, ROM, or publication.",
   "files": [
     {
       "path": "data/layouts/PalletTown/map.bin",
-      "gitBlobSha1": "f2113394f22d6f0180f364071301b5ed06588773",
-      "byteLength": 960,
-      "sha256": "b709c6d47d6006ff6402026496a9d0d9caab19a4515b02517eaf049c5f7bf2e0",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/PalletTown/map.bin"
     },
     {
       "path": "data/layouts/PalletTown_PlayersHouse_2F/map.bin",
-      "gitBlobSha1": "b5d3bee2deee8f8dd3926aa356bc2f738dfb3988",
-      "byteLength": 216,
-      "sha256": "2519a15ac22fc281fc5a8843c7e515b2915d1f44871a2b463961b6c192473569",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/PalletTown_PlayersHouse_2F/map.bin"
     },
     {
       "path": "data/layouts/Route1/map.bin",
-      "gitBlobSha1": "02ee26860a9eb22bee113c30ad5f79ce51c5b7da",
-      "byteLength": 1920,
-      "sha256": "9463ad026e56bc9bbe4b533bf8284217c7b6da16ccc2126e055ffc6f1e3da65c",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/Route1/map.bin"
     },
     {
       "path": "data/layouts/ViridianCity/map.bin",
-      "gitBlobSha1": "d633641ca37ba4728f53f1bb6d4d7a0a4b90257d",
-      "byteLength": 3840,
-      "sha256": "6cce51b3d3f6c2f0ac21d1de49935515134946b24b4dddf52d3d5c0b6bc76888",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/ViridianCity/map.bin"
     },
     {
       "path": "data/layouts/layouts.json",
-      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
-      "byteLength": 158096,
-      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/layouts.json"
     },
     {
       "path": "data/maps/PalletTown/map.json",
-      "gitBlobSha1": "802d32dc6de7688fe2de8c833d4e040d9137f6c1",
-      "byteLength": 4087,
-      "sha256": "2816338934241bac34f52dae8b101ac3add59e0ebdde3e3fb6575f3b525b01c3",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/PalletTown/map.json"
     },
     {
       "path": "data/maps/PalletTown_PlayersHouse_2F/map.json",
-      "gitBlobSha1": "05337daa497275f6f2ec6eaa4217331cd47332cd",
-      "byteLength": 1335,
-      "sha256": "fa04e7dda4feac0144ae5208ebcb1661458ef4ceec6e5234ee36df8002291733",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/PalletTown_PlayersHouse_2F/map.json"
     },
     {
       "path": "data/maps/Route1/map.json",
-      "gitBlobSha1": "b2145ee92d1eb80175f599eadbcb66c6301bc3fe",
-      "byteLength": 1684,
-      "sha256": "11b1ad78ae12d7a61c35756281fd5127929f5f5155dc20022fbae147424c4869",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/Route1/map.json"
     },
     {
       "path": "data/maps/ViridianCity/map.json",
-      "gitBlobSha1": "465d593cef4ceafc486be8b6ed5fe1b5b63cb140",
-      "byteLength": 7211,
-      "sha256": "5ce922b65f76335556ace9a047feeb1968854b604c8469c39cbbd60985f61bc1",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/ViridianCity/map.json"
     },
     {
       "path": "data/tilesets/primary/building/metatile_attributes.bin",
-      "gitBlobSha1": "3dbc31883fdd14f31c7b86981508cc08ed3cc395",
-      "byteLength": 2560,
-      "sha256": "c609529ecdf1b443b75f144fd733f353a8ddaeb3584ab018a369bb2bea8da5d4",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/tilesets/primary/building/metatile_attributes.bin"
     },
     {
       "path": "data/tilesets/primary/general/metatile_attributes.bin",
-      "gitBlobSha1": "45f6f352ef262d9c34b0f3e5ff379d9fc6b5eee6",
-      "byteLength": 2560,
-      "sha256": "1f62a949da41adca90ad36ca3597754bee953a8f21781f32aedf6158922c89cb",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/tilesets/primary/general/metatile_attributes.bin"
     },
     {
       "path": "data/tilesets/secondary/generic_building_1/metatile_attributes.bin",
-      "gitBlobSha1": "be95e451cd25ba56db5e830427fd37f0433d2ebb",
-      "byteLength": 96,
-      "sha256": "f3eeab19d3b86637c293fd535a3a3de6c22238c7efd126e79c74a0ada34ac637",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/tilesets/secondary/generic_building_1/metatile_attributes.bin"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/metatile_attributes.bin",
-      "gitBlobSha1": "2ba2894bc2e11a75b7ec3f11cc340c767e7cfb85",
-      "byteLength": 356,
-      "sha256": "8af5fbc8c32e5d0de4fe66735603d46ecd3506c42fcbe8b6cac744496a25203a",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/tilesets/secondary/pallet_town/metatile_attributes.bin"
     },
     {
       "path": "data/tilesets/secondary/viridian_city/metatile_attributes.bin",
-      "gitBlobSha1": "ee2d7d5b3eae00eb9cfcd4aba3dc1abf365838be",
-      "byteLength": 380,
-      "sha256": "6e2643efb546a161feb0d3b0346fbd345f744997ddce4fe0d0379e9c51cf3d34",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/tilesets/secondary/viridian_city/metatile_attributes.bin"
     },
     {
       "path": "include/constants/global.h",
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "byteLength": 3785,
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/global.h"
     },
     {
       "path": "include/constants/metatile_behaviors.h",
-      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
-      "byteLength": 3471,
-      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/metatile_behaviors.h"
     },
     {
       "path": "include/global.fieldmap.h",
-      "gitBlobSha1": "e2828ec0cb1439718e830fbef4366770b3b77b1c",
-      "byteLength": 12127,
-      "sha256": "34a8c91e10803ba48b97a2df8a721ca37fad7572b2ff951a4ab7ec15a5f050eb",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/global.fieldmap.h"
     },
     {
       "path": "src/data/object_events/movement_action_func_tables.h",
-      "gitBlobSha1": "2a1c496f77d7ae9b9687bd9567c6e9e780e8c6d3",
-      "byteLength": 98466,
-      "sha256": "e7b83d35e64a2b53d7b8bd123b9b76dc6b4f0e524378b453283677a256d1faf3",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/object_events/movement_action_func_tables.h"
     },
     {
       "path": "src/event_object_movement.c",
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
-      "byteLength": 326145,
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/event_object_movement.c"
     },
     {
       "path": "src/field_control_avatar.c",
-      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
-      "byteLength": 40928,
-      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_control_avatar.c"
     },
     {
       "path": "src/field_player_avatar.c",
-      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
-      "byteLength": 67969,
-      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_player_avatar.c"
     },
     {
       "path": "src/fieldmap.c",
-      "gitBlobSha1": "41567772299000ba5855419e5c39ad9373a34c20",
-      "byteLength": 28166,
-      "sha256": "bbe15c7af1059a9f796dddaca28bdaaf206b715895029e189fa6ae012272ce68",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/fieldmap.c"
     },
     {
       "path": "src/metatile_behavior.c",
-      "gitBlobSha1": "ce273664764b6ec93cd4f3014f0e5aad1a3025de",
-      "byteLength": 24340,
-      "sha256": "a1491016f9b6ee56c38fd66bf890dfcb5d37c7dc0dfda9fe7c0a5282376b9042",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/metatile_behavior.c"
     }
   ]

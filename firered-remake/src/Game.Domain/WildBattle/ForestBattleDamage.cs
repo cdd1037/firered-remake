@@ -19,7 +19,7 @@ internal static class ForestBattleDamage
         bool struggle = moveId == WildBattleRules.StruggleMove;
         var move = sourceDefinition ?? (struggle ? null : catalog.Moves[moveId]);
         bool sourceMove = sourceDefinition is not null;
-        if (sourceMove && (sourceDefinition!.Id != moveId || !MetronomeSourceMoveDefinition.Matches(sourceDefinition)))
+        if (sourceMove && (sourceDefinition!.Id != moveId || !SourceMoveDefinitionRules.IsValid(sourceDefinition)))
             throw new NotSupportedException("called_damage_source_definition");
         if (!struggle && ((!sourceMove && !(rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, move!) : route11Rules ? Route11BattleScope.ValidDefinition(move!) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move!) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move!) : vermilionRules ? VermilionBattleScope.ValidDefinition(move!) : billRules ? BillBattleScope.ValidDefinition(move!) : ceruleanRules ? CeruleanBattleScope.ValidDefinition(move!) : mtMoonRules ? MtMoonBattleScope.ValidDefinition(move!) : route3Rules ? Route3BattleScope.ValidDefinition(move!) : route22Rules ? Route22BattleScope.ValidDefinition(move!) : earlyPartyRules ? EarlyPartyBattleScope.ValidDefinition(move!) : earlyStarterRules ? EarlyStarterBattleScope.ValidDefinition(move!) : pewterRules ? PewterBattleScope.ValidDefinition(move!) : ForestBattleScope.ValidDefinition(move!))) || move!.Power == 0))
             throw new NotSupportedException("wild_battle_damage_move");

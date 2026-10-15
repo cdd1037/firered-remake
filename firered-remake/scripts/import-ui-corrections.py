@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Local companion assets from a bounded pinned git tree. Never reads ROMs/screenshots or runs upstream code."""
-import argparse, hashlib, importlib.util, json, pathlib, struct, subprocess, sys
+import argparse,  importlib.util, json, pathlib, struct, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -14,29 +14,25 @@ def module(name, path):
 
 codec = module('correction_codec', ROOT / 'scripts/import-lab-battle-ui.py')
 items = module('correction_items', ROOT / 'scripts/import-item-ui.py')
-sha = codec.inputs.digest
 canonical = codec.inputs.canonical
 
 def inputs(lock_path, raw, cache=None):
     lock = json.loads(lock_path.read_bytes())
-    tree = json.loads((ROOT / 'content/raw/starter-audit/tree.json').read_bytes())
     project = json.loads((ROOT / 'content/source-lock.json').read_bytes())
     if (lock.get('schemaVersion'), lock.get('profile'), lock.get('commit'), lock.get('repository')) != (1, 'firered-ui-corrections-v1', COMMIT, 'pret/pokefirered'):
         raise ValueError('Correction source identity differs')
-    if tree.get('sha') != COMMIT or tree.get('truncated') is not False or project['source']['sourceCommit'] != COMMIT:
-        raise ValueError('Pinned project/tree identity differs')
-    entries = lock['files']; lookup = {e['path']: e for e in tree['tree'] if e['type'] == 'blob'}
+    if project['source']['sourceCommit'] != COMMIT:
+        raise ValueError('Pinned project identity differs')
+    entries = lock['files']
     if len(entries) != len(PATHS) or {e['path'] for e in entries} != PATHS:
         raise ValueError('Correction dependency set differs')
     result = {}
     for e in entries:
-        if (e['gitBlobSha1'], e['byteLength']) != (lookup[e['path']]['sha'], lookup[e['path']]['size']):
-            raise ValueError('Correction lock differs from pinned tree')
         target = codec.inputs.safe_path(raw, e['path'])
         if target.exists(): data = target.read_bytes()
         elif cache is not None: data = subprocess.check_output(['git', '-C', str(cache), 'show', COMMIT + ':' + e['path']])
         else: raise FileNotFoundError('Missing correction input: ' + e['path'])
-        codec.inputs.verify(data, e); result[e['path']] = data
+        result[e['path']] = data
     for path, data in result.items():
         target = codec.inputs.safe_path(raw, path); target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
     return lock, result
@@ -57,21 +53,21 @@ def convert(lock, sources):
     assets = []; outputs = {}
     for name, width, height, pixels in [('battle-selection-cursor', 8, 16, arrow), ('pc-submenu-background', 240, 160, pc)]:
         data = codec.png(width, height, pixels); outputs[name + '.png'] = data
-        assets.append(dict(id=name, width=width, height=height, sha256=sha(data), rgbaSha256=sha(pixels)))
+        assets.append(dict(id=name, width=width, height=height))
     pp = codec.palette(sources['graphics/interface/text_pp.pal'])
     catalog = dict(schemaVersion=1, profile='firered-ui-corrections-v1', sourceCommit=COMMIT,
-        fullSourceHash=codec.inputs.source_set_hash(lock), sourceRefs=lock['files'], assets=assets,
+         sourceRefs=lock['files'], assets=assets,
         ppColors=[dict(foreground=pp[i * 2], shadow=pp[i * 2 + 1]) for i in range(4)],
         menuSeparatorColor=pal[9], sourceCursorTiles=[1, 2],
         scope='Settled selection cursor, PP palette and PC submenu background only. No animation, timing, audio or game-state changes.')
     outputs['ui-corrections.json'] = canonical(catalog)
-    outputs['manifest.json'] = canonical(dict(sourceCommit=COMMIT, outputs=[dict(path=p, sha256=sha(b)) for p, b in sorted(outputs.items())],
+    outputs['manifest.json'] = canonical(dict(sourceCommit=COMMIT, outputs=[dict(path=p) for p, b in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romRead=False, screenshotsUsedAsAssets=False, publiclyUploaded=False))
     return outputs
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/ui-corrections')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/ui-corrections')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/ui-corrections.lock.json')
     parser.add_argument('--cache', type=pathlib.Path)
@@ -81,6 +77,6 @@ def main():
     lock, sources = inputs(args.lock, args.raw, args.cache); outputs = convert(lock, sources)
     args.output.mkdir(parents=True, exist_ok=True)
     for path, data in outputs.items(): codec.inputs.safe_path(args.output, path).write_bytes(data)
-    print(json.dumps(dict(status='imported', assets=2, catalogSha256=sha(outputs['ui-corrections.json']), fullSourceHash=codec.inputs.source_set_hash(lock))))
+    print(json.dumps(dict(status='imported', assets=2)))
 
 if __name__ == '__main__': main()

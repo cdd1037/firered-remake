@@ -31,9 +31,7 @@ public static class MagikarpSizeRecordRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourcePath = "src/pokemon_size_record.c";
-    public const string SourceSha256 = "58561f09e5425a5def0fba121c1424f7d2c877ed1f48ba3368abd3717cf15059";
     public const string ScriptPath = "data/maps/Route12_FishingHouse/scripts.inc";
-    public const string ScriptSha256 = "7874709d1ee0980cfd5b5dfcba38771322e12884c5afcd788d3736d8730076d6";
     public const ushort DefaultRecord = 0;
     public const int PartyCapacity = 6;
     public const int MagikarpHeightDecimeters = 9;

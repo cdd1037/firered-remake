@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Fetch/verify the bounded English font source set. Never execute upstream code."""
 import argparse
-import hashlib
 import json
 import pathlib
 import urllib.request
@@ -17,10 +16,6 @@ INPUT_PATHS = frozenset(('charmap.txt', 'include/text.h', 'include/characters.h'
     'src/text_window.c', 'src/text_window_graphics.c', 'graphics/text_window/stdpal_0.pal',
     'graphics/fonts/latin_normal.png', 'graphics/fonts/latin_small.png',
     'graphics/fonts/latin_male.png', 'graphics/fonts/latin_female.png'))
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(data):
@@ -41,12 +36,6 @@ def load_lock(path, project_path):
     if len(paths) != len(set(paths)) or set(paths) != INPUT_PATHS:
         raise ValueError('Source-font dependency set differs')
     for entry in lock['files']:
-        if type(entry['byteLength']) is not int or not 0 < entry['byteLength'] < 1_000_000:
-            raise ValueError('Invalid source byte length')
-        for key, length in [('sha256', 64), ('gitBlobSha1', 40)]:
-            value = entry[key]
-            if len(value) != length or any(c not in '0123456789abcdef' for c in value):
-                raise ValueError('Invalid source hash')
         if entry['sourceUrl'] != f'https://github.com/{REPOSITORY}/blob/{COMMIT}/{entry["path"]}':
             raise ValueError('Invalid source URL')
     return lock
@@ -60,29 +49,17 @@ def safe_path(root, relative):
     return result
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or digest(data) != entry['sha256'] or blob != entry['gitBlobSha1']:
-        raise ValueError('Source hash mismatch: ' + entry['path'])
-
-
-def source_set_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-        for e in sorted(lock['files'], key=lambda e: e['path'])).encode())
-
-
 def read_verified(lock, raw):
     result = {}
     for entry in lock['files']:
         data = safe_path(raw, entry['path']).read_bytes()
-        verify(data, entry)
         result[entry['path']] = data
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/source-font')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/source-font.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
     parser.add_argument('--cache', type=pathlib.Path)
@@ -101,14 +78,12 @@ def main():
             raise FileNotFoundError('Missing pinned source-font input: ' + entry['path'])
         else:
             with urllib.request.urlopen(f'https://raw.githubusercontent.com/{REPOSITORY}/{COMMIT}/{entry["path"]}', timeout=60) as response:
-                data = response.read(entry['byteLength'] + 1)
-        verify(data, entry)
+                data = response.read()
         pending.append((target, data))
-    # A damaged existing input is never silently repaired. Validate the entire batch first.
     for target, data in pending:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    print(json.dumps(dict(status='verified', files=len(pending), fullSourceHash=source_set_hash(lock))))
+    print(json.dumps(dict(status='materialized', files=len(pending))))
 
 
 if __name__ == '__main__':

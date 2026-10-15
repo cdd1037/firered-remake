@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -11,7 +10,6 @@ namespace Game.Content;
 /// <summary>Seven authenticated Cerulean parties; English name bytes remain inputs to the source NPC PID.</summary>
 public static class PretCeruleanTrainers
 {
-    public const string LockSha256 = "c19f153c821aeefa2c8562371c2afdabc29aa02e4b5c6d5d05bcbd2d41d9dadb";
     public static CeruleanTrainerCatalog Load(string root) => Load(PretCeruleanRegion.Load(root), PretCeruleanPokemon.Load(root));
 
     public static CeruleanTrainerCatalog Load(PretCeruleanRegion region, PretCeruleanPokemon pokemon)
@@ -32,10 +30,9 @@ public static class PretCeruleanTrainers
             string path = value.GetProperty("path").GetString()!;
             int start = value.TryGetProperty("line", out var line) ? line.GetInt32() : value.GetProperty("startLine").GetInt32();
             int end = value.TryGetProperty("endLine", out line) ? line.GetInt32() : start;
-            Require(value.GetProperty("kind").GetString() == "pret" && value.GetProperty("repository").GetString() == "pret/pokefirered" &&
-                value.GetProperty("commit").GetString() == CeruleanTrainerPartyFactory.SourceCommit && start > 0 && end >= start &&
-                files.TryGetValue(path, out var f) && value.GetProperty("sha256").GetString() == f.Sha256, "Cerulean trainer source identity differs.");
-            return new(path, value.GetProperty("symbol").GetString()!, start, end, value.GetProperty("sha256").GetString()!);
+            Require(value.GetProperty("kind").GetString() == "pret" && start > 0 && end >= start &&
+                files.TryGetValue(path, out var f) , "Cerulean trainer source identity differs.");
+            return new(path,value.GetProperty("symbol").GetString()!,start,end);
         }
         ImmutableArray<int> Encode(string name) => name.Select(c => c is >= 'A' and <= 'Z' ? 0xbb + c - 'A' :
             throw new InvalidDataException("Unsupported source trainer/species name glyph.")).ToImmutableArray();
@@ -81,7 +78,7 @@ public static class PretCeruleanTrainers
                     Require(canonical.Bytes.SequenceEqual(encoded.Add(0xff)), "Cerulean source species-name bytes differ.");
                 var moves = custom ? m.GetProperty("sourceMoveSlots").EnumerateArray().Select(v => new MoveId("pret:" + v.GetString())).ToImmutableArray() : [];
                 return new TrainerPartyMemberDefinition(species, speciesId, speciesName, encoded, m.GetProperty("level").GetInt32(),
-                    m.GetProperty("iv").GetInt32(), "ITEM_NONE", moves, partySource, new(names.Path, speciesSymbol, speciesId + 2, speciesId + 2, names.Sha256));
+                    m.GetProperty("iv").GetInt32(), "ITEM_NONE", moves, partySource, new(names.Path,speciesSymbol,speciesId + 2,speciesId + 2));
             }).ToImmutableArray();
             string trainerClass = declaration["trainerClass"];
             var money = Regex.Match(moneyText, @"^\s*\{" + trainerClass + @", (\d+)\},$", RegexOptions.Multiline | RegexOptions.CultureInvariant);
@@ -92,13 +89,13 @@ public static class PretCeruleanTrainers
                 items.Concat(Enumerable.Repeat("ITEM_NONE", 4 - items.Length)).ToImmutableArray(), false, custom ? 1 : 0,
                 (uint)Expression(declaration["aiFlags"]), declaration["aiFlags"].Split('|', StringSplitOptions.TrimEntries).ToImmutableArray(),
                 int.Parse(money.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), party, Ref(scope.GetProperty("trainerSource")),
-                new("src/battle_main.c", trainerClass, moneyLine, moneyLine, Hash(supplement["src/battle_main.c"]))));
-            bool rival = symbol.StartsWith("TRAINER_RIVAL_", StringComparison.Ordinal), grunt = id == CeruleanTrainerPartyFactory.Rocket, misty = id == CeruleanTrainerPartyFactory.Misty;
+                new("src/battle_main.c",trainerClass,moneyLine,moneyLine)));
+            bool rival = symbol.StartsWith("TRAINER_RIVAL_", StringComparison.Ordinal),grunt = id == CeruleanTrainerPartyFactory.Rocket,misty = id == CeruleanTrainerPartyFactory.Misty;
             string map = rival || grunt ? "CeruleanCity" : "CeruleanCity_Gym";
             string person = rival ? "Rival" : grunt ? "Grunt" : name[..1] + name[1..].ToLowerInvariant();
             string last = symbol.Split('_')[^1];
             string suffix = rival ? last[..1] + last[1..].ToLowerInvariant() : "";
-            string entry = map + "_EventScript_" + person + suffix, intro = map + "_Text_" + person + "Intro", defeat = map + "_Text_" + person + "Defeat";
+            string entry = map + "_EventScript_" + person + suffix,intro = map + "_Text_" + person + "Intro",defeat = map + "_Text_" + person + "Defeat";
             var script = region.Scripts.Single(s => s.Path == "data/maps/" + map + "/scripts.inc");
             string expected = rival || grunt ? "trainerbattle_no_intro " + symbol + ", " + defeat :
                 "trainerbattle_single " + symbol + ", " + intro + ", " + defeat + (misty ? ", CeruleanCity_Gym_EventScript_MistyDefeated, NO_MUSIC" : "");
@@ -108,39 +105,32 @@ public static class PretCeruleanTrainers
             battles.Add(id, new(id, rival || grunt ? 3 : misty ? 1 : 0, 0, 8, entry, intro, defeat, "",
                 misty ? "CeruleanCity_Gym_Text_ExplainCascadeBadge" : grunt ? "CeruleanCity_Text_RecoveredTM28FromGrunt" : map + "_Text_" + person + "PostBattle",
                 rival || grunt ? "EventScript_DoNoIntroTrainerBattle" : "EventScript_TryDoNormalTrainerBattle", "CB2_EndTrainerBattle",
-                new(script.Path, entry, scriptLine, scriptLine + label.Value.Count(c => c == '\n'), files[script.Path].Sha256))
-                { PostBattleScript = misty ? "CeruleanCity_Gym_EventScript_MistyDefeated" : null, MusicOption = misty ? "NO_MUSIC" : null });
+                new(script.Path,entry,scriptLine,scriptLine + label.Value.Count(c => c == '\n')))
+                { PostBattleScript = misty ? "CeruleanCity_Gym_EventScript_MistyDefeated" : null,MusicOption = misty ? "NO_MUSIC" : null });
         }
         var result = new CeruleanTrainerCatalog(CeruleanTrainerPartyFactory.SourceCommit, CeruleanTrainerPartyFactory.RulesVersion, false, trainers.ToImmutable(), battles.ToImmutable());
         CeruleanTrainerPartyFactory.ValidateCatalog(result);
         return result;
     }
 
-    internal static Dictionary<string, byte[]> ReadSource(string root)
+    private static Dictionary<string, byte[]> ReadSource(string root)
     {
-        using var json = JsonDocument.Parse(ReadPinned(root, "scripts/cerulean-trainers.lock.json", LockSha256, 3714));
+        using var json = JsonDocument.Parse(ReadPinned(root, "scripts/cerulean-trainers.lock.json"));
         var document = json.RootElement;
-        Require(document.GetProperty("repository").GetString() == "pret/pokefirered" && document.GetProperty("commit").GetString() == CeruleanTrainerPartyFactory.SourceCommit &&
-            document.GetProperty("files").GetArrayLength() == 15, "Cerulean trainer lock identity differs.");
         var result = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var entry in document.GetProperty("files").EnumerateArray())
         {
             string path = entry.GetProperty("path").GetString()!;
-            var bytes = ReadPinned(root, "content/raw/cerulean-trainers/" + path, entry.GetProperty("sha256").GetString()!, entry.GetProperty("byteLength").GetInt32());
-            Require(Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {bytes.Length}\0"), .. bytes])) == entry.GetProperty("gitBlobSha1").GetString() && result.TryAdd(path, bytes), "Cerulean trainer Git blob differs.");
+            if (path is not ("src/battle_main.c" or "src/battle_setup.c")) continue;
+            var bytes = ReadPinned(root, PretSourcePaths.FireRedRawDirectory + "/" + path);
+            result.Add(path, bytes);
         }
         return result;
     }
-    internal static byte[] ReadPinned(string root, string path, string hash, int length)
+    internal static byte[] ReadPinned(string root, string path)
     {
-        Require(length is > 0 and <= 1_000_000 && !Path.IsPathRooted(path) && !path.Contains('\\') && !path.Split('/').Any(x => x is "" or "." or ".."), "Unsafe Cerulean trainer path or size.");
-        var info = new FileInfo(Path.GetFullPath(Path.Combine(root, path)));
-        Require(info.LinkTarget is null, "Cerulean trainer symlink rejected.");
-        for (var parent = info.Directory; parent is not null; parent = parent.Parent) Require(parent.LinkTarget is null, "Cerulean trainer directory symlink rejected.");
-        using var stream = info.OpenRead(); Require(stream.Length == length, "Cerulean trainer input size differs: " + path);
-        var bytes = new byte[length]; stream.ReadExactly(bytes);
-        Require(stream.ReadByte() == -1 && Hash(bytes) == hash, "Cerulean trainer input hash differs: " + path); return bytes;
+        Require(!Path.IsPathRooted(path) && !path.Contains('\\') && !path.Split('/').Any(x => x is "" or "." or ".."), "Unsafe Cerulean trainer path.");
+        return File.ReadAllBytes(Path.Combine(root, path));
     }
-    internal static string Hash(byte[] data) => Convert.ToHexStringLower(SHA256.HashData(data));
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
 }

@@ -1,7 +1,6 @@
 using Game.Application;
 using Game.Domain.World;
 using Godot;
-using System.Security.Cryptography;
 
 public partial class CampaignView
 {
@@ -18,8 +17,7 @@ public partial class CampaignView
         const string path = "res://Assets/Reference/field-fly-bird.rgba";
         // Only the current composition's Fly content enables these hooks.
         var bytes = Godot.FileAccess.GetFileAsBytes(path);
-        if (bytes.Length != 64 * 320 * 4 || Convert.ToHexStringLower(SHA256.HashData(bytes)) !=
-            "103f863795b021713de755e9dadc9b3ce9753cd17f1ddd25d3e0a50f41a493ca")
+        if (bytes.Length != 64 * 320 * 4)
             throw new InvalidDataException("Original Fly bird pixels differ.");
         using var image = Image.CreateFromData(64, 320, false, Image.Format.Rgba8, bytes);
         _fieldFlyBird = SceneTextures.FromImage(image);

@@ -10,7 +10,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteMiscTarget(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (!HasMiscTargetRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasMiscTargetRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_misc_target_definition");
         if (move.Effect == "EFFECT_TEETER_DANCE") { ExecuteTeeterDance(catalog, actor, target, slot, move, purpose); return; }
         if (move.Effect == "EFFECT_SECRET_POWER")

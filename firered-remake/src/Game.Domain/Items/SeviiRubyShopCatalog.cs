@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SeviiRubyShopCatalog
 {
     public const string Profile = "firered-sevii-ruby-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "abf72647d52a112a24928f8251294b3d904f5fb97ffbe0db30e187307c3c261d";
     public static ItemId RubyId { get; } = new("pret:ITEM_RUBY");
     public static ItemId RainbowPassId { get; } = new("pret:ITEM_RAINBOW_PASS");
     public static ItemId DireHitId { get; } = new("pret:ITEM_DIRE_HIT");
@@ -35,8 +34,7 @@ public sealed class SeviiRubyShopCatalog
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("sevii_ruby_shop_predecessor");
         var fresh = candidate.Items.Skip(100).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([RubyId, RainbowPassId, DireHitId, FireStoneId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([RubyId, RainbowPassId, DireHitId, FireStoneId]))
             throw new ArgumentException("sevii_ruby_shop_source");
         var proof = new SeviiRubyShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

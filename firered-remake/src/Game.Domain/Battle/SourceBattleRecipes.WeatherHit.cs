@@ -15,7 +15,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteWeatherHit(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         int slot, PokemonMoveDefinition move, string purpose)
     {
-        if (!HasWeatherHitRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasWeatherHitRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_weather_hit_definition");
         SourceGenericHit(catalog, actor, target, slot, move, purpose);
     }

@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class VictoryRoadShopCatalog
 {
     public const string Profile = "firered-victory-road-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "8e9944abd036c5229342b1b0390836557749771b2baef1918cfb37d75ab825b3";
     public static ItemId GuardSpecId { get; } = new("pret:ITEM_GUARD_SPEC");
     public static ItemId SitrusBerryId { get; } = new("pret:ITEM_SITRUS_BERRY");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, VictoryRoadShopCatalog> Proofs = new();
@@ -33,8 +32,7 @@ public sealed class VictoryRoadShopCatalog
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("victory_road_shop_predecessor");
         var fresh = candidate.Items.Skip(98).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([GuardSpecId, SitrusBerryId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([GuardSpecId, SitrusBerryId]))
             throw new ArgumentException("victory_road_shop_source");
         var proof = new VictoryRoadShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

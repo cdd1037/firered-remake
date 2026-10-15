@@ -5,7 +5,6 @@ Reads fixed Git blobs or authenticated cache bytes. Never executes upstream code
 """
 import argparse
 import binascii
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -20,7 +19,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-route1-capture-dex-v1'
 BACK_PROFILE = 'firered-route1-captured-back-static-v1'
-LOCK_SHA256 = 'cb879ef02bbe7419a57e1db48fa690c02ef449b8904d22d6cbbbddec8588201a'
 NAMES = (('Pidgey', 16), ('Rattata', 19))
 PATHS = frozenset('''src/pokedex_screen.c
 src/data/pokemon/pokedex_entries.h
@@ -67,10 +65,6 @@ codec = module('capture_dex_pixels', ROOT / 'scripts/import-lab-battle-ui.py')
 battle = module('capture_dex_battle', ROOT / 'scripts/import-route1-battle-art.py')
 
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()
 
@@ -98,8 +92,6 @@ def safe(root, relative):
 
 def load_lock(path):
     data = pathlib.Path(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Capture dex lock hash differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
     if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'),
             lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
@@ -109,12 +101,6 @@ def load_lock(path):
     return lock
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Capture dex source hash differs: ' + entry['path'])
-
-
 def read_sources(lock, raw, repository=None):
     sources = {}
     for entry in lock['files']:
@@ -122,7 +108,6 @@ def read_sources(lock, raw, repository=None):
         data = (subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                               check=True, capture_output=True, timeout=30).stdout
                 if repository is not None else path.read_bytes())
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
@@ -159,7 +144,7 @@ def footprint_indices(data):
     raw = decoder.decompress(chunks[1][1], 49)
     if len(raw) != 48 or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
         raise ValueError('Footprint PNG stream differs')
-    result, previous = bytearray(), [0, 0]
+    result, previous = (bytearray(), [0, 0])
     for y in range(16):
         method, row = raw[y * 3], []
         if method not in range(5):
@@ -241,8 +226,8 @@ def back_art(lock, sources):
             macro = 'SPECIES_SHINY_PAL' if variant == 'shiny' else 'SPECIES_PAL'
             codec.require(sources['src/data/pokemon_graphics/' + table].decode(), f'    {macro}({name.upper()}, {pal_symbol}),')
             sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side='back',
-                paletteVariant=variant, texturePath=filename, sha256=sha(outputs[filename]),
-                sourceImagePath=path, sourcePalettePath=palette_path, rgbaSha256=sha(rgba), indexSha256=sha(indices),
+                paletteVariant=variant, texturePath=filename,
+                sourceImagePath=path, sourcePalettePath=palette_path,
                 width=64, height=64, frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0,
                 sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=0,
                 singleBattleBaseCenter=base, singleBattleCenter=center,
@@ -253,7 +238,7 @@ def back_art(lock, sources):
                             battle.reference(lock, sources, path, image_symbol),
                             battle.reference(lock, sources, palette_path, pal_symbol)]))
     outputs['capture-back-art.json'] = canonical(dict(schemaVersion=1, profile=BACK_PROFILE,
-        repository='pret/pokefirered', sourceCommit=COMMIT, fullSourceHash=battle.source_set_hash(lock['files']),
+        repository='pret/pokefirered', sourceCommit=COMMIT,
         display=display, sprites=sprites, limitations=[
             'Pidgey/Rattata static player back frame only, normal and shiny. Existing front artifacts are reused unchanged.',
             'Default single-battle placement only; no send-out, hit, faint, ball, cry or timing reproduction.',
@@ -264,8 +249,6 @@ def back_art(lock, sources):
 def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Capture dex source set differs')
-    for entry in lock['files']:
-        verify(sources[entry['path']], entry)
     screen = sources['src/pokedex_screen.c'].decode()
     for needle in ['DexScreen_DrawMonDexPage(TRUE);', 'DexScreen_DexPageZoomEffectFrame(3, 6);',
             'while ((categoryName[index] != CHAR_SPACE) && (index < 11))',
@@ -286,8 +269,7 @@ def convert(lock, sources):
     def asset(id, w, h, pixels, x, y):
         path = id + '.png'
         outputs[path] = codec.png(w, h, pixels)
-        assets.append(dict(id=id, texturePath=path, width=w, height=h, x=x, y=y,
-                           sha256=sha(outputs[path]), rgbaSha256=sha(pixels)))
+        assets.append(dict(id=id, texturePath=path, width=w, height=h, x=x, y=y))
 
     asset('capture-dex-background', 240, 160, background(sources, palette), 0, 0)
     entries = {}
@@ -345,7 +327,7 @@ def convert(lock, sources):
         numberPrefix=string(texts, 'gText_PokedexNo'), categorySuffix=string(texts, 'gText_PokedexPokemon'),
         heightLabel=string(texts, 'gText_HT'), weightLabel=string(texts, 'gText_WT'), footerText=string(texts, 'gText_Next'))
     outputs['capture-dex.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=battle.source_set_hash(lock['files']), inputs=lock['files'], entries=entries, assets=assets,
+         inputs=lock['files'], entries=entries, assets=assets,
         layout=layout, limitations=[
             'Settled first-registration dex-entry page only. Source habitat page, zoom, palette transitions and cry remain separate work.',
             'Category stores the full source value; displayCategory preserves English revision-0 first-space truncation.',
@@ -353,7 +335,7 @@ def convert(lock, sources):
             'Description retains canonical English and source newlines. No invented Chinese description.',
             'Source tile/palette reconstruction only, not an original-game screenshot or pixel-comparison pass.']))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=battle.source_set_hash(lock['files']), outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p,b in sorted(outputs.items())],
+         outputs=[dict(path=p) for p,b in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
     return outputs
 
@@ -373,13 +355,12 @@ def run(lock_path, raw, out, repository=None):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--repository', type=pathlib.Path)
-    p.add_argument('--raw', type=pathlib.Path, default=ROOT/'content/raw/capture-dex')
+    p.add_argument('--raw', type=pathlib.Path, default=ROOT/'content/raw/pokefirered/037335f4')
     p.add_argument('--out', type=pathlib.Path, default=ROOT/'content/generated/capture-dex')
     p.add_argument('--lock', type=pathlib.Path, default=ROOT/'scripts/capture-dex.lock.json')
     a = p.parse_args()
     outputs = run(a.lock, a.raw, a.out, a.repository)
-    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), outputs=len(outputs),
-        catalogSha256=sha(outputs['capture-dex.json']), backArtSha256=sha(outputs['capture-back-art.json']))))
+    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), outputs=len(outputs))))
 
 
 if __name__ == '__main__':

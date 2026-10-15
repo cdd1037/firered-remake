@@ -21,7 +21,7 @@ public partial class CampaignView
         using var image=Image.CreateFromData(24,24,false,Image.Format.Rgba8,rgba);
         _questPocketTextures.Add(iconId,ImageTexture.CreateFromImage(image));
         document=document with{Items=document.Items.Add(new(ItemfinderRules.Item.Value,"ITEM_ITEMFINDER","ITEMFINDER",source.ItemfinderDescription,iconId,"ItemUseOutOfBattle_Itemfinder")),
-            Assets=document.Assets.Add(new(iconId,"content/generated/itemfinder-source/itemfinder.rgba",24,24,position.X,position.Y,source.IconSha256,source.IconSha256))};
+            Assets=document.Assets.Add(new(iconId,"content/generated/itemfinder-source/itemfinder.rgba",24,24,position.X,position.Y))};
     }
     private bool TryItemfinderInput(InputEvent input)
     {

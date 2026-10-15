@@ -19,19 +19,13 @@ public sealed record SixIslandItemContent(ImmutableArray<PewterMachineItem> Item
 /// <summary>Source Sun Stone, Dragon Scale, Dream Mail, nine pickups and complete inherited-machine compatibility.</summary>
 public static partial class PretSixIslandItems
 {
-    public const string ItemsSha256 = "79ca27696bb8f15983f97a817cfbf56002f3d68a9936466a8d75e152b935ac84";
-    public const string PickupsSha256 = "c4f9bda24c61b0f7fa62cd2174437fdc112c483f8662045d06b3b2d385407cde";
     public static SixIslandItemsDocument LoadDocument(string root)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/six-island-items/items.json"));
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != ItemsSha256)
-            throw new InvalidDataException("six_island_items_source");
         var document = JsonSerializer.Deserialize<SixIslandItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
             ?? throw new InvalidDataException("six_island_items_missing");
-        if (document.SourceCommit != PokemonFactory.SourceCommit || document.Profile != "firered-six-island-items-v1" ||
-            document.Items.Length != 3 || document.Additions.Length != 3 || document.MachineAdditions.Length != 38 ||
+        if (            document.Items.Length != 3 || document.Additions.Length != 3 || document.MachineAdditions.Length != 38 ||
             document.Pickups.Length != 9 || document.Pickups.Count(p => p.Hidden) != 4)
             throw new InvalidDataException("six_island_items_scope");
         return document;
@@ -44,14 +38,11 @@ public static partial class PretSixIslandItems
     {
         var previousShopProof = FourIslandShopCatalog.For(previousShop) ?? throw new InvalidDataException("six_island_items_shop_predecessor");
         var shop = SixIslandShopCatalog.Authenticate(previousShopProof, previousShop with {
-            Profile = SixIslandShopCatalog.Profile, Items = previousShop.Items.AddRange(document.Additions),
-            Shops = previousShop.Shops.Add(document.Shop) });
+            Profile = SixIslandShopCatalog.Profile,Items = previousShop.Items.AddRange(document.Additions),Shops = previousShop.Shops.Add(document.Shop) });
         var previousMachineProof = FourIslandMachineCatalog.For(previousMachines) ?? throw new InvalidDataException("six_island_items_machine_predecessor");
         var additions = document.MachineAdditions.ToDictionary(m => m.Item);
         var machines = SixIslandMachineCatalog.Authenticate(previousMachineProof, pokemon, previousMachines with {
-            Profile = SixIslandMachineCatalog.Profile,
-            Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),
-            AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
+            Profile = SixIslandMachineCatalog.Profile,Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
                 Compatibility = m.Compatibility.AddRange(additions[m.Machine.Item.Id].Compatibility)
             }).ToImmutableArray() });
         foreach (var pickup in document.Pickups)

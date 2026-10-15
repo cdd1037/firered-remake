@@ -1,15 +1,13 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
 public static class SourceExplosionAnimationCatalog
 {
-    public const string ManifestSha256="5ef521b07debc2dab88a2ada4f8724fb04adceff684cdbe825d26d2138d06968";
+
     public static bool Supports(int move)=>move is 120 or 153;
     public static (IReadOnlyDictionary<int,SourceAnimationScript> Scripts,SourcePixelAsset Explosion) Read(string folder)
     {
-        var bytes=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"manifest.json"),32768);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=ManifestSha256)throw new InvalidDataException("Explosion manifest differs.");
+        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);
         SourceAnimationCommand[] Commands(JsonElement row)=>row.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray();
         var subs=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value));

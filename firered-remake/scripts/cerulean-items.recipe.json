@@ -2,13 +2,11 @@
   "schemaVersion": 1,
   "profile": "firered-cerulean-items-v1",
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "command": "source scripts/env.sh && python3 scripts/import-cerulean-items.py --reference-repo \"$FIRERED_ORIGINAL_REFERENCE\"",
   "offlineCommand": "python3 scripts/import-cerulean-items.py",
   "upstreamScriptsExecuted": false,
   "recordedAudioImported": false,
   "inputCount": 14,
-  "inputByteLength": 577128,
   "generatedOutputCount": 3,
   "composedItems": 18,
   "composedShops": 3,
@@ -20,46 +18,36 @@
   },
   "outputs": [
     {
-      "path": "scripts/import-cerulean-items.py",
-      "sha256": "62a65daf98b4f34097b0bf5e36be85fc5d4f61b469b99543a66e29e351d8718c"
+      "path": "scripts/import-cerulean-items.py"
     },
     {
-      "path": "scripts/cerulean-items.lock.json",
-      "sha256": "f0068062f99c125a3b07f34453ae88b2158379eadbbe016edbd3f71dbd3f6744"
+      "path": "scripts/cerulean-items.lock.json"
     },
     {
-      "path": "content/generated/cerulean-items/manifest.json",
-      "sha256": "04a28a231a4e34fc61d70a3bf9bdd122de6b0b2ed16a7e842fe62319bc2629f5"
+      "path": "content/generated/cerulean-items/manifest.json"
     },
     {
-      "path": "content/generated/cerulean-items/cerulean-items.json",
-      "sha256": "dad705fe2a360618b4bc330cc296dff18bb366a4abb2b18feb4866c718283616"
+      "path": "content/generated/cerulean-items/cerulean-items.json"
     },
     {
-      "path": "content/raw/cerulean-items/manifest.json",
-      "sha256": "acc31c52834f3939b16cc3e1ba5be5b1faaab089b8eb82e1e7be56df3f1a9084"
+      "path": "content/raw/cerulean-items/manifest.json"
     }
   ],
   "unchangedDependencies": [
     {
-      "path": "scripts/early-shop.lock.json",
-      "sha256": "710db0686102fe5cbeb256876cac3b5d3b74320bbafb364478872f64da5642a3"
+      "path": "scripts/early-shop.lock.json"
     },
     {
-      "path": "scripts/mtmoon-items.lock.json",
-      "sha256": "602d603294843e02b7daa03b23356aecd38ce30d79c1b1ad65725564079fa35a"
+      "path": "scripts/mtmoon-items.lock.json"
     },
     {
-      "path": "content/generated/early-shop/early-shop.json",
-      "sha256": "ebf9ebc60ba10937f318213528872e2ad9f46d095a7ecf18555d5b64498a46c7"
+      "path": "content/generated/early-shop/early-shop.json"
     },
     {
-      "path": "content/generated/mtmoon-items/mtmoon-items.json",
-      "sha256": "ce611fe3fbce03b7790dc8a9cf9a3c0bb0056504d53a92505b64e4fd3e2e718c"
+      "path": "content/generated/mtmoon-items/mtmoon-items.json"
     },
     {
-      "path": "scripts/import-lab-battle-ui.py",
-      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+      "path": "scripts/import-lab-battle-ui.py"
     }
   ]
 }

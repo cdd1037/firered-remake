@@ -93,7 +93,7 @@ public static partial class SourceFourMedicineRules
             if ((p.SourceAbsentMaskBeforeSelection & ~15) != 0 || (p.SourceAbsentMaskBeforeSelection & p.Actor.Slot.Mask) != 0)
                 return "source_medicine_selection_absent_mask";
             if (p.DeferredEffect is { } deferred && (p.Actor.Slot.Side != BattleSide.Opponent || p.Target != p.Actor.Member ||
-                p.Item != deferred.Id || !SourceBattleItemDefinitionProof.IsAuthentic(deferred))) return "source_medicine_deferred_definition";
+                p.Item != deferred.Id || !SourceBattleItemCatalog.SupportsFixedEffect(deferred))) return "source_medicine_deferred_definition";
             if (p.Actor.Slot.Side == BattleSide.Opponent && p.DeferredEffect is null) return "source_medicine_deferred_required";
             if (p.EscapeOnUse && (p.Actor.Slot.Side != BattleSide.Player || p.Target != p.Actor.Member || p.DeferredEffect is not null ||
                 p.Item.Value is not ("pret:ITEM_POKE_DOLL" or "pret:ITEM_FLUFFY_TAIL") ||

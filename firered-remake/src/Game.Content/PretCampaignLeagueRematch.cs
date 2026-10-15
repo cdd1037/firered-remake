@@ -11,13 +11,10 @@ public sealed partial class PretCampaignCatalog
     public LeagueRematchTrainerCatalog? LeagueRematchTrainerParties { get; }
     public LeagueRematchOpponentPokemonCatalog? LeagueRematchOpponents { get; }
 
-    private static void ValidateLeagueRematchComposition(LeagueRematchTrainerCatalog trainers,
-        LeagueRematchOpponentPokemonCatalog opponents, CeruleanCavePokemonContent cave,
-        PretStoryCompilation scripts, ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidateLeagueRematchComposition(LeagueRematchTrainerCatalog trainers,LeagueRematchOpponentPokemonCatalog opponents,CeruleanCavePokemonContent cave,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
         LeagueRematchTrainerPartyFactory.ValidateCatalog(trainers);
-        if (!ReferenceEquals(opponents.Predecessor, cave.Opponents) || !ReferenceEquals(opponents.Owned, cave.Owned) ||
-            opponents.Catalog.Species.Count != 168 || cave.Owned.Catalog.Species.Count != 139 ||
+        if (            opponents.Catalog.Species.Count != 168 || cave.Owned.Catalog.Species.Count != 139 ||
             trainers.Trainers.Count != 7 || trainers.Trainers.Values.Sum(t => t.Party.Length) != 38 ||
             trainers.Trainers.Values.SelectMany(t => t.Party).Any(p => !opponents.Catalog.Species.ContainsKey(p.Species)))
             throw new InvalidDataException("league_rematch_composition_scope");

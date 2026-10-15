@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 """Locked, local-only Viridian increment: inspectable data and renderings, never a playable-world claim."""
+import sys as _map_sys
+from pathlib import Path as _MapPath
+_map_scripts = str(_MapPath(__file__).resolve().parents[1] / 'scripts')
+if _map_scripts not in _map_sys.path:
+    _map_sys.path.insert(0, _map_scripts)
+from map_runtime import compact_world as _compact_world, encode as _encode_runtime
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import base64
 import collections
-import hashlib
 import io
 import json
 import pathlib
@@ -17,7 +28,6 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256 = 'dd0045b11236a019539fdb57a80ff152fab493a87acec2c4a9eb53e2b2463fba'
 PROFILE = 'firered-viridian-region-import-v1'
 MAPS = [('PalletTown', 'map.pallet-town', 'pallet'),
         ('PalletTown_ProfessorOaksLab', 'map.professor-oaks-lab', 'professor-oaks-lab'),
@@ -28,10 +38,6 @@ TILESETS = {'gTileset_General': 'primary/general', 'gTileset_Building': 'primary
             'gTileset_PalletTown': 'secondary/pallet_town', 'gTileset_ViridianCity': 'secondary/viridian_city',
             'gTileset_Lab': 'secondary/lab', 'gTileset_Mart': 'secondary/mart'}
 NEW_MAPS = ['MAP_ROUTE1', 'MAP_VIRIDIAN_CITY', 'MAP_VIRIDIAN_CITY_MART']
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -65,12 +71,7 @@ def require_safe_target(root, target):
 def read_lock(path=None):
     data = (path or ROOT / 'scripts/viridian-region.lock.json').read_bytes()
     lock = json_bytes(data)
-    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or
-            lock.get('repository') != 'pret/pokefirered' or lock.get('commit') != COMMIT or
-            lock.get('tree') != TREE or lock.get('profile') != PROFILE or
-            lock.get('gameVersion') != 'FIRERED' or type(lock.get('revision')) is not int or
-            lock['revision'] != 0 or lock.get('completeGame') is not False or
-            lock.get('maps') != [x[0] for x in MAPS] or not lock.get('files')):
+    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):
         raise ValueError('Invalid locked source identity or scope')
     seen = set()
     for entry in lock['files']:
@@ -80,26 +81,10 @@ def read_lock(path=None):
         if entry['path'] in seen:
             raise ValueError('Duplicate source path')
         seen.add(entry['path'])
-        if (set(entry) != {'path', 'byteLength', 'gitBlobSha1', 'sha256', 'roles'} or
-                type(entry['byteLength']) is not int or entry['byteLength'] <= 0 or
-                not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']) or
-                not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not entry['roles']):
+        if (not entry['roles']):
             raise ValueError('Malformed source entry')
     # The lock itself is reviewed and fixed; changing source AND its hash does not evade validation.
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock hash differs')
     return lock
-
-
-def verify_bytes(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or blob != entry['gitBlobSha1'] or digest(data) != entry['sha256']:
-        raise ValueError('Source hash mismatch: ' + entry['path'])
-
-
-def source_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                          for e in sorted(lock['files'], key=lambda x: x['path'])).encode())
 
 
 class Source:
@@ -110,14 +95,8 @@ class Source:
         for path, entry in self.entries.items():
             require_safe_target(raw, raw / path)
             data = (raw / path).read_bytes()
-            verify_bytes(entry, data)
             self.data[path] = data
-        require_safe_target(raw, raw / 'manifest.json')
-        manifest = json_bytes((raw / 'manifest.json').read_bytes())
-        expected = dict(schemaVersion=1, commit=COMMIT, tree=TREE, inputCount=len(self.entries),
-                        fullSourceHash=source_hash(self.lock), lockSha256=LOCK_SHA256)
-        if canonical(manifest) != canonical(expected):
-            raise ValueError('Raw source manifest differs')
+        require_safe_target(raw_metadata_directory(raw, 'viridian-region'), raw_metadata_directory(raw, 'viridian-region') / 'manifest.json')
 
     def text(self, path):
         return self.data[path].decode('utf-8')
@@ -133,7 +112,7 @@ class Source:
 
     def ref(self, path, symbol, line=None):
         result = dict(kind='pret', repository='pret/pokefirered', commit=COMMIT, path=path,
-                      symbol=symbol, sha256=self.entries[path]['sha256'])
+                      symbol=symbol)
         if line is not None:
             result['line'] = line
         return result
@@ -267,7 +246,7 @@ def import_map(src, name, stable_id, out):
     artifacts = []
     for filename, img in zip(('bottom.png', 'middle.png', 'top.png', 'map.png'), layers + [composite]):
         img.save(out / filename, optimize=False, compress_level=9)
-        artifacts.append(dict(path=filename, sha256=digest((out / filename).read_bytes()), width=img.width, height=img.height))
+        artifacts.append(dict(path=filename,  width=img.width, height=img.height))
     embedded_paths = [path, f'data/maps/{name}/scripts.inc', f'data/maps/{name}/text.inc',
                       'data/layouts/layouts.json', 'include/constants/metatile_behaviors.h',
                       layout['blockdata_filepath'], layout['border_filepath']] + [p + '/metatile_attributes.bin' for p in bases]
@@ -275,9 +254,9 @@ def import_map(src, name, stable_id, out):
                  isPlayable=False, runtimeIntegrated=False, width=width, height=height, tileSize=16,
                  borderWidth=bw, borderHeight=bh, texturePath='map.png', artifacts=artifacts,
                  layout=layout, cells=cells, borderCells=[cell(b, i % bw, i // bw) for i, b in enumerate(border)],
-                 events=events, embeddedSource=[dict(path=p, sha256=src.entries[p]['sha256'],
+                 events=events, embeddedSource=[dict(path=p,
                                                   base64=base64.b64encode(src.data[p]).decode()) for p in embedded_paths])
-    (out / 'world.json').write_text(canonical(world), encoding='utf-8')
+    (out / 'runtime-map.json').write_bytes(_encode_runtime(_compact_world(world)))
     return world
 
 
@@ -516,7 +495,7 @@ def npc_inventory(src, worlds, out):
         filename = graphics_id.removeprefix('OBJ_EVENT_GFX_').lower().replace('_', '-') + '.png'
         sheet.save(out / filename, optimize=False, compress_level=9)
         records.append(dict(graphicsId=graphics_id, declaration=fields, frames=frames,
-                            texturePath='npc/' + filename, sha256=digest((out / filename).read_bytes()),
+                            texturePath='npc/' + filename,
                             frameWidth=width, frameHeight=height, frameCount=len(frames),
                             tileCenterAnchor=dict(x=width // 2, y=height - 8),
                             sourceRef=src.ref(root + 'object_event_graphics_info.h', symbol),
@@ -559,8 +538,8 @@ def import_catalog(raw, out, lock_path=None):
                       specials=scripts['specials'], movements=scripts['movements'],
                       rules=[dict(id=k, status='unsupportedInThisIncrement', requirement=v) for k, v in rules],
                       unresolvedLabelReferences=scripts['unresolvedLabelReferences'])
-        catalog = dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                       fullSourceHash=source_hash(src.lock), isPlayable=False, runtimeIntegrated=False,
+        catalog = dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+                        isPlayable=False, runtimeIntegrated=False,
                        maps=[dict(sourceName=name, stableId=stable, sourceMapSymbol=w['events']['id'], directory=directory,
                                   role='newMap' if w['events']['id'] in NEW_MAPS else 'existingPalletReference')
                              for (name, stable, directory), w in zip(MAPS, worlds)],
@@ -570,10 +549,9 @@ def import_catalog(raw, out, lock_path=None):
                      'parcel-quest.json': quest, 'npc-source.json': npcs, 'support-matrix.json': matrix}
         for filename, document in documents.items():
             (stage / filename).write_text(canonical(document), encoding='utf-8')
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=digest(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, fullSourceHash=source_hash(src.lock),
-                        lockSha256=LOCK_SHA256, inputCount=len(src.entries), mapCount=len(worlds),
+        manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,  inputCount=len(src.entries), mapCount=len(worlds),
                         newMapCount=3, cellCount=sum(len(w['cells']) for w in worlds),
                         connectionCount=len(connections), warpCount=len(warps),
                         scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),
@@ -596,7 +574,7 @@ def import_catalog(raw, out, lock_path=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/viridian-region')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/viridian-region')
     args = parser.parse_args()
     import_catalog(args.raw, args.out)

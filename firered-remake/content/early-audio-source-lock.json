@@ -3,8 +3,7 @@
   "profile": "firered-early-audio-source-v1",
   "source": {
     "repository": "pret/pokefirered",
-    "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-    "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+    "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
   },
   "scope": "Current 21 early maps including explicit script music/cry operands; event/battle/evolution music; 25 selected early move animations; 29 currently catalogued species plus connected environmental cry references. Catalogued trade/item evolutions are inventory, not reachability claims. Intro/title/Teachy TV and later areas are outside this batch.",
   "status": "source-audited-not-rendered",
@@ -15737,7 +15736,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 8184,
-      "pcmSha256": "1e7c5a52ef5c181f2d42d6aae565b9c2eef763896f45362cdb218a0a1755e3ba",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15756,7 +15754,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 8188,
-      "pcmSha256": "5dd0708484baf62c798f7e595695720f94e28afbb7f468bce3924c405f8fde3b",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15775,7 +15772,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 9567,
-      "pcmSha256": "00ccef850b51fee6b2bbd914f1bbb464aea7b9b71843b1353e9350590c8fabfd",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15794,7 +15790,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 7134,
-      "pcmSha256": "ce0ea4472d63dd91daac767c40accfeaf759d0324544036904547bb0f4160173",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15813,7 +15808,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 7167,
-      "pcmSha256": "6dbe01d062d9a53661181218cb0987d12eb00cf5a3b6a1fc696ba83801184b17",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15832,7 +15826,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 9540,
-      "pcmSha256": "93923151d6cb067875cdc278cc0f0ba9c41826517a8bd45c9fec23236f5329b9",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15851,7 +15844,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 7140,
-      "pcmSha256": "c42b5a9f64b47ad916b7c9f48193bbab44c6f27fb0da452d7e68cc02b4c53057",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15870,7 +15862,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 8533,
-      "pcmSha256": "6d88eed8c7a81a2fce6efb490141819e9a598ff9791183bd473454145ebee4cd",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15889,7 +15880,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 9541,
-      "pcmSha256": "01a490564b0831e7608ef6365f9b0389915430fed52f0e9b5679b1eccc38088c",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15908,7 +15898,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 4110,
-      "pcmSha256": "06d77399e2bdf7dda8fc71f98215844ae6580e7a001179a90a02b1851ec82eff",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15927,7 +15916,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 11541,
-      "pcmSha256": "52f9405d5c365f7a0cf6674a97d6b151514cba9b3966b19047407b139269d84d",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15946,7 +15934,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 4944,
-      "pcmSha256": "fef80aadc73a72e6d8519765f2eb2b1b053dcb5ab387e566761483b7ad1546e9",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15965,7 +15952,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 8042,
-      "pcmSha256": "91b5628c13390f00c7f0be0f4f4e6b5c449e746bd40ac7aae0e29e8623065602",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -15984,7 +15970,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 9023,
-      "pcmSha256": "185549ff7f6c0ee1048d4a8d41210a3d9dee3596ab94801a956fa8071f381e52",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16003,7 +15988,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 9574,
-      "pcmSha256": "8153fe11a56924f878af3b7e3794da98931a033beafe0fec7d24f9c691adbbc8",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16022,7 +16006,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 1903,
-      "pcmSha256": "1d8dcc52215f83dc0d01be7be92a788b132c30e1a2ea9ed53172ee56f8b1ed81",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16041,7 +16024,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 7430,
-      "pcmSha256": "089b9ac09ac966c66d639e0909adc5e3ce5ba66ef221e8bde9825d2cef060c77",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16060,7 +16042,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 8509,
-      "pcmSha256": "790e6da3d62d6df58a7f0c12cc016cdd68ffe641c9b3185c5b52c07144ebea9a",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16079,7 +16060,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 3874,
-      "pcmSha256": "d1fd26c479c0d768e42d57f5490ffe78093154881573ed70802dc205cbad9edc",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16098,7 +16078,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 4689,
-      "pcmSha256": "56f46a19902d5cf35782d27fcb773215e5b77a4fb2788b20795c716b89ba9e1a",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16117,7 +16096,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 8234,
-      "pcmSha256": "8eedcf3c1b76d3630419b9846e98de46c48cab15c09b2db68d1fa37ac24ca74e",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16136,7 +16114,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 11760,
-      "pcmSha256": "498d62bb7e59b32964b23a6b671fb5312fe9f2b47fdfab4859ccf7fa3a2c993e",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16155,7 +16132,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 4597,
-      "pcmSha256": "bbb2842c422458de379c37698b330aa9717b1cb304b71dcc748e94adf547146f",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16174,7 +16150,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 6703,
-      "pcmSha256": "b633cab1a79521fdc94dbdb09d84568de89d823c5ac111729393e91a42e5e9cf",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16193,7 +16168,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 5134,
-      "pcmSha256": "706d563834f0782f8485858f15064fd3e9138d08bf062e8fc3962bc277d0775f",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16212,7 +16186,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 11735,
-      "pcmSha256": "9192ffd5402500a9ec7418a625119c7913c15eb6b5ce75d183cbe376bbaf8e86",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16231,7 +16204,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 13819,
-      "pcmSha256": "b1f79bb88254ae911b6f2d3da6778bf0aafbf4f2e60da254309d645a73ea68ec",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16250,7 +16222,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 6998,
-      "pcmSha256": "a6d1897ef21334d4f6ece334edb095c383cdaaa039aeb90f36f568cc6c458a26",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16269,7 +16240,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 12258,
-      "pcmSha256": "4a094817725258c1588593135057ff4126cdbb121eb3583ae5355bca4fd01244",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16288,7 +16258,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 10512,
       "sampleCount": 18907,
-      "pcmSha256": "b6b21751cc2162eddcb829ffcff5d4aa1e93d25d7f558049c5a665922c4da971",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16314,7 +16283,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 30751,
-      "pcmSha256": "0cf5fe18cd5f57388f1c8295c4daa7394abd66115c7697ab6e5263f330e2e720",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16330,7 +16298,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 3847,
-      "pcmSha256": "2f093980561c2c6b1072860dd3323c9943b9b004a7de8a3b9d9af84545a771ee",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16346,7 +16313,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 6346,
-      "pcmSha256": "489043ee1b176073c814a8564af508c18ffb8ef58f461dbd4ea22b949238106c",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16362,7 +16328,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 8016,
-      "pcmSha256": "b2d2d03ba6b59dfef6c0899a95733fc427ffaee71e0f2279f402f24a3529ef78",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16378,7 +16343,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 5055,
-      "pcmSha256": "c37e74490fa522140dba1e47c2908152169d6859bf001b14f790f98ff4ec937b",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16396,7 +16360,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 4096,
-      "pcmSha256": "8a03fe6b8829a7546ed2fed3d3cc8b3e5f55a15d51c05561eb1c26d9f9c970bf",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16412,7 +16375,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 53516,
       "sampleCount": 7230,
-      "pcmSha256": "0e5e941bbb53c4985cc36d1c671efd4a415084e1fc1ac7aaef28446cc287be72",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16430,7 +16392,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 3344,
       "sampleCount": 1875,
-      "pcmSha256": "22b91a042fd174e036adeb98b8d148a92b3d9a2b06ab14dc66840aecd3673c6a",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16448,7 +16409,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 28548,
-      "pcmSha256": "eafd799be3890c2d86871d5e7e1dc34d811fdbf0c750a8c0efa173c823f8de1e",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16466,7 +16426,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 17778,
-      "pcmSha256": "2ea36fdd75d1490dc8d61fb69a8563ffbe05404bd4f0e937723544f2713be3a4",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16484,7 +16443,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 53516,
       "sampleCount": 3001,
-      "pcmSha256": "56b8c5b3aa93b40b985f83cabf31ee756769a57a908917b75b2ebfedc17f22fc",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16502,7 +16460,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 3344,
       "sampleCount": 1683,
-      "pcmSha256": "ba0515ff5f2450886eabbe2554bc683c2543977b9afd8f8a505b977805c9a465",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16520,7 +16477,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 3344,
       "sampleCount": 2592,
-      "pcmSha256": "5d38080ada7e8f2c565117d40b314a80a483584500917e670c260dbfe947eddb",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16538,7 +16494,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 6146,
-      "pcmSha256": "6fc426bd8feb1da00120f888d42877ca597cb796b2da898f3a2a8a9de497f29b",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16554,7 +16509,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 1288,
-      "pcmSha256": "ef8bcbcfad9ffd287a2a6a678039517febd0767af4e9a35b6df0261c2aee7b00",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16570,7 +16524,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 8030,
-      "pcmSha256": "6212902bc8e2fdbc78b36e1b47f2e2f35291bf3d201fd5ae2d4abf621a5e5559",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16588,7 +16541,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 1464,
-      "pcmSha256": "9fda325cbbe4aabd26e36bc28c399c4af590ceff3e4ec69e909e9a0fd91fdecc",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16604,7 +16556,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 3865,
-      "pcmSha256": "545603cb631901b09a88fc6024a0ab37865f72e5c210b773fadf49dca91a6541",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16622,7 +16573,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 2149,
-      "pcmSha256": "71eb83629c190d3714b5e7cfd205ba417162ebd388c9f77d49cdb6af1852e831",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16638,7 +16588,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 2024,
-      "pcmSha256": "11898e2673056b58842ca0758277569b868a22ef16cea26c58c1b43aed330b88",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16656,7 +16605,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 5710,
-      "pcmSha256": "fa6c5aa91171af260d3e5a2772f868c0e32067837f4b2dc813ac343f95448de8",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16674,7 +16622,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 5450,
-      "pcmSha256": "b0d6049ab4264c07389f04426170ccefb8f20b1a5aadd707b7b61264fb69434a",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16692,7 +16639,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 1672,
       "sampleCount": 2938,
-      "pcmSha256": "b197028baf7737efdfaa68e6e1b52fb9b5e1a13b34cd53728226e89c1a98281f",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16710,7 +16656,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 1833,
-      "pcmSha256": "0ad65c47bdb80dd8d3dca05ba947dfd0bca8bdc7ba61a215359b7906a8e2320d",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16728,7 +16673,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 1167,
-      "pcmSha256": "89908369bb7199deada757551f52f5d1107894e66c2e06838b60beef7afc4a8a",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16744,7 +16688,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 11025,
       "sampleCount": 1762,
-      "pcmSha256": "165c5054f7d9617893658ae75725d4f93d39911691de926f4658457065774dbf",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16760,7 +16703,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 7172,
-      "pcmSha256": "1e1fbd8b1cbabd5864ba71ee2266eafa22a28375d7bd0df303ff53b94351d57b",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16778,7 +16720,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 13716,
-      "pcmSha256": "707ff990b67b61c7e47cc171419554e22b26202d8d369766b1c2458ade7907ca",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16796,7 +16737,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 8971,
-      "pcmSha256": "1aabb66d2703f2b10fee44c34146603f51e9c0236803b09cdce21fc1ec464ad2",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16814,7 +16754,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 3344,
       "sampleCount": 14009,
-      "pcmSha256": "1f037967ff5907e30204ca16fb9056c883447235a548a86375d656f5eb8da44a",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16832,7 +16771,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 22050,
       "sampleCount": 3170,
-      "pcmSha256": "fd66f51cb1200aa2c87fbe127c6e75c6b2c0a9300812a6b067cc57c10d59bf7d",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16850,7 +16788,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 2212,
-      "pcmSha256": "c803c0610778e8c439bbe8978a3a5e5eb8a269fe3fdc31950faf4211818ed715",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16866,7 +16803,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 26758,
       "sampleCount": 5310,
-      "pcmSha256": "f71e9213f0093081f994de3de05ea2722b557402b1a0ed925ecf55a705209728",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16884,7 +16820,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 2176,
-      "pcmSha256": "378c7527dbe53d38a3cae6e5c3a49a3db3a9f2456055caa8c341b25653b88a77",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16900,7 +16835,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 4926,
-      "pcmSha256": "37bc0280d8fc8157e6986a8d4a818469f3bc417da8924d440596c20d051abeec",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16918,7 +16852,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 5375,
-      "pcmSha256": "adfb82fe0a72f4a4a3054d5a1a5a3ab57a8681a98f30b6e34fbd52cb31b97ffb",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16936,7 +16869,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 3344,
       "sampleCount": 5133,
-      "pcmSha256": "2eccfdecc4f8056f84419595aab0e320dfea28acda2be0ae3c54471f90b91eea",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16954,7 +16886,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 22050,
       "sampleCount": 4169,
-      "pcmSha256": "7239dcba27b1e005eee7be8b8adcdd26ac5f281f1dc118304c8ea12e80a489fb",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16972,7 +16903,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 6496,
-      "pcmSha256": "47e90f2f7e2cb11e903b07714c19fd55e554cfa1d1b5a7d8fb4da6f811950e30",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -16990,7 +16920,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 4658,
-      "pcmSha256": "31192ef403ce664414f49a44d28435efd4d277dfae6fe06b690659314595fd35",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17008,7 +16937,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 3344,
       "sampleCount": 2595,
-      "pcmSha256": "2d7cebe9a34e7a6d4a7fd62063f05f4440ffc9a3d90ade63befa98c0c50c7a45",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17026,7 +16954,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 8395,
-      "pcmSha256": "ca9c463e66f97b553ae3a7a7ff9451d1b95cdfc73fd70f89047077c0abeb7f9f",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17042,7 +16969,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 5016,
-      "pcmSha256": "0cd052563a08e01504681f183e37f0c7f9cd18aa4e069777a7a3382a03dd6054",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17060,7 +16986,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 9815,
-      "pcmSha256": "3cf74973dcb35947d035a0e108b5621a15b52febd362f6e57aad8c478c8a4f7c",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17078,7 +17003,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 12256,
-      "pcmSha256": "8500792c6ff52f734862b13aac47869dcb7e081c62e976b678db6a3e3234cc7a",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17096,7 +17020,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 11329,
-      "pcmSha256": "2f70a236e9060ff318ed89b277ff9616ef5b764c9accac21c88e1e37cba2ab37",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17114,7 +17037,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 7773,
-      "pcmSha256": "700aaffeaa43a8f3a52a6eb328024dee9e9c4d301d23eba8b0f1779332fc8b29",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17132,7 +17054,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 2637,
-      "pcmSha256": "58d3fabeef0973ee30b042b2b4dec15c6949c45186b94f844d19499b0d2d71dc",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17150,7 +17071,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 2471,
-      "pcmSha256": "42a550cb43fae5203db6f60728e2755f803982ae28dbd4b15f85537df84089e9",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17166,7 +17086,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 3683,
-      "pcmSha256": "67a5ab0690399a4da3f4910b506108ad281589d76ebbabfb45a1d0713b281965",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17182,7 +17101,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 6497,
-      "pcmSha256": "e75d4ddc16264c0dc9857521fee6029d124eca056719ba290c00997022427807",
       "loopEnabled": false,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17198,7 +17116,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 6184,
-      "pcmSha256": "43b6c990bf4a95036ae9bc1c92e0e48892c6a11c4c1a81794e13159ddad787bf",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17216,7 +17133,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 4529,
-      "pcmSha256": "9ef6bf510590853f3ad275b4553e8930d972365ef1dd89ed23c1b21ce3b07a96",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17234,7 +17150,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 6689,
       "sampleCount": 8139,
-      "pcmSha256": "bce839525aebd11d7cb73b64a4f19f129893ed19aafcd751ec4c1b5824c84d95",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17252,7 +17167,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 11025,
       "sampleCount": 2258,
-      "pcmSha256": "53890e611a276ffcb72f6969909e6e006bfb5830c65c1919a1d18431eee431f5",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17270,7 +17184,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 11025,
       "sampleCount": 2555,
-      "pcmSha256": "6ab1a82b07ff71d228acdc1173e9a985f71f99a51cdd24cf70311fb11fe97a19",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17288,7 +17201,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 7136,
-      "pcmSha256": "55b462ff62133eaeefaf45375e85d8c0e2d53b8657bc7943bd5f7e38736f170d",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17306,7 +17218,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 5027,
-      "pcmSha256": "f5d2dde4eb4cd00dd56bf8c4fa3e2919ff4358099531e33423fa5e364c667181",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17324,7 +17235,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 9841,
-      "pcmSha256": "83571b62ce6efd460e63ed2955d16beca0f655f0a4183973b87721dacfd4b3c1",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17342,7 +17252,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 4853,
-      "pcmSha256": "c8108d6703278b12ce6cb01f8462f64e57b85ca2ce95e39224265c58bd501d75",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17360,7 +17269,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 8441,
-      "pcmSha256": "248dfa842c6f2ffae241585e91107b21d58333dea3a70e10d97d7308223363f2",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17378,7 +17286,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 8704,
-      "pcmSha256": "fd96a185a8a7e7aa70600bc3bcaccc80ba0e23fa274660a63fada623a65edbeb",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17396,7 +17303,6 @@
       "format": "pcm-u8-mono",
       "sampleRate": 13379,
       "sampleCount": 1979,
-      "pcmSha256": "130cfa166561c3ad2c3caf7ed9a57de333052185df8b41dc260c7c7dfd31af84",
       "loopEnabled": true,
       "unityNote": 60,
       "pitchFraction": 0,
@@ -17447,1729 +17353,867 @@
   ],
   "files": [
     {
-      "path": "Makefile",
-      "byteLength": 14605,
-      "gitBlobSha1": "8b454dbd18eb0069fa5851d788697190890a5b37",
-      "sha256": "51960ea72311e53c272ebcc5b481021efba52fcc7db7f0ded4bfcebaf8bbdf47"
+      "path": "Makefile"
     },
     {
-      "path": "asm/macros/music_voice.inc",
-      "byteLength": 5414,
-      "gitBlobSha1": "1d104c349feb19ff606be000062cbc580be51abe",
-      "sha256": "3fc6bfaa1d84fd5139b23a6d7c6e7caaa8cf355426dc96b7c3da8c92783807b0"
+      "path": "asm/macros/music_voice.inc"
     },
     {
-      "path": "audio_rules.mk",
-      "byteLength": 1708,
-      "gitBlobSha1": "6b4e4afda840dbce45892a6b01c5e114deb1fd12",
-      "sha256": "23c0e8d835be50608e287101d9c968b61506298e64de6ebfc205b88ab58efbeb"
+      "path": "audio_rules.mk"
     },
     {
-      "path": "data/battle_anim_scripts.s",
-      "byteLength": 406484,
-      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068",
-      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+      "path": "data/battle_anim_scripts.s"
     },
     {
-      "path": "data/maps/PalletTown/map.json",
-      "byteLength": 4087,
-      "gitBlobSha1": "802d32dc6de7688fe2de8c833d4e040d9137f6c1",
-      "sha256": "2816338934241bac34f52dae8b101ac3add59e0ebdde3e3fb6575f3b525b01c3"
+      "path": "data/maps/PalletTown/map.json"
     },
     {
-      "path": "data/maps/PalletTown/scripts.inc",
-      "byteLength": 11418,
-      "gitBlobSha1": "1384b7d6c6bb5d2b93538ebaf5e92defde2d41e5",
-      "sha256": "ca9ae01d210ebfeda42895a152145940b7c444a03b6416b26353ceb0adac9190"
+      "path": "data/maps/PalletTown/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_1F/map.json",
-      "byteLength": 1745,
-      "gitBlobSha1": "2643219a599a4159746c5530b07fb7fdfba77b8b",
-      "sha256": "d0479076eff7f7832f7e9104ba2cef109afd907501ca0bc2c8e3fd870dd16509"
+      "path": "data/maps/PalletTown_PlayersHouse_1F/map.json"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_1F/scripts.inc",
-      "byteLength": 1870,
-      "gitBlobSha1": "889472d3c8ca3b98d61b454f311a03c60f7d343c",
-      "sha256": "d68fdc34ad8cfa80fe8d26488f0ea9dfee22dce66effc4f41cd88c47224598f1"
+      "path": "data/maps/PalletTown_PlayersHouse_1F/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_2F/map.json",
-      "byteLength": 1335,
-      "gitBlobSha1": "05337daa497275f6f2ec6eaa4217331cd47332cd",
-      "sha256": "fa04e7dda4feac0144ae5208ebcb1661458ef4ceec6e5234ee36df8002291733"
+      "path": "data/maps/PalletTown_PlayersHouse_2F/map.json"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_2F/scripts.inc",
-      "byteLength": 1494,
-      "gitBlobSha1": "edc6ac371d8f04ac9bdff0547d9b4983b9629c77",
-      "sha256": "cf8cd1b168c2bc098676305dd77eba1ebbc35e8e7f48bb69fa9ce4c43b435481"
+      "path": "data/maps/PalletTown_PlayersHouse_2F/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/map.json",
-      "byteLength": 7962,
-      "gitBlobSha1": "be72653587b49da2eb65f72a3519b57ed511d05c",
-      "sha256": "37906ed851a344cc63b41b303b41b6da091328b97b05b6e38d2570486d104704"
+      "path": "data/maps/PalletTown_ProfessorOaksLab/map.json"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
-      "byteLength": 47604,
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
-      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d"
+      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_RivalsHouse/map.json",
-      "byteLength": 2474,
-      "gitBlobSha1": "d3efdba831ddbdb174ba20deaafee3f35d96a97c",
-      "sha256": "9571bfeb37a9496c75f487cc81266e6cd2084a466f1b44d41a3b5776a4b5cfcd"
+      "path": "data/maps/PalletTown_RivalsHouse/map.json"
     },
     {
-      "path": "data/maps/PalletTown_RivalsHouse/scripts.inc",
-      "byteLength": 5691,
-      "gitBlobSha1": "a9e5e29b85d913ecd1d6547a7bf50fac65e5c173",
-      "sha256": "8ceaa5011452e4e06f15ffe43700cac92318755d02cc9e32d8b5f06095d03c9b"
+      "path": "data/maps/PalletTown_RivalsHouse/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity/map.json",
-      "byteLength": 7454,
-      "gitBlobSha1": "82fe1beaf508f4d1f79ebfff5b74793ab6698d91",
-      "sha256": "3ac96ddc080696a68ee46babc5db239aef29b45147614470f085f8ba72a5809d"
+      "path": "data/maps/PewterCity/map.json"
     },
     {
-      "path": "data/maps/PewterCity/scripts.inc",
-      "byteLength": 17694,
-      "gitBlobSha1": "5b0f1b65fcb24282071c8f387235451e2e957b5c",
-      "sha256": "8cdad0daad04002a4dff3e9878884da4e478626ac48181ea7aa48616fe295e6d"
+      "path": "data/maps/PewterCity/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_Gym/map.json",
-      "byteLength": 2514,
-      "gitBlobSha1": "5ecb2eb7c74cf0a960a9fa748ce2e3b1a200d57a",
-      "sha256": "097c4a35212ef28a7fae2974ee4ce5e3d87dbc1f9ad7c3b1aceacacaed65ad10"
+      "path": "data/maps/PewterCity_Gym/map.json"
     },
     {
-      "path": "data/maps/PewterCity_Gym/scripts.inc",
-      "byteLength": 2600,
-      "gitBlobSha1": "dfc7ed92d111456024c4ae466c3644306237b81f",
-      "sha256": "c1e6f14fd5c437d96421b41e88609e637e81fbc5a03a2161bcdadd6c1bc45153"
+      "path": "data/maps/PewterCity_Gym/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_House1/map.json",
-      "byteLength": 2193,
-      "gitBlobSha1": "c578a35411a86e99dab4b23fad30d0f0f65d7044",
-      "sha256": "033ada9d24db60d2bcdf84d4ae85b43293dff6a907dbb9150fbf98c3d2eec39b"
+      "path": "data/maps/PewterCity_House1/map.json"
     },
     {
-      "path": "data/maps/PewterCity_House1/scripts.inc",
-      "byteLength": 760,
-      "gitBlobSha1": "cbdb3294f68a1742c01efd6e2c3d75c634db5e3e",
-      "sha256": "3277dd304f7f0a4a47107c22226bc9713afa538bf9e6df90aa65d2ed1e22d320"
+      "path": "data/maps/PewterCity_House1/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_House2/map.json",
-      "byteLength": 1740,
-      "gitBlobSha1": "b1c86a681932804c22e2d8d76ea1e653ce8b2fd3",
-      "sha256": "449c6f9994098aa297af293f5e051b9e645f4553e8760c40488355a341126d52"
+      "path": "data/maps/PewterCity_House2/map.json"
     },
     {
-      "path": "data/maps/PewterCity_House2/scripts.inc",
-      "byteLength": 275,
-      "gitBlobSha1": "06c8f1a6e2fedfdb0ec406e60275f08e54adf8bb",
-      "sha256": "76b5294792805753d97783cc5490a1414355c8dbfc1897a4a5b1e52b08e626c1"
+      "path": "data/maps/PewterCity_House2/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_Mart/map.json",
-      "byteLength": 2120,
-      "gitBlobSha1": "c11a3939b6ceda828e6f5dab687412b1cb039713",
-      "sha256": "4fdf2937ddc21d2be3df3143be41b0bae08bab0989e1efd3f79516369463268c"
+      "path": "data/maps/PewterCity_Mart/map.json"
     },
     {
-      "path": "data/maps/PewterCity_Mart/scripts.inc",
-      "byteLength": 725,
-      "gitBlobSha1": "02740165f48377b5be23f76fdc22937ace5b3adb",
-      "sha256": "bd0c3cd692a688f141b749b4d43bf16cbfacc7e1abca3ccc050e8cc6d1798175"
+      "path": "data/maps/PewterCity_Mart/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_Museum_1F/map.json",
-      "byteLength": 5484,
-      "gitBlobSha1": "13d818f119d4f24974577ddbf2f196ffdc56a2b6",
-      "sha256": "be894d7df93066fd64dbdb847a32d1597c39cfe77294552b49250211747c4335"
+      "path": "data/maps/PewterCity_Museum_1F/map.json"
     },
     {
-      "path": "data/maps/PewterCity_Museum_1F/scripts.inc",
-      "byteLength": 5706,
-      "gitBlobSha1": "e7688179f606a0ba936fe857799bfd2078e795aa",
-      "sha256": "199f9436d64f20419ab16a49bd582dccd14996c870bfbf4cf3bd61e2f7274135"
+      "path": "data/maps/PewterCity_Museum_1F/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_Museum_2F/map.json",
-      "byteLength": 4412,
-      "gitBlobSha1": "4e10ce252fa7f86e5f9e5081d1d3d9480cffdc00",
-      "sha256": "7baf3f2ed67c77fa84013d11053e9c73256535a7c76e2273ced432bdbf75047a"
+      "path": "data/maps/PewterCity_Museum_2F/map.json"
     },
     {
-      "path": "data/maps/PewterCity_Museum_2F/scripts.inc",
-      "byteLength": 888,
-      "gitBlobSha1": "dfecac47b0fdd54b1f675e27863c14886d22a9c7",
-      "sha256": "9e4179d4dd073f1bb743894483588e17219865e6021d9039fabbf6eb64422ece"
+      "path": "data/maps/PewterCity_Museum_2F/scripts.inc"
     },
     {
-      "path": "data/maps/PewterCity_PokemonCenter_1F/map.json",
-      "byteLength": 4051,
-      "gitBlobSha1": "28789f97ba823cac507baac87af8308b7eaedd5b",
-      "sha256": "82b8617a46ba5297fe3bccbc5f200a24938c35ee638eea2548279caeb74daa56"
+      "path": "data/maps/PewterCity_PokemonCenter_1F/map.json"
     },
     {
-      "path": "data/maps/PewterCity_PokemonCenter_1F/scripts.inc",
-      "byteLength": 1169,
-      "gitBlobSha1": "a68ea93ba311a0c96494d1556612694d6b7e28e6",
-      "sha256": "fb566c03a9f656f534502e913b073c71c45d860f3ee5a13729b570863753b9da"
+      "path": "data/maps/PewterCity_PokemonCenter_1F/scripts.inc"
     },
     {
-      "path": "data/maps/Route1/map.json",
-      "byteLength": 1684,
-      "gitBlobSha1": "b2145ee92d1eb80175f599eadbcb66c6301bc3fe",
-      "sha256": "11b1ad78ae12d7a61c35756281fd5127929f5f5155dc20022fbae147424c4869"
+      "path": "data/maps/Route1/map.json"
     },
     {
-      "path": "data/maps/Route1/scripts.inc",
-      "byteLength": 840,
-      "gitBlobSha1": "ba2e22d9cc1f4f3f49e36f7e15b846883932cd51",
-      "sha256": "67a68fcc6790c03ee4f2fb2ab639736992aa3aa4cb4baef6d8e2117793e777f4"
+      "path": "data/maps/Route1/scripts.inc"
     },
     {
-      "path": "data/maps/Route2/map.json",
-      "byteLength": 5182,
-      "gitBlobSha1": "3f232d8d16b4a96ec74b41a28a0ec401c38a2ba8",
-      "sha256": "2562e3736b600c95b8c0a4c2a1bb3fb062f5c50208bebc43cd4303328ccda7ea"
+      "path": "data/maps/Route2/map.json"
     },
     {
-      "path": "data/maps/Route2/scripts.inc",
-      "byteLength": 199,
-      "gitBlobSha1": "f4f3b6c0b42f4f7e804d308074b2bacb31a82375",
-      "sha256": "bb401eab404aace062f15d8f3ae57bfd87696f4c6eb8929a0b3f404bbb10043c"
+      "path": "data/maps/Route2/scripts.inc"
     },
     {
-      "path": "data/maps/Route2_ViridianForest_NorthEntrance/map.json",
-      "byteLength": 2382,
-      "gitBlobSha1": "f0b7393b210ae5f272851356237b62da506859d3",
-      "sha256": "8404cb80094b615571abb1332e65fa9b88f7331810b8d317b268b5f53caaf008"
+      "path": "data/maps/Route2_ViridianForest_NorthEntrance/map.json"
     },
     {
-      "path": "data/maps/Route2_ViridianForest_NorthEntrance/scripts.inc",
-      "byteLength": 498,
-      "gitBlobSha1": "979e4bea9bee8f4eaadacf29337a55d032ae366d",
-      "sha256": "04bdb3d4ed80f03f1c0330afdff7ecceede686e55588de6e47e1ffd38a0ac20e"
+      "path": "data/maps/Route2_ViridianForest_NorthEntrance/scripts.inc"
     },
     {
-      "path": "data/maps/Route2_ViridianForest_SouthEntrance/map.json",
-      "byteLength": 1923,
-      "gitBlobSha1": "4f5a7fb05996819c621ec744b5835c5bc666efa5",
-      "sha256": "e00af0f21d008868ed5b9b183e38d86e8b516c0d4d632abe527b5bb96a32d655"
+      "path": "data/maps/Route2_ViridianForest_SouthEntrance/map.json"
     },
     {
-      "path": "data/maps/Route2_ViridianForest_SouthEntrance/scripts.inc",
-      "byteLength": 340,
-      "gitBlobSha1": "14480c59cb559b694be16614ea3cf69db1f03cb9",
-      "sha256": "7e52a71d7586a335089672cdd1410dd38469ddcba8e34cff5422ae09ee608030"
+      "path": "data/maps/Route2_ViridianForest_SouthEntrance/scripts.inc"
     },
     {
-      "path": "data/maps/ViridianCity/map.json",
-      "byteLength": 7211,
-      "gitBlobSha1": "465d593cef4ceafc486be8b6ed5fe1b5b63cb140",
-      "sha256": "5ce922b65f76335556ace9a047feeb1968854b604c8469c39cbbd60985f61bc1"
+      "path": "data/maps/ViridianCity/map.json"
     },
     {
-      "path": "data/maps/ViridianCity/scripts.inc",
-      "byteLength": 6935,
-      "gitBlobSha1": "d6c71605bcf13a788d28426039ce9bd1f95e75f7",
-      "sha256": "2f23053443e399983324ed7461923bba1267ca3d3c8961ce33a6d10be140f72d"
+      "path": "data/maps/ViridianCity/scripts.inc"
     },
     {
-      "path": "data/maps/ViridianCity_Mart/map.json",
-      "byteLength": 2202,
-      "gitBlobSha1": "e17af976592a9e35f19823648ae890d75704569b",
-      "sha256": "1bd8d13e469e932e72812bdbe6179e56cea18d77751376c8cb38fafb2d13c343"
+      "path": "data/maps/ViridianCity_Mart/map.json"
     },
     {
-      "path": "data/maps/ViridianCity_Mart/scripts.inc",
-      "byteLength": 2302,
-      "gitBlobSha1": "1210dd8263d35d9916db57c272ffa2041724dfd3",
-      "sha256": "b8ffccc716ae3d79be432c37213e3284849c5d5dd160757a8a1a9f1c5bc61e8b"
+      "path": "data/maps/ViridianCity_Mart/scripts.inc"
     },
     {
-      "path": "data/maps/ViridianCity_PokemonCenter_1F/map.json",
-      "byteLength": 2824,
-      "gitBlobSha1": "3556932f9c257eae3b7c3188ff9fd139e59933e5",
-      "sha256": "3edeace4baf5a6bce3fa0ab2dcfd3691f2ee2d7de0645f9df3e5f31c649f657d"
+      "path": "data/maps/ViridianCity_PokemonCenter_1F/map.json"
     },
     {
-      "path": "data/maps/ViridianCity_PokemonCenter_1F/scripts.inc",
-      "byteLength": 791,
-      "gitBlobSha1": "40d3d77f1575224802bed970d103c3bc13fe2361",
-      "sha256": "e29bb2ec4780375bdb4bab24b1ef6717c7116a442b8530cec22666480b0c93d4"
+      "path": "data/maps/ViridianCity_PokemonCenter_1F/scripts.inc"
     },
     {
-      "path": "data/maps/ViridianForest/map.json",
-      "byteLength": 7739,
-      "gitBlobSha1": "2d42aab09f10146a10d1ff02e8e30beb19407417",
-      "sha256": "6d6f082604d3c220eeb2c72cb6a606403330df44c58d9ed2523cd81c53fdaba2"
+      "path": "data/maps/ViridianForest/map.json"
     },
     {
-      "path": "data/maps/ViridianForest/scripts.inc",
-      "byteLength": 2152,
-      "gitBlobSha1": "5bee9e26442bb1d05d0394389938fb89c8a5192f",
-      "sha256": "e079cb646b9ccc0c56301ae8dcd10776748ac73d682927368f031ba5d1c1aa85"
+      "path": "data/maps/ViridianForest/scripts.inc"
     },
     {
-      "path": "data/sound_data.s",
-      "byteLength": 333,
-      "gitBlobSha1": "cd33950e1703a742759e3e03780dd61548e02bff",
-      "sha256": "c4d4ec7eb807fa1ebc9adb80c3f7424fbada5e789cca0b4a7dc90cd4bfde992c"
+      "path": "data/sound_data.s"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/sound.h",
-      "byteLength": 2051,
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee",
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2"
+      "path": "include/constants/sound.h"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "include/gba/m4a_internal.h",
-      "byteLength": 14382,
-      "gitBlobSha1": "609259b032a32c932fc1a9f54d0e3afda70c02dc",
-      "sha256": "9e841d8fe72d6af9f2d5a8135f686618e20975132a6d2fc95e6c7604213505e6"
+      "path": "include/gba/m4a_internal.h"
     },
     {
-      "path": "include/main.h",
-      "byteLength": 2363,
-      "gitBlobSha1": "31b22a3faa75409125257396913689a6a37c98ac",
-      "sha256": "35f92d00306f7359e825828bb94c1860c43699cbfe108f752f35c0449a06fdd8"
+      "path": "include/main.h"
     },
     {
-      "path": "sound/MPlayDef.s",
-      "byteLength": 8203,
-      "gitBlobSha1": "f5dd6484d94f818bb3635e41d475994a1525f198",
-      "sha256": "392efd915b2613cfc96d6cfe16d323b8dd38a5bd434f6ec0018bf0eb0be053dc"
+      "path": "sound/MPlayDef.s"
     },
     {
-      "path": "sound/cry_tables.inc",
-      "byteLength": 16533,
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9",
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "path": "sound/direct_sound_data.inc",
-      "byteLength": 41909,
-      "gitBlobSha1": "98191db21902a49d9d20a2ec5442786fe41d85c0",
-      "sha256": "dff5cf383b7a93e80c3de38099fe3a8cc2aeb856a1c13aab8030e03ba1f74e81"
+      "path": "sound/direct_sound_data.inc"
     },
     {
-      "path": "sound/direct_sound_samples/cries/beedrill.wav",
-      "byteLength": 9686,
-      "gitBlobSha1": "a3fa107ac176385a6207037cd583a9de1c7aaeeb",
-      "sha256": "1ee735697d1414201f306cac41b875315f40664b9ef848fb41a5debd4d142d7f"
+      "path": "sound/direct_sound_samples/cries/beedrill.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/blastoise.wav",
-      "byteLength": 9654,
-      "gitBlobSha1": "bcd068dd87fcea216c7ee53232b758b012b24d97",
-      "sha256": "114b71c317b37cd2281551f0814c4e377e0cad12a889f419b885b8dca3154d7a"
+      "path": "sound/direct_sound_samples/cries/blastoise.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/bulbasaur.wav",
-      "byteLength": 8296,
-      "gitBlobSha1": "d081218baeaea466823f60e498d0a3b948e50eee",
-      "sha256": "281a2e9127a623a72b01006cc80b2a9b0a391bbae1814840e1567359e8bade93"
+      "path": "sound/direct_sound_samples/cries/bulbasaur.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/butterfree.wav",
-      "byteLength": 5056,
-      "gitBlobSha1": "19e781569c59524cebdab86c632f46da936150eb",
-      "sha256": "0972b90ad0477b0de9fa6e1704634bb7900536d0cc3270277de692f073c48c40"
+      "path": "sound/direct_sound_samples/cries/butterfree.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/caterpie.wav",
-      "byteLength": 4222,
-      "gitBlobSha1": "c5073644629a0945b7c48550c717a213abd4c086",
-      "sha256": "2def458f06bff7d430c31aaba9a1f0e5e647cbc70dc765d79882a0722a43150a"
+      "path": "sound/direct_sound_samples/cries/caterpie.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/charizard.wav",
-      "byteLength": 9652,
-      "gitBlobSha1": "fd748e8ee7c01d28c0d54244085f44c99b587b8a",
-      "sha256": "a4669bcd33526e22f858b1b02d1b563ceeaf324bacbc985156985eaae49a6fc0"
+      "path": "sound/direct_sound_samples/cries/charizard.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/charmander.wav",
-      "byteLength": 7246,
-      "gitBlobSha1": "09762f21034ec5777e46e63920b0adc655cc80ee",
-      "sha256": "6292bf22cf046b3f089ba0e3e81eb6297e719516b5ca281554a0046514ef505c"
+      "path": "sound/direct_sound_samples/cries/charmander.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/charmeleon.wav",
-      "byteLength": 7280,
-      "gitBlobSha1": "a5289e2b01a737d6f60abb92b1dfa5a30c2fb7dc",
-      "sha256": "6eefa34a1a8211934ed0e07ace99aca68092e8cbc01a276bbc0620fdb83c5987"
+      "path": "sound/direct_sound_samples/cries/charmeleon.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/geodude.wav",
-      "byteLength": 11848,
-      "gitBlobSha1": "0c1336a8e264f9206ae75a03a322613e3e45bb5c",
-      "sha256": "88153eeb4d2c4d42343b47d4135ad7e8e75b4b8d8555bb5b95c9b6e4aa9d305e"
+      "path": "sound/direct_sound_samples/cries/geodude.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/golem.wav",
-      "byteLength": 7110,
-      "gitBlobSha1": "9a26adcc945f34397f004a4bba604a8f764ee370",
-      "sha256": "bf30ec2e298ae0328b375e5f2fbc278488acd064c356ee63b1ad491d5f09639b"
+      "path": "sound/direct_sound_samples/cries/golem.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/graveler.wav",
-      "byteLength": 13932,
-      "gitBlobSha1": "e5a2e9d19ef1538eff046729dc18cd4a071335c2",
-      "sha256": "58807f04e63f2fadb2f9c9f7f6f896f589fe6c3c96992dd10b6fe7da7590e71b"
+      "path": "sound/direct_sound_samples/cries/graveler.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/ivysaur.wav",
-      "byteLength": 8300,
-      "gitBlobSha1": "1110a633824ed692abbfaed613abd766629c6acc",
-      "sha256": "5659df65b76ad8b6b21ff13321616add89e716594582e4b3114a9f94b7b19136"
+      "path": "sound/direct_sound_samples/cries/ivysaur.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/kakuna.wav",
-      "byteLength": 9136,
-      "gitBlobSha1": "0a7b43f9464ad2a7be61cb233f703049bff3d01c",
-      "sha256": "b0853a0090d6eb6e8058d94008b8c36e534c30e50b10ba7f2f5c0f34e4e8b3eb"
+      "path": "sound/direct_sound_samples/cries/kakuna.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/metapod.wav",
-      "byteLength": 11654,
-      "gitBlobSha1": "1ef8849fceb1c0887de2ef029ec5fdc60b4979e3",
-      "sha256": "71defee3bd3b7c4caf3b6c22d6c062e1c39b2e924a39a038bc5a5aac3d8ff5d0"
+      "path": "sound/direct_sound_samples/cries/metapod.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/nidoran_m.wav",
-      "byteLength": 5246,
-      "gitBlobSha1": "94fcf0e5bd3a4aab027518c8d131b9e270c668ec",
-      "sha256": "d773cc2bf73fdf67ff7ad3dc326ce5fcbb304a75d55a8f6f1bb167e93938dff8"
+      "path": "sound/direct_sound_samples/cries/nidoran_m.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/onix.wav",
-      "byteLength": 12370,
-      "gitBlobSha1": "f0dd1f45e07d5343ea28ac71086bc148da2a3226",
-      "sha256": "57bc2f475dac453b507206edaf44039b38356b195a08415b291bb1d4e452e549"
+      "path": "sound/direct_sound_samples/cries/onix.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/pidgeot.wav",
-      "byteLength": 8622,
-      "gitBlobSha1": "d56e2e5597ede9f245db4c93de90a8f3b4116db8",
-      "sha256": "b397b404ffbbe2c448c5915b6e0111ee702ceed6fe7732664fcbc8c71c9842df"
+      "path": "sound/direct_sound_samples/cries/pidgeot.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/pidgeotto.wav",
-      "byteLength": 7542,
-      "gitBlobSha1": "b8d075754c76eceb890a99eea9c9fdf5a1d96bc8",
-      "sha256": "1c2e8eb7ed054b0d0ce36362da0478221340535337548bcc681621781aea8e12"
+      "path": "sound/direct_sound_samples/cries/pidgeotto.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/pidgey.wav",
-      "byteLength": 2016,
-      "gitBlobSha1": "5b58ae59bfd8e6eb5b07a32bfc4511a4743f0a5f",
-      "sha256": "f0a8b48a05154298d9889061addda8ace8d777535339c274fe17eaca56046c8c"
+      "path": "sound/direct_sound_samples/cries/pidgey.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/pikachu.wav",
-      "byteLength": 8346,
-      "gitBlobSha1": "dc1d354c878b9668510c67f2375bfe527d92b28d",
-      "sha256": "19ff12fa7b2e1c68c163f9718f39e23d3491bd26c544b19dbda0f2324f203f4c"
+      "path": "sound/direct_sound_samples/cries/pikachu.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/raichu.wav",
-      "byteLength": 11872,
-      "gitBlobSha1": "7b93bb5a3db7f8fc5b34d0f0cb19d17d3866c18d",
-      "sha256": "862326736151e3ebd360a820b52070177bd436effd4b3a92cf7814cf5fa6d48b"
+      "path": "sound/direct_sound_samples/cries/raichu.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/raticate.wav",
-      "byteLength": 4802,
-      "gitBlobSha1": "bbef0c0af9507efa759c3fbe0d75f6e1f0e63cf3",
-      "sha256": "3d12f086ab3e84159dae353faac48c1ef3b11b81196b4522eb9b6edd1228df68"
+      "path": "sound/direct_sound_samples/cries/raticate.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/rattata.wav",
-      "byteLength": 3986,
-      "gitBlobSha1": "951c3bd8a171b59a6c10f74b922e6419abdf4bd1",
-      "sha256": "8ccf09bac89568d150a08a19bfdcc6461142be62ba023ab446a1a253f2ef1ea8"
+      "path": "sound/direct_sound_samples/cries/rattata.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/sandshrew.wav",
-      "byteLength": 4710,
-      "gitBlobSha1": "94f98193d1a8fc1c1755173230f6e9fbea795cf7",
-      "sha256": "719758f7520b79f0fa0ae3c85ff426a00f5bc326337b04a6890812abcd337668"
+      "path": "sound/direct_sound_samples/cries/sandshrew.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/sandslash.wav",
-      "byteLength": 6816,
-      "gitBlobSha1": "ba3e29e08388d0a80863389c7874d847c6fbb7c0",
-      "sha256": "a131ebafe9c4ad0502966d80284e79cb707d3ffec1940b002d48cecfa17a0171"
+      "path": "sound/direct_sound_samples/cries/sandslash.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/squirtle.wav",
-      "byteLength": 7252,
-      "gitBlobSha1": "fb533d7184f4d2974cff070e3bed3eb285aa6730",
-      "sha256": "9c080a3265758f39ca04f6b7e12eb627542a8cd241f7bda4d6e45fda4d00be0c"
+      "path": "sound/direct_sound_samples/cries/squirtle.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/steelix.wav",
-      "byteLength": 19020,
-      "gitBlobSha1": "85de343abe7fe7b1ca8c1d57f9c737ae1006e55f",
-      "sha256": "6c5017343561b62479507eb1f702fadff54f577a0cca0226e600a4588a6f80e6"
+      "path": "sound/direct_sound_samples/cries/steelix.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/venusaur.wav",
-      "byteLength": 9680,
-      "gitBlobSha1": "4273ac8471a4a6c62cb4bbf61bad4b663cc50837",
-      "sha256": "6dce2f380ea2aeb34bda3650a581462e1eb0ea3648ca7414f74fad419b9a7c71"
+      "path": "sound/direct_sound_samples/cries/venusaur.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/wartortle.wav",
-      "byteLength": 8646,
-      "gitBlobSha1": "040292e128414b58407ec5b8a70bb85fef880f89",
-      "sha256": "0d55fdebcbeb5cd18706054e07dbd2affe8d3f045368c58c0343a9bad0debc4e"
+      "path": "sound/direct_sound_samples/cries/wartortle.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/weedle.wav",
-      "byteLength": 8154,
-      "gitBlobSha1": "2c891cd309c948181b9a874f971bafc1d9ae6b82",
-      "sha256": "9a907258d23ec431bd2268fd38b8d89b67063993221aa47e42a68c37c15e5c3c"
+      "path": "sound/direct_sound_samples/cries/weedle.wav"
     },
     {
-      "path": "sound/direct_sound_samples/dance_drums_ride_bell.wav",
-      "byteLength": 30864,
-      "gitBlobSha1": "7a0e9eb3eaa76dfa373b0a9fdd7a7a297f43d1aa",
-      "sha256": "6cb6f631d89637ffadea82dda71e94b8e4bf063653323f3ef27273eead2c206e"
+      "path": "sound/direct_sound_samples/dance_drums_ride_bell.wav"
     },
     {
-      "path": "sound/direct_sound_samples/drum_and_percussion_kick.wav",
-      "byteLength": 3960,
-      "gitBlobSha1": "4b6969b6eb4ed2b75413527d6e99d93e3d9388bf",
-      "sha256": "185c1ccf8b659f59caccd3c8e6a942b9c5c4ffdc3855a3c4488b3b73ddc0508d"
+      "path": "sound/direct_sound_samples/drum_and_percussion_kick.wav"
     },
     {
-      "path": "sound/direct_sound_samples/ethnic_flavours_ohtsuzumi.wav",
-      "byteLength": 6458,
-      "gitBlobSha1": "e7f08c81000a93bdf4f20974c54523fc891b5229",
-      "sha256": "4cbf4c8069f52ac5fbe77c5e85e958f206dbc93a9f1def916c8af71a748838ef"
+      "path": "sound/direct_sound_samples/ethnic_flavours_ohtsuzumi.wav"
     },
     {
-      "path": "sound/direct_sound_samples/register_noise.wav",
-      "byteLength": 8128,
-      "gitBlobSha1": "090b0cd5aa9b0e7761e3496ccf52275def516ed7",
-      "sha256": "0c8d33274b7c79c0db0c47885502aa462dd8ea1a60c370d0007853036c94bdfc"
+      "path": "sound/direct_sound_samples/register_noise.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_accordion.wav",
-      "byteLength": 5192,
-      "gitBlobSha1": "1b28fa0e6ce4564bd4ef2b14f05505d3ff7b13c5",
-      "sha256": "79a0fe5de922f46f49451a047ba6acdaf23b84a6e5ca9145bbd91a9981d6f741"
+      "path": "sound/direct_sound_samples/sc88pro_accordion.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_bubbles.wav",
-      "byteLength": 4208,
-      "gitBlobSha1": "17d3eaa64fb54d7c7f755d02c96f781201757f95",
-      "sha256": "3ec3005cf5014a68110eee16503bb0d3b2727b971fbb8ceb0806cca811cc091c"
+      "path": "sound/direct_sound_samples/sc88pro_bubbles.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_fingered_bass.wav",
-      "byteLength": 7366,
-      "gitBlobSha1": "dff67c22c55d2f87d94ec343dbbde0675a936b03",
-      "sha256": "fbef8a044a23e474ddace7016ddb3d463164993a2943c98ed0db16b5946b2a0d"
+      "path": "sound/direct_sound_samples/sc88pro_fingered_bass.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_flute.wav",
-      "byteLength": 2012,
-      "gitBlobSha1": "6ec093c817f9664baea2f720c2705be1a0d8b005",
-      "sha256": "b7ce264def48662a4aec00f47b0ff12d333c6947ddabcc03aa92641479adac03"
+      "path": "sound/direct_sound_samples/sc88pro_flute.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_french_horn_60.wav",
-      "byteLength": 28684,
-      "gitBlobSha1": "da82c73b64015e5818e7d925d4407a39bd30a436",
-      "sha256": "ee06d8e1bf1a94b707763113a04fba1ef91ab69668a4a3ab02b7cb4f2b497859"
+      "path": "sound/direct_sound_samples/sc88pro_french_horn_60.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_french_horn_72.wav",
-      "byteLength": 17914,
-      "gitBlobSha1": "3221dc49bcb698375009d29328349f3fb1f1d664",
-      "sha256": "7f51af6a4b0efb68aa0f50cb96e49e7fab2f214f4f719fd77255e2930c2e3997"
+      "path": "sound/direct_sound_samples/sc88pro_french_horn_72.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_fretless_bass.wav",
-      "byteLength": 3138,
-      "gitBlobSha1": "e7c59f564eae062ece7494a134d1c29fbad69809",
-      "sha256": "358a8f81fd5a1cadb3c1492e9a5fb572acbd002fff39f627d08268004caa1e47"
+      "path": "sound/direct_sound_samples/sc88pro_fretless_bass.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_glockenspiel.wav",
-      "byteLength": 1820,
-      "gitBlobSha1": "d24e64efe99a6f3aef92c0bfd7f3634ed25a3fe3",
-      "sha256": "34b391fdbdd626b4fa292a749571ea6cb2e87be10056edf54c17b118d627f583"
+      "path": "sound/direct_sound_samples/sc88pro_glockenspiel.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_harp.wav",
-      "byteLength": 2728,
-      "gitBlobSha1": "3a137c593d2c10341733124b883b6d0b49aec537",
-      "sha256": "127492fcf8d7aa3ebe929ad20af2d6044d56c6f404ab6fc8e22ec54964cd42a1"
+      "path": "sound/direct_sound_samples/sc88pro_harp.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_jingle_bell.wav",
-      "byteLength": 6258,
-      "gitBlobSha1": "8342322428804889df516a7a3277cacf40cbdb18",
-      "sha256": "38d362a412192a96252b182b7ef16a7a5a7e2136c9b5df49a46801d6bb004448"
+      "path": "sound/direct_sound_samples/sc88pro_jingle_bell.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_mute_high_conga.wav",
-      "byteLength": 1400,
-      "gitBlobSha1": "afa56506a1256840b3e26001e74beba59a44029c",
-      "sha256": "241ebb4145db296d886cd747611c48e61a4136da03bc4ee08aea46be95465efe"
+      "path": "sound/direct_sound_samples/sc88pro_mute_high_conga.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_nylon_str_guitar.wav",
-      "byteLength": 8166,
-      "gitBlobSha1": "e40e641802712e14b37810a4f8d36b42a8024c90",
-      "sha256": "401e3ccbbfdb57f5c6318426730fbb95af9aae96b09a80af3673c14909bd8e99"
+      "path": "sound/direct_sound_samples/sc88pro_nylon_str_guitar.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_open_low_conga.wav",
-      "byteLength": 1576,
-      "gitBlobSha1": "030797c0d6a778f8b9c8efb39a740b7476a808c2",
-      "sha256": "3ef5ad7af39ac31f476ad646a0a5cca971eb63bdf8be29061a7e40e1c5b15b75"
+      "path": "sound/direct_sound_samples/sc88pro_open_low_conga.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_orchestra_cymbal_crash.wav",
-      "byteLength": 4002,
-      "gitBlobSha1": "58d90c404fd1890d75e2c2492e77aed9fe441b69",
-      "sha256": "1706f2e7b6bfcb0d2d7be83e952f9f8c16daad5f37aba9b5e6219cb8af5bcd8c"
+      "path": "sound/direct_sound_samples/sc88pro_orchestra_cymbal_crash.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_orchestra_snare.wav",
-      "byteLength": 2262,
-      "gitBlobSha1": "43bb9ed9b87ae52870dc88b8416e1c4ddf773729",
-      "sha256": "93226433c4d370c4b416fcc0f71ee2f65501c425a97369bea9f3000b80863e30"
+      "path": "sound/direct_sound_samples/sc88pro_orchestra_snare.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_organ2.wav",
-      "byteLength": 2160,
-      "gitBlobSha1": "437ee2d03cf4dc70b1369430cebc7f31ab8b5bf5",
-      "sha256": "e18fa2ffc78a1cd592509e752d8c03b1eb1951e65070ed4e96dc6b9c82584850"
+      "path": "sound/direct_sound_samples/sc88pro_organ2.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_piano1_60.wav",
-      "byteLength": 5846,
-      "gitBlobSha1": "29cb5a88015033f4ce16f5a047c0b99889536c52",
-      "sha256": "dfd2fe00fb4c2aa3e491854b6bd36250ff55b050c74a2ccca15af5b45df9288f"
+      "path": "sound/direct_sound_samples/sc88pro_piano1_60.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_piano1_72.wav",
-      "byteLength": 5586,
-      "gitBlobSha1": "396f09452528b509cba19d33147605739b7ae10d",
-      "sha256": "0afdf8a64a9b0677f05aa8b533eb02bc6c82bdaa1d3b71e76209a8b8bb7a637a"
+      "path": "sound/direct_sound_samples/sc88pro_piano1_72.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_piano1_84.wav",
-      "byteLength": 3074,
-      "gitBlobSha1": "1956f95dad1bdefa6f4d9e275bc6bcf4f5ec720e",
-      "sha256": "74d1488c97c3743c78b5e4106797cd607f85a76224bf395a031fab2f2b84b097"
+      "path": "sound/direct_sound_samples/sc88pro_piano1_84.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_pizzicato_strings.wav",
-      "byteLength": 1970,
-      "gitBlobSha1": "d89ea7c8d42bcf284f84768c57aab29e3aa12b0e",
-      "sha256": "e81caf77b8adaab319e45dc96170e198adcab8fa63addc033f1fd61f5c0580f5"
+      "path": "sound/direct_sound_samples/sc88pro_pizzicato_strings.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_rnd_kick.wav",
-      "byteLength": 1280,
-      "gitBlobSha1": "02c440ce4c33b6aae9abce78a70e9fa2c1bfd476",
-      "sha256": "76e09bf3934b184892ec3e3ee5b2c27893b46e589b5274e4f17e58f5a43222aa"
+      "path": "sound/direct_sound_samples/sc88pro_rnd_kick.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_rnd_snare.wav",
-      "byteLength": 1874,
-      "gitBlobSha1": "69c9a6010e49c136f8d7abfe57b4f798d2e0c582",
-      "sha256": "8224fcfb6ae79bb6e72e64a4ffa94f799a1084963bf2f9f645f20eb08ae0a751"
+      "path": "sound/direct_sound_samples/sc88pro_rnd_snare.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_square_wave.wav",
-      "byteLength": 7308,
-      "gitBlobSha1": "5689c13f4e98815f28d51909ad660848883333f8",
-      "sha256": "7777c6751ea6d99d85463d0d214f77169217b65725368d610bb1e3fbdda09b8e"
+      "path": "sound/direct_sound_samples/sc88pro_square_wave.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_string_ensemble_60.wav",
-      "byteLength": 13852,
-      "gitBlobSha1": "1e43b2e5e2476d28c930b60fb94f2ccfed91b9c5",
-      "sha256": "393da5125fb3857e2d14217da62740f1add3bcf307f3e07bf2ef612eb88945cd"
+      "path": "sound/direct_sound_samples/sc88pro_string_ensemble_60.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_string_ensemble_72.wav",
-      "byteLength": 9108,
-      "gitBlobSha1": "5a3560bd3e73fc57c08b66d186e4cd5659ff488e",
-      "sha256": "7d1af5489685eb818fb3b8f9b75991f11c84605644c8ee3eb0beb1196ad654d9"
+      "path": "sound/direct_sound_samples/sc88pro_string_ensemble_72.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_string_ensemble_84.wav",
-      "byteLength": 14146,
-      "gitBlobSha1": "c07c8c4318b16982330ee6deeb958d106b29ebc7",
-      "sha256": "7740cd5deb701dccf035697ac3738ded51a8a53a2284551647bfe3c0e2dc01a6"
+      "path": "sound/direct_sound_samples/sc88pro_string_ensemble_84.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_synth_bass.wav",
-      "byteLength": 3306,
-      "gitBlobSha1": "98f6a4ef20f96c163252627336ac69840c21c358",
-      "sha256": "f9cd7d83aa282327376c15bef1d108f72c587f0684658d66be070c9e0f075f07"
+      "path": "sound/direct_sound_samples/sc88pro_synth_bass.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_tambourine.wav",
-      "byteLength": 2324,
-      "gitBlobSha1": "929ed5dacad2c5838c42fdb3183e85e8c9022980",
-      "sha256": "138461c3a9bb4e188df941306e47bdb3737c2cc868bc1d7fcbc70bd4da6bc1d5"
+      "path": "sound/direct_sound_samples/sc88pro_tambourine.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_timpani.wav",
-      "byteLength": 5446,
-      "gitBlobSha1": "03fb3ee714657ae30c21dc350fd27ec9aa5e27f1",
-      "sha256": "084694b94465a50176c67dcb8ccc8f49329cc9e186ede117e57b76dbf1e59826"
+      "path": "sound/direct_sound_samples/sc88pro_timpani.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_tr909_hand_clap.wav",
-      "byteLength": 2288,
-      "gitBlobSha1": "9dba2ac9d649340b08f8a9c6ba8098976854e139",
-      "sha256": "320084825a422ea761ee6511253c7b9436f3e96ec7a1e63b4e9e6c6e1e57a152"
+      "path": "sound/direct_sound_samples/sc88pro_tr909_hand_clap.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_trumpet_60.wav",
-      "byteLength": 5062,
-      "gitBlobSha1": "0675873a1452a94959fa7da2364cd3d45387c87b",
-      "sha256": "4a017c49a922fcda6e49c92c55fd2409541ac4627bab1abfbc072f0f289e05d5"
+      "path": "sound/direct_sound_samples/sc88pro_trumpet_60.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_trumpet_72.wav",
-      "byteLength": 5512,
-      "gitBlobSha1": "27f75206e14406f680c8e7bfc8f92779ccb167d1",
-      "sha256": "51a63ccd20b4daef40a15843b5211d095827d999ed3632413a083f7e3a92f323"
+      "path": "sound/direct_sound_samples/sc88pro_trumpet_72.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_trumpet_84.wav",
-      "byteLength": 5270,
-      "gitBlobSha1": "f1713f901cd7288750fca20e48fd12187fe90263",
-      "sha256": "9f550b79b95c1da18834b679c9e64409610c931b93a6c6e2292cb8adc0d97439"
+      "path": "sound/direct_sound_samples/sc88pro_trumpet_84.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_tuba_51.wav",
-      "byteLength": 4306,
-      "gitBlobSha1": "4bb436de790a3a1b672d2e90a64b42380ba04318",
-      "sha256": "cf27c657806f3f4b081e6e0878ec28d58632fce85125d7e28ca6ad4eda8b99ee"
+      "path": "sound/direct_sound_samples/sc88pro_tuba_51.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_tubular_bell.wav",
-      "byteLength": 6632,
-      "gitBlobSha1": "eed5b32b2b9c75329bc9d40e6b03ff2780c5fa57",
-      "sha256": "d0bcf7a5f6fd5f159bf6cf6b7987149f3a06764824690ded05478ddc063eceb6"
+      "path": "sound/direct_sound_samples/sc88pro_tubular_bell.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_wind.wav",
-      "byteLength": 4794,
-      "gitBlobSha1": "1b3c78c42d3a068bd5d3b267bb296ae682718aac",
-      "sha256": "3811846377f52f94b4f84905e7a864936b0b8f6bc2475bb51aeed80d84736672"
+      "path": "sound/direct_sound_samples/sc88pro_wind.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sc88pro_xylophone.wav",
-      "byteLength": 2732,
-      "gitBlobSha1": "59aec0711c3f435ae13487e385df070fd1e3a981",
-      "sha256": "9c0e4c3aa9d30c8dec8591961f282cb100e0abdbd2533f21f1409c369250365d"
+      "path": "sound/direct_sound_samples/sc88pro_xylophone.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_ambient_tom.wav",
-      "byteLength": 8508,
-      "gitBlobSha1": "f524a7c882a96084d16fd32c1bba9d9bada6ca8a",
-      "sha256": "446af805f572aa4f1266883d0a3dcb0d46f49a8f2af8c7d888972fdfc7386d4d"
+      "path": "sound/direct_sound_samples/sd90_ambient_tom.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_classical_detuned_ep1_high.wav",
-      "byteLength": 5152,
-      "gitBlobSha1": "2940e14a58dd596e91aa7227611a7903d416edda",
-      "sha256": "6214ca7c0f4685220b1dc9b48f15d8b68a17229e199a06020c4fa0258b0cbd79"
+      "path": "sound/direct_sound_samples/sd90_classical_detuned_ep1_high.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_classical_detuned_ep1_low.wav",
-      "byteLength": 9952,
-      "gitBlobSha1": "f1f8dac7980ffd84e2a661461282d3e6d75306be",
-      "sha256": "ab3b8444a1c106d1c704a7d877020a2cbb6742a9920e30fee51f909f87b77fd6"
+      "path": "sound/direct_sound_samples/sd90_classical_detuned_ep1_low.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_classical_distortion_guitar_high.wav",
-      "byteLength": 12392,
-      "gitBlobSha1": "23ab4ff4574d46658c0ee25d74bd17e44e9bd50b",
-      "sha256": "bbf84d814b72786119b381e96d53ca4dee5404a8bf73000a4d4a7a9312847865"
+      "path": "sound/direct_sound_samples/sd90_classical_distortion_guitar_high.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_classical_distortion_guitar_low.wav",
-      "byteLength": 11466,
-      "gitBlobSha1": "475a15e82c0f37a9f987cb0e5b968b88ff272317",
-      "sha256": "bcdf43cdeb37c64c77206daa5111a346267a6a9862c7ee1078aedb0f5afbfecb"
+      "path": "sound/direct_sound_samples/sd90_classical_distortion_guitar_low.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_classical_overdrive_guitar.wav",
-      "byteLength": 7910,
-      "gitBlobSha1": "231c987087385f96c7da190ef11cae5f67657e5b",
-      "sha256": "c62305de7e5df50d5326fa7a6ae326d3c0aa739816b4238317b747cd335f3732"
+      "path": "sound/direct_sound_samples/sd90_classical_overdrive_guitar.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_classical_whistle.wav",
-      "byteLength": 2774,
-      "gitBlobSha1": "fd8b1395acf156652b720215ceae8c14731722cc",
-      "sha256": "ca8c0659caa17dd1dbad614103306adf8179c054b89bf4aa5f36033e52d9d982"
+      "path": "sound/direct_sound_samples/sd90_classical_whistle.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_cowbell.wav",
-      "byteLength": 2584,
-      "gitBlobSha1": "7e5bd335417d93f8d553a53db4349b5cb2610301",
-      "sha256": "81014f5823b7cba37289965f4e3d88f51f03f27fd807ba21c454161d4230e523"
+      "path": "sound/direct_sound_samples/sd90_cowbell.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_open_triangle.wav",
-      "byteLength": 3796,
-      "gitBlobSha1": "415054e23c48b8c2c5b39e72ae68ddb7012a1893",
-      "sha256": "85025fb86ac717a1090f28418ce8865486039534493ab37ad5c6b3006272f031"
+      "path": "sound/direct_sound_samples/sd90_open_triangle.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_solo_snare.wav",
-      "byteLength": 6610,
-      "gitBlobSha1": "7ff2c98e49ccb6fca6e87fac7af348632f167523",
-      "sha256": "d9a99dcce3f6bd87cda2c95f78fca4a0ffae1ca03facd0bbd9531454bfe70911"
+      "path": "sound/direct_sound_samples/sd90_solo_snare.wav"
     },
     {
-      "path": "sound/direct_sound_samples/sd90_special_scream_drive.wav",
-      "byteLength": 6320,
-      "gitBlobSha1": "3f974062693f812d438afd52a90f73fcdfce38c0",
-      "sha256": "65d1c5d139ddcd35ee12fe52db900e57016236c073df1924d5707165f2edf3c3"
+      "path": "sound/direct_sound_samples/sd90_special_scream_drive.wav"
     },
     {
-      "path": "sound/direct_sound_samples/steinway_b_piano.wav",
-      "byteLength": 4666,
-      "gitBlobSha1": "ef5a4849c3737ffc9ef7dca7fc314d236e49b715",
-      "sha256": "0c58b3e71879b4685452a756e55bb1772a60137bf76f946fc297668d86e24f34"
+      "path": "sound/direct_sound_samples/steinway_b_piano.wav"
     },
     {
-      "path": "sound/direct_sound_samples/trinity_30303_mega_bass.wav",
-      "byteLength": 8276,
-      "gitBlobSha1": "6a6e249a475591d46a6c223d47da127dce2c1321",
-      "sha256": "9d3f8dff614f299409d4c37c1ba77e47ebf3643441a472081d1e588dfab33a31"
+      "path": "sound/direct_sound_samples/trinity_30303_mega_bass.wav"
     },
     {
-      "path": "sound/direct_sound_samples/trinity_cymbal_crash.wav",
-      "byteLength": 2394,
-      "gitBlobSha1": "36337b641c240ee15489121e386e08e71be4fcb2",
-      "sha256": "b65a38fe5da9975756bd618638da199dcf852dd1d1a22f140f48353e2ad2511e"
+      "path": "sound/direct_sound_samples/trinity_cymbal_crash.wav"
     },
     {
-      "path": "sound/direct_sound_samples/unknown_synth_snare.wav",
-      "byteLength": 2692,
-      "gitBlobSha1": "1ec62fb57617ab506356865da8fcd812d9b7e164",
-      "sha256": "7bda857d70fd9386ebc3d41a3d6bd72701d32997e9001b999b34a4eb16cdef75"
+      "path": "sound/direct_sound_samples/unknown_synth_snare.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_56.wav",
-      "byteLength": 7272,
-      "gitBlobSha1": "7c87e021b4a620c769dcb2f9d37e20919a703df9",
-      "sha256": "1f8283e61564ee3406067ac5b8852a536f8e3a7dc2885883b2158ef1d2ee66d2"
+      "path": "sound/direct_sound_samples/wave_56.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_57.wav",
-      "byteLength": 5164,
-      "gitBlobSha1": "922f43db1b55972afeaaf7e8ec603885bcd7360a",
-      "sha256": "23ea6d79a3849399f22e82a774aa5770b5a84cf1e73a71920730f508652b7850"
+      "path": "sound/direct_sound_samples/wave_57.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_58.wav",
-      "byteLength": 9978,
-      "gitBlobSha1": "d2d216aa9d69c5c03461af1806667e7e8d0e7f23",
-      "sha256": "b527ac767b5ac7469f5e7f2a33d407da8881c00325691f5eec0fa367c61ffaaa"
+      "path": "sound/direct_sound_samples/wave_58.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_61.wav",
-      "byteLength": 4990,
-      "gitBlobSha1": "c344cc5c6f158754dc357b1bcda7370ba1b00b9d",
-      "sha256": "e6c2dd29149e5c991285385d46131498358ad7683c9eddacfc842ffbda588acb"
+      "path": "sound/direct_sound_samples/wave_61.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_62.wav",
-      "byteLength": 8578,
-      "gitBlobSha1": "01ac24db5f5c3e525d268c56c0559a0afedf9b17",
-      "sha256": "68da5d43275fb5085d6c29c3352d55489e4c8d153efa7ab037f2526002540665"
+      "path": "sound/direct_sound_samples/wave_62.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_64.wav",
-      "byteLength": 8840,
-      "gitBlobSha1": "437393e8bb0a2be15e4f0e39986ef8ff1c7d168c",
-      "sha256": "2fe2bf32bdd7085d831d38ceb4b8c64d03c542144d775988dd0f2892e1d10885"
+      "path": "sound/direct_sound_samples/wave_64.wav"
     },
     {
-      "path": "sound/direct_sound_samples/wave_65.wav",
-      "byteLength": 2116,
-      "gitBlobSha1": "70fbefc215249a5004612727d70da96cc408e055",
-      "sha256": "87d4ca6a407778f561c914ee8860e0d800e21bcc1c55f56e6119bca86015f285"
+      "path": "sound/direct_sound_samples/wave_65.wav"
     },
     {
-      "path": "sound/keysplit_tables.inc",
-      "byteLength": 6460,
-      "gitBlobSha1": "81301ef62b663fe4a5d79a621be79621935798a8",
-      "sha256": "3b532f0a9ce75d2bf0272962e5009a46ed37268d4eef34f55796e6597e8bdaaf"
+      "path": "sound/keysplit_tables.inc"
     },
     {
-      "path": "sound/music_player_table.inc",
-      "byteLength": 829,
-      "gitBlobSha1": "f542389661cc960f7d2382a2839ada3f0f4d74ab",
-      "sha256": "13a0f7bb4f9cd5bfd572cb32db4869fe88c024c2f32796b179b3a704553b8ab5"
+      "path": "sound/music_player_table.inc"
     },
     {
-      "path": "sound/programmable_wave_data.inc",
-      "byteLength": 837,
-      "gitBlobSha1": "b6e6b578b637981a3e1f5d48769eb147ab51eeaa",
-      "sha256": "70f0dac7a110a03db82fae8d672d2833f2d326c4b41b29c3d7f65bec09127f13"
+      "path": "sound/programmable_wave_data.inc"
     },
     {
-      "path": "sound/programmable_wave_samples/01.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "a0ca8fed9614c0777b37c54014dd719990b3417b",
-      "sha256": "85edeb4416944af34b6ba35476463fea79e588e09a1bb888e63b9a0a7faf4fd6"
+      "path": "sound/programmable_wave_samples/01.pcm"
     },
     {
-      "path": "sound/programmable_wave_samples/02.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "25be9c0185534ee080579df839fc96325061019b",
-      "sha256": "bc378d4953d577df728e2ba4d2cc1de23de77faca2b7d7e9ab030a9c6b30ebab"
+      "path": "sound/programmable_wave_samples/02.pcm"
     },
     {
-      "path": "sound/programmable_wave_samples/03.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "5d9585aca9b00af2f4a8436a580b4d8c7ac76ea4",
-      "sha256": "5df9fb8172e62116d42bd4719d9da1da3c443f1aca770725bd1b4554adba6adf"
+      "path": "sound/programmable_wave_samples/03.pcm"
     },
     {
-      "path": "sound/programmable_wave_samples/05.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "d0b69f04a665180cb7e93bc0149e5de5efa5975a",
-      "sha256": "da1521b308885a54d58a627e8b201ceef092c90c986260b1177b3229ea4ed49e"
+      "path": "sound/programmable_wave_samples/05.pcm"
     },
     {
-      "path": "sound/programmable_wave_samples/06.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "d0fa1932d50697d92b26dc32eff3706c1b9df522",
-      "sha256": "b6a9c29beef4283ec7a5543977d9cb8f4e0034c4f9b222fbcb89c8800b7f276e"
+      "path": "sound/programmable_wave_samples/06.pcm"
     },
     {
-      "path": "sound/programmable_wave_samples/07.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "81afd79c5e68830a485d25c29e6ff26f664c0b75",
-      "sha256": "116dc30321c2a2b10ef08ce88c80be11f15c45f8a7092ba8689ee5fde6199dc7"
+      "path": "sound/programmable_wave_samples/07.pcm"
     },
     {
-      "path": "sound/programmable_wave_samples/10.pcm",
-      "byteLength": 16,
-      "gitBlobSha1": "0d71926178ce440dca1a6fe78c5d11e6b121566c",
-      "sha256": "1c8c2b3ea2dcba0d609a7c8046e3c284fb1970343938bc36b424162e977a7fca"
+      "path": "sound/programmable_wave_samples/10.pcm"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/midi.cfg",
-      "byteLength": 20338,
-      "gitBlobSha1": "71a968f7b52eb1ed005695c7c97aec856cfeb980",
-      "sha256": "49b3a0b5a2809ccd8b504da3bedfb0f5168afd073b94ef6c10a3904e1ea62560"
+      "path": "sound/songs/midi/midi.cfg"
     },
     {
-      "path": "sound/songs/midi/mus_caught.mid",
-      "byteLength": 3168,
-      "gitBlobSha1": "6599ca6b0865d7f6e3ffa4e664b73884e7919192",
-      "sha256": "fa84e5283e36bded6b2416d689d2bff1ba9d7370cb40f99c2686f09c46f0ce00"
+      "path": "sound/songs/midi/mus_caught.mid"
     },
     {
-      "path": "sound/songs/midi/mus_caught_intro.mid",
-      "byteLength": 1858,
-      "gitBlobSha1": "d2bc1feb304d137d7a61216805ec5dfb194c3105",
-      "sha256": "395af8ae1dd09684084d48ca2fbcfd9a26626d5b96c1cc05b81aac4e219247f9"
+      "path": "sound/songs/midi/mus_caught_intro.mid"
     },
     {
-      "path": "sound/songs/midi/mus_encounter_boy.mid",
-      "byteLength": 2823,
-      "gitBlobSha1": "0820f00caa811b5fe8ec2edc24b64aed6acedc19",
-      "sha256": "30874620226253a476b99251377972a64a0a6ea9ccb8d0f1a3c9ee23383b4580"
+      "path": "sound/songs/midi/mus_encounter_boy.mid"
     },
     {
-      "path": "sound/songs/midi/mus_encounter_girl.mid",
-      "byteLength": 2125,
-      "gitBlobSha1": "48ede9b4c8b7357a30c475faeddfc7a536e2333c",
-      "sha256": "c4eada2897c21e5a8e200e787a8351f1b1c186edb451dabedec3c50f73cf638a"
+      "path": "sound/songs/midi/mus_encounter_girl.mid"
     },
     {
-      "path": "sound/songs/midi/mus_encounter_rival.mid",
-      "byteLength": 5569,
-      "gitBlobSha1": "41fe40e9491dfcf6cf6cc6091db6ba403699f86e",
-      "sha256": "2a602d4a778422d92534ab30f154441876e50450f738894e634ec6fd5cd3f33b"
+      "path": "sound/songs/midi/mus_encounter_rival.mid"
     },
     {
-      "path": "sound/songs/midi/mus_evolution.mid",
-      "byteLength": 6506,
-      "gitBlobSha1": "375e6d5dbf729f4df6099e7e87f7a70bc49f0a3c",
-      "sha256": "d4ef633986ecbc63b302eee7b4d7324d17e60999094565f388ced06636ce454d"
+      "path": "sound/songs/midi/mus_evolution.mid"
     },
     {
-      "path": "sound/songs/midi/mus_evolution_intro.mid",
-      "byteLength": 254,
-      "gitBlobSha1": "231f2553314d8c3614a9931f6fb75ea85d716ae8",
-      "sha256": "7a71e467c90707403687ac2c021d8e3f048d22337ccd86878aca076d0cff8830"
+      "path": "sound/songs/midi/mus_evolution_intro.mid"
     },
     {
-      "path": "sound/songs/midi/mus_evolved.mid",
-      "byteLength": 1109,
-      "gitBlobSha1": "519ebf29a60884929d65246374dba53222717cc9",
-      "sha256": "8cc412e5937a6cdd7d8762af8dd5e6d5d763d16bd6dd4446e68b67601b738e9a"
+      "path": "sound/songs/midi/mus_evolved.mid"
     },
     {
-      "path": "sound/songs/midi/mus_follow_me.mid",
-      "byteLength": 4005,
-      "gitBlobSha1": "efea75d49f6aa4168b9e7678ae77d5755017b626",
-      "sha256": "2e256a449e13fdd5e4ea023ca22dc1e49ecc37ac3b0aba474ea507e0e177eaf3"
+      "path": "sound/songs/midi/mus_follow_me.mid"
     },
     {
-      "path": "sound/songs/midi/mus_gym.mid",
-      "byteLength": 7602,
-      "gitBlobSha1": "814e159ce74a46534191469e015c7d8a7207ada7",
-      "sha256": "90ca411af90ac72ecec32cbbbae40988af00bcb2fea2e99725e58f18f6854e59"
+      "path": "sound/songs/midi/mus_gym.mid"
     },
     {
-      "path": "sound/songs/midi/mus_heal.mid",
-      "byteLength": 428,
-      "gitBlobSha1": "0606aafa6de5f199b03b6877d1d4c1b0b9096ba9",
-      "sha256": "d45a5966975fcc452c307354e2caee0e68134960f06fb5533e0dcd5577ccf740"
+      "path": "sound/songs/midi/mus_heal.mid"
     },
     {
-      "path": "sound/songs/midi/mus_jigglypuff.mid",
-      "byteLength": 1079,
-      "gitBlobSha1": "cc3405f3cca79c0022fb0ebde5a754bf041df435",
-      "sha256": "78b2dd89ec56538f0cf25979ef7caa9cb3706eeddb5bf17860f98eea9ccec076"
+      "path": "sound/songs/midi/mus_jigglypuff.mid"
     },
     {
-      "path": "sound/songs/midi/mus_level_up.mid",
-      "byteLength": 485,
-      "gitBlobSha1": "edf9c6e2880a9e3f701c6aa5d3c98a095cf91221",
-      "sha256": "bac0151d72a284f4bd903b1ef9e121928f0fca033b3b8987072df737e474ec91"
+      "path": "sound/songs/midi/mus_level_up.mid"
     },
     {
-      "path": "sound/songs/midi/mus_oak.mid",
-      "byteLength": 6969,
-      "gitBlobSha1": "fa4710a234e641b79be000040d931f4a9f37e7c9",
-      "sha256": "675a07dd62ab510211dbf3d102a27c6f9da8438ca50999bc5edaf3ff3a89e465"
+      "path": "sound/songs/midi/mus_oak.mid"
     },
     {
-      "path": "sound/songs/midi/mus_oak_lab.mid",
-      "byteLength": 4579,
-      "gitBlobSha1": "471a1baab2cca5ede04c15f2871a5d565ddd3af4",
-      "sha256": "3b303fe45d7b643b82ebbd171b91c73ee710925e733657eeb251649fc9ee9c2d"
+      "path": "sound/songs/midi/mus_oak_lab.mid"
     },
     {
-      "path": "sound/songs/midi/mus_obtain_badge.mid",
-      "byteLength": 1722,
-      "gitBlobSha1": "05fe1516a2eae900077f818660462a6300569598",
-      "sha256": "7009aff2d1e3f5be8757bd631ae7ee2ce1d221d0ccecdcae241cf56958437a2d"
+      "path": "sound/songs/midi/mus_obtain_badge.mid"
     },
     {
-      "path": "sound/songs/midi/mus_obtain_item.mid",
-      "byteLength": 783,
-      "gitBlobSha1": "58cab9350d9d5fdb7d1fd2c76dd72ce8da624afe",
-      "sha256": "6c2aafc6bbd032626be22de560337917b0b8cb8b7387a51c6dc7c99744be186f"
+      "path": "sound/songs/midi/mus_obtain_item.mid"
     },
     {
-      "path": "sound/songs/midi/mus_obtain_key_item.mid",
-      "byteLength": 968,
-      "gitBlobSha1": "e9c01b132b937bf067ffe9ffdefe9cc7c89d2c61",
-      "sha256": "418e2584131336374a8041ab541dc5ce6fa1f53720b7338698f369437a248116"
+      "path": "sound/songs/midi/mus_obtain_key_item.mid"
     },
     {
-      "path": "sound/songs/midi/mus_obtain_tmhm.mid",
-      "byteLength": 1005,
-      "gitBlobSha1": "40f9c2ed8d5834def87904a00504d01f682c0792",
-      "sha256": "51c4e9807b0c57357c1da2a90061bf9a94eb9b865e05b2e0badc1b7776f7df1b"
+      "path": "sound/songs/midi/mus_obtain_tmhm.mid"
     },
     {
-      "path": "sound/songs/midi/mus_pallet.mid",
-      "byteLength": 5402,
-      "gitBlobSha1": "fa5917387054faea1b858675cb58b7f0d9a52811",
-      "sha256": "2d4e76ac15a5fe64802fa59799893c265ba9e4c9fb78627407aeec074b097a23"
+      "path": "sound/songs/midi/mus_pallet.mid"
     },
     {
-      "path": "sound/songs/midi/mus_pewter.mid",
-      "byteLength": 11818,
-      "gitBlobSha1": "dd88863d484513e9e5a329d0ca07b1e5f1b206e8",
-      "sha256": "a76788e76c9adceb9664a0a6ae35bd3a82145db48e73d388cc289135fa3813ef"
+      "path": "sound/songs/midi/mus_pewter.mid"
     },
     {
-      "path": "sound/songs/midi/mus_poke_center.mid",
-      "byteLength": 7151,
-      "gitBlobSha1": "cd905db38ceea7773c72eb576dbf556ebca957df",
-      "sha256": "acef705b9f70f9b84377e38714dfe2c320193e3496c5cbca6ca216b7e36abbee"
+      "path": "sound/songs/midi/mus_poke_center.mid"
     },
     {
-      "path": "sound/songs/midi/mus_rival_exit.mid",
-      "byteLength": 5234,
-      "gitBlobSha1": "cae821245050e46017ec7c09888e1366f8b1165a",
-      "sha256": "c6a41c15bf4a641d7d0ab2f6ee335afc9a38cdf67a1cb2f9d73aff415f04a33d"
+      "path": "sound/songs/midi/mus_rival_exit.mid"
     },
     {
-      "path": "sound/songs/midi/mus_route1.mid",
-      "byteLength": 6879,
-      "gitBlobSha1": "9d0ebcde630c302473cea1cd5518ae8cb8939bff",
-      "sha256": "8ee3efcb31fb6f5229cd9f856f15240798e5587492a98586975c304b4dd25a29"
+      "path": "sound/songs/midi/mus_route1.mid"
     },
     {
-      "path": "sound/songs/midi/mus_victory_gym_leader.mid",
-      "byteLength": 9749,
-      "gitBlobSha1": "1ce5dd13c5215aaced8d551f4b00a92a5d6cee60",
-      "sha256": "e2df3b5a2157ba51c23c5a1bf98c069aa8593a80ff8cef69ab9eb298a810b3a6"
+      "path": "sound/songs/midi/mus_victory_gym_leader.mid"
     },
     {
-      "path": "sound/songs/midi/mus_victory_trainer.mid",
-      "byteLength": 11549,
-      "gitBlobSha1": "26fe06bf01e052b9a242d2b0ed25528012f281d0",
-      "sha256": "d6ce432265d5ea4ce4bfb3aa3ed9103be82f1ee515d6a39914a5e8521a55f8c4"
+      "path": "sound/songs/midi/mus_victory_trainer.mid"
     },
     {
-      "path": "sound/songs/midi/mus_victory_wild.mid",
-      "byteLength": 3779,
-      "gitBlobSha1": "51fad46fc4064e49721ab4d4dcd02da312e80c06",
-      "sha256": "78820411f58e3c8f48608ac4de726c22b37f1f6fdb3448fcc21cfda168318631"
+      "path": "sound/songs/midi/mus_victory_wild.mid"
     },
     {
-      "path": "sound/songs/midi/mus_viridian_forest.mid",
-      "byteLength": 13877,
-      "gitBlobSha1": "76d73039e5280f233fff50c183e6348459e65986",
-      "sha256": "c8d24a81c9b7369878251f26fdc8fe95a9d5d6c27899cbefa837ccdd8db3feb2"
+      "path": "sound/songs/midi/mus_viridian_forest.mid"
     },
     {
-      "path": "sound/songs/midi/mus_vs_gym_leader.mid",
-      "byteLength": 20538,
-      "gitBlobSha1": "aa2da087f7c7965150f08b150204f1cbe57c3574",
-      "sha256": "1392e5dd8ab520703fdcb477a7295b62660d638d65f6286db954fcc0db2fc856"
+      "path": "sound/songs/midi/mus_vs_gym_leader.mid"
     },
     {
-      "path": "sound/songs/midi/mus_vs_trainer.mid",
-      "byteLength": 31971,
-      "gitBlobSha1": "95172f63e017ce24e3a4f5f0093042b934e40b3d",
-      "sha256": "cbef88249f18e98a67b48f3156d3f097f0108884cbfda3c94855a6bd92d25861"
+      "path": "sound/songs/midi/mus_vs_trainer.mid"
     },
     {
-      "path": "sound/songs/midi/mus_vs_wild.mid",
-      "byteLength": 14879,
-      "gitBlobSha1": "835aff19b8ad12ea6f593738af02901e13e85917",
-      "sha256": "a1a72f5d1fb313f9b2f03c6edd8cc3a4c79fa7becd75545ee25bc6a9415cd344"
+      "path": "sound/songs/midi/mus_vs_wild.mid"
     },
     {
-      "path": "sound/songs/midi/se_bag_cursor.mid",
-      "byteLength": 129,
-      "gitBlobSha1": "108325253fd72f177b243e4ab1b4feb5407cb6e0",
-      "sha256": "d1e6af36a5d51b5f7f6502eb91c3dd31bfab08321b9b03ee13e78fbef7e06244"
+      "path": "sound/songs/midi/se_bag_cursor.mid"
     },
     {
-      "path": "sound/songs/midi/se_bag_pocket.mid",
-      "byteLength": 149,
-      "gitBlobSha1": "49537bff2d1464aa3fe8e0ec80f663a8e61b0ac7",
-      "sha256": "45bef3aeef8e3e6abd1ac789fb522d00882b8b447fe48c7cad6ec9e4fc48d6be"
+      "path": "sound/songs/midi/se_bag_pocket.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball.mid",
-      "byteLength": 86,
-      "gitBlobSha1": "684ea618c1c2da9603c01b61604f9e70da8cf3e4",
-      "sha256": "8fdccb1781245f4a38cc58d512eb950a9128c3e0c4b67f8f489fc94c0ab85376"
+      "path": "sound/songs/midi/se_ball.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_bounce_1.mid",
-      "byteLength": 103,
-      "gitBlobSha1": "438d4b04728b28d9d17c7ce03d5ac82c8ce7748e",
-      "sha256": "9c8162a72075871519250249434bf806103fef51b56f665f980feee02f604ab7"
+      "path": "sound/songs/midi/se_ball_bounce_1.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_bounce_2.mid",
-      "byteLength": 103,
-      "gitBlobSha1": "961d82642b83e2e885325c1623223d08e2e700f7",
-      "sha256": "8abd9f9b83b396184c1bec4d175817b722bbb2bb0d0ec4df8417065b668eed56"
+      "path": "sound/songs/midi/se_ball_bounce_2.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_bounce_3.mid",
-      "byteLength": 103,
-      "gitBlobSha1": "fc35f1931c9c4f7b3961c19d3025363016c41539",
-      "sha256": "04592ec3f305b7d5833260bd796e494c6c865995d2781ef3d25a733ac38006df"
+      "path": "sound/songs/midi/se_ball_bounce_3.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_bounce_4.mid",
-      "byteLength": 103,
-      "gitBlobSha1": "b0f5561b993a423b734395da0a9c2473cee2d249",
-      "sha256": "1789325a77a48646461e6ea3157c27a5577532a3a04aae84286a166833d1618b"
+      "path": "sound/songs/midi/se_ball_bounce_4.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_click.mid",
-      "byteLength": 159,
-      "gitBlobSha1": "1f7131444fc5a244df09cce9387f7e228bb3c9bb",
-      "sha256": "835af2f03f8a8f06ff97d99399112df5cecfbb3172efe01d710b620553468844"
+      "path": "sound/songs/midi/se_ball_click.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_open.mid",
-      "byteLength": 181,
-      "gitBlobSha1": "669bed70026aefd558fc4f8f3687425d21ee9351",
-      "sha256": "37c908953ae593f40e9bf438018caca0b36bb2f09417b4877a7876da219ea6ba"
+      "path": "sound/songs/midi/se_ball_open.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_throw.mid",
-      "byteLength": 133,
-      "gitBlobSha1": "171f45a5ac9e982794f6eb2d01bce12315f8fa23",
-      "sha256": "1f652e5964bdc81357093f2e754aafea689ab219fe2d4ec8ff304aec9c57a84c"
+      "path": "sound/songs/midi/se_ball_throw.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_tray_ball.mid",
-      "byteLength": 88,
-      "gitBlobSha1": "8526da9c679daab8a4ca6d1b0573d25b86566587",
-      "sha256": "5b455b2c3cce832733e380db6d4c093ba036c6bde7a1af290da761141cb7faae"
+      "path": "sound/songs/midi/se_ball_tray_ball.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_tray_enter.mid",
-      "byteLength": 153,
-      "gitBlobSha1": "c88e2a8ea33fc617095e26e0041cfa6882d3ce76",
-      "sha256": "7d6a220377a383258e65d833b60b9e9d0dca11056e17444750e0e70bef12531e"
+      "path": "sound/songs/midi/se_ball_tray_enter.mid"
     },
     {
-      "path": "sound/songs/midi/se_ball_tray_exit.mid",
-      "byteLength": 78,
-      "gitBlobSha1": "a4c2a51d75126aef71c8c70ef93c72e51d7f03f5",
-      "sha256": "004136ecf31ad4ee3674c7f22c5145d7ec159b59def2965eb7f0152717c17eab"
+      "path": "sound/songs/midi/se_ball_tray_exit.mid"
     },
     {
-      "path": "sound/songs/midi/se_click.mid",
-      "byteLength": 84,
-      "gitBlobSha1": "baa73e0c65b70048a3ca6e8987ff64a2633837bb",
-      "sha256": "88c96f06e4a5b858e740499e388d6930f74a10729341c02204e04d2fb14cb20e"
+      "path": "sound/songs/midi/se_click.mid"
     },
     {
-      "path": "sound/songs/midi/se_dex_page.mid",
-      "byteLength": 132,
-      "gitBlobSha1": "a1799c5231e4edf8d0d1267df6eb603c2ff2a407",
-      "sha256": "9cdd578df23796708f6b35beb3b11de89ccfcbafc4cbb7a5d6518fad58a7e79f"
+      "path": "sound/songs/midi/se_dex_page.mid"
     },
     {
-      "path": "sound/songs/midi/se_dex_scroll.mid",
-      "byteLength": 100,
-      "gitBlobSha1": "254b7c787ec1cf742af75ef179731e87be7a1719",
-      "sha256": "92c83cfbb7f124a6b1fcc693e188ef8b6f55147a0723784892d78ebe3eef96df"
+      "path": "sound/songs/midi/se_dex_scroll.mid"
     },
     {
-      "path": "sound/songs/midi/se_dex_search.mid",
-      "byteLength": 1023,
-      "gitBlobSha1": "1869374af41f19439633a37430d44fd943a73a2e",
-      "sha256": "834bb40336c9a8d31b655419b20fc7bf00d215a31a23f4f4e7794c736bbf1ade"
+      "path": "sound/songs/midi/se_dex_search.mid"
     },
     {
-      "path": "sound/songs/midi/se_door.mid",
-      "byteLength": 168,
-      "gitBlobSha1": "82ffd2ebe88ad323b6dcc68e26876d4f1c7e3b88",
-      "sha256": "318cc27c39809e94dcee7d52f69821eac8d7a95c699749caa9a4ff8ae6dd71e7"
+      "path": "sound/songs/midi/se_door.mid"
     },
     {
-      "path": "sound/songs/midi/se_effective.mid",
-      "byteLength": 123,
-      "gitBlobSha1": "d98bd00272d1a55e7e59be5fd6c26437c72c333f",
-      "sha256": "25d3e7be684eb213ea77cd16de40f22271a0467f1b95d8e10f648099885889c0"
+      "path": "sound/songs/midi/se_effective.mid"
     },
     {
-      "path": "sound/songs/midi/se_exit.mid",
-      "byteLength": 124,
-      "gitBlobSha1": "575307d86cfa5a06137b65f0c3aa4eb3fee77a79",
-      "sha256": "2643684d5d2dce85ec336cfbb61255feecb31e59aea2183face32eb1d5ce19c9"
+      "path": "sound/songs/midi/se_exit.mid"
     },
     {
-      "path": "sound/songs/midi/se_exp.mid",
-      "byteLength": 621,
-      "gitBlobSha1": "fa75616b5c9142952edb9338cf379b2119d9d270",
-      "sha256": "738caa45c2bdf7a2c415f34353d5268af00155e72987fa4c299deee8b81227b5"
+      "path": "sound/songs/midi/se_exp.mid"
     },
     {
-      "path": "sound/songs/midi/se_exp_max.mid",
-      "byteLength": 138,
-      "gitBlobSha1": "8772e915e56f7b849b5c1a4b352d1db0e607ad52",
-      "sha256": "1b5c67cb576069b4f4aba92260110b22ec13d84f0c5babe220f9030d3f4c9b73"
+      "path": "sound/songs/midi/se_exp_max.mid"
     },
     {
-      "path": "sound/songs/midi/se_faint.mid",
-      "byteLength": 161,
-      "gitBlobSha1": "b6a0df4c8c188d85e9f53ea123041a52f4c8ae92",
-      "sha256": "9a23b5c41a0b7ab2e7b5c57566e04f66a7fa9547e6a3c42c9aa38befcdef603c"
+      "path": "sound/songs/midi/se_faint.mid"
     },
     {
-      "path": "sound/songs/midi/se_field_poison.mid",
-      "byteLength": 107,
-      "gitBlobSha1": "83841203a2e1da987bec361aba54a91995db66b3",
-      "sha256": "0705d7793b059525603a5c4c3836a70c23e91425d1799d3cda5ec8f62d2bfbaa"
+      "path": "sound/songs/midi/se_field_poison.mid"
     },
     {
-      "path": "sound/songs/midi/se_flee.mid",
-      "byteLength": 164,
-      "gitBlobSha1": "faf37d5294932f0269de38b209a05fbe7f2745e4",
-      "sha256": "ee880ce09d9eca2b00003c8b874137cef1a7a508ba1140abbc205ac7dfe3d618"
+      "path": "sound/songs/midi/se_flee.mid"
     },
     {
-      "path": "sound/songs/midi/se_help_close.mid",
-      "byteLength": 236,
-      "gitBlobSha1": "56c1a1ae51a447b87c19e6b3e0243fa4be1cf5cc",
-      "sha256": "bd7eb97932109b9d28de24fb9c68bc247f5b13b265d7e9965d8635ddfff3b1cc"
+      "path": "sound/songs/midi/se_help_close.mid"
     },
     {
-      "path": "sound/songs/midi/se_help_error.mid",
-      "byteLength": 159,
-      "gitBlobSha1": "fbd39323a5aa6d130312a94b571046b1870604ce",
-      "sha256": "64467835dc8956ddd6949f549199a9f9ecdb587573678568118fe62e3dc7fe7b"
+      "path": "sound/songs/midi/se_help_error.mid"
     },
     {
-      "path": "sound/songs/midi/se_help_open.mid",
-      "byteLength": 236,
-      "gitBlobSha1": "daf797bbe9695644dd22ceeb153398cf08d45483",
-      "sha256": "3c0e56b95d7d234563e95870e684a62c8cab9a5ab3b2daeca20093b724043869"
+      "path": "sound/songs/midi/se_help_open.mid"
     },
     {
-      "path": "sound/songs/midi/se_ledge.mid",
-      "byteLength": 83,
-      "gitBlobSha1": "61eae0318ea6e024b932f6590044ecdb05280bf4",
-      "sha256": "52d5059ae976d10ab45a471908522eac6a39a1daa625174e3722474f2288a77b"
+      "path": "sound/songs/midi/se_ledge.mid"
     },
     {
-      "path": "sound/songs/midi/se_low_health.mid",
-      "byteLength": 106,
-      "gitBlobSha1": "3676a4a0442b25dd760f67d66e49f1f75ba31616",
-      "sha256": "00aaca0f39d2725907092c7ce2cb766ca9e80e06898ec28436601044029c1086"
+      "path": "sound/songs/midi/se_low_health.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_bind.mid",
-      "byteLength": 174,
-      "gitBlobSha1": "eec8ccae97e610b548b1f3222c7f0b5428b6be6b",
-      "sha256": "0e7122d89f931f76defb1b2c92b531242d6f7fc30be724981fc2e20bab5514e3"
+      "path": "sound/songs/midi/se_m_bind.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_bubble.mid",
-      "byteLength": 120,
-      "gitBlobSha1": "bfd259e4880fcf2569e3d01675fced0073d7e22e",
-      "sha256": "c9a4a781b7d58c6e19dca457800770c52ea21fedfc3f8ed17d2eb06b6af3ed4d"
+      "path": "sound/songs/midi/se_m_bubble.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_bubble2.mid",
-      "byteLength": 115,
-      "gitBlobSha1": "1b4197e7166982af88f547239651d0b3732d237e",
-      "sha256": "061065b243f546e9ab4a93b1ab28600b3a78150e5c4a796dfc5ae7a42213c2be"
+      "path": "sound/songs/midi/se_m_bubble2.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_bubble3.mid",
-      "byteLength": 128,
-      "gitBlobSha1": "9d65ba21863ca5113f56aebe3ca63f5aee868b3f",
-      "sha256": "4f7a373813828d8e247fb183901ad8ec12e751091bf5d17b3001c98c41a8a178"
+      "path": "sound/songs/midi/se_m_bubble3.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_comet_punch.mid",
-      "byteLength": 172,
-      "gitBlobSha1": "a27538d817926c1d58e42a69f84d8b02c11b4e36",
-      "sha256": "c611f2186d53f3f9ac5dae78e74c815ffdfd0a9ef33c326c57a59599d4b0d2b8"
+      "path": "sound/songs/midi/se_m_comet_punch.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_crabhammer.mid",
-      "byteLength": 128,
-      "gitBlobSha1": "1f52315098aae1502c3f2981458317ee12baa8c5",
-      "sha256": "3df1853b6a2ce4cfc4c9fbf5ed441c2c724bb77fd1b3c69c6a2418c99a7bc820"
+      "path": "sound/songs/midi/se_m_crabhammer.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_double_slap.mid",
-      "byteLength": 113,
-      "gitBlobSha1": "80e7a52a755fe952c1f1c8992d517ba340e7955c",
-      "sha256": "2596ff0d13e5f2528b4cee2beb1ac85142f89cfea3107d43169fa1df080767b5"
+      "path": "sound/songs/midi/se_m_double_slap.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_ember.mid",
-      "byteLength": 120,
-      "gitBlobSha1": "2c686616a64b12992af9fa6c5147d01f25290308",
-      "sha256": "d6dc7700022d385fa25c5efa81047422ba4551aecedc27584659c08058c9e6d2"
+      "path": "sound/songs/midi/se_m_ember.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_flame_wheel.mid",
-      "byteLength": 255,
-      "gitBlobSha1": "ad469af35cc23730490dc064613247c43f5d97d9",
-      "sha256": "429b8931910c1ca88a72cbe3bd09755a441dec4f44decbdfac5149b04392ae79"
+      "path": "sound/songs/midi/se_m_flame_wheel.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_gust.mid",
-      "byteLength": 218,
-      "gitBlobSha1": "8bf167109a094b8ff9fe698fb8c89f4161dccc7e",
-      "sha256": "386270752168ebd902cc455cb457f7f695804ce84c0f58a61be125febbeac75c"
+      "path": "sound/songs/midi/se_m_gust.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_gust2.mid",
-      "byteLength": 128,
-      "gitBlobSha1": "6dd7020f92cf93cba6aadbe827e5ac87f38a62cb",
-      "sha256": "aabdfa6ade58002f3d62ebe7bbd4298e621790ca527fab66e3d2d2b8e8bf0eb1"
+      "path": "sound/songs/midi/se_m_gust2.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_harden.mid",
-      "byteLength": 147,
-      "gitBlobSha1": "c363300d058369a457432adf3763a99885ced324",
-      "sha256": "d10454632e8e9491e52bddd5b78bf9817cc503384087bb2c5b070e8677be8201"
+      "path": "sound/songs/midi/se_m_harden.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_horn_attack.mid",
-      "byteLength": 148,
-      "gitBlobSha1": "426cdfea4a7783544448d4a8d6642ab455a0d47a",
-      "sha256": "baca885b8d8c5d28277c396c48466916cba43eaa34f48ffa5074f888b8b02d69"
+      "path": "sound/songs/midi/se_m_horn_attack.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_hyper_beam.mid",
-      "byteLength": 233,
-      "gitBlobSha1": "559f11026c2bf87c73b248b8bfe95b845e9970e3",
-      "sha256": "4e00120435d1cf1e01f5283c6dcee369b1160e227b30080cf1b048bba8fb6819"
+      "path": "sound/songs/midi/se_m_hyper_beam.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_jump_kick.mid",
-      "byteLength": 141,
-      "gitBlobSha1": "d43366801aa54a55c534f1414a94166131949d83",
-      "sha256": "a7b8cd1d27f5a3d7f5ec90b54ee0a868e94f4e90cf3be70584162c02685711c8"
+      "path": "sound/songs/midi/se_m_jump_kick.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_leer.mid",
-      "byteLength": 245,
-      "gitBlobSha1": "b4487672298a728689c360385a63e94b573613b4",
-      "sha256": "6d82fb2d534d889240819f35f7d7c29c72eec755b6b1de1536da473b763f3844"
+      "path": "sound/songs/midi/se_m_leer.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_poison_powder.mid",
-      "byteLength": 127,
-      "gitBlobSha1": "a1ad27fee736df5f9d79b3a3cee5332b843ef26f",
-      "sha256": "ccdd14a8dd1af6c8e680f36e0c56d9fe98e41cd907222b865275bbc4056c2eed"
+      "path": "sound/songs/midi/se_m_poison_powder.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_razor_wind2.mid",
-      "byteLength": 121,
-      "gitBlobSha1": "09e8d4c5d1ec924e52ff270a3b98167c4f6b2071",
-      "sha256": "d959b3a3ce3249a11e6ab08b81d71706f4dc9a753b0c80b972e59c58e53fdb0f"
+      "path": "sound/songs/midi/se_m_razor_wind2.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_rock_throw.mid",
-      "byteLength": 156,
-      "gitBlobSha1": "af0c6905a323856b1545183303da2eb66f1333a4",
-      "sha256": "6a7bebf9bdef1e1f56f1a91da8fbe263fcb00d6a3c4ab51f099268fda3da6a74"
+      "path": "sound/songs/midi/se_m_rock_throw.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_sand_attack.mid",
-      "byteLength": 198,
-      "gitBlobSha1": "7a053f799122b9e32c59370b84b44e2d3dda895b",
-      "sha256": "82706aa09283b5796b2dd3d49a21d2b25b7f0112ab89180e07781d08a5edb2f1"
+      "path": "sound/songs/midi/se_m_sand_attack.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_scratch.mid",
-      "byteLength": 153,
-      "gitBlobSha1": "4b3c1cfcfdd381d4450ee0aa54f4b86f6c9ef673",
-      "sha256": "699d97e73429020569687f5b0ab61e373c892421b02930f0a8de622915c53682"
+      "path": "sound/songs/midi/se_m_scratch.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_stat_decrease.mid",
-      "byteLength": 846,
-      "gitBlobSha1": "6da846a9eb6328f80ff5b8cf7b3413ee0b1c3a95",
-      "sha256": "cf183ae1ff3369a385bc5f65ec706ba639f354245c717f93ea3cb686481fcd2b"
+      "path": "sound/songs/midi/se_m_stat_decrease.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_stat_increase.mid",
-      "byteLength": 870,
-      "gitBlobSha1": "3cb86950d51ecb2c89f3e17169652b19fd58cef5",
-      "sha256": "e24f2ee7a41e48e37b36d8b9747f1bcf49f76f4f8e0b7115cb93bf1efa5801f8"
+      "path": "sound/songs/midi/se_m_stat_increase.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_strength.mid",
-      "byteLength": 224,
-      "gitBlobSha1": "956119f6875ba5fca851b725d69e9437c5f44857",
-      "sha256": "b3d00179e34f4c303d81180787322ad0c1e66f191bc9124da79ea8c5f3287f90"
+      "path": "sound/songs/midi/se_m_strength.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_string_shot.mid",
-      "byteLength": 168,
-      "gitBlobSha1": "bebbaeef89bdf84b973b751d391d97d250229265",
-      "sha256": "9924a8b8d5f4b0f203dde878c2eecf9cdd08902af24cc2f374f1edcf6ebe6d18"
+      "path": "sound/songs/midi/se_m_string_shot.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_string_shot2.mid",
-      "byteLength": 369,
-      "gitBlobSha1": "5f7f5eb108d5646ca4d71d1c7213db818b668a6b",
-      "sha256": "d2b9616afd01382b378eceb585bdea11fbc6177bbfa5bdc9515b65133e1bd4fd"
+      "path": "sound/songs/midi/se_m_string_shot2.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_supersonic.mid",
-      "byteLength": 428,
-      "gitBlobSha1": "73ec2782e06ec5e57bc1d6f76261800455699a06",
-      "sha256": "42491a2e4b5fa526f3dcaff1dae53d933b72c5df76285cedef21c7cd468a8601"
+      "path": "sound/songs/midi/se_m_supersonic.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_tail_whip.mid",
-      "byteLength": 136,
-      "gitBlobSha1": "771581ce07af1ed0b919e027ac00bff54b18fcaa",
-      "sha256": "ade00718e6bf3a9056eb5561502257043abf13cb7b49a9b8a73f4b407ea8a818"
+      "path": "sound/songs/midi/se_m_tail_whip.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_toxic.mid",
-      "byteLength": 235,
-      "gitBlobSha1": "27a7d2c7e95db7281864ef5ad25685b30d1209ba",
-      "sha256": "668e1eb21922c155c8b2acedc35041de024696a8e239d6077950553356305542"
+      "path": "sound/songs/midi/se_m_toxic.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_vital_throw2.mid",
-      "byteLength": 258,
-      "gitBlobSha1": "b6e1dc48dffd91631194ce465ea9545b7a1f8422",
-      "sha256": "ca698c14d97f7c0012f978e51a6e2868f03b8566c22fc4ffd2ccf470b8905d49"
+      "path": "sound/songs/midi/se_m_vital_throw2.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_wing_attack.mid",
-      "byteLength": 284,
-      "gitBlobSha1": "459e7240613a9aa62d9c623aa7e6686d69e01fdd",
-      "sha256": "506ec7914e5e410422a3b3e80754fb475b5d4c7f42dead9031b3d8cf242e0a1b"
+      "path": "sound/songs/midi/se_m_wing_attack.mid"
     },
     {
-      "path": "sound/songs/midi/se_not_effective.mid",
-      "byteLength": 103,
-      "gitBlobSha1": "34aafbb184344ef5ca924d9237d99cf191761343",
-      "sha256": "3e1c034ba93b3bcb388fb1558d5537ee33171404b65d2b0d083ab78025a5c1af"
+      "path": "sound/songs/midi/se_not_effective.mid"
     },
     {
-      "path": "sound/songs/midi/se_pc_login.mid",
-      "byteLength": 108,
-      "gitBlobSha1": "f46a52e7a9a2fb31fa64e579a02e5b593a87b382",
-      "sha256": "52ee6345bbc3b4a0b444baff317ff4fcd9e5d4c1ba393b40850a3fd51f01ac70"
+      "path": "sound/songs/midi/se_pc_login.mid"
     },
     {
-      "path": "sound/songs/midi/se_pc_off.mid",
-      "byteLength": 96,
-      "gitBlobSha1": "acb0960ff01f71319649a8a8de547efb78e976f2",
-      "sha256": "c166d6746e8fcf95e55c317734d6bc9b4cdd75c91b3f89f5765e10ef7b149d42"
+      "path": "sound/songs/midi/se_pc_off.mid"
     },
     {
-      "path": "sound/songs/midi/se_pc_on.mid",
-      "byteLength": 148,
-      "gitBlobSha1": "86c0fa1c663d25ea51de5576a9f40378fb8506d0",
-      "sha256": "672490fca6e381fd4f0d9d1fd0707b77714c52905f15321cb7206c6fb6864def"
+      "path": "sound/songs/midi/se_pc_on.mid"
     },
     {
-      "path": "sound/songs/midi/se_save.mid",
-      "byteLength": 179,
-      "gitBlobSha1": "5c4b90697b167a12c75c58e788c472958376fa7c",
-      "sha256": "73a59104049fd7d4ad5e9b59e7ec0a33a060795c02faf9361049ffd057b5b153"
+      "path": "sound/songs/midi/se_save.mid"
     },
     {
-      "path": "sound/songs/midi/se_select.mid",
-      "byteLength": 107,
-      "gitBlobSha1": "5f38c82d7287de397323767ab003daa922635cbe",
-      "sha256": "f5393c12d1e28a551db9dae8278dc6f499151fb730c01a0ad08d413ff5adc10b"
+      "path": "sound/songs/midi/se_select.mid"
     },
     {
-      "path": "sound/songs/midi/se_shop.mid",
-      "byteLength": 92,
-      "gitBlobSha1": "3125930ba86f481418d3332dc4abfd0b53b6e7b9",
-      "sha256": "31dc4466f11e56b8780537c440766cdda479b837f868a285b641080caff6803c"
+      "path": "sound/songs/midi/se_shop.mid"
     },
     {
-      "path": "sound/songs/midi/se_super_effective.mid",
-      "byteLength": 271,
-      "gitBlobSha1": "e70b129014ed6caca47faab71241d7fc4504801f",
-      "sha256": "3786e07d95bb0e28b2d28a28b5b88a3160d664c220d335368748f698df16a899"
+      "path": "sound/songs/midi/se_super_effective.mid"
     },
     {
-      "path": "sound/songs/midi/se_switch.mid",
-      "byteLength": 87,
-      "gitBlobSha1": "3d909dadb30270969a39745d209965975e03343c",
-      "sha256": "c2851539c843abe6717dd34bbdaec29bed62c3bf41ad906ec9666c4a9459e212"
+      "path": "sound/songs/midi/se_switch.mid"
     },
     {
-      "path": "sound/songs/midi/se_use_item.mid",
-      "byteLength": 91,
-      "gitBlobSha1": "4375a705d79e11da4f581e4673554cade3506263",
-      "sha256": "d06f92a9cd9b6941f9c2873a238df136220b13614302690cd4b51220e5f454bb"
+      "path": "sound/songs/midi/se_use_item.mid"
     },
     {
-      "path": "sound/songs/midi/se_wall_hit.mid",
-      "byteLength": 72,
-      "gitBlobSha1": "8197a78a5e68fe90a5d6e584036e2f6e888b8b41",
-      "sha256": "7865974b35361102210ac992d50f145a32b50e836accf983945cd03a94a4c40e"
+      "path": "sound/songs/midi/se_wall_hit.mid"
     },
     {
-      "path": "sound/songs/midi/se_win_open.mid",
-      "byteLength": 76,
-      "gitBlobSha1": "a6a7c4ea0cc82c93d692a34c674474eb9f3f87c2",
-      "sha256": "c43c945c433a88874b2c72318468d6e1c2f71e4631215ef567bb1c6c6410c333"
+      "path": "sound/songs/midi/se_win_open.mid"
     },
     {
-      "path": "sound/voice_groups.inc",
-      "byteLength": 350627,
-      "gitBlobSha1": "5bccf12b2047ee95be3032e79a36cbafdf0d3143",
-      "sha256": "8e0825c62716927ca2f673274353235d4119d786d31186efd515869803f7f0d3"
+      "path": "sound/voice_groups.inc"
     },
     {
-      "path": "src/battle_anim_sound_tasks.c",
-      "byteLength": 10204,
-      "gitBlobSha1": "87dc92b1515195b746d30a9743b4fac9ce71d8a1",
-      "sha256": "6a3535cb3eac400deaf86aa59159fd0a66445174e9c5a598bea822f286b6cd73"
+      "path": "src/battle_anim_sound_tasks.c"
     },
     {
-      "path": "src/battle_main.c",
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/battle_message.c",
-      "byteLength": 151308,
-      "gitBlobSha1": "a6392be9a91cd8171d920ff45c684b627b0c98b1",
-      "sha256": "257be289b56dbfe63da9cf956a87d91219d45eb72a47d2dff681caa684f2b6de"
+      "path": "src/battle_message.c"
     },
     {
-      "path": "src/battle_script_commands.c",
-      "byteLength": 355862,
-      "gitBlobSha1": "67f90a37044db87091b2174f78fe1e31ad2ef10d",
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3"
+      "path": "src/battle_script_commands.c"
     },
     {
-      "path": "src/battle_setup.c",
-      "byteLength": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "src/battle_setup.c"
     },
     {
-      "path": "src/evolution_scene.c",
-      "byteLength": 63119,
-      "gitBlobSha1": "442aa15ff743d34ab2be2f644c6edc73a7199137",
-      "sha256": "36d3fe95bd25ce07a4085ba6e9b7b68dc9014b349e0e4106d42e28b7b40155fb"
+      "path": "src/evolution_scene.c"
     },
     {
-      "path": "src/field_effect.c",
-      "byteLength": 125868,
-      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be",
-      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a"
+      "path": "src/field_effect.c"
     },
     {
-      "path": "src/m4a.c",
-      "byteLength": 46383,
-      "gitBlobSha1": "ebd3afe291b6c4e9f2ac62250a87c6a0482086d4",
-      "sha256": "db6bea72be02870e19a9c95f5895c6f34b75af36e6bf7f3b75b10f5b4877fe92"
+      "path": "src/m4a.c"
     },
     {
-      "path": "src/m4a_1.s",
-      "byteLength": 39597,
-      "gitBlobSha1": "4cbbf08129ed6f85f3c730429f6b430627109117",
-      "sha256": "348ed832bb30b24fa3ad9cf90242cc708ad972c19dff43b4dd550de4e5716dbf"
+      "path": "src/m4a_1.s"
     },
     {
-      "path": "src/m4a_tables.c",
-      "byteLength": 6171,
-      "gitBlobSha1": "286e938bad9cb498a6838ab18c3d2138ce2f5d28",
-      "sha256": "2ce635365c1dcd704a1c7fc7d24e9e92589c87fee2152676edfaf7319e48a07b"
+      "path": "src/m4a_tables.c"
     },
     {
-      "path": "src/main.c",
-      "byteLength": 11699,
-      "gitBlobSha1": "542b0f5d16dd93107523d11163bfcb70a42b707a",
-      "sha256": "0bfa6c662b1cbd49bd31020b6c2509208004611e6701ad64badce22eca371139"
+      "path": "src/main.c"
     },
     {
-      "path": "src/overworld.c",
-      "byteLength": 103643,
-      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
-      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2"
+      "path": "src/overworld.c"
     },
     {
-      "path": "src/pokeball.c",
-      "byteLength": 40613,
-      "gitBlobSha1": "a77401d44dffc4b3fbc6b49b3395c937d19a4bb8",
-      "sha256": "8f455e556937c5f7629df42133656475f253cced2021c6c17bfe27c554845fd5"
+      "path": "src/pokeball.c"
     },
     {
-      "path": "src/pokemon.c",
-      "byteLength": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "src/scrcmd.c",
-      "byteLength": 56954,
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+      "path": "src/scrcmd.c"
     },
     {
-      "path": "src/sound.c",
-      "byteLength": 15232,
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e",
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+      "path": "src/sound.c"
     },
     {
-      "path": "src/text.c",
-      "byteLength": 63210,
-      "gitBlobSha1": "f3eef07ce6dea8269980a5ecfdd6902c1c9c13d2",
-      "sha256": "5696f49443eeaaac74b530421ac7f0cbfc71996c557399583788111c322dd80c"
+      "path": "src/text.c"
     },
     {
-      "path": "tools/mid2agb/agb.cpp",
-      "byteLength": 16817,
-      "gitBlobSha1": "5b7924d01f9b43fe229dd291728447a48b02192c",
-      "sha256": "a8064724fd3a4d74f83a314a26fceaa08b790869100ded6fe43ded0b63ed3bab"
+      "path": "tools/mid2agb/agb.cpp"
     },
     {
-      "path": "tools/mid2agb/main.cpp",
-      "byteLength": 6531,
-      "gitBlobSha1": "ea2b294ac8611a52d427b149876fcb8b7ad00af6",
-      "sha256": "f26184a31bd3af612f9c91bfae369da0507023eece40f7e57f21df27c4224b89"
+      "path": "tools/mid2agb/main.cpp"
     },
     {
-      "path": "tools/mid2agb/midi.cpp",
-      "byteLength": 23227,
-      "gitBlobSha1": "fa7d9ce28574275001948ad9a06935c4f09cebe6",
-      "sha256": "53b1f3a275a6dc2b2ba3184e7c74b79b602eefed1ae3e2ee01f51d09e5206982"
+      "path": "tools/mid2agb/midi.cpp"
     },
     {
-      "path": "tools/wav2agb/converter.cpp",
-      "byteLength": 16069,
-      "gitBlobSha1": "c826e0a784bcf673157ca55497bfdc4f5169d416",
-      "sha256": "717d3ba8897af54425226104ca2441e2483584b05d15950279667c2950146664"
+      "path": "tools/wav2agb/converter.cpp"
     },
     {
-      "path": "tools/wav2agb/wav_file.cpp",
-      "byteLength": 14498,
-      "gitBlobSha1": "79cfed5d79bd39ca03926540d3c25bd0c38773ad",
-      "sha256": "a511c1253b854d08052c3a9824f204034e12667f1e67e3175ee881c69df14aa6"
+      "path": "tools/wav2agb/wav_file.cpp"
     }
   ],
-  "fullSourceHash": "15250b6f4f7788716ce590c6e648ddb326869f16138000857d335219f6928f82",
   "limitations": [
     "MIDI seconds are nominal SMF timing, not m4a frame timing or PCM end/loop positions.",
     "PCM source measurement does not establish rendered m4a output, audible playback or listening acceptance.",

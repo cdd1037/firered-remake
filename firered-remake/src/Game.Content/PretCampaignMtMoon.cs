@@ -36,11 +36,9 @@ public sealed partial class PretCampaignCatalog
             if(entries.Length!=1)throw new InvalidDataException("mtmoon_encounter_table_missing");
             var entry=entries[0];var source=entry.GetProperty("sourceRef");var table=entry.GetProperty("table");
             var land=table.GetProperty("land_mons");var weights=entry.GetProperty("slotWeights").EnumerateArray().Select(v=>v.GetInt32()).ToArray();
-            var parsed=new EarlyLandEncounterTable(PretMtMoonRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),
-                source.GetProperty("commit").GetString()!,source.GetProperty("path").GetString()!,source.GetProperty("symbol").GetString()!,source.GetProperty("sha256").GetString()!,
-                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),weights[i])).ToImmutableArray());
+            var parsed=new EarlyLandEncounterTable(PretMtMoonRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),                source.GetProperty("commit").GetString()!,source.GetProperty("path").GetString()!,source.GetProperty("symbol").GetString()!,                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),weights[i])).ToImmutableArray());
             EarlyLandEncounterRules.ValidateTable(parsed);
-            if(parsed.Map!=expected.Map||parsed.SourceCommit!=expected.SourceCommit||parsed.SourcePath!=expected.SourcePath||parsed.SourceSymbol!=expected.SourceSymbol||parsed.SourceSha256!=expected.SourceSha256||parsed.RawEncounterRate!=expected.RawEncounterRate||!parsed.Slots.SequenceEqual(expected.Slots))
+            if(parsed.Map!=expected.Map||parsed.SourcePath!=expected.SourcePath||parsed.SourceSymbol!=expected.SourceSymbol||parsed.RawEncounterRate!=expected.RawEncounterRate||!parsed.Slots.SequenceEqual(expected.Slots))
                 throw new InvalidDataException("mtmoon_encounter_source_differs");
             tables=tables.Add(parsed.Map,parsed);
         }

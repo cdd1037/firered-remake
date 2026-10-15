@@ -5,292 +5,148 @@
   "profile": "firered-old-man-tutorial-v1",
   "files": [
     {
-      "path": "src/pokemon.c",
-      "bytes": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "src/random.c",
-      "bytes": 323,
-      "gitBlobSha1": "635a1df5a59fa42a88f30ad884405db2bde95ea5",
-      "sha256": "e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2"
+      "path": "src/random.c"
     },
     {
-      "path": "include/random.h",
-      "bytes": 669,
-      "gitBlobSha1": "fd6b88ad0af62f22951e6e81fa21e38b12480ece",
-      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9"
+      "path": "include/random.h"
     },
     {
-      "path": "include/constants/pokemon.h",
-      "bytes": 10894,
-      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b",
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+      "path": "include/constants/pokemon.h"
     },
     {
-      "path": "include/constants/species.h",
-      "bytes": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "include/constants/moves.h",
-      "bytes": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      "path": "include/constants/moves.h"
     },
     {
-      "path": "include/constants/items.h",
-      "bytes": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      "path": "include/constants/items.h"
     },
     {
-      "path": "include/constants/battle.h",
-      "bytes": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      "path": "include/constants/battle.h"
     },
     {
-      "path": "include/constants/battle_string_ids.h",
-      "bytes": 20327,
-      "gitBlobSha1": "24cc01ca6a6a8876db103861e7298b57a4e47c14",
-      "sha256": "4766f2d31c75a31c0cc2e2dfc7be80b9887820ca3153aabdfb93cb2c3419f246"
+      "path": "include/constants/battle_string_ids.h"
     },
     {
-      "path": "src/data/pokemon/species_info.h",
-      "bytes": 342600,
-      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2",
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+      "path": "src/data/pokemon/species_info.h"
     },
     {
-      "path": "src/data/pokemon/level_up_learnset_pointers.h",
-      "bytes": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      "path": "src/data/pokemon/level_up_learnset_pointers.h"
     },
     {
-      "path": "src/data/pokemon/level_up_learnsets.h",
-      "bytes": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      "path": "src/data/pokemon/level_up_learnsets.h"
     },
     {
-      "path": "src/data/pokemon/evolution.h",
-      "bytes": 12282,
-      "gitBlobSha1": "c9b0cf716d6e25cfa054e988115af60f61bd206e",
-      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+      "path": "src/data/pokemon/evolution.h"
     },
     {
-      "path": "src/data/battle_moves.h",
-      "bytes": 121457,
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+      "path": "src/data/battle_moves.h"
     },
     {
-      "path": "src/data/text/species_names.h",
-      "bytes": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      "path": "src/data/text/species_names.h"
     },
     {
-      "path": "src/data/text/move_names.h",
-      "bytes": 15252,
-      "gitBlobSha1": "d63ddb871e07fab66ffcaf8ec051e86b54e1fe71",
-      "sha256": "d45a00ae94f33e294dd2fa742db1397fe1559fcf42ae553c8983f92d384b6bef"
+      "path": "src/data/text/move_names.h"
     },
     {
-      "path": "src/data/items.json",
-      "bytes": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      "path": "src/data/items.json"
     },
     {
-      "path": "src/battle_setup.c",
-      "bytes": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "src/battle_setup.c"
     },
     {
-      "path": "src/battle_controllers.c",
-      "bytes": 46191,
-      "gitBlobSha1": "a2662c39a6f66adb48b38d7b5797f8be54a6cc6b",
-      "sha256": "7980699ddf2836e07fc3e3a6396c7cc4d6ca1d944be112a82726e8a931e98e4e"
+      "path": "src/battle_controllers.c"
     },
     {
-      "path": "src/battle_ai_script_commands.c",
-      "bytes": 55810,
-      "gitBlobSha1": "4df9977bc53d57ce380644ccd1cb6c3f7e7767c9",
-      "sha256": "0b297aa963de7a7810d3b635a95e9ab68a2594aaf4bec77d946a0e068d3a47c4"
+      "path": "src/battle_ai_script_commands.c"
     },
     {
-      "path": "src/battle_main.c",
-      "bytes": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/battle_controller_opponent.c",
-      "bytes": 73524,
-      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
-      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+      "path": "src/battle_controller_opponent.c"
     },
     {
-      "path": "src/battle_controller_oak_old_man.c",
-      "bytes": 89439,
-      "gitBlobSha1": "71926e57906f3fca9a034e9ce0d0714ecfb13062",
-      "sha256": "33d81123fe5f6512b7b31a006d3fc272c75af42ccd4495bab4e4069891ed55f8"
+      "path": "src/battle_controller_oak_old_man.c"
     },
     {
-      "path": "src/battle_script_commands.c",
-      "bytes": 355862,
-      "gitBlobSha1": "67f90a37044db87091b2174f78fe1e31ad2ef10d",
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3"
+      "path": "src/battle_script_commands.c"
     },
     {
-      "path": "src/battle_message.c",
-      "bytes": 151308,
-      "gitBlobSha1": "a6392be9a91cd8171d920ff45c684b627b0c98b1",
-      "sha256": "257be289b56dbfe63da9cf956a87d91219d45eb72a47d2dff681caa684f2b6de"
+      "path": "src/battle_message.c"
     },
     {
-      "path": "src/battle_bg.c",
-      "bytes": 39359,
-      "gitBlobSha1": "3bcc500805622febd3892580da14f65ea2746a6f",
-      "sha256": "9e608837b0f13ba6782d8f3d4f2590ee273b5c7fb8b6275514c89cd780b474f0"
+      "path": "src/battle_bg.c"
     },
     {
-      "path": "src/item_menu.c",
-      "bytes": 79276,
-      "gitBlobSha1": "8f52ead00ec1e34df74dadb71aa23439d507b073",
-      "sha256": "155bd6b0943e8df179cbc9892e573cee52fd8f67a1d0dd39b962bdbec2e3546a"
+      "path": "src/item_menu.c"
     },
     {
-      "path": "src/data.c",
-      "bytes": 8769,
-      "gitBlobSha1": "498f281b48ca9bbbcba32a9200e981316a3d54bf",
-      "sha256": "e1efcc8e6bde1c187fe51dafb0bdb8dbdc5ae3761c44f6488f4f42dbf19a71f9"
+      "path": "src/data.c"
     },
     {
-      "path": "src/data/trainer_graphics/back_pic_tables.h",
-      "bytes": 1150,
-      "gitBlobSha1": "116dd02dedaa234a63c65bd7e50e3b31644fe5de",
-      "sha256": "985bdf4ab23cf95bd66082e09111e69295c8f1c045d4a8bb605fff701da6573c"
+      "path": "src/data/trainer_graphics/back_pic_tables.h"
     },
     {
-      "path": "src/data/trainer_graphics/back_pic_anims.h",
-      "bytes": 1954,
-      "gitBlobSha1": "833a0cb2856b39c618d21e8b3bee134e8f1a5f1c",
-      "sha256": "712fdb86073e21e77fa8a22aa92e9850c53f889814d7de44050260ea95d707c2"
+      "path": "src/data/trainer_graphics/back_pic_anims.h"
     },
     {
-      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
-      "bytes": 44879,
-      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
-      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h"
     },
     {
-      "path": "src/pokeball.c",
-      "bytes": 40613,
-      "gitBlobSha1": "a77401d44dffc4b3fbc6b49b3395c937d19a4bb8",
-      "sha256": "8f455e556937c5f7629df42133656475f253cced2021c6c17bfe27c554845fd5"
+      "path": "src/pokeball.c"
     },
     {
-      "path": "src/battle_gfx_sfx_util.c",
-      "bytes": 38339,
-      "gitBlobSha1": "a79a092540657589707da9666b64b39a23f300a9",
-      "sha256": "c4c009637d19310decd87c89781f6798f677e727fc6acd0a0e6071d74ae23b3b"
+      "path": "src/battle_gfx_sfx_util.c"
     },
     {
-      "path": "src/overworld.c",
-      "bytes": 103643,
-      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
-      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2"
+      "path": "src/overworld.c"
     },
     {
-      "path": "src/field_fadetransition.c",
-      "bytes": 25263,
-      "gitBlobSha1": "f392a06d5c05966441ab448fec9f5a06c908c489",
-      "sha256": "6fa3cb3b827470de6c4942b0296bf823529faec41c6473ffe88675a44114851e"
+      "path": "src/field_fadetransition.c"
     },
     {
-      "path": "src/scrcmd.c",
-      "bytes": 56954,
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+      "path": "src/scrcmd.c"
     },
     {
-      "path": "src/script.c",
-      "bytes": 13713,
-      "gitBlobSha1": "d0433bdda062b138e53d1a1d3184b4566ad7d9dc",
-      "sha256": "1cc4aade1f821e5f218ba7c191b1217e5a3cf942d0bfd0f32f775ce1f808437c"
+      "path": "src/script.c"
     },
     {
-      "path": "src/field_control_avatar.c",
-      "bytes": 40928,
-      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
-      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d"
+      "path": "src/field_control_avatar.c"
     },
     {
-      "path": "data/maps/ViridianCity/scripts.inc",
-      "bytes": 6935,
-      "gitBlobSha1": "d6c71605bcf13a788d28426039ce9bd1f95e75f7",
-      "sha256": "2f23053443e399983324ed7461923bba1267ca3d3c8961ce33a6d10be140f72d"
+      "path": "data/maps/ViridianCity/scripts.inc"
     },
     {
-      "path": "data/maps/ViridianCity/map.json",
-      "bytes": 7211,
-      "gitBlobSha1": "465d593cef4ceafc486be8b6ed5fe1b5b63cb140",
-      "sha256": "5ce922b65f76335556ace9a047feeb1968854b604c8469c39cbbd60985f61bc1"
+      "path": "data/maps/ViridianCity/map.json"
     },
     {
-      "path": "data/battle_scripts_2.s",
-      "bytes": 6616,
-      "gitBlobSha1": "6f41e3ce138c9276bdef763e1a659b37124ae768",
-      "sha256": "83e1211907cc9a21cd1d94e65a065af5abf683d4e88e7ee690e78faf40651133"
+      "path": "data/battle_scripts_2.s"
     },
     {
-      "path": "graphics/trainers/back_pics/old_man_back_pic.png",
-      "bytes": 1739,
-      "gitBlobSha1": "07793a1be2bd8c26dd836ff6b21261203b31b39e",
-      "sha256": "6ae4a5c88efc5784c21b93c8abc0aceb5801dae161f04b1f97054e2a993a5191"
+      "path": "graphics/trainers/back_pics/old_man_back_pic.png"
     },
     {
-      "path": "graphics/trainers/palettes/old_man_back_pic.pal",
-      "bytes": 199,
-      "gitBlobSha1": "85cf9ff8daa4469064465b16f6ddf983b724404e",
-      "sha256": "fdd4e1f72a3224e4e8855effa5a15b1be72db8bf9b6fd4f2c7091afcb661dc86"
+      "path": "graphics/trainers/palettes/old_man_back_pic.pal"
     },
     {
-      "path": "graphics/pokemon/weedle/front.png",
-      "bytes": 471,
-      "gitBlobSha1": "db4bc28f237f3832c72ad76036e084323a04b4ab",
-      "sha256": "9ee9225c4b1bba90d4aa78b33f8757fa4282a6ad7b81df62fa371f570176a9bd"
+      "path": "graphics/pokemon/weedle/front.png"
     },
     {
-      "path": "graphics/pokemon/weedle/normal.pal",
-      "bytes": 196,
-      "gitBlobSha1": "32a4c1222da15699ef3c889e9fda01d24f88844a",
-      "sha256": "8b6d6c0e6e5d699a3c927838dbac063271dcf792b26f663e1e6944b40de7085d"
+      "path": "graphics/pokemon/weedle/normal.pal"
     },
     {
-      "path": "graphics/pokemon/weedle/shiny.pal",
-      "bytes": 198,
-      "gitBlobSha1": "8d572dc1980033b67947ce9b805c30d7d372c000",
-      "sha256": "93bcd781cab961ad495ddd017ba7cb416801cc485f5d575f45df4737425513ca"
+      "path": "graphics/pokemon/weedle/shiny.pal"
     },
     {
-      "path": "graphics/items/icons/teachy_tv.png",
-      "bytes": 333,
-      "gitBlobSha1": "43a1588350b984cfcd103cda29cf334183a7623e",
-      "sha256": "9e4df7294dcc5bf7b9a47925b83349f027688d3cc10049eb5781aec53f2ff0e6"
+      "path": "graphics/items/icons/teachy_tv.png"
     },
     {
-      "path": "graphics/items/icon_palettes/teachy_tv.pal",
-      "bytes": 192,
-      "gitBlobSha1": "7de3e7f778c3b000561f16f2abb4a6477d7ba8c9",
-      "sha256": "cfd47738a84eb8a77eccc28f2bfd096e8f347afb43e4fc3b2248fe8fda2212e6"
+      "path": "graphics/items/icon_palettes/teachy_tv.pal"
     }
   ]
 }

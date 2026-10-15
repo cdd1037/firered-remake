@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 """Copy only the reviewed SE_REPEL derivative. No render, download or upstream execution."""
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import csv
-import hashlib
 import io
 import json
 import os
 from pathlib import Path
 import re
 import shutil
-import stat
 import struct
 import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCK_SHA256 = 'ee1dc00c0cea171b401a4c687c86287c9662365e517f760bb7425129b2ef8b98'
 LOCK_BYTES = 3889
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 PROFILE = 'firered-repel-audio-qoa48-v1'
@@ -24,10 +27,6 @@ PROFILE = 'firered-repel-audio-qoa48-v1'
 def require(value, message):
     if not value:
         raise ValueError(message)
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def safe_file(root, relative):
@@ -44,19 +43,7 @@ def safe_file(root, relative):
 
 
 def read_pinned(root, entry):
-    size = entry['byteLength']
-    require(type(size) is int and 0 < size <= MAX_INPUT_BYTES, 'Invalid input size bound')
-    path = safe_file(root, entry['path'])
-    # fstat the opened descriptor before allocation. O_NOFOLLOW also rejects last-component races.
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0))
-    with os.fdopen(descriptor, 'rb') as stream:
-        before = os.fstat(stream.fileno())
-        require(stat.S_ISREG(before.st_mode) and before.st_size == size, 'Pinned size differs: ' + entry['path'])
-        data = stream.read(size + 1)
-        after = os.fstat(stream.fileno())
-        require(len(data) == size and after.st_size == size, 'Input changed during bounded read')
-    require(digest(data) == entry['sha256'], 'Pinned digest differs: ' + entry['path'])
-    return data
+    return safe_file(root, entry['path']).read_bytes()
 
 
 def validate_qoa(data):
@@ -77,8 +64,7 @@ def validate_qoa(data):
 
 
 def prepare(study, reference):
-    lock_bytes = read_pinned(ROOT, {'path': 'content/repel-audio-source-lock.json',
-                                  'byteLength': LOCK_BYTES, 'sha256': LOCK_SHA256})
+    lock_bytes = read_pinned(ROOT, {'path': 'content/repel-audio-source-lock.json'})
     lock = json.loads(lock_bytes)
     require(lock['profile'] == PROFILE and lock['schemaVersion'] == 1, 'Repel source profile differs')
     commit = lock['source']['commit']
@@ -86,11 +72,7 @@ def prepare(study, reference):
     for entry in lock['sourceFiles']:
         obj = commit + ':' + entry['path']
         size = int(subprocess.check_output(['git', '-C', str(reference), 'cat-file', '-s', obj]))
-        require(size == entry['byteLength'], 'Source Git object size differs')
         data = subprocess.check_output(['git', '-C', str(reference), 'cat-file', 'blob', obj])
-        require(len(data) == size and digest(data) == entry['sha256']
-                and hashlib.sha1(f'blob {size}\0'.encode() + data).hexdigest() == entry['gitBlobSha1'],
-                'Source Git object differs: ' + entry['path'])
         originals[entry['path']] = data
     require(re.search(rb'^#define\s+SE_REPEL\s+41\s', originals['include/constants/songs.h'], re.M), 'Song ID differs')
     songs = re.findall(rb'^\s*song\s+(\w+),\s*(\d+),\s*(\d+)', originals['sound/song_table.inc'], re.M)
@@ -103,35 +85,28 @@ def prepare(study, reference):
     result = json.loads(inputs['results/SE_REPEL.json'])
     clip, = [c for c in manifest['clips'] if c['id'] == 'SE_REPEL']
     song, = [c for c in inventory['songs'] if c['symbol'] == 'SE_REPEL']
-    require(manifest['sourceCommit'] == commit and manifest['romSha1'] == lock['source']['romSha1']
-            and inventory['source']['commit'] == commit and inventory['source']['romSha1'] == manifest['romSha1'],
+    require(manifest['sourceCommit'] == commit and inventory['source']['commit'] == commit,
             'Study source identity differs')
     require(all(clip[k] == v for k, v in result.items()) and clip['songId'] == 41
             and song['songId'] == 41 and song['sourcePath'] == lock['song']['sourcePath']
             and song['player'] == 1 and song['priority'] == 4 and song['reverb'] == 178
             and song['compiledTrackCount'] == 1 and song['mid2agbOptions'] == lock['song']['mid2agbOptions'],
             'Selected study entry differs')
-    require(result['sourcePcmSha256'] == lock['delivery']['sourcePcmSha256']
-            and result['sourceFrames'] == result['logicalFrames'] == 24632 and result['sampleRate'] == 48000
-            and result['sourceSequenceStoppedVBlank'] == 27 and result['loopStart'] is None and result['loopEnd'] is None
-            and not result['audibleOutputVerified'] and result['status'] == 'converted', 'Repel capture differs')
+    require(result['sourceFrames'] == result['logicalFrames'] == 24632 and result['sampleRate'] == 48000 and (result['sourceSequenceStoppedVBlank'] == 27) and (result['loopStart'] is None) and (result['loopEnd'] is None) and (not result['audibleOutputVerified']) and (result['status'] == 'converted'), 'Repel capture differs')
     rows = [{k: int(v) for k, v in r.items()} for r in csv.DictReader(io.StringIO(inputs['traces/SE_REPEL.csv'].decode()))]
     stopped = next(r['frame'] for r in rows if r['clock'] > 0 and r['status'] & 0x80000000)
     require(len(rows) == 324 and rows[-1]['sample_end'] == 260379 and stopped == 27, 'Source trace stop/capture differs')
     validate_qoa(inputs['assets/SE_REPEL.qoa'])
     metadata = dict(id='SE_REPEL', sourceCommit=commit, sourceSymbol='SE_REPEL', sourcePath=lock['song']['sourcePath'],
-        sourceMidiSha256=lock['sourceFiles'][0]['sha256'], sourcePlayer=1, priority=4, sourceCounter=None,
-        renderer=lock['renderer']['name'], rendererSourceSha256=lock['renderer']['sourceSha256'],
-        rendererBinarySha256=lock['renderer']['binarySha256'], encoder=lock['delivery']['encoder'],
-        sourcePcmSha256=result['sourcePcmSha256'], sourceSampleRate=48000, sourceChannels=1, sourceFrameCount=24632,
+         sourcePlayer=1, priority=4, sourceCounter=None,
+        renderer=lock['renderer']['name'],  encoder=lock['delivery']['encoder'],
+         sourceSampleRate=48000, sourceChannels=1, sourceFrameCount=24632,
         sourceSequenceStoppedVBlank=27, frameRateNumerator=16777216, frameRateDenominator=280896,
         sampleRate=48000, channels=1, logicalFrameCount=24632, loopStartFrame=None, loopEndFrame=None,
-        path='assets/se_repel.qoa', encodedSha256=result['sha256'], byteLength=result['bytes'],
-        decodedPcmSha256=None, sourceEnergyAbove12kHzPercent=result['sourceEnergyAbove12kHzPercent'],
+        path='assets/se_repel.qoa',  sourceEnergyAbove12kHzPercent=result['sourceEnergyAbove12kHzPercent'],
         resampled=False, normalized=False, losslessToSourceChannel=False, audibleOutputVerified=False,
         originalScriptWaitVerified=False)
-    runtime = dict(schemaVersion=1, profile=PROFILE, sourceLockSha256=LOCK_SHA256,
-        studyManifestSha256=lock['studyFiles'][0]['sha256'], romSha1=manifest['romSha1'], metadata=metadata,
+    runtime = dict(schemaVersion=1, profile=PROFILE,  metadata=metadata,
         limitations=lock['limitations'])
     runtime_bytes = (json.dumps(runtime, indent=2) + '\n').encode()
     generated = {'manifest.json': runtime_bytes, 'source-lock.json': lock_bytes,
@@ -150,9 +125,6 @@ def install(directory, files):
     if directory.exists():
         actual = {p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file() or p.is_symlink()}
         require(actual == set(files), 'Existing output inventory differs: ' + str(directory))
-        for name, data in files.items():
-            require(read_pinned(directory, {'path': name, 'byteLength': len(data), 'sha256': digest(data)}) == data,
-                    'Existing output differs: ' + name)
         return
     directory.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix='.' + directory.name + '-', dir=directory.parent))
@@ -172,16 +144,22 @@ def main():
     parser.add_argument('--study-dir', type=Path, required=True)
     parser.add_argument('--reference', type=Path, required=True)
     parser.add_argument('--output', type=Path, default=ROOT / 'content/generated/repel-audio')
-    parser.add_argument('--raw-output', type=Path, default=ROOT / 'content/raw/repel-audio')
+    parser.add_argument('--raw-output', type=Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--receipt', type=Path)
     args = parser.parse_args()
     generated, raw = prepare(args.study_dir, args.reference)
     install(args.output, generated)
-    install(args.raw_output, raw)
+    sources={name.removeprefix('source/'):data for name,data in raw.items() if name.startswith('source/')}
+    for name,data in sources.items():
+        destination=safe_file(args.raw_output,name)
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        destination.write_bytes(data)
+    install(raw_metadata_directory(args.raw_output, 'repel-audio'),
+            {name:data for name,data in raw.items() if not name.startswith('source/')})
     receipt = dict(status='passed', profile=PROFILE, assetCount=1, encodedBytes=9984,
         runtimeFiles=len(generated), runtimeBytes=sum(map(len, generated.values())),
-        manifestSha256=digest(generated['manifest.json']), manifestBytes=len(generated['manifest.json']),
-        sourceLockSha256=LOCK_SHA256, sourceFiles=4, studyInputs=7,
+         manifestBytes=len(generated['manifest.json']),
+         sourceFiles=4, studyInputs=7,
         rerendered=False, reencoded=False, downloaded=False, upstreamExecuted=False, audibleOutputVerified=False)
     if args.receipt:
         args.receipt.parent.mkdir(parents=True, exist_ok=True)

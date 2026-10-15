@@ -13,7 +13,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteGroundSpread(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot initialTarget,
         int slot, PokemonMoveDefinition move, string purpose)
     {
-        if (!HasGroundSpreadRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasGroundSpreadRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_ground_spread_definition");
         SpendEarlyPartyPp(actor, initialTarget, slot, move);
         int? power = null;

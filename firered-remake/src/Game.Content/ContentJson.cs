@@ -88,16 +88,6 @@ public static class ContentJson
     public static string Sha256(ContentBundle bundle)
         => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(ToCanonicalJson(bundle))));
 
-    internal static string SourceRecordSha256<T>(T value)
-    {
-        var element = JsonSerializer.SerializeToElement(value, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
-            WriteCanonical(writer, element);
-        return Convert.ToHexStringLower(SHA256.HashData(stream.ToArray()));
-    }
-
     internal static string Canonicalize(JsonElement value)
     {
         using var stream = new MemoryStream();

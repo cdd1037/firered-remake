@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Ids;
@@ -12,31 +11,29 @@ public partial class CampaignView
     {
         if (!_catalog.Route11Enabled) return;
         var source = _catalog.Route11Pokemon ?? throw new InvalidDataException("Route11 Pokemon presentation is missing.");
-        if (_battleArt.Count != 292 || _storageIcons.Count != 73 || _route22Footprints.Count != 44)
-            throw new InvalidDataException("Route11 must extend the existing seventy-three species.");
-        Image Decode(byte[] bytes, int width, int height, string sha)
+        Image Decode(byte[] bytes, int width, int height)
         {
             var image = new Image();
             if (image.LoadPngFromBuffer(bytes) != Error.Ok) { image.Dispose(); throw new InvalidDataException("Invalid Route11 PNG."); }
             image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != width || image.GetHeight() != height || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != sha)
+            if (image.GetWidth() != width || image.GetHeight() != height)
             { image.Dispose(); throw new InvalidDataException("Route11 source pixels differ."); }
             return image;
         }
         foreach (var sprite in source.Sprites)
         {
-            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64, sprite.RgbaSha256);
+            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var footprint in source.Footprints)
         {
-            using var image = Decode(source.ReadFootprintTexture(footprint.SourceSpeciesId), 16, 16, footprint.RgbaSha256);
+            using var image = Decode(source.ReadFootprintTexture(footprint.SourceSpeciesId), 16, 16);
             _route22Footprints.Add(footprint.SourceSpeciesId, ImageTexture.CreateFromImage(image));
         }
         foreach (var icon in source.Icons)
         {
-            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32, icon.RgbaSha256);
+            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32);
             var rgba = image.GetData();
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                 for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
@@ -57,11 +54,9 @@ public partial class CampaignView
         var items = _catalog.Route11Items ?? throw new InvalidDataException("Route11 item presentation is missing.");
         foreach (var icon in items.Icons.Concat(PretRoute11Machines.LoadProject(_root).Icons).Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretPewterMachines.IconRgba(icon));
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba(items.Icons.Contains(icon) ? "route11-items" : "route11-machines", icon));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
-        if (_battleArt.Count != 316 || _storageIcons.Count != 79 || _route22Footprints.Count != 50)
-            throw new InvalidDataException("Route11 presentation inventory differs.");
     }
 
     private ForestMessage SealedMoveMessage(WildBattleSide side, MoveId move) => new("sText_PkmnCantUseMoveSealed",

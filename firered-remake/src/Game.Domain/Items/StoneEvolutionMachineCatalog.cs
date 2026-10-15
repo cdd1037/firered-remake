@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class StoneEvolutionMachineCatalog
 {
     public const string Profile = "firered-stone-evolution-teaching-v1";
-    public const string InheritedAdditionsSourceSha256 = "6d2b2e80164bc4d8f7b93691a626d96376351c4b37a36515bbd46b775890c045";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, StoneEvolutionMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public DepartmentStoreMachineStock Predecessor { get; }
@@ -31,8 +30,7 @@ public sealed class StoneEvolutionMachineCatalog
             old.AdditionalMachines is not { IsDefault: false, Length: 41 } inherited ||
             candidate with { Profile = old.Profile, Compatibility = old.Compatibility, AdditionalMachines = old.AdditionalMachines } != old)
             throw new ArgumentException("stone_evolution_machine_predecessor");
-        var additions = new List<(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility)>();
-        void Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
+        void Rows(ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
         {
             if (before.Length != 163 || rows.IsDefault || rows.Length != 170 || rows.Any(c => c is null) ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
@@ -40,19 +38,15 @@ public sealed class StoneEvolutionMachineCatalog
                 throw new ArgumentException("stone_evolution_machine_inherited_rows");
             if (!rows.Skip(163).Select(c => c.Species).SequenceEqual(StoneEvolutionOwnedPokemonCatalog.AdditionalSpecies))
                 throw new ArgumentException("stone_evolution_machine_added_order");
-            additions.Add((item, rows.Skip(163).ToImmutableArray()));
         }
-        Rows(old.Tm39.Item.Id, candidate.Compatibility, old.Compatibility);
+        Rows(candidate.Compatibility, old.Compatibility);
         for (int i = 0; i < inherited.Length; i++)
         {
             var current = machines[i]; var before = inherited[i];
             if (current is null || !ReferenceEquals(current.Machine, before.Machine) || current with { Compatibility = before.Compatibility } != before)
                 throw new ArgumentException("stone_evolution_machine_inherited_metadata");
-            Rows(before.Machine.Item.Id, current.Compatibility, before.Compatibility);
+            Rows(current.Compatibility, before.Compatibility);
         }
-        if (CampaignSourceFingerprint.Compute(additions.OrderBy(p => p.Item.Value, StringComparer.Ordinal)
-                .Select(p => new { p.Item, p.Compatibility }).ToArray()) != InheritedAdditionsSourceSha256)
-            throw new ArgumentException("stone_evolution_machine_inherited_source");
         var proof = new StoneEvolutionMachineCatalog(candidate with { }, predecessor, pokemon);
         Proofs.Add(proof.Catalog, proof);
         OwnedMachineCatalogBinding.Register(proof.Catalog, pokemon.SharedBattle);

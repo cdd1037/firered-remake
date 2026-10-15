@@ -20,10 +20,7 @@ public static class PretRoute3Encounters
         var land = table.GetProperty("land_mons");
         var weights = entry.GetProperty("slotWeights").EnumerateArray().Select(v => v.GetInt32()).ToArray();
         if (weights.Length != 12) throw new InvalidDataException("Route3 requires twelve source encounter weights.");
-        var result = new EarlyLandEncounterTable(PretRoute3Region.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),
-            source.GetProperty("commit").GetString()!, source.GetProperty("path").GetString()!,
-            source.GetProperty("symbol").GetString()!, source.GetProperty("sha256").GetString()!,
-            land.GetProperty("encounter_rate").GetInt32(), land.GetProperty("mons").EnumerateArray().Select((mon, i) =>
+        var result = new EarlyLandEncounterTable(PretRoute3Region.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),            source.GetProperty("commit").GetString()!,source.GetProperty("path").GetString()!,            source.GetProperty("symbol").GetString()!,            land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((mon, i) =>
                 new EarlyLandEncounterSlot(i, new("pret:" + mon.GetProperty("species").GetString()),
                     mon.GetProperty("min_level").GetByte(), mon.GetProperty("max_level").GetByte(), weights[i])).ToImmutableArray());
         EarlyLandEncounterRules.ValidateTable(result);

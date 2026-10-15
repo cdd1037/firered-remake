@@ -2,352 +2,237 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
       "path": "asm/macros/event.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      ]
     },
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      ]
     },
     {
-      "byteLength": 973,
-      "gitBlobSha1": "789caf5b2129a8d537b4e103eb04fffc5601c706",
       "path": "data/maps/SilphCo_10F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "5782ab4256b7ae6121bc3c3503e0d78941e67831985ebd55ec5e492eeccb7d60"
+      ]
     },
     {
-      "byteLength": 3815,
-      "gitBlobSha1": "94aebcc2b04aafaf6a0ad57621afb7db7ad2cdd3",
       "path": "data/maps/SilphCo_11F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "34d6a1075bc50768cd182488907e77e4f46110ba55fae4dec83ff7d96c729339"
+      ]
     },
     {
-      "byteLength": 367,
-      "gitBlobSha1": "16d249cd03487e09e4fbbca5526b0fd7e1c90515",
       "path": "data/maps/SilphCo_1F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f95bd6f58d732abad159850cfd91043241ec6a87b328e4f3a3be0f2dcd157ead"
+      ]
     },
     {
-      "byteLength": 1219,
-      "gitBlobSha1": "9fb2624fdd338b1fc28a907aaf4cbf313dfe6fca",
       "path": "data/maps/SilphCo_2F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "8bca764b3e2e8f6338659b307deb363542daf54e81bb3edf6339c41e63fc75ae"
+      ]
     },
     {
-      "byteLength": 1009,
-      "gitBlobSha1": "1b5510791434acaa9713ab407bb95b086386b017",
       "path": "data/maps/SilphCo_3F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "de8cf2428970d57ee9f6190f5c294f7d8fc1211de3df50f82227c34e5818ff89"
+      ]
     },
     {
-      "byteLength": 1232,
-      "gitBlobSha1": "9b1b7615f92e8a25973eff8f4f1940d61100e016",
       "path": "data/maps/SilphCo_4F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "431c7c8059c14efd11f28b18c4dd69bb7dd2ab9c11447817fb84a46c3a66c77f"
+      ]
     },
     {
-      "byteLength": 1818,
-      "gitBlobSha1": "e8f921d9ad5eff7e6e89eab80dd59728d3fa6507",
       "path": "data/maps/SilphCo_5F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7e1bebe3f4e201970c075c9c6c103790e2ff8891e73b9f5e2ea2321a95d0c73d"
+      ]
     },
     {
-      "byteLength": 2408,
-      "gitBlobSha1": "e19836d27b49a1a1ead9fc430d41a0e7f911598b",
       "path": "data/maps/SilphCo_6F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ff7bdbb55add2b442d0f8f8dba57a972689d63bdea691025a9c08ee2af5a6098"
+      ]
     },
     {
-      "byteLength": 6761,
-      "gitBlobSha1": "7c6898d89aceac4fd3014157bf5a366c223b1327",
       "path": "data/maps/SilphCo_7F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "87760a3d9105e4f441fecd443c67e67fde075a40e4379a5bb2d944fe5b9687c9"
+      ]
     },
     {
-      "byteLength": 1173,
-      "gitBlobSha1": "e27d177e2b1728c4e3445d109bcd87878856f14a",
       "path": "data/maps/SilphCo_8F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7d8a7b1b5cfa5fecdbc79c4d7f9a551d6bd3994592c8504826ab060a82b95f5d"
+      ]
     },
     {
-      "byteLength": 1431,
-      "gitBlobSha1": "a62a85baefb161e010adf242dfb6a8c6b561f022",
       "path": "data/maps/SilphCo_9F/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7bcd8b77e3f16b1a56e697bbad270bedf4ce6408dc87611af1063c1554b4f20d"
+      ]
     },
     {
-      "byteLength": 4817,
-      "gitBlobSha1": "dc6b5cfeee126be2943b5b3b0a65009d896557fb",
       "path": "data/maps/SilphCo_Elevator/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "cf1da1c2b7a3528e800310fd6b043a32a6308959227a235e4c4549c060d252c7"
+      ]
     },
     {
-      "byteLength": 12171,
-      "gitBlobSha1": "25233baa0794d0511f01638676eb4c7803c957e8",
       "path": "data/scripts/item_ball_scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c"
+      ]
     },
     {
-      "byteLength": 21838,
-      "gitBlobSha1": "3771ef33a1fec9aacad85d29ebc96c962cf59261",
       "path": "include/battle.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "bf64a16fb4e660f8a326eb352a511bb9e8fd54a74ebb03e328c08d5a23e5d8fa"
+      ]
     },
     {
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
       "path": "include/constants/battle.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      ]
     },
     {
-      "byteLength": 1436,
-      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
       "path": "include/constants/battle_ai.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+      ]
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
       "path": "include/constants/battle_setup.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+      ]
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
       "path": "include/constants/items.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      ]
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
       "path": "include/constants/moves.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      ]
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
       "path": "include/constants/opponents.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      ]
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      ]
     },
     {
-      "byteLength": 20887,
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
       "path": "include/constants/trainers.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+      ]
     },
     {
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
       "path": "src/battle_main.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      ]
     },
     {
-      "byteLength": 121457,
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
       "path": "src/data/battle_moves.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+      ]
     },
     {
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
       "path": "src/data/items.json",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      ]
     },
     {
-      "byteLength": 36157,
-      "gitBlobSha1": "6b4ebc1f7c0c5f72eb28f656c31be10f86e02094",
       "path": "src/data/party_menu.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7"
+      ]
     },
     {
-      "byteLength": 12282,
-      "gitBlobSha1": "c9b0cf716d6e25cfa054e988115af60f61bd206e",
       "path": "src/data/pokemon/evolution.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+      ]
     },
     {
-      "byteLength": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
       "path": "src/data/pokemon/level_up_learnset_pointers.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      ]
     },
     {
-      "byteLength": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
       "path": "src/data/pokemon/level_up_learnsets.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      ]
     },
     {
-      "byteLength": 342600,
-      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2",
       "path": "src/data/pokemon/species_info.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+      ]
     },
     {
-      "byteLength": 559340,
-      "gitBlobSha1": "0aa21e85be2f970536c8ed901c556013c16327e5",
       "path": "src/data/pokemon/tmhm_learnsets.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+      ]
     },
     {
-      "byteLength": 15252,
-      "gitBlobSha1": "d63ddb871e07fab66ffcaf8ec051e86b54e1fe71",
       "path": "src/data/text/move_names.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d45a00ae94f33e294dd2fa742db1397fe1559fcf42ae553c8983f92d384b6bef"
+      ]
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
       "path": "src/data/text/species_names.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      ]
     },
     {
-      "byteLength": 242256,
-      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
       "path": "src/data/trainer_parties.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+      ]
     },
     {
-      "byteLength": 302118,
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
       "path": "src/data/trainers.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+      ]
     },
     {
-      "byteLength": 62085,
-      "gitBlobSha1": "8ece0e12d5fa10eb170bb6ad3ecf9a2ccf1ca624",
       "path": "src/move_descriptions.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+      ]
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-silph-catalogs-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

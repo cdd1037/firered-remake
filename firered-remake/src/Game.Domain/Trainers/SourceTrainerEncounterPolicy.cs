@@ -74,7 +74,7 @@ public static class SourceTrainerEncounterPolicy
             encounter.Inventory.Trainer != proof.Trainer.Id || encounter.StaleCurrentMove.Value is null)
             return "source_trainer_encounter_context";
         if (encounter.StaleCurrentMove != SourceTrainerEncounterPolicy.NoMove && encounter.StaleCurrentMove != WildBattleRules.StruggleMove &&
-            (!catalog.Moves.TryGetValue(encounter.StaleCurrentMove, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))
+            (!catalog.Moves.TryGetValue(encounter.StaleCurrentMove, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
             return "source_trainer_encounter_stale_move";
         if (encounter.KnownPlayerAbility is { } ability &&
             SourceMechanicsCatalog.For(catalog)?.Abilities.ContainsKey(ability) != true)

@@ -22,10 +22,9 @@ public partial class SynthSourceAudioPlayer
         }
         var extension = JsonSerializer.Deserialize<SynthManifest>(art.Files[PretGameCornerPresentation.Base + "synth-manifest.json"], options)
             ?? throw new InvalidDataException("Game Corner synth extension missing.");
-        if (extension.SchemaVersion != 1 || extension.SourceCommit != PretGameCornerPresentation.SourceCommit || extension.Cues is not [var normal] ||
+        if (extension.SchemaVersion != 1 || extension.Cues is not [var normal] ||
             normal.Id != "CRY_DRATINI_NORMAL" || normal.Species != 147 || normal.CryMode != 0 || normal.SourcePlayer != 4 || normal.Priority != 10 ||
-            normal.SourceSymbol != "SPECIES_DRATINI" || normal.SourcePath != "sound/direct_sound_samples/cries/dratini.wav" ||
-            normal.SourceCommit != PretGameCornerPresentation.SourceCommit || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
+            normal.SourceSymbol != "SPECIES_DRATINI" || normal.SourcePath != "sound/direct_sound_samples/cries/dratini.wav" || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
             _catalog.ContainsKey(normal.Id))
             throw new InvalidDataException("Game Corner Dratini source cue binding differs.");
         _catalog.Add(normal.Id, normal);

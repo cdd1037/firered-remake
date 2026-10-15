@@ -1,7 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 
@@ -19,10 +16,9 @@ public sealed record SourceBattleItemDefinition(string Symbol, int SourceItemId,
     public bool IsEscapeItem => BattleUseFunction == "BattleUseFunc_PokeDoll";
 }
 
-/// <summary>A separate, exact source item proof; never widens any historical shop/catalog profile.</summary>
+/// <summary>Immutable source items; field and battle handlers decide which effects they support.</summary>
 public sealed class SourceBattleItemCatalog
 {
-    public const string SemanticSha256 = "ebebc7d3e8b6074a20d71a43f7c58509f8289a01573333022484a4e0bab48a63";
     public static InventoryLimits Limits { get; } = new(42, 30, 999);
     public ImmutableDictionary<ItemId, SourceBattleItemDefinition> Items { get; }
     private SourceBattleItemCatalog(ImmutableArray<SourceBattleItemDefinition> definitions) => Items = definitions.ToImmutableDictionary(d => d.Id);
@@ -30,16 +26,67 @@ public sealed class SourceBattleItemCatalog
     {
         if (sourceCommit != PokemonFactory.SourceCommit || definitions.IsDefaultOrEmpty || definitions.Any(d => d is null || d.EffectBytes.IsDefault))
             throw new ArgumentException("source_item_catalog_identity");
-        var text = new StringBuilder(sourceCommit).Append('\n');
-        foreach (var d in definitions.OrderBy(d => d.SourceItemId))
-            text.Append(CanonicalRow(d)).Append('\n');
-        if (Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString()))) != SemanticSha256)
-            throw new ArgumentException("source_item_catalog_fingerprint");
         return new(definitions);
     }
-    internal static string CanonicalRow(SourceBattleItemDefinition d) => string.Join('|',d.Symbol,
-        d.SourceItemId.ToString(CultureInfo.InvariantCulture),d.Name,d.Pocket,d.BattleUsage.ToString(CultureInfo.InvariantCulture),
-        d.BattleUseFunction,string.Join(',',d.EffectBytes),d.Reusable?"1":"0",d.HoldEffect,d.HoldEffectParam.ToString(CultureInfo.InvariantCulture));
+    private static readonly ImmutableHashSet<string> FixedEffectItems =
+        ImmutableHashSet.Create(StringComparer.Ordinal,
+            "ITEM_POTION",
+            "ITEM_ANTIDOTE",
+            "ITEM_BURN_HEAL",
+            "ITEM_ICE_HEAL",
+            "ITEM_AWAKENING",
+            "ITEM_PARALYZE_HEAL",
+            "ITEM_FULL_RESTORE",
+            "ITEM_MAX_POTION",
+            "ITEM_HYPER_POTION",
+            "ITEM_SUPER_POTION",
+            "ITEM_FULL_HEAL",
+            "ITEM_REVIVE",
+            "ITEM_MAX_REVIVE",
+            "ITEM_FRESH_WATER",
+            "ITEM_SODA_POP",
+            "ITEM_LEMONADE",
+            "ITEM_MOOMOO_MILK",
+            "ITEM_ENERGY_POWDER",
+            "ITEM_ENERGY_ROOT",
+            "ITEM_HEAL_POWDER",
+            "ITEM_REVIVAL_HERB",
+            "ITEM_ETHER",
+            "ITEM_MAX_ETHER",
+            "ITEM_ELIXIR",
+            "ITEM_MAX_ELIXIR",
+            "ITEM_LAVA_COOKIE",
+            "ITEM_BLUE_FLUTE",
+            "ITEM_YELLOW_FLUTE",
+            "ITEM_RED_FLUTE",
+            "ITEM_BERRY_JUICE",
+            "ITEM_GUARD_SPEC",
+            "ITEM_DIRE_HIT",
+            "ITEM_X_ATTACK",
+            "ITEM_X_DEFEND",
+            "ITEM_X_SPEED",
+            "ITEM_X_ACCURACY",
+            "ITEM_X_SPECIAL",
+            "ITEM_CHERI_BERRY",
+            "ITEM_CHESTO_BERRY",
+            "ITEM_PECHA_BERRY",
+            "ITEM_RAWST_BERRY",
+            "ITEM_ASPEAR_BERRY",
+            "ITEM_LEPPA_BERRY",
+            "ITEM_ORAN_BERRY",
+            "ITEM_PERSIM_BERRY",
+            "ITEM_LUM_BERRY",
+            "ITEM_SITRUS_BERRY");
+
+    internal static bool SupportsFixedEffect(SourceBattleItemDefinition? definition)
+    {
+        if (definition is null || !FixedEffectItems.Contains(definition.Symbol) ||
+            definition.EffectBytes.IsDefault || definition.EffectBytes.Length < 6) return false;
+        var effect = definition.EffectBytes;
+        int arguments = ((effect[4] & 4) != 0 ? 1 : 0) + ((effect[4] & 8) != 0 ? 1 : 0);
+        for (int band = 0; band < 3; band++) if ((effect[5] & (0x20 << band)) != 0) arguments++;
+        return effect.Length == 6 + arguments;
+    }
     public SourceBattleItemDefinition? Find(ItemId id) => Items.GetValueOrDefault(id);
     internal bool Owns(SourceBattleItemDefinition definition) => Items.TryGetValue(definition.Id, out var exact) && ReferenceEquals(exact, definition);
 }

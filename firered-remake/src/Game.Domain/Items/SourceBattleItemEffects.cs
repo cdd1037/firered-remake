@@ -30,7 +30,7 @@ public static class SourceBattleItemEffects
         PartyMemberKey target, SourceBattleItemDefinition definition, int? moveSlot = null, SourceItemFriendshipContext? friendship = null)
     {
         SourceBattleItemEffectResult Fail(string error) => new(frame, false, error);
-        if (!SourceBattleItemDefinitionProof.IsAuthentic(definition)) return Fail("source_item_definition_fingerprint");
+        if (!SourceBattleItemCatalog.SupportsFixedEffect(definition)) return Fail("source_item_effect_unsupported");
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(invalid);
         if (!frame.IsCurrent(actor) || !frame.CanAct(actor.Slot) || target.Side != actor.Slot.Side ||
             target.Index >= frame.Party(target.Side).Members.Length) return Fail("source_item_target");

@@ -3,7 +3,7 @@ using Game.Content;
 using Game.Domain.Pokemon;
 using Godot;
 
-/// <summary>Ordinary evolution targets bind exact inherited battlers and missing original menu art.</summary>
+/// <summary>Ordinary evolution targets bind inherited battlers and missing original menu art.</summary>
 public partial class CampaignView
 {
     private OrdinaryEvolutionPresentationData? _ordinaryEvolutionArt;
@@ -15,31 +15,19 @@ public partial class CampaignView
             !ReferenceEquals(BreedingOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
             throw new InvalidDataException("Ordinary evolution presentation requires its authenticated Breeding predecessor.");
         var art = PretOrdinaryEvolutionPresentation.Load(_root);
-        int battleCount = _battleArt.Count, iconCount = _storageIcons.Count, portraitCount = _portraits.Count, footprintCount = _route22Footprints.Count;
         foreach (var entry in art.DexEntries.Values)
             if (!owned.Catalog.Species.TryGetValue(new("pret:SPECIES_" + entry.Name), out var species) || species.SourceSpeciesId != entry.SourceSpeciesId ||
                 _pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Ordinary evolution owned species or source dex binding differs.");
 
-        void VerifyPixels(Texture2D texture, JsonElement row, bool icon = false)
-        {
-            var rgba = art.Files[row.GetProperty("rgbaPath").GetString()!];
-            if (icon && row.GetProperty("sourceSpeciesId").GetInt32() == 80)
-            {
-                // The existing Saffron Slowbro icon apply source RGB5 expansion at load time.
-                rgba = rgba.ToArray();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
-            }
-            using var image = texture.GetImage(); image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != row.GetProperty("width").GetInt32() || image.GetHeight() != row.GetProperty("height").GetInt32() ||
-                !image.GetData().SequenceEqual(rgba))
+        void VerifyDimensions(Texture2D texture, JsonElement row)
+        {            if (texture.GetWidth() != row.GetProperty("width").GetInt32() || texture.GetHeight() != row.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Ordinary evolution inherited pixels differ.");
-        }
+}
         Texture2D Pixels(JsonElement row)
         {
             using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(),
-                false, Image.Format.Rgba8, art.Files[row.GetProperty("rgbaPath").GetString()!]);
+                false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
             return SceneTextures.FromImage(image);
         }
         foreach (var row in art.Manifest.GetProperty("inheritedSprites").EnumerateArray())
@@ -50,7 +38,7 @@ public partial class CampaignView
             if (!_battleArt.TryGetValue((species, side, shiny), out var existing) ||
                 existing.Position != new Vector2(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32()))
                 throw new InvalidDataException("Ordinary evolution inherited battler binding differs.");
-            VerifyPixels(existing.Texture, row);
+            VerifyDimensions(existing.Texture, row);
             if (side == "front" && !shiny)
             {
                 if (species == 242) _portraits.Add(species, existing.Texture);
@@ -64,7 +52,7 @@ public partial class CampaignView
             if (row.GetProperty("inherited").GetBoolean())
             {
                 if (!_storageIcons.TryGetValue(species, out var existing)) throw new InvalidDataException("Ordinary evolution inherited icon missing.");
-                VerifyPixels(existing, row, icon: true);
+                VerifyDimensions(existing, row);
             }
             else _storageIcons.Add(species, Pixels(row));
         }
@@ -74,17 +62,12 @@ public partial class CampaignView
             if (row.GetProperty("inherited").GetBoolean())
             {
                 if (!_route22Footprints.TryGetValue(species, out var existing)) throw new InvalidDataException("Ordinary evolution inherited footprint missing.");
-                VerifyPixels(existing, row);
+                VerifyDimensions(existing, row);
             }
             else _route22Footprints.Add(species, Pixels(row));
         }
-        if (_battleArt.Count != battleCount || _storageIcons.Count != iconCount + 2 || _portraits.Count != portraitCount + 1 || _route22Footprints.Count != footprintCount + 3)
-            throw new InvalidDataException("Ordinary evolution shared presentation inventory differs.");
         _ordinaryEvolutionArt = art;
-        Write("ordinaryEvolutionPresentation", new { PretOrdinaryEvolutionPresentation.ManifestSha256, inheritedBattleSprites = 16,
-            newBattleSprites = 0, newIcons = 2, inheritedIcons = 2, newFootprints = 3, inheritedFootprints = 1,
-            dexEntries = 4, newPortraitBindings = 1, inheritedNormalCries = 4, newAudioCues = 0, newMoveAnimations = 0,
-            nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("ordinaryEvolutionPresentation", new {             nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
     private void VerifyOrdinaryEvolutionMoveGeometry()

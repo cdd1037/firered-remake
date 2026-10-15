@@ -1,5 +1,9 @@
 # 资源来源、重建与未来公开仓库边界
 
+> 当前资源布局：原始文件使用共享上游路径，转换资源使用共享数值常量、单一紧凑地图和 PNG 图像。运行依赖及本轮验证见 [转换资源收敛](generated-resource-unification.md)、[共享原始资源](shared-raw-resources.md)。下文历史命令不代表旧逐包文件布局仍受支持。
+
+> 2026-10-15：运行时素材身份认证与逐文件 hash/长度门禁已移除。下文旧 hash、锁表及冻结验收叙述仅为早期来源记录；现行加载与重建约定见 [深入精简结果](deep-simplification-20261015.md)。来源版本、输入路径、生成步骤和正常格式检查继续保留。
+
 更新：2026-10-09。本文是工程获取/重建指南和发布准备清单，不是法律意见、素材授权证明或“可直接公开”的承诺。未来 GitHub 应以经过审查的原创实现、工具、来源锁和合成测试为主要内容；原作资源由使用者自行准备符合其适用法律及授权条件的输入，在本地生成。
 
 **当前结论：主仓库不是独立、从零可重建的公开发行包。** 图像/字体/地图已有分批导入工具；音频已完成本地原引擎渲染和冻结导入，但渲染器与参考构建工具仍在仓库外。部分验证依赖本地冻结存档、截图或 golden。不要通过公开恢复归档、整个工作目录或当前 Git 历史来补齐这些依赖。
@@ -202,3 +206,12 @@ python3 scripts/audit-public-resource-boundary.py --history > /tmp/firered-publi
 ## Battle-medicine acceptance fixtures (0604388)
 
 The medicine campaign suite requires three private saves, including the historical `tests/Game.BasicMenuIntegrityAudit.Tests/fixtures/before-liam-shift.json`. Its SHA256 is `3d55f9c358f9a0e8c44da2faaa41a19cfafea833f66904d6673c62d2f2374cea`; the same bytes are retained at `tests/Game.FieldPickupAudit.Tests/fixtures/source-storage.json`. The other two are fixed FieldPickups acceptance outputs (`picked-1001.json` and `upgraded-storage.json`). See the medicine suite README for all hashes and the existing BasicMenu `prepare-fixtures.py` workflow. They are not obtainable from a bare source clone without the authenticated local inputs or retained private archive.
+
+## Shared original source layout
+
+Current source inputs live once at `content/raw/pokefirered/037335f4/`, using
+upstream relative paths. Feature-local raw paths in older reports describe
+historical checkpoints. Use the current importer defaults and recipes; do not
+recreate those duplicate feature directories. See
+[shared-raw-resources.md](shared-raw-resources.md) for the layout and the three
+retained palette variants. Package manifests remain separate from source files.

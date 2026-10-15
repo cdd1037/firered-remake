@@ -42,9 +42,9 @@ def build(root):
   experience=level**3 if fields['growthRate']=='GROWTH_MEDIUM_FAST' else 5*level**3//4
   meta.require(fields['growthRate'] in ('GROWTH_MEDIUM_FAST','GROWTH_SLOW'),'Fixture growth not transcribed')
   fixtures.append(dict(map=mapid,statistics=stats,moves=['pret:'+m for m in moves],ability=ability,experience=experience,initialGlobalSeed=initial,initialRateSeed=0,initialSteps=8,previousBehavior=21,behavior=21,rateThreshold=table['rawEncounterRate']*16,rateSeedAfter=12345,rateCursorAfter=1,slot=slot,species=mon['species']['value'],level=level,selectionTrace=selection,personality=pid,nature=nature,ivs=ivs,globalSeedAfterGeneration=postgeneration,globalCursorAfterGeneration=generationcursor,generationTrace=generation,heldItem='ITEM_NONE',heldRoll=heldroll,heldTrace=draws[-1],globalSeedAfterHeldItem=seed,globalCursorAfterHeldItem=cursor))
- return meta.canonical(dict(schemaVersion=1,sourceCommit=meta.COMMIT,derivation='Independent Python transcription, not original-C differential execution',sourceFiles={p:meta.sha(raw[p]) for p in ('src/wild_encounter.c','src/data/wild_encounters.json')},vectors=fixtures))
+ return meta.canonical(dict(schemaVersion=1,sourceCommit=meta.COMMIT,derivation='Independent Python transcription, not original-C differential execution',sourceFiles=['src/wild_encounter.c','src/data/wild_encounters.json'],vectors=fixtures))
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args();b=build(a.project_root);target=a.project_root/'tests/Game.SurfContent.Tests/source-generation-vectors.json'
  if a.check:meta.require(target.read_bytes()==b,'Generation vectors differ')
  else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
- print(meta.sha(b),len(b))
+ print(len(b))

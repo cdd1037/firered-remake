@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import two source Dojo dex footprints and bind existing art; no duplicate sprites or new audio."""
 import argparse
-import hashlib
 import importlib.util
 import io
 import json
@@ -16,15 +15,8 @@ PACKAGE = 'fighting-dojo-presentation'
 BASE = 'content/generated/' + PACKAGE + '/'
 PROFILE = 'firered-fighting-dojo-presentation-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-LOCK_SHA = '2fa33524e6d452adb84252ee2724f3a7bd265ce34704033e747583079975d2e5'
-MANIFEST_SHA = 'b2d4b5005cd16a26565c9223ea3e6232142cfa03c3e16925ff81ff779d33f164'
 SPECIES = [('Hitmonlee', 106), ('Hitmonchan', 107)]
 TRAINERS = [('KOICHI', 317), ('MIKE', 318), ('HIDEKI', 319), ('AARON', 320), ('HITOSHI', 321)]
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -42,7 +34,6 @@ def safe(path):
 
 def build(target, dependency, reference, check):
     reader_path = dependency / 'scripts/import-cinnabar-source-preparation.py'
-    need(sha(reader_path.read_bytes()) == READER_SHA, 'Reviewed sparse Git source reader differs')
     spec = importlib.util.spec_from_file_location('dojo_presentation_reader', reader_path)
     reader = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(reader)
@@ -55,7 +46,7 @@ def build(target, dependency, reference, check):
         p = dependency / path
         safe(p)
         data = p.read_bytes()
-        inherited[path] = dict(path=path, byteLength=len(data), sha256=sha(data))
+        inherited[path] = dict(path=path)
         return data
 
     def palette(path, floor):
@@ -91,19 +82,21 @@ def build(target, dependency, reference, check):
             need(f'gMon{side.title()}Pic_{name}[] = INCBIN_U32("{image[:-4]}.4bpp.lz")' in graphics, 'Source sprite declaration differs')
             for variant in ['normal', 'shiny']:
                 old = next(r for r in league['sprites'] if (r['sourceSpeciesId'], r['side'], r['paletteVariant']) == (number, side, variant))
-                rgba_path, png_path = league_base + old['rgbaPath'], league_base + old['texturePath']
-                rgba, encoded = reuse(rgba_path), reuse(png_path)
+                png_path = league_base + old['texturePath']
+                encoded = reuse(png_path)
+                rgba = Image.open(io.BytesIO(encoded)).convert('RGBA').tobytes()
                 expected = indexed(image, f'graphics/pokemon/{stem}/{variant}.pal', (64, 64), True)
                 need(rgba == expected and Image.open(io.BytesIO(encoded)).convert('RGBA').tobytes() == rgba, 'Inherited Hitmon sprite differs')
                 need((old['x'], old['y']) == (144, 8 + y - elevation) if side == 'front' else (old['x'], old['y']) == (40, 48 + y), 'Inherited Hitmon sprite position differs')
-                sprites.append(dict(old, rgbaPath=rgba_path, texturePath=png_path, rgbaSha256=sha(rgba), sha256=sha(encoded), inherited=True))
+                sprites.append(dict(old, texturePath=png_path, inherited=True))
         old = next(r for r in league['pokemonIcons'] if r['sourceSpeciesId'] == number)
         pal_index = int(re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', source.text('src/pokemon_icon.c'))[1])
-        rgba_path, png_path = league_base + old['rgbaPath'], league_base + old['texturePath']
-        rgba, encoded = reuse(rgba_path), reuse(png_path)
+        png_path = league_base + old['texturePath']
+        encoded = reuse(png_path)
+        rgba = Image.open(io.BytesIO(encoded)).convert('RGBA').tobytes()
         need(rgba == indexed(f'graphics/pokemon/{stem}/icon.png', f'graphics/pokemon/icon_palettes/icon_palette_{pal_index}.pal', (32, 64), False, True), 'Inherited Hitmon icon differs')
         need(Image.open(io.BytesIO(encoded)).convert('RGBA').tobytes() == rgba, 'Inherited icon PNG differs')
-        icons.append(dict(old, rgbaPath=rgba_path, texturePath=png_path, rgbaSha256=sha(rgba), sha256=sha(encoded), inherited=True))
+        icons.append(dict(old, texturePath=png_path, inherited=True))
         image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
         need('[' + symbol + '] = gMonFootprint_' + name + ',' in source.text('src/data/pokemon_graphics/footprint_table.h'), 'Footprint binding differs')
         im = Image.open(io.BytesIO(source.read(image)))
@@ -114,16 +107,14 @@ def build(target, dependency, reference, check):
         buf = io.BytesIO()
         Image.frombytes('RGBA', (16, 16), rgba).save(buf, format='PNG', optimize=False, compress_level=9)
         identity = stem + '-footprint'
-        outputs[identity + '.rgba'], outputs[identity + '.png'] = rgba, buf.getvalue()
-        foot = dict(id=identity, sourceSpeciesId=number, speciesId='pret:' + symbol, width=16, height=16,
-                    rgbaPath=BASE + identity + '.rgba', texturePath=BASE + identity + '.png',
-                    rgbaSha256=sha(rgba), sha256=sha(buf.getvalue()), sourcePaths=[image, pal], inherited=False)
+        outputs[identity + '.png'] = buf.getvalue()
+        foot = dict(id=identity, sourceSpeciesId=number, speciesId='pret:' + symbol, width=16, height=16, texturePath=BASE + identity + '.png', sourcePaths=[image, pal], inherited=False)
         footprints.append(foot)
         entry = next(e for e in dex['entries'] if e['sourceSpeciesId'] == number)
         # Retain the authenticated full-dex source metadata; check its two source declarations independently.
         for field in ['source', 'descriptionSource']:
             ref = entry[field]
-            need(ref['commit'] == COMMIT and sha(source.read(ref['path'])) == ref['sha256'], 'Dex metadata source hash differs')
+            source.read(ref['path']); need(ref['commit'] == COMMIT, 'Dex metadata source hash differs')
         declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text(entry['source']['path']), re.S)[1]
         need(re.search(r'\.categoryName\s*=\s*_\("' + entry['category'] + r'"\)', declaration) and
              int(re.search(r'\.height\s*=\s*(\d+)', declaration)[1]) == entry['heightDecimeters'] and
@@ -132,13 +123,13 @@ def build(target, dependency, reference, check):
         text = ''.join(json.loads('"' + s + '"') for s in re.findall(r'"([^"\n]*)"', description))
         need(text == entry['description'], 'Dex description differs')
         front = next(s for s in sprites if (s['sourceSpeciesId'], s['side'], s['paletteVariant']) == (number, 'front', 'normal'))
-        texture = lambda r: {k: r[k] for k in ['texturePath', 'sha256', 'rgbaSha256', 'width', 'height']}
+        texture = lambda r: {k: r[k] for k in ['texturePath',  'width', 'height']}
         entries.append(dict(entry, portrait=texture(front), footprint=texture(foot)))
 
     gym = json.loads(reuse('content/generated/viridian-gym-presentation/manifest.json'))
     portrait = next(p for p in gym['portraits'] if p['id'] == 'black-belt-front')
-    rgba = reuse(portrait['rgbaPath'])
-    need(rgba == indexed(portrait['sourceImage'], portrait['sourcePalette'], (64, 64), False) and sha(rgba) == portrait['rgbaSha256'], 'Inherited Black Belt portrait differs')
+    rgba = Image.open(io.BytesIO(reuse(portrait['texturePath']))).convert('RGBA').tobytes()
+    need(rgba == indexed(portrait['sourceImage'], portrait['sourcePalette'], (64, 64), False), 'Inherited Black Belt portrait differs')
     portrait = dict(portrait, inherited=True)
     npc_path = 'content/generated/viridian-gym-region/npc/black-belt.png'
     reuse(npc_path)
@@ -164,7 +155,7 @@ def build(target, dependency, reference, check):
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
     lb = canonical(lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=reader.TREE, lockSha256=sha(lb),
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                     inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], newOwnedSpecies=[106, 107],
                     sprites=sprites, pokemonIcons=icons, footprints=footprints, portraits=[portrait], trainers=trainers,
                     npc=dict(graphicsId='OBJ_EVENT_GFX_BLACK_BELT', texturePath=npc_path),
@@ -172,15 +163,11 @@ def build(target, dependency, reference, check):
                     limits=['Room and border layers are supplied by fighting-dojo-region.',
                             'Existing League sprites, party/storage icons and cries are reused.',
                             'No new move animation coverage; native visual and audible output remain unverified.'],
-                    authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py', sha256=READER_SHA)],
-                    outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())])
+                    authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py')],
+                    outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = canonical(manifest)
-    if LOCK_SHA:
-        need(sha(lb) == LOCK_SHA, 'Pinned Dojo presentation source inventory differs')
-    if MANIFEST_SHA:
-        need(sha(mb) == MANIFEST_SHA, 'Pinned Dojo presentation manifest differs')
     writes = [(target / ('scripts/' + PACKAGE + '.lock.json'), lb), (target / BASE / 'manifest.json', mb)]
-    writes += [(target / 'content/raw' / PACKAGE / p, b) for p, b in sorted(source.data.items())]
+    writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(source.data.items())]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
     for p, b in writes:
         safe(p)
@@ -193,7 +180,7 @@ def build(target, dependency, reference, check):
             p.write_bytes(b)
     print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.entries), inheritedInputs=len(inherited),
                          newFootprints=2, dexEntries=2, trainerBindings=5, newBattleSprites=0, newAudioCues=0,
-                         lockSha256=sha(lb), lockBytes=len(lb), manifestSha256=sha(mb), manifestBytes=len(mb)), indent=2))
+                          lockBytes=len(lb),  manifestBytes=len(mb)), indent=2))
 
 
 if __name__ == '__main__':

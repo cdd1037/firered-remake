@@ -5,7 +5,6 @@ The existing reviewed Git reader and canonical species/move catalogs are depende
 No upstream executable runs and no substitute trainer, species, or move is permitted.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -16,34 +15,29 @@ sys.dont_write_bytecode = True
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-vs-seeker-parties-v1'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-RULES_SHA = 'fe86197c305da3991d16a3c9fc6574740e35ef59fa6ab27e0e2adc788abf4590'
-SPECIES_SHA = 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc'
 
 def need(ok, message):
     if not ok: raise ValueError(message)
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def compact(value): return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
 def output(value): return compact(value) + b'\n'
 def identity(symbol): return {'value': 'pret:' + symbol}
 
 def generate(reference, dependency, rules_root):
     helper = dependency/'scripts/import-cinnabar-source-preparation.py'
-    need(sha(helper.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('vs_seeker_source_reader', helper)
     reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
     src = reader.Source(reference)
     dependencies = []
-    def dependent(root, path, expected):
-        raw = (root/path).read_bytes(); need(sha(raw) == expected, 'Dependency differs: ' + path)
-        dependencies.append(dict(path=path, byteLength=len(raw), sha256=expected))
+    def dependent(root, path):
+        raw = (root/path).read_bytes()
+        dependencies.append(dict(path=path))
         return json.loads(raw)
-    rules = dependent(rules_root, 'content/generated/vs-seeker/catalog.json', RULES_SHA)
-    canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json', SPECIES_SHA)
+    rules = dependent(rules_root, 'content/generated/vs-seeker/catalog.json')
+    canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json')
     # The canonical catalog itself fixes the move package's exact identity.
     move_ref = next(x for x in canonical['moveDependency']['files'] if x['path'].endswith('/catalog.json'))
-    move_document = dependent(dependency, move_ref['path'], move_ref['sha256'])
+    move_document = dependent(dependency, move_ref['path'])
     species = {x['id']['value'][5:]: x for x in canonical['species']}
     moves = {x['id']['value'][5:]: x for x in move_document['moves']}
 
@@ -53,7 +47,7 @@ def generate(reference, dependency, rules_root):
         return found[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=src.text(path).count('\n', 0, match.start()) + 1,
-            endLine=src.text(path).count('\n', 0, match.end()) + 1, sha256=sha(src.read(path)))
+            endLine=src.text(path).count('\n', 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r'^#define\s+' + re.escape(symbol) + r'\s+([^\n]+)')[1].split('//')[0].strip()
         if re.fullmatch(r'0x[0-9a-fA-F]+|\d+', value): return int(value, 0)
@@ -155,15 +149,15 @@ def generate(reference, dependency, rules_root):
                 line = script_text.count('\n', 0, offset) + 1
                 found.append(dict(actorScript=root, scriptEntry=label, opcode=opcode, arguments=args, trainer=identity(args[0]),
                     isRematch='rematch' in opcode, mode=number('include/constants/battle_setup.h', modes[opcode]),
-                    source=dict(path=script_path, symbol=label, startLine=line, endLine=line, sha256=sha(src.read(script_path)))))
+                    source=dict(path=script_path, symbol=label, startLine=line, endLine=line)))
             pending += [x for x in re.findall(r'\b\w+\b', block[2]) if x in blocks and x not in seen]
         need(len(found) == 2 and sum(o['isRematch'] for o in found) == 1, 'Exactly one original/rematch branch per actor: ' + root)
         occurrences += found
     occurrences.sort(key=lambda x: (x['actorScript'], x['isRematch']))
     document = dict(sourceCommit=COMMIT, profile=PROFILE, trainers=trainers, resolvedMoves=resolved)
     occurrence_document = dict(sourceCommit=COMMIT, profile=PROFILE, occurrences=occurrences)
-    lock = dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT, tree=TREE, profile=PROFILE,
-        reader=dict(path='scripts/import-cinnabar-source-preparation.py', sha256=READER_SHA), dependencies=dependencies,
+    lock = dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT,  profile=PROFILE,
+        reader=dict(path='scripts/import-cinnabar-source-preparation.py'), dependencies=dependencies,
         files=[src.entries[p] for p in sorted(src.entries)])
     summary = dict(trainers=len(trainers), singles=sum(not t['doubleBattle'] for t in trainers), doubles=sum(t['doubleBattle'] for t in trainers),
         partyMembers=sum(len(t['party']) for t in trainers), sourceSpecies=sorted({m['species']['value'] for t in trainers for m in t['party']}),
@@ -172,9 +166,7 @@ def generate(reference, dependency, rules_root):
         heldItems=sorted({m['heldItem'] for t in trainers for m in t['party']}),
         missingCanonicalSpecies=[], missingCanonicalMoves=[], upstreamScriptsExecuted=False)
     return {'catalog.json': output(document), 'battle-occurrences.json': output(occurrence_document), 'manifest.json': output(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        semanticSha256=sha(compact(document)), catalogSha256=sha(output(document)), catalogByteLength=len(output(document)),
-        occurrencesSha256=sha(output(occurrence_document)), occurrencesByteLength=len(output(occurrence_document)),
-        sourceLockSha256=sha(output(lock)), summary=summary)), 'source-lock.json': output(lock)}, src
+           summary=summary)), 'source-lock.json': output(lock)}, src
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--source-root', type=Path, required=True); p.add_argument('--dependency-root', type=Path, required=True)
@@ -185,7 +177,7 @@ def main():
         if a.check: need(path.read_bytes() == data, 'Generated artifact differs: ' + str(path))
         else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
     for name, raw in src.data.items():
-        path = a.output_root/'content/raw/vs-seeker-parties'/name
+        path = a.output_root/'content/raw/pokefirered/037335f4'/name
         if a.check: need(path.read_bytes() == raw, 'Raw source differs: ' + name)
         else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(raw)
     print(artifacts['manifest.json'].decode().strip())

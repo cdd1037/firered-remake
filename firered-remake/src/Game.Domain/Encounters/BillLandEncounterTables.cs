@@ -9,7 +9,6 @@ public static class BillLandEncounterTables
     public static EarlyLandEncounterTable Route25 { get; } = Create("map.route-25","sRoute25_FireRed",21,[("WEEDLE",8),("CATERPIE",8),("PIDGEY",13),("ODDISH",14),("ODDISH",13),("ABRA",11),("PIDGEY",11),("ODDISH",12),("KAKUNA",9),("ABRA",9),("METAPOD",9),("ABRA",13)]);
     public static ImmutableArray<EarlyLandEncounterTable> All { get; } = [Route24,Route25];
     private static EarlyLandEncounterTable Create(string map,string symbol,int rate,(string Species,byte Level)[] slots) =>
-        new(new(map),EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,symbol,
-            "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c",rate,
+        new(new(map),EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,symbol,rate,
             slots.Select((s,i)=>new EarlyLandEncounterSlot(i,new("pret:SPECIES_"+s.Species),s.Level,s.Level,EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

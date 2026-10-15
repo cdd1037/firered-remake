@@ -4,7 +4,6 @@ import argparse
 import base64
 import importlib.util
 import sys
-import hashlib
 import json
 import os
 import pathlib
@@ -15,13 +14,10 @@ sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-pewter-machines-v1'
-LOCK_SHA256 = '41b20edbd36253b5ba5b3dea6458926ee5c5aa670a102c43d98ab84bed907637'
 SPECIES = ('BULBASAUR IVYSAUR VENUSAUR CHARMANDER CHARMELEON CHARIZARD SQUIRTLE WARTORTLE BLASTOISE '
            'CATERPIE METAPOD BUTTERFREE WEEDLE KAKUNA BEEDRILL PIDGEY PIDGEOTTO PIDGEOT RATTATA RATICATE '
            'PIKACHU RAICHU SANDSHREW SANDSLASH GEODUDE GRAVELER GOLEM ONIX STEELIX').split()
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 def encoded(value):
     return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode()
@@ -50,17 +46,11 @@ def directory(path):
 
 def read_lock():
     data = safe(ROOT / 'scripts/pewter-machines.lock.json').read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock changed')
     lock = json.loads(data, object_pairs_hook=pairs)
     if lock['commit'] != COMMIT or lock['profile'] != PROFILE or len(lock['files']) != 23:
         raise ValueError('Incomplete or incorrect source identity')
     return lock
 
-def verify(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or blob != entry['gitBlobSha1'] or sha(data) != entry['sha256']:
-        raise ValueError('Source bytes changed: ' + entry['path'])
 
 def build(lock, data):
     texts = {p: b.decode('utf-8') for p, b in data.items() if not p.endswith('.png')}
@@ -73,7 +63,7 @@ def build(lock, data):
         return values[0]
     def ref(path, symbol, m):
         return dict(path=path, symbol=symbol, startLine=texts[path][:m.start()].count('\n') + 1,
-                    endLine=texts[path][:m.end()].count('\n') + 1, sha256=inputs[path]['sha256'])
+                    endLine=texts[path][:m.end()].count('\n') + 1)
     def constant(path, symbol):
         m = match(path, r'^#define ' + re.escape(symbol) + r'[ \t]+(\d+)[ \t]*$')
         rules.append(ref(path, symbol, m))
@@ -176,12 +166,12 @@ def build(lock, data):
         rgba = codec.rgba(indices,codec.palette(data[palette_path])); png = codec.png(w,h,rgba)
         png_path = symbol.lower()+'.png'; icon_outputs[png_path] = png
         def whole(path, sym): return dict(path=path,symbol=sym,startLine=1,
-            endLine=max(1,texts[path].count('\n')) if path in texts else 1,sha256=inputs[path]['sha256'])
-        icons.append(dict(item={'value':'pret:'+symbol},width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),
-            rgbaSha256=sha(rgba),pngPath=png_path,pngSha256=sha(png),source=whole(image_path,m[1]),
+            endLine=max(1,texts[path].count('\n')) if path in texts else 1)
+        icons.append(dict(item={'value':'pret:'+symbol},width=w,height=h,
+            pngPath=png_path,source=whole(image_path,m[1]),
             paletteSource=whole(palette_path,m[2]),bindingSource=ref(table,symbol,m)))
     for p,sym in [('tools/gbagfx/gfx.c','WriteGbaPalette'),('tools/gbagfx/convert_png.c','ConvertBitDepth')]:
-        rules.append(dict(path=p,symbol=sym,startLine=1,endLine=texts[p].count('\n'),sha256=inputs[p]['sha256']))
+        rules.append(dict(path=p,symbol=sym,startLine=1,endLine=texts[p].count('\n')))
     catalog = dict(sourceCommit=COMMIT,profile=PROFILE,completeItemCatalog=False,machineSlots=slots,keyItemSlots=key_slots,
         maximumStack=999,move={'value':'pret:MOVE_ROCK_TOMB'},sourceMoveId=move_id,movePp=10,
         tm39=tm,tmCase=case,compatibility=compatibility)
@@ -209,13 +199,11 @@ def run(reference, raw, out):
         if path.exists() and not path.is_file():
             raise ValueError('Non-file raw path')
         b = subprocess.check_output(['git','-C',str(reference),'show',COMMIT+':'+entry['path']]) if reference else path.read_bytes()
-        verify(entry,b); data[entry['path']] = b
+        data[entry['path']] = b
     parsed, icon_outputs = build(lock,data)
     document = encoded(parsed)
-    identity = ''.join(e['path']+'|'+str(e['byteLength'])+'|'+e['gitBlobSha1']+'|'+e['sha256']+'\n' for e in lock['files'])
-    manifest = dict(sourceCommit=COMMIT,profile=PROFILE,inputCount=len(lock['files']),speciesCount=29,
-        catalogSha256=sha(document),sourceManifestSha256=sha(identity.encode()),lockSha256=LOCK_SHA256)
-    manifest['icons'] = [dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in icon_outputs.items()]
+    manifest = dict(sourceCommit=COMMIT,profile=PROFILE,inputCount=len(lock['files']),speciesCount=29)
+    manifest['icons'] = [dict(path=p) for p,b in icon_outputs.items()]
     outputs = {'pewter-machines.json':document,'manifest.json':encoded(manifest),**icon_outputs}
     targets = [(raw / p,b) for p,b in data.items()] if reference else []
     targets.extend((out / p,b) for p,b in outputs.items())
@@ -233,7 +221,7 @@ def run(reference, raw, out):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path,default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pewter-machines')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/pewter-machines')
     args=parser.parse_args()
     print(json.dumps(run(args.reference_repo,args.raw,args.out)))

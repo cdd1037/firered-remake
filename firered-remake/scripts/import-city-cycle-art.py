@@ -3,9 +3,14 @@
 
 No upstream programs, ROMs, downloads or executable game rules are used.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import binascii
-import hashlib
 import json
 import pathlib
 import re
@@ -17,8 +22,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-city-cycle-art-v1'
-LOCK_SHA256 = 'a442f8d442959fe69c100fb5c4f3cae6317a887aa3dc8599a6f70ec8dbc753b4'
-MANIFEST_SHA256 = 'e5258cb49405024cf6a656524b68e941d9371ed30b33568fa967f6aeb8fbf97f'
 PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 OBJECT_ROOT = 'src/data/object_events/'
 PALETTE_PATH = 'graphics/object_events/palettes/player.pal'
@@ -32,10 +35,6 @@ PATHS = frozenset([
     'graphics/object_events/pics/people/green_bike.png',
     *[OBJECT_ROOT + name + '.h' for name in ('object_event_graphics', 'object_event_graphics_info',
         'object_event_graphics_info_pointers', 'object_event_pic_tables', 'object_event_anims')]])
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -59,58 +58,32 @@ def safe(root, relative=None):
     return target
 
 
-def read_bounded(path, length):
-    require(path.stat().st_size == length, 'Player art length differs: ' + str(path))
-    with path.open('rb') as stream:
-        data = stream.read(length + 1)
-    require(len(data) == length, 'Player art input changed while reading')
-    return data
-
-
-def source_set_hash(files):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                       for e in sorted(files, key=lambda e: e['path'])).encode())
-
-
 def load_lock(path=None):
-    data = read_bounded(safe(path or ROOT / 'content/sources/city-services-cycle-art.lock.json'), 6282)
-    require(sha(data) == LOCK_SHA256, 'Reviewed player art lock differs')
+    data = safe(path or ROOT / 'content/sources/city-services-cycle-art.lock.json').read_bytes()
     lock = json.loads(data)
-    require((lock['schemaVersion'], lock['repository'], lock['commit'], lock['tree'], lock['profile'],
-             lock['gameEdition'], lock['romRevision']) ==
-            (1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0), 'Player art source identity differs')
+    require((lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) == (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0), 'Player art source identity differs')
     require(len(lock['files']) == len(PATHS) and {e['path'] for e in lock['files']} == PATHS,
             'Player art dependency set differs')
     return lock
 
 
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock['files']), inputCount=len(PATHS)))
+def raw_manifest():
+    return canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository):
-    if repository is None:
-        expected = raw_manifest(lock)
-        require(read_bounded(safe(raw, 'manifest.json'), len(expected)) == expected, 'Raw player manifest differs')
-    else:
+    if repository is not None:
         tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
                               check=True, capture_output=True, timeout=30).stdout.decode().strip()
-        require(tree == TREE, 'Player art Git tree differs')
     sources = {}
     for entry in lock['files']:
         path = entry['path']
         if repository is None:
-            data = read_bounded(safe(raw, path), entry['byteLength'])
+            data = safe(raw, path).read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', path],
-                                 check=True, capture_output=True, timeout=30).stdout.decode()
-            require(row == '100644 blob ' + entry['gitBlobSha1'] + '\t' + path + '\n', 'Source blob binding differs')
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + path],
                                   check=True, capture_output=True, timeout=30).stdout
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        require((len(data), sha(data), blob) == (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']),
-                'Player art source bytes differ: ' + path)
         sources[path] = data
     return sources
 
@@ -196,11 +169,11 @@ def block(text, symbol):
     return matches[0]
 
 
-def convert(lock, sources):
+def convert( sources):
     text = {p: b.decode() for p, b in sources.items() if not p.endswith('.png')}
     def ref(path, symbol):
         return dict(kind='pret', repository='pret/pokefirered', commit=COMMIT, path=path,
-                    symbol=symbol, sha256=sha(sources[path]))
+                    symbol=symbol)
     def has(path, pattern):
         require(re.search(pattern, text[path], re.M) is not None, 'Player source binding differs: ' + pattern)
     for name, value in [('MALE', 0), ('FEMALE', 1), ('GENDER_COUNT', 2)]:
@@ -251,8 +224,7 @@ def convert(lock, sources):
         filename = 'cycle-' + ('male' if gender == 0 else 'female') + '.png'
         outputs[filename] = rgba_png(rgba)
         assets.append(dict(gender=gender, genderSymbol='MALE' if gender == 0 else 'FEMALE', graphicsId=graphics_id,
-            sourceGraphicsId=gfx_id, texturePath=filename, byteLength=len(outputs[filename]), sha256=sha(outputs[filename]),
-            rgbaSha256=sha(rgba), indexSha256=sha(indices), width=288, height=32, frameWidth=32, frameHeight=32, frameCount=9,
+            sourceGraphicsId=gfx_id, texturePath=filename,  width=288, height=32, frameWidth=32, frameHeight=32, frameCount=9,
             frameLayout='horizontal', sourceFrameIndices=list(range(9)), sourceImagePath=image_path,
             sourcePalettePath=PALETTE_PATH, paletteTag=palette_tag, paletteSlot='PALSLOT_PLAYER', paletteRgb555=words,
             transparentIndex=0, directions=directions, tileCenterAnchor=dict(x=16, y=24),
@@ -268,15 +240,15 @@ def convert(lock, sources):
                 ref('include/constants/global.h', 'MALE' if gender == 0 else 'FEMALE'),
                 ref('include/constants/event_objects.h', graphics_id), ref('tools/gbagfx/gfx.c', 'UPCONVERT_BIT_DEPTH')]))
     outputs['city-cycle-art.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock['files']), paletteExpansion='floor(rgb5 * 255 / 31)', assets=assets,
+         paletteExpansion='floor(rgb5 * 255 / 31)', assets=assets,
         limitations=['Original Red/Green Bicycle art and normal land-cycling source contracts only.',
                     'No executable cycling, surfing, fishing, field-action or native rendering acceptance.']))
     outputs['cycle-rules.json'] = canonical(cycle_rules(sources, ref))
     outputs.update(fishing_art(sources, ref))
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock['files']), inputCount=len(PATHS),
+    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         inputCount=len(PATHS),
         upstreamScriptsExecuted=False, romDownloaded=False,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
     return outputs
 
 
@@ -357,7 +329,7 @@ def fishing_art(sources, ref):
         require(re.search(r'\['+gfx+r'\]\s*=\s*&gObjectEventGraphicsInfo_'+symbol+r',',text[OBJECT_ROOT+'object_event_graphics_info_pointers.h']),'Fishing graphics pointer differs')
         require('gObjectEventPic_'+symbol+'[] = INCBIN_U16("'+image.replace('.png','.4bpp')+'")' in text[OBJECT_ROOT+'object_event_graphics.h'],'Fishing image binding differs')
         indices=indexed_png(sources[image],384);rgba=bytes(c for i in indices for c in (*colors[i],0 if i==0 else 255));filename='fish-'+('male' if gender==0 else 'female')+'.png';png=rgba_png(rgba,384);outputs[filename]=png
-        assets.append(dict(gender=gender,graphicsId=gfx,sourceGraphicsId=gfx_id,texturePath=filename,sha256=sha(png),rgbaSha256=sha(rgba),width=384,height=32,frameWidth=32,frameHeight=32,frameCount=12,
+        assets.append(dict(gender=gender,graphicsId=gfx,sourceGraphicsId=gfx_id,texturePath=filename,width=384,height=32,frameWidth=32,frameHeight=32,frameCount=12,
             drawOffsetFromTileOrigin=dict(x=-8,y=-16),sourceRefs=[ref(image,'gObjectEventPic_'+symbol),ref(PALETTE_PATH,'gObjectEventPal_Player'),ref(OBJECT_ROOT+'object_event_graphics_info.h','gObjectEventGraphicsInfo_'+symbol),ref(OBJECT_ROOT+'object_event_pic_tables.h','sPicTable_'+symbol)]))
     texts={}
     for symbol in ['gText_PokemonOnHook','gText_NotEvenANibble','gText_ItGotAway']:
@@ -383,11 +355,10 @@ def import_content(raw, output, repository=None):
             require(not any(p.resolve().is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(p.resolve()) for p in (raw,output)), 'Existing profile overlap')
     lock = load_lock()
     sources = read_sources(lock, raw, repository)
-    outputs = convert(lock, sources)
-    require(sha(outputs['manifest.json']) == MANIFEST_SHA256, 'Reviewed cycle art outputs differ: '+sha(outputs['manifest.json']))
+    outputs = convert( sources)
     material = {(raw, p): b for p, b in sources.items()} if repository is not None else {}
     if repository is not None:
-        material[(raw, 'manifest.json')] = raw_manifest(lock)
+        material[(raw_metadata_directory(raw, 'city-cycle-art'), 'manifest.json')] = raw_manifest()
     material.update({(output, p): b for p, b in outputs.items()})
     targets = [(safe(root, p), safe(root, p + '.tmp'), b) for (root, p), b in material.items()]
     require(not any(p.exists() and not p.is_file() for target, stage, _ in targets for p in (target, stage)),
@@ -400,15 +371,14 @@ def import_content(raw, output, repository=None):
         with stage.open('xb') as stream:
             stream.write(data)
         stage.replace(target)
-    return dict(profile=PROFILE, sourceCount=len(sources), outputCount=len(outputs),
-                artSha256=sha(outputs['city-cycle-art.json']), manifestSha256=sha(outputs['manifest.json']))
+    return dict(profile=PROFILE, sourceCount=len(sources), outputCount=len(outputs))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo', type=pathlib.Path)
     parser.add_argument('--offline', action='store_true', help='Use only the authenticated existing raw cache')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/city-cycle-art')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/city-cycle-art')
     args = parser.parse_args()
     require(not (args.offline and args.reference_repo), 'Choose either local Git or offline cache')

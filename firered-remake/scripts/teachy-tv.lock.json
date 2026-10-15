@@ -2,680 +2,391 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-teachy-tv-v1",
   "files": [
     {
       "path": "data/battle_scripts_1.s",
-      "kind": "source",
-      "byteLength": 138642,
-      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034",
-      "gitBlobSha1": "8aa0a1004033e40df8222107b60cc72fa85d9b8f"
+      "kind": "source"
     },
     {
       "path": "data/layouts/Route1/map.bin",
-      "kind": "resource",
-      "byteLength": 1920,
-      "sha256": "9463ad026e56bc9bbe4b533bf8284217c7b6da16ccc2126e055ffc6f1e3da65c",
-      "gitBlobSha1": "02ee26860a9eb22bee113c30ad5f79ce51c5b7da"
+      "kind": "resource"
     },
     {
       "path": "data/layouts/layouts.json",
-      "kind": "source",
-      "byteLength": 158096,
-      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
-      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d"
+      "kind": "source"
     },
     {
       "path": "data/text/pokedude.inc",
-      "kind": "source",
-      "byteLength": 4419,
-      "sha256": "f3744e797fbd0da4ee0d99f97205cbdef317552e61173f03df1307e6111057c1",
-      "gitBlobSha1": "a7cfd8e9fa4632ef72caa8b4aa92edaf4c1c4d07"
+      "kind": "source"
     },
     {
       "path": "data/tilesets/primary/general/metatiles.bin",
-      "kind": "resource",
-      "byteLength": 10240,
-      "sha256": "8d950c1a1f151f5e1bded1ecee165b815c3a4d62b69a4a9cec4f676283f9041e",
-      "gitBlobSha1": "7a228eeaea2f928545b294505b1181618ec9c429"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/00.pal",
-      "kind": "resource",
-      "byteLength": 186,
-      "sha256": "757529e794c7fb9c333b1c2ef83704f6b03bb0fe756443b80025b2bc55dbe7f0",
-      "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/01.pal",
-      "kind": "resource",
-      "byteLength": 192,
-      "sha256": "baec95e65952c79e6ceb9cf8306995379982dc9253e67797b350556e1db83bfb",
-      "gitBlobSha1": "09828f4f1f27fd489057d5efb68941ca3947f9fe"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/02.pal",
-      "kind": "resource",
-      "byteLength": 192,
-      "sha256": "ea0310019345ea29e2196c4326182e32cbddf0e5fc2c4d010e8c40794c78852b",
-      "gitBlobSha1": "6b019b884c96679a0000222fd58ce78d8ee2c165"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/03.pal",
-      "kind": "resource",
-      "byteLength": 195,
-      "sha256": "117156779971950f6693bbefa2e92c373662209f2e39e4716f1e37a4f72ba022",
-      "gitBlobSha1": "205c464c79d6e0b30b4d80a37558fe44fde62f60"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/04.pal",
-      "kind": "resource",
-      "byteLength": 199,
-      "sha256": "7fed8601788c83852288c2395afd84a2c9ca6717c1eb38b762ad8ae7a9d61c5d",
-      "gitBlobSha1": "9b094a6aaa24bec00b20dfd68bed519959054d97"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/05.pal",
-      "kind": "resource",
-      "byteLength": 198,
-      "sha256": "f8497b9b541ebe7ba0a80b0ac865135410d9cf6324f13949f3285c70b1119e07",
-      "gitBlobSha1": "c5a653979a010ae3b699a00b247fa72cc0a65fbb"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/06.pal",
-      "kind": "resource",
-      "byteLength": 198,
-      "sha256": "4d2d0cfdc068acb9bc2adc9d4d762bcee527fd0cf045c30728632e15b0590582",
-      "gitBlobSha1": "cdf41b2983e5466152336b36c7ac4a3da4c7b4d4"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/07.pal",
-      "kind": "resource",
-      "byteLength": 117,
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/08.pal",
-      "kind": "resource",
-      "byteLength": 117,
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/09.pal",
-      "kind": "resource",
-      "byteLength": 117,
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/10.pal",
-      "kind": "resource",
-      "byteLength": 117,
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/11.pal",
-      "kind": "resource",
-      "byteLength": 117,
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/12.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/13.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/14.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/palettes/15.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/primary/general/tiles.png",
-      "kind": "resource",
-      "byteLength": 8671,
-      "sha256": "9ff889d1b9da5383a0cd0c85ac7b791812867804f3a38566b46172087419e0b9",
-      "gitBlobSha1": "84ba7b2f987ce0134e5936faf083f7df15665a64"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/metatiles.bin",
-      "kind": "resource",
-      "byteLength": 1424,
-      "sha256": "3b7ba7f75fd5d750413fc252519569a9f98fac586d87f62066bdf1e3edf35ca2",
-      "gitBlobSha1": "41db2701509573f5a57d38ddb349e9a243b518ee"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/00.pal",
-      "kind": "resource",
-      "byteLength": 187,
-      "sha256": "77bf9872166325d3efeac30fd239248fdf52d9f726aad11658c3b9043af6294f",
-      "gitBlobSha1": "42246e9ea73b5284b826e6f0b36936d3442f6bca"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/01.pal",
-      "kind": "resource",
-      "byteLength": 193,
-      "sha256": "df2417a4e46e1089cb56041750c6b81a2c98fef14f8256de0d7dcdda64e1da8b",
-      "gitBlobSha1": "28db536cb43bd4089f31712e1c3cc013f81c97d0"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/02.pal",
-      "kind": "resource",
-      "byteLength": 194,
-      "sha256": "1232c6a269f74fa49e0b34ca573cb336b6f2b262feb41c3b2f36e8044159f3bc",
-      "gitBlobSha1": "937cec4da8543ea7af18d9c1f9e9833328abe77e"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/03.pal",
-      "kind": "resource",
-      "byteLength": 193,
-      "sha256": "0c6d9358c87a8245d0ec44f40b7064f5e0cec3ad2142157bb8e62e44628fd9a7",
-      "gitBlobSha1": "6d1dfb5af46ca550d5f45f86bf4d6a485ab6b806"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/04.pal",
-      "kind": "resource",
-      "byteLength": 195,
-      "sha256": "dc6c7c3af8e1da0d769b72653d369181c5c65d82cbead71ecd5e73481f74dc2d",
-      "gitBlobSha1": "cde020d4ea5afe486577cd352a21a0a912f9f3ac"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/05.pal",
-      "kind": "resource",
-      "byteLength": 195,
-      "sha256": "2bb3f814b7be56fd42b2ba870a3a09b96bdb7cbcbf8d57bcc39fe82c68e14d2d",
-      "gitBlobSha1": "bdcc7b8ed0927eff7bff8b6cf45ba1cd85e8ae6d"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/06.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/07.pal",
-      "kind": "resource",
-      "byteLength": 115,
-      "sha256": "a47bca4043b26b45e2e06f38bd87f2c611c81629a65dc46e7144273143d3d5b2",
-      "gitBlobSha1": "995731c23cc045acf66daa3297353845cbb9db3e"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/08.pal",
-      "kind": "resource",
-      "byteLength": 199,
-      "sha256": "14c4f6f561b62186b212917e7e922e12ddcc2eae3cca047b53c3354220669997",
-      "gitBlobSha1": "dcecb9c407189e58cde4d27ca554aae4d6957b16"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/09.pal",
-      "kind": "resource",
-      "byteLength": 200,
-      "sha256": "18fa76a58a43b9968fd1b506a6a5b72b39a1093d1cb8b7479115e2f3bcd514c9",
-      "gitBlobSha1": "90bb7751719782413faddaa574bc33b5a4eb8a99"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/10.pal",
-      "kind": "resource",
-      "byteLength": 195,
-      "sha256": "24abe115664ebcb82c3651b316d2496999c0ec99690dcb956ccee2afc2f030e9",
-      "gitBlobSha1": "1958eff11b300c3c32791d4ac4e5673554942f30"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/11.pal",
-      "kind": "resource",
-      "byteLength": 189,
-      "sha256": "9a4bea40b1915f05d12a5867c1d9c65d72a876f23931d7aa95f035eddbb04c5f",
-      "gitBlobSha1": "896c79281af5dc57e8ce29b34fbe51ffd5d3328d"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/12.pal",
-      "kind": "resource",
-      "byteLength": 170,
-      "sha256": "1ad9341bbc8ee6284a665f18d2bd535637cffdc2c0a2e47bd2a7d9253af32ba6",
-      "gitBlobSha1": "2bfc45b6d384336b43df8be66a18ed2158b555ae"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/13.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/14.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/15.pal",
-      "kind": "resource",
-      "byteLength": 113,
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b"
+      "kind": "resource"
     },
     {
       "path": "data/tilesets/secondary/pallet_town/tiles.png",
-      "kind": "resource",
-      "byteLength": 929,
-      "sha256": "321a23f388126175b34b85cf46c2d8f943daab5ee4d0916129c345b99b9108d2",
-      "gitBlobSha1": "771eed906cc7721e5126a6badd7a1df3136e0fe3"
+      "kind": "resource"
     },
     {
       "path": "graphics/field_effects/palettes/general_1.pal",
-      "kind": "resource",
-      "byteLength": 180,
-      "sha256": "8490b3225a800740beecf972c7ecec4757282d0254db226cf27b3fcd0a835f67",
-      "gitBlobSha1": "ad39c8c9a7f59db7292f53201436599e74a05c6b"
+      "kind": "resource"
     },
     {
       "path": "graphics/field_effects/pics/tall_grass.png",
-      "kind": "resource",
-      "byteLength": 371,
-      "sha256": "6273183298ed0037801430695c718018c14058a25ccd27b7a7318519dbb45c51",
-      "gitBlobSha1": "850e92c2197ff9205f8bcdc5e330c733798efc33"
+      "kind": "resource"
     },
     {
       "path": "graphics/interface/red_arrow.pal",
-      "kind": "resource",
-      "byteLength": 177,
-      "sha256": "17e60df253f8a544ceb56217c38025e37baa8d5341a0af85e31561bb9851cb4a",
-      "gitBlobSha1": "f820b52bb0a644a545f3d236d00f5a318bdeb12d"
+      "kind": "resource"
     },
     {
       "path": "graphics/interface/red_arrow_other.png",
-      "kind": "resource",
-      "byteLength": 197,
-      "sha256": "a279a889b4c34b1365388b92a665c6828d4957504cc90a7cdf02f2f2fd1e456d",
-      "gitBlobSha1": "33fcf44b9c34c49b1c141a0802bcb648f250eb7a"
+      "kind": "resource"
     },
     {
       "path": "graphics/items/icon_palettes/teachy_tv.pal",
-      "kind": "resource",
-      "byteLength": 192,
-      "sha256": "cfd47738a84eb8a77eccc28f2bfd096e8f347afb43e4fc3b2248fe8fda2212e6",
-      "gitBlobSha1": "7de3e7f778c3b000561f16f2abb4a6477d7ba8c9"
+      "kind": "resource"
     },
     {
       "path": "graphics/items/icons/teachy_tv.png",
-      "kind": "resource",
-      "byteLength": 333,
-      "sha256": "9e4df7294dcc5bf7b9a47925b83349f027688d3cc10049eb5781aec53f2ff0e6",
-      "gitBlobSha1": "43a1588350b984cfcd103cda29cf334183a7623e"
+      "kind": "resource"
     },
     {
       "path": "graphics/object_events/palettes/npc_white.pal",
-      "kind": "resource",
-      "byteLength": 186,
-      "sha256": "31668dbee587a2e6c7238d4ff94a090e753ddcc06336649a186ab124ad4a6c97",
-      "gitBlobSha1": "1646e805e636837f975619827060764e7aa48293"
+      "kind": "resource"
     },
     {
       "path": "graphics/object_events/pics/people/teachy_tv_host.png",
-      "kind": "resource",
-      "byteLength": 717,
-      "sha256": "2b73ae25c4481d916a468844a903eee1532bb368a61b6debc65c7f0ec1c595ea",
-      "gitBlobSha1": "f4588e9f87e9b26200ddba66152d4a9559c86703"
+      "kind": "resource"
     },
     {
       "path": "graphics/teachy_tv/border.png",
-      "kind": "resource",
-      "byteLength": 307,
-      "sha256": "381869d0a6a46483b229ec5c42910fc77e541e1fc02aeae2404f07e8ca42db29",
-      "gitBlobSha1": "08fa27da6c847939c93b82cb77cd1c7f26997525"
+      "kind": "resource"
     },
     {
       "path": "graphics/teachy_tv/palettes.pal",
-      "kind": "resource",
-      "byteLength": 712,
-      "sha256": "85520b1bc94765a587ed7ea008f0743d08898acc33910a12118e26a11f06e66f",
-      "gitBlobSha1": "22808d3de082c61ff87f9d13aef35853b2a40c75"
+      "kind": "resource"
     },
     {
       "path": "graphics/teachy_tv/screen.bin",
-      "kind": "resource",
-      "byteLength": 2048,
-      "sha256": "9dea15208ca3b9ec8cb52aef25ca38b6dfdd36b8c1999731025d6e348f13d95e",
-      "gitBlobSha1": "34dc439bce50c7a8ce292ed686e360ccccd55f55"
+      "kind": "resource"
     },
     {
       "path": "graphics/teachy_tv/tiles.png",
-      "kind": "resource",
-      "byteLength": 1971,
-      "sha256": "556413ae4ede3e9cf8edd377c21ab8ed8a8981f35b3b3171a6b43c45203880f7",
-      "gitBlobSha1": "ecc121d02ff984e57a7e6cd0888396490c9d7bfa"
+      "kind": "resource"
     },
     {
       "path": "graphics/teachy_tv/title.bin",
-      "kind": "resource",
-      "byteLength": 2048,
-      "sha256": "16adaf3c76347a1d981dbeddfb2634cda1227deb24b51227e7361221533c2ac4",
-      "gitBlobSha1": "f51b3695fa297e62ddafe84093e9aea33f2758ef"
+      "kind": "resource"
     },
     {
       "path": "graphics/trainers/back_pics/pokedude_back_pic.png",
-      "kind": "resource",
-      "byteLength": 1921,
-      "sha256": "45e83ed6866c201b1465a34e4c4ca1423347625e976212c2427c4bbf3594eb1d",
-      "gitBlobSha1": "6f2f543a41d385a7231695b872a7eb0247c51f80"
+      "kind": "resource"
     },
     {
       "path": "graphics/trainers/palettes/pokedude_back_pic.pal",
-      "kind": "resource",
-      "byteLength": 194,
-      "sha256": "47857505f39ddd07499d008b740a6f1a30d9d55e03542bf9e3a837a0f69a9792",
-      "gitBlobSha1": "56a86d9800ec1f02039e2e42d75c1ffa7ac4d2ac"
+      "kind": "resource"
     },
     {
       "path": "graphics_file_rules.mk",
-      "kind": "source",
-      "byteLength": 14859,
-      "sha256": "bd56e518ab9527f844642230673ce27a5bae73c7208d917d3288b073859fb685",
-      "gitBlobSha1": "39b952cd45b6a34eb98318a76aa531fcafff134d"
+      "kind": "source"
     },
     {
       "path": "include/battle_controllers.h",
-      "kind": "source",
-      "byteLength": 9872,
-      "sha256": "051ebf096d6538d1cc7ea321dacf5d3e9e54f0d4edc9ddeb29996242de618120",
-      "gitBlobSha1": "334485c15be1e7ad2327f96417b7c73be3567c51"
+      "kind": "source"
     },
     {
       "path": "include/constants/battle.h",
-      "kind": "source",
-      "byteLength": 16440,
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1"
+      "kind": "source"
     },
     {
       "path": "include/constants/battle_string_ids.h",
-      "kind": "source",
-      "byteLength": 20327,
-      "sha256": "4766f2d31c75a31c0cc2e2dfc7be80b9887820ca3153aabdfb93cb2c3419f246",
-      "gitBlobSha1": "24cc01ca6a6a8876db103861e7298b57a4e47c14"
+      "kind": "source"
     },
     {
       "path": "include/constants/items.h",
-      "kind": "source",
-      "byteLength": 12436,
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3"
+      "kind": "source"
     },
     {
       "path": "include/constants/moves.h",
-      "kind": "source",
-      "byteLength": 10249,
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643"
+      "kind": "source"
     },
     {
       "path": "include/constants/pokemon.h",
-      "kind": "source",
-      "byteLength": 10894,
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
-      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b"
+      "kind": "source"
     },
     {
       "path": "include/constants/songs.h",
-      "kind": "source",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "kind": "source"
     },
     {
       "path": "include/fieldmap.h",
-      "kind": "source",
-      "byteLength": 2226,
-      "sha256": "e7d93120d2695043c7d75067f3c768344622c198503b0671d47292d6aa708a43",
-      "gitBlobSha1": "639e329a9a0f721abd7e40001228859cb9466005"
+      "kind": "source"
     },
     {
       "path": "include/teachy_tv.h",
-      "kind": "source",
-      "byteLength": 354,
-      "sha256": "02d74576a3abf07f396f930a1ed973f4080d52361b30faea6f54cff3855267fb",
-      "gitBlobSha1": "3484f88c1c03c41f1ea1cceeb502aa5144041c65"
+      "kind": "source"
     },
     {
       "path": "sound/song_table.inc",
-      "kind": "source",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "kind": "source"
     },
     {
       "path": "sound/songs/midi/midi.cfg",
-      "kind": "source",
-      "byteLength": 20338,
-      "sha256": "49b3a0b5a2809ccd8b504da3bedfb0f5168afd073b94ef6c10a3904e1ea62560",
-      "gitBlobSha1": "71a968f7b52eb1ed005695c7c97aec856cfeb980"
+      "kind": "source"
     },
     {
       "path": "sound/songs/midi/mus_follow_me.mid",
-      "kind": "resource",
-      "byteLength": 4005,
-      "sha256": "2e256a449e13fdd5e4ea023ca22dc1e49ecc37ac3b0aba474ea507e0e177eaf3",
-      "gitBlobSha1": "efea75d49f6aa4168b9e7678ae77d5755017b626"
+      "kind": "resource"
     },
     {
       "path": "sound/songs/midi/mus_teachy_tv_menu.mid",
-      "kind": "resource",
-      "byteLength": 582,
-      "sha256": "2cbed3884d0ac2c8baae6cecbef4316ea87318817961f5703351f724cd6f8964",
-      "gitBlobSha1": "b5d446098a7c8bd2dad5eb59f7abd570afb5e571"
+      "kind": "resource"
     },
     {
       "path": "sound/songs/midi/mus_teachy_tv_show.mid",
-      "kind": "resource",
-      "byteLength": 4005,
-      "sha256": "2e256a449e13fdd5e4ea023ca22dc1e49ecc37ac3b0aba474ea507e0e177eaf3",
-      "gitBlobSha1": "efea75d49f6aa4168b9e7678ae77d5755017b626"
+      "kind": "resource"
     },
     {
       "path": "src/battle_controller_pokedude.c",
-      "kind": "source",
-      "byteLength": 98136,
-      "sha256": "cc013710d9d5487e9b4fe47f1a77e3d1ab5f90d829ce1b5fa9c64a63e0fef1fd",
-      "gitBlobSha1": "f6307236c5b55cef16c5459f389410e174dd8665"
+      "kind": "source"
     },
     {
       "path": "src/battle_controllers.c",
-      "kind": "source",
-      "byteLength": 46191,
-      "sha256": "7980699ddf2836e07fc3e3a6396c7cc4d6ca1d944be112a82726e8a931e98e4e",
-      "gitBlobSha1": "a2662c39a6f66adb48b38d7b5797f8be54a6cc6b"
+      "kind": "source"
     },
     {
       "path": "src/battle_main.c",
-      "kind": "source",
-      "byteLength": 171904,
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428"
+      "kind": "source"
     },
     {
       "path": "src/battle_script_commands.c",
-      "kind": "source",
-      "byteLength": 355862,
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
-      "gitBlobSha1": "67f90a37044db87091b2174f78fe1e31ad2ef10d"
+      "kind": "source"
     },
     {
       "path": "src/battle_setup.c",
-      "kind": "source",
-      "byteLength": 33351,
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd",
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2"
+      "kind": "source"
     },
     {
       "path": "src/battle_util.c",
-      "kind": "source",
-      "byteLength": 136791,
-      "sha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
-      "gitBlobSha1": "bb66a0144b6144a72e1d9b22321c541e22302f7e"
+      "kind": "source"
     },
     {
       "path": "src/battle_util2.c",
-      "kind": "source",
-      "byteLength": 3901,
-      "sha256": "0e41d0db402bc2a64f6b0dac7c8ec56e49055c6b58a4c0dfef8db87148b37c8c",
-      "gitBlobSha1": "8a5fbccf67942b9bc55d460cea07a2744c9a2b14"
+      "kind": "source"
     },
     {
       "path": "src/bg.c",
-      "kind": "source",
-      "byteLength": 31836,
-      "sha256": "4813ff7fb1b9bcc952d3973d05a46d31c9fee57342c7957165a76a136ccd57da",
-      "gitBlobSha1": "aa11ae01f87242edecc5656bb6649b04e319357a"
+      "kind": "source"
     },
     {
       "path": "src/data/graphics/trainers.h",
-      "kind": "source",
-      "byteLength": 34300,
-      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
-      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088"
+      "kind": "source"
     },
     {
       "path": "src/data/object_events/object_event_anims.h",
-      "kind": "source",
-      "byteLength": 37750,
-      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e",
-      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d"
+      "kind": "source"
     },
     {
       "path": "src/data/object_events/object_event_graphics.h",
-      "kind": "source",
-      "byteLength": 23522,
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec",
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be"
+      "kind": "source"
     },
     {
       "path": "src/data/object_events/object_event_graphics_info.h",
-      "kind": "source",
-      "byteLength": 97115,
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512",
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47"
+      "kind": "source"
     },
     {
       "path": "src/data/object_events/object_event_pic_tables.h",
-      "kind": "source",
-      "byteLength": 82763,
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995",
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68"
+      "kind": "source"
     },
     {
       "path": "src/data/text/teachy_tv.h",
-      "kind": "source",
-      "byteLength": 7487,
-      "sha256": "1a13ffc13846e0465cbb68f9e90722df90c017e438d0832d66fe9d0dc41f7d0b",
-      "gitBlobSha1": "3cfa41ff788c5b5f3e99b5cec7c68ebbd27e205d"
+      "kind": "source"
     },
     {
       "path": "src/data/trainer_graphics/back_pic_anims.h",
-      "kind": "source",
-      "byteLength": 1954,
-      "sha256": "712fdb86073e21e77fa8a22aa92e9850c53f889814d7de44050260ea95d707c2",
-      "gitBlobSha1": "833a0cb2856b39c618d21e8b3bee134e8f1a5f1c"
+      "kind": "source"
     },
     {
       "path": "src/data/trainer_graphics/back_pic_tables.h",
-      "kind": "source",
-      "byteLength": 1150,
-      "sha256": "985bdf4ab23cf95bd66082e09111e69295c8f1c045d4a8bb605fff701da6573c",
-      "gitBlobSha1": "116dd02dedaa234a63c65bd7e50e3b31644fe5de"
+      "kind": "source"
     },
     {
       "path": "src/graphics.c",
-      "kind": "source",
-      "byteLength": 99258,
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252"
+      "kind": "source"
     },
     {
       "path": "src/item_menu.c",
-      "kind": "source",
-      "byteLength": 79276,
-      "sha256": "155bd6b0943e8df179cbc9892e573cee52fd8f67a1d0dd39b962bdbec2e3546a",
-      "gitBlobSha1": "8f52ead00ec1e34df74dadb71aa23439d507b073"
+      "kind": "source"
     },
     {
       "path": "src/item_use.c",
-      "kind": "source",
-      "byteLength": 28138,
-      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98",
-      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f"
+      "kind": "source"
     },
     {
       "path": "src/list_menu.c",
-      "kind": "source",
-      "byteLength": 25630,
-      "sha256": "065fd44e600802f3e988b559f5fb834070d4132897a24917b3f375213a8f4a31",
-      "gitBlobSha1": "36b81faec0de5f45d38c539954e3e22fe35aa51a"
+      "kind": "source"
     },
     {
       "path": "src/load_save.c",
-      "kind": "source",
-      "byteLength": 8253,
-      "sha256": "b6a07136288f9330cf2b56f3a101fb62fd99fb23d76c9ab8de81e8cba458c012",
-      "gitBlobSha1": "8b723dd044c6024b3671bb890b25b56a53f99ec5"
+      "kind": "source"
     },
     {
       "path": "src/menu_indicators.c",
-      "kind": "source",
-      "byteLength": 18576,
-      "sha256": "ad444dfceeade546b017d86de08bbe1e0cf97e0a66423dfe8cad7de96af1289c",
-      "gitBlobSha1": "393a508678a47dca6420c739413a3e727aa26ffb"
+      "kind": "source"
     },
     {
       "path": "src/party_menu.c",
-      "kind": "source",
-      "byteLength": 211085,
-      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
-      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223"
+      "kind": "source"
     },
     {
       "path": "src/pokemon.c",
-      "kind": "source",
-      "byteLength": 221865,
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+      "kind": "source"
     },
     {
       "path": "src/teachy_tv.c",
-      "kind": "source",
-      "byteLength": 41130,
-      "sha256": "1118a976220b53c6ce3415262f7b0e19c84724d8e3c6e0ca1bb8f5bd40c5a2cf",
-      "gitBlobSha1": "0366330644dd0572b07b56a1e983596d8825bf24"
+      "kind": "source"
     },
     {
       "path": "src/tm_case.c",
-      "kind": "source",
-      "byteLength": 56461,
-      "sha256": "3dad9224df99f5432f37ca80b752da0f41a0d60dabeddc839309588c188a324c",
-      "gitBlobSha1": "8975761a51626fe62533fab389ca4ed704f74434"
+      "kind": "source"
     }
   ]
 }

@@ -2,55 +2,32 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "graphics/trainers/front_pics/biker_front_pic.png",
-      "byteLength": 1179,
-      "sha256": "a676b6b30fe7479f52313a95afb1e05c904c34c7ec972c7cf755f2c711ba1644",
-      "gitBlobSha1": "e8c23dfc7f49ba79a8eeaec8345e6f8212685f97"
+      "path": "graphics/trainers/front_pics/biker_front_pic.png"
     },
     {
-      "path": "graphics/trainers/palettes/biker.pal",
-      "byteLength": 191,
-      "sha256": "2b4ebb79f479934cee6aed26878d14ed562467ef9cce79140f23449093dd150a",
-      "gitBlobSha1": "90b2a33884d698ceeda827481b2b67b48d7798f6"
+      "path": "graphics/trainers/palettes/biker.pal"
     },
     {
-      "path": "include/constants/trainers.h",
-      "byteLength": 20887,
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9",
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e"
+      "path": "include/constants/trainers.h"
     },
     {
-      "path": "src/data/graphics/trainers.h",
-      "byteLength": 34300,
-      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
-      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088"
+      "path": "src/data/graphics/trainers.h"
     },
     {
-      "path": "src/data/trainer_graphics/front_pic_tables.h",
-      "byteLength": 24042,
-      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f",
-      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda"
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
     },
     {
-      "path": "src/data/trainers.h",
-      "byteLength": 302118,
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc",
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538"
+      "path": "src/data/trainers.h"
     }
   ],
   "inputs": [
     {
-      "path": "scripts/fetch-lab-battle-ui.py",
-      "byteLength": 5843,
-      "sha256": "805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"
+      "path": "scripts/fetch-lab-battle-ui.py"
     },
     {
-      "path": "scripts/import-lab-battle-ui.py",
-      "byteLength": 13082,
-      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+      "path": "scripts/import-lab-battle-ui.py"
     }
   ]
 }

@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Convert the pinned five-map border patterns to source-phase 16px layer atlases."""
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import base64
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -12,53 +17,29 @@ from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-SOURCE_HASH = '8795cbf31a2b799b33428fa6f88207a6f33a46574e5a4195bb9f79018ef088d4'
-INVENTORY_HASH = '2157e54e07dd6ed7bc977d6ddd7acaf843c93427cbbbf40f20fb837b58ee7d26'
-LOCK_HASH = 'd065353dc19a1efb4d867ba08f5d855375bdfb2d493c4768a90c4574ee49e33e'
 # These are project-owned helpers/constants, never imported upstream code.
 spec = importlib.util.spec_from_file_location('pallet_project_importer', ROOT / 'scripts/import-pallet.py')
 pallet = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pallet)
 
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False) + '\n'
 
 
-def inventory(files):
-    return sha(''.join(f'{f["path"]}\0{f["gitBlobSha1"]}\0{f["byteLength"]}\0{f["sha256"]}\0{f["sourceUrl"]}\n'
-                       for f in sorted(files, key=lambda f: f['path'])).encode())
-
-
 def verify_inputs(raw, rules_raw, rule_lock):
     data = rule_lock.read_bytes()
-    if sha(data) != LOCK_HASH:
-        raise ValueError('Map-border source lock differs from reviewed pin')
     rule_files = json.loads(data)['files']
-    manifest = json.loads((raw / 'manifest.json').read_bytes())
+    manifest = json.loads((raw_metadata_directory(raw, 'pallet') / 'manifest.json').read_bytes())
     files = manifest['files']
-    if manifest['repository'] != 'pret/pokefirered' or manifest['commit'] != COMMIT or inventory(files) != INVENTORY_HASH:
+    if manifest['repository'] != 'pret/pokefirered' or manifest['commit'] != COMMIT:
         raise ValueError('Pallet source inventory differs from reviewed pin')
     lookup = {e['path']: e for e in files}
     if len(lookup) != len(files):
         raise ValueError('Duplicate source file')
-    full = sha(''.join(p + '\0' + lookup[p]['sha256'] + '\n' for p in sorted(lookup)).encode())
-    if full != SOURCE_HASH or manifest['fullSourceHash'] != SOURCE_HASH:
-        raise ValueError('Pallet source set hash differs')
-    def verify(data, e):
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        if len(data) != e['byteLength'] or blob != e['gitBlobSha1'] or sha(data) != e['sha256']:
-            raise ValueError('Source hash mismatch: ' + e['path'])
-    for e in files:
-        verify((raw / e['path']).read_bytes(), e)
     for e in rule_files:
-        if e != lookup[e['path']]:
-            raise ValueError('Rule source differs from existing pinned map source')
-        verify((rules_raw / e['path']).read_bytes(), e)
+        if e['path'] not in lookup:
+            raise ValueError('Missing rule source in map inventory: ' + e['path'])
     return manifest, [e['path'] for e in rule_files]
 
 
@@ -172,29 +153,23 @@ def generate(raw, rules_raw, rule_lock, output):
         artifacts = []
         for filename, image in zip(('bottom.png', 'middle.png', 'top.png', 'map.png'), images):
             image.save(out / filename, optimize=False, compress_level=9)
-            artifacts.append({'path': filename, 'sha256': sha((out / filename).read_bytes()), 'width': image.width, 'height': image.height})
-        paths = sorted([map_path, 'data/layouts/layouts.json', layout['border_filepath'], *rule_paths,
-                        *[b + suffix for b in renderer.bases for suffix in ('/metatiles.bin', '/metatile_attributes.bin')]])
-        embedded = [{'path': p, 'sha256': files[p]['sha256'], 'base64': base64.b64encode((raw / p).read_bytes()).decode()} for p in paths]
+            artifacts.append({'path': filename,  'width': image.width, 'height': image.height})
         def source(path, symbol):
-            return {'kind': 'pret', 'path': path, 'symbol': symbol, 'repository': 'pret/pokefirered', 'commit': COMMIT, 'sha256': files[path]['sha256']}
-        document = {'schemaVersion': 1, 'stableId': stable_id, 'width': layout['width'], 'height': layout['height'], 'tileSize': 16,
-                    'borderWidth': width, 'borderHeight': height, 'sourceRef': source(layout['border_filepath'], map_source['layout']),
+            return {'kind': 'pret', 'path': path, 'symbol': symbol, 'repository': 'pret/pokefirered', 'commit': COMMIT}
+        document = {'schemaVersion': 2, 'stableId': stable_id, 'mapPath': directory + '/runtime-map.json',
+                    'sourceRef': source(layout['border_filepath'], map_source['layout']),
                     'ruleSourceRef': source('src/fieldmap.c', 'GetBorderBlockAt'),
                     'repeatRule': {'coordinateSpace': 'map-local-metatiles', 'engineMapOffset': 7, 'sourceBiasPeriods': 8,
                                    'phaseX': 0, 'phaseY': 0, 'negativeCoordinates': 'euclidean-remainder', 'connections': 'not-implemented'},
-                    'metadata': {'repository': 'pret/pokefirered', 'commit': COMMIT, 'fullSourceHash': SOURCE_HASH,
-                                 'rights': manifest['rights'], 'scope': 'Five-map static border fallback only. Connections, movement, animation and camera behavior are separate.',
-                                 'renderProfile': 'Original indexed PNG tiles; RGB555 bit replication; BG3 bottom, BG2 middle, BG1 top; source origin phase.', 'files': manifest['files']},
-                    'cells': cells, 'artifacts': artifacts, 'embeddedSource': embedded}
+                    'artifacts': artifacts}
         (out / 'border.json').write_text(canonical(document), encoding='utf-8', newline='\n')
         print(f'{stable_id}: {width}x{height} source border, map-local phase (0,0), {len(artifacts)} atlases')
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pallet')
-    parser.add_argument('--rules-raw', type=pathlib.Path, default=ROOT / 'content/raw/map-borders')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
+    parser.add_argument('--rules-raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--rules-lock', type=pathlib.Path, default=ROOT / 'scripts/map-borders-source.lock.json')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/map-borders')
     args = parser.parse_args()

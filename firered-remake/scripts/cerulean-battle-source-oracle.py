@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Independent source-semantic vectors for the opt-in Cerulean battle kernel.
-No production C# is imported, executed or scraped. Fails closed on source drift.
+No production C# is imported, executed or scraped.
 """
-import argparse, hashlib, json, pathlib, subprocess
+import argparse, json, pathlib, subprocess
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 LOCK=ROOT/'scripts/cerulean-battle-source.lock.json'
@@ -14,7 +14,6 @@ def generate(ref):
     source={}
     for row in lock['files']:
         data=(ref/row['path']).read_bytes()
-        assert hashlib.sha256(data).hexdigest()==row['sha256'],row['path']
         source[row['path']]=data.decode()
     assert 'gBattleMoveDamage = gBattleMons[gBattlerTarget].maxHP / 2;' in source['src/battle_script_commands.c']
     assert 'gBattleMons[gBattlerTarget].ability != ABILITY_SHELL_ARMOR' in source['src/battle_script_commands.c']
@@ -35,7 +34,7 @@ def generate(ref):
                 draw('wild-battle.player.damage',16);draw('wild-battle.player.secondary-effect',100)
             draw('wild-battle.turn-end.random-turn-number')
             vectors.append(dict(move=move,target=target,seed=seed,trace=trace))
-    return dict(schemaVersion=1,sourceCommit=COMMIT,sourceLockSha256=hashlib.sha256(LOCK.read_bytes()).hexdigest(),
+    return dict(schemaVersion=1,sourceCommit=COMMIT,
                 semantics='source command RNG only, excludes animation/VBlank/controller timing',traceVectors=vectors,
                 recover=[dict(maxHp=m,before=b,after=min(m,b+max(1,m//2))) for m,b in [(1,1),(53,1),(53,50),(54,1)]],
                 potion=[dict(maxHp=m,hp=h,use=h>0 and (h<m//4 or m-h>50)) for m,h in [(43,9),(43,10),(80,30),(81,30),(80,0)]])

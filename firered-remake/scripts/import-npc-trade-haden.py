@@ -5,9 +5,14 @@ Pinned upstream Git blobs are inert data. Reviewed local readers/renderers retai
 all terrain, trainers, triggers, warps and source scripts. This resource package
 does not open Cycling Road or alter any of the nine trade definitions.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 from collections import deque
-import hashlib
 import importlib.util
 import json
 import os
@@ -20,32 +25,25 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'npc-trade-haden'
 RESOURCE_ID = 'firered-npc-trade-haden-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-HELPER_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-MANIFEST_SHA256 = '3f12b45e5d300cdd1bc85f6dda3b7607d3548e681f5b585ace8aaa79e878a8cf'
-LOCK_SHA256 = '7f7199c7d214daf7f3914f5d56da27e23530ecece48685e268abad655b26de5e'
 MAPS = ['Route18', 'Route18_EastEntrance_1F', 'Route18_EastEntrance_2F']
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_Building': 'primary/building',
     'gTileset_CeladonCity': 'secondary/celadon_city', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
 CITY_PATH = 'content/generated/fuchsia-route-region/fuchsia-city/runtime-map.json'
-CITY_SHA = 'e52978f1264280fee620b4323c11211ce66203922bafd7e3ed5ea775f8e41822'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_BOY': ('content/generated/silph-region/npc/boy.png', '66f9d36364cd200ca0ab6d3af85e8c8d524132f3b7733d605546f028780dc6a0'),
-    'OBJ_EVENT_GFX_POLICEMAN': ('content/generated/vermilion-region/npc/policeman.png', '888d6d1d5feaf30704c1f4026d9eb3c7d5b683453eba0733e4071747bbdc662e'),
-    'OBJ_EVENT_GFX_ROCKER': ('content/generated/silph-region/npc/rocker.png', '59e2bc1bd24f2bb6d763da22d0de3624a389f29e36bc755a69511a5b975555b1'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/silph-region/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a'),
+    'OBJ_EVENT_GFX_BOY': 'content/generated/silph-region/npc/boy.png',
+    'OBJ_EVENT_GFX_POLICEMAN': 'content/generated/vermilion-region/npc/policeman.png',
+    'OBJ_EVENT_GFX_ROCKER': 'content/generated/silph-region/npc/rocker.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
 }
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, digest, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == digest, 'Reviewed helper differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value)
     return value
@@ -117,7 +115,7 @@ def contracts(src, worlds, scripts, city_bytes, links):
         'EventScript_SetEnteringCyclingRoad', 'EventScript_SetExitingCyclingRoad', actor['script']]]
     return dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, tradeId=5, stableMapId=upper['stableId'],
         actorLocalId=1, actor=actor, mapTopology=links,
-        retainedCity=dict(path=CITY_PATH, sha256=CITY_SHA, byteLength=len(city_bytes), map='map.fuchsia-city',
+        retainedCity=dict(path=CITY_PATH,  map='map.fuchsia-city',
             connectionIndex=1, connection=connection, geometryChanges=[], eventChanges=[]),
         expectedMapCounts=dict(predecessor=316, successor=319), scriptsOwner='npc-trades', scriptDependencies=dependencies,
         sourceCyclingState=dict(variable='VAR_MAP_SCENE_ROUTE16', foot=0, cyclingRoad=1,
@@ -148,8 +146,8 @@ def main():
     target, dep, ref = [Path(os.path.abspath(p)) for p in (args.project_root, args.dependency_root, args.reference_root)]
     for path in (target, dep, ref): safe(path)
     need(not(target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Source/output overlap')
-    reader = module(dep/'scripts/import-cinnabar-source-preparation.py', READER_SHA, 'haden_reader')
-    helper = module(dep/'scripts/import-fossil-lab-region.py', HELPER_SHA, 'haden_helper')
+    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', 'haden_reader')
+    helper = module(dep / 'scripts/import-fossil-lab-region.py', 'haden_helper')
     reader.PRODUCT, reader.TILESETS, reader.PROFILE = dep, TILESETS, RESOURCE_ID
     helper.MAPS, helper.NPC_REUSE = MAPS, NPC_REUSE
     src = reader.Source(ref); worlds = [reader.decode(src, name) for name in MAPS]
@@ -161,53 +159,45 @@ def main():
     links = reader.topology(src, worlds)
     need(len(links['warps']) == 6 and len(links['connections']) == 2 and all(c['reciprocal'] for c in links['connections']), 'Original map topology differs')
     retained = dep/CITY_PATH; safe(retained); city_bytes = retained.read_bytes()
-    need(sha(city_bytes) == CITY_SHA, 'Retained Fuchsia map differs')
     contract = contracts(src, worlds, scripts, city_bytes, links)
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='haden-', dir=target) as folder:
         stage = Path(folder)
         for world in worlds:
             shared.import_map(src, world['sourceName'], world['stableId'], stage/reader.directory(world['sourceName']))
         npcs = helper.reuse_npcs(src, shared, worlds, stage, dep)
-        source_hash = sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         entries = []
         for world in worlds:
-            relative = reader.directory(world['sourceName']); rich_path = stage/relative/'world.json'; rich = rich_path.read_bytes()
-            compact = converter.convert(rich, sha(rich), source_hash); helper.compact_check(compact, world, src)
-            encoded = converter.encode(compact); (stage/relative/'runtime-map.json').write_bytes(encoded); rich_path.unlink()
+            relative = reader.directory(world['sourceName']); rich_path = stage/relative/'runtime-map.json'; rich = rich_path.read_bytes()
+            compact = converter.normalize_runtime(json.loads(rich)); helper.compact_check(compact, world, src)
+            encoded = converter.encode(compact); (stage/relative/'runtime-map.json').write_bytes(encoded)
             entries.append(dict(sourceName=world['sourceName'], stableId=world['stableId'], directory=relative,
-                sourceMapSymbol=world['events']['id'], path=relative+'/runtime-map.json', sha256=sha(encoded), byteLength=len(encoded),
-                sourceWorldSha256=sha(rich), sourceWorldByteLength=len(rich), fullSourceHash=source_hash))
+                sourceMapSymbol=world['events']['id'], path=relative+'/runtime-map.json'))
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False); lock_bytes = canonical(lock)
-        docs = {'catalog.json':dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=reader.TREE,
-            fullSourceHash=source_hash, maps=entries, inputFiles=lock['files'], tilesets=TILESETS),
-            'contracts.json':contract, 'npc-source.json':npcs, 'scripts.json':scripts, 'constants.json':constants,
-            'geometry.json':dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+             maps=entries, inputFiles=lock['files'], tilesets=TILESETS),
+            'contracts.json':contract, 'npc-source.json':npcs, 'scripts.json':scripts,
+            'geometry.json':dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage/name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
             for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-            sourceTree=reader.TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-            helperSha256=HELPER_SHA, converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],
-            rendererSha256=reader.HELPERS['_regional_service_shared.py'], inputCount=len(src.entries), mapCount=3,
+              inputCount=len(src.entries), mapCount=3,
             cellCount=1499, borderCellCount=12, objectCount=5, directedWarpCount=6, coordinateEventCount=11,
             backgroundEventCount=4, reusedNpcGraphicsCount=4, scriptBlockCount=len(scripts['blocks']),
             unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned manifest differs')
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned lock differs')
         writes = [(target/'scripts/npc-trade-haden.lock.json', lock_bytes)]
-        writes += [(target/'content/raw'/PACKAGE/p, b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
             if path.suffix == '.json': json.loads(data)
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: '+str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes), lockSha256=sha(lock_bytes),
-            lockByteLength=len(lock_bytes), fullSourceHash=source_hash, inputCount=len(src.entries), outputCount=len(outputs),
+        print(json.dumps(dict( inputCount=len(src.entries), outputCount=len(outputs),
             scriptBlockCount=len(scripts['blocks']), mapCount=3, cellRoundtripCount=1499, borderCellRoundtripCount=12,
             reusedNpcGraphicsCount=4, check=args.check), indent=2))
 

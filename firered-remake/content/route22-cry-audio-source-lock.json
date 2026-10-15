@@ -13,156 +13,92 @@
   ],
   "sourceFiles": [
     {
-      "path": "src/sound.c",
-      "byteLength": 15232,
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+      "path": "src/sound.c"
     },
     {
-      "path": "src/pokemon.c",
-      "byteLength": 221865,
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "sound/cry_tables.inc",
-      "byteLength": 16533,
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "include/constants/sound.h",
-      "byteLength": 2051,
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+      "path": "include/constants/sound.h"
     },
     {
-      "path": "sound/direct_sound_samples/cries/spearow.wav",
-      "byteLength": 8836,
-      "sha256": "34df66e764c86d6335fea4a93049b73f4519d55ed94bb2c831705f2d77cb48db",
-      "gitBlobSha1": "e441d27ed47e9cbc76dfe72d0b962063d0f6378d"
+      "path": "sound/direct_sound_samples/cries/spearow.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/fearow.wav",
-      "byteLength": 8634,
-      "sha256": "52e689a78da95a654a3a89806bdddabdd0d1f35082fb2a5848024dd10ad84e78",
-      "gitBlobSha1": "d2ab288dd162b21b4b14d8b908a2623b2922f259"
+      "path": "sound/direct_sound_samples/cries/fearow.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/mankey.wav",
-      "byteLength": 8210,
-      "sha256": "7a5ff39d7eb01025c0a38adb73d69d0bc099b85e4ae59b662e6adcdd18aa9077",
-      "gitBlobSha1": "9cf9f486688f04859754db0442c6ed645090552a"
+      "path": "sound/direct_sound_samples/cries/mankey.wav"
     }
   ],
   "studyFiles": [
     {
-      "path": "manifest.json",
-      "byteLength": 970213,
-      "sha256": "545523faab56c15b1a388aebfbf285958e439c7a160c303bab3d597eda1d038d"
+      "path": "manifest.json"
     },
     {
-      "path": "inventory.json",
-      "byteLength": 1142993,
-      "sha256": "26598ab2d5f1d67d2925f02d3570c1a6e1323a2814f773bd0077069f18d926c0"
+      "path": "inventory.json"
     },
     {
-      "path": "runtime-manifest.json",
-      "byteLength": 224518,
-      "sha256": "bb4707a91a93f2cc852b5ffd6b7070b5359b9517bf0c5c021466a62bca45ae72"
+      "path": "runtime-manifest.json"
     },
     {
-      "path": "cry-inventory.json",
-      "byteLength": 47355,
-      "sha256": "5209ab1ca1821f2009c11d8204696bb641245716c0d5b7be87cca329f6396a9c"
+      "path": "cry-inventory.json"
     },
     {
-      "path": "RESULT.json",
-      "byteLength": 2006,
-      "sha256": "0b6351703a428e221d21dc6b83b0a6aaf5099f031f45bcb2432fd908ce03b3c8"
+      "path": "RESULT.json"
     },
     {
-      "path": "run_study.py",
-      "byteLength": 6262,
-      "sha256": "978d1f800f52ffeab7b2a00979bbb61d944a99cecbeeed19e7ba6a48eb60f792"
+      "path": "run_study.py"
     },
     {
-      "path": "encode_qoa.gd",
-      "byteLength": 522,
-      "sha256": "d6c333e7e5de9bc96c38b10301fa57f131b89635288ac6dd6ae62ade7ab1fbae"
+      "path": "encode_qoa.gd"
     },
     {
-      "path": "results/CRY_SPEAROW_NORMAL.json",
-      "byteLength": 1066,
-      "sha256": "d58509dc8ba5fc4dd25e60801458e7ef488e7604e9d18a8a5e305cd6c84cab69"
+      "path": "results/CRY_SPEAROW_NORMAL.json"
     },
     {
-      "path": "traces/CRY_SPEAROW_NORMAL.csv",
-      "byteLength": 16019,
-      "sha256": "7d447000dbcd148409f265fa4d759bd4f1317c61c21ba10588b1e375a1f8b0bc"
+      "path": "traces/CRY_SPEAROW_NORMAL.csv"
     },
     {
-      "path": "assets/CRY_SPEAROW_NORMAL.qoa",
-      "byteLength": 9088,
-      "sha256": "818a46ec398b20c409791b9937f687e70c4cccae3c7f332d32c9f25c496179e9"
+      "path": "assets/CRY_SPEAROW_NORMAL.qoa"
     },
     {
-      "path": "results/CRY_FEAROW_NORMAL.json",
-      "byteLength": 1076,
-      "sha256": "3aaf98e2dd8df9d58c6868afa01842e80ce0985bab7f9fe3fd5ce9638df1b7ec"
+      "path": "results/CRY_FEAROW_NORMAL.json"
     },
     {
-      "path": "traces/CRY_FEAROW_NORMAL.csv",
-      "byteLength": 16019,
-      "sha256": "7d447000dbcd148409f265fa4d759bd4f1317c61c21ba10588b1e375a1f8b0bc"
+      "path": "traces/CRY_FEAROW_NORMAL.csv"
     },
     {
-      "path": "assets/CRY_FEAROW_NORMAL.qoa",
-      "byteLength": 8920,
-      "sha256": "c03ce9c6359cb9d244184149d180952e1cc6523108e058accc1c54ac7cb14082"
+      "path": "assets/CRY_FEAROW_NORMAL.qoa"
     },
     {
-      "path": "results/CRY_MANKEY_NORMAL.json",
-      "byteLength": 1063,
-      "sha256": "8f597c9479833117e1633c9ce4da6454be2f8b5d5be49bed4d6c7c75092359b8"
+      "path": "results/CRY_MANKEY_NORMAL.json"
     },
     {
-      "path": "traces/CRY_MANKEY_NORMAL.csv",
-      "byteLength": 16019,
-      "sha256": "7d447000dbcd148409f265fa4d759bd4f1317c61c21ba10588b1e375a1f8b0bc"
+      "path": "traces/CRY_MANKEY_NORMAL.csv"
     },
     {
-      "path": "assets/CRY_MANKEY_NORMAL.qoa",
-      "byteLength": 8544,
-      "sha256": "65e524910a0d12659f980fb215e39d79f64dc0c5d249539174c831d299807677"
+      "path": "assets/CRY_MANKEY_NORMAL.qoa"
     }
   ],
   "renderer": {
-    "name": "mGBA-0.10.5-original-FireRed-rev0-m4a-offline-v1",
-    "sourceSha256": "a8267d4ff5244c688f7a22a82a684134f9b731f066cd8ee122718be06a98db7f",
-    "binarySha256": "3d158c1301984157a724f37418ea12a6caadbcba2bd9a2b83955d4f15daff0fb"
+    "name": "mGBA-0.10.5-original-FireRed-rev0-m4a-offline-v1"
   },
   "rendererFiles": [
     {
-      "path": "render_audio.c",
-      "byteLength": 6263,
-      "sha256": "a8267d4ff5244c688f7a22a82a684134f9b731f066cd8ee122718be06a98db7f"
+      "path": "render_audio.c"
     },
     {
-      "path": "render_audio",
-      "byteLength": 17440,
-      "sha256": "3d158c1301984157a724f37418ea12a6caadbcba2bd9a2b83955d4f15daff0fb"
+      "path": "render_audio"
     },
     {
-      "path": "symbols.json",
-      "byteLength": 403,
-      "sha256": "950f15dd421f5f9ffc01b523389ce2147bcbb59dc58351486a0c1e72e40dde66"
+      "path": "symbols.json"
     }
   ],
   "cryMode": {

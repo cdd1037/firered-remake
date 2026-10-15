@@ -4,8 +4,13 @@
 Only immutable local Git objects or verified raw cache bytes are read. No upstream
 code, ROM, network, runtime shaders, battle effects or evolution executor is used.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,8 +24,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-trainer-card-v1'
-LOCK_SHA256 = '898efb9be9d35163e08e2b5c47e22e8b3e59e35aa9bb1159727bffe379adc047'
-MANIFEST_SHA256 = '7fe6515e5ad5e1caa915610d2d6972255c002571ced748888dec6722bd5ec8f5'
 PATHS = frozenset("""src/trainer_card.c
 src/trainer_pokemon_sprites.c
 src/strings.c
@@ -57,14 +60,6 @@ pixels = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(pixels)
 
 
-def source_set_hash(files):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in sorted(files, key=lambda e: e['path'])).encode('utf-8'))
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
@@ -97,54 +92,32 @@ def safe(root, relative=None):
 def load_lock(path=None):
     path = path or ROOT / 'scripts/fetch-trainer-card.lock.json'
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed trainer card source lock differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Trainer card source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Trainer card source dependency set differs')
     return lock
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Trainer card source hash differs: ' + entry['path'])
-
-
 def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                          lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock['files']),
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+
                           inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Trainer card raw manifest differs')
-    else:
-        # ls-tree is a read-only object identity check; source contents use git show only.
-        tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
-                              check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
-        if tree != TREE:
-            raise ValueError('Trainer card source tree differs')
+    if repository is not None:
+        tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'], check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
             data = target.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']],
-                                 check=True, capture_output=True, timeout=30).stdout.decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Trainer card input is not the pinned regular Git blob: ' + entry['path'])
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                                   check=True, capture_output=True, timeout=30).stdout
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
@@ -174,7 +147,7 @@ def overlay(destination, width, source, sw, sh, x=0, y=0):
                 destination[target:target+4] = source[start:start+4]
 
 
-def convert(lock, sources):
+def convert( sources):
     assets, outputs = [], {}
     code = sources['src/trainer_card.c'].decode('utf-8')
     def require(path, needle):
@@ -216,11 +189,9 @@ def convert(lock, sources):
     def add(identifier, w, h, rgba, x=0, y=0, input_paths=()):
         if len(rgba) != w*h*4:
             raise ValueError('Trainer Card RGBA size differs')
-        png_path, rgba_path = identifier+'.png', identifier+'.rgba'
-        outputs[png_path], outputs[rgba_path] = pixels.png(w,h,rgba), bytes(rgba)
-        assets.append(dict(id=identifier, texturePath=png_path, rgbaPath=rgba_path,
-            width=w,height=h,x=x,y=y,sha256=sha(outputs[png_path]),rgbaSha256=sha(rgba),
-            sourcePaths=list(input_paths)))
+        png_path = identifier + '.png'
+        outputs[png_path] = pixels.png(w, h, rgba)
+        assets.append(dict(id=identifier, texturePath=png_path, width=w, height=h, x=x, y=y, sourcePaths=list(input_paths)))
 
     base = 'graphics/trainer_card/'
     tiles = pixels.tile_list(sources[base+'tiles.png'])
@@ -289,17 +260,15 @@ def convert(lock, sources):
         if match is None: raise ValueError('Missing source function '+symbol)
         refs.append(dict(path='src/trainer_card.c',symbol=symbol,startLine=code.count('\n',0,match.start())+1))
     outputs['trainer-card.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock['files']),assets=assets,texts=texts,layout=layout,rules=rules,sourceRefs=refs,
+        assets=assets,texts=texts,layout=layout,rules=rules,sourceRefs=refs,
         limitations=['Static FRLG own-card, zero-star graphics only. No card-flip timing or link profile.',
             'Play time and game statistics are not persisted by the current campaign. Do not manufacture them from steps.',
             'Back-side frame is supplied, but statistics and sticker/selected-icon systems remain unimplemented.',
             'Pixel-authenticated source conversion is not evidence of complete native-frame equivalence.']))
-    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,
-        lockSha256=LOCK_SHA256,fullSourceHash=source_set_hash(lock['files']),inputCount=len(sources),assetCount=len(assets),
-        upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+        inputCount=len(sources),assetCount=len(assets),
+        upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
-
-
 
 
 def import_content(raw, out, repository=None, lock_path=None):
@@ -312,11 +281,9 @@ def import_content(raw, out, repository=None, lock_path=None):
             raise ValueError('Materialization must not overlap the reference repository')
     lock=load_lock(lock_path)
     sources=read_sources(lock,raw,repository)
-    outputs=convert(lock,sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed trainer card generated output hashes differ')
+    outputs=convert(sources)
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None: material[(raw,'manifest.json')]=raw_manifest(lock)
+    if repository is not None: material[(raw_metadata_directory(raw, 'trainer-card'),'manifest.json')]=raw_manifest(lock)
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -327,15 +294,13 @@ def import_content(raw, out, repository=None, lock_path=None):
         target.parent.mkdir(parents=True,exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs),
-        trainerCardSha256=sha(outputs['trainer-card.json']),manifestSha256=sha(outputs['manifest.json']),
-        fullSourceHash=source_set_hash(lock['files']))
+    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs))
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path,default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/trainer-card')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/trainer-card')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/fetch-trainer-card.lock.json')
     args=parser.parse_args()

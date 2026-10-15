@@ -5,39 +5,38 @@ namespace Game.Domain.Encounters;
 
 /// <summary>Inactive source declarations are evidence only, with no field dispatch API.</summary>
 public sealed record CeruleanCaveRockSmashSourceTable(MapId Map, string SourceCommit, string SourcePath,
-    string SourceSymbol, string SourceSha256, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
+    string SourceSymbol, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
 public sealed record CeruleanCaveHeldItemSource(SpeciesId Species, string Common, string Rare);
 
 /// <summary>Exact pinned FireRed rows for the three floors. Only Land, Surf and Old Rod are field-enabled.</summary>
 public static class CeruleanCaveEncounterTables
 {
-    public const string SourceSha256 = "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c";
     public static ImmutableArray<EarlyLandEncounterTable> Land { get; } = [
-        new(new("map.cerulean-cave-1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", SourceSha256, 7,
+        new(new("map.cerulean-cave-1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", 7,
             [new(0, new("pret:SPECIES_MAGNETON"), 49, 49, 20), new(1, new("pret:SPECIES_PARASECT"), 49, 49, 20), new(2, new("pret:SPECIES_GOLBAT"), 46, 46, 10), new(3, new("pret:SPECIES_MACHOKE"), 46, 46, 10), new(4, new("pret:SPECIES_PRIMEAPE"), 52, 52, 10), new(5, new("pret:SPECIES_DITTO"), 52, 52, 10), new(6, new("pret:SPECIES_ELECTRODE"), 58, 58, 5), new(7, new("pret:SPECIES_PARASECT"), 58, 58, 5), new(8, new("pret:SPECIES_GOLBAT"), 55, 55, 4), new(9, new("pret:SPECIES_WOBBUFFET"), 55, 55, 4), new(10, new("pret:SPECIES_PRIMEAPE"), 61, 61, 1), new(11, new("pret:SPECIES_DITTO"), 61, 61, 1)]),
-        new(new("map.cerulean-cave-2f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave2F_FireRed", SourceSha256, 7,
+        new(new("map.cerulean-cave-2f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave2F_FireRed", 7,
             [new(0, new("pret:SPECIES_GOLBAT"), 49, 49, 20), new(1, new("pret:SPECIES_MACHOKE"), 49, 49, 20), new(2, new("pret:SPECIES_MAGNETON"), 52, 52, 10), new(3, new("pret:SPECIES_PARASECT"), 52, 52, 10), new(4, new("pret:SPECIES_KADABRA"), 55, 55, 10), new(5, new("pret:SPECIES_DITTO"), 55, 55, 10), new(6, new("pret:SPECIES_GOLBAT"), 58, 58, 5), new(7, new("pret:SPECIES_WOBBUFFET"), 58, 58, 5), new(8, new("pret:SPECIES_ELECTRODE"), 61, 61, 4), new(9, new("pret:SPECIES_PARASECT"), 61, 61, 4), new(10, new("pret:SPECIES_KADABRA"), 64, 64, 1), new(11, new("pret:SPECIES_DITTO"), 64, 64, 1)]),
-        new(new("map.cerulean-cave-b1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", SourceSha256, 7,
+        new(new("map.cerulean-cave-b1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", 7,
             [new(0, new("pret:SPECIES_KADABRA"), 58, 58, 20), new(1, new("pret:SPECIES_DITTO"), 58, 58, 20), new(2, new("pret:SPECIES_MAGNETON"), 55, 55, 10), new(3, new("pret:SPECIES_PARASECT"), 55, 55, 10), new(4, new("pret:SPECIES_GOLBAT"), 52, 52, 10), new(5, new("pret:SPECIES_MACHOKE"), 52, 52, 10), new(6, new("pret:SPECIES_KADABRA"), 67, 67, 5), new(7, new("pret:SPECIES_DITTO"), 67, 67, 5), new(8, new("pret:SPECIES_ELECTRODE"), 64, 64, 4), new(9, new("pret:SPECIES_PARASECT"), 64, 64, 4), new(10, new("pret:SPECIES_GOLBAT"), 61, 61, 1), new(11, new("pret:SPECIES_WOBBUFFET"), 61, 61, 1)]),
     ];
     public static ImmutableArray<WaterEncounterTable> Water { get; } = [
-        new(new("map.cerulean-cave-1f"), "MAP_CERULEAN_CAVE_1F", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", SourceSha256, 2,
+        new(new("map.cerulean-cave-1f"), "MAP_CERULEAN_CAVE_1F", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", 2,
             [new(0, new("pret:SPECIES_PSYDUCK"), 30, 40, 60), new(1, new("pret:SPECIES_GOLDUCK"), 40, 50, 30), new(2, new("pret:SPECIES_GOLDUCK"), 45, 55, 5), new(3, new("pret:SPECIES_PSYDUCK"), 40, 50, 4), new(4, new("pret:SPECIES_PSYDUCK"), 40, 50, 1)]),
-        new(new("map.cerulean-cave-b1f"), "MAP_CERULEAN_CAVE_B1F", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", SourceSha256, 2,
+        new(new("map.cerulean-cave-b1f"), "MAP_CERULEAN_CAVE_B1F", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", 2,
             [new(0, new("pret:SPECIES_PSYDUCK"), 40, 50, 60), new(1, new("pret:SPECIES_GOLDUCK"), 50, 60, 30), new(2, new("pret:SPECIES_GOLDUCK"), 55, 65, 5), new(3, new("pret:SPECIES_PSYDUCK"), 50, 60, 4), new(4, new("pret:SPECIES_PSYDUCK"), 50, 60, 1)]),
     ];
     public static ImmutableArray<OldRodEncounterTable> FishingSource { get; } = [
-        new(new("map.cerulean-cave-1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", SourceSha256, 20,
+        new(new("map.cerulean-cave-1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", 20,
             [new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70), new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30), new(2, new("pret:SPECIES_POLIWAG"), 5, 15, 60), new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20), new(4, new("pret:SPECIES_GOLDEEN"), 5, 15, 20), new(5, new("pret:SPECIES_POLIWAG"), 15, 25, 40), new(6, new("pret:SPECIES_POLIWHIRL"), 20, 30, 40), new(7, new("pret:SPECIES_GYARADOS"), 15, 25, 15), new(8, new("pret:SPECIES_PSYDUCK"), 15, 25, 4), new(9, new("pret:SPECIES_PSYDUCK"), 25, 35, 1)]),
-        new(new("map.cerulean-cave-b1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", SourceSha256, 20,
+        new(new("map.cerulean-cave-b1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", 20,
             [new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70), new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30), new(2, new("pret:SPECIES_POLIWAG"), 5, 15, 60), new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20), new(4, new("pret:SPECIES_GOLDEEN"), 5, 15, 20), new(5, new("pret:SPECIES_POLIWAG"), 15, 25, 40), new(6, new("pret:SPECIES_POLIWHIRL"), 20, 30, 40), new(7, new("pret:SPECIES_GYARADOS"), 15, 25, 15), new(8, new("pret:SPECIES_PSYDUCK"), 15, 25, 4), new(9, new("pret:SPECIES_GYARADOS"), 25, 35, 1)]),
     ];
     public static ImmutableArray<CeruleanCaveRockSmashSourceTable> RockSmashSource { get; } = [
-        new(new("map.cerulean-cave-1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", SourceSha256, 50,
+        new(new("map.cerulean-cave-1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave1F_FireRed", 50,
             [new(0, new("pret:SPECIES_GEODUDE"), 30, 40, 60), new(1, new("pret:SPECIES_GRAVELER"), 40, 50, 30), new(2, new("pret:SPECIES_GRAVELER"), 45, 55, 5), new(3, new("pret:SPECIES_GEODUDE"), 40, 50, 4), new(4, new("pret:SPECIES_GEODUDE"), 40, 50, 1)]),
-        new(new("map.cerulean-cave-2f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave2F_FireRed", SourceSha256, 50,
+        new(new("map.cerulean-cave-2f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCave2F_FireRed", 50,
             [new(0, new("pret:SPECIES_GEODUDE"), 35, 45, 60), new(1, new("pret:SPECIES_GRAVELER"), 45, 55, 30), new(2, new("pret:SPECIES_GRAVELER"), 50, 60, 5), new(3, new("pret:SPECIES_GEODUDE"), 45, 55, 4), new(4, new("pret:SPECIES_GEODUDE"), 45, 55, 1)]),
-        new(new("map.cerulean-cave-b1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", SourceSha256, 50,
+        new(new("map.cerulean-cave-b1f"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sCeruleanCaveB1F_FireRed", 50,
             [new(0, new("pret:SPECIES_GEODUDE"), 40, 50, 60), new(1, new("pret:SPECIES_GRAVELER"), 50, 60, 30), new(2, new("pret:SPECIES_GRAVELER"), 55, 65, 5), new(3, new("pret:SPECIES_GEODUDE"), 50, 60, 4), new(4, new("pret:SPECIES_GEODUDE"), 50, 60, 1)]),
     ];
     public static ImmutableArray<OldRodEncounterTable> OldRod { get; } =
@@ -50,7 +49,6 @@ public static class CeruleanCaveEncounterTables
     public static bool IsCave(MapId map) => Land.Any(t => t.Map == map);
 
     public const string HeldItemSourcePath = "src/data/pokemon/species_info.h";
-    public const string HeldItemSourceSha256 = "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e";
 
     // Every random source species, including the inactive rod and Rock Smash rows.
     public static ImmutableArray<CeruleanCaveHeldItemSource> HeldItems { get; } = [

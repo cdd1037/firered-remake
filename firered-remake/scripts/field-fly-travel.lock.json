@@ -1,75 +1,42 @@
 {
   "schemaVersion": 1,
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "src/field_effect.c",
-      "byteLength": 125868,
-      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
-      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be"
+      "path": "src/field_effect.c"
     },
     {
-      "path": "src/trig.c",
-      "byteLength": 22537,
-      "sha256": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",
-      "gitBlobSha1": "2181ebef75cad163187971dac4b2179f95a4ef31"
+      "path": "src/trig.c"
     },
     {
-      "path": "src/sprite.c",
-      "byteLength": 48783,
-      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
-      "gitBlobSha1": "d0198d53004775c8664dcccf57833e178833776e"
+      "path": "src/sprite.c"
     },
     {
-      "path": "src/field_fadetransition.c",
-      "byteLength": 25263,
-      "sha256": "6fa3cb3b827470de6c4942b0296bf823529faec41c6473ffe88675a44114851e",
-      "gitBlobSha1": "f392a06d5c05966441ab448fec9f5a06c908c489"
+      "path": "src/field_fadetransition.c"
     },
     {
-      "path": "src/field_weather.c",
-      "byteLength": 33681,
-      "sha256": "935ed0d0d83ff91bd8fdb52883c8223a816a66a40ec44b2b61c3e68fedc52672",
-      "gitBlobSha1": "56cf6505bd381fde0aaa9a704cc4e997b5f934d2"
+      "path": "src/field_weather.c"
     },
     {
-      "path": "src/event_object_movement.c",
-      "byteLength": 326145,
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b"
+      "path": "src/event_object_movement.c"
     },
     {
-      "path": "src/data/field_effects/field_effect_objects.h",
-      "byteLength": 38717,
-      "sha256": "cfdb0c9dbac21ea91964e76a2b9de7ddc104cfdd048d3a517739b9fe7350a98d",
-      "gitBlobSha1": "780ef92f859a2b3cf7aeb07af626e7cc1aecb912"
+      "path": "src/data/field_effects/field_effect_objects.h"
     },
     {
-      "path": "src/data/object_events/object_event_anims.h",
-      "byteLength": 37750,
-      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e",
-      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d"
+      "path": "src/data/object_events/object_event_anims.h"
     },
     {
-      "path": "graphics/field_effects/pics/bird.png",
-      "byteLength": 1006,
-      "sha256": "6b5885da142a8a75b140f8d5cbdf5d409f3573accb7f1f53f21329ffb9f318c0",
-      "gitBlobSha1": "124d755a0a888b2744e622627c5347aafb2d5f9c"
+      "path": "graphics/field_effects/pics/bird.png"
     },
     {
-      "path": "graphics/object_events/palettes/player.pal",
-      "byteLength": 189,
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c",
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e"
+      "path": "graphics/object_events/palettes/player.pal"
     }
   ],
   "output": {
     "path": "src/Game.Godot/Assets/Reference/field-fly-bird.rgba",
     "width": 64,
-    "height": 320,
-    "byteLength": 81920,
-    "sha256": "103f863795b021713de755e9dadc9b3ce9753cd17f1ddd25d3e0a50f41a493ca"
+    "height": 320
   },
   "frames": [
     "without-player",

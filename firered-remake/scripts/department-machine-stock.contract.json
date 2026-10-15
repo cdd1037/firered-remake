@@ -4,67 +4,67 @@
   "inputs": [
     {
       "path": "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc",
-      "localPath": "content/raw/department-store/data/maps/CeladonCity_DepartmentStore_2F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_2F/scripts.inc",
       "byteLength": 1430,
       "sha256": "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e"
     },
     {
       "path": "src/data/items.json",
-      "localPath": "content/raw/department-store/src/data/items.json",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/items.json",
       "byteLength": 194280,
       "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
     },
     {
       "path": "include/constants/items.h",
-      "localPath": "content/raw/department-store/include/constants/items.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/items.h",
       "byteLength": 12436,
       "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
     },
     {
       "path": "src/data/pokemon/tmhm_learnsets.h",
-      "localPath": "content/raw/pewter-machines/src/data/pokemon/tmhm_learnsets.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h",
       "byteLength": 559340,
       "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
     },
     {
       "path": "src/move_descriptions.c",
-      "localPath": "content/raw/pewter-machines/src/move_descriptions.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/move_descriptions.c",
       "byteLength": 62085,
       "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
     },
     {
       "path": "include/constants/moves.h",
-      "localPath": "content/raw/pewter-machines/include/constants/moves.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/moves.h",
       "byteLength": 10249,
       "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
     },
     {
       "path": "src/data/battle_moves.h",
-      "localPath": "content/raw/pokemon/src/data/battle_moves.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/battle_moves.h",
       "byteLength": 121457,
       "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
     },
     {
       "path": "src/shop.c",
-      "localPath": "content/raw/department-store/src/shop.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/shop.c",
       "byteLength": 34724,
       "sha256": "d326d1498cad7fc610f483237a3ff17b0d27836dcf8213960b41bbd2b58844f8"
     },
     {
       "path": "src/item.c",
-      "localPath": "content/raw/department-store/src/item.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/item.c",
       "byteLength": 17534,
       "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
     },
     {
       "path": "src/tm_case.c",
-      "localPath": "content/raw/pewter-region/src/tm_case.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/tm_case.c",
       "byteLength": 56461,
       "sha256": "3dad9224df99f5432f37ca80b752da0f41a0d60dabeddc839309588c188a324c"
     },
     {
       "path": "src/data/item_icon_table.h",
-      "localPath": "content/raw/pewter-machines/src/data/item_icon_table.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/item_icon_table.h",
       "byteLength": 30370,
       "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
     }

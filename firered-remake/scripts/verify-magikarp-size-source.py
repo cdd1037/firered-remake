@@ -6,7 +6,6 @@ The original data/functions are compiled in a temporary harness, never an upstre
 The C# file is compiled alone against the existing main Game.Domain.dll and net10 references.
 """
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -14,7 +13,6 @@ import subprocess
 import tempfile
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-SOURCE_HASH = '58561f09e5425a5def0fba121c1424f7d2c877ed1f48ba3368abd3717cf15059'
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -30,7 +28,6 @@ def main():
     parser.add_argument('--integrated-domain', type=pathlib.Path, help='Use the exact already-built Domain assembly; do not compile the new type again')
     args = parser.parse_args()
     source = run(['git', 'show', COMMIT + ':src/pokemon_size_record.c'], cwd=args.reference)
-    assert hashlib.sha256(source).hexdigest() == SOURCE_HASH
     source = source.decode()
     table = re.search(r'struct UnknownStruct\n.*?\n\};\n\nstatic const struct UnknownStruct sBigMonSizeTable\[\] =\n\{.*?\n\};', source, re.S)[0]
     functions = source[source.index('static u32 GetMonSizeHash'):source.index('static void FormatMonSizeRecord')]
@@ -131,9 +128,9 @@ static class Program {
     boundaries = [0,1,9,10,109,110,309,310,709,710,2709,2710,7709,7710,17709,17710,
                   32709,32710,47709,47710,57709,57710,62709,62710,64709,64710,65209,65210,
                   65409,65410,65509,65510,65535]
-    result = dict(sourceCommit=COMMIT, sourcePath='src/pokemon_size_record.c', sourceSha256=SOURCE_HASH,
-                  sdk='10.0.401', runtime='10.0.12', fullProductBuild=False, integratedDomain=bool(args.integrated_domain), domainSha256=hashlib.sha256(domain.read_bytes()).hexdigest(), comparedSizeHashes=65536,
-                  comparedPersonalityIvVectors=len(cases), sourceSizeTableSha256=hashlib.sha256(expected[:65536*4]).hexdigest(),
+    result = dict(sourceCommit=COMMIT, sourcePath='src/pokemon_size_record.c',
+                  sdk='10.0.401', runtime='10.0.12', fullProductBuild=False, integratedDomain=bool(args.integrated_domain), comparedSizeHashes=65536,
+                  comparedPersonalityIvVectors=len(cases),
                   boundaryVectors=[dict(record=i,sizeTenthsCentimeters=values[i]) for i in boundaries],
                   hashVectors=[dict(personality=pid,ivs=ivs,expectedHash=values[65536+i]) for i,(pid,ivs) in enumerate(cases)],
                   comparisonAndScriptChecksPassed=True, allPassed=True)

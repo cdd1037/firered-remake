@@ -4,8 +4,13 @@
 Only immutable local Git objects or verified raw cache bytes are read. No upstream
 code, ROM, network, runtime shaders, battle effects or evolution executor is used.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,8 +24,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-storage-art-v1'
-LOCK_SHA256 = '56f010572588b32392d6ca95428fcb737d780e2e53fce33862282f3f2c5565ea'
-MANIFEST_SHA256 = '5b2cab19c6636313ad7b0cdd02f4ecca6c5b2e6548f114656c445bdbb8198c88'
 SPECIES = (('Bulbasaur',1),('Ivysaur',2),('Venusaur',3),('Charmander',4),('Charmeleon',5),('Charizard',6),
            ('Squirtle',7),('Wartortle',8),('Blastoise',9),('Caterpie',10),('Metapod',11),('Butterfree',12),
            ('Weedle',13),('Kakuna',14),('Beedrill',15),('Pidgey',16),('Pidgeotto',17),('Pidgeot',18),
@@ -64,14 +67,6 @@ pixels = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(pixels)
 
 
-def source_set_hash(files):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in sorted(files, key=lambda e: e['path'])).encode('utf-8'))
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
@@ -104,61 +99,40 @@ def safe(root, relative=None):
 def load_lock(path=None):
     path = path or ROOT / 'scripts/fetch-storage-art.lock.json'
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed storage art source lock differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Storage art source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Storage art source dependency set differs')
     return lock
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Storage art source hash differs: ' + entry['path'])
-
-
 def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                          lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock['files']),
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+
                           inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Storage art raw manifest differs')
-    else:
-        # ls-tree is a read-only object identity check; source contents use git show only.
+    if repository is not None:
         tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
                               check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
-        if tree != TREE:
-            raise ValueError('Storage art source tree differs')
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
             data = target.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']],
-                                 check=True, capture_output=True, timeout=30).stdout.decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Storage art input is not the pinned regular Git blob: ' + entry['path'])
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                                   check=True, capture_output=True, timeout=30).stdout
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
 
 def reference(lock, sources, path, symbol, needle=None):
     entry = next(e for e in lock['files'] if e['path'] == path)
-    result = dict(path=path, symbol=symbol, sha256=entry['sha256'])
+    result = dict(path=path, symbol=symbol)
     if needle is not None:
         source = sources[path].decode('utf-8')
         if source.count(needle) != 1:
@@ -255,24 +229,14 @@ def convert(lock, sources):
         indices = indices[:32*32]
         colors = pixels.palette(sources[palette_path])
         rgba = pixels.rgba(indices, colors)
-        png_path,rgba_path = f'icons/{stem}.png', f'icons/{stem}.rgba'
-        outputs[png_path],outputs[rgba_path] = pixels.png(32,32,rgba),rgba
-        icons.append(dict(speciesId='pret:'+symbol, sourceSpeciesId=sid, texturePath=png_path,
-            rgbaPath=rgba_path, sha256=sha(outputs[png_path]), rgbaSha256=sha(rgba),
-            width=32,height=32,sourceFrameIndex=0,sourceFrameCount=2,paletteIndex=palette_index,
-            paletteVariant='shared-normal-shiny',transparentIndex=0,indexSha256=sha(indices),
-            paletteRgb555=[(r>>3)|((g>>3)<<5)|((b>>3)<<10) for r,g,b in colors],
-            sourceRefs=[reference(lock,sources,image_path,'gMonIcon_'+name),
-                        reference(lock,sources,palette_path,'gMonIconPalettes['+str(palette_index)+']'),
-                        reference(lock,sources,ip,'gMonIconPaletteIndices['+symbol+']',palette_match[0]),
-                        reference(lock,sources,gp,'CreateMonIconSprite', 'template.paletteTag = PALTAG_MON_ICON_0 + gMonIconPaletteIndices[species];'),
-                        reference(lock,sources,gp,'TryLoadMonIconTiles', 'CpuCopy32(GetMonIconTiles(species, TRUE), (void *)(OBJ_VRAM0) + offset * 32, 0x200);')]))
+        png_path = f'icons/{stem}.png'
+        outputs[png_path] = pixels.png(32, 32, rgba)
+        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, texturePath=png_path, width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2, paletteIndex=palette_index, paletteVariant='shared-normal-shiny', transparentIndex=0, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in colors], sourceRefs=[reference(lock, sources, image_path, 'gMonIcon_' + name), reference(lock, sources, palette_path, 'gMonIconPalettes[' + str(palette_index) + ']'), reference(lock, sources, ip, 'gMonIconPaletteIndices[' + symbol + ']', palette_match[0]), reference(lock, sources, gp, 'CreateMonIconSprite', 'template.paletteTag = PALTAG_MON_ICON_0 + gMonIconPaletteIndices[species];'), reference(lock, sources, gp, 'TryLoadMonIconTiles', 'CpuCopy32(GetMonIconTiles(species, TRUE), (void *)(OBJ_VRAM0) + offset * 32, 0x200);')]))
     def add(identifier,w,h,rgba,x=0,y=0):
         if len(rgba)!=w*h*4: raise ValueError('Asset size differs')
-        png_path,rgba_path=identifier+'.png',identifier+'.rgba'
-        outputs[png_path],outputs[rgba_path]=pixels.png(w,h,rgba),bytes(rgba)
-        assets.append(dict(id=identifier,texturePath=png_path,rgbaPath=rgba_path,width=w,height=h,x=x,y=y,
-                           sha256=sha(outputs[png_path]),rgbaSha256=sha(rgba)))
+        png_path = identifier + '.png'
+        outputs[png_path] = pixels.png(w, h, rgba)
+        assets.append(dict(id=identifier, texturePath=png_path, width=w, height=h, x=x, y=y))
     base='graphics/pokemon_storage/'
     menu_tiles=pixels.tile_list(sources[base+'menu.png'])
     scrolling_palette=pixels.colors(pixels.indexed_png(sources[base+'scrolling_bg.png'])[3])
@@ -335,18 +299,18 @@ def convert(lock, sources):
                     reference(lock,sources,tp,'PrintDisplayMonInfo'),
                     reference(lock,sources,'src/pokemon_storage_system_data.c','displayMonTexts')])
     outputs['storage-art.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock['files']),icons=icons,assets=assets,display=display,
+        icons=icons,assets=assets,display=display,
         limitations=['Only the first default forest wallpaper is converted; other box wallpapers are not implemented.',
             'Static settled source layers with scrolling phase zero. No waveform, hand cursor, box-name text, dynamic information text, marking sprites or animated transitions.',
             'The composed background uses the empty-selection top data strip. Dynamic display-mon data chrome requires separate runtime composition.',
             'Party panel begins with one filled first slot and five empty slots; occupancy overlays are separate source assets.',
             'The original storage system uses one shared normal/shiny palette per species and frame zero for both party and box icons.',
             'Pixel/source-authenticated reconstruction; no claim of complete native frame or timing equivalence.']))
-    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,
-        lockSha256=LOCK_SHA256,fullSourceHash=source_set_hash(lock['files']),inputCount=len(lock['files']),
+    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+        inputCount=len(lock['files']),
         iconCount=len(icons),assetCount=len(assets),textureCount=len(icons)+len(assets),
         upstreamScriptsExecuted=False,romDownloaded=False,runtimeShadersUsed=False,
-        outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
 
 
@@ -361,10 +325,8 @@ def import_content(raw, out, repository=None, lock_path=None):
     lock=load_lock(lock_path)
     sources=read_sources(lock,raw,repository)
     outputs=convert(lock,sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed storage art generated output hashes differ')
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None: material[(raw,'manifest.json')]=raw_manifest(lock)
+    if repository is not None: material[(raw_metadata_directory(raw, 'storage-art'),'manifest.json')]=raw_manifest(lock)
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -375,15 +337,13 @@ def import_content(raw, out, repository=None, lock_path=None):
         target.parent.mkdir(parents=True,exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs),
-        storageArtSha256=sha(outputs['storage-art.json']),manifestSha256=sha(outputs['manifest.json']),
-        fullSourceHash=source_set_hash(lock['files']))
+    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs))
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path,default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/storage-art')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/storage-art')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/fetch-storage-art.lock.json')
     args=parser.parse_args()

@@ -9,7 +9,7 @@ public static partial class PretStoryCompiler
     {
         const string path="data/maps/PowerPlant/scripts.inc";
         if(file.Path!=path)return null;
-        if(!FirstSeviiSource(file,path,"7558c5214a97c767aa1840d14fa15521e7f0993657ee19a3bb088b4202f6f192"))
+        if(!FirstSeviiSource(file,path))
             return (StoryOp.Unsupported,0,int.MaxValue);
         bool zapdos=label=="PowerPlant_EventScript_Zapdos";
         bool electrode=label is "PowerPlant_EventScript_Electrode1" or "PowerPlant_EventScript_Electrode2";

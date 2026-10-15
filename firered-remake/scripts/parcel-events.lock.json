@@ -3,82 +3,43 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "path": "asm/macros/event.inc",
-      "byteLength": 56947,
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671",
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f"
+      "path": "asm/macros/event.inc"
     },
     {
-      "path": "data/scripts/std_msgbox.inc",
-      "byteLength": 1040,
-      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431",
-      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde"
+      "path": "data/scripts/std_msgbox.inc"
     },
     {
-      "path": "data/event_scripts.s",
-      "byteLength": 55643,
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0"
+      "path": "data/event_scripts.s"
     },
     {
-      "path": "data/maps/ViridianCity_Mart/scripts.inc",
-      "byteLength": 2302,
-      "sha256": "b8ffccc716ae3d79be432c37213e3284849c5d5dd160757a8a1a9f1c5bc61e8b",
-      "gitBlobSha1": "1210dd8263d35d9916db57c272ffa2041724dfd3"
+      "path": "data/maps/ViridianCity_Mart/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
-      "byteLength": 47604,
-      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d",
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987"
+      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc"
     },
     {
-      "path": "src/save_location.c",
-      "byteLength": 3826,
-      "sha256": "09cc0a8cd3655c9e2855450a589880582f27988e7c8e5ea8e73f47ab3285d528",
-      "gitBlobSha1": "52220739cbb3c750b95b5d9de39f3409bba26007"
+      "path": "src/save_location.c"
     },
     {
-      "path": "src/string_util.c",
-      "byteLength": 14320,
-      "sha256": "ed9519d4eaf51ed660a522915366dc0ebf2916d592a91a1d7fc2a012e4f3f17e",
-      "gitBlobSha1": "5c26d151a61274caac3a16c3b9c4eb73bf9a9e26"
+      "path": "src/string_util.c"
     },
     {
-      "path": "src/scrcmd.c",
-      "byteLength": 56954,
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553",
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814"
+      "path": "src/scrcmd.c"
     },
     {
-      "path": "src/script_menu.c",
-      "byteLength": 44041,
-      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8",
-      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a"
+      "path": "src/script_menu.c"
     },
     {
-      "path": "src/strings.c",
-      "byteLength": 96631,
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600"
+      "path": "src/strings.c"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/items.h",
-      "byteLength": 12436,
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3"
+      "path": "include/constants/items.h"
     },
     {
-      "path": "include/constants/menu.h",
-      "byteLength": 6143,
-      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4",
-      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde"
+      "path": "include/constants/menu.h"
     }
   ]
 }

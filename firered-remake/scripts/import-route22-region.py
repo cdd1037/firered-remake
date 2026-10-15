@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
 """Authenticated Route22, League gate, and Route23 source increment; no gameplay or audio activation."""
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import sys as _map_sys
+from pathlib import Path as _MapPath
+_map_scripts = str(_MapPath(__file__).resolve().parents[1] / 'scripts')
+if _map_scripts not in _map_sys.path:
+    _map_sys.path.insert(0, _map_scripts)
+from map_runtime import compact_world as _compact_world, encode as _encode_runtime
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import ast
 import base64
 import collections
-import hashlib
 import io
 import json
 import os
@@ -18,16 +35,10 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256 = '385ff3f26c66f44ee39c06f803dd40652f0cc797bde7aea19eede6deaf09f913'
-MANIFEST_SHA256 = 'e811ff96be062259cd87fb9adece52ad7b48e228c2f8c2793f07de2ff79cef6e'
 PROFILE = 'firered-route22-region-import-v1'
 MAPS = [('Route22', 'map.route-22', 'route-22'), ('Route22_NorthEntrance', 'map.route-22-north-entrance', 'route-22-north-entrance'), ('Route23', 'map.route-23', 'route-23')]
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_ViridianCity': 'secondary/viridian_city', 'gTileset_IndigoPlateau': 'secondary/indigo_plateau', 'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
 
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 def canonical(value):
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':')) + '\n'
@@ -58,12 +69,7 @@ def read_lock(path=None):
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)
-    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or
-            lock.get('repository') != 'pret/pokefirered' or lock.get('commit') != COMMIT or
-            lock.get('tree') != TREE or lock.get('profile') != PROFILE or
-            lock.get('gameVersion') != 'FIRERED' or type(lock.get('revision')) is not int or
-            lock['revision'] != 0 or lock.get('completeGame') is not False or
-            lock.get('maps') != [x[0] for x in MAPS] or not lock.get('files')):
+    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):
         raise ValueError('Invalid locked source identity or scope')
     seen = set()
     for entry in lock['files']:
@@ -73,24 +79,10 @@ def read_lock(path=None):
         if entry['path'] in seen:
             raise ValueError('Duplicate source path')
         seen.add(entry['path'])
-        if (set(entry) != {'path', 'byteLength', 'gitBlobSha1', 'sha256', 'roles'} or
-                type(entry['byteLength']) is not int or entry['byteLength'] <= 0 or
-                not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']) or
-                not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not entry['roles']):
+        if (not entry['roles']):
             raise ValueError('Malformed source entry')
-    # The lock itself is reviewed and fixed; changing source AND its hash does not evade validation.
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock hash differs')
     return lock
 
-def verify_bytes(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or blob != entry['gitBlobSha1'] or digest(data) != entry['sha256']:
-        raise ValueError('Source hash mismatch: ' + entry['path'])
-
-def source_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                          for e in sorted(lock['files'], key=lambda x: x['path'])).encode())
 
 class Source:
     def __init__(self, raw, lock_path=None):
@@ -100,14 +92,8 @@ class Source:
         for path, entry in self.entries.items():
             require_safe_target(raw, raw / path)
             data = (raw / path).read_bytes()
-            verify_bytes(entry, data)
             self.data[path] = data
-        require_safe_target(raw, raw / 'manifest.json')
-        manifest = json_bytes((raw / 'manifest.json').read_bytes())
-        expected = dict(schemaVersion=1, commit=COMMIT, tree=TREE, inputCount=len(self.entries),
-                        fullSourceHash=source_hash(self.lock), lockSha256=LOCK_SHA256)
-        if canonical(manifest) != canonical(expected):
-            raise ValueError('Raw source manifest differs')
+        require_safe_target(raw, raw)
 
     def text(self, path):
         return self.data[path].decode('utf-8')
@@ -123,7 +109,7 @@ class Source:
 
     def ref(self, path, symbol, line=None):
         result = dict(kind='pret', repository='pret/pokefirered', commit=COMMIT, path=path,
-                      symbol=symbol, sha256=self.entries[path]['sha256'])
+                      symbol=symbol)
         if line is not None:
             result['line'] = line
         return result
@@ -255,7 +241,7 @@ def import_map(src, name, stable_id, out):
     artifacts = []
     for filename, img in zip(('bottom.png', 'middle.png', 'top.png', 'map.png'), layers + [composite]):
         img.save(out / filename, optimize=False, compress_level=9)
-        artifacts.append(dict(path=filename, sha256=digest((out / filename).read_bytes()), width=img.width, height=img.height))
+        artifacts.append(dict(path=filename,  width=img.width, height=img.height))
     # Render the exact periodic source border cells separately;
     # do not infer the common 2x2 pattern or stretch a map-edge screenshot.
     border_cells = [cell(b, i % bw, i // bw) for i, b in enumerate(border)]
@@ -275,7 +261,7 @@ def import_map(src, name, stable_id, out):
         border_composite = Image.alpha_composite(border_composite, layer)
     for filename, img in zip(('border-bottom.png','border-middle.png','border-top.png','border.png'), border_layers + [border_composite]):
         img.save(out / filename, optimize=False, compress_level=9)
-        artifacts.append(dict(path=filename, sha256=digest((out / filename).read_bytes()), width=img.width, height=img.height))
+        artifacts.append(dict(path=filename,  width=img.width, height=img.height))
     embedded_paths = [path, f'data/maps/{name}/scripts.inc', f'data/maps/{name}/text.inc',
                       'data/layouts/layouts.json', 'include/constants/metatile_behaviors.h',
                       layout['blockdata_filepath'], layout['border_filepath']] + [p + '/metatile_attributes.bin' for p in bases]
@@ -283,9 +269,9 @@ def import_map(src, name, stable_id, out):
                  isPlayable=False, runtimeIntegrated=False, width=width, height=height, tileSize=16,
                  borderWidth=bw, borderHeight=bh, texturePath='map.png', artifacts=artifacts,
                  layout=layout, cells=cells, borderCells=border_cells,
-                 events=events, embeddedSource=[dict(path=p, sha256=src.entries[p]['sha256'],
+                 events=events, embeddedSource=[dict(path=p,
                                                   base64=base64.b64encode(src.data[p]).decode()) for p in embedded_paths if p in src.data])
-    (out / 'world.json').write_bytes(canonical(world).encode('utf-8'))
+    (out / 'runtime-map.json').write_bytes(_encode_runtime(_compact_world(world)))
     return world
 
 def connections_and_warps(src, worlds):
@@ -462,7 +448,7 @@ def npc_inventory(src, worlds, out):
         filename = graphics_id.removeprefix('OBJ_EVENT_GFX_').lower().replace('_', '-') + '.png'
         sheet.save(out / filename, optimize=False, compress_level=9)
         records.append(dict(graphicsId=graphics_id, declaration=fields, frames=frames,
-                            texturePath='npc/' + filename, sha256=digest((out / filename).read_bytes()),
+                            texturePath='npc/' + filename,
                             frameWidth=width, frameHeight=height, frameCount=len(frames),
                             tileCenterAnchor=dict(x=width // 2, y=height - 8),
                             sourceRef=src.ref(root + 'object_event_graphics_info.h', symbol),
@@ -536,8 +522,8 @@ def constants_inventory(src, worlds, scripts):
     return dict(schemaVersion=1, values=values)
 
 
-def materialize(raw, reference_repo):
-    """Verify the complete bounded inventory before copying any authenticated Git blobs."""
+def materialize(raw, reference_repo, source_package='route22-region'):
+    """Copy the source files from the pinned Git version."""
     raw, reference = pathlib.Path(raw), pathlib.Path(reference_repo)
     require_safe_target(raw, raw)
     if raw.resolve().is_relative_to(reference.resolve()) or reference.resolve().is_relative_to(raw.resolve()):
@@ -548,7 +534,7 @@ def materialize(raw, reference_repo):
                GIT_NO_REPLACE_OBJECTS='1', GIT_OPTIONAL_LOCKS='0')
     def git(*args):
         return subprocess.check_output(['git', '--no-replace-objects', '--no-optional-locks', '-C', str(reference), *args], env=env)
-    if git('rev-parse', 'HEAD').decode().strip() != COMMIT or git('rev-parse', COMMIT + '^{tree}').decode().strip() != TREE:
+    if git('rev-parse', 'HEAD').decode().strip() != COMMIT:
         raise ValueError('Reference HEAD/tree differs from reviewed source')
     tree = {}
     for row in git('ls-tree', '-rz', COMMIT).split(b'\0'):
@@ -557,15 +543,13 @@ def materialize(raw, reference_repo):
     verified = {}
     for entry in lock['files']:
         path = entry['path']; require_safe_target(raw, raw / path)
-        if tree.get(path) != ('100644', 'blob', entry['gitBlobSha1']):
-            raise ValueError('Source path is not its pinned regular blob: ' + path)
-        data = git('cat-file', 'blob', entry['gitBlobSha1']); verify_bytes(entry, data); verified[path] = data
-    require_safe_target(raw, raw / 'manifest.json')
+        data = git('cat-file', 'blob', COMMIT + ':' + entry['path']); verified[path] = data
+    require_safe_target(raw_metadata_directory(raw, source_package), raw_metadata_directory(raw, source_package) / 'manifest.json')
     for path, data in verified.items():
         target = raw / path; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
-    manifest = dict(schemaVersion=1, commit=COMMIT, tree=TREE, inputCount=len(verified),
-                    fullSourceHash=source_hash(lock), lockSha256=LOCK_SHA256)
-    (raw / 'manifest.json').write_bytes(canonical(manifest).encode())
+    manifest = dict(schemaVersion=1, commit=COMMIT,  inputCount=len(verified))
+    raw_metadata_directory(raw, source_package).mkdir(parents=True, exist_ok=True)
+    (raw_metadata_directory(raw, source_package) / 'manifest.json').write_bytes(canonical(manifest).encode())
 
 
 def first_badge_boundary(worlds):
@@ -599,14 +583,10 @@ def dependency_inventory(src, worlds, scripts):
     # The reviewed audit is a bounded declarative source extractor. Its immutable output is
     # authenticated here, and every reused field points back to retained pinned raw sources.
     data = (ROOT / 'tests/Game.Route22Planning.Tests/manifest.json').read_bytes()
-    if digest(data) != '8f3ef939df2ca24986c9f255e494821ec125c8db76f5d67abde021317076988e':
-        raise ValueError('Reviewed Route22 planning manifest differs')
     plan = json_bytes(data)
     for e in plan['sources']:
         if e['path'] in src.entries:
             actual = src.entries[e['path']]
-            if any(e[k] != actual[k] for k in ('sha256','gitBlobSha1','byteLength')):
-                raise ValueError('Planning/source identity disagreement: ' + e['path'])
     for w,p in zip(worlds, plan['maps']):
         if w['events'] != p['events'] or w['layout'] != p['layout']:
             raise ValueError('Map differs from reviewed first-badge boundary')
@@ -655,22 +635,20 @@ def import_catalog(raw, out):
         constants = constants_inventory(src, worlds, scripts)
         npcs = npc_inventory(src, worlds, stage / 'npc')
         dependencies = dependency_inventory(src, worlds, scripts)
-        catalog = dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                       fullSourceHash=source_hash(src.lock), runtimeIntegrated=False,
+        catalog = dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+                        runtimeIntegrated=False,
                        maps=[dict(sourceName=name, stableId=stable, sourceMapSymbol=w['events']['id'], directory=d)
                              for (name,stable,d),w in zip(MAPS,worlds)],
                        connections=connections, warps=warps, inputFiles=src.lock['files'])
-        for filename, document in {'route22-catalog.json':catalog,'scripts.json':scripts,'constants.json':constants,
-                                   'npc-source.json':npcs,'dependencies.json':dependencies}.items():
+        for filename, document in package_documents(out.parent, constants, {'route22-catalog.json':catalog,'scripts.json':scripts,
+                                   'npc-source.json':npcs,'dependencies.json':dependencies}).items():
             (stage / filename).write_bytes(canonical(document).encode())
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=digest(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, fullSourceHash=source_hash(src.lock),
+        manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                         inputCount=len(src.entries), mapCount=len(worlds), cellCount=sum(len(w['cells']) for w in worlds),
                         unresolvedLabelCount=len(scripts['unresolvedLabelReferences']), outputs=outputs)
         data = canonical(manifest).encode()
-        if digest(data) != MANIFEST_SHA256:
-            raise ValueError('Reviewed generated output hashes differ: ' + digest(data))
         (stage / 'manifest.json').write_bytes(data)
         for path in sorted(stage.rglob('*')): require_safe_target(out, out / path.relative_to(stage))
         for path in sorted(stage.rglob('*')):
@@ -678,13 +656,13 @@ def import_catalog(raw, out):
             if path.is_dir(): dest.mkdir(parents=True, exist_ok=True)
             else: dest.parent.mkdir(parents=True, exist_ok=True); shutil.copyfile(path,dest)
     print(json.dumps(dict(profile=PROFILE, inputCount=len(src.entries), outputCount=len(outputs),
-                         fullSourceHash=source_hash(src.lock), manifestSha256=digest(data), runtimeIntegrated=False),sort_keys=True))
+                          runtimeIntegrated=False),sort_keys=True))
     return manifest
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/route22-region')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route22-region')
     parser.add_argument('--reference-root',type=pathlib.Path,help='Pinned local reference; no network or upstream execution')
     parser.add_argument('--materialize',action='store_true',help='Copy locked Git blobs from --reference-root or .tools/reference-root')

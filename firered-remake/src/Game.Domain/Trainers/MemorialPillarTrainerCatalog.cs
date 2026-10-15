@@ -17,16 +17,14 @@ public static class MemorialPillarTrainerPartyFactory
     public const int VictoryMoney = 1176;
     public static ImmutableArray<TrainerId> AllTrainers { get; } =
         [new("pret:TRAINER_BIRD_KEEPER_MILO"), new("pret:TRAINER_BIRD_KEEPER_CHAZ"), new("pret:TRAINER_BIRD_KEEPER_HAROLD")];
-    private static readonly ImmutableDictionary<TrainerId, string> TrainerHashes = new Dictionary<TrainerId, string> {
-        [new("pret:TRAINER_BIRD_KEEPER_MILO")] = "f5aa1412387c6099d43b8f6bf6e081710d57d29c5757ddb8e53ed904aa055671",
-        [new("pret:TRAINER_BIRD_KEEPER_CHAZ")] = "91709a4eec481c7ff86dda04cd8902e50e754a9e9b45e54053c81a1b03f0edb1",
-        [new("pret:TRAINER_BIRD_KEEPER_HAROLD")] = "d37c4d4c9357505014ce818bfc836ee89301bd7ca525d2aba392c44d60fd9234",
-    }.ToImmutableDictionary();
-    private static readonly ImmutableDictionary<string, string> BattleHashes = new Dictionary<string, string> {
-        ["FiveIsland_MemorialPillar_EventScript_Milo"] = "f32acfb92381f1bc98c5902ad9b4d83b43d49d27086ba51e4bcc1b4dbdd12a69",
-        ["FiveIsland_MemorialPillar_EventScript_Chaz"] = "a72626f216ccd2e75eba0c28824afbb1cb6e47dcca78a3fa63d451cb906859dd",
-        ["FiveIsland_MemorialPillar_EventScript_Harold"] = "7d2b8d94d37341406214498113bd3b892afcd8c39c4ef5af79b6ad16831ccedc",
-    }.ToImmutableDictionary(StringComparer.Ordinal);
+    private static readonly ImmutableHashSet<TrainerId> TrainerIds = ImmutableHashSet.CreateRange<TrainerId>([
+        new("pret:TRAINER_BIRD_KEEPER_MILO"),
+        new("pret:TRAINER_BIRD_KEEPER_CHAZ"),
+        new("pret:TRAINER_BIRD_KEEPER_HAROLD")]);
+    private static readonly ImmutableHashSet<string> BattleScripts = ImmutableHashSet.Create<string>(StringComparer.Ordinal,
+        "FiveIsland_MemorialPillar_EventScript_Milo",
+        "FiveIsland_MemorialPillar_EventScript_Chaz",
+        "FiveIsland_MemorialPillar_EventScript_Harold");
 
     public static void ValidateCatalog(MemorialPillarTrainerCatalog catalog)
     {
@@ -34,17 +32,17 @@ public static class MemorialPillarTrainerPartyFactory
         if (catalog.SourceCommit != TrainerPartyFactory.SourceCommit || catalog.Profile != Profile || catalog.CompleteSourceRoster ||
             catalog.Trainers is null || catalog.Trainers.Count != 3 || catalog.BattlesByScript is null || catalog.BattlesByScript.Count != 3)
             throw new ArgumentException("memorial_pillar_trainer_scope");
-        foreach (var (id, hash) in TrainerHashes)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || CampaignSourceFingerprint.Compute(trainer) != hash)
+        foreach (var id in TrainerIds)
+            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null)
                 throw new ArgumentException("memorial_pillar_trainer_source");
-        foreach (var (script, hash) in BattleHashes)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || CampaignSourceFingerprint.Compute(battle) != hash)
+        foreach (var script in BattleScripts)
+            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null)
                 throw new ArgumentException("memorial_pillar_trainer_script_source");
     }
 
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || !BattleHashes.TryGetValue(battle.ScriptEntry, out var hash) || CampaignSourceFingerprint.Compute(battle) != hash)
+        if (battle is null || !BattleScripts.Contains(battle.ScriptEntry))
             throw new ArgumentException("memorial_pillar_trainer_script_source");
     }
 

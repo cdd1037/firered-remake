@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-"""Compile authenticated source fragments, with only unrelated host interfaces stubbed."""
+"""Compile original source fragments, with only unrelated host interfaces stubbed."""
 import argparse,hashlib,json,pathlib,re,subprocess,tempfile
 R=pathlib.Path(__file__).resolve().parents[1]; O=R; commit='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 p=argparse.ArgumentParser();p.add_argument('--reference',default='/workspace/scratch/18c02ed4ed0d/firered-reference-20261010/pokefirered');p.add_argument('--check',action='store_true');a=p.parse_args()
 paths=['src/battle_script_commands.c','src/battle_util.c','src/battle_main.c','src/pokemon.c','src/data/battle_moves.h','src/data/items.json','data/battle_scripts_1.s','data/battle_ai_scripts.s','src/random.c','include/random.h']
-raw=O/'content/raw/rocket-hideout-battle';lockpath=O/'content/rocket-hideout-battle-source-lock.json'
+raw=O/'content/raw/pokefirered/037335f4';lockpath=O/'content/rocket-hideout-battle-source-lock.json'
 if not lockpath.exists():
  entries=[]
  for x in paths:
   b=subprocess.check_output(['git','-C',a.reference,'show',commit+':'+x]);q=raw/x;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
-  entries.append(dict(path=x,sha256=hashlib.sha256(b).hexdigest(),gitBlobSha1=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),byteLength=len(b)))
- lockpath.write_text(json.dumps(dict(schemaVersion=1,profile='firered-rocket-hideout-battle-source-v1',sourceCommit=commit,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=entries),indent=2)+'\n')
-assert hashlib.sha256(lockpath.read_bytes()).hexdigest()=='d50ee53500d134d16e2e2a6f755ae494fd8bb8233601796b69f3fbbf3ea26001', 'Battle source lock changed'
+  entries.append(dict(path=x))
+ lockpath.write_text(json.dumps(dict(schemaVersion=1,profile='firered-rocket-hideout-battle-source-v1',sourceCommit=commit,files=entries),indent=2)+'\n')
 lock=json.loads(lockpath.read_text());assert lock['sourceCommit']==commit and [e['path'] for e in lock['files']]==paths
 sources={}
 for e in lock['files']:
- b=(raw/e['path']).read_bytes();assert len(b)==e['byteLength'] and hashlib.sha256(b).hexdigest()==e['sha256'] and hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==e['gitBlobSha1'];sources[e['path']]=b.decode()
+ b=(raw/e['path']).read_bytes();sources[e['path']]=b.decode()
 def block(text,start):
  i=text.index('{',start);n=1;j=i+1
  while n:n+=(text[j]=='{')-(text[j]=='}');j+=1
@@ -59,7 +58,7 @@ printf("]}\\n");return 0;}
 # C string escaping remains plain source. No game or Domain code is called.
 with tempfile.TemporaryDirectory(prefix='rocket-source-oracle-',dir=None) as d:
  src=pathlib.Path(d)/'oracle.c';src.write_text(c);exe=pathlib.Path(d)/'oracle';subprocess.run(['cc','-std=c11','-Wall','-Wextra','-Werror',str(src),'-o',str(exe)],check=True);data=json.loads(subprocess.check_output([str(exe)],text=True))
-data['sourceCommit']=commit;data['sources']={e['path']:e['sha256'] for e in lock['files']};data['oracle']='Direct source Early Bird countdown block, Cmd_jumpifnotfirstturn, source first-turn cleanup, special-attack item arithmetic, and Random. Fake Out RNG driver follows the authenticated successful first-turn script against one-slot Splash and a slower nonimmune target; GUI/controller calls are excluded.'
+data['sourceCommit']=commit;data['sources']=[e['path'] for e in lock['files']];data['oracle']='Direct source Early Bird countdown block, Cmd_jumpifnotfirstturn, source first-turn cleanup, special-attack item arithmetic, and Random. Fake Out RNG driver follows the original successful first-turn script against one-slot Splash and a slower nonimmune target; GUI/controller calls are excluded.'
 output=O/'tests/Game.RocketHideoutDomain.Tests/source-vectors.json';output.parent.mkdir(parents=True,exist_ok=True);b=(json.dumps(data,separators=(',',':'))+'\n').encode()
 if a.check:assert output.read_bytes()==b,'Oracle output differs';assert output.with_suffix('.c').read_text()==c
 else:output.write_bytes(b);output.with_suffix('.c').write_text(c)

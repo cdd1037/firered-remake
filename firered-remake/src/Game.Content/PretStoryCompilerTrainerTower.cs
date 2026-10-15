@@ -5,46 +5,25 @@ namespace Game.Content;
 
 public static partial class PretStoryCompiler
 {
-    private static readonly ImmutableDictionary<string, string> TrainerTowerScriptHashes = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["data/scripts/trainer_tower.inc"] = "6d9b5d9d01b293e03f7010452032b2d880d7aab751bc763ec5357551e5638db5",
-        ["data/maps/TrainerTower_Lobby/scripts.inc"] = "3fddc6d076cf542b55459b29969e326176ba58e350f9dead3a0fb37959592c0e",
-        ["data/maps/TrainerTower_1F/scripts.inc"] = "85cde9e74e62dc2d81c28c9a5481fa423790dfa8b255f950f6146cfcf6c84a02",
-        ["data/maps/TrainerTower_2F/scripts.inc"] = "d9733db6140c194e341d2f2c483d1cbe25abf1084047ad72cd822825a05f650a",
-        ["data/maps/TrainerTower_3F/scripts.inc"] = "1d8cac1b8c55f301568ef93a64db35a54f5da2ee8f99965d58365fe161188a76",
-        ["data/maps/TrainerTower_4F/scripts.inc"] = "6fd1287174e3cbd0cc8cceeb8f070ec5550bdb77647e715ed4d559b8667f78d6",
-        ["data/maps/TrainerTower_5F/scripts.inc"] = "1e026ab7be1ac8d86f992bb0c6fcdcb5f846417e17e27150d86c943c9fbde151",
-        ["data/maps/TrainerTower_6F/scripts.inc"] = "a8a9bce7b825c420e6ae970e03320eca2d2349dbd877b2387be917e7972b27a3",
-        ["data/maps/TrainerTower_7F/scripts.inc"] = "4e50407518159cb4623ff06827cb5e38a476d787adce78e434812a5348ef402a",
-        ["data/maps/TrainerTower_8F/scripts.inc"] = "06a71c1e0f6f221b177dcee7813faf8b09bd202d98eae79d43ebf8397fef58f6",
-        ["data/maps/TrainerTower_Roof/scripts.inc"] = "92052dd30d59cf932779b7ef70752deb165dcfac5158bb40e554ca0d5c0bc47f",
-        ["data/maps/TrainerTower_Elevator/scripts.inc"] = "143f5a03534e833cc3cb6e107d76667316d39fc716eb0977160857d2c7f292d8"
-    }.ToImmutableDictionary(StringComparer.Ordinal);
+    private static readonly ImmutableHashSet<string>TrainerTowerScriptPaths = new[] {"data/scripts/trainer_tower.inc","data/maps/TrainerTower_Lobby/scripts.inc","data/maps/TrainerTower_1F/scripts.inc","data/maps/TrainerTower_2F/scripts.inc","data/maps/TrainerTower_3F/scripts.inc","data/maps/TrainerTower_4F/scripts.inc","data/maps/TrainerTower_5F/scripts.inc","data/maps/TrainerTower_6F/scripts.inc","data/maps/TrainerTower_7F/scripts.inc","data/maps/TrainerTower_8F/scripts.inc","data/maps/TrainerTower_Roof/scripts.inc","data/maps/TrainerTower_Elevator/scripts.inc"}.ToImmutableHashSet(StringComparer.Ordinal);
 
     // asm/macros/trainer_tower.inc, SHA-256 9d758f6ee2ee2e1466febd9ac732ad0c1cebfe5b971aaf38f8a90cd978655fdb.
     // Native functions retain the macro's arguments and source call-site; they are never global opcode aliases.
     private static readonly ImmutableHashSet<string> TrainerTowerNullaryMacros = new[]
     {
-        "ttower_initfloor", "ttower_dobattle", "ttower_getchallengetype", "ttower_clearedfloor",
-        "ttower_isfloorcleared", "ttower_startchallenge", "ttower_getownerstate", "ttower_giveprize",
-        "ttower_checkfinaltime", "ttower_resumetimer", "ttower_setlost", "ttower_getchallengestatus",
-        "ttower_gettime", "ttower_showresults", "ttower_closeresults", "ttower_checkdoubles",
-        "ttower_getnumfloors", "ttower_shouldexit", "ttower_encountermusic", "ttower_getbeatchallenge"
+        "ttower_initfloor","ttower_dobattle","ttower_getchallengetype","ttower_clearedfloor","ttower_isfloorcleared","ttower_startchallenge","ttower_getownerstate","ttower_giveprize","ttower_checkfinaltime","ttower_resumetimer","ttower_setlost","ttower_getchallengestatus","ttower_gettime","ttower_showresults","ttower_closeresults","ttower_checkdoubles","ttower_getnumfloors","ttower_shouldexit","ttower_encountermusic","ttower_getbeatchallenge"
     }.ToImmutableHashSet(StringComparer.Ordinal);
 
     private static bool IsTrainerTowerScript(PretSourceScriptFile file) =>
-        TrainerTowerScriptHashes.TryGetValue(file.Path, out var hash) && FirstSeviiSource(file, file.Path, hash);
+        TrainerTowerScriptPaths.Contains(file.Path) && FirstSeviiSource(file,file.Path);
 
-    private static bool IsTrainerTowerAssemblyData(PretSourceScriptFile file, string label, string[] body) =>
+    private static bool IsTrainerTowerAssemblyData(PretSourceScriptFile file,string label,string[] body) =>
         IsTrainerTowerScript(file) && label == "TrainerTower_Lobby_Mart_Items" && body.SequenceEqual(new[]
         {
-            ".2byte ITEM_ULTRA_BALL", ".2byte ITEM_GREAT_BALL", ".2byte ITEM_FULL_RESTORE", ".2byte ITEM_MAX_POTION",
-            ".2byte ITEM_HYPER_POTION", ".2byte ITEM_REVIVE", ".2byte ITEM_FULL_HEAL", ".2byte ITEM_ESCAPE_ROPE",
-            ".2byte ITEM_MAX_REPEL", ".2byte ITEM_NONE", "release", "end"
+            ".2byte ITEM_ULTRA_BALL",".2byte ITEM_GREAT_BALL",".2byte ITEM_FULL_RESTORE",".2byte ITEM_MAX_POTION",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",".2byte ITEM_FULL_HEAL",".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"
         });
 
-    private static bool TryCompileTrainerTowerInstruction(PretSourceScriptFile file, string label, int line,
-        string opcode, ImmutableArray<string> args, out StoryInstruction? instruction)
+    private static bool TryCompileTrainerTowerInstruction(PretSourceScriptFile file,string label,int line,string opcode,ImmutableArray<string> args,out StoryInstruction? instruction)
     {
         instruction = null;
         bool towerPath = file.Path == "data/scripts/trainer_tower.inc" || file.Path.StartsWith("data/maps/TrainerTower_", StringComparison.Ordinal);
@@ -72,14 +51,14 @@ public static partial class PretStoryCompiler
         if (opcode == "setdynamicwarp")
         {
             if (label != "TrainerTower_Elevator_EventScript_SelectLobby" ||
-                !args.SequenceEqual(new[] { "MAP_TRAINER_TOWER_LOBBY", "17", "8" }))
+                !args.SequenceEqual(new[] { "MAP_TRAINER_TOWER_LOBBY","17","8" }))
                 throw new InvalidDataException("trainer_tower_elevator_warp_source");
             instruction = new(StoryOp.Special, opcode, args, new(file.Path, label, line));
             return true;
         }
         if (opcode == "setobjectxy")
         {
-            if (label != "TrainerTower_Lobby_OnResume" || !args.SequenceEqual(new[] { "LOCALID_PLAYER", "9", "7" }))
+            if (label != "TrainerTower_Lobby_OnResume" || !args.SequenceEqual(new[] { "LOCALID_PLAYER","9","7" }))
                 throw new InvalidDataException("trainer_tower_resume_position_source");
             instruction = new(StoryOp.Special, opcode, args, new(file.Path, label, line));
             return true;
@@ -95,7 +74,7 @@ public static partial class PretStoryCompiler
         return false;
     }
 
-    private static void CompleteTrainerTowerSourceBlocks(PretSourceScriptFile file, Dictionary<string, List<(int Line, string Text)>> blocks)
+    private static void CompleteTrainerTowerSourceBlocks(PretSourceScriptFile file,Dictionary<string, List<(int Line, string Text)>> blocks)
     {
         if (!IsTrainerTowerScript(file)) return;
         var labels = blocks.Keys.ToArray();
@@ -115,7 +94,7 @@ public static partial class PretStoryCompiler
                     throw new InvalidDataException("trainer_tower_movement_fallthrough:" + label);
                 body.AddRange(blocks[next]);
             }
-            else body.Add((body[^1].Line, "goto " + next));
+            else body.Add((body[^1].Line,"goto " + next));
         }
     }
 }

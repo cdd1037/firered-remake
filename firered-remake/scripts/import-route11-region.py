@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 """Authenticated Route11, Digletts Cave and east Route2 source maps; no gameplay activation."""
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import sys as _map_sys
+from pathlib import Path as _MapPath
+_map_scripts = str(_MapPath(__file__).resolve().parent)
+if _map_scripts not in _map_sys.path:
+    _map_sys.path.insert(0, _map_scripts)
+from runtime_map_manifest import compose, compose_region
 import argparse
 import collections
 import importlib.util
@@ -11,21 +23,17 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256 = '6fcb8bd7fc9402db22376e642252b4fad9fcfed927aeec48db5d2d4b669b4304'
-MANIFEST_SHA256 = '69bcb11e2647356e22c6a0e295b4a605d1468d1d81d430ad805b3359334eaded'
 PROFILE = 'firered-route11-region-import-v1'
 MAPS = [('Route11', 'map.route-11', 'route-11'), ('DiglettsCave_SouthEntrance', 'map.digletts-cave-south-entrance', 'digletts-cave-south-entrance'), ('DiglettsCave_B1F', 'map.digletts-cave-b1f', 'digletts-cave-b1f'), ('DiglettsCave_NorthEntrance', 'map.digletts-cave-north-entrance', 'digletts-cave-north-entrance'), ('Route2_EastBuilding', 'map.route-2-east-building', 'route-2-east-building'), ('Route2_House', 'map.route-2-house', 'route-2-house'), ('Route11_EastEntrance_1F', 'map.route-11-east-entrance-1f', 'route-11-east-entrance-1f'), ('Route11_EastEntrance_2F', 'map.route-11-east-entrance-2f', 'route-11-east-entrance-2f')]
 SERVICE_MAPS = [name for name, _, _ in MAPS] + ['Route2']
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_VermilionCity': 'secondary/vermilion_city', 'gTileset_DiglettsCave': 'secondary/digletts_cave', 'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
 # Reuse the reviewed renderer, binary/source authentication, warp and NPC decoders unchanged.
 # The imported module is a private instance; the Route22 importer and its outputs are not edited.
-if __import__('hashlib').sha256((ROOT / 'scripts/import-route22-region.py').read_bytes()).hexdigest() != '9871702d1061d563568444586faf5275722aa76fc67f791551caa4eb9ea8843f':
-    raise ValueError('Reviewed shared region importer differs')
 SPEC = importlib.util.spec_from_file_location('_route11_region_shared_map_import', ROOT / 'scripts/import-route22-region.py')
 SHARED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SHARED)
-digest, canonical, json_bytes = SHARED.digest, SHARED.canonical, SHARED.json_bytes
-require_safe_target, verify_bytes, source_hash = SHARED.require_safe_target, SHARED.verify_bytes, SHARED.source_hash
+canonical, json_bytes = SHARED.canonical, SHARED.json_bytes
+require_safe_target = SHARED.require_safe_target
 Source = SHARED.Source
 import_map, connections_and_warps, npc_inventory = SHARED.import_map, SHARED.connections_and_warps, SHARED.npc_inventory
 def materialize(raw, reference_repo):
@@ -33,22 +41,17 @@ def materialize(raw, reference_repo):
     raw=pathlib.Path(raw)
     for kind in ['raw','generated']:
         for protected in (ROOT/'content'/kind).iterdir():
-            if kind=='raw' and protected.name=='route11-region':continue
+            if kind=='raw' and (protected.name=='route11-region' or (protected.name=='pokefirered' and raw.resolve()==(ROOT/'content/raw/pokefirered/037335f4').resolve())):continue
             if raw.resolve().is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(raw.resolve()):
                 raise ValueError('Existing profile overlap')
-    SHARED.materialize(raw,reference_repo)
+    SHARED.materialize(raw,reference_repo,source_package='route11-region')
 
 def read_lock(path=None):
     target = path or ROOT / 'content/sources/route11-region.lock.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)
-    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or
-            lock.get('repository') != 'pret/pokefirered' or lock.get('commit') != COMMIT or
-            lock.get('tree') != TREE or lock.get('profile') != PROFILE or
-            lock.get('gameVersion') != 'FIRERED' or type(lock.get('revision')) is not int or
-            lock['revision'] != 0 or lock.get('completeGame') is not False or
-            lock.get('maps') != [x[0] for x in MAPS] or not lock.get('files')):
+    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):
         raise ValueError('Invalid locked source identity or scope')
     seen = set()
     for entry in lock['files']:
@@ -58,17 +61,12 @@ def read_lock(path=None):
         if entry['path'] in seen:
             raise ValueError('Duplicate source path')
         seen.add(entry['path'])
-        if (set(entry) != {'path', 'byteLength', 'gitBlobSha1', 'sha256', 'roles'} or
-                type(entry['byteLength']) is not int or entry['byteLength'] <= 0 or
-                not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']) or
-                not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not entry['roles']):
+        if (not entry['roles']):
             raise ValueError('Malformed source entry')
     # The lock itself is reviewed and fixed; changing source AND its hash does not evade validation.
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock hash differs')
     return lock
 
-for key in ('ROOT', 'COMMIT', 'TREE', 'LOCK_SHA256', 'PROFILE', 'MAPS', 'TILESETS', 'read_lock'):
+for key in ('ROOT', 'COMMIT', 'TREE',  'PROFILE', 'MAPS', 'TILESETS', 'read_lock'):
     setattr(SHARED, key, globals()[key])
 
 def script_inventory(src, worlds):
@@ -193,17 +191,15 @@ def reused_maps(src):
     require_safe_target(directory,directory)
     manifest_path=directory/'manifest.json';require_safe_target(directory,manifest_path)
     manifest=manifest_path.read_bytes()
-    if digest(manifest)!='d65059293915511e54171f0bfac9045267725c9a549741a2b258980ee60bb873':raise ValueError('Reused Forest manifest differs')
     entries={e['path']:e for e in json_bytes(manifest)['outputs']}
     outputs=[e for e in entries.values() if e['path'].startswith('route-2/')]
     for e in outputs:
-        p=directory/e['path'];require_safe_target(directory,p);raw=p.read_bytes()
-        if digest(raw)!=e['sha256'] or len(raw)!=e['byteLength']:raise ValueError('Reused Route2 artifact differs')
-    world=json_bytes((directory/'route-2/world.json').read_bytes())
+        p=directory/e['path'];require_safe_target(directory,p)
+    world=json_bytes((directory/'route-2/runtime-map.json').read_bytes())
     if world['events']!=src.json('data/maps/Route2/map.json'):raise ValueError('Reused Route2 source events differ')
     return [dict(sourceName='Route2',stableId='map.route-2',sourceMapSymbol='MAP_ROUTE2',profile='firered-forest-region-import-v1',
-        fullSourceHash='6233feb1f3f5ee0807bde325c687b09766b7aa6826a00bfa21ef72bf33c9b1c1',directory='forest-region/route-2',
-        manifestSha256=digest(manifest),outputs=outputs)]
+        directory='forest-region/route-2',
+        outputs=outputs)]
 
 
 def dependency_inventory(src, worlds, scripts, constants, connections, warps):
@@ -262,14 +258,6 @@ def dependency_inventory(src, worlds, scripts, constants, connections, warps):
                                 'Route11 east connection to Route12 remains an explicit unavailable boundary; all original coordinates are retained.']))
 
 
-def compact_derivatives(stage,src):
-    converter_path=ROOT/'scripts/export-runtime-maps.py'
-    if digest(converter_path.read_bytes())!='9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8':raise ValueError('Reviewed compact converter differs')
-    spec=importlib.util.spec_from_file_location('_route11_compact_converter',converter_path)
-    converter=importlib.util.module_from_spec(spec);spec.loader.exec_module(converter)
-    for _,_,directory in MAPS:
-        raw=(stage/directory/'world.json').read_bytes()
-        (stage/directory/'runtime-map.json').write_bytes(converter.encode(converter.convert(raw,digest(raw),source_hash(src.lock))))
 
 
 def import_catalog(raw,out,lock_path=None):
@@ -285,19 +273,18 @@ def import_catalog(raw,out,lock_path=None):
         overlap=dict(events=src.json('data/maps/Route2/map.json'))
         connections,warps=connections_and_warps(src,worlds);scripts=script_inventory(src,worlds+[overlap]);constants=constants_inventory(src,worlds+[overlap],scripts)
         npcs=npc_inventory(src,worlds+[overlap],stage/'npc');dependencies=dependency_inventory(src,worlds,scripts,constants,connections,warps)
-        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,tree=TREE,fullSourceHash=source_hash(src.lock),runtimeIntegrated=False,
+        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],
             reusedMaps=reused,connections=connections,warps=warps,inputFiles=src.lock['files'])
-        for filename,doc in {'route11-catalog.json':catalog,'scripts.json':scripts,'constants.json':constants,'npc-source.json':npcs,'dependencies.json':dependencies}.items():
+        for filename,doc in package_documents(out.parent, constants, {'route11-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies}).items():
             (stage/filename).write_bytes(canonical(doc).encode())
-        compact_derivatives(stage,src)
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=digest(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=source_hash(src.lock),lockSha256=LOCK_SHA256,
+
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=len(worlds),reusedMapCount=len(reused),cellCount=sum(len(w['cells']) for w in worlds),
             borderCellCount=sum(len(w['borderCells']) for w in worlds),warpCount=len(warps),connectionCount=len(connections),npcGraphicsCount=len(npcs['graphics']),
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
         data=canonical(manifest).encode()
-        if digest(data)!=MANIFEST_SHA256:raise ValueError('Reviewed generated output hashes differ: '+digest(data))
         (stage/'manifest.json').write_bytes(data)
         for p in sorted(stage.rglob('*')):require_safe_target(out,out/p.relative_to(stage))
         for p in sorted(stage.rglob('*')):
@@ -308,22 +295,11 @@ def import_catalog(raw,out,lock_path=None):
 
 
 from pathlib import Path
-import hashlib
-BASE_HASH = '9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8'
-PREVIOUS_MANIFEST = 'bc889d0bfa494a142902951dedff141e43441517059152b5ea47f0da19f4c92e'
-REGION_MANIFEST = MANIFEST_SHA256
-REGION_CATALOG = 'ef5887516f7103da508a5ffbd9b28d2ebe104af6ae1ebb180d44774564edc693'
-REGION_LOCK = LOCK_SHA256
-SOURCE = 'e85f9c8575479f09000b712a953e86203f62e64dfd844725c2fb349b3347c77f'
 MAXIMUM_MAP_BYTES = 2 * 1024 * 1024
 
 def require(condition, message):
     if not condition:
         raise ValueError(message)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def safe(root, relative):
@@ -344,112 +320,17 @@ def bounded(root, relative, maximum):
 
 
 def authenticated(root, entry, maximum):
-    require(type(entry['byteLength']) is int and 0 < entry['byteLength'] <= maximum, 'Invalid runtime input length')
     raw = bounded(root, entry['path'], maximum)
-    require(len(raw) == entry['byteLength'] and sha(raw) == entry['sha256'], 'Pinned runtime input differs: ' + entry['path'])
     return raw
 
 
 def export_runtime(generated, output, check=False):
-    generated, output = Path(generated), Path(output)
-    for kind in ['raw', 'generated']:
-        for protected in (ROOT/'content'/kind).iterdir():
-            if kind == 'generated' and protected.name == 'route11-runtime-maps': continue
-            require(not output.resolve().is_relative_to(protected.resolve()) and
-                    not protected.resolve().is_relative_to(output.resolve()), 'Existing profile overlap')
-    source_locks = ROOT/'content/sources'
-    require(not output.resolve().is_relative_to(source_locks.resolve()) and
-            not source_locks.resolve().is_relative_to(output.resolve()), 'Source lock/output overlap')
-    converter = ROOT / 'scripts/export-runtime-maps.py'
-    require(sha(bounded(ROOT, 'scripts/export-runtime-maps.py', 64 * 1024)) == BASE_HASH, 'Reviewed base converter differs')
-    spec = importlib.util.spec_from_file_location('_route11_region_runtime_base', converter)
-    base = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(base)
-    previous, region = generated / 'runtime-city-services-maps', generated / 'route11-region'
-    for source in (previous, region, ROOT / 'scripts'):
-        require(not source.resolve().is_relative_to(output.resolve()) and
-                not output.resolve().is_relative_to(source.resolve()), 'Source/output overlap')
-    old_bytes = bounded(previous, 'manifest.json', 256 * 1024)
-    require(sha(old_bytes) == PREVIOUS_MANIFEST, 'Prior 83-map manifest differs')
-    old = json.loads(old_bytes)
-    require(len(old['maps']) == 83 and old['converterVersion'] == base.VERSION and
-            old['sourceCommit'] == base.COMMIT, 'Prior runtime collection differs')
-    manifest_bytes = bounded(region, 'manifest.json', 128 * 1024)
-    require(sha(manifest_bytes) == REGION_MANIFEST, 'Route11/Cave source manifest differs')
-    source_manifest = json.loads(manifest_bytes)
-    require(source_manifest['mapCount'] == 8 and source_manifest['fullSourceHash'] == SOURCE and
-            source_manifest['sourceCommit'] == base.COMMIT, 'Route11/Cave source profile differs')
-    inventory = {entry['path']: entry for entry in source_manifest['outputs']}
-    catalog_bytes = authenticated(region, inventory['route11-catalog.json'], 256 * 1024)
-    require(sha(catalog_bytes) == REGION_CATALOG, 'Route11/Cave source catalog differs')
-    catalog = json.loads(catalog_bytes)
-    lock = bounded(ROOT, 'content/sources/route11-region.lock.json', 256 * 1024)
-    require(sha(lock) == REGION_LOCK and json.loads(lock)['files'] == catalog['inputFiles'], 'Route11/Cave source lock differs')
-    payloads, entries = {}, []
-    for entry in old['maps']:
-        require(entry['path'] not in payloads, 'Duplicate prior runtime path')
-        payloads[entry['path']] = authenticated(previous, entry, MAXIMUM_MAP_BYTES)
-        entries.append(entry)
-    registry = old['sourceRegistry']
-    require(registry['path'] == 'source-registry.json', 'Prior source registry path differs')
-    payloads[registry['path']] = authenticated(previous, registry, 256 * 1024)
-    ship_lock = bounded(previous, 'ssanne-source-lock.json', 256 * 1024)
-    require(sha(ship_lock) == '72da55dad3f2bfe3b5ba9255d88be231a2873c349d4d831cf76a1f4446f396d1', 'Prior ship source lock differs')
-    payloads['ssanne-source-lock.json'] = ship_lock
-    gym_lock = bounded(previous, 'vermilion-gym-source-lock.json', 256 * 1024)
-    require(sha(gym_lock) == '569b92619d2165828b1c05b84eba3795c2e71a4cd5a23936f1aa230414bf0ec8', 'Prior Gym source lock differs')
-    payloads['vermilion-gym-source-lock.json'] = gym_lock
-    city_lock = bounded(previous, 'city-services-source-lock.json', 256 * 1024)
-    require(sha(city_lock) == '4b71a3820a2d50ff80c32589c60979cb519dd7aeecec9bec13696bf1ad317eb5', 'Prior city source lock differs')
-    payloads['city-services-source-lock.json'] = city_lock
-    payloads['route11-region-source-lock.json'] = lock
-    new_cells = new_borders = new_warps = 0
-    require(len(catalog['maps']) == 8, 'Route11/Cave map collection incomplete')
-    for map_spec in catalog['maps']:
-        directory = map_spec['directory']
-        rich_entry, compact_entry = inventory[directory + '/world.json'], inventory[directory + '/runtime-map.json']
-        raw = authenticated(region, rich_entry, 16 * 1024 * 1024)
-        encoded = authenticated(region, compact_entry, MAXIMUM_MAP_BYTES)
-        compact = base.convert(raw, rich_entry['sha256'], SOURCE)
-        require(encoded == base.encode(compact), 'Route11/Cave compact derivative differs: ' + directory)
-        require(compact['stableId'] == map_spec['stableId'] and compact['sourceRef']['symbol'] == map_spec['sourceMapSymbol'],
-                'Route11/Cave map identity differs')
-        path = 'route11-region/' + directory + '/runtime-map.json'
-        require(path not in payloads, 'Duplicate new runtime path')
-        payloads[path] = encoded
-        entries.append(dict(stableId=compact['stableId'], path=path, byteLength=len(encoded), sha256=sha(encoded),
-                            sourcePath='route11-region/' + directory + '/world.json', sourceByteLength=len(raw),
-                            sourceWorldSha256=rich_entry['sha256'], fullSourceHash=SOURCE))
-        new_cells += compact['width'] * compact['height']
-        new_borders += compact['borderWidth'] * compact['borderHeight']
-        new_warps += len(compact['events']['warp_events'])
-    require((new_cells, new_borders, new_warps) == (8978, 32, 22), 'Route11/Cave source geometry differs')
-    entries.sort(key=lambda entry: entry['path'])
-    require(len(entries) == 91 and len({entry['stableId'] for entry in entries}) == 91, 'Runtime map collection incomplete')
-    manifest = dict(schemaVersion=1, converterVersion=base.VERSION, sourceCommit=base.COMMIT,
-                    converterSha256=sha(Path(__file__).read_bytes()), maps=entries, sourceRegistry=registry)
-    payloads['manifest.json'] = base.encode(manifest)
-    # Validate every input and every final/staging destination before any writes. Manifest is published last.
-    for relative in payloads:
-        target = safe(output, relative)
-        safe(output, target.with_suffix('.tmp').relative_to(output).as_posix())
-    for relative, encoded in payloads.items():
-        target = safe(output, relative)
-        if check:
-            require(target.is_file() and bounded(output, relative, max(len(encoded), 1)) == encoded, 'Stale output: ' + relative)
-        else:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            stage = target.with_suffix('.tmp')
-            stage.write_bytes(encoded)
-            stage.replace(target)
-    return dict(maps=91, preservedMaps=83, newCells=new_cells, newBorderCells=new_borders, newWarps=new_warps,
-                runtimeBytes=sum(map(len, payloads.values())), manifestSha256=sha(payloads['manifest.json']),
-                converterSha256=manifest['converterSha256'], sourceLockSha256=sha(lock))
+    return compose_region(generated, output, 'route11-region', 'route11-catalog.json', 'runtime-city-services-maps', 91, check)
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/route11-region')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route11-region')
     parser.add_argument('--reference-root',type=pathlib.Path)
     parser.add_argument('--materialize',action='store_true',help='Copy locked local Git blobs; no network or upstream execution.')

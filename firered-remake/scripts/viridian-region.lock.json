@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-viridian-region-import-v1",
   "gameVersion": "FIRERED",
   "revision": 0,
@@ -17,135 +16,90 @@
   "files": [
     {
       "path": "asm/macros/event.inc",
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "asm/macros/movement.inc",
-      "byteLength": 13520,
-      "gitBlobSha1": "775efb245218d4ef374794b9704b668c0a69ed15",
-      "sha256": "31ca0f9417c2450e7ce07619ba617d1d2e70b98132eda048b8e5e391f910654b",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "data/event_scripts.s",
-      "byteLength": 55643,
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/layouts/Mart/border.bin",
-      "byteLength": 8,
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
-      "sha256": "e0d28e51c7e052913771ad123ea4ae85d601f22af3040d698e9b1f6a6ecb5196",
       "roles": [
         "layout-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/layouts/Mart/map.bin",
-      "byteLength": 198,
-      "gitBlobSha1": "dee537e4938503cfe0392ab697c7b99f31a810d8",
-      "sha256": "8f5493928d1f5f834f6ea39e055a23f49ae04a132d452ce7846607780a53d082",
       "roles": [
         "layout-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/layouts/PalletTown/border.bin",
-      "byteLength": 8,
-      "gitBlobSha1": "a701312cfff9ef56ae960aed042d8b9e68eefb84",
-      "sha256": "bd05db219b1304364f4d1c265db9cece1af50fb2332d9f39357fdc8d721dc449",
       "roles": [
         "layout-PalletTown"
       ]
     },
     {
       "path": "data/layouts/PalletTown/map.bin",
-      "byteLength": 960,
-      "gitBlobSha1": "f2113394f22d6f0180f364071301b5ed06588773",
-      "sha256": "b709c6d47d6006ff6402026496a9d0d9caab19a4515b02517eaf049c5f7bf2e0",
       "roles": [
         "layout-PalletTown"
       ]
     },
     {
       "path": "data/layouts/PalletTown_ProfessorOaksLab/border.bin",
-      "byteLength": 8,
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
-      "sha256": "e0d28e51c7e052913771ad123ea4ae85d601f22af3040d698e9b1f6a6ecb5196",
       "roles": [
         "layout-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/layouts/PalletTown_ProfessorOaksLab/map.bin",
-      "byteLength": 364,
-      "gitBlobSha1": "1067109ab0843e5ededaa96558c30c64e0dab04a",
-      "sha256": "a1ca472215cd91f5128360af49880035be67b82fb43120758826a21e6a8d803f",
       "roles": [
         "layout-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/layouts/Route1/border.bin",
-      "byteLength": 8,
-      "gitBlobSha1": "a701312cfff9ef56ae960aed042d8b9e68eefb84",
-      "sha256": "bd05db219b1304364f4d1c265db9cece1af50fb2332d9f39357fdc8d721dc449",
       "roles": [
         "layout-Route1"
       ]
     },
     {
       "path": "data/layouts/Route1/map.bin",
-      "byteLength": 1920,
-      "gitBlobSha1": "02ee26860a9eb22bee113c30ad5f79ce51c5b7da",
-      "sha256": "9463ad026e56bc9bbe4b533bf8284217c7b6da16ccc2126e055ffc6f1e3da65c",
       "roles": [
         "layout-Route1"
       ]
     },
     {
       "path": "data/layouts/ViridianCity/border.bin",
-      "byteLength": 8,
-      "gitBlobSha1": "a701312cfff9ef56ae960aed042d8b9e68eefb84",
-      "sha256": "bd05db219b1304364f4d1c265db9cece1af50fb2332d9f39357fdc8d721dc449",
       "roles": [
         "layout-ViridianCity"
       ]
     },
     {
       "path": "data/layouts/ViridianCity/map.bin",
-      "byteLength": 3840,
-      "gitBlobSha1": "d633641ca37ba4728f53f1bb6d4d7a0a4b90257d",
-      "sha256": "6cce51b3d3f6c2f0ac21d1de49935515134946b24b4dddf52d3d5c0b6bc76888",
       "roles": [
         "layout-ViridianCity"
       ]
     },
     {
       "path": "data/layouts/layouts.json",
-      "byteLength": 158096,
-      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
-      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
       "roles": [
         "layout-catalog"
       ]
     },
     {
       "path": "data/maps/PalletTown/map.json",
-      "byteLength": 4087,
-      "gitBlobSha1": "802d32dc6de7688fe2de8c833d4e040d9137f6c1",
-      "sha256": "2816338934241bac34f52dae8b101ac3add59e0ebdde3e3fb6575f3b525b01c3",
       "roles": [
         "boundary-PalletTown_ProfessorOaksLab",
         "boundary-Route1",
@@ -155,9 +109,6 @@
     },
     {
       "path": "data/maps/PalletTown/scripts.inc",
-      "byteLength": 11418,
-      "gitBlobSha1": "1384b7d6c6bb5d2b93538ebaf5e92defde2d41e5",
-      "sha256": "ca9ae01d210ebfeda42895a152145940b7c444a03b6416b26353ceb0adac9190",
       "roles": [
         "map-PalletTown",
         "script-label-closure"
@@ -165,9 +116,6 @@
     },
     {
       "path": "data/maps/PalletTown/text.inc",
-      "byteLength": 2109,
-      "gitBlobSha1": "726aea8c67812ef2bc72e51b2d8ee38e21fd4863",
-      "sha256": "6fe28872b8f6ad72ad26dc64a6f6922258cf187f5efb40dfeddc9e2d1f2469b2",
       "roles": [
         "map-PalletTown",
         "script-label-closure"
@@ -175,18 +123,12 @@
     },
     {
       "path": "data/maps/PalletTown_PlayersHouse_1F/map.json",
-      "byteLength": 1745,
-      "gitBlobSha1": "2643219a599a4159746c5530b07fb7fdfba77b8b",
-      "sha256": "d0479076eff7f7832f7e9104ba2cef109afd907501ca0bc2c8e3fd870dd16509",
       "roles": [
         "boundary-PalletTown"
       ]
     },
     {
       "path": "data/maps/PalletTown_ProfessorOaksLab/map.json",
-      "byteLength": 7962,
-      "gitBlobSha1": "be72653587b49da2eb65f72a3519b57ed511d05c",
-      "sha256": "37906ed851a344cc63b41b303b41b6da091328b97b05b6e38d2570486d104704",
       "roles": [
         "boundary-PalletTown",
         "map-PalletTown_ProfessorOaksLab",
@@ -195,9 +137,6 @@
     },
     {
       "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
-      "byteLength": 47604,
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
-      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d",
       "roles": [
         "map-PalletTown_ProfessorOaksLab",
         "script-label-closure"
@@ -205,9 +144,6 @@
     },
     {
       "path": "data/maps/PalletTown_ProfessorOaksLab/text.inc",
-      "byteLength": 13281,
-      "gitBlobSha1": "849a643c3a8c7d38efc6853f850698d9cf50a4ee",
-      "sha256": "fb03a0a75876da386c54137e2eeed0dfb0da0d6fdaf3bc8c66cd83d36c2d724f",
       "roles": [
         "map-PalletTown_ProfessorOaksLab",
         "script-label-closure"
@@ -215,27 +151,18 @@
     },
     {
       "path": "data/maps/PalletTown_RivalsHouse/map.json",
-      "byteLength": 2474,
-      "gitBlobSha1": "d3efdba831ddbdb174ba20deaafee3f35d96a97c",
-      "sha256": "9571bfeb37a9496c75f487cc81266e6cd2084a466f1b44d41a3b5776a4b5cfcd",
       "roles": [
         "boundary-PalletTown"
       ]
     },
     {
       "path": "data/maps/PewterCity/text.inc",
-      "byteLength": 5124,
-      "gitBlobSha1": "2adeb55d6ffaf01f64f7b093aa07ec6726d2041a",
-      "sha256": "40f370211449d154cf816d543b609f001e33dc514d9dc872a869cff52dcf1068",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/maps/Route1/map.json",
-      "byteLength": 1684,
-      "gitBlobSha1": "b2145ee92d1eb80175f599eadbcb66c6301bc3fe",
-      "sha256": "11b1ad78ae12d7a61c35756281fd5127929f5f5155dc20022fbae147424c4869",
       "roles": [
         "boundary-PalletTown",
         "boundary-ViridianCity",
@@ -245,9 +172,6 @@
     },
     {
       "path": "data/maps/Route1/scripts.inc",
-      "byteLength": 840,
-      "gitBlobSha1": "ba2e22d9cc1f4f3f49e36f7e15b846883932cd51",
-      "sha256": "67a68fcc6790c03ee4f2fb2ab639736992aa3aa4cb4baef6d8e2117793e777f4",
       "roles": [
         "map-Route1",
         "script-label-closure"
@@ -255,9 +179,6 @@
     },
     {
       "path": "data/maps/Route1/text.inc",
-      "byteLength": 911,
-      "gitBlobSha1": "271e96da28a0baa5478c1cdde44339b7c7d558e8",
-      "sha256": "1691f076783a9f5da41d6f67e98e8b5e199eb7c57b894c6fef64a7e1d9f5cefe",
       "roles": [
         "map-Route1",
         "script-label-closure"
@@ -265,36 +186,24 @@
     },
     {
       "path": "data/maps/Route2/map.json",
-      "byteLength": 5182,
-      "gitBlobSha1": "3f232d8d16b4a96ec74b41a28a0ec401c38a2ba8",
-      "sha256": "2562e3736b600c95b8c0a4c2a1bb3fb062f5c50208bebc43cd4303328ccda7ea",
       "roles": [
         "boundary-ViridianCity"
       ]
     },
     {
       "path": "data/maps/Route21_North/map.json",
-      "byteLength": 3183,
-      "gitBlobSha1": "7fdfa0dffca0ab108a4de5b6e8d732e1a3d2481a",
-      "sha256": "0b5c53b1ba5849fc9a6a836f99064ac0043d2c6e2eb1af2fdd5523658793e54b",
       "roles": [
         "boundary-PalletTown"
       ]
     },
     {
       "path": "data/maps/Route22/map.json",
-      "byteLength": 2865,
-      "gitBlobSha1": "6da244d40828807eb434d2ee06da15ac71ffdb78",
-      "sha256": "3d77705fd405402183c292d15d47d698f96cd9cdf2e4e7534c2833032b6e7951",
       "roles": [
         "boundary-ViridianCity"
       ]
     },
     {
       "path": "data/maps/ViridianCity/map.json",
-      "byteLength": 7211,
-      "gitBlobSha1": "465d593cef4ceafc486be8b6ed5fe1b5b63cb140",
-      "sha256": "5ce922b65f76335556ace9a047feeb1968854b604c8469c39cbbd60985f61bc1",
       "roles": [
         "boundary-Route1",
         "boundary-ViridianCity_Mart",
@@ -304,9 +213,6 @@
     },
     {
       "path": "data/maps/ViridianCity/scripts.inc",
-      "byteLength": 6935,
-      "gitBlobSha1": "d6c71605bcf13a788d28426039ce9bd1f95e75f7",
-      "sha256": "2f23053443e399983324ed7461923bba1267ca3d3c8961ce33a6d10be140f72d",
       "roles": [
         "map-ViridianCity",
         "script-label-closure"
@@ -314,9 +220,6 @@
     },
     {
       "path": "data/maps/ViridianCity/text.inc",
-      "byteLength": 4368,
-      "gitBlobSha1": "7293afb817f885c026629bd8adfaccbc23274983",
-      "sha256": "305bc3579d38f658950a35b9b1197143a73e60f01fe6d9a0103e16da7316163d",
       "roles": [
         "map-ViridianCity",
         "script-label-closure"
@@ -324,27 +227,18 @@
     },
     {
       "path": "data/maps/ViridianCity_Gym/map.json",
-      "byteLength": 5712,
-      "gitBlobSha1": "916a821a0879f341c3635eb4c2239209b130e8a2",
-      "sha256": "dfcf38b622c0f6bdacfbd3ed9f16b995586206e37ee6a9969ae57814e9d505e3",
       "roles": [
         "boundary-ViridianCity"
       ]
     },
     {
       "path": "data/maps/ViridianCity_House/map.json",
-      "byteLength": 2396,
-      "gitBlobSha1": "7448c7a663dfdd79e982c8394507d7bf58d1e6e3",
-      "sha256": "7d3de29227f14c66a40eb2eab6f92228d05d11db6ae55bdfc6928a2d32449714",
       "roles": [
         "boundary-ViridianCity"
       ]
     },
     {
       "path": "data/maps/ViridianCity_Mart/map.json",
-      "byteLength": 2202,
-      "gitBlobSha1": "e17af976592a9e35f19823648ae890d75704569b",
-      "sha256": "1bd8d13e469e932e72812bdbe6179e56cea18d77751376c8cb38fafb2d13c343",
       "roles": [
         "boundary-ViridianCity",
         "map-ViridianCity_Mart",
@@ -353,9 +247,6 @@
     },
     {
       "path": "data/maps/ViridianCity_Mart/scripts.inc",
-      "byteLength": 2302,
-      "gitBlobSha1": "1210dd8263d35d9916db57c272ffa2041724dfd3",
-      "sha256": "b8ffccc716ae3d79be432c37213e3284849c5d5dd160757a8a1a9f1c5bc61e8b",
       "roles": [
         "map-ViridianCity_Mart",
         "script-label-closure"
@@ -363,9 +254,6 @@
     },
     {
       "path": "data/maps/ViridianCity_Mart/text.inc",
-      "byteLength": 876,
-      "gitBlobSha1": "e07a637562ecaa22766ac4362716d97ffa380c51",
-      "sha256": "44a7bb62c4fe1c4a96c9ab689b6ab9bcb21af4d97e2f66f50d86e6137846caa8",
       "roles": [
         "map-ViridianCity_Mart",
         "script-label-closure"
@@ -373,189 +261,126 @@
     },
     {
       "path": "data/maps/ViridianCity_PokemonCenter_1F/map.json",
-      "byteLength": 2824,
-      "gitBlobSha1": "3556932f9c257eae3b7c3188ff9fd139e59933e5",
-      "sha256": "3edeace4baf5a6bce3fa0ab2dcfd3691f2ee2d7de0645f9df3e5f31c649f657d",
       "roles": [
         "boundary-ViridianCity"
       ]
     },
     {
       "path": "data/maps/ViridianCity_School/map.json",
-      "byteLength": 2856,
-      "gitBlobSha1": "f9a6bac70607e26780f1e3c25c9af1288e49bf98",
-      "sha256": "2c4065ca97abd84ab175f81c295464741231893f3d95a59ed14351707819631e",
       "roles": [
         "boundary-ViridianCity"
       ]
     },
     {
       "path": "data/script_cmd_table.inc",
-      "byteLength": 11359,
-      "gitBlobSha1": "c5d112d9ea66d258d5a372dda89b9ad96ed2b1e1",
-      "sha256": "6b59babf9b8a33bdc37a322a1a4b6e2261426126097330f305823e53415b1389",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "data/scripts/bag_full.inc",
-      "byteLength": 358,
-      "gitBlobSha1": "eaf65c7759f5a760c0524a6ae7a3b5b1724930e3",
-      "sha256": "81db2478b9acaeb2011eea4294b5f24f3c4669e724d75e5aa513ba105c2db267",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/cable_club.inc",
-      "byteLength": 53968,
-      "gitBlobSha1": "423ac7ad3d43196faebfd870d0230a82b85b01af",
-      "sha256": "f197f6f19dc7477bd28ec798008a02d6b5542b4b22119e7562ce060789c793df",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/field_moves.inc",
-      "byteLength": 7082,
-      "gitBlobSha1": "fc2998f1aed8b11482d87e51cfe9e51fa9dd630c",
-      "sha256": "8f1c7850d777b97ceb8779e3b2cb4a30562cd647e3c03192261fb917a42a9bb6",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/item_ball_scripts.inc",
-      "byteLength": 12171,
-      "gitBlobSha1": "25233baa0794d0511f01638676eb4c7803c957e8",
-      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/move_tutors.inc",
-      "byteLength": 14295,
-      "gitBlobSha1": "e5b0f72b29a1fd4019b9cbc8f98fd3a1d345ef78",
-      "sha256": "f4c92284b5535577ba815441c5d6b76e36c5c1dd1a3b1a632a1a8cb6e665821f",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/movement.inc",
-      "byteLength": 1147,
-      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5",
-      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/obtain_item.inc",
-      "byteLength": 5866,
-      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9",
-      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/pokedex_rating.inc",
-      "byteLength": 2621,
-      "gitBlobSha1": "6a4ed07511f68b0af8e9e60ce4515b85dac5bc73",
-      "sha256": "1296caff62f2ee448b5b5f5b2e08ab9e710307c463673a997282326666ec92e5",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/std_msgbox.inc",
-      "byteLength": 1040,
-      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde",
-      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/scripts/trainer_battle.inc",
-      "byteLength": 3768,
-      "gitBlobSha1": "c3e4371962dae55fedfd0b5c2f02068a1f8cf0e7",
-      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/specials.inc",
-      "byteLength": 15782,
-      "gitBlobSha1": "d880bf6b9dc9fd765f0b85e6d698411e3da81d5d",
-      "sha256": "2dcf5aae5ded1a99026a9b944e31679c2eda389fbca36089c0f8c5d2f4015788",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "data/text/flavor_text.inc",
-      "byteLength": 2964,
-      "gitBlobSha1": "19752ae8751dfb641e42d0edba52da3258ac252e",
-      "sha256": "04564490bd4c5dfd447480a797fad714536b4d36c19a276e56dcf5336f9e1028",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/text/obtain_item.inc",
-      "byteLength": 1065,
-      "gitBlobSha1": "8d2708166d4d21da3a6c20282e0ebf244ca0d57e",
-      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/text/pc_transfer.inc",
-      "byteLength": 1333,
-      "gitBlobSha1": "8cba666dcecc6e9460875cd33a463978157c45ed",
-      "sha256": "19dbb798107edc01bfe7f79c1d52c9fd7eacf6f2c9e670ae570c078abf91cd28",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/text/poke_mart.inc",
-      "byteLength": 839,
-      "gitBlobSha1": "1e1d4ac35e4618f3b3ddacd023e0b8c0be52f0e3",
-      "sha256": "a1b8588b2078d15aa82893be92a408a682106ecff3a9db6c36008618497d169e",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/text/pokedex_rating.inc",
-      "byteLength": 3759,
-      "gitBlobSha1": "3aa1080aa2174a8f6479e235bcdf73bddab78521",
-      "sha256": "02375e8e33a2940c2d5ee64c1196497d29e4475f5bc2ef40a338d59a161d1cc0",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/text/sign_lady.inc",
-      "byteLength": 773,
-      "gitBlobSha1": "deb6b97c8b6bbdfc2669497aca99d84a98c1c638",
-      "sha256": "4ca7e44affb267c9682a96b1de804035f6181db9de5432d7ec8b3df1612685fe",
       "roles": [
         "script-label-closure"
       ]
     },
     {
       "path": "data/tilesets/primary/building/metatile_attributes.bin",
-      "byteLength": 2560,
-      "gitBlobSha1": "3dbc31883fdd14f31c7b86981508cc08ed3cc395",
-      "sha256": "c609529ecdf1b443b75f144fd733f353a8ddaeb3584ab018a369bb2bea8da5d4",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -563,9 +388,6 @@
     },
     {
       "path": "data/tilesets/primary/building/metatiles.bin",
-      "byteLength": 10240,
-      "gitBlobSha1": "024797c8ee2b805df8566a62fb4e65f3244dac39",
-      "sha256": "6b53b219dcacf26af58c7174279c24a44ad13194c7292c74fcf24c48a1be4b4b",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -573,9 +395,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/00.pal",
-      "byteLength": 203,
-      "gitBlobSha1": "3b6416376ec903750b97307c613328b124481489",
-      "sha256": "6d8396ee26f5d12f993004066251e5b0b578adad04740aa17745a70853a1a725",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -583,9 +402,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/01.pal",
-      "byteLength": 203,
-      "gitBlobSha1": "66561f6d3326d5c3c717426abed1b9b5ce771c29",
-      "sha256": "93c52f1deab53435356361fe1c47de7d6a038ae6f393adc8650a1641ed10846c",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -593,9 +409,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/02.pal",
-      "byteLength": 200,
-      "gitBlobSha1": "87a022102f199020c802e20c91a39c6e3461f929",
-      "sha256": "220932f7bc7c1a6ef2dfa2efdc47d6b0f238440361400b629c441acd89306bea",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -603,9 +416,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/03.pal",
-      "byteLength": 203,
-      "gitBlobSha1": "783496dcd9bf89b72ffc26a29991f49600a8c355",
-      "sha256": "103665f17a67f4a83acfefdfa04a4e1ce736927dd65a9b6b64867ecbb9437c6c",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -613,9 +423,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/04.pal",
-      "byteLength": 206,
-      "gitBlobSha1": "89eace6050ad504ce38e5ee5615def5d5109d3bf",
-      "sha256": "7a205e7a627e475e0f110f4082c221c39fb10c7b543cf4c90f1e6817831f30a1",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -623,9 +430,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/05.pal",
-      "byteLength": 195,
-      "gitBlobSha1": "c7780e5c7515197b8faf0eda54968653ed5e8c04",
-      "sha256": "63c7f7fc52611a66b6371ea09da8d30ab1e9763136aceeb93bcae1016ba42211",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -633,9 +437,6 @@
     },
     {
       "path": "data/tilesets/primary/building/palettes/06.pal",
-      "byteLength": 119,
-      "gitBlobSha1": "1d08ce9a2024a64b883c14bc907b448733603a8a",
-      "sha256": "a88e85688071309411a19eea8f42792b69e073af41b5be6be6743f7e36b435f0",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -643,9 +444,6 @@
     },
     {
       "path": "data/tilesets/primary/building/tiles.png",
-      "byteLength": 7011,
-      "gitBlobSha1": "8d864f27e2f1167e5879d3e8ec5b8546311208ba",
-      "sha256": "0c6faa0058210ffd5794613c28969d1982737cc3b7d4feeab03a13895c8363f2",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab",
         "tileset-ViridianCity_Mart"
@@ -653,9 +451,6 @@
     },
     {
       "path": "data/tilesets/primary/general/metatile_attributes.bin",
-      "byteLength": 2560,
-      "gitBlobSha1": "45f6f352ef262d9c34b0f3e5ff379d9fc6b5eee6",
-      "sha256": "1f62a949da41adca90ad36ca3597754bee953a8f21781f32aedf6158922c89cb",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -664,9 +459,6 @@
     },
     {
       "path": "data/tilesets/primary/general/metatiles.bin",
-      "byteLength": 10240,
-      "gitBlobSha1": "7a228eeaea2f928545b294505b1181618ec9c429",
-      "sha256": "8d950c1a1f151f5e1bded1ecee165b815c3a4d62b69a4a9cec4f676283f9041e",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -675,9 +467,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/00.pal",
-      "byteLength": 186,
-      "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c",
-      "sha256": "757529e794c7fb9c333b1c2ef83704f6b03bb0fe756443b80025b2bc55dbe7f0",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -686,9 +475,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/01.pal",
-      "byteLength": 192,
-      "gitBlobSha1": "09828f4f1f27fd489057d5efb68941ca3947f9fe",
-      "sha256": "baec95e65952c79e6ceb9cf8306995379982dc9253e67797b350556e1db83bfb",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -697,9 +483,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/02.pal",
-      "byteLength": 192,
-      "gitBlobSha1": "6b019b884c96679a0000222fd58ce78d8ee2c165",
-      "sha256": "ea0310019345ea29e2196c4326182e32cbddf0e5fc2c4d010e8c40794c78852b",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -708,9 +491,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/03.pal",
-      "byteLength": 195,
-      "gitBlobSha1": "205c464c79d6e0b30b4d80a37558fe44fde62f60",
-      "sha256": "117156779971950f6693bbefa2e92c373662209f2e39e4716f1e37a4f72ba022",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -719,9 +499,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/04.pal",
-      "byteLength": 199,
-      "gitBlobSha1": "9b094a6aaa24bec00b20dfd68bed519959054d97",
-      "sha256": "7fed8601788c83852288c2395afd84a2c9ca6717c1eb38b762ad8ae7a9d61c5d",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -730,9 +507,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/05.pal",
-      "byteLength": 198,
-      "gitBlobSha1": "c5a653979a010ae3b699a00b247fa72cc0a65fbb",
-      "sha256": "f8497b9b541ebe7ba0a80b0ac865135410d9cf6324f13949f3285c70b1119e07",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -741,9 +515,6 @@
     },
     {
       "path": "data/tilesets/primary/general/palettes/06.pal",
-      "byteLength": 198,
-      "gitBlobSha1": "cdf41b2983e5466152336b36c7ac4a3da4c7b4d4",
-      "sha256": "4d2d0cfdc068acb9bc2adc9d4d762bcee527fd0cf045c30728632e15b0590582",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -752,9 +523,6 @@
     },
     {
       "path": "data/tilesets/primary/general/tiles.png",
-      "byteLength": 8671,
-      "gitBlobSha1": "84ba7b2f987ce0134e5936faf083f7df15665a64",
-      "sha256": "9ff889d1b9da5383a0cd0c85ac7b791812867804f3a38566b46172087419e0b9",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1",
@@ -763,171 +531,114 @@
     },
     {
       "path": "data/tilesets/secondary/lab/metatile_attributes.bin",
-      "byteLength": 700,
-      "gitBlobSha1": "0d685881c8407672f8a4157b406e03da1ee84204",
-      "sha256": "ce6594ef39e2421a71b007c13c4696f79a49bd13eeca3e9dfec2a16cb495e0e1",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/metatiles.bin",
-      "byteLength": 2800,
-      "gitBlobSha1": "a7833446f030fbae8ced830f5e0c7b7302088fbf",
-      "sha256": "ad20e1e58ccf29a884170d612fb6e2fef253688678b06dae43ac3e2942a2e8cf",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/palettes/07.pal",
-      "byteLength": 199,
-      "gitBlobSha1": "3d7f8bd898ab55e9e2210224461962b005c98c8f",
-      "sha256": "2b3c5a339f0cec846d0bfbbd35792a448298c626c04a3dc55e249a3ab758e525",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/palettes/08.pal",
-      "byteLength": 194,
-      "gitBlobSha1": "7fce49d063f3dde6fe0f8d4d03d1cb7e67d2b95d",
-      "sha256": "7abdc06329b1ae362b64e0f631490f07cb1e38b1ec0cdf67840573e21c41d899",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/palettes/09.pal",
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/palettes/10.pal",
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/palettes/11.pal",
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/palettes/12.pal",
-      "byteLength": 204,
-      "gitBlobSha1": "3c32c9fd43263f12be8ed82e4c24d7c64594bbb2",
-      "sha256": "65cb1d632b0b4feeaff0da45ce2da43fe89e2b3d7c1160e7829955b81c480c3e",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/lab/tiles.png",
-      "byteLength": 1308,
-      "gitBlobSha1": "6caeac8a8c868e1e712dd09d6c239cf9324b6bbc",
-      "sha256": "7c05a9933ef15e1d04329734feb135d402d9d7711ea2b9a3d8957c2366bf6bde",
       "roles": [
         "tileset-PalletTown_ProfessorOaksLab"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/metatile_attributes.bin",
-      "byteLength": 268,
-      "gitBlobSha1": "31fdb5cc053cbb8af9a7ad08729b40dd3e5471db",
-      "sha256": "7dbd2c93c112903bae8ecd78a9e9a31c0afe5121a05980bb1dddc72c67486ef4",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/metatiles.bin",
-      "byteLength": 1072,
-      "gitBlobSha1": "1c00836c1a7f75bea981a9303f9d7ee53ded0780",
-      "sha256": "ba42fc92f0e14255aae6ae13a45f59bc5a9d5835e2e7f4f71575d54c59e2b0db",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/palettes/07.pal",
-      "byteLength": 201,
-      "gitBlobSha1": "0a07057ecda51b04fb118eb0a8229c30dbf5c46a",
-      "sha256": "c243110031a6a8a4e7c42d0c80e4a7f8cadca4c3dee6c8cb594d9e2fe6770b94",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/palettes/08.pal",
-      "byteLength": 135,
-      "gitBlobSha1": "06fcc911b85a4c07e990cacb1287b7311357a306",
-      "sha256": "8c2193213389f558a59e346a62bb853f8e20734ce8fe7fc55f1b1054a64e79a9",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/palettes/09.pal",
-      "byteLength": 195,
-      "gitBlobSha1": "ea018609bd991542ef817f59314841427f9d2ac3",
-      "sha256": "5e101354a6cc25baec6777d1645934e135545d278acce0f34936c591273bf5ef",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/palettes/10.pal",
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/palettes/11.pal",
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/palettes/12.pal",
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/mart/tiles.png",
-      "byteLength": 438,
-      "gitBlobSha1": "2bfeb408064a1c2f839ae2a87231064e5ec8c8f8",
-      "sha256": "d3db888db856f7d3987c5365db580e9f43c2889c2c9e04ae4b0a1eb3e2afc3c7",
       "roles": [
         "tileset-ViridianCity_Mart"
       ]
     },
     {
       "path": "data/tilesets/secondary/pallet_town/metatile_attributes.bin",
-      "byteLength": 356,
-      "gitBlobSha1": "2ba2894bc2e11a75b7ec3f11cc340c767e7cfb85",
-      "sha256": "8af5fbc8c32e5d0de4fe66735603d46ecd3506c42fcbe8b6cac744496a25203a",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -935,9 +646,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/metatiles.bin",
-      "byteLength": 1424,
-      "gitBlobSha1": "41db2701509573f5a57d38ddb349e9a243b518ee",
-      "sha256": "3b7ba7f75fd5d750413fc252519569a9f98fac586d87f62066bdf1e3edf35ca2",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -945,9 +653,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/07.pal",
-      "byteLength": 115,
-      "gitBlobSha1": "995731c23cc045acf66daa3297353845cbb9db3e",
-      "sha256": "a47bca4043b26b45e2e06f38bd87f2c611c81629a65dc46e7144273143d3d5b2",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -955,9 +660,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/08.pal",
-      "byteLength": 199,
-      "gitBlobSha1": "dcecb9c407189e58cde4d27ca554aae4d6957b16",
-      "sha256": "14c4f6f561b62186b212917e7e922e12ddcc2eae3cca047b53c3354220669997",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -965,9 +667,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/09.pal",
-      "byteLength": 200,
-      "gitBlobSha1": "90bb7751719782413faddaa574bc33b5a4eb8a99",
-      "sha256": "18fa76a58a43b9968fd1b506a6a5b72b39a1093d1cb8b7479115e2f3bcd514c9",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -975,9 +674,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/10.pal",
-      "byteLength": 195,
-      "gitBlobSha1": "1958eff11b300c3c32791d4ac4e5673554942f30",
-      "sha256": "24abe115664ebcb82c3651b316d2496999c0ec99690dcb956ccee2afc2f030e9",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -985,9 +681,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/11.pal",
-      "byteLength": 189,
-      "gitBlobSha1": "896c79281af5dc57e8ce29b34fbe51ffd5d3328d",
-      "sha256": "9a4bea40b1915f05d12a5867c1d9c65d72a876f23931d7aa95f035eddbb04c5f",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -995,9 +688,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/palettes/12.pal",
-      "byteLength": 170,
-      "gitBlobSha1": "2bfc45b6d384336b43df8be66a18ed2158b555ae",
-      "sha256": "1ad9341bbc8ee6284a665f18d2bd535637cffdc2c0a2e47bd2a7d9253af32ba6",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -1005,9 +695,6 @@
     },
     {
       "path": "data/tilesets/secondary/pallet_town/tiles.png",
-      "byteLength": 929,
-      "gitBlobSha1": "771eed906cc7721e5126a6badd7a1df3136e0fe3",
-      "sha256": "321a23f388126175b34b85cf46c2d8f943daab5ee4d0916129c345b99b9108d2",
       "roles": [
         "tileset-PalletTown",
         "tileset-Route1"
@@ -1015,90 +702,60 @@
     },
     {
       "path": "data/tilesets/secondary/viridian_city/metatile_attributes.bin",
-      "byteLength": 380,
-      "gitBlobSha1": "ee2d7d5b3eae00eb9cfcd4aba3dc1abf365838be",
-      "sha256": "6e2643efb546a161feb0d3b0346fbd345f744997ddce4fe0d0379e9c51cf3d34",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/metatiles.bin",
-      "byteLength": 1520,
-      "gitBlobSha1": "297673a4beec8d2b7763944e48a105f8844fd2dd",
-      "sha256": "8491038f93b038fd271a50821b51eaee2d3b3cf9aa99050632ed96306232f4e5",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/palettes/07.pal",
-      "byteLength": 145,
-      "gitBlobSha1": "93518605a9efb507514197c5e6145181af83c769",
-      "sha256": "33f6542585a81317445150f1cfda30b77818b84e361b506b800cb65cd9e252c2",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/palettes/08.pal",
-      "byteLength": 190,
-      "gitBlobSha1": "219129ebabb2411a6a1437c7502000a5b574bd6b",
-      "sha256": "e4ee580b87938526b3344d75729aa4d13d0f554b903a8e52a5a62f71a0b9cb28",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/palettes/09.pal",
-      "byteLength": 197,
-      "gitBlobSha1": "0aa2b58dcfed72c95fb2f4b4b316fa323e92f941",
-      "sha256": "7d0092132a5fa4da9f391585e0bdd4e49b545f68e9858eeb3bf65ab7601dae77",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/palettes/10.pal",
-      "byteLength": 190,
-      "gitBlobSha1": "4baf904aeaa06413b3eed140921f3448d95781ec",
-      "sha256": "1f68455ceb0b4182e585f989572168f35249dc703da8edc65a69a3a800fb9b4c",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/palettes/11.pal",
-      "byteLength": 192,
-      "gitBlobSha1": "2e92b3cc3e589dd474c146e299290ccafad225e2",
-      "sha256": "e81af309ea981aa9bc0bd389fc9f85d5d092027b2e688991545f9f3f51fdd8e7",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/palettes/12.pal",
-      "byteLength": 195,
-      "gitBlobSha1": "70ed40322587420aecf1e95c5a381cbf774acbc4",
-      "sha256": "5d87d75412c5a053fb8215299cd10ff5b9d75dacf746b4d4f5896232c081d0c2",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "data/tilesets/secondary/viridian_city/tiles.png",
-      "byteLength": 1268,
-      "gitBlobSha1": "39b80d8f9de1e7f93419caec59d2388764cf09e4",
-      "sha256": "5c5348d6cccf3bccb3c1bd8c28951ff84c2ecece8256e59273c966672ebc5451",
       "roles": [
         "tileset-ViridianCity"
       ]
     },
     {
       "path": "graphics/object_events/palettes/npc_blue.pal",
-      "byteLength": 186,
-      "gitBlobSha1": "c62e8ce063b6fffc53a5f02d4008d72e838dfda2",
-      "sha256": "0248021441c52c9441e9521b1c75dd0aa90e0127589cd9384320daa2f1aa57da",
       "roles": [
         "npc-OBJ_EVENT_GFX_POKEDEX",
         "npc-OBJ_EVENT_GFX_YOUNGSTER"
@@ -1106,9 +763,6 @@
     },
     {
       "path": "graphics/object_events/palettes/npc_green.pal",
-      "byteLength": 185,
-      "gitBlobSha1": "0c60b08a5b8b6e54123283eb221df86b06e2db59",
-      "sha256": "5197d4636852e15601d101670ae9889aaae3ad847f712f98df06df87f0906f19",
       "roles": [
         "npc-OBJ_EVENT_GFX_BLUE",
         "npc-OBJ_EVENT_GFX_BOY",
@@ -1119,9 +773,6 @@
     },
     {
       "path": "graphics/object_events/palettes/npc_pink.pal",
-      "byteLength": 192,
-      "gitBlobSha1": "e245ba013a743c5479fe120f76642f0c160fa938",
-      "sha256": "f04b8993dbfc4ea962f17993eff5e1c621e6e71eaa782737ddbf41ce26c3fbfb",
       "roles": [
         "npc-OBJ_EVENT_GFX_OLD_MAN_1",
         "npc-OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN"
@@ -1129,9 +780,6 @@
     },
     {
       "path": "graphics/object_events/palettes/npc_white.pal",
-      "byteLength": 186,
-      "gitBlobSha1": "1646e805e636837f975619827060764e7aa48293",
-      "sha256": "31668dbee587a2e6c7238d4ff94a090e753ddcc06336649a186ab124ad4a6c97",
       "roles": [
         "npc-OBJ_EVENT_GFX_CLERK",
         "npc-OBJ_EVENT_GFX_FAT_MAN",
@@ -1143,648 +791,432 @@
     },
     {
       "path": "graphics/object_events/palettes/player.pal",
-      "byteLength": 189,
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c",
       "roles": [
         "npc-OBJ_EVENT_GFX_RED_NORMAL"
       ]
     },
     {
       "path": "graphics/object_events/pics/misc/cut_tree.png",
-      "byteLength": 389,
-      "gitBlobSha1": "be22aeaed27a123a953d7878395e56536367a272",
-      "sha256": "819545f25316a679f4c1c5697339a3bc0dcf2722a612978acd7cc6bd9f2e0dac",
       "roles": [
         "npc-OBJ_EVENT_GFX_CUT_TREE"
       ]
     },
     {
       "path": "graphics/object_events/pics/misc/item_ball.png",
-      "byteLength": 205,
-      "gitBlobSha1": "5b91624c73faf52c650db9f7eff704f716050bb5",
-      "sha256": "175afd1c4a7c0d9df6fca9e46386408a621384c7dda9a553830e309545549ba7",
       "roles": [
         "npc-OBJ_EVENT_GFX_ITEM_BALL"
       ]
     },
     {
       "path": "graphics/object_events/pics/misc/pokedex.png",
-      "byteLength": 206,
-      "gitBlobSha1": "9089df95920c4a823cf6150b2daa5e3b060332d5",
-      "sha256": "14c1dce247e91cd9de3c9d92fd5cbe279fc9dc931844e95ce7aabc28c7e9506a",
       "roles": [
         "npc-OBJ_EVENT_GFX_POKEDEX"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/blue.png",
-      "byteLength": 727,
-      "gitBlobSha1": "80cd7518a1e5029711cad58b4e103f46fc281ee8",
-      "sha256": "2b66b767e56237d811ad83585f7b6a8732f73efd8d8406069e07322d36d791fb",
       "roles": [
         "npc-OBJ_EVENT_GFX_BLUE"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/boy.png",
-      "byteLength": 747,
-      "gitBlobSha1": "bb13ed6c0a9c99899e9ef00ed90967f526937027",
-      "sha256": "63a9921d07eadcc1abab04f5dd357a630a517a5df9edc2517a50ca0d58eabe6e",
       "roles": [
         "npc-OBJ_EVENT_GFX_BOY"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/clerk.png",
-      "byteLength": 769,
-      "gitBlobSha1": "d883102c9e6ad3dc3aa3019096b751ded24ffb13",
-      "sha256": "dc08770288111df9ae0b49ef88c568746e156a635d137a9348385ed7cb61a12b",
       "roles": [
         "npc-OBJ_EVENT_GFX_CLERK"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/fat_man.png",
-      "byteLength": 733,
-      "gitBlobSha1": "76dd076588edf2128cb39e8f06484f8af3b5da75",
-      "sha256": "be589118d9a218642ae004029d8b982de10dd5cb8fbbda428ca74fbdb930ed25",
       "roles": [
         "npc-OBJ_EVENT_GFX_FAT_MAN"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/old_man_1.png",
-      "byteLength": 641,
-      "gitBlobSha1": "ca9c1f5afbe8c3caff95481c3941dea444c83abf",
-      "sha256": "d9605339fed36e193f5ae892e24bd1b39f93ad62c45ec0b018983b7a0ace5063",
       "roles": [
         "npc-OBJ_EVENT_GFX_OLD_MAN_1"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/old_man_lying_down.png",
-      "byteLength": 269,
-      "gitBlobSha1": "05a775388317a5e10be398e2b45ae0d1876d905a",
-      "sha256": "50796a2ab47024abb6c48c1082632ac74e5771d31d037ee7d3dd5cd77178f2fc",
       "roles": [
         "npc-OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/prof_oak.png",
-      "byteLength": 789,
-      "gitBlobSha1": "037b0f9668806cc7424c0d18dd0907e30e4cfc37",
-      "sha256": "9ac53f6e5615d0cc4f78da06dd03c3d62808d60e634f051deaf3152411f83599",
       "roles": [
         "npc-OBJ_EVENT_GFX_PROF_OAK"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/red_normal.png",
-      "byteLength": 742,
-      "gitBlobSha1": "377224e2f5c6bca2ff5d762f22fc214a6982f772",
-      "sha256": "94eb37499a8bd663f47a0767c34b93569cf0c222a9906852943016e3a771054d",
       "roles": [
         "npc-OBJ_EVENT_GFX_RED_NORMAL"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/red_surf_run.png",
-      "byteLength": 1140,
-      "gitBlobSha1": "f4473bbae05befae4f520ae907a680a87567294d",
-      "sha256": "c33a893e4449cadb417de8e201018975f99e056e582abdafe2cb9f7450931252",
       "roles": [
         "npc-OBJ_EVENT_GFX_RED_NORMAL"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/scientist.png",
-      "byteLength": 821,
-      "gitBlobSha1": "9ea707eea440c50dcb35d69f4c876c036879c471",
-      "sha256": "0421b6307c965839a0d074a5e52e0d0a39b1f024f370f9dac512fa285655785e",
       "roles": [
         "npc-OBJ_EVENT_GFX_SCIENTIST"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/woman_1.png",
-      "byteLength": 744,
-      "gitBlobSha1": "73fef57d09f6343b7b18adf2d0a644b619666b89",
-      "sha256": "cc6508fdb301902362bf094b11270acdb5fc98e99150503c96a81e0038ced77a",
       "roles": [
         "npc-OBJ_EVENT_GFX_WOMAN_1"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/woman_3.png",
-      "byteLength": 730,
-      "gitBlobSha1": "753d0e7f715fbf82eb42396921cb4fddb1d636de",
-      "sha256": "78e4b094c3f34b2deee98a580f174564c4210dce3a93302d8db2b9e0635bde56",
       "roles": [
         "npc-OBJ_EVENT_GFX_WOMAN_3"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/worker_f.png",
-      "byteLength": 671,
-      "gitBlobSha1": "d6f592e3df37cf8b0f6605f68f15326306986efb",
-      "sha256": "a73099dc895f3bd0b7df3c0f710d4817ab037f1d97cd0713146167f9733d7f75",
       "roles": [
         "npc-OBJ_EVENT_GFX_WORKER_F"
       ]
     },
     {
       "path": "graphics/object_events/pics/people/youngster.png",
-      "byteLength": 769,
-      "gitBlobSha1": "6c44de4130533b252effbc817d333582cb8d0713",
-      "sha256": "86dfa7e28d76ce53d82085ced36f0c76bc35b715ef7975e25ad8699850a6e6e8",
       "roles": [
         "npc-OBJ_EVENT_GFX_YOUNGSTER"
       ]
     },
     {
       "path": "include/constants/battle.h",
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/event_object_movement.h",
-      "byteLength": 19206,
-      "gitBlobSha1": "936ef4dfdd84bc2ad533dc466072cd4a9632da85",
-      "sha256": "3d12e9868383a42afef346e968031a12504dc8fc4dda12a17623af3f9df6ecba",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/event_objects.h",
-      "byteLength": 7965,
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
-      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/fame_checker.h",
-      "byteLength": 815,
-      "gitBlobSha1": "e09279bb46f1eecd1bcbfeaebb2a6f2f0b2b0421",
-      "sha256": "e3cf025d99dd2dc571ab1bb5c14f21d03b90913c3ff977f271a9fe78eed865c7",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/flags.h",
-      "byteLength": 95397,
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/global.h",
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/items.h",
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/map_scripts.h",
-      "byteLength": 443,
-      "gitBlobSha1": "1353de360cf1e00b6efbb26ec59c4822c99b59bf",
-      "sha256": "02f8c3a4dd660d5b11f7d4af1f5a6d4530a994df33ba8304024e2a5ba004afc8",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/map_types.h",
-      "byteLength": 1034,
-      "gitBlobSha1": "48566e9eefbc1b10bf246c144465959cd4b63ba7",
-      "sha256": "21b9dc465effd752f859c25d22fee121da8f56e245b1f65ad022af0f9a8008fa",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/metatile_behaviors.h",
-      "byteLength": 3471,
-      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
-      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/metatile_labels.h",
-      "byteLength": 16165,
-      "gitBlobSha1": "7f42269233803e98ba24e7869d3c4a610d1f8259",
-      "sha256": "a38cbe9de5b9d68ddc43d11e5e05b26f00ae6360998ab095a16a0bfd4fa9a7bc",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/moves.h",
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/pokemon.h",
-      "byteLength": 10894,
-      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b",
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/constants/vars.h",
-      "byteLength": 17306,
-      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
-      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/global.fieldmap.h",
-      "byteLength": 12127,
-      "gitBlobSha1": "e2828ec0cb1439718e830fbef4366770b3b77b1c",
-      "sha256": "34a8c91e10803ba48b97a2df8a721ca37fad7572b2ff951a4ab7ec15a5f050eb",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "include/wild_encounter.h",
-      "byteLength": 1378,
-      "gitBlobSha1": "b730103069f14a7d7147547d5bfad82bf082a6de",
-      "sha256": "a6255623049a7b02d33e70f5fa2ad951c2caff7f73ac6b96f43a5112a9bda83e",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/battle_setup.c",
-      "byteLength": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/battle_moves.h",
-      "byteLength": 121457,
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/items.json",
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/items.json.txt",
-      "byteLength": 1170,
-      "gitBlobSha1": "a389a5c83f1caa1b11cb490c6b03e5b33d359fd1",
-      "sha256": "dfdcaaec0169aee61a443304ed3b19be5880caa39f98259cac87d1d24d7ed1a9",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/object_events/object_event_graphics.h",
-      "byteLength": 23522,
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec",
       "roles": [
         "npc-bindings"
       ]
     },
     {
       "path": "src/data/object_events/object_event_graphics_info.h",
-      "byteLength": 97115,
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512",
       "roles": [
         "npc-bindings"
       ]
     },
     {
       "path": "src/data/object_events/object_event_graphics_info_pointers.h",
-      "byteLength": 23651,
-      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
-      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c",
       "roles": [
         "npc-bindings"
       ]
     },
     {
       "path": "src/data/object_events/object_event_pic_tables.h",
-      "byteLength": 82763,
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995",
       "roles": [
         "npc-bindings"
       ]
     },
     {
       "path": "src/data/pokemon/level_up_learnset_pointers.h",
-      "byteLength": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/pokemon/level_up_learnsets.h",
-      "byteLength": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/pokemon/species_info.h",
-      "byteLength": 342600,
-      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2",
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/tilesets/graphics.h",
-      "byteLength": 83873,
-      "gitBlobSha1": "5e6791a66f03876f2aaabe94bde3083e68f5bf2e",
-      "sha256": "63ca2a6588d938adcc4d4bf325578f23b7b1e2b622a3e27ffeccae2ac6133f61",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/tilesets/headers.h",
-      "byteLength": 21121,
-      "gitBlobSha1": "676bd21050e753822a61aa127310c338938c3c00",
-      "sha256": "bd8233763e26d3dbb025010ad379c53bcc5b102dd1a1de40cec85f8262686c8c",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/tilesets/metatiles.h",
-      "byteLength": 15339,
-      "gitBlobSha1": "a9f267159b45291c4a8f28a7577609d9f15b655f",
-      "sha256": "4609feb19cc299e896c8d955a5031abe0d78a7dbcdbcf218257092a008b4e182",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/wild_encounters.json",
-      "byteLength": 706967,
-      "gitBlobSha1": "176027bbc114fcaa42464b0f49c90de26538f555",
-      "sha256": "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/data/wild_encounters.json.txt",
-      "byteLength": 5565,
-      "gitBlobSha1": "c9eda0e2680056a681a0764148cf64a9b7ceb57a",
-      "sha256": "3f0cf0545b0362bef7a81ebbebedd54fee58e37592d718ebf98ab7cfcfd74119",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/event_data.c",
-      "byteLength": 8913,
-      "gitBlobSha1": "da9391cf0ef74c1addf550def8616c81f16e89e3",
-      "sha256": "163fcef03561426fc185b499eef1088dc7a4334b612968a82df3a0fa6131d06f",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/event_object_movement.c",
-      "byteLength": 326145,
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
       "roles": [
         "npc-bindings"
       ]
     },
     {
       "path": "src/field_camera.c",
-      "byteLength": 16987,
-      "gitBlobSha1": "88f94bff08ef951523facf2b579fbc3d4d8455b2",
-      "sha256": "256f0b9606918403f3230bd814d3234d1731609d683bdac0a7f45f5604e8383d",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/field_control_avatar.c",
-      "byteLength": 40928,
-      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
-      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/field_fadetransition.c",
-      "byteLength": 25263,
-      "gitBlobSha1": "f392a06d5c05966441ab448fec9f5a06c908c489",
-      "sha256": "6fa3cb3b827470de6c4942b0296bf823529faec41c6473ffe88675a44114851e",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/field_player_avatar.c",
-      "byteLength": 67969,
-      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
-      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/field_specials.c",
-      "byteLength": 77314,
-      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
-      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/fieldmap.c",
-      "byteLength": 28166,
-      "gitBlobSha1": "41567772299000ba5855419e5c39ad9373a34c20",
-      "sha256": "bbe15c7af1059a9f796dddaca28bdaaf206b715895029e189fa6ae012272ce68",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/graphics.c",
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/item.c",
-      "byteLength": 17534,
-      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
-      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/metatile_behavior.c",
-      "byteLength": 24340,
-      "gitBlobSha1": "ce273664764b6ec93cd4f3014f0e5aad1a3025de",
-      "sha256": "a1491016f9b6ee56c38fd66bf890dfcb5d37c7dc0dfda9fe7c0a5282376b9042",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/new_game.c",
-      "byteLength": 4328,
-      "gitBlobSha1": "3768b3ccb98cdad514b858cbc59244f21bedb7b0",
-      "sha256": "55f03492ea90ee853550a40008089d44ca59c28cb47b8aa10aa2494e8d8608cc",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/overworld.c",
-      "byteLength": 103643,
-      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
-      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/pokedex.c",
-      "byteLength": 3065,
-      "gitBlobSha1": "9146267187521792ddf5d9ba9508d3e37efca32f",
-      "sha256": "b6283039a19fe1a5b781f6dd7ef3f61b1a022c460ce2588b8b6f99932a4682b7",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/quest_log.c",
-      "byteLength": 57194,
-      "gitBlobSha1": "0a2f76f2c4019fa0938d5044da73fcea1b2b069c",
-      "sha256": "75f19a2193d991754b48fc5a859a5731a7ddb853372dd3992842912b44a19d4e",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/scrcmd.c",
-      "byteLength": 56954,
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/script.c",
-      "byteLength": 13713,
-      "gitBlobSha1": "d0433bdda062b138e53d1a1d3184b4566ad7d9dc",
-      "sha256": "1cc4aade1f821e5f218ba7c191b1217e5a3cf942d0bfd0f32f775ce1f808437c",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/shop.c",
-      "byteLength": 34724,
-      "gitBlobSha1": "3d6b1cde422435be57497efb98479da067db38fa",
-      "sha256": "d326d1498cad7fc610f483237a3ff17b0d27836dcf8213960b41bbd2b58844f8",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "src/wild_encounter.c",
-      "byteLength": 24781,
-      "gitBlobSha1": "fa358c0280880b741161fb14807beea6779d3060",
-      "sha256": "06021f7ef390bbb49a7801ca44def3a67380c53e5ab5fd211e472fc53b10ca8f",
       "roles": [
         "rule-reference"
       ]
     },
     {
       "path": "tileset_rules.mk",
-      "byteLength": 7240,
-      "gitBlobSha1": "a868248cf07750504eec7d87c772e089c60aa211",
-      "sha256": "aed8ebf86db60e11384c23e158208f3c5581b72a43ed014eabe5a5d3b60af9d4",
       "roles": [
         "rule-reference"
       ]

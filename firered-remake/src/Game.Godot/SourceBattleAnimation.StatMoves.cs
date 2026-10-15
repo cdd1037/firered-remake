@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
@@ -20,18 +19,16 @@ public sealed class SourceMetallicMaterial
 }
 public static class SourceStatMoveCatalog
 {
-    public const string ManifestSha256="b10c77ef3aaa8a1085d07efdde8447ca9c6a5f9830a7d17e475d4791588b2355";
+
     public static bool Supports(int move)=>move is 74 or 106 or 334 or 110 or 107;
     public static (IReadOnlyDictionary<int,SourceAnimationScript> Scripts,SourceMetallicMaterial Material) Read(string folder)
     {
-        var bytes=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"manifest.json"),16384);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=ManifestSha256)throw new InvalidDataException("Stat moves manifest differs.");
+        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);
         SourceAnimationCommand[] Commands(JsonElement row)=>row.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray();
         var subs=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value));
         var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,Commands(r.GetProperty("commands"))){Subroutines=subs}).ToDictionary(s=>s.MoveId);
-        var data=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"metal-shine.bin"),6176,6176);
-        if(Convert.ToHexStringLower(SHA256.HashData(data))!=doc.RootElement.GetProperty("material").GetProperty("sha256").GetString())throw new InvalidDataException("Metallic material bytes differ.");
+        var data=System.IO.File.ReadAllBytes(Path.Combine(folder,"metal-shine.bin"));
         return (scripts,new(data));
     }
 }

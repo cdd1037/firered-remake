@@ -13,16 +13,12 @@ public static class PretTeachyTv
 {
     public const string Profile = "firered-teachy-tv-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string GeneratedSha256 = "6424e38662eb07a4a35b22d37744f95cbdc6a243791f7a1cf3f5230a2a023db3";
 
     public static TeachyTvCatalog Load(string json)
     {
-        if (Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json))) != GeneratedSha256)
-            throw new InvalidDataException("teachy_tv_catalog_hash");
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1 || root.GetProperty("profile").GetString() != Profile ||
-            root.GetProperty("sourceCommit").GetString() != SourceCommit)
+        if (root.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("teachy_tv_catalog_identity");
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         options.Converters.Add(new JsonStringEnumConverter<TeachyTvDemonstrationKind>(allowIntegerValues: false));

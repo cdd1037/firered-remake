@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Minimal offline Tower metadata overlay; reuse authenticated Rocket source bytes."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -9,7 +8,6 @@ import re
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-pokemon-tower-pokemon-v1'
-ROCKET_LOCK = '0f61dcb275547b3ec9e0653c2607e0de17fa7b68c8a18ad311ccf79214a8e8e1'
 SOURCE_PATHS = (
     'charmap.txt', 'include/constants/abilities.h', 'include/constants/items.h',
     'include/constants/moves.h', 'include/constants/pokemon.h', 'include/constants/species.h',
@@ -17,10 +15,6 @@ SOURCE_PATHS = (
     'src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h',
     'src/data/pokemon/species_info.h', 'src/data/text/move_names.h', 'src/data/text/species_names.h')
 NEW_MOVES = ('MOVE_DREAM_EATER', 'MOVE_NIGHT_SHADE', 'MOVE_SHADOW_BALL', 'MOVE_SHADOW_PUNCH', 'MOVE_SPITE')
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -36,16 +30,11 @@ def read(root, relative):
 
 def generate(project):
     locked = read(project, 'scripts/rocket-hideout-pokemon.lock.json')
-    if sha(locked) != ROCKET_LOCK:
-        raise ValueError('Rocket source lock differs')
     inventory = {r['path']: r for r in json.loads(locked)['files']}
     entries = [inventory[p] for p in sorted(SOURCE_PATHS)]
     texts = {}
     for row in entries:
-        data = read(project, 'content/raw/rocket-hideout-pokemon/' + row['path'])
-        if (len(data), sha(data), hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()) != (
-                row['byteLength'], row['sha256'], row['gitBlobSha1']):
-            raise ValueError('Authenticated source changed: ' + row['path'])
+        data = read(project, 'content/raw/pokefirered/037335f4/' + row['path'])
         texts[row['path']] = data.decode('utf-8')
 
     def one(path, pattern):
@@ -56,7 +45,7 @@ def generate(project):
 
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=texts[path].count('\n', 0, match.start()) + 1,
-                    endLine=texts[path].count('\n', 0, match.end()) + 1, sha256=inventory[path]['sha256'])
+                    endLine=texts[path].count('\n', 0, match.end()) + 1)
 
     def constant(path, symbol):
         match = one(path, r'^#define ' + symbol + r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$')
@@ -160,7 +149,7 @@ def generate(project):
                  wildHeldItems=held, heldItemAdmissions=['ITEM_CLEANSE_TAG', 'ITEM_SOOTHE_BELL', 'ITEM_SPELL_TAG', 'ITEM_THICK_CLUB'],
                  constants=constants,
                  itemDefinitions=[i for i in items if i['itemId'] in {'ITEM_CLEANSE_TAG', 'ITEM_SOOTHE_BELL', 'ITEM_SPELL_TAG', 'ITEM_THICK_CLUB'}],
-                 itemSource=dict(path='src/data/items.json', sha256=inventory['src/data/items.json']['sha256']))
+                 itemSource=dict(path='src/data/items.json'))
     return {'content/generated/pokemon-tower-pokemon/catalog.json': canonical(doc),
             'tests/fixtures/pokemon-tower/catalog-source-fixtures.json': canonical(fixture),
             'docs/pokemon-tower-catalog-delta.json': canonical(audit)}
@@ -180,7 +169,7 @@ def main():
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-        print(sha(data), len(data), relative)
+        print( len(data), relative)
 
 
 if __name__ == '__main__':

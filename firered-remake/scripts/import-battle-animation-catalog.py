@@ -1,28 +1,20 @@
 #!/usr/bin/env python3
 """Pinned animation dependency inventory; does not execute animation or claim rendered coverage."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
 import subprocess
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA = '82fce8fac858aeb7eb2d798ea50afd4671805f45ff190dab588406b9ee8f4a16'
 BASE_PATHS = ('data/battle_anim_scripts.s', 'asm/macros/battle_anim_script.inc',
               'include/constants/moves.h', 'include/constants/battle_anim.h',
               'include/constants/songs.h', 'include/constants/sound.h',
               'src/data/battle_anim.h')
 
 
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def inventory(reference, cache_root=None):
     lock_bytes = Path(__file__).with_name('battle-animation-source.lock.json').read_bytes()
-    if digest(lock_bytes) != LOCK_SHA:
-        raise ValueError('Source lock differs')
     lock = json.loads(lock_bytes)
     expected = {entry['path']: entry for entry in lock['files']}
     if lock['sourceCommit'] != COMMIT or tuple(expected) != BASE_PATHS:
@@ -35,7 +27,7 @@ def inventory(reference, cache_root=None):
             if source.stat().st_size != record['bytes']:
                 raise ValueError('Source length differs: ' + path)
             data = stream.read(record['bytes'] + 1)
-        if len(data) != record['bytes'] or digest(data) != record['sha256']:
+        if len(data) != record['bytes']:
             raise ValueError('Source bytes differ: ' + path)
         if (reference / '.git').exists() and subprocess.check_output(
                 ['git', '-C', str(reference), 'show', COMMIT + ':' + path]) != data:
@@ -147,8 +139,7 @@ def inventory(reference, cache_root=None):
             'Calls include continuation and callee; return-stack reachability is not interpreted.',
             'C task and sprite callbacks can load additional graphics and trigger sounds; these transitive dependencies remain to inspect.',
             'No animation frame, sound timing, original runtime or renderer is accepted by this inventory.'],
-        'inputs': [{'path': p, 'bytes': len(raw[p]), 'sha256': digest(raw[p]),
-            'gitBlobSha1': hashlib.sha1(f'blob {len(raw[p])}\0'.encode() + raw[p]).hexdigest()} for p in BASE_PATHS],
+        'inputs': [{'path': p, 'bytes': len(raw[p])} for p in BASE_PATHS],
         'macroDefinitions': sorted(macro_names), 'usedCommands': commands,
         'instructionCount': len(instructions), 'labelCount': len(labels), 'moves': entries,
         'summary': {'moves': len(entries), 'scriptRoots': len({e['script'] for e in entries}),

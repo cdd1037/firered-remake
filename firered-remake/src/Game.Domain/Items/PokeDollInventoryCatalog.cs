@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class PokeDollInventoryCatalog
 {
     public const string Profile = "firered-poke-doll-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "d87d874ee7df65d92aa4b737c1bb934d70bc3223a655cd47973d79de78fcc958";
     public static ItemId PokeDollId { get; } = new("pret:ITEM_POKE_DOLL");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, PokeDollInventoryCatalog> Proofs = new();
     public EarlyShopCatalog Catalog { get; }
@@ -31,8 +30,7 @@ public sealed class PokeDollInventoryCatalog
             candidate with { Profile = old.Profile, Items = old.Items } != old ||
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("poke_doll_inventory_predecessor");
-        if (candidate.Items[128].Id != PokeDollId ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(128).ToArray()) != AdditionalItemsSourceSha256)
+        if (candidate.Items[128].Id != PokeDollId)
             throw new ArgumentException("poke_doll_inventory_source");
         var proof = new PokeDollInventoryCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

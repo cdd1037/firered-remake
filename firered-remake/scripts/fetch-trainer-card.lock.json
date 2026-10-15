@@ -2,196 +2,102 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 14605,
-      "gitBlobSha1": "8b454dbd18eb0069fa5851d788697190890a5b37",
-      "path": "Makefile",
-      "sha256": "51960ea72311e53c272ebcc5b481021efba52fcc7db7f0ded4bfcebaf8bbdf47"
+      "path": "Makefile"
     },
     {
-      "byteLength": 1200,
-      "gitBlobSha1": "14840e5e469c2f14a661593a57ee7d878dc9a1f4",
-      "path": "graphics/trainer_card/back.bin",
-      "sha256": "982382da521607c46940a4dfc081e311cc8324ec5be3233c509f7ceced1ef01d"
+      "path": "graphics/trainer_card/back.bin"
     },
     {
-      "byteLength": 537,
-      "gitBlobSha1": "e9edda3189b08d8d0d3d564236588f1ce7d78cdd",
-      "path": "graphics/trainer_card/badges.png",
-      "sha256": "213fcf06d1125b42df17c9de249fa8cd76a428da2b38582a04c9b1f52b2130c1"
+      "path": "graphics/trainer_card/badges.png"
     },
     {
-      "byteLength": 1200,
-      "gitBlobSha1": "c0914427dbfb0a3c4223e623434727c433eb3eaf",
-      "path": "graphics/trainer_card/bg.bin",
-      "sha256": "7b285d40ee401c1c6c2ec8cefaeb69209ed636cae8d408e6b8b50b3daf1a113c"
+      "path": "graphics/trainer_card/bg.bin"
     },
     {
-      "byteLength": 535,
-      "gitBlobSha1": "1e83a252c28d326547026d3a30fe25dac1838d28",
-      "path": "graphics/trainer_card/blue.pal",
-      "sha256": "d2046f3748b2984be4f214e18ef4eb320df9a738ed8be4a3d507450b1252fb66"
+      "path": "graphics/trainer_card/blue.pal"
     },
     {
-      "byteLength": 182,
-      "gitBlobSha1": "3e8a3ab52b85c9bf9544d0d664ede6a2856166bc",
-      "path": "graphics/trainer_card/female_bg.pal",
-      "sha256": "c41fd0e23057a8200d650ae475047db6555b78ad7fb9bae3aae934a003be39f5"
+      "path": "graphics/trainer_card/female_bg.pal"
     },
     {
-      "byteLength": 1200,
-      "gitBlobSha1": "c83a6e494a34b961b6cc802e6ef2c3e9817785b2",
-      "path": "graphics/trainer_card/front.bin",
-      "sha256": "82234e283c60cac80dd7b67ddecab3d4df9ab0fe49ef1c9d2a426067f6c376a8"
+      "path": "graphics/trainer_card/front.bin"
     },
     {
-      "byteLength": 1629,
-      "gitBlobSha1": "5d2b11467f5ebe70e0b4c78f90343c9d56821ffc",
-      "path": "graphics/trainer_card/tiles.png",
-      "sha256": "14a71c8d062be82737dde8950ea191361ffc799060e5413479718798e49fb4f5"
+      "path": "graphics/trainer_card/tiles.png"
     },
     {
-      "byteLength": 722,
-      "gitBlobSha1": "b20b0906e504e3e96ddbcc5a00e3de070ed09e49",
-      "path": "graphics/trainers/front_pics/leaf_front_pic.png",
-      "sha256": "54dc10d0408c2e064b4f192891a32e499dafa611875f875ba41f51ad45deec71"
+      "path": "graphics/trainers/front_pics/leaf_front_pic.png"
     },
     {
-      "byteLength": 691,
-      "gitBlobSha1": "45bb17f9b68ade667b1326de00f52943d79531e6",
-      "path": "graphics/trainers/front_pics/red_front_pic.png",
-      "sha256": "4442795842373b5045041f7207619799160edcc9e0124e19996e46401ed149f0"
+      "path": "graphics/trainers/front_pics/red_front_pic.png"
     },
     {
-      "byteLength": 190,
-      "gitBlobSha1": "30e2cdde0557cae16e1b2af92760d2ac96580472",
-      "path": "graphics/trainers/palettes/leaf.pal",
-      "sha256": "8761cfbbbdd72f160f05330ea92fba7e74f1caf760f3e2b3db04284637ac41cc"
+      "path": "graphics/trainers/palettes/leaf.pal"
     },
     {
-      "byteLength": 190,
-      "gitBlobSha1": "30e2cdde0557cae16e1b2af92760d2ac96580472",
-      "path": "graphics/trainers/palettes/red.pal",
-      "sha256": "8761cfbbbdd72f160f05330ea92fba7e74f1caf760f3e2b3db04284637ac41cc"
+      "path": "graphics/trainers/palettes/red.pal"
     },
     {
-      "byteLength": 12798,
-      "gitBlobSha1": "d00ecf0a3afcd9fc1fa9534c00f4b74793d5f06f",
-      "path": "include/characters.h",
-      "sha256": "6787db76f83c4f8426c5adbfa7aa061c46585db9522f1fef00ad888616199b98"
+      "path": "include/characters.h"
     },
     {
-      "byteLength": 95397,
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
-      "path": "include/constants/flags.h",
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+      "path": "include/constants/flags.h"
     },
     {
-      "byteLength": 21092,
-      "gitBlobSha1": "7ee1b3760e58411f2c765da05825d544baaac119",
-      "path": "include/constants/pokedex.h",
-      "sha256": "aac527819623140d7f44ad99b72654bab59ca5679a80cca33361828cc7e7d0c6"
+      "path": "include/constants/pokedex.h"
     },
     {
-      "byteLength": 428,
-      "gitBlobSha1": "67901eb27195f28be9642012252d96e93f2f1497",
-      "path": "include/constants/trainer_card.h",
-      "sha256": "a68436eb06b0521bf712720457cbc9e25bdbf8c0bac74db5ce55529b6bbd8d65"
+      "path": "include/constants/trainer_card.h"
     },
     {
-      "byteLength": 5585,
-      "gitBlobSha1": "7090a029bfc454e19e6425df631fda9db866ae0a",
-      "path": "include/text.h",
-      "sha256": "ca0d1447747d042d92da4df693be353a5af5a26a6c9dcfdf1e3bbc0d01530299"
+      "path": "include/text.h"
     },
     {
-      "byteLength": 1684,
-      "gitBlobSha1": "09b9a253a65f35dca0867e9283bc2baaf1717617",
-      "path": "include/trainer_card.h",
-      "sha256": "dada7e3c137ca333e42375aa6180fe85414464747d52853ea6262af4a8703cf0"
+      "path": "include/trainer_card.h"
     },
     {
-      "byteLength": 7755,
-      "gitBlobSha1": "969f89900879f6272aa51b55f5e688c0c2eedc02",
-      "path": "src/blit.c",
-      "sha256": "a88f404ede1b3681741fab707e601723d7333f4e9230e71f7a4b680ab1522cea"
+      "path": "src/blit.c"
     },
     {
-      "byteLength": 34300,
-      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
-      "path": "src/data/graphics/trainers.h",
-      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9"
+      "path": "src/data/graphics/trainers.h"
     },
     {
-      "byteLength": 21759,
-      "gitBlobSha1": "e7611d7582dd9d6f1bf1ea64821300d24bcd9af8",
-      "path": "src/data/pokemon/trainer_class_lookups.h",
-      "sha256": "c3b212c2d454f60cf196052159d6862303da16fc4e22c3d8cbf3fcb89e60e6a6"
+      "path": "src/data/pokemon/trainer_class_lookups.h"
     },
     {
-      "byteLength": 24042,
-      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
-      "path": "src/data/trainer_graphics/front_pic_tables.h",
-      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f"
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
     },
     {
-      "byteLength": 8913,
-      "gitBlobSha1": "da9391cf0ef74c1addf550def8616c81f16e89e3",
-      "path": "src/event_data.c",
-      "sha256": "163fcef03561426fc185b499eef1088dc7a4334b612968a82df3a0fa6131d06f"
+      "path": "src/event_data.c"
     },
     {
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
-      "path": "src/graphics.c",
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3"
+      "path": "src/graphics.c"
     },
     {
-      "byteLength": 3065,
-      "gitBlobSha1": "9146267187521792ddf5d9ba9508d3e37efca32f",
-      "path": "src/pokedex.c",
-      "sha256": "b6283039a19fe1a5b781f6dd7ef3f61b1a022c460ce2588b8b6f99932a4682b7"
+      "path": "src/pokedex.c"
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
-      "path": "src/strings.c",
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      "path": "src/strings.c"
     },
     {
-      "byteLength": 67579,
-      "gitBlobSha1": "ab959d6c45b89fed49fa1db3fb970e0d40044c30",
-      "path": "src/trainer_card.c",
-      "sha256": "54c39013c4bd42a9b14d8a375b7d04aec80a6448dbb1ca2a7dba4f58d7821f60"
+      "path": "src/trainer_card.c"
     },
     {
-      "byteLength": 9331,
-      "gitBlobSha1": "a6622d8fc915b209881560f7e2d6e17d6eab6759",
-      "path": "src/trainer_pokemon_sprites.c",
-      "sha256": "efbb56754bf17ef3cf418ff00779782f8c45995bc835d061d99a1005e2802ffe"
+      "path": "src/trainer_pokemon_sprites.c"
     },
     {
-      "byteLength": 15783,
-      "gitBlobSha1": "834f13a8c9f4b5dbf5f5c278004f5fe5d9ff0ca2",
-      "path": "src/window.c",
-      "sha256": "223a0ff33a3d4c92dc25d18ab2022d32e7e06d8c0e2fbf02c3cc111cbb0a2352"
+      "path": "src/window.c"
     },
     {
-      "byteLength": 7511,
-      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
-      "path": "tools/gbagfx/convert_png.c",
-      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965"
+      "path": "tools/gbagfx/convert_png.c"
     },
     {
-      "byteLength": 18570,
-      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
-      "path": "tools/gbagfx/gfx.c",
-      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+      "path": "tools/gbagfx/gfx.c"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-trainer-card-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

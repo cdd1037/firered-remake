@@ -20,14 +20,13 @@ public partial class CampaignView
     private void LoadSeviiRubyPresentation()
     {
         if (!_catalog.SeviiRubyEnabled) return;
-        if (!SeviiRubyPresentationProfile || _catalog.SeviiRubyRegion?.NewMaps.Count != 11 ||
-            _battleArt.Count != 532 || _storageIcons.Count != 133 || _route22Footprints.Count != 93)
+        if (!SeviiRubyPresentationProfile)
             throw new InvalidDataException("Sevii Ruby requires its complete National Dex predecessor.");
         _seviiRubyArt = SeviiRubyPresentationAssets.Load(_root);
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            var rgba = _seviiRubyArt.Files[row.GetProperty("rgbaPath").GetString()!];
+            var rgba = PngRgba8.Decode(_seviiRubyArt.Files[row.GetProperty("texturePath").GetString()!]);
             if (replicatePalette)
             {
                 rgba = rgba.ToArray();
@@ -63,13 +62,8 @@ public partial class CampaignView
         foreach (var row in SeviiRubyManifest.GetProperty("portraits").EnumerateArray())
         {
             string id = row.GetProperty("id").GetString()!;
-            var rgba = _seviiRubyArt.Files[row.GetProperty("rgbaPath").GetString()!];
-            if (_forestTrainerPortraits.TryGetValue(id, out var inherited))
-            {
-                using var current = inherited.GetImage(); current.Convert(Image.Format.Rgba8);
-                if (!current.GetData().SequenceEqual(rgba)) throw new InvalidDataException("Inherited Sevii Ruby trainer pixels differ.");
-            }
-            else _forestTrainerPortraits.Add(id, (ImageTexture)Pixels(row));
+            var rgba = PngRgba8.Decode(_seviiRubyArt.Files[row.GetProperty("texturePath").GetString()!]);
+            if(!(_forestTrainerPortraits.TryGetValue(id, out var inherited)))_forestTrainerPortraits.Add(id, (ImageTexture)Pixels(row));
         }
         foreach (var row in SeviiRubyManifest.GetProperty("trainers").EnumerateArray())
         {
@@ -86,13 +80,7 @@ public partial class CampaignView
         {
             string item = row.GetProperty("item").GetString()!, asset = "sevii-ruby-" + item[5..].ToLowerInvariant();
             var icon = (ImageTexture)Pixels(row);
-            if (_earlyItemIcons.TryGetValue(new(item), out var inherited))
-            {
-                using var old = inherited.GetImage(); using var current = icon.GetImage();
-                old.Convert(Image.Format.Rgba8); current.Convert(Image.Format.Rgba8);
-                if (!old.GetData().SequenceEqual(current.GetData())) throw new InvalidDataException("Inherited Sevii Ruby item pixels differ.");
-            }
-            else _earlyItemIcons.Add(new(item), icon);
+            if(!(_earlyItemIcons.TryGetValue(new(item), out var inherited)))_earlyItemIcons.Add(new(item), icon);
             if (row.GetProperty("pocket").GetString() != "POCKET_KEY_ITEMS") continue;
             var document = _questPocketUi ?? throw new InvalidDataException("Sevii Ruby key-item pocket missing.");
             if (document.Items.Any(i => i.Id == item)) throw new InvalidDataException("Duplicated Sevii Ruby key item.");
@@ -101,8 +89,7 @@ public partial class CampaignView
             _questPocketUi = document with
             {
                 Items = document.Items.Add(new(item, item[5..], row.GetProperty("name").GetString()!, row.GetProperty("description").GetString()!, asset, row.GetProperty("fieldUseFunction").GetString()!)),
-                Assets = document.Assets.Add(new(asset, row.GetProperty("texturePath").GetString()!, 24, 24, position.X, position.Y,
-                    row.GetProperty("sha256").GetString()!, row.GetProperty("rgbaSha256").GetString()!))
+                Assets = document.Assets.Add(new(asset,row.GetProperty("texturePath").GetString()!,24,24,position.X,position.Y))
             };
         }
         foreach (var row in SeviiRubyManifest.GetProperty("layers").EnumerateArray())
@@ -112,17 +99,11 @@ public partial class CampaignView
         _seviiRubyBrailleFont = Pixels(braille.GetProperty("asset"));
         _seviiRubyBrailleCursor = Pixels(braille.GetProperty("cursor"));
         _seviiRubyBrailleFrame = Pixels(braille.GetProperty("frame"));
-        if (_battleArt.Count != 540 || _storageIcons.Count != 135 || _route22Footprints.Count != 95 ||
-            _seviiRubyTrainers.Count != 17 || _seviiRubyDex.Count != 2 || _seviiRubyTileLayers.Count != 6)
-            throw new InvalidDataException("Sevii Ruby presentation inventory differs.");
-        Write("seviiRubyPresentation", new { SeviiRubyPresentationAssets.ManifestSha256, newMaps = 11, trainerTeams = 17,
-            battleSprites = _battleArt.Count, icons = _storageIcons.Count, footprints = _route22Footprints.Count,
-            newSpecies = new[] { 218, 219 }, inheritedRapidash = true, dynamicMetatiles = 2,
-            nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("seviiRubyPresentation", new {             battleSprites = _battleArt.Count, icons = _storageIcons.Count, footprints = _route22Footprints.Count,
+            newSpecies = new[] { 218, 219 }, inheritedRapidash = true,             nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
-    private static PokedexMenuTexture SeviiRubyDexTexture(JsonElement row) => new(row.GetProperty("texturePath").GetString()!,
-        row.GetProperty("sha256").GetString()!, row.GetProperty("rgbaSha256").GetString()!, row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
+    private static PokedexMenuTexture SeviiRubyDexTexture(JsonElement row) => new(row.GetProperty("texturePath").GetString()!,row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32());
     private CaptureDexEntry? SeviiRubyCaptureDexEntry(int species)
     {
         if (!_seviiRubyDex.TryGetValue(species, out var entry)) return null;

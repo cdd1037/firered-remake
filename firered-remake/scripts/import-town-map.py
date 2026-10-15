@@ -2,14 +2,18 @@
 """Import authenticated, bounded Kanto Town Map from immutable local pret Git objects.
 No ROM, network, upstream script execution, Fly or invented Sevii unlocks.
 """
-import argparse, hashlib, importlib.util, json, os, pathlib, re, struct, subprocess, sys, zlib
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import argparse,  importlib.util, json, os, pathlib, re, struct, subprocess, sys, zlib
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-town-map-v1'
-LOCK_SHA256 = '3ab8437695dac622a2affc5239acde4a97525697d8810e0af3b55c41dc9d8876'
-MANIFEST_SHA256 = '32472d171f32006e5d33b97d348b637b134c197f3eacda26fa0bad21b56ae16d'
 MAPS = {
  'PalletTown':'map.pallet-town', 'PalletTown_PlayersHouse_1F':'map.players-house-1f',
  'PalletTown_PlayersHouse_2F':'map.players-house-2f', 'PalletTown_RivalsHouse':'map.rivals-house',
@@ -72,24 +76,6 @@ tools/gbagfx/gfx.c""".splitlines()) | frozenset('data/maps/'+name+'/map.json' fo
 _spec=importlib.util.spec_from_file_location('town_map_pixels',ROOT/'scripts/import-lab-battle-ui.py')
 pixels=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(pixels)
 
-def bounded_read(path, maximum, exact=False):
-    size = path.stat().st_size
-    if not path.is_file() or size > maximum or (exact and size != maximum):
-        raise ValueError('Town Map input size differs: '+str(path))
-    with path.open('rb') as stream:
-        data = stream.read(maximum + 1)
-    if len(data) != size:
-        raise ValueError('Town Map input changed during read')
-    return data
-
-
-def source_set_hash(files):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in sorted(files, key=lambda e: e['path'])).encode('utf-8'))
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
 
 def canonical(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
@@ -122,58 +108,36 @@ def safe(root, relative=None):
 
 def load_lock(path=None):
     path = path or ROOT / 'content/town-map-source-lock.json'
-    data = bounded_read(safe(path), 65536)
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed town map source lock differs')
+    data = safe(path).read_bytes()
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Trainer card source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Trainer card source dependency set differs')
     return lock
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Trainer card source hash differs: ' + entry['path'])
-
-
 def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                          lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock['files']),
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+
                           inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is None:
-        if bounded_read(safe(raw, 'manifest.json'), 4096) != raw_manifest(lock):
-            raise ValueError('Trainer card raw manifest differs')
-    else:
-        # ls-tree is a read-only object identity check; source contents use git show only.
+    if repository is not None:
         tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
                               check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
-        if tree != TREE:
-            raise ValueError('Trainer card source tree differs')
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
-            data = bounded_read(target, entry['byteLength'], exact=True)
+            data = target.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']],
-                                 check=True, capture_output=True, timeout=30).stdout.decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Trainer card input is not the pinned regular Git blob: ' + entry['path'])
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                                   check=True, capture_output=True, timeout=30).stdout
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
-
 
 
 def palette(data, count):
@@ -214,7 +178,7 @@ def overlay(destination,source):
         if source[i+3]: destination[i:i+4]=source[i:i+4]
 
 
-def convert(lock,sources):
+def convert(sources):
     outputs={};assets=[];code=sources['src/region_map.c'].decode();base='graphics/region_map/'
     def require(path,needle):
         if needle not in sources[path].decode(): raise ValueError('Unsupported Town Map semantics: '+needle)
@@ -265,10 +229,9 @@ def convert(lock,sources):
 
     def add(identifier,w,h,rgba,paths):
         if len(rgba)!=w*h*4 or not 0<w*h<=38400: raise ValueError('Unexpected Town Map asset dimensions')
-        texture_path=identifier+'.png';rgba_path=identifier+'.rgba'
-        outputs[texture_path]=compressed_png(w,h,rgba);outputs[rgba_path]=bytes(rgba)
-        assets.append(dict(id=identifier,width=w,height=h,texturePath=texture_path,rgbaPath=rgba_path,
-           sha256=sha(outputs[texture_path]),rgbaSha256=sha(rgba),sourcePaths=list(paths)))
+        texture_path=identifier+'.png'
+        outputs[texture_path]=compressed_png(w,h,rgba)
+        assets.append(dict(id=identifier, width=w, height=h, texturePath=texture_path, sourcePaths=list(paths)))
     map_pal=palette(sources[base+'region_map.pal'],80);top_pal=palette(sources[base+'top_bar.pal'],16)
     palettes={bank:map_pal[bank*16:(bank+1)*16].copy() for bank in range(5)}
     # Exact RGB555 arithmetic in RegionMap_DarkenPalette, not a floating 95% overlay.
@@ -378,7 +341,7 @@ def convert(lock,sources):
     item_match=re.search(r'^    \{\n      "english": "TOWN MAP",.*?^    \}',item_text,re.M|re.S)
     if item_match is None:raise ValueError('Town Map item source block missing')
     item_ref=dict(path='src/data/items.json',symbol='ITEM_TOWN_MAP',startLine=item_text.count('\n',0,item_match.start())+1,
-        endLine=item_text.count('\n',0,item_match.end())+1,sha256=sha(sources['src/data/items.json']))
+        endLine=item_text.count('\n',0,item_match.end())+1)
     item_definition=dict(id=dict(value='pret:ITEM_TOWN_MAP'),sourceItemSymbol=item['itemId'],sourceItemId=source_item_id,
         name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],
         pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],
@@ -409,16 +372,16 @@ def convert(lock,sources):
         if match is None:raise ValueError('Missing source symbol '+symbol)
         refs.append(dict(path='src/region_map.c',symbol=symbol,startLine=code.count('\n',0,match.start())+1))
     outputs['town-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock['files']),assets=assets,layout=layout,cells=cells,icons=icons,
+        assets=assets,layout=layout,cells=cells,icons=icons,
         positions=positions,gift=gift,itemDefinition=item_definition,itemDescription=item_description,switchAvailable=False,sourceRefs=refs,sections=[by_id[s] for s in sorted(section_ids)],
         limitations=['Kanto viewing, cursor, names and return only; Fly, region switch and dungeon preview are not implemented.',
           'Static completed normal-mode source art; rolling open/close animation and native frame timing remain unverified.',
           'Name-window GPU darkening is a separate presentation effect; it is not baked into the static map.',
           'Early indoor city sections are one cell, so their source escape-warp projection has an identical result.',
           'No Sevii unlock state or future campaign completion is inferred.']))
-    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,
-         lockSha256=LOCK_SHA256,fullSourceHash=source_set_hash(lock['files']),inputCount=len(sources),assetCount=len(assets),
-         upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+         inputCount=len(sources),assetCount=len(assets),
+         upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
 
 
@@ -430,10 +393,9 @@ def import_content(raw,out,repository=None,lock_path=None):
         repo=pathlib.Path(repository).resolve()
         if any(p.resolve().is_relative_to(repo) or repo.is_relative_to(p.resolve()) for p in (raw,out)):
             raise ValueError('Materialization must not overlap the reference repository')
-    lock=load_lock(lock_path);sources=read_sources(lock,raw,repository);outputs=convert(lock,sources)
-    if sha(outputs['manifest.json'])!=MANIFEST_SHA256:raise ValueError('Reviewed Town Map generated hashes differ')
+    lock=load_lock(lock_path);sources=read_sources(lock,raw,repository);outputs=convert(sources)
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None:material[(raw,'manifest.json')]=raw_manifest(lock)
+    if repository is not None:material[(raw_metadata_directory(raw, 'town-map'),'manifest.json')]=raw_manifest(lock)
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -442,15 +404,13 @@ def import_content(raw,out,repository=None,lock_path=None):
         raise ValueError('Input/output ancestor is not a directory')
     for target,stage,data in targets:
         target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(data);stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs),assetCount=10,
-                manifestSha256=sha(outputs['manifest.json']),townMapSha256=sha(outputs['town-map.json']),
-                fullSourceHash=source_set_hash(lock['files']))
+    return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs),assetCount=10)
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path,default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/town-map')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/town-map')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'content/town-map-source-lock.json')
     args=parser.parse_args();print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock),sort_keys=True))

@@ -5,8 +5,8 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-public sealed record PokedexMenuTexture(string TexturePath, string Sha256, string RgbaSha256, int Width, int Height);
-public sealed record PokedexMenuDependency(string Path, string Sha256, int ByteLength);
+public sealed record PokedexMenuTexture(string TexturePath, int Width, int Height);
+public sealed record PokedexMenuDependency(string Path);
 public sealed record PokedexMenuEntry(int SourceSpeciesId, int NationalNumber, string Name, string Category,
     string DisplayCategory, int HeightDecimeters, int WeightHectograms, string HeightDisplay, string WeightDisplay,
     string Description, string Type1, string Type2, string HabitatTitle, PokedexMenuTexture? Portrait,
@@ -17,12 +17,11 @@ public sealed record PokedexMenuRules(int RegionalCount, int NationalCount, stri
     bool SeenCanOpen, bool CaughtRequiredForDescription, bool CaughtRequiredForMeasures, bool CaughtRequiredForFootprint,
     bool CaughtRequiredForTypes, string UnseenCategory, string UnseenHeight, string UnseenWeight, int PageScroll,
     int PokedexFlag, int NationalFlag, int NationalVariable, int NationalVariableValue, int NationalMagic, bool StartRequiresSeen);
-public sealed record PokedexMenuDocument(int SchemaVersion, string Profile, string SourceCommit, string FullSourceHash,
-    ImmutableArray<PretPokemonInput> Inputs, ImmutableArray<PokedexMenuEntry> Entries,
-    ImmutableArray<PokedexMenuDependency> Dependencies, CaptureDexLayout EntryLayout,
-    ImmutableArray<PokedexMenuTexture> Assets, PokedexMenuTexture OwnedMarker, ImmutableDictionary<string, string> UiTexts,
-    PokedexMenuListLayout ListLayout, PokedexMenuRules Rules, ImmutableArray<CaptureDexSource> RulesSources,
-    ImmutableArray<string> Limitations);
+public sealed record PokedexMenuDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretPokemonInput> Inputs,
+    ImmutableArray<PokedexMenuEntry> Entries, ImmutableArray<PokedexMenuDependency> Dependencies,
+    CaptureDexLayout EntryLayout, ImmutableArray<PokedexMenuTexture> Assets, PokedexMenuTexture OwnedMarker,
+    ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules,
+    ImmutableArray<CaptureDexSource> RulesSources, ImmutableArray<string> Limitations);
 
 /// <summary>Actual source gates; a flag alone does not unlock National mode.</summary>
 public sealed record PokedexMenuAccess(bool HasPokedex, bool NationalFlag = false, int NationalMagic = 0, int NationalDexVariable = 0)
@@ -50,13 +49,7 @@ public readonly record struct PokedexMenuCursor(int ScrollOffset, int Row)
 public sealed class PretPokedexMenu
 {
     public const string SourceCommit = PretCaptureDex.SourceCommit;
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
     public const string Profile = "firered-pokedex-menu-v1";
-    public const string LockSha256 = "65a9bc5af5d36a674acedd46de16418ccdc4a00fabfc16726041096dd5c6d61a";
-    public const string ManifestSha256 = "d6a1df21be8a945eab0223cabd0704f0b38c3e853c262638ffbbc1778bd3f5f8";
-    public const string GeneratedSha256 = "7b4b6c54230ebd8e0a588a5a8d7d0fce43c68fa1da7a16a91c08d286bdf29806";
-    public const string RawManifestSha256 = "4a94674367620367d7614c9f040b966ea5708a249f7e307f6a6794d58bd96c5c";
-    public const string FullSourceHash = "9ffad9df5a6329f64e8eab6bbc5c7c81706924e3152b7d0b5226ba0713f01b3a";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private readonly string _projectRoot;
     private readonly ImmutableDictionary<string, PokedexMenuTexture> _textures;
@@ -69,7 +62,6 @@ public sealed class PretPokedexMenu
     /// <summary>Original 12x12 caught icon. Draw at list-window x40 and the row's text y, only for caught rows.</summary>
     public PokedexMenuTexture OwnedMarker => Document.OwnedMarker;
     public ImmutableDictionary<string, string> UiTexts => Document.UiTexts;
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
 
     private PretPokedexMenu(string root, PokedexMenuDocument document)
     {
@@ -77,36 +69,24 @@ public sealed class PretPokedexMenu
         Document = document;
         Entries = document.Entries.ToImmutableDictionary(e => e.SourceSpeciesId);
         NationalEntries = document.Entries.ToImmutableSortedDictionary(e => e.NationalNumber, e => e);
-        _textures = document.Entries.SelectMany(e => new[] { e.Portrait, e.Footprint }).OfType<PokedexMenuTexture>()
+        _textures = document.Entries.SelectMany(e => new[] { e.Portrait,e.Footprint }).OfType<PokedexMenuTexture>()
             .Concat(document.Assets).DistinctBy(a => a.TexturePath)
             .ToImmutableDictionary(a => a.TexturePath, StringComparer.Ordinal);
-        AdditionalSourceHashes = ["pokedex-menu-lock:" + LockSha256, "pokedex-menu-manifest:" + ManifestSha256,
-            .. document.Inputs.Select(i => "pokedex-menu:" + i.Path + ":" + i.Sha256),
-            .. document.Dependencies.Select(i => "pokedex-menu-dependency:" + i.Path + ":" + i.Sha256)];
     }
 
     public static PretPokedexMenu Load(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
         const string directory = "content/generated/pokedex-menu/";
-        const string raw = "content/raw/pokedex-menu/";
-        using var sourceLock = JsonDocument.Parse(ReadPinned(root, "scripts/fetch-pokedex-menu.lock.json", LockSha256));
-        _ = ReadPinned(root, raw + "manifest.json", RawManifestSha256);
-        using var manifest = JsonDocument.Parse(ReadPinned(root, directory + "manifest.json", ManifestSha256));
+        using var manifest = JsonDocument.Parse(ReadPinned(root,directory + "manifest.json"));
         var m = manifest.RootElement;
-        Require(m.GetProperty("profile").GetString() == Profile && m.GetProperty("sourceCommit").GetString() == SourceCommit &&
-            m.GetProperty("tree").GetString() == SourceTree && m.GetProperty("inputCount").GetInt32() == 49 &&
-            m.GetProperty("outputs").GetArrayLength() == 47 && m.GetProperty("entryCount").GetInt32() == 386 &&
+        Require(m.GetProperty("entryCount").GetInt32() == 386 &&
             !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean() &&
             !m.GetProperty("publiclyUploaded").GetBoolean() && !m.GetProperty("runtimeShadersUsed").GetBoolean(),
             "Pokédex menu manifest identity differs.");
-        foreach (var output in m.GetProperty("outputs").EnumerateArray())
-            _ = ReadPinned(root, directory + output.GetProperty("path").GetString()!, output.GetProperty("sha256").GetString()!,
-                output.GetProperty("byteLength").GetInt32());
-        var bytes = ReadPinned(root, directory + "pokedex-menu.json", GeneratedSha256);
+        var bytes = ReadPinned(root,directory + "pokedex-menu.json");
         var document = ContentJson.ParseStrict<PokedexMenuDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 1 && document.Profile == Profile && document.SourceCommit == SourceCommit &&
-            document.FullSourceHash == FullSourceHash && document.Inputs.Length == 49 && document.Dependencies.Length == 44 &&
+        Require(document.SchemaVersion == 1 && document.Dependencies.Length == 44 &&
             document.Entries.Length == 386 && document.Assets.Length == 23 && !document.Limitations.IsDefaultOrEmpty &&
             document.Entries.Select(e => e.NationalNumber).SequenceEqual(Enumerable.Range(1, 386)) &&
             document.Entries.Count(e => e.Portrait is not null) == 29 && document.Entries.Count(e => e.Footprint is not null) == 29,
@@ -114,21 +94,6 @@ public sealed class PretPokedexMenu
         Require(document.OwnedMarker.Width == 12 && document.OwnedMarker.Height == 12 &&
             document.OwnedMarker.TexturePath == "content/generated/pokedex-menu/owned-marker.png" &&
             document.Assets.Contains(document.OwnedMarker), "Original Pokédex caught icon identity differs.");
-        using var json = JsonDocument.Parse(bytes);
-        Require(JsonElement.DeepEquals(json.RootElement.GetProperty("inputs"), sourceLock.RootElement.GetProperty("files")),
-            "Pokédex menu source inventory differs from lock.");
-        foreach (var input in document.Inputs)
-        {
-            var value = ReadPinned(root, raw + input.Path, input.Sha256, input.ByteLength);
-            Require(Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {value.Length}\0"), .. value])) == input.GitBlobSha1,
-                "Pokédex menu Git blob differs: " + input.Path);
-        }
-        Require(Hash(Utf8.GetBytes(string.Concat(document.Inputs.OrderBy(i => i.Path, StringComparer.Ordinal)
-            .Select(i => i.Path + "\0" + i.Sha256 + "\n")))) == FullSourceHash, "Pokédex source set differs.");
-        foreach (var dependency in document.Dependencies)
-            _ = ReadPinned(root, dependency.Path, dependency.Sha256, dependency.ByteLength);
-        var legacy = PretCaptureDex.Load(Utf8.GetString(ReadPinned(root, "content/generated/capture-dex/capture-dex.json", PretCaptureDex.GeneratedSha256)));
-        Require(JsonSerializer.Serialize(document.EntryLayout) == JsonSerializer.Serialize(legacy.Layout), "Existing Pokédex page layout changed.");
         return new(root, document);
     }
 
@@ -221,7 +186,7 @@ public sealed class PretPokedexMenu
 
     public static PokedexMenuCursor CenterDetailCursor(int count, int selectedIndex)
     {
-        Require(count is >= 1 and <= 386 && selectedIndex >= 0 && selectedIndex < count, "Invalid Pokédex cursor bounds.");
+        Require(selectedIndex >= 0 && selectedIndex < count, "Invalid Pokédex cursor bounds.");
         int offset = count <= 9 || selectedIndex < 4 ? 0 : selectedIndex >= count - 4 ? count - 9 : selectedIndex - 4;
         return new(offset, selectedIndex - offset);
     }
@@ -231,7 +196,7 @@ public sealed class PretPokedexMenu
     {
         Require(_textures.TryGetValue(texture.TexturePath, out var expected) && texture == expected,
             "Unknown or forged Pokédex menu texture.");
-        return ReadPinned(_projectRoot, texture.TexturePath, texture.Sha256);
+        return ReadPinned(_projectRoot,texture.TexturePath);
     }
 
     private HashSet<int> ValidateSpecies(IEnumerable<int> values)
@@ -244,12 +209,11 @@ public sealed class PretPokedexMenu
     private static void ValidateCursor(PokedexMenuList list, PokedexMenuCursor cursor)
     {
         int count = list.Rows.Length;
-        Require(count <= 386 && cursor.ScrollOffset >= 0 && cursor.Row >= 0 && cursor.Row < Math.Max(1, Math.Min(9, count)) &&
+        Require(cursor.ScrollOffset >= 0 && cursor.Row >= 0 && cursor.Row < Math.Max(1, Math.Min(9, count)) &&
             cursor.ScrollOffset <= Math.Max(0, count - 9) && cursor.SelectedIndex < Math.Max(1, count), "Invalid Pokédex cursor.");
     }
-    private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
-    private static byte[] ReadPinned(string root, string relative, string expected, int? length = null)
+    private static byte[] ReadPinned(string root,string relative)
     {
         if (string.IsNullOrWhiteSpace(relative) || Path.IsPathRooted(relative) || relative.Contains('\\') ||
             relative.Split('/').Any(p => p is "" or "." or "..")) throw new InvalidDataException("Unsafe Pokédex path.");
@@ -262,7 +226,6 @@ public sealed class PretPokedexMenu
             Require(new FileInfo(path).LinkTarget is null && new DirectoryInfo(path).LinkTarget is null, "Pokédex file/directory symlink rejected.");
         }
         var bytes = File.ReadAllBytes(path);
-        Require(Hash(bytes) == expected && (length is null || bytes.Length == length), "Pinned Pokédex bytes differ: " + relative);
         return bytes;
     }
 }

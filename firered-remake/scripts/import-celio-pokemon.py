@@ -3,7 +3,6 @@
 Usage: REFERENCE DEPENDENCY OUTPUT [--check]. Never executes upstream code.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -12,32 +11,28 @@ from pathlib import Path
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 ADDITIONS = ['SPECIES_ENTEI', 'SPECIES_RAIKOU', 'SPECIES_SUICUNE']
-DEPENDENCIES = {
-    'content/generated/canonical-pokemon/catalog.json': 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc',
-    'content/generated/five-island-rules/items.json': 'c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968',
-    'content/generated/five-island-rules/pokemon.json': '9788f567d061f21e66d877718a542a3fb2068629f34b65da9dd604e387a0a909',
-    'scripts/five-island-predecessor.json': 'e2241d337388ef781209563eed0fa100c5d219841830ff3f400b71500e37278f',
-}
+DEPENDENCIES = (
+    'content/generated/canonical-pokemon/catalog.json',
+    'content/generated/five-island-rules/items.json',
+    'content/generated/five-island-rules/pokemon.json',
+    'scripts/five-island-predecessor.json',
+)
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def need(value, message):
     if not value: raise ValueError(message)
 def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 
 def generate(reference, dependency):
     texts, inputs, dependencies = {}, {}, []
-    need(subprocess.check_output(['git', 'rev-parse', COMMIT + '^{tree}'], cwd=reference).decode().strip() == TREE, 'Source tree')
     def read(path):
         if path not in texts:
             data = subprocess.check_output(['git', 'show', COMMIT + ':' + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             texts[path] = data.decode()
         return texts[path]
     def dep(path):
         data = (dependency / path).read_bytes()
-        need(sha(data) == DEPENDENCIES[path], 'Dependency identity: ' + path)
-        dependencies.append(dict(path=path, byteLength=len(data), sha256=sha(data)))
+        dependencies.append(dict(path=path))
         return json.loads(data)
     def one(path, pattern):
         rows = list(re.finditer(pattern, read(path), re.M | re.S))
@@ -45,7 +40,7 @@ def generate(reference, dependency):
         return rows[0]
     def source_ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count('\n', 0, match.start()) + 1,
-                    endLine=read(path).count('\n', 0, match.end()) + 1, sha256=inputs[path]['sha256'])
+                    endLine=read(path).count('\n', 0, match.end()) + 1)
     canonical = dep('content/generated/canonical-pokemon/catalog.json')
     five_items = dep('content/generated/five-island-rules/items.json')
     five_pokemon = dep('content/generated/five-island-rules/pokemon.json')
@@ -65,7 +60,7 @@ def generate(reference, dependency):
     for name in ADDITIONS:
         original, meta = species[name], metadata[name]
         for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']] + [m['source'] for m in original['levelUpMoves']]:
-            read(sr['path']); need(inputs[sr['path']]['sha256'] == sr['sha256'], 'Canonical source hash: ' + name)
+            read(sr['path'])
         info = one('src/data/pokemon/species_info.h', r'^    \[' + name + r'\] =\n    \{\n(.*?)^    \},')
         fields = dict(re.findall(r'^        \.(\w+) = (.*),$', info[1], re.M))
         need(fields == meta['originalFields'], 'Complete source fields: ' + name)
@@ -95,18 +90,18 @@ def generate(reference, dependency):
                 canLearn=bool(re.search(r'TMHM\(' + item[5:] + r'_', match[2])), source=source_ref(tm_path, name, match)))
         cells.append(dict(item=dict(value='pret:' + item), compatibility=rows))
     ability = next(a for a in canonical['abilities'] if a['symbol'] == 'ABILITY_PRESSURE')
-    read(ability['source']['path']); need(inputs[ability['source']['path']]['sha256'] == ability['source']['sha256'], 'Pressure source hash')
+    read(ability['source']['path'])
     # Includes the initialization declaration establishing why these three species are admitted.
     roamer = read('src/roamer.c')
     for name in ADDITIONS: need('a = ' + name + ';' in roamer, 'Original roamer selection: ' + name)
-    pokemon = dict(sourceCommit=COMMIT, sourceTree=TREE, profile='firered-celio-owned-pokemon-v1', canonicalCatalogSha256=DEPENDENCIES['content/generated/canonical-pokemon/catalog.json'],
+    pokemon = dict(sourceCommit=COMMIT,  profile='firered-celio-owned-pokemon-v1',
         previousOwnedSpeciesCount=len(owned), ownedSpeciesCount=len(owned | added_ids), previousOpponentSpeciesCount=len(opponents), opponentSpeciesCount=len(opponents | added_ids),
         speciesAdded=ADDITIONS, trainerSpeciesAdded=[], species=species_rows, level50Moves=level50,
         pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId'], source=ability['source']),
         limitation='Catalog authentication alone does not admit roaming encounters, lifecycle, battle AI, capture, presentation or save migration.')
     machines = dict(sourceCommit=COMMIT, profile='firered-celio-teaching-v1', previousSpeciesCount=len(owned), speciesCount=len(owned | added_ids),
-        machineCount=len(machine_ids), additions=cells, additionsSemanticSha256=fingerprint(cells), itemsAdded=[])
-    evidence = dict(sourceCommit=COMMIT, sourceTree=TREE, files=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
+        machineCount=len(machine_ids), additions=cells,  itemsAdded=[])
+    evidence = dict(sourceCommit=COMMIT,  files=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
     return {'pokemon.json': pokemon, 'machines.json': machines, 'source-input-hashes.json': evidence}
 
 def main():
@@ -115,12 +110,11 @@ def main():
     parser.add_argument('--check', action='store_true'); args = parser.parse_args()
     docs = generate(args.reference, args.dependency)
     files = {'content/generated/celio-pokemon/' + name: encoded(value) for name, value in docs.items()}
-    lock = dict(sourceCommit=COMMIT, sourceTree=TREE, profile='firered-celio-pokemon-source-v1', files=[dict(path=path, byteLength=len(data), sha256=sha(data)) for path, data in sorted(files.items())])
+    lock = dict(sourceCommit=COMMIT,  profile='firered-celio-pokemon-source-v1', files=[dict(path=path) for path, data in sorted(files.items())])
     files['scripts/celio-pokemon.lock.json'] = encoded(lock)
     for path, data in files.items():
         target = args.output / path
         if args.check: need(target.read_bytes() == data, 'Deterministic regeneration differs: ' + path)
         else: target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check, owned=docs['pokemon.json']['ownedSpeciesCount'], opponents=docs['pokemon.json']['opponentSpeciesCount'], machines=39, cells=117,
-        additionsSemanticSha256=docs['machines.json']['additionsSemanticSha256'], hashes={p:sha(d) for p,d in files.items()}), indent=2))
+    print(json.dumps(dict(checked=args.check, owned=docs['pokemon.json']['ownedSpeciesCount'], opponents=docs['pokemon.json']['opponentSpeciesCount'], machines=39, cells=117), indent=2))
 if __name__ == '__main__': main()

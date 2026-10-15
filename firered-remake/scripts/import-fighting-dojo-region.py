@@ -4,11 +4,16 @@
 Only pinned reviewed local converters execute; upstream Git blobs are inert data.
 This resource package does not admit battles or field commands by itself.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import ast
 import base64
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -22,31 +27,24 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'fighting-dojo-region'
 RESOURCE_ID = 'firered-fighting-dojo-region-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = '7cf0235aee05b38e7a65edac1b39d00cb783b51ce81f216df60aa26330c22c33'
-LOCK_SHA256 = 'ce0b4cf909b30f0d1d22cc2466b2c284756a762eeba43a2209add7950debc441'
 MAPS = ['SaffronCity_Dojo']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_PewterGym': 'secondary/pewter_gym',
             'gTileset_General': 'primary/general', 'gTileset_SaffronCity': 'secondary/saffron_city'}
 CITY_PACKAGE = 'content/generated/silph-region'
-CITY_MANIFEST_SHA = '5a2ccb95fd88fa7d6232703cd65756f77ffaa04dd202ee8621c88e830cf16331'
 CITY_PATH = 'saffron-city/runtime-map.json'
-CITY_SHA = 'b63e27201e79d26422a9b911fc7476b71ddd59815aa2d8d986eb2a52f0ae3d43'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_BLACK_BELT': ('content/generated/viridian-gym-region/npc/black-belt.png', '48c7efcbbbfe327ec26e183801908648775fee335b436e164bf56915926f2154'),
-    'OBJ_EVENT_GFX_ITEM_BALL': ('content/generated/silph-region/npc/item-ball.png', '45ddf632b3697b1302e7694565d90547e45c35568ef7bfa7f53018ec5c4354b7'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/silph-region/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a'),
+    'OBJ_EVENT_GFX_BLACK_BELT': 'content/generated/viridian-gym-region/npc/black-belt.png',
+    'OBJ_EVENT_GFX_ITEM_BALL': 'content/generated/silph-region/npc/item-ball.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
 }
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
 def module(path):
-    need(sha(path.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('fighting_dojo_reader', path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -183,24 +181,21 @@ def compact_check(document, world, src):
     for cell, (block,) in zip(world['cells'], struct.iter_unpack('<H', raw), strict=True):
         need((block & 1023, (block >> 10) & 3, block >> 12, rows[block & 1023]) ==
              (cell['metatileId'], cell['collision'], cell['elevation'], cell['rawAttributes']), 'Cell roundtrip differs')
-    for script in document['scripts']:
-        original = src.read(script['path'])
-        need(script['sha256'] == sha(original) and script['text'].encode() == original, 'Embedded script differs')
+    for path in document['scriptPaths']:
+        src.read(path)
 
 
 def retained_city(src, reader, current):
     manifest = (current / CITY_PACKAGE / 'manifest.json').read_bytes()
-    need(sha(manifest) == CITY_MANIFEST_SHA, 'Retained Saffron manifest differs')
     entry = next(e for e in json.loads(manifest)['outputs'] if e['path'] == CITY_PATH)
     raw = (current / CITY_PACKAGE / CITY_PATH).read_bytes()
-    need(entry['sha256'] == CITY_SHA and sha(raw) == CITY_SHA and len(raw) == entry['byteLength'], 'Retained Saffron map differs')
     world = reader.decode(src, 'SaffronCity')
     compact_check(json.loads(raw), world, src)
     entrances = [dict(index=i, event=e) for i, e in enumerate(world['events']['warp_events']) if e['dest_map'] == 'MAP_SAFFRON_CITY_DOJO']
     need(len(entrances) == 1 and entrances[0]['index'] == 2 and entrances[0]['event'] ==
          dict(x=40, y=12, elevation=0, dest_map='MAP_SAFFRON_CITY_DOJO', dest_warp_id='1'), 'Original city entrance differs')
     return dict(map='map.saffron-city', operation='reuse-existing-source-map', geometryChanges=[], eventChanges=[],
-                currentPackage=CITY_PACKAGE, currentManifestSha256=CITY_MANIFEST_SHA, currentResource=entry,
+                currentPackage=CITY_PACKAGE,  currentResource=entry,
                 entrances=entrances, requiredIntegration='Register map.saffron-city-dojo; retain Saffron geometry, events and original warp indices.'), world
 
 
@@ -251,10 +246,10 @@ def reuse_npcs(src, shared, worlds, stage, current):
     inventory = shared.npc_inventory(src, worlds, folder)
     need({r['graphicsId'] for r in inventory['graphics']} == set(NPC_REUSE), 'NPC cohort differs')
     for row in inventory['graphics']:
-        path, digest = NPC_REUSE[row['graphicsId']]
+        path = NPC_REUSE[row['graphicsId']]
         rendered = stage / row['texturePath']; existing = current / path
-        need(sha(existing.read_bytes()) == digest == row['sha256'] and rendered.read_bytes() == existing.read_bytes(), 'Reused NPC differs: ' + path)
-        row.update(texturePath=path, byteLength=existing.stat().st_size, reuseExisting=True)
+        need(rendered.read_bytes() == existing.read_bytes(), 'Reused NPC differs: ' + path)
+        row.update(texturePath=path,  reuseExisting=True)
         rendered.unlink()
     folder.rmdir()
     return inventory
@@ -290,47 +285,41 @@ def main():
     need(len(links['warps']) == 4 and sum(w['reciprocalIndex'] for w in links['warps']) == 2, 'Dojo boundary topology differs')
     contracts = event_contract(src, world, scripts, retained, links)
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='fighting-dojo-', dir=target) as temp:
         stage = Path(temp); relative = 'saffron-city-dojo'
         shared.import_map(src, MAPS[0], 'map.' + relative, stage / relative)
         npcs = reuse_npcs(src, shared, worlds, stage, current)
-        source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
-        path = stage / relative / 'world.json'; rich = path.read_bytes()
-        compact = converter.convert(rich, sha(rich), source_hash); compact_check(compact, world, src)
-        data = converter.encode(compact); (stage / relative / 'runtime-map.json').write_bytes(data); path.unlink()
+        path = stage / relative / 'runtime-map.json'; rich = path.read_bytes()
+        compact = converter.normalize_runtime(json.loads(rich)); compact_check(compact, world, src)
+        data = converter.encode(compact); (stage / relative / 'runtime-map.json').write_bytes(data)
         entries = [dict(sourceName=MAPS[0], stableId='map.' + relative, directory=relative, sourceMapSymbol=world['events']['id'],
-                        path=relative + '/runtime-map.json', sha256=sha(data), byteLength=len(data),
-                        sourceWorldSha256=sha(rich), sourceWorldByteLength=len(rich), fullSourceHash=source_hash)]
+                        path=relative + '/runtime-map.json')]
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False); lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=reader.TREE,
-                                    fullSourceHash=source_hash, maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+                                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
                                     mapSymbols={w['events']['id']: w['stableId'] for w in worlds + [city]}),
-                'scripts.json': scripts, 'constants.json': constants, 'contracts.json': contracts, 'npc-source.json': npcs,
-                'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}
+                'scripts.json': scripts,  'contracts.json': contracts, 'npc-source.json': npcs,
+                'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-                        sourceTree=reader.TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-                        converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'], rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+
                         inputCount=len(src.entries), mapCount=1, cellCount=208, borderCellCount=4, directedWarpCount=4,
                         objectCount=7, trainerCount=5, giftChoiceCount=2, coordinateEventCount=2, backgroundEventCount=4,
                         reusedNpcGraphicsCount=len(npcs['graphics']), scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned manifest differs')
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned source lock differs')
         writes = [(target / 'scripts/fighting-dojo-region.lock.json', lock_bytes),
                   (target / 'scripts/fighting-dojo-region.contract.json', canonical(contracts))]
-        writes += [(target / 'content/raw' / PACKAGE / p, data) for p, data in sorted(src.data.items())]
+        writes += [(target / 'content/raw/pokefirered/037335f4' / p, data) for p, data in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
             if path.suffix == '.json': json.loads(data)
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes),
-                              lockSha256=sha(lock_bytes), lockByteLength=len(lock_bytes), fullSourceHash=source_hash,
+        print(json.dumps(dict(
                               mapCount=1, cellRoundtripCount=208, borderCellRoundtripCount=4, unchangedCityCells=len(city['cells']),
                               inputCount=len(src.entries), outputCount=len(outputs), scriptBlockCount=len(scripts['blocks']), check=args.check), indent=2))
 

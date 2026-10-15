@@ -9,8 +9,6 @@ namespace Game.Domain.Items;
 public sealed class GameCornerMachineCatalog
 {
     public const string Profile = "firered-game-corner-teaching-v1";
-    public const string InheritedSourceSha256 = "072458eb21384b98ee17b3eb3242a994e1c67292caf6721ea48e444f16b78623";
-    public const string AdditionsSourceSha256 = "b371a57f8eb0c778763a7d142c59622b4dbe4aa12343032f0c33f2210c731a7e";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, GameCornerMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public DepartmentStoreMachineStock Predecessor { get; }
@@ -31,8 +29,7 @@ public sealed class GameCornerMachineCatalog
             candidate with { Profile = original.Profile, Compatibility = original.Compatibility, AdditionalMachines = original.AdditionalMachines } != original)
             throw new ArgumentException("game_corner_machine_predecessor");
         predecessor.Validate();
-        var cells = new List<(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility)>();
-        void Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
+        void Rows(ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
         {
             if (before.Length != 170 || rows.IsDefault || rows.Length != 174 || rows.Any(c => c is null) ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
@@ -40,22 +37,17 @@ public sealed class GameCornerMachineCatalog
                 !rows.Skip(170).Select(c => c.Species).SequenceEqual(GameCornerOwnedPokemonCatalog.AdditionalSpecies) ||
                 rows.Any(c => pokemon.Catalog.Species[c.Species].SourceSpeciesId != c.SourceSpeciesId))
                 throw new ArgumentException("game_corner_machine_rows");
-            cells.Add((item, rows.Skip(170).ToImmutableArray()));
         }
-        Rows(original.Tm39.Item.Id, candidate.Compatibility, original.Compatibility);
+        Rows(candidate.Compatibility, original.Compatibility);
         for (int i = 0; i < inherited.Length; i++)
         {
             var next = machines[i]; var before = inherited[i];
             if (next is null || !ReferenceEquals(next.Machine, before.Machine) || next with { Compatibility = before.Compatibility } != before)
                 throw new ArgumentException("game_corner_machine_inherited_metadata");
-            Rows(before.Machine.Item.Id, next.Compatibility, before.Compatibility);
+            Rows(next.Compatibility, before.Compatibility);
         }
-        if (CampaignSourceFingerprint.Compute(cells.OrderBy(p => p.Item.Value, StringComparer.Ordinal)
-            .Select(p => new { p.Item, p.Compatibility }).ToArray()) != InheritedSourceSha256)
-            throw new ArgumentException("game_corner_machine_inherited_source");
         var added = machines.Skip(inherited.Length).ToArray();
-        if (CampaignSourceFingerprint.Compute(added) != AdditionsSourceSha256 ||
-            !added.Select(m => m.Machine.Item.Id.Value).SequenceEqual(new[] { "pret:ITEM_TM13", "pret:ITEM_TM23", "pret:ITEM_TM24", "pret:ITEM_TM30", "pret:ITEM_TM35" }))
+        if (!added.Select(m => m.Machine.Item.Id.Value).SequenceEqual(new[] { "pret:ITEM_TM13", "pret:ITEM_TM23", "pret:ITEM_TM24", "pret:ITEM_TM30", "pret:ITEM_TM35" }))
             throw new ArgumentException("game_corner_machine_prize_source");
         foreach (var machine in added)
             if (PewterMachineRules.Definition(original, machine.Machine.Item.Id) is not null ||

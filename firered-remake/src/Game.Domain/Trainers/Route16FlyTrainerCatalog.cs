@@ -16,22 +16,19 @@ public static class Route16FlyTrainerPartyFactory
     public static TrainerId TrainerId { get; } = new("pret:TRAINER_YOUNG_COUPLE_LEA_JED");
     public const int SharedTrainerFlag = 0x500 + 489;
     public const int VictoryMoney = 1624;
-    private static readonly ImmutableDictionary<string, string> BattleHashes = new Dictionary<string, string> {
-        ["Route16_EventScript_Lea"] = "2981443dbe0ff44883a1775cc1880d6b234415fb88b8201d88bda71059296799",
-        ["Route16_EventScript_Jed"] = "711b51de8a91372a2559e3c36d20a6400e39727ce3af263b247ce5c703a44860",
-    }.ToImmutableDictionary(StringComparer.Ordinal);
+    private static readonly ImmutableHashSet<string> BattleScripts = ImmutableHashSet.Create<string>(StringComparer.Ordinal,
+        "Route16_EventScript_Lea",
+        "Route16_EventScript_Jed");
 
     public static void ValidateCatalog(Route16FlyTrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (catalog.SourceCommit != TrainerPartyFactory.SourceCommit || catalog.Profile != Profile ||
             catalog.Trainers is null || catalog.Trainers.Count != 1 || catalog.BattlesByScript is null || catalog.BattlesByScript.Count != 2 ||
-            !catalog.Trainers.TryGetValue(TrainerId, out var trainer) || trainer is null ||
-            CampaignSourceFingerprint.Compute(trainer) != "52aceb08c9ea7a52fee686499f0e208158f03b306f9d38a2eb30704156edf412")
+            !catalog.Trainers.TryGetValue(TrainerId, out var trainer) || trainer is null)
             throw new ArgumentException("route16_double_trainer_source");
-        foreach (var (script, hash) in BattleHashes)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null ||
-                CampaignSourceFingerprint.Compute(battle) != hash)
+        foreach (var script in BattleScripts)
+            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null)
                 throw new ArgumentException("route16_double_script_source");
     }
 

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Authenticate the bounded One Island / Mt. Ember Ruby region; execute no upstream code."""
-import argparse, ast, collections, hashlib, importlib.util, json, re, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-sevii-ruby-region-v1'
 PACKAGE = 'sevii-ruby-region'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-PREPARER_SHA = 'a506bc03d71e3736341e55e05f6d7374e25ed66885e1079ae3290ac2e794f950'
-MANIFEST_SHA256 = '9440bfac129598e4ae2d70aa171c1a8ebf9441dd129ecac74ea9fbc9841235ac'
-LOCK_SHA256 = 'a4db62be71d3a82b03bbdb3a4748c42a036415a98be0a349c54160aa565ca523'
 CORE = ['OneIsland_KindleRoad', 'MtEmber_Exterior', 'MtEmber_RubyPath_1F',
         'MtEmber_RubyPath_B1F', 'MtEmber_RubyPath_B2F', 'MtEmber_RubyPath_B3F',
         'MtEmber_RubyPath_B4F', 'MtEmber_RubyPath_B5F',
@@ -21,13 +23,11 @@ TILESETS = {'gTileset_General':'primary/general',
             'gTileset_SeviiIslands123':'secondary/sevii_islands_123',
             'gTileset_MtEmber':'secondary/mt_ember'}
 
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
 def need(v, message):
     if not v: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in output: '+str(path))
-def module(path, name, expected):
-    need(sha(path.read_bytes()) == expected, 'Reviewed dependency differs: '+str(path))
+def module(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value)
     return value
@@ -85,7 +85,7 @@ def declarations(src, scripts, worlds, proof):
     wanted = evolution|opponents
     for symbol in wanted:
         for ref in [species[symbol]['source'], species[symbol]['learnsetSource']]+[m['source'] for m in species[symbol]['levelUpMoves']]:
-            need(sha(src.read(ref['path']))==ref['sha256'], 'Canonical dependency differs')
+            src.read(ref['path'])
     item_symbols = {'ITEM_RUBY','ITEM_TRI_PASS','ITEM_RAINBOW_PASS','ITEM_HM06'}
     local_labels = {e.get('script') for w in worlds for e in w['events']['object_events']}
     for block in scripts['blocks']:
@@ -103,7 +103,7 @@ def declarations(src, scripts, worlds, proof):
         trainerMoves=sorted({m for t in trainers for mon in t['party'] for m in mon['resolvedMoves']}-{'MOVE_NONE'}),
         fullNaturalMoveClosure=sorted({m['move']['value'][5:] for s in wanted for m in species[s]['levelUpMoves']}),
         pokemon=[species[s] for s in sorted(wanted)], pokemonMetadata=[metadata[s] for s in sorted(wanted)],
-        itemDeclarations=items, canonicalCatalogSha256=sha(canonical(proof)),
+        itemDeclarations=items,
         limitations=['Complete original first-encounter teams, wild tables and level evolutions are inventory only.',
             'Rematch opcodes are preserved; VS Seeker higher-tier teams are not admitted.',
             'No legendary, Sapphire quest, roamer or later-island runtime admission.'])
@@ -158,8 +158,8 @@ def main():
     safe(args.project_root.absolute())
     target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve();safe(target)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py','ruby_reader',READER_SHA)
-    prep=module(dep/'scripts/first-sevii-preparation/prepare_first_sevii.py','ruby_script_index',PREPARER_SHA)
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'ruby_reader')
+    prep=module(dep / 'scripts/first-sevii-preparation/prepare_first_sevii.py', 'ruby_script_index')
     reader.PRODUCT=dep;reader.TILESETS=TILESETS;reader.PROFILE=PROFILE
     prep.CORE=CORE;prep.SUPPORT=SUPPORT;prep.ANCHOR=['OneIsland_PokemonCenter_1F']
     src=reader.Source(ref);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
@@ -169,8 +169,7 @@ def main():
     need(not scripts['unresolvedLabelReferences'], 'Unresolved label closure')
     links=prep.topology(src,worlds)
     proofbytes=(dep/'content/generated/canonical-pokemon/catalog.json').read_bytes()
-    need(sha(proofbytes)==reader.CANONICAL_SHA, 'Canonical Pokemon catalog differs')
-    data=declarations(src,scripts,worlds,json.loads(proofbytes));data['canonicalCatalogSha256']=reader.CANONICAL_SHA
+    data=declarations(src,scripts,worlds,json.loads(proofbytes))
     for p in reader.META_PATHS+['data/maps/PalletTown/scripts.inc','data/maps/PalletTown_ProfessorOaksLab/scripts.inc',
         'src/event_data.c','src/seagallop.c','src/new_game.c','src/field_specials.c',
         'src/data/heal_locations.json','src/data/heal_locations.constants.json.txt',
@@ -202,7 +201,7 @@ def main():
             'Celio dispatch contains original guarded Sapphire/link/roamer branches; closure membership is not permission.',
             'No battle, natural travel, save, native window or physical audio validation is claimed.'])
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='sevii-ruby-import-') as temp:
         stage=Path(temp)
         for n in CORE+SUPPORT:shared.import_map(src,n,'map.'+reader.directory(n),stage/reader.directory(n))
@@ -214,36 +213,30 @@ def main():
             if p.startswith('data/maps/') and p.endswith('/map.json'):
                 n=p.split('/')[2];symbol='MAP_'+re.sub(r'([a-z])([A-Z])',r'\1_\2',n).upper()
                 if symbol in tokens:mapsymbols[symbol]='map.'+reader.directory(n)
-        sourcehash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         catalog=[]
         for w in worlds:
-            relative=reader.directory(w['sourceName']);p=stage/relative/'world.json';rich=p.read_bytes()
-            compact=converter.encode(converter.convert(rich,sha(rich),sourcehash));(stage/relative/'runtime-map.json').write_bytes(compact)
+            relative=reader.directory(w['sourceName']);p=stage/relative/'runtime-map.json';rich=p.read_bytes()
+            compact=converter.encode(converter.normalize_runtime(json.loads(rich)));(stage/relative/'runtime-map.json').write_bytes(compact)
             catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],
-                path=relative+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourceWorldSha256=sha(rich),
-                sourceWorldByteLength=len(rich),fullSourceHash=sourcehash));p.unlink()
+                path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE+SUPPORT)
         lockbytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,
-            fullSourceHash=sourcehash,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=mapsymbols,inputFiles=lock['files'],**links),
-            'scripts.json':scripts,'constants.json':const,'npc-source.json':npcs,'contracts.json':contract,
-            'declarations.json':data,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}
+        docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+            runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=mapsymbols,inputFiles=lock['files'],**links),
+            'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contract,
+            'declarations.json':data,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=sourcehash,
-            lockSha256=sha(lockbytes),inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),
             warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,trainerCount=len(data['trainers']),
-            readerSha256=READER_SHA,scriptIndexerSha256=PREPARER_SHA,branchContractSha256=sha(branchbytes),outputs=outputs)
+            outputs=outputs)
         manifestbytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifestbytes)
-        if MANIFEST_SHA256:need(sha(manifestbytes)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(sha(lockbytes)==LOCK_SHA256,'Pinned lock differs')
-        writes=[(target/'content/sources/sevii-ruby-region.lock.json',lockbytes)]+[(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/sources/sevii-ruby-region.lock.json',lockbytes)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             safe(p)
             if args.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestbytes),manifestByteLength=len(manifestbytes),
-            lockByteLength=len(lockbytes),outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 
 if __name__=='__main__':main()

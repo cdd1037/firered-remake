@@ -55,7 +55,7 @@ bool Identity(PokemonInstance a, PokemonInstance b) => a with { Moves = [], Curr
 Test("source14 member metadata, no natural caller enablement, forbidden transitive IDs remain forbidden", () => {
     Check(Environment.Version.Major == 10 && catalog.Species.Count == 107, "runtime and bounded species profile");
     string[] members = ["TRANSFORM", "CONVERSION", "CONVERSION_2", "SPIKES", "HEAL_BELL", "BATON_PASS", "BEAT_UP", "MEMENTO", "ROLE_PLAY", "RECYCLE", "SKILL_SWAP", "CAMOUFLAGE", "TEETER_DANCE", "AROMATHERAPY"];
-    foreach (var member in members) Check(MetronomeSourceMoveDefinition.Matches(catalog.Moves[Id(member)]) && WildBattleRules.IsCalledMoveEffectSupported(catalog.Moves[Id(member)]), member + " authenticated registered");
+    foreach (var member in members) Check(SourceMoveDefinitionRules.IsValid(catalog.Moves[Id(member)]) && WildBattleRules.IsCalledMoveEffectSupported(catalog.Moves[Id(member)]), member + " authenticated registered");
     foreach (var name in new[] { "TRICK", "THIEF", "COVET" })
     { var state = Party(Pair()); var r = WildBattleRules.ResolveCalledMoveAction(catalog, state, new(WildBattleSide.Player, 0, Id(name))); Atomic(state, r.Battle, name); Check(r.Fault == "called_move_metronome_forbidden", "strict direct Metronome gate"); }
     Check(!catalog.Species.Values.Any(s => new[] { s.Ability1, s.Ability2 }.Any(a => a is "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_FORECAST")), "no invented species or weather suppressor");

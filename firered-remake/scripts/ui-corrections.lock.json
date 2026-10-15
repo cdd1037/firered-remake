@@ -6,58 +6,34 @@
   "files": [
     {
       "path": "graphics/battle_interface/textbox.png",
-      "byteLength": 505,
-      "sha256": "6b8659e01403ef32b55404be32e3aece4b855384352802efc5f718bd5d6e22b9",
-      "gitBlobSha1": "a3f50fedab0e78b10bbca96e0afdcebcf5af2f03",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_interface/textbox.png"
     },
     {
       "path": "graphics/battle_interface/textbox1.pal",
-      "byteLength": 183,
-      "sha256": "5bbf9a5560390c69d73d5561936281a160eebf96e49587215e620cd26ff211dd",
-      "gitBlobSha1": "fd5043327985ee1db694bfdbb386df48226f6171",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_interface/textbox1.pal"
     },
     {
       "path": "graphics/interface/text_pp.pal",
-      "byteLength": 150,
-      "sha256": "ab973a827795a587b0343431437797c9f41fe2adeaf0b04950a314932e32ccb9",
-      "gitBlobSha1": "46860b414a63af98eff53dfcea7818c2c08ffd24",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/interface/text_pp.pal"
     },
     {
       "path": "graphics/item_pc/bg.png",
-      "byteLength": 923,
-      "sha256": "202b4bc237e4aac8be33b23ac9ab657dafb42833768b41086607ac1285dd595a",
-      "gitBlobSha1": "a028e79074048381f7cf8083e3aa06e83e079406",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/item_pc/bg.png"
     },
     {
       "path": "graphics/item_pc/bg.bin",
-      "byteLength": 2048,
-      "sha256": "fbe50ebc4dc4f2ff81bfec7c22783e7558d08fa9a658c901bb9b3597a934efff",
-      "gitBlobSha1": "046ef83b4dc9fab6570cc2e4ab39374621e29c2c",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/item_pc/bg.bin"
     },
     {
       "path": "src/battle_controller_player.c",
-      "byteLength": 116151,
-      "sha256": "1fc12b9ed3e5f598eb1fc3761db3d57d44b5b68d6e432042d13d1679d76efa05",
-      "gitBlobSha1": "d8e1fe71e4e06303476313c15ab371fee1f82139",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_controller_player.c"
     },
     {
       "path": "src/battle_message.c",
-      "byteLength": 151308,
-      "sha256": "257be289b56dbfe63da9cf956a87d91219d45eb72a47d2dff681caa684f2b6de",
-      "gitBlobSha1": "a6392be9a91cd8171d920ff45c684b627b0c98b1",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_message.c"
     },
     {
       "path": "src/item_pc.c",
-      "byteLength": 34539,
-      "sha256": "f57d9c734b232e90986389e2bd4f0aebc57db7d93bedba7b48b3ed305dc87d6e",
-      "gitBlobSha1": "5a114e9fd28e8beb9921946aabada065455c70ed",
       "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/item_pc.c"
     }
   ]

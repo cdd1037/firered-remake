@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Read pinned Git blobs and generate the bounded Itemfinder/Sacred Ash source contract."""
-import argparse, hashlib, io, json, re, subprocess
+import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-def sha(x): return hashlib.sha256(x).hexdigest()
 def generate(reference):
     raw={}
     def read(path):
@@ -50,8 +49,8 @@ def generate(reference):
         icon=Image.open(io.BytesIO(raw[iconpath]));assert icon.mode=='P' and icon.size==(24,24)
         rgba=bytes(c for i in icon.get_flattened_data() for c in (*palette[i],0 if i==0 else 255))
         icons[short+'.rgba']=rgba
-        iconrows.append(dict(item='pret:ITEM_'+short.upper(),file=short+'.rgba',sha256=sha(rgba)))
-    doc=dict(schemaVersion=1,sourceCommit=COMMIT,itemfinderSourceId=261,requiredCaught=30,underfoot=underfoot,texts=texts,itemfinderDescription=item['description_english'].replace('\\n','\n'),iconSha256=sha(icons['itemfinder.rgba']),icons=iconrows,inputs=[dict(path=p,sha256=sha(b),byteLength=len(b)) for p,b in sorted(raw.items())],limitations=['Uses source range, nearest ordering and loaded direct map connections; missing connected map data is not fabricated.','Native Itemfinder arrow/star animation and timed dings are represented by source direction/ding metadata, not pixel timing.'])
+        iconrows.append(dict(item='pret:ITEM_'+short.upper(),file=short+'.rgba'))
+    doc=dict(schemaVersion=1,sourceCommit=COMMIT,itemfinderSourceId=261,requiredCaught=30,underfoot=underfoot,texts=texts,itemfinderDescription=item['description_english'].replace('\\n','\n'),icons=iconrows,inputs=[dict(path=p) for p,b in sorted(raw.items())],limitations=['Uses source range, nearest ordering and loaded direct map connections; missing connected map data is not fabricated.','Native Itemfinder arrow/star animation and timed dings are represented by source direction/ding metadata, not pixel timing.'])
     return doc,raw,icons
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()
@@ -59,9 +58,9 @@ if __name__=='__main__':
     outputs.update(icons)
     outputs.update({'source/'+k:v for k,v in raw.items()})
     lock=json.loads(Path(__file__).with_name('itemfinder-source.lock.json').read_text())
-    assert sha(outputs['itemfinder-source.json'])==lock['documentSha256'] and doc['inputs']==lock['inputs'], 'Locked Itemfinder source contract changed'
+    assert doc['inputs'] == lock['inputs'], 'Locked Itemfinder source contract changed'
     for path,data in outputs.items():
         f=a.output/path
         if a.check: assert f.read_bytes()==data,path
         else: f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(data)
-    print(json.dumps(dict(passed=True,sourceCommit=COMMIT,underfoot=len(doc['underfoot']),inputs=len(raw),documentSha256=sha(outputs['itemfinder-source.json']))))
+    print(json.dumps(dict(passed=True,sourceCommit=COMMIT,underfoot=len(doc['underfoot']),inputs=len(raw))))

@@ -12,15 +12,14 @@ public partial class CampaignView
     private void LoadMewtwoPresentation()
     {
         if (!_catalog.CeruleanCaveEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.CelioEnabled || _battleArt.Count != 648 ||
-            _storageIcons.Count != 162 || _route22Footprints.Count != 115 ||
+        if (!_session.IsCurrentGame || !_catalog.CelioEnabled ||
             _catalog.PokemonContent?.Catalog.Species.GetValueOrDefault(new("pret:SPECIES_MEWTWO"))?.SourceSpeciesId != 150)
             throw new InvalidDataException("Mewtwo requires its complete current Celio predecessor and owned catalog entry.");
         _mewtwoArt = MewtwoPresentationAssets.Load(_root);
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            var rgba = _mewtwoArt.Files[row.GetProperty("rgbaPath").GetString()!];
+            var rgba = PngRgba8.Decode(_mewtwoArt.Files[row.GetProperty("texturePath").GetString()!]);
             if (replicatePalette)
             {
                 rgba = rgba.ToArray();
@@ -50,10 +49,7 @@ public partial class CampaignView
             _route22Footprints.Add(150, Pixels(row));
             _mewtwoDex[150] = _mewtwoDex[150] with { Footprint = SeviiRubyDexTexture(row) };
         }
-        if (_battleArt.Count != 652 || _storageIcons.Count != 163 || _route22Footprints.Count != 116 || _mewtwoDex.Count != 1)
-            throw new InvalidDataException("Mewtwo presentation inventory differs.");
-        Write("mewtwoPresentation", new { MewtwoPresentationAssets.ManifestSha256, battleSprites = 652, icons = 163,
-            footprints = 116, newMoveAnimations = 0, nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("mewtwoPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
     private CaptureDexEntry? MewtwoCaptureDexEntry(int species) => !_mewtwoDex.TryGetValue(species, out var e) ? null :

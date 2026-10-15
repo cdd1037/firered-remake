@@ -28,7 +28,7 @@ if (args.Length == 4 && args[0] == "content" && args[1] == "inspect-pinned-map")
     var file=sourceLock.RootElement.GetProperty("evidenceFiles").EnumerateArray().SingleOrDefault(e=>e.GetProperty("path").GetString()==path);
     if(file.ValueKind==JsonValueKind.Undefined)throw new InvalidDataException("source_path_not_locked");
     var json=File.ReadAllText(args[2]);using var mapJson=JsonDocument.Parse(json);
-    var source=new SourceRef(SourceKind.Pret,path,mapJson.RootElement.GetProperty("id").GetString()!,"pret/pokefirered",RuleVersions.SourceCommit,file.GetProperty("sha256").GetString());
+    var source=new SourceRef(SourceKind.Pret,path,mapJson.RootElement.GetProperty("id").GetString()!,"pret/pokefirered",RuleVersions.SourceCommit);
     var structure=PretMapImporter.ImportStructure(json,source);
     Console.WriteLine(JsonSerializer.Serialize(new{passed=true,structure.IsPlayable,structure.LayoutResolved,structure.ScriptConversionAttempted,structure.SourceRef,mapId=structure.Map.Id,scriptReferences=structure.ReferencedScriptSymbols,structure.Limitations},new JsonSerializerOptions{WriteIndented=true}));return 0;
 }
@@ -54,25 +54,25 @@ if (args.Length == 3 && args[0] == "content")
 if (args.Length == 2 && args[0] == "scenario" && args[1] == "pallet")
 {
     var map=PretWorldMap.Load("content/generated/pallet");
-    SourceRef source(string path){var file=map.Metadata.Files.Single(f=>f.Path==path);return new(SourceKind.Pret,path,"PalletTown",map.Metadata.Repository,map.Metadata.Commit,file.Sha256);}
+    SourceRef source(string path){var file=map.Metadata.Files.Single(f=>f.Path==path);return new(SourceKind.Pret,path,"PalletTown",map.Metadata.Repository,map.Metadata.Commit);}
     const string scripts="data/maps/PalletTown/scripts.inc",texts="data/maps/PalletTown/text.inc";
-    var dialogues=PretDialogueImporter.Import(File.ReadAllText("content/raw/pallet/"+scripts),File.ReadAllText("content/raw/pallet/"+texts),source(scripts),source(texts));
+    var dialogues=PretDialogueImporter.Import(File.ReadAllText(PretSourcePaths.FireRedRawDirectory + "/"+scripts),File.ReadAllText(PretSourcePaths.FireRedRawDirectory + "/"+texts),source(scripts),source(texts));
     string? interaction(TilePosition p)
     {
         var (dx,dy)=p.Facing switch{Direction.North=>(0,-1),Direction.South=>(0,1),Direction.East=>(1,0),_=>(-1,0)};
         return map.Events.GetProperty("bg_events").EnumerateArray().Where(e=>e.GetProperty("x").GetInt32()==p.X+dx&&e.GetProperty("y").GetInt32()==p.Y+dy).Select(e=>e.GetProperty("script").GetString()).FirstOrDefault();
     }
-    var session=new ReferenceWorldSession(map,new(map.Id,6,8,3,Direction.South),map.Metadata.FullSourceHash,interaction,dialogues.Programs);
+    var session=new ReferenceWorldSession(map,new(map.Id,6,8,3,Direction.South),PretWorldMap.FullSourceHash,interaction,dialogues.Programs);
     var sequence=new[]{new ReferenceWorldCommand("move",Direction.West),new("move",Direction.West),new("move",Direction.North),new("interact")};
     var hashes=new List<string>();int i=0;
     foreach(var command in sequence){var result=session.Execute("pallet-test:"+(i++),session.Revision,command);if(result.Status==CommandStatus.Fault)throw new InvalidDataException(result.Error);hashes.Add(result.StateHash);}
     if(session.VisibleText!="RED's house")throw new InvalidDataException("source_sign_text_or_position_mismatch");
     if(session.ValidateSave(session.State)!="save_event_active")throw new InvalidDataException("unsafe_save_allowed");
     session.Execute("close",session.Revision,new("interact"));
-    var bytes=SaveCodec.Encode(session.State,1,ReferenceWorldSession.Rules,map.Metadata.FullSourceHash);
-    var loaded=SaveCodec.Decode<ReferenceWorldState>(bytes,ReferenceWorldSession.Rules,map.Metadata.FullSourceHash,validate:session.ValidateSave);
+    var bytes=SaveCodec.Encode(session.State,1,ReferenceWorldSession.Rules,PretWorldMap.FullSourceHash);
+    var loaded=SaveCodec.Decode<ReferenceWorldState>(bytes,ReferenceWorldSession.Rules,PretWorldMap.FullSourceHash,validate:session.ValidateSave);
     if(CanonicalJson.Hash(loaded.State)!=CanonicalJson.Hash(session.State))throw new InvalidDataException("reference_save_hash_mismatch");
-    Console.WriteLine(JsonSerializer.Serialize(new{passed=true,scenario="pallet-source-sign",map=map.Id.Value,map.Width,map.Height,sourceHash=map.Metadata.FullSourceHash,supportedReadOnlyScripts=dialogues.Programs.Count,unsupportedScripts=dialogues.UnsupportedScripts.Length,hashes,finalPosition=session.State.World.Player,scope="real map + read-only sign + save boundary; not main story"},new JsonSerializerOptions{WriteIndented=true}));return 0;
+    Console.WriteLine(JsonSerializer.Serialize(new{passed=true,scenario="pallet-source-sign",map=map.Id.Value,map.Width,map.Height,sourceHash=PretWorldMap.FullSourceHash,supportedReadOnlyScripts=dialogues.Programs.Count,unsupportedScripts=dialogues.UnsupportedScripts.Length,hashes,finalPosition=session.State.World.Player,scope="real map + read-only sign + save boundary; not main story"},new JsonSerializerOptions{WriteIndented=true}));return 0;
 }
 
 if (args.Length == 2 && args[0] == "scenario" && args[1] == "smoke")

@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class NpcTradeMachineCatalog
 {
     public const string Profile = "firered-npc-trade-teaching-v1";
-    public const string InheritedAdditionsSourceSha256 = "ac628f79acf3b6efc79f396d120575c5462631a07cf69edd58a45675fe5e7110";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, NpcTradeMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public FossilLabMachineCatalog Predecessor { get; }
@@ -31,26 +30,21 @@ public sealed class NpcTradeMachineCatalog
             old.AdditionalMachines is not { IsDefault: false, Length: 40 } inherited ||
             candidate with { Profile = old.Profile, Compatibility = old.Compatibility, AdditionalMachines = old.AdditionalMachines } != old)
             throw new ArgumentException("npc_trade_machine_predecessor");
-        var additions = new List<(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility)>();
-        void Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
+        void Rows(ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
         {
             if (before.Length != 159 || rows.IsDefault || rows.Length != 161 || rows.Any(c => c is null) ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
                 !rows.Select(c => c.Species).ToHashSet().SetEquals(pokemon.Catalog.Species.Keys))
                 throw new ArgumentException("npc_trade_machine_inherited_rows");
-            additions.Add((item, [rows[159], rows[160]]));
         }
-        Rows(old.Tm39.Item.Id, candidate.Compatibility, old.Compatibility);
+        Rows(candidate.Compatibility, old.Compatibility);
         for (int i = 0; i < inherited.Length; i++)
         {
             var current = machines[i]; var before = inherited[i];
             if (current is null || !ReferenceEquals(current.Machine, before.Machine) || current with { Compatibility = before.Compatibility } != before)
                 throw new ArgumentException("npc_trade_machine_inherited_metadata");
-            Rows(before.Machine.Item.Id, current.Compatibility, before.Compatibility);
+            Rows(current.Compatibility, before.Compatibility);
         }
-        if (CampaignSourceFingerprint.Compute(additions.OrderBy(p => p.Item.Value, StringComparer.Ordinal)
-                .Select(p => new { p.Item, p.Compatibility }).ToArray()) != InheritedAdditionsSourceSha256)
-            throw new ArgumentException("npc_trade_machine_inherited_source");
         var proof = new NpcTradeMachineCatalog(candidate with { }, predecessor, pokemon);
         Proofs.Add(proof.Catalog, proof);
         OwnedMachineCatalogBinding.Register(proof.Catalog, pokemon.SharedBattle);

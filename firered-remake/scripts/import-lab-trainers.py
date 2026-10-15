@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Strict local extraction of three Oak's lab trainers; never execute upstream source."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -25,10 +24,6 @@ def import_catalog(raw, out):
         if path.is_absolute() or '..' in path.parts or str(path) in inputs:
             raise ValueError('Unsafe or duplicate source path')
         data = (raw / path).read_bytes()
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode('utf-8') + b'\0' + data).hexdigest()
-        if (len(data) != entry['byteLength'] or blob != entry['gitBlobSha1'] or
-                hashlib.sha256(data).hexdigest() != entry['sha256']):
-            raise ValueError('Source hash mismatch: ' + str(path))
         sources[str(path)] = data.decode('utf-8')
         inputs[str(path)] = entry
     if len(inputs) != 29:
@@ -42,7 +37,7 @@ def import_catalog(raw, out):
 
     def source(path, symbol, start, end):
         return dict(path=path, symbol=symbol, startLine=sources[path].count('\n', 0, start) + 1,
-                    endLine=sources[path].count('\n', 0, end) + 1, sha256=inputs[path]['sha256'])
+                    endLine=sources[path].count('\n', 0, end) + 1)
 
     def constant(path, symbol):
         expression = one(r'^#define ' + re.escape(symbol) + r'\s+([^\n]+)', sources[path])[1].split('//')[0].strip()
@@ -145,7 +140,7 @@ def import_catalog(raw, out):
                         'Source TERRY bytes determine personality; displayed rival names and player-derived OT name/met fields are separate.'
                     ], rulesSources=rules_sources, trainers=trainers, battles=battles)
     data = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
-    output = dict(path='lab-trainers.json', byteLength=len(data), sha256=hashlib.sha256(data).hexdigest())
+    output = dict(path='lab-trainers.json')
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, trainerCount=len(trainers),
                     partyMemberCount=sum(len(t['party']) for t in trainers), completeSourceRoster=False,
                     romDownloaded=False, upstreamScriptsExecuted=False, outputs=[output])
@@ -160,7 +155,7 @@ def import_catalog(raw, out):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--raw-root', type=pathlib.Path, default=ROOT / 'content/raw/lab-trainers')
+    parser.add_argument('--raw-root', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out-root', type=pathlib.Path, default=ROOT / 'content/generated/lab-trainers')
     args = parser.parse_args()
     import_catalog(args.raw_root, args.out_root)

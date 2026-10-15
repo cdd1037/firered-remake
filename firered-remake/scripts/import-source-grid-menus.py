@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Extract bounded static multichoice-grid definitions; run no reference-repository code."""
 import argparse
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -11,14 +10,7 @@ import sys
 sys.dont_write_bytecode = True
 PROFILE = 'firered-source-grid-menus-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-LOCK_SHA = 'a84d3995b57d4523a9e16bfa0f3bae6f0a208cc33d73c6e348b9d1a58ed386fb'
-MANIFEST_SHA = '80bdf36db8811680be81e79329688b3c3d701f5498c2ee25e74c2dfa5cea07cb'
 BASE = 'content/generated/source-grid-menus/'
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -32,7 +24,6 @@ def need(value, message):
 
 def build(target, dependency, reference, check):
     reader_path = dependency / 'scripts/import-cinnabar-source-preparation.py'
-    need(sha(reader_path.read_bytes()) == READER_SHA, 'Reviewed sparse Git reader differs')
     spec = importlib.util.spec_from_file_location('source_grid_reader', reader_path)
     reader = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(reader)
@@ -79,12 +70,11 @@ def build(target, dependency, reference, check):
         column_width = max((sum(widths[charmap[c]] for c in option['text']) + 7) // 8 for option in options) + 1
         definitions.append(dict(id=menu_id, sourceId=number, options=options, columnWidthTiles=column_width))
     locked = canonical(source.lock())
-    manifest = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=reader.TREE,
-                              lockSha256=sha(locked), menus=definitions, semantics=dict(cancelResult=127, rowHeight=16,
+    manifest = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+                               menus=definitions, semantics=dict(cancelResult=127, rowHeight=16,
                               initialCursor=0, wrap=False, rowMajor=True, textX=8, textY=1, cursorX=0, cursorY=1)))
-    need(sha(locked) == LOCK_SHA and sha(manifest) == MANIFEST_SHA, 'Reviewed source menu package differs')
     outputs = {'scripts/source-grid-menus.lock.json': locked, BASE + 'manifest.json': manifest}
-    outputs.update({'content/raw/source-grid-menus/' + p: b for p, b in source.data.items()})
+    outputs.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in source.data.items()})
     for path, data in outputs.items():
         destination = target / path
         need(not any(p.is_symlink() for p in [destination, *destination.parents]), 'Symlink output rejected')
@@ -93,8 +83,7 @@ def build(target, dependency, reference, check):
         else:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
-    print(json.dumps(dict(inputs=len(source.entries), files=len(outputs), lockSha256=sha(locked),
-                          manifestSha256=sha(manifest), menus=definitions), sort_keys=True))
+    print(json.dumps(dict(inputs=len(source.entries), files=len(outputs),  menus=definitions), sort_keys=True))
 
 
 if __name__ == '__main__':

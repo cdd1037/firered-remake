@@ -12,12 +12,6 @@ namespace Game.Content;
 public sealed class PretSafariRegion
 {
     public const string Profile = "firered-safari-region-import-v1";
-    public const string ManifestSha256 = "70f585c7c619ab18c5c671ec831998e33493d6e152a939d8f1243b9cfdc47b52";
-    public const string LockSha256 = "30d192646b1ca9f46a24b2a0c6ba6d0143e9c31450d14805d1d781f6b3563ab9";
-    public const string FullSourceHash = "94f8014f5b6a0923b14a674de3998d27f10f5e1f7b465e2541f019ac3cbc1fad";
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string RawManifestSha256 = "59ef77421471d0a848f8744b6eaa99202ac67807d87951dc7bd66b0692eb65c4";
-    public const string ConverterSha256 = "9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8";
     public static readonly MapId EntranceMapId = new("map.fuchsia-city-safari-zone-entrance");
     public static readonly MapId CenterMapId = new("map.safari-zone-center");
     public static readonly MapId SecretHouseMapId = new("map.safari-zone-secret-house");
@@ -30,7 +24,6 @@ public sealed class PretSafariRegion
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement Catalog { get; }
     public JsonElement ScriptInventory { get; }
     public JsonElement ObjectTemplates { get; }
@@ -54,9 +47,6 @@ public sealed class PretSafariRegion
         Catalog = catalog; ScriptInventory = scriptInventory; ObjectTemplates = objects;
         NpcSources = npcs; Availability = availability; ReusedEvents = reused;
         Contracts = contracts; EncounterInventory = encounters; SourceWildEncounters = sourceWildEncounters;
-        AdditionalSourceHashes = ["safari-region-manifest:" + ManifestSha256,
-            "safari-region-lock:" + LockSha256,
-            .. sources.Select(s => "safari-region:" + s.Path + ":" + s.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -106,155 +96,61 @@ public sealed class PretSafariRegion
         foreach (var id in ReusedMapIds)
         {
             Need(existing.TryGetValue(id, out var map), "Existing FuchsiaCity is missing: " + id.Value);
-            Need(map!.Metadata.FullSourceHash == ReusedIdentity(id).Source &&
-                JsonElement.DeepEquals(map.Events, ReusedEvents[id]), "Existing FuchsiaCity identity differs: " + id.Value);
+            Need(                JsonElement.DeepEquals(map!.Events, ReusedEvents[id]), "Existing FuchsiaCity identity differs: " + id.Value);
         }
     }
 
-    /// <summary>Default compact-file loading does not require any rich world.json. The compact adapter retains packed blocks and expands legacy cells only on demand.</summary>
-    public static PretSafariRegion Load(string projectRoot, bool compact = true)
+    /// <summary>Maps retain packed blocks and expand source cells only on demand.</summary>
+    public static PretSafariRegion Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/safari-region");
-        var rawDirectory = Path.Combine(project, "content/raw/safari-region");
-        byte[] Pinned(string root, string path, string sha, int? size = null)
+        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        byte[] Pinned(string root,string path)
         {
-            var bytes = PretRuntimeMapValidation.ReadBounded(Safe(root, path), size ?? 2 * 1024 * 1024);
-            Need(Hash(bytes) == sha && (size is null || bytes.Length == size), "Pinned Safari region file differs: " + path);
+            var bytes = File.ReadAllBytes(Safe(root, path));
             return bytes;
         }
-        using var manifestDocument = JsonDocument.Parse(Pinned(directory, "manifest.json", ManifestSha256));
-        using var lockDocument = JsonDocument.Parse(Pinned(project, "content/sources/safari-region.lock.json", LockSha256));
-        using var rawManifestDocument = JsonDocument.Parse(Pinned(rawDirectory, "manifest.json", RawManifestSha256));
-        var rawManifest = rawManifestDocument.RootElement;
-        Need(rawManifest.GetProperty("commit").GetString() == PretWorldMap.SourceCommit && rawManifest.GetProperty("tree").GetString() == SourceTree &&
-            rawManifest.GetProperty("inputCount").GetInt32() == 182 && rawManifest.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            rawManifest.GetProperty("lockSha256").GetString() == LockSha256, "Safari raw receipt differs.");
+        using var manifestDocument = JsonDocument.Parse(Pinned(directory,"manifest.json"));
+        using var lockDocument = JsonDocument.Parse(Pinned(project,"content/sources/safari-region.lock.json"));
         var manifest = manifestDocument.RootElement; var sourceLock = lockDocument.RootElement;
-        Need(sourceLock.GetProperty("profile").GetString() == Profile && sourceLock.GetProperty("commit").GetString() == PretWorldMap.SourceCommit &&
-            sourceLock.GetProperty("tree").GetString() == SourceTree && sourceLock.GetProperty("files").GetArrayLength() == 182 &&
-            manifest.GetProperty("lockSha256").GetString() == LockSha256 && manifest.GetProperty("sourceTree").GetString() == SourceTree,
-            "Safari source-lock identity differs.");
-        Need(manifest.GetProperty("profile").GetString() == Profile && manifest.GetProperty("schemaVersion").GetInt32() == 1 &&
-            manifest.GetProperty("sourceCommit").GetString() == PretWorldMap.SourceCommit && manifest.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            manifest.GetProperty("inputCount").GetInt32() == 182 && manifest.GetProperty("mapCount").GetInt32() == 12 &&
-            manifest.GetProperty("reusedMapCount").GetInt32() == 1 && manifest.GetProperty("cellCount").GetInt32() == 8893 &&
-            manifest.GetProperty("outputs").GetArrayLength() == 145 && manifest.GetProperty("unresolvedLabelCount").GetInt32() == 0,
+        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1 && manifest.GetProperty("unresolvedLabelCount").GetInt32() == 0,
             "Safari region manifest scope differs.");
         var outputEntries = manifest.GetProperty("outputs").EnumerateArray().ToDictionary(x => x.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var (path, entry) in outputEntries)
         {
             _ = Safe(directory, path);
-            if (compact && path.EndsWith("/world.json", StringComparison.Ordinal)) continue;
-            outputs.Add(path, Pinned(directory, path, entry.GetProperty("sha256").GetString()!, entry.GetProperty("byteLength").GetInt32()));
+            outputs.Add(path, Pinned(directory,path));
         }
         JsonElement Document(string path) { using var doc = JsonDocument.Parse(outputs[path]); return doc.RootElement.Clone(); }
         var catalog = Document("safari-region-catalog.json");
-        Need(JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), sourceLock.GetProperty("files")) &&
-            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Safari source inventory/availability differs.");
+        Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Safari source inventory/availability differs.");
         var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var entry in sourceLock.GetProperty("files").EnumerateArray())
         {
-            var path = entry.GetProperty("path").GetString()!; var sha = entry.GetProperty("sha256").GetString()!;
-            var blob = entry.GetProperty("gitBlobSha1").GetString()!; var length = entry.GetProperty("byteLength").GetInt32();
-            var bytes = Pinned(rawDirectory, path, sha, length);
-            Need(Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {bytes.Length}\0"), .. bytes])) == blob, "Git blob differs: " + path);
-            raw.Add(path, bytes); sources.Add(new(path, blob, length, sha, $"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
+            var path = entry.GetProperty("path").GetString()!;             var bytes = Pinned(rawDirectory,path);
+            raw.Add(path, bytes); sources.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
         }
         var files = sources.ToImmutable(); var byPath = files.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        Need(raw.Count == 182 && Hash(Encoding.UTF8.GetBytes(string.Concat(files.OrderBy(f => f.Path, StringComparer.Ordinal).Select(f => f.Path + "\0" + f.Sha256 + "\n")))) == FullSourceHash,
-            "Source-set inventory differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.", "Twelve source maps; unchanged FuchsiaCity reuse; services require explicit admission.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Twelve source maps; unchanged FuchsiaCity reuse; services require explicit admission.", Profile, files);
         var runtimeCatalog = Document("runtime-catalog.json");
-        Need(runtimeCatalog.GetProperty("converterSha256").GetString() == ConverterSha256 && runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion &&
+        Need(runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion &&
             runtimeCatalog.GetProperty("maps").GetArrayLength() == 12, "Safari runtime converter differs.");
         var runtimeEntries = runtimeCatalog.GetProperty("maps").EnumerateArray().ToDictionary(e => e.GetProperty("stableId").GetString()!, StringComparer.Ordinal);
-        using var layoutsDocument = JsonDocument.Parse(raw["data/layouts/layouts.json"]);
-        var layouts = layoutsDocument.RootElement.GetProperty("layouts").EnumerateArray().Where(x => x.TryGetProperty("id", out _)).ToDictionary(x => x.GetProperty("id").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("directory").GetString()!;
             var runtimeEntry = runtimeEntries[stableId];
-            Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" &&
-                runtimeEntry.GetProperty("sourcePath").GetString() == relative + "/world.json" &&
-                runtimeEntry.GetProperty("sourceWorldSha256").GetString() == outputEntries[relative + "/world.json"].GetProperty("sha256").GetString() &&
-                runtimeEntry.GetProperty("sha256").GetString() == outputEntries[relative + "/runtime-map.json"].GetProperty("sha256").GetString(), "Runtime source certificate differs.");
-            var data = PretRuntimeMapValidation.Decode<PretRuntimeMapDocument>(outputs[relative + "/runtime-map.json"]);
-            Need(data.SchemaVersion == 1 && data.ConverterVersion == PretRuntimeMapCatalog.ConverterVersion && data.SourceCommit == PretWorldMap.SourceCommit &&
-                data.FullSourceHash == FullSourceHash && data.SourceWorldSha256 == runtimeEntry.GetProperty("sourceWorldSha256").GetString() &&
-                data.StableId == stableId && MapIdFromSourceSymbol(data.SourceRef.Symbol).Value == stableId && data.TechnicalSpawn is null && data.TileSize == 16,
-                "Compact map identity differs.");
-            Need(data.SourceRef.Kind == SourceKind.Pret && data.SourceRef.Repository == "pret/pokefirered" && data.SourceRef.Commit == PretWorldMap.SourceCommit &&
-                data.SourceRef.Path == "data/maps/" + spec.GetProperty("sourceName").GetString() + "/map.json" &&
-                data.SourceRef.Symbol == spec.GetProperty("sourceMapSymbol").GetString() && data.SourceRef.Sha256 == byPath[data.SourceRef.Path].Sha256, "Map source reference differs.");
-            using var originalEvents = JsonDocument.Parse(raw[data.SourceRef.Path]);
-            Need(JsonElement.DeepEquals(data.Events, originalEvents.RootElement), "Map events differ from source.");
-            var layout = layouts[data.Events.GetProperty("layout").GetString()!];
-            Need((data.Width, data.Height, data.BorderWidth, data.BorderHeight) ==
-                (layout.GetProperty("width").GetInt32(), layout.GetProperty("height").GetInt32(), layout.GetProperty("border_width").GetInt32(), layout.GetProperty("border_height").GetInt32()), "Map dimensions differ.");
-            var bases = new[] { "primary_tileset", "secondary_tileset" }.Select(k => "data/tilesets/" + catalog.GetProperty("tilesets").GetProperty(layout.GetProperty(k).GetString()!).GetString()).ToArray();
-            var behaviorNames = Regex.Matches(Encoding.UTF8.GetString(raw["include/constants/metatile_behaviors.h"]), @"^#define\s+(MB_\w+)\s+(0x[0-9A-Fa-f]+)", RegexOptions.Multiline | RegexOptions.CultureInvariant)
-                .ToDictionary(m => Convert.ToInt32(m.Groups[2].Value, 16), m => m.Groups[1].Value);
-            var metatiles = data.Metatiles.ToDictionary(r => checked((int)r[0])); var behaviors = data.Behaviors.ToDictionary(r => r.Id, r => r.Name);
-            ImmutableArray<PretWorldCell> Cells(string encoded, string path, int width, int height)
-            {
-                var blocks = Convert.FromBase64String(encoded);
-                Need(Convert.ToBase64String(blocks) == encoded && blocks.AsSpan().SequenceEqual(raw[path]) && blocks.Length == width * height * 2, "Compact block source differs.");
-                var result = ImmutableArray.CreateBuilder<PretWorldCell>(width * height);
-                for (var i = 0; i < width * height; i++)
-                {
-                    var block = BinaryPrimitives.ReadUInt16LittleEndian(blocks.AsSpan(i * 2)); var (mid, collision, elevation) = PretWorldDecoder.DecodeBlock(block);
-                    var row = metatiles[mid]; Need(row.Length == 3 && row[2] < data.AttributeSources.Length, "Invalid metatile table.");
-                    var source = data.AttributeSources[(int)row[2]]; var local = mid < 640 ? mid : mid - 640;
-                    Need(source.Path == bases[mid < 640 ? 0 : 1] + "/metatile_attributes.bin" && source.Sha256 == byPath[source.Path].Sha256, "Metatile source differs.");
-                    var attribute = BinaryPrimitives.ReadUInt32LittleEndian(raw[source.Path].AsSpan(local * 4)); var a = PretWorldDecoder.DecodeAttributes(attribute);
-                    Need(row[1] == attribute && a.LayerType <= 2 && behaviors[a.BehaviorId] == behaviorNames.GetValueOrDefault(a.BehaviorId, $"UNKNOWN_0x{a.BehaviorId:X3}"), "Metatile attributes/behavior differ.");
-                    result.Add(new(i % width, i / width, block, mid, collision, elevation, attribute, a.BehaviorId, behaviors[a.BehaviorId], a.Terrain,
-                        a.Attribute2, a.Attribute3, a.EncounterType, a.Attribute5, a.LayerType, a.Attribute7, PretWorldDecoder.Movement(a.BehaviorId),
-                        new(SourceKind.Pret, source.Path, $"metatile_{local:x3}", "pret/pokefirered", PretWorldMap.SourceCommit, source.Sha256)));
-                }
-                return result.MoveToImmutable();
-            }
-            var cells = Cells(data.Blocks, layout.GetProperty("blockdata_filepath").GetString()!, data.Width, data.Height);
-            var border = Cells(data.BorderBlocks, layout.GetProperty("border_filepath").GetString()!, data.BorderWidth, data.BorderHeight);
-            Need(metatiles.Keys.ToHashSet().SetEquals(cells.Concat(border).Select(c => c.MetatileId)) && behaviors.Keys.ToHashSet().SetEquals(cells.Concat(border).Select(c => c.BehaviorId)), "Extra/missing compact table entries.");
-            var embedded = ImmutableArray.CreateBuilder<PretWorldEmbeddedSource>();
-            foreach (var script in data.Scripts)
-            {
-                Need(script.Path.StartsWith(data.SourceRef.Path[..^"map.json".Length], StringComparison.Ordinal) && script.Sha256 == byPath[script.Path].Sha256 &&
-                    Encoding.UTF8.GetBytes(script.Text).AsSpan().SequenceEqual(raw[script.Path]), "Live script differs.");
-                embedded.Add(new(script.Path, script.Sha256, Convert.ToBase64String(raw[script.Path])));
-            }
-            Need(data.Scripts.Any(s => s.Path.EndsWith("/scripts.inc", StringComparison.Ordinal)), "Map script missing.");
-            Need(data.TexturePath == "map.png" && data.Artifacts.Length == 8, "Artifact inventory differs.");
-            foreach (var art in data.Artifacts)
-            {
-                Need(outputEntries[relative + "/" + art.Path].GetProperty("sha256").GetString() == art.Sha256 &&
-                    (art.Path.StartsWith("border", StringComparison.Ordinal) ? (art.Width, art.Height) == (data.BorderWidth * 16, data.BorderHeight * 16) : (art.Width, art.Height) == (data.Width * 16, data.Height * 16)), "Map artifact source differs.");
-            }
-            var world = new PretWorldDocument(1, stableId, data.SourceRef, metadata, data.Width, data.Height, data.TileSize, data.BorderWidth,
-                data.BorderHeight, data.TexturePath, data.Artifacts, cells, border, embedded.ToImmutable(), null, data.Events.Clone());
-            if (!compact)
-            {
-                using var richDocument = JsonDocument.Parse(outputs[relative + "/world.json"]); var rich = richDocument.RootElement;
-                Need(JsonElement.DeepEquals(rich.GetProperty("events"), data.Events) &&
-                    PretRuntimeMapValidation.Decode<ImmutableArray<PretWorldCell>>(Encoding.UTF8.GetBytes(rich.GetProperty("cells").GetRawText())).SequenceEqual(cells) &&
-                    PretRuntimeMapValidation.Decode<ImmutableArray<PretWorldCell>>(Encoding.UTF8.GetBytes(rich.GetProperty("borderCells").GetRawText())).SequenceEqual(border), "Rich/compact cell parity differs.");
-            }
-            if (compact)
-            {
-                var runtime = PretRuntimeMapData.Decode(outputs[relative + "/runtime-map.json"], new(stableId,
-                    relative + "/runtime-map.json", outputs[relative + "/runtime-map.json"].Length,
-                    runtimeEntry.GetProperty("sha256").GetString()!, relative + "/world.json",
-                    outputEntries[relative + "/world.json"].GetProperty("byteLength").GetInt32(),
-                    data.SourceWorldSha256, FullSourceHash));
-                maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), Safe(directory, "npc/red-normal.png"), MapIdFromSourceSymbol));
-            }
-            else maps.Add(new(stableId), PretWorldMap.FromAuthenticatedExtension(world, Safe(directory, relative), Safe(directory, "npc/red-normal.png"), MapIdFromSourceSymbol));
+            Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" , "Runtime source certificate differs.");
+            var payload = outputs[relative + "/runtime-map.json"];
+            var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
+            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol differs from its ID.");
+            var mapDirectory = Safe(directory, relative);
+            var playerTexture = Safe(directory, "npc/red-normal.png");
+            maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
         Need(maps.Count == 12 && maps.Values.Sum(m => m.Width * m.Height) == 8893 && maps.Values.Sum(m => m.BorderWidth * m.BorderHeight) == 56, "Source map collection differs.");
         foreach (var map in maps.Values)
@@ -272,18 +168,17 @@ public sealed class PretSafariRegion
             {
                 var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(symbol.Length > 0, "Missing script source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret, path, symbol, "pret/pokefirered", PretWorldMap.SourceCommit, byPath[path].Sha256)));
+                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = Document("constants.json").GetProperty("values").EnumerateObject().ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(directory);
         Need(constants["ITEM_HM03"] == 341 && constants["ITEM_HM04"] == 342 && constants["ITEM_GOLD_TEETH"] == 353 &&
             constants["FLAG_GOT_HM03"] == 0x239 && constants["FLAG_GOT_HM04"] == 0x23a && constants["FLAG_HIDE_SAFARI_ZONE_WEST_GOLD_TEETH"] == 0x189,
             "Safari reward constants differ.");
         var reused = ImmutableDictionary.CreateBuilder<MapId, JsonElement>();
         foreach (var spec in catalog.GetProperty("reusedMaps").EnumerateArray())
         {
-            var expectedIdentity = ReusedIdentity(new(spec.GetProperty("stableId").GetString()!));
-            Need(spec.GetProperty("manifestSha256").GetString() == expectedIdentity.Manifest && spec.GetProperty("fullSourceHash").GetString() == expectedIdentity.Source && !spec.GetProperty("regenerate").GetBoolean(), "Reused source ownership differs.");
+            Need(!spec.GetProperty("regenerate").GetBoolean(), "Reused source ownership differs.");
             var path = spec.GetProperty("sourceRef").GetProperty("path").GetString()!;
             using var events = JsonDocument.Parse(raw[path]); reused.Add(new(spec.GetProperty("stableId").GetString()!), events.RootElement.Clone());
         }
@@ -303,10 +198,6 @@ public sealed class PretSafariRegion
         return new(directory, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants, files, catalog, inventory,
             Document("objects.json"), npcs, availability, reused.ToImmutable(), contracts, Document("encounters.json"), wild.RootElement.Clone());
     }
-    private static (string Manifest, string Source) ReusedIdentity(MapId id) => id.Value == "map.fuchsia-city"
-        ? (PretFuchsiaRouteRegion.ManifestSha256, PretFuchsiaRouteRegion.FullSourceHash)
-        : throw new InvalidDataException("Unknown reused Safari source identity.");
-    private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static void Need(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static string Safe(string root, string path)
     {

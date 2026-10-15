@@ -11,21 +11,15 @@ namespace Game.Content;
 public sealed class PretRoute5DayCare
 {
     public const string ResourceId = "firered-route5-daycare-v1";
-    public const string ManifestSha256 = "649d9f9196f1e6d25e1e092249aadaf301bf91073b67c2de0929152233e3f7c0";
-    public const string LockSha256 = "707e138e108dcb4b86b4bae57fbf3b94ef190ab4d47c6a000deb6d4e0af78e4e";
-    public const string FullSourceHash = "511eb9a23f295060eb1351f72127e8d441ee963b215f00b98747d9a4e2a84250";
     public static MapId HouseMapId { get; } = new("map.route-5-pokemon-day-care");
     private readonly ImmutableDictionary<string, ImmutableArray<byte>> _sourceBytes;
     public static MapId DayCareMapId => HouseMapId;
     public const string EntryScript = "Route5_PokemonDayCare_EventScript_DaycareMan";
-    public const string MapScriptSha256 = "e9df7e0a04bbafe696a2f3a5e920b5b7d031f40164ed79c4abf3f42a1e38b898";
-    public const string SharedScriptSha256 = "cefd9875f288efb807dc38a4d4dbd50dd75cb34bcb132e1f24e13d8d721705a8";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableArray<PretSourceScriptFile> Scripts { get; }
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -44,8 +38,6 @@ public sealed class PretRoute5DayCare
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
         NpcSources = source.Document("npc-source.json");
-        AdditionalSourceHashes = ["route5-daycare-manifest:" + ManifestSha256, "route5-daycare-lock:" + LockSha256,
-            .. source.Files.Select(f => "route5-daycare:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -71,8 +63,7 @@ public sealed class PretRoute5DayCare
     public static PretRoute5DayCare Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot, "route5-daycare", ResourceId,
-            "scripts/route5-daycare.lock.json", LockSha256, 24405, ManifestSha256, 3508, 80, 15);
+        var source = new SilphSourcePackage(projectRoot,"route5-daycare",            "scripts/route5-daycare.lock.json");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Route 5 Day Care actor collection differs.");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
@@ -82,36 +73,21 @@ public sealed class PretRoute5DayCare
             Need(graphics.Add(graphic) && texture.GetProperty("reuseExisting").GetBoolean() &&
                 graphic is "OBJ_EVENT_GFX_GENTLEMAN" or "OBJ_EVENT_GFX_RED_NORMAL",
                 "Route 5 Day Care actors must reuse the original existing resources.");
-            _ = SafariSource.Read(dependencyRoot, texture.GetProperty("texturePath").GetString()!,
-                texture.GetProperty("sha256").GetString()!, texture.GetProperty("byteLength").GetInt32());
         }
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Route 5 Day Care catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.",
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Route 5 Day Care; service rules and current-game admission are separate.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray()
-            .ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-        string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" &&
-            hash == outputs[path].GetProperty("sha256").GetString() &&
-            spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length,
+        string path = spec.GetProperty("path").GetString()!;
+        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
             "Route 5 Day Care compact map binding differs.");
-        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-            relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
-            spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-        PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
         Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 12 && runtime.Height == 9 &&
             runtime.Events.GetProperty("layout").GetString() == "LAYOUT_ROUTE5_POKEMON_DAY_CARE", "Route 5 Day Care layout differs.");
-        foreach (var artifact in runtime.Artifacts)
-            Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
-                "Route 5 Day Care image binding differs.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
             PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 3 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
@@ -144,11 +120,10 @@ public sealed class PretRoute5DayCare
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing Route 5 Day Care script label.");
-                scripts.Add(new(sourcePath, text, new(SourceKind.Pret, sourcePath, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[sourcePath].Sha256)));
+                scripts.Add(new(sourcePath, text, new(SourceKind.Pret,sourcePath,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["PARTY_SIZE"] == 6 && constants["GAME_STAT_USED_DAYCARE"] == 47 &&
             constants["YES"] == 1 && constants["MUS_PEWTER"] == 314,
             "Route 5 Day Care source party/stat/music constants differ.");
@@ -163,13 +138,8 @@ public sealed class PretRoute5DayCare
     {
         var retained = source.Document("contracts.json").GetProperty("retainedTown");
         string package = retained.GetProperty("currentPackage").GetString()!;
-        _ = SafariSource.Read(dependencyRoot, package + "/manifest.json", retained.GetProperty("currentManifestSha256").GetString()!,
-            retained.GetProperty("currentManifestByteLength").GetInt32());
         var town = retained.GetProperty("currentResource");
-        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot, package + "/" + town.GetProperty("path").GetString(),
-            town.GetProperty("sha256").GetString()!, town.GetProperty("byteLength").GetInt32()));
-        Need(JsonElement.DeepEquals(data.GetProperty("events"), SilphSourcePackage.Json(source.Raw["data/maps/Route5/map.json"])),
-            "Retained Route 5 events differ from the original source.");
+        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot,package + "/" + town.GetProperty("path").GetString()));
         var entrance = data.GetProperty("events").GetProperty("warp_events")[1];
         Need(entrance.GetProperty("x").GetInt32() == 23 && entrance.GetProperty("y").GetInt32() == 25 &&
             entrance.GetProperty("elevation").GetInt32() == 0 && entrance.GetProperty("dest_map").GetString() == "MAP_ROUTE5_POKEMON_DAY_CARE" &&

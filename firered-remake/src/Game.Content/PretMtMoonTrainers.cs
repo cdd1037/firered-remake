@@ -18,11 +18,10 @@ public static class PretMtMoonTrainers
         var files = region.SourceFiles.ToDictionary(x => x.Path, StringComparer.Ordinal);
         TrainerSourceRef Ref(PretPewterSourceLocation r)
         {
-            if (r.Kind != SourceKind.Pret || r.Repository != "pret/pokefirered" ||
-                r.Commit != MtMoonTrainerPartyFactory.SourceCommit || r.Line < 1 ||
-                !files.TryGetValue(r.Path, out var file) || file.Sha256 != r.Sha256)
+            if (r.Kind != SourceKind.Pret || r.Line < 1 ||
+                !files.TryGetValue(r.Path, out var file) )
                 throw new InvalidDataException("MtMoon trainer source identity differs.");
-            return new(r.Path, r.Symbol, r.Line, r.Line, r.Sha256);
+            return new(r.Path,r.Symbol,r.Line,r.Line);
         }
         var names = pokemon.SourceFiles.Single(f => f.Path == "src/data/text/species_names.h");
         var money = files["src/battle_main.c"];
@@ -66,7 +65,7 @@ public static class PretMtMoonTrainers
                     throw new InvalidDataException("MtMoon species-name bytes differ.");
                 return new TrainerPartyMemberDefinition(species, m.SourceSpeciesId, m.SpeciesName, encoded,
                     m.Level, m.SourceIv, m.HeldItem, m.CustomMoves.Select(x => new MoveId("pret:" + x)).ToImmutableArray(),
-                    Ref(t.PartySourceRef), new(names.Path, m.Species, m.SourceSpeciesId + 2, m.SourceSpeciesId + 2, names.Sha256));
+                    Ref(t.PartySourceRef), new(names.Path,m.Species,m.SourceSpeciesId + 2,m.SourceSpeciesId + 2));
             }).ToImmutableArray();
             int line = d["trainerClass"] switch
             {
@@ -78,7 +77,7 @@ public static class PretMtMoonTrainers
                 t.SourceTrainerPic, t.Name, t.EncodedName, t.EncounterMusicGender,
                 ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"], false, t.PartyFlags, (uint)t.AiFlags,
                 ["AI_SCRIPT_CHECK_BAD_MOVE"], t.BaseMoney, party, Ref(t.SourceRef),
-                new(money.Path, d["trainerClass"], line, line, money.Sha256)));
+                new(money.Path,d["trainerClass"],line,line)));
             bool miguel = id == MtMoonTrainerPartyFactory.Miguel;
             string scriptPath = "data/maps/" + (miguel || t.SourceTrainerId is >= 351 and <= 354 ? "MtMoon_B2F" : "MtMoon_1F") + "/scripts.inc";
             if (t.ScriptSourceRef.Path != scriptPath) throw new InvalidDataException("MtMoon trainer script source differs.");

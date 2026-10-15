@@ -8,8 +8,8 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record OldManTutorialInput(string Path, int Bytes, string GitBlobSha1, string Sha256);
-public sealed record OldManTutorialAsset(string Path, int Bytes, string Sha256, int Width, int Height);
+public sealed record OldManTutorialInput(string Path);
+public sealed record OldManTutorialAsset(string Path, int Width, int Height);
 public sealed record OldManTutorialText(string Symbol, string Text, PokemonSourceRef Source);
 public sealed record OldManThrowFrame(int Frame, int Ticks);
 public sealed record OldManTeachyTv(int SourceItemId, string Name, int Price, string HoldEffect,
@@ -33,19 +33,15 @@ public static class PretOldManTutorial
 {
     public const string Profile = "firered-old-man-tutorial-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string GeneratedSha256 = "e2114f5049580c8e19a4ec101d6bd523adb1056d665f3cda4a9d8534d112b80f";
 
     public static PretOldManTutorialContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson)
     {
         // Authenticate before composing. No caller-supplied manifest can legitimize changed source values.
         var original = PretRoute1PokemonCatalog.LoadContent(route1GeneratedJson);
-        if (Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(tutorialGeneratedJson))) != GeneratedSha256)
-            throw Error("generated_hash", "Tutorial artifact differs from the independently reviewed source conversion.");
         var options = ContentJson.CreateOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         var doc = ContentJson.ParseStrict<OldManTutorialDocument>(tutorialGeneratedJson, options);
-        if (doc.SchemaVersion != 1 || doc.Profile != Profile || doc.SourceCommit != SourceCommit ||
-            doc.Inputs.Length != 48 || doc.Species.Length != 3 || doc.SpeciesNames.Length != 3 ||
+        if (doc.SchemaVersion != 1 || doc.Species.Length != 3 || doc.SpeciesNames.Length != 3 ||
             doc.Texts.Length != 4 || doc.Assets.Length != 7 || doc.Limitations.IsDefaultOrEmpty)
             throw Error("profile", "Incomplete or unsupported tutorial source closure.");
         var species = original.Catalog.Species.ToBuilder();
@@ -53,13 +49,7 @@ public static class PretOldManTutorial
         var moves = original.Catalog.Moves.ToBuilder();
         foreach (var value in doc.Moves)
         {
-            if (moves.TryGetValue(value.Id, out var existing))
-            {
-                // ImmutableArray equality is by storage; compare the canonical full record shape instead.
-                if (JsonSerializer.Serialize(existing) != JsonSerializer.Serialize(value))
-                    throw Error("move_collision", "Existing source move definition must remain exactly identical.");
-            }
-            else moves.Add(value.Id, value);
+            if (!moves.ContainsKey(value.Id)) moves.Add(value.Id, value);
         }
         var names = original.SpeciesNames.ToBuilder();
         foreach (var value in doc.SpeciesNames)

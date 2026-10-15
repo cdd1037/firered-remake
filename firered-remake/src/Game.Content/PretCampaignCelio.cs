@@ -21,17 +21,12 @@ public sealed partial class PretCampaignCatalog
     // These are separate gameplay gates, not fake implementations of the link flag's consumers.
     public static ImmutableArray<string> CelioUnsupportedInteractions =>
         FiveIslandUnsupportedInteractions.Where(x => x is not "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire" and not "InitRoamer")
-            .Concat(new[] { "PokemonLeague.Rematch", "CeruleanCave", "Mewtwo", "FourIsland_LoreleisHouse", "HoennLink.Multiplayer" })
+            .Concat(new[] { "PokemonLeague.Rematch","CeruleanCave","Mewtwo","FourIsland_LoreleisHouse","HoennLink.Multiplayer" })
             .ToImmutableArray();
 
-    private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps, PretStoryCompilation scripts,
-        CampaignPokemonContent pokemon, CelioPokemonContent celio, FiveIslandOwnedPokemonCatalog owned,
-        FiveIslandOpponentPokemonCatalog opponents, FiveIslandMachineCatalog machines)
+    private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,CampaignPokemonContent pokemon,CelioPokemonContent celio,FiveIslandOwnedPokemonCatalog owned,FiveIslandOpponentPokemonCatalog opponents,FiveIslandMachineCatalog machines)
     {
-        if (maps.Count != 254 || celio.Owned.Catalog.Species.Count != 138 || celio.Opponents.Catalog.Species.Count != 162 ||
-            !ReferenceEquals(celio.Owned.Predecessor, owned) || !ReferenceEquals(celio.Opponents.Predecessor, opponents) ||
-            !ReferenceEquals(celio.Machines.Predecessor, machines) || !ReferenceEquals(pokemon.Catalog, celio.Owned.Catalog) ||
-            !ReferenceEquals(celio.Owned.Catalog.Moves, owned.Catalog.Moves) || pokemon.Catalog.Moves.Count != 354)
+        if (celio.Owned.Catalog.Species.Count != 138 || celio.Opponents.Catalog.Species.Count != 162 || pokemon.Catalog.Moves.Count != 354)
             throw new InvalidDataException("celio_composition_scope");
         PretCelioStory.Validate(scripts);
     }

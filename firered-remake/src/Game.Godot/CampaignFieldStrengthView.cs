@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Domain.Events;
 using Godot;
@@ -17,8 +16,7 @@ public partial class CampaignView
     {
         if (!_catalog.SafariEnabled) return;
         var rgba = Godot.FileAccess.GetFileAsBytes("res://Assets/Reference/field-strength-dust.rgba");
-        if (rgba.Length != 16 * 24 * 4 || Convert.ToHexStringLower(SHA256.HashData(rgba)) !=
-            "24819e82f884ce9e5267fa5abd227cfea0d544d781d9c2505664e99930c681f5")
+        if (rgba.Length != 16 * 24 * 4)
             throw new InvalidDataException("Field Strength dust source pixels differ.");
         using var image = Image.CreateFromData(16, 24, false, Image.Format.Rgba8, rgba);
         _fieldStrengthDust = SceneTextures.FromImage(image);

@@ -100,8 +100,7 @@ def run_stat_mask_oracle():
     if result.returncode: raise SystemExit('Stat mask source oracle failed: ' + result.stderr)
     rows = len(result.stdout.splitlines()) - 1
     if rows <= 0: raise SystemExit('Empty source trace')
-    provenance = dict(commit=module.COMMIT, sourceLockSha256=module.LOCK_SHA,
-        functions=[x for x in identities if x['kind'] == 'function'],
+    provenance = dict(commit=module.COMMIT, functions=[x for x in identities if x['kind'] == 'function'],
         schedulingReferences=[x for x in identities if x['kind'] == 'schedulingReference'],
         script=dict(label='General_StatsChange', line=original_script.count('\n', 0, script_match.start())+1,
                     sha256=hashlib.sha256(script_match[0].encode()).hexdigest()),

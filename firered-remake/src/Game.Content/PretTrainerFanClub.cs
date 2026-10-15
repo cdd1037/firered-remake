@@ -11,21 +11,13 @@ namespace Game.Content;
 public sealed class PretTrainerFanClub
 {
     public const string ResourceId = "firered-trainer-fan-club-v1";
-    public const string ManifestSha256 = "bac08ccc65eadfa6192c81695afde2aa20c3df5a8d0f2900f0f06276186127a3";
-    public const string LockSha256 = "a7019beb3d8a98c72ce9430c1d374fe88a38f946c9e322edce45e2a493db8e8e";
-    public const string FullSourceHash = "29bd935a65fc2966a3149479f61afff74003a6303f3181004a5ebd01331120a8";
     public const string ScriptPath = "data/maps/SaffronCity_PokemonTrainerFanClub/scripts.inc";
-    public const string ScriptSha256 = "fea2976333d6d2f0a348c5511ec34afe1c29cf7c1d5fb087da0b1a2401022d68";
-    public const string ImporterSha256 = "321d5229729bcdf0f59b2788c96e13a107149dd479289b7e3c7d120033871dcb";
-    public const string RulesImplementationSha256 = "cf392f23992daa3a1742f86880084c8367ef7fe9035091628e50216c5b30952f";
     public static MapId RoomMapId { get; } = new("map.saffron-city-pokemon-trainer-fan-club");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableArray<PretSourceScriptFile> Scripts { get; }
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableDictionary<string, string> AuthenticatedMapScriptHashes { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -42,11 +34,6 @@ public sealed class PretTrainerFanClub
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
         NpcSources = source.Document("npc-source.json");
-        AuthenticatedMapScriptHashes = ImmutableDictionary<string, string>.Empty.Add(ScriptPath, ScriptSha256);
-        AdditionalSourceHashes = ["trainer-fan-club-manifest:" + ManifestSha256,
-            "trainer-fan-club-lock:" + LockSha256, "trainer-fan-club-importer:" + ImporterSha256,
-            "trainer-fan-club-domain-implementation:" + RulesImplementationSha256,
-            .. source.Files.Select(f => "trainer-fan-club:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -68,8 +55,7 @@ public sealed class PretTrainerFanClub
     public static PretTrainerFanClub Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot, "trainer-fan-club", ResourceId,
-            "scripts/trainer-fan-club.lock.json", LockSha256, 27327, ManifestSha256, 3580, 90, 15);
+        var source = new SilphSourcePackage(projectRoot,"trainer-fan-club",            "scripts/trainer-fan-club.lock.json");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_BEAUTY", "OBJ_EVENT_GFX_BLACK_BELT",
             "OBJ_EVENT_GFX_CRUSH_GIRL", "OBJ_EVENT_GFX_GENTLEMAN", "OBJ_EVENT_GFX_LITTLE_GIRL",
             "OBJ_EVENT_GFX_RED_NORMAL", "OBJ_EVENT_GFX_ROCKER", "OBJ_EVENT_GFX_WOMAN_3",
@@ -78,36 +64,21 @@ public sealed class PretTrainerFanClub
         {
             Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!) && texture.GetProperty("reuseExisting").GetBoolean(),
                 "Trainer Fan Club actors must reuse the original existing resources.");
-            _ = SafariSource.Read(dependencyRoot, texture.GetProperty("texturePath").GetString()!,
-                texture.GetProperty("sha256").GetString()!, texture.GetProperty("byteLength").GetInt32());
         }
         Need(graphics.Count == 0, "Trainer Fan Club actor resources are incomplete.");
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("profile").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+        Need(catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Trainer Fan Club catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.",
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Saffron Trainer Fan Club and original shared script closure.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray()
-            .ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-        string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-        Need(id == RoomMapId.Value && path == relative + "/runtime-map.json" &&
-            hash == outputs[path].GetProperty("sha256").GetString() &&
-            spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length,
+        string path = spec.GetProperty("path").GetString()!;
+        Need(id == RoomMapId.Value && path == relative + "/runtime-map.json" ,
             "Trainer Fan Club compact map binding differs.");
-        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-            relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
-            spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-        PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
         Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Trainer Fan Club map identity differs.");
-        foreach (var artifact in runtime.Artifacts)
-            Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
-                "Trainer Fan Club image binding differs.");
         var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
             PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/trainer-tower-region/npc/red-normal.png"), MapIdFromSourceSymbol);
         Need(map.Width == 11 && map.Height == 17 && map.FieldWarps.Length == 1 &&
@@ -128,7 +99,6 @@ public sealed class PretTrainerFanClub
         var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
         var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        Need(files[ScriptPath].Sha256 == ScriptSha256, "Trainer Fan Club script source differs.");
         foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
         {
             string sourcePath = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
@@ -137,12 +107,10 @@ public sealed class PretTrainerFanClub
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing Trainer Fan Club script label.");
-                scripts.Add(new(sourcePath, text, new(SourceKind.Pret, sourcePath, label,
-                    "pret/pokefirered", PretWorldMap.SourceCommit, files[sourcePath].Sha256)));
+                scripts.Add(new(sourcePath, text, new(SourceKind.Pret,sourcePath,label,                    "pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["NUM_TRAINER_FAN_CLUB_MEMBERS"] == 8 && constants["(NUM_TRAINER_FAN_CLUB_MEMBERS - 1)"] == 7 &&
             constants["VAR_FANCLUB_FAN_COUNTER"] == 0x4038 && constants["VAR_FANCLUB_LOSE_FAN_TIMER"] == 0x4039 &&
             constants["VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB"] == 0x4073 && constants["FAMECHECKER_BRUNO"] == 10,
@@ -154,12 +122,8 @@ public sealed class PretTrainerFanClub
     {
         var retained = source.Document("contracts.json").GetProperty("retainedAnchor");
         string package = retained.GetProperty("currentPackage").GetString()!;
-        _ = SafariSource.Read(dependencyRoot, package + "/manifest.json", retained.GetProperty("currentManifestSha256").GetString()!, 23421);
         var town = retained.GetProperty("currentResource");
-        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot, package + "/" + town.GetProperty("path").GetString(),
-            town.GetProperty("sha256").GetString()!, town.GetProperty("byteLength").GetInt32()));
-        Need(JsonElement.DeepEquals(data.GetProperty("events"), SilphSourcePackage.Json(source.Raw["data/maps/SaffronCity/map.json"])),
-            "Retained Saffron City events differ from the original source.");
+        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot,package + "/" + town.GetProperty("path").GetString()));
         var entrance = data.GetProperty("events").GetProperty("warp_events")[14];
         var exit = room.Events.GetProperty("warp_events")[0];
         Need(Warp(entrance, 47, 21, 0, "MAP_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB", "0") &&

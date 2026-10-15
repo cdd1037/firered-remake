@@ -3,104 +3,64 @@
   "revision": 0,
   "files": [
     {
-      "path": "data/battle_anim_scripts.s",
-      "bytes": 406484,
-      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+      "path": "data/battle_anim_scripts.s"
     },
     {
-      "path": "asm/macros/battle_anim_script.inc",
-      "bytes": 4279,
-      "sha256": "cb193c567289983c26ed8acaa8dd64501c64c7e088e28995c49439333b52b27c"
+      "path": "asm/macros/battle_anim_script.inc"
     },
     {
-      "path": "src/battle_anim.c",
-      "bytes": 46944,
-      "sha256": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5"
+      "path": "src/battle_anim.c"
     },
     {
-      "path": "src/battle_anim_normal.c",
-      "bytes": 31800,
-      "sha256": "73478ff40f601740b58408caa3259f5abc29f90010f77017aecc69d71803a6c3"
+      "path": "src/battle_anim_normal.c"
     },
     {
-      "path": "src/battle_anim_mon_movement.c",
-      "bytes": 32082,
-      "sha256": "ce72119ff5d658784180bae2e171fae2affa45077e9a1d5e2d55a2caf1ce628c"
+      "path": "src/battle_anim_mon_movement.c"
     },
     {
-      "path": "src/battle_anim_mons.c",
-      "bytes": 70676,
-      "sha256": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb"
+      "path": "src/battle_anim_mons.c"
     },
     {
-      "path": "src/battle_anim_utility_funcs.c",
-      "bytes": 34923,
-      "sha256": "8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297"
+      "path": "src/battle_anim_utility_funcs.c"
     },
     {
-      "path": "src/battle_anim_effects_2.c",
-      "bytes": 110677,
-      "sha256": "50561e4882a0f8813f305af6f4147ed1c394657278e32aae6c733bef31994a04"
+      "path": "src/battle_anim_effects_2.c"
     },
     {
-      "path": "src/palette.c",
-      "bytes": 27804,
-      "sha256": "d406f56ba0a815d184753396e7e05120921c651a7bb2f5efff642816e64e7dc6"
+      "path": "src/palette.c"
     },
     {
-      "path": "src/blend_palette.c",
-      "bytes": 1460,
-      "sha256": "219a02b2ed9ab3010e203e0131fa8133571dcc271e025d7f6f14bf7993a51090"
+      "path": "src/blend_palette.c"
     },
     {
-      "path": "src/task.c",
-      "bytes": 5029,
-      "sha256": "8bdd5205ec396be7b66d6e384a82309b3cab59783d46fb8c4c991b2172d4868b"
+      "path": "src/task.c"
     },
     {
-      "path": "src/sprite.c",
-      "bytes": 48783,
-      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae"
+      "path": "src/sprite.c"
     },
     {
-      "path": "src/battle_main.c",
-      "bytes": 171904,
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/graphics.c",
-      "bytes": 99258,
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3"
+      "path": "src/graphics.c"
     },
     {
-      "path": "src/data/battle_anim.h",
-      "bytes": 61792,
-      "sha256": "c4cfe40d12623423e80d72946c4554783fc06b0d8cd80b48309295c475508ec1"
+      "path": "src/data/battle_anim.h"
     },
     {
-      "path": "include/gba/io_reg.h",
-      "bytes": 33335,
-      "sha256": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0"
+      "path": "include/gba/io_reg.h"
     },
     {
-      "path": "include/palette.h",
-      "bytes": 3545,
-      "sha256": "3f5ee66bab01538193629ffef3ff3cd6ad7555f7e294f52ae3ccfa36f94ac418"
+      "path": "include/palette.h"
     },
     {
-      "path": "include/constants/songs.h",
-      "bytes": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/battle_anim.h",
-      "bytes": 27801,
-      "sha256": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e"
+      "path": "include/constants/battle_anim.h"
     },
     {
-      "path": "graphics/battle_anims/sprites/explosion.png",
-      "bytes": 845,
-      "sha256": "dced88dac0a8c65a065ae59a1688b672775c743c40672f5b694ba6692caa151b"
+      "path": "graphics/battle_anims/sprites/explosion.png"
     }
   ]
 }

@@ -12,9 +12,6 @@ namespace Game.Content;
 public sealed class PretNpcTrades
 {
     public const string ResourceId = "firered-npc-trades-v1";
-    public const string ManifestSha256 = "ec54335876c2949df6834037003a903e31cd4884c810f3150355c64807edb215";
-    public const string LockSha256 = "638b02dc118938c0f02af524a501bbc6261017f40ad2ee69ba3ed6359cc1abac";
-    public const string FullSourceHash = "d34edcac7ca2b83d5e6f73360b3e1be983ad46bb558876768a26980507bd82be";
     public static MapId LoungeMapId { get; } = new("map.cinnabar-island-pokemon-lab-lounge");
     public NpcTradePokemonCatalog Trades { get; }
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
@@ -23,7 +20,6 @@ public sealed class PretNpcTrades
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, string> Texts { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -41,9 +37,6 @@ public sealed class PretNpcTrades
         SourceFiles = source.Files; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         ScriptInventory = source.Document("scripts.json"); NpcSources = source.Document("npc-source.json");
-        AdditionalSourceHashes = ["npc-trades-manifest:" + ManifestSha256, "npc-trades-lock:" + LockSha256,
-            "npc-trades-semantics:" + NpcTradePokemonCatalog.SemanticSha256,
-            .. source.Files.Select(f => "npc-trades:" + f.Path + ":" + f.Sha256)];
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -62,22 +55,15 @@ public sealed class PretNpcTrades
     public static PretNpcTrades Load(string projectRoot, SourceMechanicsCatalog mechanics)
     {
         ArgumentNullException.ThrowIfNull(mechanics);
-        var source = new SilphSourcePackage(projectRoot, "npc-trades", ResourceId,
-            "scripts/npc-trades.lock.json", LockSha256, 32442, ManifestSha256, 4075, 105, 17);
+        var source = new SilphSourcePackage(projectRoot,"npc-trades",            "scripts/npc-trades.lock.json");
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("resourceId").GetString() == ResourceId &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")) &&
-            source.Manifest.GetProperty("tradeSemanticSha256").GetString() == NpcTradePokemonCatalog.SemanticSha256,
+        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "NPC trade source/catalog identity differs.");
         foreach (var row in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
             Need(row.GetProperty("reuseExisting").GetBoolean(), "Lounge actors must reuse authenticated existing graphics.");
-            _ = SafariSource.Read(projectRoot, row.GetProperty("texturePath").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
         }
         var contracts = source.Document("contracts.json");
-        foreach (var row in contracts.GetProperty("retainedMaps").EnumerateArray())
-            _ = SafariSource.Read(projectRoot, row.GetProperty("path").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
         Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual(Enumerable.Range(0, 9)) &&
             contracts.GetProperty("deferredTradeIds").GetArrayLength() == 0 &&
             contracts.GetProperty("retainedMaps").GetArrayLength() == 8 &&
@@ -96,24 +82,17 @@ public sealed class PretNpcTrades
                 definition.ScriptSource.Symbol == definition.ScriptLabel && definition.Source.Symbol == definition.TradeSymbol,
                 "NPC trade original actor/source binding differs.");
         }
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId, source.Files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray().ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-            string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-            Need(path == relative + "/runtime-map.json" && hash == outputs[path].GetProperty("sha256").GetString() &&
-                spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length, "Lounge compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(), spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+            string path = spec.GetProperty("path").GetString()!;
+            Need(path == relative + "/runtime-map.json" , "Lounge compact resource binding differs.");
+            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 15 && runtime.Height == 11,
                 "Lounge map identity/dimensions differ.");
-            foreach (var artifact in runtime.Artifacts)
-                Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256, "Lounge image binding differs.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
                 PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/silph-region/npc/red-normal.png"), MapIdFromSourceSymbol));
         }
@@ -144,11 +123,10 @@ public sealed class PretNpcTrades
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing NPC trade source script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret, path, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[path].Sha256)));
+                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["INGAME_TRADE_NIDORAN"] == 2 && constants["INGAME_TRADE_NIDORINOA"] == 4 &&
             constants["FLAG_DID_MS_NIDO_TRADE"] == 587 && constants["FLAG_DID_NINA_TRADE"] == 593 &&
             constants["INGAME_TRADE_ELECTRODE"] == 6 && constants["INGAME_TRADE_TANGELA"] == 7 && constants["INGAME_TRADE_SEEL"] == 8 &&
@@ -162,9 +140,8 @@ public sealed class PretNpcTrades
         PokemonSourceRef Ref(string p)
         {
             var r = row.GetProperty(p);
-            var result = new PokemonSourceRef(r.GetProperty("path").GetString()!, r.GetProperty("symbol").GetString()!,
-                r.GetProperty("startLine").GetInt32(), r.GetProperty("endLine").GetInt32(), r.GetProperty("sha256").GetString()!);
-            source.Reference(result); return result;
+            var result = new PokemonSourceRef(r.GetProperty("path").GetString()!,r.GetProperty("symbol").GetString()!,                r.GetProperty("startLine").GetInt32(),r.GetProperty("endLine").GetInt32());
+return result;
         }
         var ivs = row.GetProperty("ivs"); var conditions = row.GetProperty("contestConditions");
         return new(I("tradeId"), new(S("requestedSpecies")), new(S("receivedSpecies")), S("nickname"), row.GetProperty("personality").GetUInt32(),

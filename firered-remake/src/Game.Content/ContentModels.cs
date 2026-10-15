@@ -5,8 +5,7 @@ namespace Game.Content;
 
 // Schema 1 is a small engineering IR, not a representation of all FireRed mechanics.
 public enum SourceKind { OriginalFixture, Pret }
-public sealed record SourceRef(SourceKind Kind, string Path, string Symbol,
-    string? Repository = null, string? Commit = null, string? Sha256 = null);
+public sealed record SourceRef(SourceKind Kind, string Path, string Symbol, string? Repository = null, string? Commit = null);
 public interface IContentDefinition { string StableId { get; } SourceRef SourceRef { get; } }
 public sealed record ContentBundle(int SchemaVersion, string StableId, SourceRef SourceRef,
     string RulesVersion, bool IsOriginalFixture,

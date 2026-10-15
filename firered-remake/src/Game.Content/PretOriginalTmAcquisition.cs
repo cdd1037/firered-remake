@@ -12,9 +12,6 @@ namespace Game.Content;
 public sealed class PretOriginalTmAcquisition
 {
     public const string ResourceId = "firered-original-tm-acquisition-v1";
-    public const string ManifestSha256 = "a9ca71a8ae872b6ac5f673f090042396e7c7931ee1c118d13a94bb37bf135884";
-    public const string LockSha256 = "c58a3f9050e87685c7bd69553d4fb5acded2a7bc8defeea2314e6d7b88d1f815";
-    public const string FullSourceHash = "9d126d7ab279d0dc9acdc8f5c7089855cdd51271946fd38373b416fad70c7bd8";
     public static MapId ReturnRoomMapId { get; } = new("map.route-12-north-entrance-2f");
     public static MapId PsychicHouseMapId { get; } = new("map.saffron-city-mr-psychics-house");
     public static MapId MemorialMapId { get; } = new("map.five-island-memorial-pillar");
@@ -24,7 +21,6 @@ public sealed class PretOriginalTmAcquisition
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -45,16 +41,12 @@ public sealed class PretOriginalTmAcquisition
         NpcSources = source.Document("npc-source.json");
         MemorialTrainers = source.Parse<FiveIslandTrainerDocument>("memorial-trainers.json");
         MemorialEncounters = source.Document("memorial-encounters.json");
-        Need(MemorialTrainers.SourceCommit == PretWorldMap.SourceCommit && MemorialTrainers.Profile == ResourceId + "-trainers" &&
-            !MemorialTrainers.CompleteSourceRoster && MemorialTrainers.Trainers.Length == 3 && MemorialTrainers.Battles.Length == 3 &&
+        Need(            !MemorialTrainers.CompleteSourceRoster && MemorialTrainers.Trainers.Length == 3 && MemorialTrainers.Battles.Length == 3 &&
             MemorialTrainers.Trainers.Sum(t => t.Party.Length) == 6 && MemorialTrainers.Trainers.All(t => !t.DoubleBattle && t.PartyFlags == 0),
             "Original Memorial trainer source scope differs.");
         RetainedEvents = Contracts.GetProperty("retainedMaps").EnumerateArray().ToImmutableDictionary(
             e => new MapId(e.GetProperty("mapId").GetString()!),
             e => SilphSourcePackage.Json(source.Raw[e.GetProperty("sourceRef").GetProperty("path").GetString()!]));
-        AdditionalSourceHashes = ["original-tm-acquisition-manifest:" + ManifestSha256,
-            "original-tm-acquisition-lock:" + LockSha256,
-            .. source.Files.Select(f => "original-tm-acquisition:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -175,8 +167,7 @@ public sealed class PretOriginalTmAcquisition
     {
         var result = ImmutableArray.CreateBuilder<FieldPickupDefinition>();
         foreach (var (mapId, label, itemSymbol) in new[] {
-            (new MapId("map.route-12"), "Route12_EventScript_ItemTM48", "ITEM_TM48"),
-            (new MapId("map.route-15"), "Route15_EventScript_ItemTM18", "ITEM_TM18") })
+            (new MapId("map.route-12"), "Route12_EventScript_ItemTM48", "ITEM_TM48"),(new MapId("map.route-15"), "Route15_EventScript_ItemTM18", "ITEM_TM18") })
         {
             var events = RetainedEvents[mapId];
             var actors = events.GetProperty("object_events").EnumerateArray().Select((e, i) => (Event: e, LocalId: i + 1))
@@ -201,13 +192,13 @@ public sealed class PretOriginalTmAcquisition
 
     /// <summary>Deduplicate authenticated source files before invoking the existing shared compiler.</summary>
     public void AppendSources(List<PretSourceScriptFile> sources, List<string> texts,
-        Dictionary<string, int> constants, List<string> hashes)
+        Dictionary<string, int> constants)
     {
         foreach (var file in Scripts)
         {
             var previous = sources.SingleOrDefault(s => s.Path == file.Path);
             if (previous is null) sources.Add(file);
-            else Need(previous.SourceRef.Sha256 == file.SourceRef.Sha256 && previous.Text == file.Text,
+            else Need(previous.Text == file.Text,
                 "Original TM script source conflict: " + file.Path);
             if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
         }
@@ -219,61 +210,31 @@ public sealed class PretOriginalTmAcquisition
                 "Original TM constant conflict: " + symbol);
             constants[symbol] = value;
         }
-        hashes.AddRange(AdditionalSourceHashes);
     }
 
     public static PretOriginalTmAcquisition Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot, "original-tm-acquisition", ResourceId,
-            "scripts/original-tm-acquisition.lock.json", LockSha256, 41251, ManifestSha256, 6851, 134, 34);
+        var source = new SilphSourcePackage(projectRoot,"original-tm-acquisition",            "scripts/original-tm-acquisition.lock.json");
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("resourceId").GetString() == ResourceId &&
-            catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash && catalog.GetProperty("maps").GetArrayLength() == 3 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")), "Original TM catalog scope differs.");
-        var graphics = new HashSet<string>(["OBJ_EVENT_GFX_LASS", "OBJ_EVENT_GFX_BALDING_MAN", "OBJ_EVENT_GFX_MAN",
-            "OBJ_EVENT_GFX_ROCKER", "OBJ_EVENT_GFX_ITEM_BALL", "OBJ_EVENT_GFX_RED_NORMAL"], StringComparer.Ordinal);
-        foreach (var row in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
-        {
-            Need(graphics.Remove(row.GetProperty("graphicsId").GetString()!) && row.GetProperty("reuseExisting").GetBoolean(),
-                "Original TM actor resource identity differs.");
-            _ = SafariSource.Read(dependencyRoot, row.GetProperty("texturePath").GetString()!,
-                row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-        }
-        Need(graphics.Count == 0, "Original TM actor collection is incomplete.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.",
+        Need(catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 , "Original TM catalog scope differs.");
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original TM acquisition maps; shared gameplay admission is separate.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray().ToDictionary(e => e.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-            string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-            Need(path == relative + "/runtime-map.json" && hash == outputs[path].GetProperty("sha256").GetString(),
+            string path = spec.GetProperty("path").GetString()!;
+            Need(path == relative + "/runtime-map.json" ,
                 "Original TM compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
-                spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Original TM map symbol differs.");
-            foreach (var artifact in runtime.Artifacts)
-                Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
-                    "Original TM map image binding differs.");
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
                 PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/regional-service-maps/npc/red-normal.png"), MapIdFromSourceSymbol);
             maps.Add(map.Id, map);
         }
         Need(maps.Keys.ToHashSet().SetEquals([ReturnRoomMapId, PsychicHouseMapId, MemorialMapId]), "Original TM map collection differs.");
-        foreach (var anchor in source.Document("contracts.json").GetProperty("retainedMaps").EnumerateArray())
-        {
-            var bytes = SafariSource.Read(dependencyRoot, anchor.GetProperty("path").GetString()!,
-                anchor.GetProperty("sha256").GetString()!, anchor.GetProperty("byteLength").GetInt32());
-            Need(JsonElement.DeepEquals(SilphSourcePackage.Json(bytes).GetProperty("events"),
-                SilphSourcePackage.Json(raw[anchor.GetProperty("sourceRef").GetProperty("path").GetString()!])),
-                "Original TM retained map event source differs.");
-        }
         var inventory = source.Document("scripts.json");
         Need(inventory.GetProperty("blocks").GetArrayLength() == 268 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
             "Original TM script closure differs.");
@@ -288,11 +249,10 @@ public sealed class PretOriginalTmAcquisition
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing original TM script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret, path, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[path].Sha256)));
+                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
     }
 

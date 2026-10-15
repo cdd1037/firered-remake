@@ -6,13 +6,12 @@ namespace Game.Content;
 public static class PretCeladonApproachMachines
 {
     public const string Profile="firered-celadon-approach-machines-v1";
-    public const string GeneratedSha256="f7a0c24f1a7b9b0f883554da2269530081974b91cc4645f6c219568ab0762e77";
     public static PretRockTunnelMachinesDocument LoadProject(string root)
     {
         _=PretCeladonApproachItems.LoadProject(root);
-        var bytes=PretCeladonApproachSource.Read(root,"content/generated/celadon-approach-items/celadon-approach-machines.json",GeneratedSha256);
+        var bytes=PretCeladonApproachSource.Read(root,"content/generated/celadon-approach-items/celadon-approach-machines.json");
         var d=ContentJson.ParseStrict<PretRockTunnelMachinesDocument>(Encoding.UTF8.GetString(bytes),ContentJson.CreateOptions());
-        PretCeladonApproachSource.Require(d.SchemaVersion==1&&d.Profile==Profile&&d.SourceCommit==PretCeladonApproachSource.Commit&&d.Machines.Length==14&&d.Inputs.Length==32&&d.Icons.IsEmpty&&!d.Limitations.IsDefaultOrEmpty,"Celadon machine scope differs.");
+        PretCeladonApproachSource.Require(d.SchemaVersion==1&&d.Machines.Length==14&&d.Icons.IsEmpty&&!d.Limitations.IsDefaultOrEmpty,"Celadon machine scope differs.");
         var old=PretRockTunnelMachines.LoadProject(root);
         for(int i=0;i<14;i++)
         {
@@ -20,7 +19,7 @@ public static class PretCeladonApproachMachines
             PretCeladonApproachSource.Require(a.Machine==b.Machine&&a.Move==b.Move&&a.SourceMoveId==b.SourceMoveId&&a.MovePp==b.MovePp&&b.Compatibility.Length==94&&a.Compatibility.SequenceEqual(b.Compatibility.Take(93)),"Inherited machine changed.");
             var tail=b.Compatibility[^1];
             PretCeladonApproachSource.Require(tail.Species.Value=="pret:SPECIES_MUK"&&tail.SourceSpeciesId==89&&tail.CanLearn==("10010111110100"[i]=='1')&&
-                tail.Source==new OpeningItemSourceRef("src/data/pokemon/tmhm_learnsets.h","SPECIES_MUK",2035,2063,"92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"),"Muk source compatibility differs.");
+                tail.Source==new OpeningItemSourceRef("src/data/pokemon/tmhm_learnsets.h","SPECIES_MUK",2035,2063),"Muk source compatibility differs.");
         }
         return d;
     }

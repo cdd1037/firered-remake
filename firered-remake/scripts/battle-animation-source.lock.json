@@ -5,46 +5,25 @@
   "revision": 0,
   "files": [
     {
-      "path": "data/battle_anim_scripts.s",
-      "bytes": 406484,
-      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
-      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068"
+      "path": "data/battle_anim_scripts.s"
     },
     {
-      "path": "asm/macros/battle_anim_script.inc",
-      "bytes": 4279,
-      "sha256": "cb193c567289983c26ed8acaa8dd64501c64c7e088e28995c49439333b52b27c",
-      "gitBlobSha1": "15c48c39f5860efe132e782c22a6cedb0f8d5ac3"
+      "path": "asm/macros/battle_anim_script.inc"
     },
     {
-      "path": "include/constants/moves.h",
-      "bytes": 10249,
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643"
+      "path": "include/constants/moves.h"
     },
     {
-      "path": "include/constants/battle_anim.h",
-      "bytes": 27801,
-      "sha256": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e",
-      "gitBlobSha1": "4fc4e4407fb91c086c0b9a0b52188a5e20ce4d6e"
+      "path": "include/constants/battle_anim.h"
     },
     {
-      "path": "include/constants/songs.h",
-      "bytes": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/sound.h",
-      "bytes": 2051,
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+      "path": "include/constants/sound.h"
     },
     {
-      "path": "src/data/battle_anim.h",
-      "bytes": 61792,
-      "sha256": "c4cfe40d12623423e80d72946c4554783fc06b0d8cd80b48309295c475508ec1",
-      "gitBlobSha1": "ec8dc3de772056de958bba1227e7172b500a0380"
+      "path": "src/data/battle_anim.h"
     }
   ]
 }

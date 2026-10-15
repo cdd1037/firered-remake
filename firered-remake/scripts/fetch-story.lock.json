@@ -3,88 +3,46 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "path": "src/new_game.c",
-      "gitBlobSha1": "3768b3ccb98cdad514b858cbc59244f21bedb7b0",
-      "byteLength": 4328,
-      "sha256": "55f03492ea90ee853550a40008089d44ca59c28cb47b8aa10aa2494e8d8608cc"
+      "path": "src/new_game.c"
     },
     {
-      "path": "data/event_scripts.s",
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
-      "byteLength": 55643,
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+      "path": "data/event_scripts.s"
     },
     {
-      "path": "data/scripts/movement.inc",
-      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5",
-      "byteLength": 1147,
-      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64"
+      "path": "data/scripts/movement.inc"
     },
     {
-      "path": "data/scripts/fame_checker.inc",
-      "gitBlobSha1": "a84b2309103b14b72de633357efae8b692df3802",
-      "byteLength": 6374,
-      "sha256": "1a1513814888c5e24f3dadba2481141c146e2b411f496ecd26096fa7711154f7"
+      "path": "data/scripts/fame_checker.inc"
     },
     {
-      "path": "include/constants/fame_checker.h",
-      "gitBlobSha1": "e09279bb46f1eecd1bcbfeaebb2a6f2f0b2b0421",
-      "byteLength": 815,
-      "sha256": "e3cf025d99dd2dc571ab1bb5c14f21d03b90913c3ff977f271a9fe78eed865c7"
+      "path": "include/constants/fame_checker.h"
     },
     {
-      "path": "include/constants/event_objects.h",
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
-      "byteLength": 7965,
-      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947"
+      "path": "include/constants/event_objects.h"
     },
     {
-      "path": "include/constants/vars.h",
-      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
-      "byteLength": 17306,
-      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+      "path": "include/constants/vars.h"
     },
     {
-      "path": "include/constants/flags.h",
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
-      "byteLength": 95397,
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+      "path": "include/constants/flags.h"
     },
     {
-      "path": "src/fame_checker.c",
-      "gitBlobSha1": "b39771a49f420b5331ef8747b4fb1f27e8829ef4",
-      "byteLength": 69648,
-      "sha256": "b09dc1fcbc1f8d1649df0f0be4f5a332135ba3d0f7041f1b2c784b0a0e35080c"
+      "path": "src/fame_checker.c"
     },
     {
-      "path": "asm/macros/event.inc",
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
-      "byteLength": 56947,
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "asm/macros/event.inc"
     },
     {
-      "path": "src/scrcmd.c",
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
-      "byteLength": 56954,
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+      "path": "src/scrcmd.c"
     },
     {
-      "path": "data/scripts/std_msgbox.inc",
-      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde",
-      "byteLength": 1040,
-      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431"
+      "path": "data/scripts/std_msgbox.inc"
     },
     {
-      "path": "tools/mapjson/mapjson.cpp",
-      "gitBlobSha1": "8d8ec4e4e6e1c011b06f00819abe40bad10d19d5",
-      "byteLength": 28254,
-      "sha256": "c8a4af233a24c70ee49f2739bec7b313da8f50e15d2a25b31db1d40cc179aab9"
+      "path": "tools/mapjson/mapjson.cpp"
     },
     {
-      "path": "data/scripts/obtain_item.inc",
-      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9",
-      "byteLength": 5866,
-      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d"
+      "path": "data/scripts/obtain_item.inc"
     }
   ]
 }

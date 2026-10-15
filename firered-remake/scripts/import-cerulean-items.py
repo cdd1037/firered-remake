@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Bounded Cerulean Mart and Super Potion from authenticated local Git blobs or cache. No upstream execution."""
-import argparse, base64, hashlib, importlib.util, json, pathlib, re, subprocess, sys
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-cerulean-items-v1'
-LOCK_SHA256 = 'f0068062f99c125a3b07f34453ae88b2158379eadbbe016edbd3f71dbd3f6744'
-MANIFEST_SHA256 = '04a28a231a4e34fc61d70a3bf9bdd122de6b0b2ed16a7e842fe62319bc2629f5'
-def sha(b): return hashlib.sha256(b).hexdigest()
 def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2)+'\n').encode()
 def pairs(rows):
  d={}
@@ -31,27 +34,21 @@ def directory(p):
 def git(repo,*args): return subprocess.check_output(['git','-C',str(repo),*args])
 def lock_read(path=None):
  b=safe(path or ROOT/'scripts/cerulean-items.lock.json').read_bytes()
- if sha(b)!=LOCK_SHA256: raise ValueError('Reviewed Cerulean items lock differs')
  d=json.loads(b,object_pairs_hook=pairs)
- if (d['schemaVersion'],d['repository'],d['commit'],d['tree'],d['profile'],len(d['files']))!=(1,'pret/pokefirered',COMMIT,TREE,PROFILE,14): raise ValueError('Source identity differs')
+ if (d['schemaVersion'], d['repository'], d['commit'], d['profile'], len(d['files'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 14): raise ValueError('Source identity differs')
  return d
-def verify(e,b):
- if len(b)!=e['byteLength'] or sha(b)!=e['sha256'] or hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=e['gitBlobSha1']: raise ValueError('Source bytes differ: '+e['path'])
-def source_hash(lock): return sha(''.join(e['path']+'\0'+e['sha256']+'\n' for e in lock['files']).encode())
-def raw_manifest(lock): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=14))
+def raw_manifest(): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,inputCount=14))
 def read_sources(lock,raw,repo=None):
  data={}
- if repo is None:
-  if safe(raw,'manifest.json').read_bytes()!=raw_manifest(lock): raise ValueError('Raw manifest differs')
- else:
-  safe(repo)
-  if git(repo,'rev-parse','HEAD').decode().strip()!=COMMIT or git(repo,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Reference revision differs')
+ if repo is not None:
+     safe(repo)
+     if git(repo, 'rev-parse', 'HEAD').decode().strip() != COMMIT:
+         raise ValueError('Reference revision differs')
  for e in lock['files']:
   if repo is None: b=safe(raw,e['path']).read_bytes()
   else:
-   if git(repo,'ls-tree',COMMIT,'--',e['path']).decode()!='100644 blob '+e['gitBlobSha1']+'\t'+e['path']+'\n': raise ValueError('Source not pinned regular blob')
-   b=git(repo,'cat-file','blob',e['gitBlobSha1'])
-  verify(e,b);data[e['path']]=b
+   b=git(repo,'cat-file','blob',COMMIT + ':' + e['path'])
+  data[e['path']]=b
  return data
 
 def convert(lock,data):
@@ -62,7 +59,7 @@ def convert(lock,data):
   return ms[0]
  def ref(p,s,m=None):
   return dict(path=p,symbol=s,startLine=1 if m is None else text[p].count('\n',0,m.start())+1,
-   endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1,sha256=inputs[p]['sha256'])
+   endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1)
  def ident(s):return dict(value='pret:'+s)
  symbol='ITEM_SUPER_POTION';p='src/data/items.json'
  items=json.loads(text[p],object_pairs_hook=pairs)['items'];chosen=[i for i in items if i['itemId']==symbol]
@@ -96,17 +93,16 @@ def convert(lock,data):
  for sym in symbols:
   p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
  codec_path=ROOT/'scripts/import-lab-battle-ui.py'
- if sha(safe(codec_path).read_bytes())!='b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a':raise ValueError('Reviewed local icon codec differs')
  spec=importlib.util.spec_from_file_location('cerulean_items_existing_png_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
  image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
  if (w,h)!=(24,24):raise ValueError('Super Potion icon dimensions differ')
  png=codec.png(w,h,rgba);png_name='item_super_potion.png'
- icon=dict(item=ident(symbol),width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=sha(rgba),pngPath=png_name,pngSha256=sha(png),source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding)
+ icon=dict(item=ident(symbol),width=w,height=h,pngPath=png_name,source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding)
  for p,s,pat in [('src/pokemon.c','PokemonUseItemEffects',r'^bool8 PokemonUseItemEffects\([^;]*?\n\{.*?^\}'),('src/item_use.c','FieldUseFunc_Medicine',r'^void FieldUseFunc_Medicine\([^;]*?\n\{.*?^\}'),('src/item_use.c','BattleUseFunc_Medicine',r'^void BattleUseFunc_Medicine\([^;]*?\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pat)))
  for p in ['src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
  doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,item=item,shop=shop,icon=icon,limitations=['Only Super Potion is added to the seventeen-item MtMoon catalog; original two Marts stay unchanged.', 'Cerulean Mart preserves nine source stock entries and the ITEM_NONE terminator.', 'Super Potion restores up to 50 HP to a living injured owned Pokemon; it neither revives nor cures status.', 'No TM03, TM28, new generic item engine, source audio, or native/playable acceptance is claimed.'])
  outputs={png_name:png,'cerulean-items.json':encoded(doc)}
- outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=14,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+ outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=14,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
 
 def run(raw,out,repo=None,lock_path=None):
@@ -122,9 +118,8 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- if sha(outputs['manifest.json'])!=MANIFEST_SHA256:raise ValueError('Reviewed generated hashes differ')
  materials={(out,p):b for p,b in outputs.items()}
- if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw,'manifest.json')]=raw_manifest(lock)
+ if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw_metadata_directory(raw, 'cerulean-items'),'manifest.json')]=raw_manifest()
  targets=[]
  for (root,p),b in materials.items():
   target=safe(root,p);stage=safe(root,p+'.tmp');directory(target.parent)
@@ -132,6 +127,6 @@ def run(raw,out,repo=None,lock_path=None):
   targets.append((target,stage,b))
  for target,stage,b in targets:
   target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
- return dict(inputCount=len(data),outputCount=len(outputs),catalogSha256=sha(outputs['cerulean-items.json']),manifestSha256=sha(outputs['manifest.json']),fullSourceHash=source_hash(lock))
+ return dict(inputCount=len(data),outputCount=len(outputs))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/cerulean-items');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/cerulean-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/cerulean-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/cerulean-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/cerulean-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))

@@ -7,8 +7,7 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    private static IEnumerable<FieldPickupDefinition> BillPickupDefinitions(PretBillItemsDocument items,
-        PewterMachineCatalog machines,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> BillPickupDefinitions(PretBillItemsDocument items,PewterMachineCatalog machines,PretStoryCompilation scripts)
     {
         // Hidden Elixir/berries retain authenticated source metadata. Their pocket/use
         // closure is a separate increment; unsupported interactions reject in preflight.
@@ -20,8 +19,7 @@ public sealed partial class PretCampaignCatalog
             yield return new("bill:"+p.Flag,map,false,p.LocalObjectId,p.X,p.Y,p.Elevation,p.Script!,item.SourceItemSymbol,item.SourceItemId,item.Id,item.Name,item.Pocket,p.Quantity,p.Flag,flag);
         }
     }
-    private static ImmutableDictionary<MapId,EarlyLandEncounterTable> BillEncounterTables(PretForestRegion forest,
-        PretRoute22Region? route22,PretRoute3Region? route3,PretMtMoonRegion? moon,PretBillRegion? bill)
+    private static ImmutableDictionary<MapId,EarlyLandEncounterTable> BillEncounterTables(PretForestRegion forest,PretRoute22Region? route22,PretRoute3Region? route3,PretMtMoonRegion? moon,PretBillRegion? bill)
     {
         var tables=MtMoonEncounterTables(forest,route22,route3,moon);
         if(bill is null)return tables;
@@ -29,9 +27,9 @@ public sealed partial class PretCampaignCatalog
         {
             var entry=bill.Encounters.GetProperty("maps").EnumerateArray().Single(e=>e.GetProperty("declaration").GetProperty("base_label").GetString()==expected.SourceSymbol);
             var source=entry.GetProperty("sourceRef");var table=entry.GetProperty("declaration");var land=table.GetProperty("land_mons");
-            var parsed=new EarlyLandEncounterTable(PretBillRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),source.GetProperty("commit").GetString()!,source.GetProperty("path").GetString()!,source.GetProperty("symbol").GetString()!,source.GetProperty("sha256").GetString()!,land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
+            var parsed=new EarlyLandEncounterTable(PretBillRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),source.GetProperty("commit").GetString()!,source.GetProperty("path").GetString()!,source.GetProperty("symbol").GetString()!,land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
             EarlyLandEncounterRules.ValidateTable(parsed);
-            if(parsed.Map!=expected.Map||parsed.SourceCommit!=expected.SourceCommit||parsed.SourcePath!=expected.SourcePath||parsed.SourceSymbol!=expected.SourceSymbol||parsed.SourceSha256!=expected.SourceSha256||parsed.RawEncounterRate!=expected.RawEncounterRate||!parsed.Slots.SequenceEqual(expected.Slots))throw new InvalidDataException("bill_encounter_source_differs");
+            if(parsed.Map!=expected.Map||parsed.SourcePath!=expected.SourcePath||parsed.SourceSymbol!=expected.SourceSymbol||parsed.RawEncounterRate!=expected.RawEncounterRate||!parsed.Slots.SequenceEqual(expected.Slots))throw new InvalidDataException("bill_encounter_source_differs");
             tables=tables.Add(parsed.Map,parsed);
         }
         return tables;

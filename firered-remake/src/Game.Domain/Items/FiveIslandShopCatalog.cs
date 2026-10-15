@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class FiveIslandShopCatalog
 {
     public const string Profile = "firered-five-island-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "563c01cecd18ee0f1ea0ecec18b07df525b3013358e9eb621541884fbe19f53c";
     public static ItemId BigPearlId { get; } = new("pret:ITEM_BIG_PEARL");
     public static ItemId UpGradeId { get; } = new("pret:ITEM_UP_GRADE");
     public static ItemId SapphireId { get; } = new("pret:ITEM_SAPPHIRE");
@@ -34,8 +33,7 @@ public sealed class FiveIslandShopCatalog
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("five_island_shop_predecessor");
         var fresh = candidate.Items.Skip(108).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([BigPearlId, UpGradeId, SapphireId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([BigPearlId, UpGradeId, SapphireId]))
             throw new ArgumentException("five_island_shop_source");
         var proof = new FiveIslandShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

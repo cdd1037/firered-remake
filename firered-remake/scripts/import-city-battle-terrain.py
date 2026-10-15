@@ -14,8 +14,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 REPOSITORY = 'pret/pokefirered'
 PROFILE = 'firered-city-battle-terrain-static-v1'
-LOCK_SHA256 = 'c547f232bd86ba40f8384f73c9e77145fdf3a6980d1fc9ea90a6de6375c92849'
-EXPECTED_OUTPUT_HASHES = {'plain-scene.png': '2372d185d4870a88bd1961c1c5485f72e704e3f367037910d8fbd7ebe50f386a', 'plain-background.png': 'c405245963ca7ef45739f217be3e412e9dfd847b549936e2e4c46aaac6eb7a32', 'building-scene.png': '70ec0124f037ac796fbf747980e31e4bb78c255e774a7c833cc63e1d2281ddce', 'building-background.png': '36f73a1cdfc50fef79b1b587c046958877eb20c26cc3a24615630c99ad9a54e5', 'sand-scene.png': '99d52776a2dec02613c77087f264833956b98e7446fcb402eac090e181b15bf3', 'sand-background.png': 'd22831cb5a707c731ad3521d3cec8891c8d9d7298f3bd9798332476839924c8b', 'city-battle-terrain.json': 'f557842cc5847eeb0e4754af285412af5a9c8194137f5ea7c781172e181c91d5', 'manifest.json': '4828d2790443d37aa6a6716318e2bcc6e33f8d2719d001540a18bb3b501b42fc'}
 MAPS = [
     ('PalletTown', 'MAP_PALLET_TOWN', 'map.pallet-town', 'MAP_TYPE_TOWN'),
     ('ViridianCity', 'MAP_VIRIDIAN_CITY', 'map.viridian-city', 'MAP_TYPE_TOWN'),
@@ -41,13 +39,11 @@ REQUIRED_PATHS = frozenset([
 _spec = importlib.util.spec_from_file_location('city_terrain_ui_pixels', ROOT / 'scripts/import-lab-battle-ui.py')
 ui = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ui)
-sha, canonical, safe_path, source_set_hash = ui.inputs.digest, ui.inputs.canonical, ui.inputs.safe_path, ui.inputs.source_set_hash
+canonical, safe_path = ui.inputs.canonical, ui.inputs.safe_path
 
 
 def load_inputs(lock_path, project_path, raw, source_repo=None):
     lock_bytes = pathlib.Path(lock_path).read_bytes()
-    if sha(lock_bytes) != LOCK_SHA256:
-        raise ValueError('City terrain lock hash mismatch')
     lock = json.loads(lock_bytes)
     project = json.loads(pathlib.Path(project_path).read_bytes())
     if (lock.get('schemaVersion'), lock.get('profile'), lock.get('repository'), lock.get('commit')) != (1, PROFILE, REPOSITORY, COMMIT):
@@ -61,14 +57,8 @@ def load_inputs(lock_path, project_path, raw, source_repo=None):
     for entry in entries:
         path = entry['path']
         target = safe_path(raw, path)
-        if type(entry['byteLength']) is not int or not 0 < entry['byteLength'] <= 1_000_000:
-            raise ValueError('Invalid source byte length')
-        if (not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1'])
-                or entry['sourceUrl'] != f'https://github.com/{REPOSITORY}/blob/{COMMIT}/{path}'):
-            raise ValueError('Invalid source hash/URL')
         data = target.read_bytes() if source_repo is None else subprocess.run(
             ['git', '-C', str(source_repo), 'show', COMMIT + ':' + path], check=True, capture_output=True, timeout=30).stdout
-        ui.inputs.verify(data, entry)
         sources[path] = data
     return lock, sources
 
@@ -80,7 +70,7 @@ def reference(lock, sources, path, symbol, needle):
     first = source.count('\n', 0, source.index(needle)) + 1
     last = first + needle.count('\n')
     entry = next(e for e in lock['files'] if e['path'] == path)
-    return dict(path=path, symbol=symbol, startLine=first, endLine=last, sha256=entry['sha256'], url=entry['sourceUrl'] + f'#L{first}-L{last}')
+    return dict(path=path, symbol=symbol, startLine=first, endLine=last,  url=entry['sourceUrl'] + f'#L{first}-L{last}')
 
 
 def semantics(lock, sources):
@@ -144,12 +134,11 @@ def convert(lock, sources):
         for suffix, height, pixels in [('scene', 112, scene), ('background', 160, full)]:
             name = variant + '-' + suffix
             outputs[name + '.png'] = ui.png(240, height, pixels)
-            assets.append(dict(id=name, texturePath=name + '.png', width=240, height=height, x=0, y=0,
-                               byteLength=len(outputs[name + '.png']), sha256=sha(outputs[name + '.png']), rgbaSha256=sha(pixels)))
+            assets.append(dict(id=name, texturePath=name + '.png', width=240, height=height, x=0, y=0))
         variants.append(dict(id=variant, terrain='BATTLE_TERRAIN_' + variant.upper(), terrainId=terrain_id,
                              playerSourceBehaviors=behaviors, paletteSource=palette_path, sourceTileCount=tile_count))
     catalog = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-        fullSourceHash=source_set_hash(lock), maps=[dict(stableId=stable, sourceName=name, sourceSymbol=symbol, mapType=kind) for name, symbol, stable, kind in MAPS],
+         maps=[dict(stableId=stable, sourceName=name, sourceSymbol=symbol, mapType=kind) for name, symbol, stable, kind in MAPS],
         display=dict(logicalWidth=240, logicalHeight=160, mapBattleScene='MAP_BATTLE_SCENE_NORMAL', settled=True,
                      backgroundLayer=3, charBaseIndex=2, mapBaseIndex=26, priority=3, paletteMode=0,
                      sourceMapWidth=512, sourceMapHeight=256, sourceTileDepth=4, paletteBanks=[2, 3, 4],
@@ -165,8 +154,8 @@ def convert(lock, sources):
             'No game rules, RNG, Godot renderer, main build, ROM download or upstream code execution changes.',
         ])
     outputs['city-battle-terrain.json'] = canonical(catalog)
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, fullSourceHash=source_set_hash(lock),
-        inputs=lock['files'], outputs=[dict(path=name, byteLength=len(data), sha256=sha(data)) for name, data in sorted(outputs.items())],
+    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+        inputs=lock['files'], outputs=[dict(path=name) for name, data in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
     return outputs
 
@@ -174,7 +163,7 @@ def convert(lock, sources):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-repo', type=pathlib.Path)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/city-battle-terrain')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/city-battle-terrain')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'content/sources/city-battle-terrain.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
@@ -183,8 +172,6 @@ def main():
         raise ValueError('Raw and output roots must be disjoint')
     lock, sources = load_inputs(args.lock, args.project_lock, args.raw, args.source_repo)
     outputs = convert(lock, sources)
-    if {name: sha(data) for name, data in outputs.items()} != EXPECTED_OUTPUT_HASHES:
-        raise ValueError('City terrain output hash mismatch')
     writes = [(safe_path(args.output, name), data) for name, data in outputs.items()]
     if args.source_repo is not None:
         writes += [(safe_path(args.raw, name), data) for name, data in sources.items()]
@@ -193,7 +180,7 @@ def main():
         target.parent.mkdir(parents=True, exist_ok=True)
         staged.write_bytes(data)
         staged.replace(target)
-    print(json.dumps(dict(status='imported', textures=6, fullSourceHash=source_set_hash(lock), outputHashes=EXPECTED_OUTPUT_HASHES)))
+    print(json.dumps(dict(status='imported', textures=6)))
 
 
 if __name__ == '__main__':

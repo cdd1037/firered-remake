@@ -18,7 +18,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteAdditionalPrimaryStatus(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose, ref bool handled)
     {
         if (!HasAdditionalPrimaryStatusRecipe(move.Effect)) return;
-        if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
+        if (Invocation is null || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("primary_status_source_definition");
         handled = true;
         var target = Invocation.Target;

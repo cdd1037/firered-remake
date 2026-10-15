@@ -1,144 +1,74 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "graphics/object_events/pics/people/red_surf_run.png",
-      "byteLength": 1140,
-      "sha256": "c33a893e4449cadb417de8e201018975f99e056e582abdafe2cb9f7450931252",
-      "gitBlobSha1": "f4473bbae05befae4f520ae907a680a87567294d"
+      "path": "graphics/object_events/pics/people/red_surf_run.png"
     },
     {
-      "path": "graphics/object_events/pics/people/green_surf_run.png",
-      "byteLength": 1055,
-      "sha256": "6457fa188cada46e25e9389c2bba1d974320d09f6f4a27678086340714740f1f",
-      "gitBlobSha1": "30db5b193451683aa3a79ec2a9a82e26ee1a506b"
+      "path": "graphics/object_events/pics/people/green_surf_run.png"
     },
     {
-      "path": "graphics/object_events/pics/misc/surf_blob.png",
-      "byteLength": 466,
-      "sha256": "87a6a4815cb5b942eedeb535bc82778c5aeefcba7cd52fba4067d349f98fb3fd",
-      "gitBlobSha1": "82aa7a09c4eaabf58a165a7a881f8fb11cffc6e9"
+      "path": "graphics/object_events/pics/misc/surf_blob.png"
     },
     {
-      "path": "graphics/object_events/palettes/player.pal",
-      "byteLength": 189,
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c",
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e"
+      "path": "graphics/object_events/palettes/player.pal"
     },
     {
-      "path": "src/data/object_events/object_event_graphics.h",
-      "byteLength": 23522,
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec",
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be"
+      "path": "src/data/object_events/object_event_graphics.h"
     },
     {
-      "path": "src/data/object_events/object_event_graphics_info.h",
-      "byteLength": 97115,
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512",
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47"
+      "path": "src/data/object_events/object_event_graphics_info.h"
     },
     {
-      "path": "src/data/object_events/object_event_pic_tables.h",
-      "byteLength": 82763,
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995",
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68"
+      "path": "src/data/object_events/object_event_pic_tables.h"
     },
     {
-      "path": "src/data/object_events/object_event_anims.h",
-      "byteLength": 37750,
-      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e",
-      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d"
+      "path": "src/data/object_events/object_event_anims.h"
     },
     {
-      "path": "src/data/field_effects/field_effect_objects.h",
-      "byteLength": 38717,
-      "sha256": "cfdb0c9dbac21ea91964e76a2b9de7ddc104cfdd048d3a517739b9fe7350a98d",
-      "gitBlobSha1": "780ef92f859a2b3cf7aeb07af626e7cc1aecb912"
+      "path": "src/data/field_effects/field_effect_objects.h"
     },
     {
-      "path": "src/field_effect_helpers.c",
-      "byteLength": 49443,
-      "sha256": "bd19b5a73def76a864e37bf4c406035d5eae2890893ad7983386ff4a27b944b4",
-      "gitBlobSha1": "278364803e7c9a989863a1014e8a733ea4590dfa"
+      "path": "src/field_effect_helpers.c"
     },
     {
-      "path": "src/field_effect.c",
-      "byteLength": 125868,
-      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
-      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be"
+      "path": "src/field_effect.c"
     },
     {
-      "path": "src/event_object_movement.c",
-      "byteLength": 326145,
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b"
+      "path": "src/event_object_movement.c"
     },
     {
-      "path": "src/field_player_avatar.c",
-      "byteLength": 67969,
-      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e",
-      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb"
+      "path": "src/field_player_avatar.c"
     },
     {
-      "path": "src/battle_bg.c",
-      "byteLength": 39359,
-      "sha256": "9e608837b0f13ba6782d8f3d4f2590ee273b5c7fb8b6275514c89cd780b474f0",
-      "gitBlobSha1": "3bcc500805622febd3892580da14f65ea2746a6f"
+      "path": "src/battle_bg.c"
     },
     {
-      "path": "src/battle_setup.c",
-      "byteLength": 33351,
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd",
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2"
+      "path": "src/battle_setup.c"
     },
     {
-      "path": "graphics_file_rules.mk",
-      "byteLength": 14859,
-      "sha256": "bd56e518ab9527f844642230673ce27a5bae73c7208d917d3288b073859fb685",
-      "gitBlobSha1": "39b952cd45b6a34eb98318a76aa531fcafff134d"
+      "path": "graphics_file_rules.mk"
     },
     {
-      "path": "graphics/battle_terrain/water/terrain.png",
-      "byteLength": 959,
-      "sha256": "2384103b3270e43716a580edc822494ea7ed150d2d1e8b571cae75853a6f2f72",
-      "gitBlobSha1": "8953e79408ba0940c3aef05da09c3c616c8930bd"
+      "path": "graphics/battle_terrain/water/terrain.png"
     },
     {
-      "path": "graphics/battle_terrain/water/terrain.pal",
-      "byteLength": 514,
-      "sha256": "b1c1b775ef03400bbedf18baeb8346e1bedd246176f3e0ab791d70b08364b017",
-      "gitBlobSha1": "d31dce6587bf84eb4abf21be18b4715863eba956"
+      "path": "graphics/battle_terrain/water/terrain.pal"
     },
     {
-      "path": "graphics/battle_terrain/water/terrain.bin",
-      "byteLength": 4096,
-      "sha256": "3c527aef8e4a1a7f66e95dff2a5dd0f21254af0ff8968d249f8a251d5594ab87",
-      "gitBlobSha1": "0ee05129a04859b154f1e6229c0f274506f90205"
+      "path": "graphics/battle_terrain/water/terrain.bin"
     },
     {
-      "path": "graphics/battle_terrain/pond/terrain.png",
-      "byteLength": 739,
-      "sha256": "c4d704315af5cc4710b797de25bf9f202e9b7fc8ed927085bb5fa1825756bea0",
-      "gitBlobSha1": "161498b2a004a0bd4d628ca74caf299b6c4e3b67"
+      "path": "graphics/battle_terrain/pond/terrain.png"
     },
     {
-      "path": "graphics/battle_terrain/pond/terrain.pal",
-      "byteLength": 515,
-      "sha256": "54a12fe3df0153d73262a236a44d1fdc1e3bf313f710f886d6706f5018891b00",
-      "gitBlobSha1": "041560cf4a143bef2cc2e64362945b1d9aba8c3d"
+      "path": "graphics/battle_terrain/pond/terrain.pal"
     },
     {
-      "path": "graphics/battle_terrain/pond/terrain.bin",
-      "byteLength": 4096,
-      "sha256": "66dab23a8ad15e806940833879f0597097c56a99d14afe3d65e7bf3ebce63f36",
-      "gitBlobSha1": "d4c3dedcb4b776731a55f9a9d730c601167831b5"
+      "path": "graphics/battle_terrain/pond/terrain.bin"
     },
     {
-      "path": "src/metatile_behavior.c",
-      "byteLength": 24340,
-      "sha256": "a1491016f9b6ee56c38fd66bf890dfcb5d37c7dc0dfda9fe7c0a5282376b9042",
-      "gitBlobSha1": "ce273664764b6ec93cd4f3014f0e5aad1a3025de"
+      "path": "src/metatile_behavior.c"
     }
   ],
   "outputs": [
@@ -147,45 +77,35 @@
       "input": "graphics/object_events/pics/people/red_surf_run.png",
       "path": "src/Game.Godot/Assets/Reference/field-surf-red.rgba",
       "width": 48,
-      "height": 32,
-      "byteLength": 6144,
-      "sha256": "1d915d0db6b68c8ad0dae70edf8efa1aa208a9f9c53908bd0046d47089979c99"
+      "height": 32
     },
     {
       "id": "green",
       "input": "graphics/object_events/pics/people/green_surf_run.png",
       "path": "src/Game.Godot/Assets/Reference/field-surf-green.rgba",
       "width": 48,
-      "height": 32,
-      "byteLength": 6144,
-      "sha256": "8e5ebf6392af062d97ae17f240ac3031d654aeb544fb35ba53c321e2a8919c82"
+      "height": 32
     },
     {
       "id": "blob",
       "input": "graphics/object_events/pics/misc/surf_blob.png",
       "path": "src/Game.Godot/Assets/Reference/field-surf-blob.rgba",
       "width": 192,
-      "height": 32,
-      "byteLength": 24576,
-      "sha256": "1b33f1bf7e117eda94142098e87e774106aff9faa633ce9c2bf307b171066318"
+      "height": 32
     },
     {
       "id": "water",
       "input": "graphics/battle_terrain/water/terrain.png",
       "path": "src/Game.Godot/Assets/Reference/field-surf-water.rgba",
       "width": 240,
-      "height": 112,
-      "byteLength": 107520,
-      "sha256": "072ebbce02cb7d3867f5f25d0252f398b907965c77f9d38a3bd541f15c35e24c"
+      "height": 112
     },
     {
       "id": "pond",
       "input": "graphics/battle_terrain/pond/terrain.png",
       "path": "src/Game.Godot/Assets/Reference/field-surf-pond.rgba",
       "width": 240,
-      "height": 112,
-      "byteLength": 107520,
-      "sha256": "a93580b2e6444c2630facd5268cc28417574c4d646ae9bd5434f3d345d3c441b"
+      "height": 112
     }
   ]
 }

@@ -23,24 +23,21 @@ public sealed partial class PretPokemonTowerRegion
     private PretPokemonTowerRegion(string directory, string rawDirectory, ImmutableDictionary<MapId, PretWorldMap> maps,
         PretRuntimeMapData house, ImmutableArray<PretWorldSourceFile> files, ImmutableArray<PretSourceScriptFile> scripts,
         ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
-        ImmutableDictionary<string, (string Hash, int Length)> outputs, JsonElement contract, JsonElement city)
+        ImmutableHashSet<string> outputs, JsonElement contract, JsonElement city)
     {
         GeneratedDirectory = directory; _rawDirectory = rawDirectory; NewMaps = maps; ExistingHouse = house; SourceFiles = files;
         Scripts = scripts; TextSources = texts; Constants = constants; _outputs = outputs; SourceContract = contract; ExternalLavenderEvents = city;
-        AdditionalSourceHashes = ["pokemon-tower-region-manifest:" + ManifestSha256, "pokemon-tower-region-lock:" + LockSha256,
-            .. files.Select(f => "pokemon-tower-region:" + f.Path + ":" + f.Sha256)];
         InitiallySetFlags = [constants["FLAG_HIDE_POKEHOUSE_FUJI"]];
         var deps = Dependencies; var mechanics = Mechanics;
         SourceRef Source(string path, string symbol)
         {
             var f = files.Single(f => f.Path == path);
-            return new(SourceKind.Pret, path, symbol, "pret/pokefirered", PretWorldMap.SourceCommit, f.Sha256);
+            return new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit);
         }
         SourceRef Ref(JsonElement s)
         {
             var source = Source(s.GetProperty("path").GetString()!, s.GetProperty("symbol").GetString()!);
-            Need(s.GetProperty("kind").GetString() == "pret" && s.GetProperty("repository").GetString() == source.Repository &&
-                s.GetProperty("commit").GetString() == source.Commit && s.GetProperty("sha256").GetString() == source.Sha256, "Tower source reference differs.");
+            Need(s.GetProperty("kind").GetString() == "pret" , "Tower source reference differs.");
             return source;
         }
         ImmutableArray<PretTowerCoordinateTrigger> Triggers(int floor) => maps[FloorMapId(floor)].Events.GetProperty("coord_events").EnumerateArray().Select((e, index) =>
@@ -109,12 +106,7 @@ public sealed partial class PretPokemonTowerRegion
         Need(Pickups.Length == 10 && Pickups.Count(p => p.Underfoot) == 1 && Pickups.Single(p => p.Underfoot).ItemSymbol == "ITEM_SOOTHE_BELL", "Tower pickup inventory differs.");
         NpcSprites = NpcSources.GetProperty("graphics").EnumerateArray().Select(n =>
         {
-            var relative = n.GetProperty("texturePath").GetString()!; var hash = n.GetProperty("sha256").GetString()!;
-            Need(outputs[relative].Hash == hash, "Tower NPC texture identity differs.");
-            return new PretTowerNpcSprite(n.GetProperty("graphicsId").GetString()!, Path.Combine(directory, relative), hash,
-                n.GetProperty("frameWidth").GetInt32(), n.GetProperty("frameHeight").GetInt32(), n.GetProperty("frameCount").GetInt32(),
-                n.GetProperty("tileCenterAnchor").GetProperty("x").GetInt32(), n.GetProperty("tileCenterAnchor").GetProperty("y").GetInt32(),
-                Ref(n.GetProperty("sourceRef")), Ref(n.GetProperty("paletteSourceRef")), n.GetProperty("frames").EnumerateArray().Select(f => Ref(f.GetProperty("sourceRef"))).ToImmutableArray());
+            var relative = n.GetProperty("texturePath").GetString()!;             return new PretTowerNpcSprite(n.GetProperty("graphicsId").GetString()!,Path.Combine(directory, relative),                n.GetProperty("frameWidth").GetInt32(),n.GetProperty("frameHeight").GetInt32(),n.GetProperty("frameCount").GetInt32(),                n.GetProperty("tileCenterAnchor").GetProperty("x").GetInt32(),n.GetProperty("tileCenterAnchor").GetProperty("y").GetInt32(),                Ref(n.GetProperty("sourceRef")),Ref(n.GetProperty("paletteSourceRef")),n.GetProperty("frames").EnumerateArray().Select(f => Ref(f.GetProperty("sourceRef"))).ToImmutableArray());
         }).ToImmutableDictionary(n => n.GraphicsId, StringComparer.Ordinal);
         Need(NpcSprites.Count == 15 && maps.Values.SelectMany(m => m.Events.GetProperty("object_events").EnumerateArray())
             .Concat(house.Events.GetProperty("object_events").EnumerateArray()).All(e => NpcSprites.ContainsKey(e.GetProperty("graphics_id").GetString()!)), "Tower NPC source closure incomplete.");

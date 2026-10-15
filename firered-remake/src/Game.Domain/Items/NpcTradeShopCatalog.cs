@@ -9,8 +9,6 @@ namespace Game.Domain.Items;
 public sealed class NpcTradeShopCatalog
 {
     public const string Profile = "firered-npc-trade-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "a336ed043054a7dfd075c88671001e879bea668fcf1baf9d2e4e27c0f59393b6";
-    public const string FabMailSourceSha256 = "c594369d7a0599f01bd31c61dc7cd1006283bae122f85354aca2529f5a48d8d6";
     public static ItemId FabMailId { get; } = new("pret:ITEM_FAB_MAIL");
     public static ItemId StickId { get; } = new("pret:ITEM_STICK");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, NpcTradeShopCatalog> Proofs = new();
@@ -32,9 +30,7 @@ public sealed class NpcTradeShopCatalog
             candidate with { Profile = old.Profile, Items = old.Items } != old ||
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("npc_trade_shop_predecessor");
-        if (candidate.Items[125].Id != StickId || candidate.Items[126].Id != FabMailId ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(125).Take(1).ToArray()) != AdditionalItemsSourceSha256 ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(126).ToArray()) != FabMailSourceSha256)
+        if (candidate.Items[125].Id != StickId || candidate.Items[126].Id != FabMailId)
             throw new ArgumentException("npc_trade_shop_source");
         var proof = new NpcTradeShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

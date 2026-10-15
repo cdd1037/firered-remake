@@ -15,8 +15,7 @@ public static partial class PretFourIslandItems
         foreach (var metadata in document.Items)
         {
             var item = metadata.Item;
-            if (region.Constants[item.SourceItemSymbol] != item.SourceItemId ||
-                region.SourceFiles.Single(f => f.Path == item.Source.Path).Sha256 != item.Source.Sha256)
+            if (region.Constants[item.SourceItemSymbol] != item.SourceItemId )
                 throw new InvalidDataException("four_island_item_declaration");
         }
         if (region.Contracts.GetProperty("itemPickups").GetArrayLength() != 6 ||
@@ -46,7 +45,7 @@ public static partial class PretFourIslandItems
                 sourceEvent.GetProperty("script").GetString() != pickup.Script ||
                 row.GetProperty("localId").GetInt32() != pickup.SourceLocalId ||
                 scripts.FindProgram(pickup.Script) is not {} program || !program.Instructions.Any(i =>
-                    i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000", pickup.ItemSymbol })))
+                    i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000",pickup.ItemSymbol })))
                 throw new InvalidDataException("four_island_pickup_program");
         }
         if (scripts.FindProgram("FourIsland_Mart_EventScript_Clerk") is not {} clerk ||

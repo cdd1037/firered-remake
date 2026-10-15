@@ -2,406 +2,207 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-ssanne-items-v1",
   "gameEdition": "FIRERED",
   "romRevision": 0,
   "files": [
     {
-      "path": "data/maps/SSAnne_1F_Corridor/map.json",
-      "byteLength": 3071,
-      "gitBlobSha1": "45bd8e6063b352b0a7dea8421deec6f6d752d944",
-      "sha256": "5e38eb169c99c7cf0bc571702fc761a93e9e9475c5a1d2774ca98e3bed443940"
+      "path": "data/maps/SSAnne_1F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room1/map.json",
-      "byteLength": 1088,
-      "gitBlobSha1": "a74f0215e1e2a5f59252b8ca5e7813cb7f15f473",
-      "sha256": "73b8d0c04f3015ff4e01d2ad59484913a17ae63af9977bdb8c190bc112eb5ea7"
+      "path": "data/maps/SSAnne_1F_Room1/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room2/map.json",
-      "byteLength": 2315,
-      "gitBlobSha1": "3681c1b971d979984b1fa541534cfe294aff3759",
-      "sha256": "c2711d8c2de8213e5fd8d6fcb89ccb9875a878529f4a29b0b5f31d941a7576c3"
+      "path": "data/maps/SSAnne_1F_Room2/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room3/map.json",
-      "byteLength": 1920,
-      "gitBlobSha1": "1523f12596911c53ec54eb5aa7b874107095038b",
-      "sha256": "c61e4204a41797fb2a75dfe22601ae1dd253b0b25572a91c268d4f1c79c8d308"
+      "path": "data/maps/SSAnne_1F_Room3/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room4/map.json",
-      "byteLength": 1074,
-      "gitBlobSha1": "08de2fce80e31dd15a13323935a1e359d9dc4e26",
-      "sha256": "875debfa9a9f3b689829a5985f3cb90c86220bb9bb5657dd4340173d1841262b"
+      "path": "data/maps/SSAnne_1F_Room4/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room5/map.json",
-      "byteLength": 1074,
-      "gitBlobSha1": "a796b3aa7949477922fca6ad1a2610e85fada24b",
-      "sha256": "60fd6f0adc2f7907611713b511f0607d7e69afb39523343110b7e34bccfc8471"
+      "path": "data/maps/SSAnne_1F_Room5/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room6/map.json",
-      "byteLength": 1069,
-      "gitBlobSha1": "2b19578a05ebc32fda3ed713f9ca1ca77df51858",
-      "sha256": "0315f7aa57c6e7b20dc0cbd4c7f588f502554b3c8b674629540223de142a9d62"
+      "path": "data/maps/SSAnne_1F_Room6/map.json"
     },
     {
-      "path": "data/maps/SSAnne_1F_Room7/map.json",
-      "byteLength": 1076,
-      "gitBlobSha1": "92dd20902647272fdd1683518a013adc7f7d7234",
-      "sha256": "d52c89114d37af0877b74b6a09f5c48d8632d0cc14601ef467af9be33273b0b2"
+      "path": "data/maps/SSAnne_1F_Room7/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Corridor/map.json",
-      "byteLength": 3282,
-      "gitBlobSha1": "56a20bb69da3418c9ebcc4e460eb189f1c821d16",
-      "sha256": "f01af2f316a184b89145a21e0fbb4d31b9222279c95f55a84cfc05a296313bb7"
+      "path": "data/maps/SSAnne_2F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room1/map.json",
-      "byteLength": 1076,
-      "gitBlobSha1": "9bf965c753781bb52ede9ec948990f1d01e8df2c",
-      "sha256": "dc549fa707c381bed030d207fc0be18c9fe461cfed0fb7346d0ddffd0f24c7f0"
+      "path": "data/maps/SSAnne_2F_Room1/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room2/map.json",
-      "byteLength": 1918,
-      "gitBlobSha1": "0809ce8172a95f6e8d677af33980ff0ece9f97a6",
-      "sha256": "0006381f503e0ad2e3f62a40b6a4cf5c15ebc4625c80e25d0c1676a9362cabd2"
+      "path": "data/maps/SSAnne_2F_Room2/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room3/map.json",
-      "byteLength": 1491,
-      "gitBlobSha1": "c1dce2a6d1fdf252a329aa9e24f6ab0d6921e8d7",
-      "sha256": "54402e0926fc1ef63c8955944a4c7643f7ec9e33d7e2c8ce73a478aca3330dd1"
+      "path": "data/maps/SSAnne_2F_Room3/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room4/map.json",
-      "byteLength": 1914,
-      "gitBlobSha1": "ee878da6330b674c53abf80a4d27e4e164558385",
-      "sha256": "d2ff41a019082575957a94df125fdeea787872d3cf2bacbcbb5a9e71d4e3f49a"
+      "path": "data/maps/SSAnne_2F_Room4/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room5/map.json",
-      "byteLength": 1485,
-      "gitBlobSha1": "f982577f841666b58d09870e41986e049309a2a2",
-      "sha256": "d19834601be2c5c81632af5f0adf8e88743d1e1ef2d2f03f4fd450a845f77569"
+      "path": "data/maps/SSAnne_2F_Room5/map.json"
     },
     {
-      "path": "data/maps/SSAnne_2F_Room6/map.json",
-      "byteLength": 1473,
-      "gitBlobSha1": "9b199c30a90afa0722fdbfd15cffbfa8a6363a64",
-      "sha256": "74e8f753087458b9a8307d5f115c79b7e460500e218f472bbf80401129093a02"
+      "path": "data/maps/SSAnne_2F_Room6/map.json"
     },
     {
-      "path": "data/maps/SSAnne_3F_Corridor/map.json",
-      "byteLength": 1351,
-      "gitBlobSha1": "4c7259290f846a246045851a359efa51bf30e9ae",
-      "sha256": "5abe650c1c590ced0e5a8336a70f82e2327ace45a62c246319d616e3a6c6ca6a"
+      "path": "data/maps/SSAnne_3F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Corridor/map.json",
-      "byteLength": 1585,
-      "gitBlobSha1": "fa64ecb132a33ddbca665440e22dc02019818427",
-      "sha256": "d461b347e81b72229e2869fcc6122c4fe2cb9880d79a2dc548450a4e77201797"
+      "path": "data/maps/SSAnne_B1F_Corridor/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room1/map.json",
-      "byteLength": 1479,
-      "gitBlobSha1": "254074b367b970cd39d43efb5aa54e1fb108666a",
-      "sha256": "7b2e8e622aafe5fe6f2ff78df98cf6bf01e0c96f4d8ae3a0131be9699c94344b"
+      "path": "data/maps/SSAnne_B1F_Room1/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room2/map.json",
-      "byteLength": 1512,
-      "gitBlobSha1": "edbedddbe7fb59130dc86bbdb70fcef844cc3380",
-      "sha256": "63224893d6625b292254bf5de4d61772ecb48f43e95738abf51aed11fe54a823"
+      "path": "data/maps/SSAnne_B1F_Room2/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room3/map.json",
-      "byteLength": 1513,
-      "gitBlobSha1": "f46cc525a726bfffb3cade5271d3649c87e0dcb4",
-      "sha256": "dac6bc49a289fd673f555d540f7498ee87d962a660cdac8ccb66302cdf89ddfc"
+      "path": "data/maps/SSAnne_B1F_Room3/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room4/map.json",
-      "byteLength": 1482,
-      "gitBlobSha1": "d57823eb43f80a5d0fcdecb951f3dac379edcf50",
-      "sha256": "628c81e6abe7f7ffc270fbdc42b6cc3d65b8af95a18475cb413a57404c613e29"
+      "path": "data/maps/SSAnne_B1F_Room4/map.json"
     },
     {
-      "path": "data/maps/SSAnne_B1F_Room5/map.json",
-      "byteLength": 1922,
-      "gitBlobSha1": "dce8aff5154979e17248ab4a24f9ab04a74b5f5f",
-      "sha256": "5dedef6a108304fc0c9bb510d8357b0aea55e8f5c96b270abec1e8ae22a8ad86"
+      "path": "data/maps/SSAnne_B1F_Room5/map.json"
     },
     {
-      "path": "data/maps/SSAnne_CaptainsOffice/map.json",
-      "byteLength": 1747,
-      "gitBlobSha1": "9d7417e62ff0ce98f176d9bac632ecadb2aacbcc",
-      "sha256": "aaf2356e01c1f2f5cdf79d6309513cbcd07a627cb442eb7aac2a5a782fdc9970"
+      "path": "data/maps/SSAnne_CaptainsOffice/map.json"
     },
     {
-      "path": "data/maps/SSAnne_Deck/map.json",
-      "byteLength": 2814,
-      "gitBlobSha1": "193652c1e4e3902b75cc750e3f3d31e2e306e96a",
-      "sha256": "f73efcf1ae6de12e4c0a5c9c704c8274b485bf0232b45e06cbe69b6468d04be1"
+      "path": "data/maps/SSAnne_Deck/map.json"
     },
     {
-      "path": "data/maps/SSAnne_Exterior/map.json",
-      "byteLength": 1863,
-      "gitBlobSha1": "1402b883371019e00e94973b267afaf7bf48a0fa",
-      "sha256": "b61c2239d951708715a265802796df7c18adaeff8a277e90db1fe341d7c1c543"
+      "path": "data/maps/SSAnne_Exterior/map.json"
     },
     {
-      "path": "data/maps/SSAnne_Kitchen/map.json",
-      "byteLength": 4618,
-      "gitBlobSha1": "1566589d7c5aa66ee16b5c6684237f171d29b868",
-      "sha256": "30e2de2146a0009c7dfb6d1f0140ee67f9aead914c0988bd6887e50528a41726"
+      "path": "data/maps/SSAnne_Kitchen/map.json"
     },
     {
-      "path": "data/scripts/item_ball_scripts.inc",
-      "byteLength": 12171,
-      "gitBlobSha1": "25233baa0794d0511f01638676eb4c7803c957e8",
-      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c"
+      "path": "data/scripts/item_ball_scripts.inc"
     },
     {
-      "path": "graphics/items/icon_palettes/berry_pouch.pal",
-      "byteLength": 178,
-      "gitBlobSha1": "bafbbd641caec17f0e26d0fe831de843eae5cd6c",
-      "sha256": "a2c30b7f62629ef6f8feaceb068ca28646d68fdeeca440ea53a2ad3a867a99b0"
+      "path": "graphics/items/icon_palettes/berry_pouch.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/cheri_berry.pal",
-      "byteLength": 175,
-      "gitBlobSha1": "6d5eb6121fd2e87c2e95738dd96546246389a3e0",
-      "sha256": "8a897333be06ec6c75d78b337640a0d9c63e79fb134dbfaf179b4ac610ead56c"
+      "path": "graphics/items/icon_palettes/cheri_berry.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/chesto_berry.pal",
-      "byteLength": 169,
-      "gitBlobSha1": "738b10391b8b2a8738cabd0f0a5db1207c08fdb6",
-      "sha256": "0494ccbef57a82de2a950fc7d484e8c8f4ce7357b2c70f8be2a4513a1e5645b2"
+      "path": "graphics/items/icon_palettes/chesto_berry.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/ether.pal",
-      "byteLength": 178,
-      "gitBlobSha1": "312f134ffca85ce19747ce07a55cc7543c8929eb",
-      "sha256": "f496330b5a6419648e8185f5bd410d3345e503e3114531cd0108e6400f8e04f4"
+      "path": "graphics/items/icon_palettes/ether.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/fighting_tm_hm.pal",
-      "byteLength": 193,
-      "gitBlobSha1": "3dcd54ce734808dadbf2a4a56ae7e8e38cebd45d",
-      "sha256": "3a31e2b8849e55a9bc7913c7b77b79be27a5c34d2389ce2bfbda64f6f370f635"
+      "path": "graphics/items/icon_palettes/fighting_tm_hm.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/great_ball.pal",
-      "byteLength": 185,
-      "gitBlobSha1": "6eadfac6d2aa7ebab426f0092199c479bafd30fd",
-      "sha256": "1b798a5dfa531ca3cb277b2eacd26d710a432fa1b69caf8f5d29794546fb30e6"
+      "path": "graphics/items/icon_palettes/great_ball.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/hyper_potion.pal",
-      "byteLength": 179,
-      "gitBlobSha1": "fda69e0bb8d9525b37d27b7b65e1658fa13ec0f2",
-      "sha256": "fa95e7fa740fe6e514398249da3313afc165e1c2e9fa9f365c337b92239d33ae"
+      "path": "graphics/items/icon_palettes/hyper_potion.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/lava_cookie_and_letter.pal",
-      "byteLength": 164,
-      "gitBlobSha1": "b4c2b10f2690ee747eb6896034d09ba1c0e2e703",
-      "sha256": "4085764dc8046187f665a3fc9266f5d057e737dbb5d58583dd130df4f8aaab42"
+      "path": "graphics/items/icon_palettes/lava_cookie_and_letter.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/normal_tm_hm.pal",
-      "byteLength": 198,
-      "gitBlobSha1": "a5bd9da1c79e9489f785b964c962ab50da39f247",
-      "sha256": "6a18911b91817e9b86068c1e485420dd99751da04603f6241ee783339bed69d4"
+      "path": "graphics/items/icon_palettes/normal_tm_hm.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/pecha_berry.pal",
-      "byteLength": 168,
-      "gitBlobSha1": "0225be168ede7823da3b27ad50267db4745c95b8",
-      "sha256": "c09e2c1b4113dc03372a57b4eb589433a49b77bd7a4b64b643ea7acbae3950a4"
+      "path": "graphics/items/icon_palettes/pecha_berry.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/psychic_tm_hm.pal",
-      "byteLength": 198,
-      "gitBlobSha1": "7a047b8d6b0e2773d2bb59e1f9a7b646637e1b5f",
-      "sha256": "99e712cd1cf60879d6b5792c7f742f2acc4082d82df3ead4ece55c884d217308"
+      "path": "graphics/items/icon_palettes/psychic_tm_hm.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/ss_ticket.pal",
-      "byteLength": 143,
-      "gitBlobSha1": "d943c9e01461d49fe5e468fa218d77a64077d7e6",
-      "sha256": "e0b5be9608654bc70cdeab196d7ea1c5a2bbe61612fba01258d9a1e8d2988a9c"
+      "path": "graphics/items/icon_palettes/ss_ticket.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/star.pal",
-      "byteLength": 173,
-      "gitBlobSha1": "d37358e90513b57974917dc0723a93efd07e5175",
-      "sha256": "76dbd57e3776795be102469f56b33d1a6bbcccb4be39fc1ac4e94484ae97a7f2"
+      "path": "graphics/items/icon_palettes/star.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/super_potion.pal",
-      "byteLength": 176,
-      "gitBlobSha1": "76e58020ab47f9367f2f48ad0408e8d4d52427ad",
-      "sha256": "ecbdb9f40bbf8fddca1ea16774f59098cbf2f9cbaddcfa5f603bade3cdfa99b2"
+      "path": "graphics/items/icon_palettes/super_potion.pal"
     },
     {
-      "path": "graphics/items/icon_palettes/x_attack.pal",
-      "byteLength": 171,
-      "gitBlobSha1": "4976e5623db52d27cb851ef8c124045be7df5b28",
-      "sha256": "26d0473b57c501ed468e7d87601445e40cfb8412165e22484d34b65aa4ed2423"
+      "path": "graphics/items/icon_palettes/x_attack.pal"
     },
     {
-      "path": "graphics/items/icons/battle_stat_item.png",
-      "byteLength": 305,
-      "gitBlobSha1": "1b0adfa1fce8cc62dc8891fa6a6ca37c40bd46a5",
-      "sha256": "73feed52bc18eda0599d72ebf22d0d971d89bc01895300dd43d62b3e9ef1a5c4"
+      "path": "graphics/items/icons/battle_stat_item.png"
     },
     {
-      "path": "graphics/items/icons/berry_pouch.png",
-      "byteLength": 324,
-      "gitBlobSha1": "26f011d65a0b9c99485a0c1d69f45eed1a3b27cd",
-      "sha256": "93332b1803e12494c67900bc3a9e62cd25c90051e09631659fd34109a0a8c10b"
+      "path": "graphics/items/icons/berry_pouch.png"
     },
     {
-      "path": "graphics/items/icons/cheri_berry.png",
-      "byteLength": 320,
-      "gitBlobSha1": "cdd0ad96ddfd64223542e716ad329104aac72de6",
-      "sha256": "cb1cafbcb09420dc8bf6b16c279b3a71feac5ded2439b3952d108106ed1143e1"
+      "path": "graphics/items/icons/cheri_berry.png"
     },
     {
-      "path": "graphics/items/icons/chesto_berry.png",
-      "byteLength": 288,
-      "gitBlobSha1": "0d44845189c07f21b0d8d302f0c3779c94d24487",
-      "sha256": "20a6083e8cc4a2a7882b562125be7a57877fb52653978926c38f493f33f0db64"
+      "path": "graphics/items/icons/chesto_berry.png"
     },
     {
-      "path": "graphics/items/icons/ether.png",
-      "byteLength": 278,
-      "gitBlobSha1": "b94d9567bf49319aa82642db7cb4d9fa2fee114b",
-      "sha256": "0fc203dd22fbfcbc42d9662ee0771596dfe288ab405f96d203bb3f74284b845e"
+      "path": "graphics/items/icons/ether.png"
     },
     {
-      "path": "graphics/items/icons/great_ball.png",
-      "byteLength": 292,
-      "gitBlobSha1": "92a57202deb6c2fecffe9841299967184433a499",
-      "sha256": "d7a91997f1b8bfb713146098aa25153c0c853a666f52760a234d436ede3ba8ca"
+      "path": "graphics/items/icons/great_ball.png"
     },
     {
-      "path": "graphics/items/icons/lava_cookie.png",
-      "byteLength": 292,
-      "gitBlobSha1": "5c8c37c7de1b16c828fd145a4501258a31d73ebf",
-      "sha256": "71347d58af89ea000fed54e9a957186e3fae9b7f057605e98f60d6e51c5600e9"
+      "path": "graphics/items/icons/lava_cookie.png"
     },
     {
-      "path": "graphics/items/icons/pecha_berry.png",
-      "byteLength": 272,
-      "gitBlobSha1": "aa7f2f15447b4caaf6f69b9efb3687c4822a3aa7",
-      "sha256": "d6793bf91042c478b2b59619a27585e5041dde0b08afaef4945ef790a584179e"
+      "path": "graphics/items/icons/pecha_berry.png"
     },
     {
-      "path": "graphics/items/icons/potion.png",
-      "byteLength": 289,
-      "gitBlobSha1": "c985ee5701682a37114ff0a85a51e7a5861c72cd",
-      "sha256": "dbea4bcb4accef436ce65e618807bf01c83e4f8d47e8424653561c4465bf80c5"
+      "path": "graphics/items/icons/potion.png"
     },
     {
-      "path": "graphics/items/icons/ss_ticket.png",
-      "byteLength": 233,
-      "gitBlobSha1": "faf5fc617d2303a32df4b01f70c0a1afd3622dbb",
-      "sha256": "95190375b5938ec3604018612e1470f3d18bc8573677258f16e87002023e624f"
+      "path": "graphics/items/icons/ss_ticket.png"
     },
     {
-      "path": "graphics/items/icons/stardust.png",
-      "byteLength": 285,
-      "gitBlobSha1": "1f427cfbef41761deead4bc26aa3bc5a0fb41441",
-      "sha256": "3951eba06b2cfd3c2717a164549cbabeb66a634350736c1eb5b2142eeec9a3df"
+      "path": "graphics/items/icons/stardust.png"
     },
     {
-      "path": "graphics/items/icons/tm_hm.png",
-      "byteLength": 344,
-      "gitBlobSha1": "c4e6d1df78a0498443ae3567ec7c9f3839e7713a",
-      "sha256": "ad43897b481aa49e13dd85f205fe5fe9496212e47266eb3e9359113ad03d77bf"
+      "path": "graphics/items/icons/tm_hm.png"
     },
     {
-      "path": "include/constants/global.h",
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      "path": "include/constants/global.h"
     },
     {
-      "path": "include/constants/item_effects.h",
-      "byteLength": 3009,
-      "gitBlobSha1": "888cb685362ce4bcedef6204bf1b64ea6fb19c5e",
-      "sha256": "71075ef690c612f81cb68d5fae62874e39d452208cc1e94890c3973f774fd0f9"
+      "path": "include/constants/item_effects.h"
     },
     {
-      "path": "include/constants/items.h",
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      "path": "include/constants/items.h"
     },
     {
-      "path": "src/data/graphics/items.h",
-      "byteLength": 46353,
-      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
-      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+      "path": "src/data/graphics/items.h"
     },
     {
-      "path": "src/data/item_icon_table.h",
-      "byteLength": 30370,
-      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
-      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+      "path": "src/data/item_icon_table.h"
     },
     {
-      "path": "src/data/items.json",
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      "path": "src/data/items.json"
     },
     {
-      "path": "src/data/items.json.txt",
-      "byteLength": 1170,
-      "gitBlobSha1": "a389a5c83f1caa1b11cb490c6b03e5b33d359fd1",
-      "sha256": "dfdcaaec0169aee61a443304ed3b19be5880caa39f98259cac87d1d24d7ed1a9"
+      "path": "src/data/items.json.txt"
     },
     {
-      "path": "src/data/pokemon/item_effects.h",
-      "byteLength": 12207,
-      "gitBlobSha1": "db57298b6ceeea0b3605bf3e65aaa9d2d6be1010",
-      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+      "path": "src/data/pokemon/item_effects.h"
     },
     {
-      "path": "src/item.c",
-      "byteLength": 17534,
-      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
-      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+      "path": "src/item.c"
     },
     {
-      "path": "src/pokemon.c",
-      "byteLength": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "tools/gbagfx/convert_png.c",
-      "byteLength": 7511,
-      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
-      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965"
+      "path": "tools/gbagfx/convert_png.c"
     },
     {
-      "path": "tools/gbagfx/gfx.c",
-      "byteLength": 18570,
-      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
-      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+      "path": "tools/gbagfx/gfx.c"
     }
   ]
 }

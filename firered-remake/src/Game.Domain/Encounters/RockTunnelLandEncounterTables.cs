@@ -18,8 +18,7 @@ public static class RockTunnelLandEncounterTables
     public static ImmutableArray<EarlyLandEncounterTable> All { get; } = [Route9, Route10, RockTunnel1F, RockTunnelB1F];
     public static bool IsCave(MapId map) => map == RockTunnel1F.Map || map == RockTunnelB1F.Map;
     private static EarlyLandEncounterTable Create(string map, string symbol, int rate, (string Species, byte Level)[] rows) =>
-        new(new(map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol,
-            "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c", rate,
+        new(new(map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol, rate,
             rows.Select((s,i) => new EarlyLandEncounterSlot(i, new("pret:SPECIES_" + s.Species), s.Level, s.Level,
                 EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

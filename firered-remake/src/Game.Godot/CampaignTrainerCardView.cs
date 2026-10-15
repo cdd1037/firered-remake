@@ -13,7 +13,6 @@ public partial class CampaignView
         {
             using var image=new Image();if(image.LoadPngFromBuffer(_trainerCard.ReadAssetTexture(asset.Id))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height)throw new InvalidDataException("Trainer Card PNG differs.");
             image.Convert(Image.Format.Rgba8);var rgba=image.GetData();
-            if(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(rgba))!=asset.RgbaSha256)throw new InvalidDataException("Trainer Card pixels differ.");
             for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
             using var display=Image.CreateFromData(image.GetWidth(),image.GetHeight(),false,Image.Format.Rgba8,rgba);_trainerCardTextures.Add(asset.Id,ImageTexture.CreateFromImage(display));
         }

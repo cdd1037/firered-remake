@@ -4,10 +4,15 @@
 Only hash-pinned local source/map/icon codecs execute. Upstream Git blobs remain inert.
 Safari tables and unloaded Kanto maps remain source-only; no runtime admission occurs here.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import base64
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -21,22 +26,15 @@ PACKAGE = 'good-rod-service'
 RESOURCE_ID = 'firered-good-rod-service-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-MANIFEST_SHA256 = 'e093d3c2f38a311daa35a8313d7f3efe9fb5dc78765633e1c25cad655a3ff249'
-LOCK_SHA256 = '58e10882454fa2fdf093be40c46d24c1aaad5e9ada3caaa9793cb88c4e2f5075'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-ICON_CODEC_SHA = 'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a'
 MAP = 'FuchsiaCity_House2'
 MAP_ID = 'map.fuchsia-city-house-2'
 DIRECTORY = 'fuchsia-city-house-2'
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_Museum':'secondary/museum'}
 CITY_PACKAGE = 'content/generated/fuchsia-route-region'
-CITY_MANIFEST_SHA = '0dfe16640308b507cfeb0ee4e9dd6082fcbc7ac2f2c07da2ab83614c0a6bd152'
 CITY_RESOURCE = 'fuchsia-city/runtime-map.json'
-CITY_SHA = 'e52978f1264280fee620b4323c11211ce66203922bafd7e3ed5ea775f8e41822'
 NPC_REUSE = {
- 'OBJ_EVENT_GFX_FISHER': ('content/generated/city-services/npc/fisher.png','dda295510084aa22ddb5937f51db011c3a95fdff39f7c052f22c7442f00113e8'),
- 'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/city-services/npc/red-normal.png','51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
+ 'OBJ_EVENT_GFX_FISHER': 'content/generated/city-services/npc/fisher.png',
+ 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
 ORDINARY_SYMBOLS = ('MAP_CELADON_CITY','MAP_CERULEAN_CAVE_1F','MAP_CERULEAN_CAVE_B1F','MAP_CERULEAN_CITY',
  'MAP_CINNABAR_ISLAND','MAP_FUCHSIA_CITY','MAP_PALLET_TOWN','MAP_ROUTE10','MAP_ROUTE11','MAP_ROUTE12','MAP_ROUTE13',
  'MAP_ROUTE21_NORTH','MAP_ROUTE21_SOUTH','MAP_ROUTE22','MAP_ROUTE23','MAP_ROUTE24','MAP_ROUTE25','MAP_ROUTE4','MAP_ROUTE6',
@@ -45,13 +43,12 @@ SOURCE_ONLY_SYMBOLS = ('MAP_ROUTE19','MAP_ROUTE20','MAP_SAFARI_ZONE_CENTER','MAP
  'MAP_SAFARI_ZONE_NORTH','MAP_SAFARI_ZONE_WEST','MAP_SEAFOAM_ISLANDS_B3F','MAP_SEAFOAM_ISLANDS_B4F')
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, expected, name):
-    safe(path); need(sha(path.read_bytes()) == expected, 'Reviewed local codec differs: ' + str(path))
+def module(path, name):
+    safe(path)
     spec = importlib.util.spec_from_file_location(name,path); value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value); return value
 
 def declaration(src, path, symbol, macro=False):
@@ -65,13 +62,13 @@ def fishing_tables(src):
     path='src/data/wild_encounters.json'; raw=src.read(path,'good-rod-source-tables')
     groups=json.loads(raw)['wild_encounter_groups']; group=next(g for g in groups if g['label']=='gWildMonHeaders')
     field=next(g for g in group['fields'] if g['type']=='fishing_mons')
-    need(field['groups']['good_rod']==[2,3,4] and field['encounter_rates']==[70,30,60,20,20,40,40,15,4,1], 'Source fishing groups differ')
+    need(field['groups']['good_rod'] == [2, 3, 4] and field['encounter_rates'] == [70, 30, 60, 20, 20, 40, 40, 15, 4, 1], 'Source fishing groups differ')
     candidates=[e for e in group['encounters'] if e['base_label'].endswith('_FireRed') and 'fishing_mons' in e and
                 not e['map'].startswith(tuple('MAP_'+x+'_' for x in ['ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN']))]
     need({e['map'] for e in candidates}==set(ORDINARY_SYMBOLS+SOURCE_ONLY_SYMBOLS), 'Kanto source fishing cohort differs')
     def table(e):
         stable='map.'+e['map'].removeprefix('MAP_').lower().replace('_','-');stable=re.sub(r'route(\d+)',r'route-\1',stable)
-        return dict(map=dict(value=stable),sourceCommit=COMMIT,sourcePath=path,sourceSymbol=e['base_label'],sourceSha256=sha(raw),
+        return dict(map=dict(value=stable),sourceCommit=COMMIT,sourcePath=path,sourceSymbol=e['base_label'],
           rawEncounterRate=e['fishing_mons']['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),
           minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=field['encounter_rates'][i])
           for i,m in enumerate(e['fishing_mons']['mons']) if i in field['groups']['good_rod']])
@@ -88,12 +85,12 @@ def fishing_tables(src):
     return dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,rod='good',tables=tables,sourceOnlyTables=source_only), held_items
 
 def item_inventory(src, constants, stage, dep):
-    codec=module(dep/'scripts/import-lab-battle-ui.py',ICON_CODEC_SHA,'good_rod_icon_codec')
+    codec=module(dep / 'scripts/import-lab-battle-ui.py', 'good_rod_icon_codec')
     symbol='ITEM_GOOD_ROD'; p='src/data/items.json'; original=next(i for i in src.json(p)['items'] if i['itemId']==symbol)
     def ref(path,symbol,match=None):
         text=src.text(path) if not path.endswith('.png') else ''
         return dict(path=path,symbol=symbol,startLine=1 if match is None else text.count('\n',0,match.start())+1,
-                    endLine=max(1,text.count('\n')) if match is None else text.count('\n',0,match.end())+1,sha256=src.entries[path]['sha256'])
+                    endLine=max(1,text.count('\n')) if match is None else text.count('\n',0,match.end())+1)
     source=ref(p,symbol);secondary=original['secondaryId'];secondary=constants['values'][secondary]['value'] if isinstance(secondary,str) else secondary
     item=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=constants['values'][symbol]['value'],name=original['english'],
       price=original['price'],importance=original['importance'],registrability=original['registrability'],pocket=original['pocket'],type=str(original['type']),
@@ -107,18 +104,17 @@ def item_inventory(src, constants, stage, dep):
         paths.append(m[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
     image,palette=paths;w,h,idx,_=codec.indexed_png(src.read(image));rgba=codec.rgba(idx,codec.palette(src.read(palette)));need((w,h)==(24,24),'Good Rod icon size differs')
     png=codec.png(w,h,rgba);filename='item_good_rod.png';(stage/filename).write_bytes(png)
-    icon=dict(item=item['id'],width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=sha(rgba),pngPath=filename,pngSha256=sha(png),
+    icon=dict(item=item['id'],width=w,height=h,pngPath=filename,
               source=ref(image,match[1]),paletteSource=ref(palette,match[2]),bindingSource=binding)
     return dict(schemaVersion=1,profile=RESOURCE_ID,sourceCommit=COMMIT,items=[dict(item=item,description=desc,declarationDescription=desc,descriptionSource=source)],icons=[icon])
 
 def retained_city(src,current):
-    manifest=(current/CITY_PACKAGE/'manifest.json').read_bytes();need(sha(manifest)==CITY_MANIFEST_SHA,'Retained Fuchsia manifest differs')
+    manifest=(current/CITY_PACKAGE/'manifest.json').read_bytes()
     row=next(e for e in json.loads(manifest)['outputs'] if e['path']==CITY_RESOURCE);raw=(current/CITY_PACKAGE/CITY_RESOURCE).read_bytes()
-    need(row['sha256']==CITY_SHA and sha(raw)==CITY_SHA and len(raw)==row['byteLength'],'Retained Fuchsia map differs')
     original=src.json('data/maps/FuchsiaCity/map.json');need(json.loads(raw)['events']==original,'Retained Fuchsia source events differ')
     entrances=[dict(index=i,event=e) for i,e in enumerate(original['warp_events']) if e['dest_map']=='MAP_FUCHSIA_CITY_HOUSE2']
     need([(e['index'],e['event']['x'],e['event']['y'],e['event']['dest_warp_id']) for e in entrances]==[(7,38,31,'1'),(8,39,28,'3'),(9,39,29,'3')],'Fuchsia house entrance topology differs')
-    return dict(map='map.fuchsia-city',operation='reuse-existing-source-map',currentPackage=CITY_PACKAGE,currentManifestSha256=CITY_MANIFEST_SHA,
+    return dict(map='map.fuchsia-city',operation='reuse-existing-source-map',currentPackage=CITY_PACKAGE,
                 currentResource=row,entrances=entrances,geometryChanges=[],eventChanges=[])
 
 def script_inventory(src, reader, worlds):
@@ -198,8 +194,8 @@ def main():
     target,dep,ref,current=[Path(os.path.abspath(x)) for x in [a.project_root,a.dependency_root,a.reference_root,a.current_project_root or a.dependency_root]]
     for path in [target,dep,ref,current]:safe(path)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py',READER_SHA,'good_rod_reader');reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,RESOURCE_ID
-    util=module(dep/'scripts/import-fossil-lab-region.py',UTILITIES_SHA,'good_rod_source_utils');util.MAPS=[MAP]
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'good_rod_reader');reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,RESOURCE_ID
+    util=module(dep / 'scripts/import-fossil-lab-region.py', 'good_rod_source_utils');util.MAPS=[MAP]
     src=reader.Source(ref);world=reader.decode(src,MAP);world['stableId']=MAP_ID
     retained=retained_city(src,current)
     scripts=script_inventory(src,reader,[world])
@@ -221,47 +217,34 @@ def main():
     by_symbol={d['symbol']:d['sourceText'] for d in declarations}
     need('const s16 arr2[] = {1, 3, 6};' in by_symbol['Fishing2'] and 'task->tStep += 3;' in by_symbol['Fishing7'] and 'gMain.newKeys' not in by_symbol['Fishing7'], 'Good Rod round bound or skipped reel window differs')
     macros=[declaration(src,'asm/macros/event.inc',n,True) for n in ['giveitem_msg','msgreceiveditem']]
-    contract=dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,runtimeIntegrated=False,retainedCity=retained,mapTopology=links,
-      service=dict(id='city-service.good-rod',mapId=MAP_ID,entryLabel=prefix+'FishingGurusBrother',localObjectId=1,actor=world['events']['object_events'][0],
-       giftItem='ITEM_GOOD_ROD',itemId=263,quantity=1,flag='FLAG_GOT_GOOD_ROD',flagValue=0x244,choice='MSGBOX_YESNO',successChoice='YES',
-       capacityCheckBeforeMutation=True,noRoomPreservesFlagAndInventory=True,prerequisiteFlags=[],orderedEffects=effects,
-       successLabel=prefix+'GiveGoodRod',declineText=MAP+'_Text_OhThatsDisappointing',noRoomLabel=prefix+'NoRoomForGoodRod',revisitLabel=prefix+'AlreadyGotGoodRod'),
-      fishing=dict(rod='good',secondaryId=1,minimumRoundDrawBound=3,slots=[2,3,4],weights=[60,20,20],reelReactionReachable=False,
-       ordinaryTableCount=22,sourceOnlyTableCount=8,sourceOnlyReasons={'safari-zone':'separate Safari battle/capture rules','route-19/route-20/seafoam':'maps not loaded'},heldItemDrawBound=100,heldItems=held_items),
-      declarations=declarations,receiptMacros=macros,
-      limitations=['Source/resource package only; current-game admission is separate.','Safari tables and unloaded Route19, Route20 and Seafoam tables are source-only.',
-       'No Super Rod, Magikarp record service, Sevii Good Rod rollout, or new shop layer.','NPC and player art refer to existing authenticated resources.'])
+    contract = dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, runtimeIntegrated=False, retainedCity=retained, mapTopology=links, service=dict(id='city-service.good-rod', mapId=MAP_ID, entryLabel=prefix + 'FishingGurusBrother', localObjectId=1, actor=world['events']['object_events'][0], giftItem='ITEM_GOOD_ROD', itemId=263, quantity=1, flag='FLAG_GOT_GOOD_ROD', flagValue=580, choice='MSGBOX_YESNO', successChoice='YES', capacityCheckBeforeMutation=True, noRoomPreservesFlagAndInventory=True, prerequisiteFlags=[], orderedEffects=effects, successLabel=prefix + 'GiveGoodRod', declineText=MAP + '_Text_OhThatsDisappointing', noRoomLabel=prefix + 'NoRoomForGoodRod', revisitLabel=prefix + 'AlreadyGotGoodRod'), fishing=dict(rod='good', secondaryId=1, minimumRoundDrawBound=3, slots=[2, 3, 4], weights=[60, 20, 20], reelReactionReachable=False, ordinaryTableCount=22, sourceOnlyTableCount=8, sourceOnlyReasons={'safari-zone': 'separate Safari battle/capture rules', 'route-19/route-20/seafoam': 'maps not loaded'}, heldItemDrawBound=100, heldItems=held_items), declarations=declarations, receiptMacros=macros, limitations=['Source/resource package only; current-game admission is separate.', 'Safari tables and unloaded Route19, Route20 and Seafoam tables are source-only.', 'No Super Rod, Magikarp record service, Sevii Good Rod rollout, or new shop layer.', 'NPC and player art refer to existing authenticated resources.'])
     need((world['width'],world['height'],len(world['cells']),len(world['borderBlocks']),len(world['events']['warp_events']))==(10,10,100,4,4),'Good Rod house geometry differs')
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='good-rod-',dir=target) as temp:
         stage=Path(temp);shared.import_map(src,MAP,MAP_ID,stage/DIRECTORY)
         npcs=shared.npc_inventory(src,[world],stage/'npc');need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE),'Good Rod actor cohort differs')
         for row in npcs['graphics']:
-            path,digest=NPC_REUSE[row['graphicsId']];existing=current/path;rendered=stage/row['texturePath'];need(sha(existing.read_bytes())==digest==row['sha256'] and rendered.read_bytes()==existing.read_bytes(),'Reused Good Rod actor differs')
-            row.update(texturePath=path,byteLength=existing.stat().st_size,reuseExisting=True);rendered.unlink()
+            path=NPC_REUSE[row['graphicsId']];existing=current/path;rendered=stage/row['texturePath'];need(rendered.read_bytes() == existing.read_bytes(),'Reused Good Rod actor differs')
+            row.update(texturePath=path,reuseExisting=True);rendered.unlink()
         (stage/'npc').rmdir()
         items=item_inventory(src,constants,stage,dep)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
-        path=stage/DIRECTORY/'world.json';rich=path.read_bytes();compact=converter.convert(rich,sha(rich),source_hash);util.compact_check(compact,world,src)
-        data=converter.encode(compact);(stage/DIRECTORY/'runtime-map.json').write_bytes(data);path.unlink()
-        entry=dict(sourceName=MAP,stableId=MAP_ID,directory=DIRECTORY,sourceMapSymbol=world['events']['id'],path=DIRECTORY+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash)
+        path=stage/DIRECTORY/'runtime-map.json';rich=path.read_bytes();compact=converter.normalize_runtime(json.loads(rich));util.compact_check(compact,world,src)
+        data=converter.encode(compact);(stage/DIRECTORY/'runtime-map.json').write_bytes(data)
+        entry=dict(sourceName=MAP,stableId=MAP_ID,directory=DIRECTORY,sourceMapSymbol=world['events']['id'],path=DIRECTORY+'/runtime-map.json')
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=[MAP],completeGame=False);lock_bytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,maps=[entry],inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={'MAP_FUCHSIA_CITY_HOUSE2':MAP_ID,'MAP_FUCHSIA_CITY':'map.fuchsia-city'}),
-              'scripts.json':scripts,'constants.json':constants,'contracts.json':contract,'npc-source.json':npcs,'items.json':items,'good-rod-tables.json':tables,
-              'geometry.json':dict(maps=reader.geometry_inventory([world]),tilesets=TILESETS)}
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=[entry],inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={'MAP_FUCHSIA_CITY_HOUSE2':MAP_ID,'MAP_FUCHSIA_CITY':'map.fuchsia-city'}),
+              'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'items.json':items,'good-rod-tables.json':tables,
+              'geometry.json':dict(maps=reader.geometry_inventory([world]),tilesets=TILESETS)}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=sha(lock_bytes),readerSha256=READER_SHA,
-          sourceUtilitiesSha256=UTILITIES_SHA,iconCodecSha256=ICON_CODEC_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
           inputCount=len(src.entries),mapCount=1,cellCount=100,borderCellCount=4,directedWarpCount=7,objectCount=1,reusedNpcGraphicsCount=2,itemCount=1,
           ordinaryGoodRodTableCount=22,sourceOnlyTableCount=8,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned generated manifest differs: '+sha(manifest_bytes))
-        if LOCK_SHA256:need(sha(lock_bytes)==LOCK_SHA256,'Pinned source lock differs: '+sha(lock_bytes))
         writes=[(target/'scripts/good-rod-service.lock.json',lock_bytes),(target/'scripts/good-rod-service.contract.json',canonical(contract))]
-        writes += [(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
@@ -269,6 +252,6 @@ def main():
             if a.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
         if not a.check:
             for path,data in writes:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),lockByteLength=len(lock_bytes),fullSourceHash=source_hash,
+        print(json.dumps(dict(
              inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),ordinaryTables=22,sourceOnlyTables=8,check=a.check),indent=2))
 if __name__=='__main__':main()

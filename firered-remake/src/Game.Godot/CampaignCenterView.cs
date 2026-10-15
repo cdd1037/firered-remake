@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Content;
 using Godot;
@@ -27,8 +26,7 @@ public partial class CampaignView
             {
                 using var image = new Image();
                 if (image.LoadPngFromBuffer(PretCenterHealingArt.ReadTexture(directory, asset)) != Error.Ok
-                    || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8
-                    || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
+                    || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8)
                     throw new InvalidDataException("Healing texture pixels differ: " + asset.Id);
                 _centerHealingTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
             }

@@ -29,7 +29,6 @@ public static class TrainerFanClubRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourcePath = "src/trainer_fan_club.c";
-    public const string SourceSha256 = "a0676e06e8b41041e8e7a093e4e9376e75baf00ae90bed44878e5aad6cb6524f";
     public const string CounterVariable = "VAR_FANCLUB_FAN_COUNTER";
     public const string LoseFanHoursVariable = "VAR_FANCLUB_LOSE_FAN_TIMER";
     public const string SceneVariable = "VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB";

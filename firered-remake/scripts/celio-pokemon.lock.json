@@ -1,24 +1,16 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-celio-pokemon-source-v1",
   "files": [
     {
-      "path": "content/generated/celio-pokemon/machines.json",
-      "byteLength": null,
-      "sha256": "98b8fcfa9fda49e6a9b74081386c1a2d52781394af2dd62c802f22b34b0578f0"
+      "path": "content/generated/celio-pokemon/machines.json"
     },
     {
-      "path": "content/generated/celio-pokemon/pokemon.json",
-      "byteLength": null,
-      "sha256": "3f5b6aeeb5454af27c38ff837757fe9f50647a2ed95dc19ea94e83dc05c54e9f"
+      "path": "content/generated/celio-pokemon/pokemon.json"
     },
     {
-      "path": "content/generated/celio-pokemon/source-input-hashes.json",
-      "byteLength": null,
-      "sha256": "ff5618b3f99225ebeb5ef07a8d385e99125be5e349ab27a77673575c4cdc0182"
+      "path": "content/generated/celio-pokemon/source-input-hashes.json"
     }
   ],
-  "recoveryStatus": "CONTEXT_RECONSTRUCTION_ONLY: original resource bytes and byteLength values unavailable; regenerate before using this lock",
-  "originalLockSha256": "7d494069210809051b28fbd90f142d44618376100d3385b5b7259b385ab95342"
+  "recoveryStatus": "CONTEXT_RECONSTRUCTION_ONLY: original resource bytes and byteLength values unavailable; regenerate before using this lock"
 }

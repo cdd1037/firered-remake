@@ -2,181 +2,80 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "data/battle_anim_scripts.s",
-      "byteLength": 406484,
-      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
-      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068"
+      "path": "data/battle_anim_scripts.s"
     },
     {
-      "path": "data/maps/CeladonCity_Gym/map.json",
-      "byteLength": 5730,
-      "sha256": "eb9eb76fef8c1c6544b3846908a04b6ed7bd21785335b46b08f8aa3c7bca4a5d",
-      "gitBlobSha1": "5db7ad03519f01e62ab0b3cc1d74490cc24ed973"
+      "path": "data/maps/CeladonCity_Gym/map.json"
     },
     {
-      "path": "data/maps/CeladonCity_Gym/scripts.inc",
-      "byteLength": 3070,
-      "sha256": "ded6804f2de529da76ec6daf68e4a2ccbf26a583626620264da42ecfccbdfe3c",
-      "gitBlobSha1": "3ab6ce2984457c0fadc6f42cea8039762835b1fa"
+      "path": "data/maps/CeladonCity_Gym/scripts.inc"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/sound.h",
-      "byteLength": 2051,
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+      "path": "include/constants/sound.h"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "sound/cry_tables.inc",
-      "byteLength": 16533,
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "path": "sound/direct_sound_samples/cries/exeggcute.wav",
-      "byteLength": 9446,
-      "sha256": "0e49f06fabfd6eb955bb67df757a41587b8fb527c4753abc32e0b5dce6c4fefc",
-      "gitBlobSha1": "865aedc1f5f1ef65b263be738315aed4eeb86743"
+      "path": "sound/direct_sound_samples/cries/exeggcute.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/tangela.wav",
-      "byteLength": 7582,
-      "sha256": "e8da9fcdb81f9d308ae8532c0d0d3eb10e9f29423e2eb21dc888800f8121ce9d",
-      "gitBlobSha1": "991b787ff4ad31f937a6f114f7dcf2a574df4acc"
+      "path": "sound/direct_sound_samples/cries/tangela.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/victreebel.wav",
-      "byteLength": 9662,
-      "sha256": "e9986c3baed9d80087f386c85e3e6eab5cbdca8427d3d4660e3bcc6023fd1443",
-      "gitBlobSha1": "cea271b30baa186fc70e12207147192f227f284b"
+      "path": "sound/direct_sound_samples/cries/victreebel.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/vileplume.wav",
-      "byteLength": 12790,
-      "sha256": "2363a84fc7971ee91363474edeb1027eba7129045993aaa1dccf8c857fdc3ac7",
-      "gitBlobSha1": "06dfaab478a260ffc9fa79fa8590f5befba15111"
+      "path": "sound/direct_sound_samples/cries/vileplume.wav"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/se_m_absorb.mid",
-      "byteLength": 175,
-      "sha256": "dbb28f9a98b13c52160af581e421ac0922311a146417c5319e5be72c7d87e65a",
-      "gitBlobSha1": "ae54fe2bc35eab468d87ec57120a2792dd52031b"
+      "path": "sound/songs/midi/se_m_absorb.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_morning_sun.mid",
-      "byteLength": 423,
-      "sha256": "98cabc9316dfaa429048241fba0e5f921b7ce1455ac6f4ac2febf6793d1804c8",
-      "gitBlobSha1": "c18658877242072150102810058c14ce1a635432"
+      "path": "sound/songs/midi/se_m_morning_sun.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_petal_dance.mid",
-      "byteLength": 703,
-      "sha256": "bb06f8d8f8c33a1bdd52373100e5f9084b399cc7a467ff677b2060bc585fb7d7",
-      "gitBlobSha1": "567379579643c6c733ba82a4fd183fe44a3b0797"
+      "path": "sound/songs/midi/se_m_petal_dance.mid"
     },
     {
-      "path": "sound/songs/midi/se_shiny.mid",
-      "byteLength": 257,
-      "sha256": "6a1a4c348e68f01fba3f84b9dd3436ed3dc02231a49ac22f7185fc8bf6fc5693",
-      "gitBlobSha1": "b9a4fe81012363c60f0dc2c3ad779d19f9f41032"
+      "path": "sound/songs/midi/se_shiny.mid"
     },
     {
-      "path": "src/sound.c",
-      "byteLength": 15232,
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+      "path": "src/sound.c"
     }
   ],
   "inputs": [
     {
-      "path": "content/generated/celadon-approach-synth-audio/manifest.json",
-      "byteLength": 1177,
-      "sha256": "783f665e6660198e64eb3ea04510d138072b448a63d1581d393b47ef1a6bb5b2"
+      "path": "content/generated/celadon-approach-synth-audio/manifest.json"
     },
     {
-      "path": "content/generated/rocktunnel-synth-audio/manifest.json",
-      "byteLength": 5587,
-      "sha256": "478237a8683d31438da6a5504272e76a52313d1417133767e08fa83a4cc0a621"
+      "path": "content/generated/rocktunnel-synth-audio/manifest.json"
     },
     {
-      "path": "content/generated/route11-synth-audio/manifest.json",
-      "byteLength": 2653,
-      "sha256": "0631c99d955f0eddaea29dbc65b56df14e14847ee1c9bc5d072c7ccaf39bf4b1"
+      "path": "content/generated/route11-synth-audio/manifest.json"
     },
     {
-      "path": "content/generated/synth-audio/firered.pack",
-      "byteLength": 2565436,
-      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+      "path": "content/generated/synth-audio/firered.pack"
     },
     {
-      "path": "content/generated/synth-audio/manifest.json",
-      "byteLength": 88374,
-      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+      "path": "content/generated/synth-audio/manifest.json"
     },
     {
-      "path": "content/generated/synth-audio/normal-cries.bin",
-      "byteLength": 6188,
-      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+      "path": "content/generated/synth-audio/normal-cries.bin"
     },
     {
-      "path": "scripts/audit-early-audio.py",
-      "byteLength": 21672,
-      "sha256": "e7db8de67b65dcc69dc6d7c41153340c9204913bcb5a3d35f585b5e9ab8525c5"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
-      "byteLength": 4642,
-      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
-      "byteLength": 2705,
-      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
-      "byteLength": 2372,
-      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
-      "byteLength": 4767,
-      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
-      "byteLength": 2676,
-      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
-      "byteLength": 9512,
-      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
-      "byteLength": 37803,
-      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+      "path": "scripts/audit-early-audio.py"
     }
   ]
 }

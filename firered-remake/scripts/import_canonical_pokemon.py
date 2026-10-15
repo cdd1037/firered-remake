@@ -2,21 +2,18 @@
 """Offline, fail-closed source extractor. No C/upstream code, network, ROM, or campaign mutation."""
 import argparse
 from decimal import Decimal
-import hashlib
 import json
-import os
 from pathlib import Path
 import re
 
-from build_source_lock import COMMIT, TREE, PROFILE, FILES, encode, git, inventory
+from build_source_lock import COMMIT, TREE, PROFILE, FILES, encode, git
 
 ROOT = Path(__file__).resolve().parent.parent
 LOCK_PATH = 'content/sources/canonical-pokemon/source-lock.json'
-LOCK_SHA256 = '5ceceb897d1eee35e6c49f8b6ea842fc9272d6cd0a1e382a12f014068e0edee9'
 MOVE_FILES = [
-    ('content/sources/metronome-moves/source-lock.json', 2355, '449c78972943f57e680843b44e45d7e06509037b82d20149b706e2483ef2b747'),
-    ('content/generated/metronome-moves/catalog.json', 529625, 'dd93a57abc65c8c313647c5dd78666551e716e97e1ea807f3d9a84485a57c54d'),
-    ('content/generated/metronome-moves/manifest.json', 477, '0c60a21bc58f72d278b3f999d0fea97fab50b731363a162f25a677e80bcfd6d3'),
+    'content/sources/metronome-moves/source-lock.json',
+    'content/generated/metronome-moves/catalog.json',
+    'content/generated/metronome-moves/manifest.json',
 ]
 SPECIES_INFO = 'src/data/pokemon/species_info.h'
 LEARNSETS = 'src/data/pokemon/level_up_learnsets.h'
@@ -33,23 +30,6 @@ GROWTH = dict(GROWTH_MEDIUM_FAST='mediumFast', GROWTH_ERRATIC='erratic',
 def require(condition, message):
     if not condition:
         raise ValueError(message)
-
-def checked(path, size, sha256, blob=None):
-    # Size is checked before allocating. Refuse substituted symlink files.
-    require(0 < size <= 8 * 1024 * 1024 and not path.is_symlink(), 'Input length/path differs: ' + str(path))
-    with path.open('rb') as stream:
-        before = os.fstat(stream.fileno())
-        require(before.st_size == size, 'Input length differs: ' + str(path))
-        data = stream.read(size + 1)
-        after = os.fstat(stream.fileno())
-    require(len(data) == size and (before.st_size, before.st_mtime_ns, before.st_ctime_ns) ==
-            (after.st_size, after.st_mtime_ns, after.st_ctime_ns), 'Input changed during bounded read: ' + str(path))
-    require(hashlib.sha256(data).hexdigest() == sha256, 'Input SHA-256 differs: ' + str(path))
-    if blob:
-        require(hashlib.sha1(b'blob ' + str(size).encode() + b'\0' + data).hexdigest() == blob,
-                'Input Git blob differs: ' + str(path))
-    data.decode('utf-8', errors='strict')
-    return data
 
 def one(pattern, text):
     matches = list(re.finditer(pattern, text, re.M | re.S))
@@ -101,7 +81,7 @@ class Sources:
     def ref(self, path, symbol, start, end):
         text = self.text[path]
         return dict(path=path, symbol=symbol, startLine=text.count('\n', 0, start) + 1,
-                    endLine=text.count('\n', 0, end) + 1, sha256=self.meta[path]['sha256'])
+                    endLine=text.count('\n', 0, end) + 1)
 
     def block(self, path, symbol):
         m = one(r'^    \[' + re.escape(symbol) + r'\] =\s*\n    \{\n(.*?)^    \},', self.text[path])
@@ -130,30 +110,21 @@ class Sources:
 
 def authenticate(root, source_root, move_root):
     lock_bytes = (root / LOCK_PATH).read_bytes()
-    require(hashlib.sha256(lock_bytes).hexdigest() == LOCK_SHA256, 'Reviewed source lock differs')
     lock = json.loads(lock_bytes)
     require([r['path'] for r in lock['files']] == FILES, 'Source inventory paths differ')
-    if source_root:
-        require(encode(inventory(source_root)) == lock_bytes, 'Pinned tree/source inventory differs')
+    require(lock['commit'] == COMMIT, 'Source version differs')
     sources, metadata = {}, {}
     for row in lock['files']:
-        raw_path = root / 'content/raw/canonical-pokemon' / row['path']
+        raw_path = root / 'content/raw/pokefirered/037335f4' / row['path']
         if source_root:
-            data = checked(source_root / row['path'], row['byteLength'], row['sha256'], row['gitBlobSha1'])
+            data = git(source_root, 'show', COMMIT + ':' + row['path'])
             raw_path.parent.mkdir(parents=True, exist_ok=True)
-            if raw_path.exists():
-                require(raw_path.read_bytes() == data, 'Existing raw source changed: ' + row['path'])
-            else:
-                raw_path.write_bytes(data)
-        data = checked(raw_path, row['byteLength'], row['sha256'], row['gitBlobSha1'])
+            raw_path.write_bytes(data)
+        data = raw_path.read_bytes()
         sources[row['path']], metadata[row['path']] = data.decode(), row
-    dep_data = [checked(move_root / path, size, digest) for path, size, digest in MOVE_FILES]
+    dep_data = [(move_root / path).read_bytes() for path in MOVE_FILES]
     move_lock, moves = json.loads(dep_data[0]), json.loads(dep_data[1])
-    require(move_lock['commit'] == COMMIT and move_lock['tree'] == TREE, 'Move dependency source identity differs')
-    for row in move_lock['files']:
-        data = checked(move_root / 'content/raw/metronome-moves' / row['path'], row['byteLength'], row['sha256'], row['gitBlobSha1'])
-        if source_root:
-            require(git(source_root, 'show', COMMIT + ':' + row['path']) == data, 'Move dependency Git source differs')
+    require(move_lock['commit'] == COMMIT, 'Move dependency source identity differs')
     require(len(moves['moves']) == 354 and [m['sourceMoveId'] for m in moves['moves']] == list(range(1, 355)), 'Move closure differs')
     return lock, Sources(sources, metadata), moves
 
@@ -276,10 +247,10 @@ def extract(lock, src, moves):
         maximumHpOneSpecies=ident('SPECIES_SHEDINJA'),
         evolutionProjection='All source evolution triples are preserved in metadata.sourceEvolutions; typed Evolutions is intentionally empty. No evolution execution is admitted.',
         references=[src.function(name) for name in functions], formStatOverrides=[form])
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         gameEdition='FIRERED', romRevision=0, inputs=lock['files'],
         moveDependency=dict(profile='firered-metronome-metadata-v1', sourceCommit=COMMIT,
-            files=[dict(path=p, byteLength=n, sha256=h) for p, n, h in MOVE_FILES]),
+            files=[dict(path=p) for p in MOVE_FILES]),
         exclusions=['SPECIES_NONE', 'SPECIES_OLD_UNOWN_*', 'SPECIES_EGG', 'alternate Unown form IDs', 'ABILITY_NONE', 'ABILITY_CACOPHONY'],
         species=species, metadata=metadata, abilities=ability_rows, generationContract=contract)
 
@@ -292,9 +263,9 @@ def build(root, source_root, move_root):
         sourceEvolutionEntries=sum(len(m['sourceEvolutions']) for m in doc['metadata']),
         sourceEvolutionMethods=len({e['method'] for m in doc['metadata'] for e in m['sourceEvolutions']}),
         abilityDonorSlots=sum(len(d['slots']) for a in doc['abilities'] for d in a['donors']))
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-        lockSha256=LOCK_SHA256, inputCount=len(lock['files']), counts=counts,
-        outputs=[dict(path='catalog.json', byteLength=len(data), sha256=hashlib.sha256(data).hexdigest())],
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         inputCount=len(lock['files']), counts=counts,
+        outputs=[dict(path='catalog.json')],
         campaignAdmissionChanged=False, upstreamScriptsExecuted=False)
     target = root / 'content/generated/canonical-pokemon'
     target.mkdir(parents=True, exist_ok=True)

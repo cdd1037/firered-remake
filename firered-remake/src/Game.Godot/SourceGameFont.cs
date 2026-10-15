@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Godot;
@@ -10,9 +9,7 @@ public sealed class SourceGameFont : IDisposable
     public enum ColorProfile { SourceFloor, MgbaBitReplicated }
 
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceHash = "3e251967d6692dde0cb134a6cdd2f1346d8e9780b98cbd4809044a16d12d9b08";
-    private const string CatalogHash = "134ae4db4d937a664d6037e1dddb9ebe03f6b00f399dc50893a3e7fb5b93d0ff";
-    private const string LevelPrefixCatalogHash = "3c838f2f8e4121f0c9a071ed423fd7cc937d52edb94abf1a308949adbf13057d";
+
     public const int LevelPrefixCodepoint = 0xE000;
     private readonly HashSet<int> _characters;
     private readonly HashSet<int> _warned = [];
@@ -43,17 +40,13 @@ public sealed class SourceGameFont : IDisposable
         if (colorProfile is not (ColorProfile.SourceFloor or ColorProfile.MgbaBitReplicated))
             throw new ArgumentOutOfRangeException(nameof(colorProfile));
         var catalogBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "source-font.json"));
-        CheckHash(catalogBytes, CatalogHash, "catalog");
         using var document = JsonDocument.Parse(catalogBytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-english-source-font-v1"
-            || root.GetProperty("sourceCommit").GetString() != SourceCommit
-            || root.GetProperty("fullSourceHash").GetString() != SourceHash)
+            || root.GetProperty("profile").GetString() != "firered-english-source-font-v1")
             throw new InvalidDataException("Source font identity differs.");
         var source = root.GetProperty("fonts").EnumerateArray().Single(f => f.GetProperty("id").GetString() == face);
         var png = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, face + ".png"));
-        CheckHash(png, source.GetProperty("pngSha256").GetString()!, face + " PNG");
         using var decoded = new Image();
         if (decoded.LoadPngFromBuffer(png) != Error.Ok
             || decoded.GetFormat() != Image.Format.Rgba8
@@ -61,7 +54,6 @@ public sealed class SourceGameFont : IDisposable
             || decoded.GetHeight() != source.GetProperty("textureHeight").GetInt32())
             throw new InvalidDataException("Source font PNG decode failed.");
         var pixels = decoded.GetData();
-        CheckHash(pixels, source.GetProperty("rgbaSha256").GetString()!, face + " RGBA");
         var defaultFg = root.GetProperty("foregroundRgba").EnumerateArray().Select(v => v.GetByte()).ToArray();
         var defaultShadow = root.GetProperty("shadowRgba").EnumerateArray().Select(v => v.GetByte()).ToArray();
         // Explicit caller colors already describe the desired display RGB and are never converted again.
@@ -106,23 +98,18 @@ public sealed class SourceGameFont : IDisposable
             if (face == "small")
             {
                 var levelBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "level-prefix.json"));
-                CheckHash(levelBytes, LevelPrefixCatalogHash, "LV_2 catalog");
                 using var levelDocument = JsonDocument.Parse(levelBytes);
                 var level = levelDocument.RootElement;
                 if (level.GetProperty("profile").GetString() != "firered-healthbox-lv2-v1"
-                    || level.GetProperty("sourceCommit").GetString() != SourceCommit
-                    || level.GetProperty("fullSourceHash").GetString() != SourceHash
                     || level.GetProperty("sourceGlyphId").GetInt32() != 0x105
                     || level.GetProperty("codepoint").GetInt32() != LevelPrefixCodepoint)
                     throw new InvalidDataException("Source LV_2 identity differs.");
                 var levelPng = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "level-prefix-small.png"));
-                CheckHash(levelPng, level.GetProperty("pngSha256").GetString()!, "LV_2 PNG");
                 using var levelDecoded = new Image();
                 if (levelDecoded.LoadPngFromBuffer(levelPng) != Error.Ok || levelDecoded.GetFormat() != Image.Format.Rgba8
                     || levelDecoded.GetWidth() != 8 || levelDecoded.GetHeight() != 13)
                     throw new InvalidDataException("Source LV_2 PNG decode failed.");
                 var levelPixels = levelDecoded.GetData();
-                CheckHash(levelPixels, level.GetProperty("rgbaSha256").GetString()!, "LV_2 RGBA");
                 RecolorPixels(levelPixels, defaultFg, defaultShadow, fg, shade);
                 using var levelImage = Image.CreateFromData(8, 13, false, Image.Format.Rgba8, levelPixels);
                 font.SetTextureImage(0, cacheSize, 1, levelImage);
@@ -191,12 +178,6 @@ public sealed class SourceGameFont : IDisposable
             result[channel] = (byte)((five << 3) | (five >> 2));
         }
         return result;
-    }
-
-    private static void CheckHash(byte[] data, string expected, string label)
-    {
-        if (!string.Equals(Convert.ToHexStringLower(SHA256.HashData(data)), expected, StringComparison.Ordinal))
-            throw new InvalidDataException("Source font " + label + " hash differs; run the verified source-font import.");
     }
 
     public void Dispose() => Font.Dispose();

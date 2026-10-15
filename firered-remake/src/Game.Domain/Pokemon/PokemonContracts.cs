@@ -13,7 +13,7 @@ public sealed record SixStats(int Hp, int Attack, int Defense, int Speed, int Sp
     public static SixStats Zero { get; } = new(0, 0, 0, 0, 0, 0);
     public ImmutableArray<int> Values => [Hp, Attack, Defense, Speed, SpecialAttack, SpecialDefense];
 }
-public sealed record PokemonSourceRef(string Path, string Symbol, int StartLine, int EndLine, string Sha256);
+public sealed record PokemonSourceRef(string Path, string Symbol, int StartLine, int EndLine);
 public sealed record PokemonLevelUpMove(int Level, MoveId Move, PokemonSourceRef Source);
 public enum PokemonEvolutionMethod { Level = 0, Item = 1, Trade = 2, TradeItem = 3, Friendship = 4, LevelAttackGreaterDefense = 5, LevelAttackEqualDefense = 6, LevelAttackLessDefense = 7 }
 public sealed record PokemonEvolution(int Level, SpeciesId Target, PokemonSourceRef Source)

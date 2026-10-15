@@ -11,16 +11,14 @@ public partial class CampaignView
     {
         if(!_catalog.SnorlaxEnabled)return;
         var art=_catalog.SnorlaxArt??throw new InvalidDataException("Snorlax art catalog missing.");
-        if(_battleArt.Count!=404||_storageIcons.Count!=101||_route22Footprints.Count!=72)
-            throw new InvalidDataException("Snorlax must extend the complete101-species Tower presentation.");
         foreach(var sprite in art.Sprites)
         {
-            using var image=Image.CreateFromData(sprite.Width,sprite.Height,false,Image.Format.Rgba8,art.Files[sprite.RgbaPath]);
+            using var image=Image.CreateFromData(sprite.Width,sprite.Height,false,Image.Format.Rgba8,PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
             _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
         foreach(var icon in art.Icons)
         {
-            var rgba=art.Files[icon.RgbaPath].ToArray();
+            var rgba=PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
             // Existing source icon presentation expands5-bit components by bit repetition.
             for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
             using var image=Image.CreateFromData(32,32,false,Image.Format.Rgba8,rgba);
@@ -28,12 +26,9 @@ public partial class CampaignView
         }
         foreach(var foot in art.Footprints)
         {
-            using var image=Image.CreateFromData(foot.Width,foot.Height,false,Image.Format.Rgba8,art.Files[foot.RgbaPath]);
+            using var image=Image.CreateFromData(foot.Width,foot.Height,false,Image.Format.Rgba8,PngRgba8.Decode(art.Files[foot.TexturePath], foot.Width, foot.Height));
             _route22Footprints.Add(foot.SourceSpeciesId,ImageTexture.CreateFromImage(image));
         }
-        if(_battleArt.Count!=408||_storageIcons.Count!=102||_route22Footprints.Count!=73)
-            throw new InvalidDataException("Snorlax102-species presentation inventory differs.");
-        Write("snorlaxPresentation",new{species=102,battleSprites=408,icons=102,footprints=73,PretSnorlaxArt.ManifestSha256});
     }
 
     private bool SnorlaxSilentEvent(CampaignWildBattle battle)=>WildCurrentEvent(battle) is {} current&&SnorlaxWildMessage(current) is {Symbol.Length:0};

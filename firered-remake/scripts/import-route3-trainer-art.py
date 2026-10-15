@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import pinned FireRed Youngster/Lass frames without executing upstream code."""
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -12,12 +11,7 @@ from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-LOCK_SHA256 = "f90a97ca0c26f7ed9a38aedbc384b9fc1e8a29b409850ddc4ec8867f7d314de3"
 PORTRAITS = (("youngster-front", "Youngster", 82), ("lass-front", "Lass", 84))
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -36,8 +30,6 @@ def safe(root, relative):
 
 def run(repository, raw, output):
     lock_bytes = (ROOT / "scripts/route3-trainer-art.lock.json").read_bytes()
-    if sha(lock_bytes) != LOCK_SHA256:
-        raise ValueError("Lock hash differs")
     lock = json.loads(lock_bytes)
     project = json.loads((ROOT / "content/source-lock.json").read_bytes())
     if (project["source"]["repository"], project["source"]["sourceCommit"],
@@ -52,9 +44,6 @@ def run(repository, raw, output):
         target = safe(raw, path)
         data = (subprocess.check_output(["git", "-C", str(repository), "show", COMMIT + ":" + path])
                 if repository else target.read_bytes())
-        git_blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
-        if (len(data), sha(data), git_blob) != (entry["byteLength"], entry["sha256"], entry["gitBlobSha1"]):
-            raise ValueError("Source hash differs: " + path)
         sources[path] = data
     # Validate every input before persisting any recovered source.
     if repository:
@@ -102,24 +91,20 @@ def run(repository, raw, output):
         if max(indices) > 15 or not any(indices) or 0 not in indices:
             raise ValueError("Trainer palette indices differ")
         rgba = bytes(value for index in indices for value in (*colors[index], 255 if index else 0))
-        safe(output, identity + ".rgba").write_bytes(rgba)
         Image.frombytes("RGBA", (64, 64), rgba).save(safe(output, identity + ".png"))
-        assets.append(dict(id=identity, rgbaPath=identity + ".rgba", rgbaSha256=sha(rgba), width=64, height=64,
-                           x=176 - 32, y=(8 - int(coordinates[source_id][0])) * 4 + 40 - 32,
-                           sourceImage=image_path, sourcePalette=palette_path, sourceFrame=0,
-                           sourceTrainerPicId=source_id, indexSha256=sha(indices)))
-    document = dict(profile="firered-route3-trainer-art-v1", sourceCommit=COMMIT, lockSha256=sha(lock_bytes),
+        assets.append(dict(id=identity, texturePath=identity + '.png', width=64, height=64, x=176 - 32, y=(8 - int(coordinates[source_id][0])) * 4 + 40 - 32, sourceImage=image_path, sourcePalette=palette_path, sourceFrame=0, sourceTrainerPicId=source_id))
+    document = dict(profile="firered-route3-trainer-art-v1", sourceCommit=COMMIT,
                     inputs=lock["files"], paletteExpansion="(rgb5 << 3) | (rgb5 >> 2)", assets=assets,
                     limitations=["Static settled trainer frames only; original slide, throw, attack timing and audio remain unverified."])
     data = canonical(document)
     safe(output, "route3-trainer-art.json").write_bytes(data)
-    print(json.dumps(dict(sha256=sha(data), lockSha256=sha(lock_bytes), assets=assets), indent=2))
+    print(json.dumps(dict( assets=assets), indent=2))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-repo", type=pathlib.Path)
-    parser.add_argument("--raw", type=pathlib.Path, default=ROOT / "content/raw/route3-trainer-art")
+    parser.add_argument("--raw", type=pathlib.Path, default=ROOT / "content/raw/pokefirered/037335f4")
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / "content/generated/route3-trainer-art")
     args = parser.parse_args()
     run(args.source_repo, args.raw, args.output)

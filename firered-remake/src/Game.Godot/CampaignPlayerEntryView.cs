@@ -32,7 +32,7 @@ public partial class CampaignView
         var source=PretPlayerGenderArt.Load(_root);var asset=source.Assets.Single(a=>a.Gender==1);
         using var image=new Image();if(image.LoadPngFromBuffer(source.ReadTexture(1))!=Error.Ok)throw new InvalidDataException("Female player texture could not be decoded.");
         image.Convert(Image.Format.Rgba8);var pixels=image.GetData();
-        if(image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||Convert.ToHexStringLower(SHA256.HashData(pixels))!=asset.RgbaSha256)throw new InvalidDataException("Female player pixels differ.");
+        if(image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height)throw new InvalidDataException("Female player pixels differ.");
         for(int i=0;i<pixels.Length;i+=4)if(pixels[i+3]!=0)for(int c=0;c<3;c++){int five=pixels[i+c]>>3;pixels[i+c]=(byte)((five<<3)|(five>>2));}
         using var display=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,pixels);
         _femalePlayer=new(ImageTexture.CreateFromImage(display),asset.FrameWidth,asset.FrameHeight,asset.FrameCount,new(asset.TileCenterAnchor.X,asset.TileCenterAnchor.Y),false);
@@ -67,7 +67,7 @@ public partial class CampaignView
         AddChild(_entryNameEdit);
         ReadEntrySave();
         Write("playerEntryReady",new{mode=_entryMode,hasContinue=_entrySave is not null,backup=_entrySave?.Source.EndsWith(".bak",StringComparison.Ordinal)==true,
-            source=PretMainMenuSource.GeneratedSha256,fullTitleIntroImplemented=false});
+        fullTitleIntroImplemented=false});
         return true;
     }
 

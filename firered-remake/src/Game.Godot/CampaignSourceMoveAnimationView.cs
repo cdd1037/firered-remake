@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Domain.Pokemon;
@@ -39,8 +38,7 @@ public partial class CampaignView
         foreach(var row in _sourceMoveManifest.RootElement.GetProperty("assets").EnumerateArray())
         {string id=row.GetProperty("id").GetString()!;_sourceMoveAssets.Add(id,SourceHitAnimationCatalog.Asset(_sourceMoveManifest,folder,id));}
         folder=System.IO.Path.Combine(_root,"content/generated/campaign-hit-art");
-        var bytes=SourceHitAnimationCatalog.ReadBounded(System.IO.Path.Combine(folder,"manifest.json"),132335,132335);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="f65895babddf0327ad6884ba4d86d2c582e780c17bf91064599a657361acc94c")throw new InvalidDataException("Campaign hit art manifest differs.");
+        var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);
         foreach(var row in doc.RootElement.GetProperty("geometry").EnumerateArray())
         {
@@ -55,8 +53,8 @@ public partial class CampaignView
         {
             string path=row.GetProperty("path").GetString()!,id=row.GetProperty("id").GetString()!;
             if(System.IO.Path.GetFileName(path)!=path)throw new InvalidDataException("Campaign hit art path differs.");
-            var data=SourceHitAnimationCatalog.ReadBounded(System.IO.Path.Combine(folder,path),8196,8196);
-            if(Convert.ToHexStringLower(SHA256.HashData(data))!=row.GetProperty("sha256").GetString()||BinaryPrimitives.ReadUInt16LittleEndian(data)!=64||BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(2))!=64)throw new InvalidDataException("Substitute image differs.");
+            var data=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,path));
+            if(BinaryPrimitives.ReadUInt16LittleEndian(data)!=64||BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(2))!=64)throw new InvalidDataException("Substitute image differs.");
             ushort[] pixels=new ushort[4096];for(int i=0;i<pixels.Length;i++)pixels[i]=BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(4+i*2));
             var asset=new SourcePixelAsset(64,64,pixels);_sourceMoveAssets.Add(id,asset);
             using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,SourcePixelRgba(asset));

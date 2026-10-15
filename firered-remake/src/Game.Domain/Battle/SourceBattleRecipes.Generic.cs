@@ -34,7 +34,7 @@ internal abstract partial class SourceRecipeContext
                 ExecuteStruggle(catalog, side, Invocation!.Target, slot, move, purpose); handled = true; return;
             }
             if (!HasGenericRecipe(move.Effect)) return;
-            if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
+            if (Invocation is null || !SourceMoveDefinitionRules.IsValid(move))
                 throw new SourceRecipeUnsupported("called_generic_source_definition");
             handled = true;
             var target = Invocation.Target;

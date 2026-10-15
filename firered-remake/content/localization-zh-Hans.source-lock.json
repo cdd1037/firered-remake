@@ -23,8 +23,7 @@
     "XZONN_HACK build defaults and unparticipating-party EXP modification ecc8a91f36c722428c3b25e4b4cc74f90d30abe4",
     "Unreviewed font generation or asset redistribution"
   ],
-  "fileHashes": [],
-  "importGate": "Before import, whitelist exact declarations/fields, record file hashes, normalize placeholders with source context, identify reachable untranslated strings and verify rendering/input. No locale bundle is currently enabled.",
+  "importGate": "Before import, whitelist exact declarations/fields, normalize placeholders with source context, identify reachable untranslated strings and verify rendering/input. No locale bundle is currently enabled.",
   "requiresUserChineseRom": false,
   "implementationSchedule": "Deferred while complete gameplay flow and original English reference comparison continue."
 }

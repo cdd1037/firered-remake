@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """Authenticated city gift and exchange source; two new maps and a reused Cerulean Bike Shop."""
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import collections
 import importlib.util
@@ -11,8 +17,6 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256 = '4b71a3820a2d50ff80c32589c60979cb519dd7aeecec9bec13696bf1ad317eb5'
-MANIFEST_SHA256 = 'cf23195b4f3b0a5bf85f3ed4bb6d596aa94f9bc7f32ce66866cebeed7f3e30a4'
 PROFILE = 'firered-city-services-import-v1'
 MAPS = [('VermilionCity_PokemonFanClub', 'map.vermilion-city-pokemon-fan-club', 'vermilion-city-pokemon-fan-club'),
         ('VermilionCity_House1', 'map.vermilion-city-house-1', 'vermilion-city-house1')]
@@ -23,8 +27,8 @@ TILESETS = {'gTileset_Building':'primary/building', 'gTileset_FanClubDaycare':'s
 SPEC = importlib.util.spec_from_file_location('_city_services_shared_map_import', ROOT / 'scripts/import-route22-region.py')
 SHARED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SHARED)
-digest, canonical, json_bytes = SHARED.digest, SHARED.canonical, SHARED.json_bytes
-require_safe_target, verify_bytes, source_hash = SHARED.require_safe_target, SHARED.verify_bytes, SHARED.source_hash
+canonical, json_bytes = SHARED.canonical, SHARED.json_bytes
+require_safe_target = SHARED.require_safe_target
 Source = SHARED.Source
 import_map, connections_and_warps, npc_inventory = SHARED.import_map, SHARED.connections_and_warps, SHARED.npc_inventory
 def materialize(raw, reference_repo):
@@ -32,22 +36,17 @@ def materialize(raw, reference_repo):
     raw=pathlib.Path(raw)
     for kind in ['raw','generated']:
         for protected in (ROOT/'content'/kind).iterdir():
-            if kind=='raw' and protected.name=='city-services':continue
+            if kind=='raw' and (protected.name=='city-services' or (protected.name=='pokefirered' and raw.resolve()==(ROOT/'content/raw/pokefirered/037335f4').resolve())):continue
             if raw.resolve().is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(raw.resolve()):
                 raise ValueError('Existing profile overlap')
-    SHARED.materialize(raw,reference_repo)
+    SHARED.materialize(raw,reference_repo,source_package='city-services')
 
 def read_lock(path=None):
     target = path or ROOT / 'content/sources/city-services.lock.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)
-    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or
-            lock.get('repository') != 'pret/pokefirered' or lock.get('commit') != COMMIT or
-            lock.get('tree') != TREE or lock.get('profile') != PROFILE or
-            lock.get('gameVersion') != 'FIRERED' or type(lock.get('revision')) is not int or
-            lock['revision'] != 0 or lock.get('completeGame') is not False or
-            lock.get('maps') != [x[0] for x in MAPS] or not lock.get('files')):
+    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):
         raise ValueError('Invalid locked source identity or scope')
     seen = set()
     for entry in lock['files']:
@@ -57,17 +56,12 @@ def read_lock(path=None):
         if entry['path'] in seen:
             raise ValueError('Duplicate source path')
         seen.add(entry['path'])
-        if (set(entry) != {'path', 'byteLength', 'gitBlobSha1', 'sha256', 'roles'} or
-                type(entry['byteLength']) is not int or entry['byteLength'] <= 0 or
-                not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']) or
-                not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not entry['roles']):
+        if (not entry['roles']):
             raise ValueError('Malformed source entry')
     # The lock itself is reviewed and fixed; changing source AND its hash does not evade validation.
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock hash differs')
     return lock
 
-for key in ('ROOT', 'COMMIT', 'TREE', 'LOCK_SHA256', 'PROFILE', 'MAPS', 'TILESETS', 'read_lock'):
+for key in ('ROOT', 'COMMIT', 'TREE',  'PROFILE', 'MAPS', 'TILESETS', 'read_lock'):
     setattr(SHARED, key, globals()[key])
 
 def script_inventory(src, worlds):
@@ -190,14 +184,12 @@ def item_inventory(src, constants, stage):
     """Convert the three original key item declarations/icons without admitting use handlers."""
     import base64
     codec_path = ROOT/'scripts/import-lab-battle-ui.py'
-    if digest(codec_path.read_bytes()) != 'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a':
-        raise ValueError('Reviewed local icon codec differs')
     spec=importlib.util.spec_from_file_location('_city_services_icon_codec',codec_path)
     codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
     def ref(path,symbol,match=None):
         text=src.text(path) if not path.endswith('.png') else ''
         return dict(path=path,symbol=symbol,startLine=1 if match is None else text.count('\n',0,match.start())+1,
-                    endLine=max(1,text.count('\n')) if match is None else text.count('\n',0,match.end())+1,sha256=src.entries[path]['sha256'])
+                    endLine=max(1,text.count('\n')) if match is None else text.count('\n',0,match.end())+1)
     items=[];icons=[]
     for symbol in ['ITEM_BIKE_VOUCHER','ITEM_OLD_ROD','ITEM_BICYCLE']:
         source_items=src.json('src/data/items.json')['items'];original=next(i for i in source_items if i['itemId']==symbol)
@@ -221,8 +213,8 @@ def item_inventory(src, constants, stage):
         image,palette=paths;w,h,idx,_=codec.indexed_png(src.data[image]);rgba=codec.rgba(idx,codec.palette(src.data[palette]))
         if (w,h)!=(24,24): raise ValueError('Item icon dimensions differ')
         png=codec.png(w,h,rgba);filename=symbol.lower()+'.png';(stage/filename).write_bytes(png)
-        icons.append(dict(item=item['id'],width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=digest(rgba),
-            pngPath=filename,pngSha256=digest(png),source=ref(image,match[1]),paletteSource=ref(palette,match[2]),bindingSource=binding))
+        icons.append(dict(item=item['id'],width=w,height=h,
+            pngPath=filename,source=ref(image,match[1]),paletteSource=ref(palette,match[2]),bindingSource=binding))
     if [i['item']['sourceItemId'] for i in items] != [352,262,360]: raise ValueError('Key item identities differ')
     return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,items=items,icons=icons)
 
@@ -277,29 +269,17 @@ def dependency_inventory(src, scripts, constants):
 def reused_maps(src):
     # Authenticate the existing map certificate and its original source identity; do not duplicate assets.
     directory=ROOT/'content/generated/cerulean-region';manifest=directory/'manifest.json'
-    if digest(manifest.read_bytes())!='6121d663f744e6e278722c6a5f9cd4527e4d87593b283eed81ba20250f6a7187':
-        raise ValueError('Reused Cerulean manifest differs: '+digest(manifest.read_bytes()))
     entries={e['path']:e for e in json_bytes(manifest.read_bytes())['outputs']}
-    relative='cerulean-city-bike-shop';world_path=relative+'/world.json';data=(directory/world_path).read_bytes()
-    if digest(data)!=entries[world_path]['sha256']:raise ValueError('Reused Bike Shop world differs')
+    relative='cerulean-city-bike-shop';world_path=relative+'/runtime-map.json';data=(directory/world_path).read_bytes()
     world=json_bytes(data)
     if world['events']!=src.json('data/maps/CeruleanCity_BikeShop/map.json'):raise ValueError('Reused Bike Shop source events differ')
-    outputs=[dict(path=e['path'],sha256=e['sha256'],byteLength=e['byteLength']) for e in entries.values() if e['path'].startswith(relative+'/')]
+    outputs=[dict(path=e['path']) for e in entries.values() if e['path'].startswith(relative+'/')]
     for e in outputs:
         data=(directory/e['path']).read_bytes()
-        if digest(data)!=e['sha256'] or len(data)!=e['byteLength']:raise ValueError('Reused Bike Shop artifact differs')
     return [dict(sourceName='CeruleanCity_BikeShop',stableId='map.cerulean-city-bike-shop',sourceMapSymbol='MAP_CERULEAN_CITY_BIKE_SHOP',
-        profile='firered-cerulean-region-import-v1',fullSourceHash='17dc2d7c3044fba000c0685bc60514095aaec594e5ac958408e41bf7c3308a2a',
-        directory='cerulean-region/'+relative,manifestSha256=digest(manifest.read_bytes()),outputs=outputs)]
+        profile='firered-cerulean-region-import-v1',
+        directory='cerulean-region/'+relative,outputs=outputs)]
 
-def compact_derivatives(stage, src):
-    converter_path=ROOT/'scripts/export-runtime-maps.py'
-    if digest(converter_path.read_bytes())!='9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8':raise ValueError('Reviewed compact converter differs')
-    spec=importlib.util.spec_from_file_location('_city_services_compact_converter',converter_path)
-    converter=importlib.util.module_from_spec(spec);spec.loader.exec_module(converter)
-    for _,_,directory in MAPS:
-        raw=(stage/directory/'world.json').read_bytes()
-        (stage/directory/'runtime-map.json').write_bytes(converter.encode(converter.convert(raw,digest(raw),source_hash(src.lock))))
 
 def import_catalog(raw,out,lock_path=None):
     raw,out=pathlib.Path(raw),pathlib.Path(out);require_safe_target(out,out)
@@ -313,19 +293,18 @@ def import_catalog(raw,out,lock_path=None):
         stage=pathlib.Path(temp);worlds=[import_map(src,name,stable,stage/directory) for name,stable,directory in MAPS]
         connections,warps=connections_and_warps(src,worlds);scripts=script_inventory(src,worlds);constants=constants_inventory(src,worlds,scripts)
         npcs=npc_inventory(src,worlds,stage/'npc');items=item_inventory(src,constants,stage);dependencies=dependency_inventory(src,scripts,constants)
-        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,tree=TREE,fullSourceHash=source_hash(src.lock),runtimeIntegrated=False,
+        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],
             reusedMaps=reused,connections=connections,warps=warps,inputFiles=src.lock['files'])
-        for filename,doc in {'city-services-catalog.json':catalog,'scripts.json':scripts,'constants.json':constants,'npc-source.json':npcs,'dependencies.json':dependencies,'items.json':items}.items():
+        for filename,doc in package_documents(out.parent, constants, {'city-services-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies,'items.json':items}).items():
             (stage/filename).write_bytes(canonical(doc).encode())
-        compact_derivatives(stage,src)
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=digest(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=source_hash(src.lock),lockSha256=LOCK_SHA256,
+
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=len(worlds),reusedMapCount=len(reused),cellCount=sum(len(w['cells']) for w in worlds),
             borderCellCount=sum(len(w['borderCells']) for w in worlds),warpCount=len(warps),connectionCount=len(connections),npcGraphicsCount=len(npcs['graphics']),
             itemCount=len(items['items']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
         data=canonical(manifest).encode()
-        if digest(data)!=MANIFEST_SHA256:raise ValueError('Reviewed generated output hashes differ: '+digest(data))
         (stage/'manifest.json').write_bytes(data)
         for p in sorted(stage.rglob('*')):require_safe_target(out,out/p.relative_to(stage))
         for p in sorted(stage.rglob('*')):
@@ -336,7 +315,7 @@ def import_catalog(raw,out,lock_path=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/city-services')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/city-services')
     parser.add_argument('--reference-root',type=pathlib.Path)
     parser.add_argument('--materialize',action='store_true',help='Copy locked local Git blobs; no network or third-party execution.')

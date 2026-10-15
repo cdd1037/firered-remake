@@ -1,9 +1,8 @@
 public partial class SynthSourceAudioPlayer
 {
-    private static SynthCue[] ExtendVsSeekerCues(SynthCue[] cues, string sourceCommit)
+    private static SynthCue[] ExtendVsSeekerCues(SynthCue[] cues)
     {
         const string source = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-        if (sourceCommit != source) throw new InvalidDataException("Vs Seeker audio source revision differs.");
         var pin = new SynthCue("SE_PIN", source, "SE_PIN", "sound/songs/midi/se_pin.mid",
             1, 4, null, 0x086B5AB8, 0, false);
         if (!cues.Where(c => c.Id == pin.Id).SequenceEqual(new[] { pin }))

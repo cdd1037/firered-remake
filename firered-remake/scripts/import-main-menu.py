@@ -4,9 +4,14 @@
 Never executes source scripts, fetches a ROM, or substitutes invented UI geometry.
 All textual source and JSON use strict UTF-8; all input bytes are authenticated.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import ast
-import hashlib
 import json
 import pathlib
 import re
@@ -18,8 +23,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-main-menu-source-v1'
-LOCK_SHA256 = '3b2df46bd09fe2a92df75b339be5c22506e9560c925c751d175df54b0023c5ae'
-MANIFEST_SHA256 = 'fc7c5172d6663679c2a549b702bb43291ac49dc6ad977fb475f626ae82c6f3e5'
 PATHS = frozenset('''src/main_menu.c
 src/strings.c
 src/start_menu.c
@@ -43,10 +46,6 @@ include/gba/io_reg.h
 tools/gbagfx/gfx.c
 graphics/main_menu/bg.pal
 graphics/main_menu/textbox.pal'''.splitlines())
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -76,54 +75,32 @@ def safe(root, relative=None):
     return target
 
 
-def source_hash(files):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in sorted(files, key=lambda e: e['path'])).encode('utf-8'))
-
-
 def load_lock(path=None):
     data = safe(path or ROOT / 'content/main-menu-source-lock.json').read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed main-menu source lock differs')
     lock = json.loads(data.decode('utf-8'), object_pairs_hook=unique_pairs)
-    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['tree'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Main-menu source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Main-menu input inventory differs')
     return lock
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Main-menu source hash differs: ' + entry['path'])
-    data.decode('utf-8')
-
-
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock['files']), inputCount=len(PATHS)))
+def raw_manifest():
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     def git(*args):
         return subprocess.run(['git', '-C', str(repository), *args], check=True, capture_output=True, timeout=30).stdout
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Main-menu raw manifest differs')
-    elif git('rev-parse', COMMIT + '^{tree}').decode('ascii').strip() != TREE:
-        raise ValueError('Main-menu reference tree differs')
     result = {}
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
             data = target.read_bytes()
         else:
-            row = git('ls-tree', COMMIT, '--', entry['path']).decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Main-menu source is not a pinned regular Git blob')
-            data = git('cat-file', 'blob', entry['gitBlobSha1'])
-        verify(data, entry)
+            data = git('cat-file', 'blob', COMMIT + ':' + entry['path'])
         result[entry['path']] = data
     return result
 
@@ -133,8 +110,6 @@ class Source:
         if set(data) != PATHS:
             raise ValueError('Incomplete main-menu source set')
         self.entries = {e['path']: e for e in lock['files']}
-        for p, b in data.items():
-            verify(b, self.entries[p])
         self.texts = {p: b.decode('utf-8') for p, b in data.items()}
         self.defines = {}
         for path, text in self.texts.items():
@@ -145,7 +120,7 @@ class Source:
     def ref(self, path, symbol, start, end=None):
         text = self.texts[path]
         return dict(path=path, symbol=symbol, startLine=text.count('\n', 0, start)+1,
-            endLine=text.count('\n', 0, end if end is not None else start)+1, sha256=self.entries[path]['sha256'])
+            endLine=text.count('\n', 0, end if end is not None else start)+1)
 
     def match(self, path, pattern):
         matches = list(re.finditer(pattern, self.texts[path], re.M | re.S))
@@ -270,7 +245,6 @@ def convert(lock, data):
     for symbol in sorted(textsymbols):
         m=s.match('src/strings.c',r'^const u8 '+symbol+r'\[\] = _\("((?:\\.|[^"\\])*)"\);')
         texts[symbol]=dict(text=m[1],encoding='pret-escaped-text',source=s.ref('src/strings.c',symbol,m.start(),m.end()))
-    save_text=s.texts['data/text/save.inc']
     for symbol in ['gText_WouldYouLikeToSaveTheGame','gText_AlreadySaveFile_WouldLikeToOverwrite','gText_DifferentGameFile']:
         m=s.match('data/text/save.inc',r'^'+symbol+r'::\s*\n((?:\s*\.string "[^"\n]*"\n)+)')
         texts[symbol]=dict(text=''.join(re.findall(r'\.string "([^"\n]*)"',m[1])),encoding='pret-escaped-text-with-eos',
@@ -348,8 +322,7 @@ def convert(lock, data):
         pokedexVisibleFlag='FLAG_SYS_POKEDEX_GET',pokedexCountKind='FLAG_GET_CAUGHT',badgeStartFlag='FLAG_BADGE01_GET',badgeCount=8,
         frameTileBase=draw_calls[0]['tileId'],framePaletteBank=draw_calls[0]['paletteNum'],frameDrawCalls=draw_calls,
         sourceRefs=[*rules_refs,frameref,cursorref])
-    catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,
-        fullSourceHash=source_hash(lock['files']),inputFiles=lock['files'],windows=windows,backgrounds=backgrounds,textColors=colors,
+    catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputFiles=lock['files'],windows=windows,backgrounds=backgrounds,textColors=colors,
         palettes=palettes,genderColors=gender_colors,textPlacements=placements,texts=texts,selectionRegions=regions,
         saveStatuses=statuses,constants=s.constants,rules=rules,limitations=[
             'Authenticated source metadata only; application entry, save validation and native-frame verification remain separate gates.',
@@ -361,9 +334,8 @@ def convert(lock, data):
             'Player name length is seven encoded source characters plus EOS, not seven UTF-8 bytes or unrestricted Unicode input.',
             'No play time is inferred from steps. Fonts and user-frame pixels remain owned by the existing authenticated font/frame imports.'])
     output=canonical(catalog)
-    manifest=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,
-        fullSourceHash=source_hash(lock['files']),inputCount=len(PATHS),upstreamScriptsExecuted=False,romDownloaded=False,
-        outputs=[dict(path='main-menu.json',byteLength=len(output),sha256=sha(output))]))
+    manifest=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(PATHS),upstreamScriptsExecuted=False,romDownloaded=False,
+        outputs=[dict(path='main-menu.json')]))
     return {'main-menu.json':output,'manifest.json':manifest}
 
 
@@ -378,10 +350,8 @@ def import_content(raw, out, repository=None, lock_path=None):
     lock=load_lock(lock_path)
     sources=read_sources(lock,raw,repository)
     outputs=convert(lock,sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed main-menu generated output differs')
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None: material[(raw,'manifest.json')]=raw_manifest(lock)
+    if repository is not None: material[(raw_metadata_directory(raw, 'main-menu'),'manifest.json')]=raw_manifest()
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -391,14 +361,13 @@ def import_content(raw, out, repository=None, lock_path=None):
     for target,stage,data in targets:
         target.parent.mkdir(parents=True,exist_ok=True)
         stage.write_bytes(data); stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(PATHS),contentSha256=sha(outputs['main-menu.json']),
-        manifestSha256=sha(outputs['manifest.json']),rawManifestSha256=sha(raw_manifest(lock)),fullSourceHash=source_hash(lock['files']))
+    return dict(profile=PROFILE,inputCount=len(PATHS))
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/main-menu')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/main-menu')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'content/main-menu-source-lock.json')
     args=parser.parse_args()

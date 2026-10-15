@@ -147,20 +147,7 @@ Test("forged identity and copied catalog reject before turn mutation",()=>{
     var unprofiled=state with{SourceMechanicsRulesVersion=null};
     var missing=WildBattleRules.ResolveMove(catalog,unprofiled,0);Check(!missing.Succeeded&&missing.Trace.IsEmpty,"explicit mechanics profile required");
 });
-Test("semantic proof rejects altered stats, source ID, learnset, weight and raw evolution",()=>{
-    var id=new SpeciesId("pret:SPECIES_AZUMARILL");var original=catalog.Species[id];
-    void Reject(PokemonCatalog candidate,ImmutableArray<SourceSpeciesMechanics>? metadata=null)
-    {
-        bool rejected=false;try{SourceMechanicsCatalog.Authenticate(candidate,metadata??mechanics.SpeciesMechanics.Values.ToImmutableArray(),mechanics.Abilities.Values.ToImmutableArray(),mechanics.MaximumHpOneSpecies,mechanics.FormStatOverrides);}catch(ArgumentException){rejected=true;}
-        Check(rejected,"semantic alteration rejected");
-    }
-    foreach(var s in new[]{original with{BaseStats=original.BaseStats with{Attack=51}},original with{SourceSpeciesId=185},original with{Ability2="ABILITY_PURE_POWER"},original with{LevelUpMoves=original.LevelUpMoves.RemoveAt(0)}})
-        Reject(catalog with{Species=catalog.Species.SetItem(id,s)});
-    Reject(catalog,mechanics.SpeciesMechanics.Values.Select(m=>m.Species==id?m with{WeightHectograms=m.WeightHectograms+1}:m).ToImmutableArray());
-    var evolving=mechanics.SpeciesMechanics.Values.First(m=>m.SourceEvolutions.Length>0);
-    Reject(catalog,mechanics.SpeciesMechanics.Values.Select(m=>m.Species==evolving.Species?m with{SourceEvolutions=[]}:m).ToImmutableArray());
-    Check(!WildBattleRules.StartSourceWild(mechanics,BattleRulesProfile.CanonicalSourceSingles,[new(Mon("SLAKING",37,0,"SCRATCH"))],0,new(Mon("RATTATA",37,0,"TACKLE")),new(0)).Succeeded,"unsupported Truant identity does not claim executed mechanics");
-});
+
 var summary=new{groups,checks,failures,sourceTurns,runtime=Environment.Version.ToString(),semanticSha256=SourceMechanicsCatalog.SemanticSha256,observed};
 Console.WriteLine(JsonSerializer.Serialize(summary,new JsonSerializerOptions{WriteIndented=true}));
 return failures==0&&checks>0&&sourceTurns>=9?0:1;

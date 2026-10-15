@@ -2,176 +2,91 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 194,
-      "gitBlobSha1": "1f0ba5049d9c8d1d75666ea26fe23ff9d88b18ce",
-      "path": "graphics/items/icon_palettes/fire_tm_hm.pal",
-      "sha256": "abf93622b18caf0ddd7fbf4d7dcc74ce3280d4a18e84fe99032d11afcf5a25cc"
+      "path": "graphics/items/icon_palettes/fire_tm_hm.pal"
     },
     {
-      "byteLength": 177,
-      "gitBlobSha1": "35de1c5626b637582bc3066a6868333365fd2083",
-      "path": "graphics/items/icon_palettes/full_restore.pal",
-      "sha256": "d45ca30e0c77cc4361b814604b192aea099f496e968dc917ff2f8de669eff4bd"
+      "path": "graphics/items/icon_palettes/full_restore.pal"
     },
     {
-      "byteLength": 172,
-      "gitBlobSha1": "a531418942bcf7d5fdf256c697b22a7c7f8bed00",
-      "path": "graphics/items/icon_palettes/gold_teeth.pal",
-      "sha256": "7b703aa1a0f98ce6198ad391e7d7b23ad78ae7d204292b2f7f3ebbe09fe12f8a"
+      "path": "graphics/items/icon_palettes/gold_teeth.pal"
     },
     {
-      "byteLength": 175,
-      "gitBlobSha1": "41b1af789cc8222f0457301d127e526a295ccc42",
-      "path": "graphics/items/icon_palettes/leaf_stone.pal",
-      "sha256": "1472baef6879944aec358847249953360429433d4f5c6e8256b93e24b3b590a5"
+      "path": "graphics/items/icon_palettes/leaf_stone.pal"
     },
     {
-      "byteLength": 178,
-      "gitBlobSha1": "8ac590135e7c7ffa403d6fe32001e1427522acdd",
-      "path": "graphics/items/icon_palettes/max_potion.pal",
-      "sha256": "8e3c98705253cb2ef79e5e9a86bc8f24af374efb5c28c73dd62f5d63f3b24b7a"
+      "path": "graphics/items/icon_palettes/max_potion.pal"
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "a5bd9da1c79e9489f785b964c962ab50da39f247",
-      "path": "graphics/items/icon_palettes/normal_tm_hm.pal",
-      "sha256": "6a18911b91817e9b86068c1e485420dd99751da04603f6241ee783339bed69d4"
+      "path": "graphics/items/icon_palettes/normal_tm_hm.pal"
     },
     {
-      "byteLength": 179,
-      "gitBlobSha1": "913a87ea471bca3abc8dd19f1fd0d4fbfb990b6c",
-      "path": "graphics/items/icon_palettes/protein.pal",
-      "sha256": "d79cb40bb639f6c2c1ca2dccc50ff012d9c1ad03f465a6a995ab8f912df3fc7b"
+      "path": "graphics/items/icon_palettes/protein.pal"
     },
     {
-      "byteLength": 168,
-      "gitBlobSha1": "169de57a16595a2c200dfb026ef6b5c46ccd7a7b",
-      "path": "graphics/items/icon_palettes/quick_claw.pal",
-      "sha256": "b1a591cc5f3ff0aad089e3b6f2d835a0ed3cc5d9f7d0eade919eef700d5c5688"
+      "path": "graphics/items/icon_palettes/quick_claw.pal"
     },
     {
-      "byteLength": 153,
-      "gitBlobSha1": "ec9f047825a054df1e958db4e00dd81a53db0dba",
-      "path": "graphics/items/icon_palettes/revive.pal",
-      "sha256": "f78dae1109eba7a4c466e420f91183514948a04139d5dea6e0507ead3d860d97"
+      "path": "graphics/items/icon_palettes/revive.pal"
     },
     {
-      "byteLength": 197,
-      "gitBlobSha1": "73df7faabcc2342b9088696091fa726fbaf5c8d8",
-      "path": "graphics/items/icon_palettes/steel_tm_hm.pal",
-      "sha256": "48c64fca4091ec10142aea8723a63c60ab17795747f15d4eb889acb587ffde26"
+      "path": "graphics/items/icon_palettes/steel_tm_hm.pal"
     },
     {
-      "byteLength": 196,
-      "gitBlobSha1": "9d10b3c1d657baf4c268dc1d4c8896f6a896629f",
-      "path": "graphics/items/icon_palettes/water_tm_hm.pal",
-      "sha256": "ef82275c397acdbad9c7651afd859f2f9476bb0afd74ffc2f9aa9d037f0e6cd1"
+      "path": "graphics/items/icon_palettes/water_tm_hm.pal"
     },
     {
-      "byteLength": 297,
-      "gitBlobSha1": "a6dd8b569df4fe8e3e18d647e5ab78a12ba9349c",
-      "path": "graphics/items/icons/gold_teeth.png",
-      "sha256": "83f7359db21485b12edf7dddcd648d599d8123491550fb60954b4859cf2c8222"
+      "path": "graphics/items/icons/gold_teeth.png"
     },
     {
-      "byteLength": 304,
-      "gitBlobSha1": "9d5b8a051e28333e2c6414c8d2fb4facd7b75c61",
-      "path": "graphics/items/icons/large_potion.png",
-      "sha256": "06d2195c82a86d16847fda8a737c2606968e0c2fc85d55e1de5979903ea0e3d0"
+      "path": "graphics/items/icons/large_potion.png"
     },
     {
-      "byteLength": 326,
-      "gitBlobSha1": "d0adc718127fbfcab283b3d4051df00815cc9480",
-      "path": "graphics/items/icons/leaf_stone.png",
-      "sha256": "14f633943e198b995b7aa7f0adef1bf083392818cd4c547d58ea8820343ed319"
+      "path": "graphics/items/icons/leaf_stone.png"
     },
     {
-      "byteLength": 269,
-      "gitBlobSha1": "dd3df2b0c4bca0712b40e883053a41208dc39a8c",
-      "path": "graphics/items/icons/max_revive.png",
-      "sha256": "c0ec43ddc330925bab58f867070614ab7bee72b05aea27aed90304f1eb3dd899"
+      "path": "graphics/items/icons/max_revive.png"
     },
     {
-      "byteLength": 244,
-      "gitBlobSha1": "3f2c298c847d9513b0e94cad656ee1301b0b3831",
-      "path": "graphics/items/icons/quick_claw.png",
-      "sha256": "ae96e287d21d503b9982976671437048ad4f640f2add54fea56700e775c579ba"
+      "path": "graphics/items/icons/quick_claw.png"
     },
     {
-      "byteLength": 344,
-      "gitBlobSha1": "c4e6d1df78a0498443ae3567ec7c9f3839e7713a",
-      "path": "graphics/items/icons/tm_hm.png",
-      "sha256": "ad43897b481aa49e13dd85f205fe5fe9496212e47266eb3e9359113ad03d77bf"
+      "path": "graphics/items/icons/tm_hm.png"
     },
     {
-      "byteLength": 273,
-      "gitBlobSha1": "2ba89b154cd317ddd3dfdbba9cc24d2dd7adcb6a",
-      "path": "graphics/items/icons/vitamin.png",
-      "sha256": "2900e01a302c63dc86dd65e5b669aa3657d8f9f56f56d155ede3c3c55dabf783"
+      "path": "graphics/items/icons/vitamin.png"
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "path": "include/constants/items.h",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      "path": "include/constants/items.h"
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
-      "path": "include/constants/moves.h",
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      "path": "include/constants/moves.h"
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "path": "include/constants/species.h",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "byteLength": 121457,
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
-      "path": "src/data/battle_moves.h",
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+      "path": "src/data/battle_moves.h"
     },
     {
-      "byteLength": 46353,
-      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
-      "path": "src/data/graphics/items.h",
-      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+      "path": "src/data/graphics/items.h"
     },
     {
-      "byteLength": 30370,
-      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
-      "path": "src/data/item_icon_table.h",
-      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+      "path": "src/data/item_icon_table.h"
     },
     {
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "path": "src/data/items.json",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      "path": "src/data/items.json"
     },
     {
-      "byteLength": 36157,
-      "gitBlobSha1": "6b4ebc1f7c0c5f72eb28f656c31be10f86e02094",
-      "path": "src/data/party_menu.h",
-      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7"
+      "path": "src/data/party_menu.h"
     },
     {
-      "byteLength": 559340,
-      "gitBlobSha1": "0aa21e85be2f970536c8ed901c556013c16327e5",
-      "path": "src/data/pokemon/tmhm_learnsets.h",
-      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+      "path": "src/data/pokemon/tmhm_learnsets.h"
     },
     {
-      "byteLength": 62085,
-      "gitBlobSha1": "8ece0e12d5fa10eb170bb6ad3ecf9a2ccf1ca624",
-      "path": "src/move_descriptions.c",
-      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+      "path": "src/move_descriptions.c"
     }
   ],
   "profile": "firered-safari-items-v1",
   "repository": "pret/pokefirered",
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

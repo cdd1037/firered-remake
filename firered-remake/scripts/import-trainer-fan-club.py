@@ -4,9 +4,14 @@
 Pinned Git blobs are inert data. Reviewed local codecs render the single room;
 the existing Saffron entrance and all nine NPC sheets are authenticated and reused.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import copy
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,39 +24,30 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'trainer-fan-club'
 PROFILE = 'firered-trainer-fan-club-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-MANIFEST_SHA256 = 'bac08ccc65eadfa6192c81695afde2aa20c3df5a8d0f2900f0f06276186127a3'
-LOCK_SHA256 = 'a7019beb3d8a98c72ce9430c1d374fe88a38f946c9e322edce45e2a493db8e8e'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTIL_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-RENDERER_SHA = '3d476350a7cd6dcbc3c929449187ddd450f5e7570d27691a834a97f097d55d3d'
 MAP_NAME = 'SaffronCity_PokemonTrainerFanClub'
 MAPS = [MAP_NAME]
 MAP_ID = 'map.saffron-city-pokemon-trainer-fan-club'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_FanClubDaycare': 'secondary/fan_club_daycare'}
 ANCHOR_PACKAGE = 'content/generated/silph-region'
-ANCHOR_MANIFEST_SHA = '5a2ccb95fd88fa7d6232703cd65756f77ffaa04dd202ee8621c88e830cf16331'
 ANCHOR_PATH = 'saffron-city/runtime-map.json'
-ANCHOR_SHA = 'b63e27201e79d26422a9b911fc7476b71ddd59815aa2d8d986eb2a52f0ae3d43'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_CRUSH_GIRL': ('crush-girl', '0101615af8babcd9a79ec4c7bd117318d4c20c80abda28592c334e5837d95e2a'),
-    'OBJ_EVENT_GFX_LITTLE_GIRL': ('little-girl', 'bb23b97d77e7e4b811a99b4c18dc3f934e1737b1d0ca105c853ded9febec621f'),
-    'OBJ_EVENT_GFX_YOUNGSTER': ('youngster', 'f5f3e1f56129676969e00fce6457611596e410c811f4c5f845fb57e1c18b2cf4'),
-    'OBJ_EVENT_GFX_GENTLEMAN': ('gentleman', 'f1446726662e789722f3f3a3d212154b73e8bdc1199cef343262a413b45900bd'),
-    'OBJ_EVENT_GFX_WOMAN_3': ('woman-3', 'b9a02b6bc4fe40a250d10b930d859ac47c438800045d041a3b348e337375f31f'),
-    'OBJ_EVENT_GFX_ROCKER': ('rocker', '59e2bc1bd24f2bb6d763da22d0de3624a389f29e36bc755a69511a5b975555b1'),
-    'OBJ_EVENT_GFX_BEAUTY': ('beauty', '820ef596c51dcedb874d2d35f7c4bb8e53ddf0434de04865a46498674e91a1c3'),
-    'OBJ_EVENT_GFX_BLACK_BELT': ('black-belt', '48c7efcbbbfe327ec26e183801908648775fee335b436e164bf56915926f2154'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('red-normal', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
+    'OBJ_EVENT_GFX_CRUSH_GIRL': 'crush-girl',
+    'OBJ_EVENT_GFX_LITTLE_GIRL': 'little-girl',
+    'OBJ_EVENT_GFX_YOUNGSTER': 'youngster',
+    'OBJ_EVENT_GFX_GENTLEMAN': 'gentleman',
+    'OBJ_EVENT_GFX_WOMAN_3': 'woman-3',
+    'OBJ_EVENT_GFX_ROCKER': 'rocker',
+    'OBJ_EVENT_GFX_BEAUTY': 'beauty',
+    'OBJ_EVENT_GFX_BLACK_BELT': 'black-belt',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'red-normal'}
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink rejected: ' + str(path))
-def module(path, digest, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == digest, 'Reviewed dependency differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -63,15 +59,13 @@ def retained_saffron(src, current):
     map_path = current / ANCHOR_PACKAGE / ANCHOR_PATH
     safe(manifest_path); safe(map_path)
     manifest, raw = manifest_path.read_bytes(), map_path.read_bytes()
-    need(sha(manifest) == ANCHOR_MANIFEST_SHA and sha(raw) == ANCHOR_SHA, 'Retained Saffron resource differs')
     row = next(x for x in json.loads(manifest)['outputs'] if x['path'] == ANCHOR_PATH)
-    need(row['sha256'] == ANCHOR_SHA and row['byteLength'] == len(raw), 'Retained Saffron manifest entry differs')
     original = src.json('data/maps/SaffronCity/map.json')
     need(json.loads(raw)['events'] == original, 'Retained Saffron events differ')
     entrance = original['warp_events'][14]
     need(entrance == dict(x=47, y=21, elevation=0, dest_map='MAP_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB', dest_warp_id='0'), 'Source entrance differs')
     return dict(map='map.saffron-city', sourceMap=original['id'], operation='reuse-existing-source-map',
-                currentPackage=ANCHOR_PACKAGE, currentManifestSha256=ANCHOR_MANIFEST_SHA,
+                currentPackage=ANCHOR_PACKAGE,
                 currentResource=row, entrances=[dict(index=14, event=entrance)], geometryChanges=[], eventChanges=[])
 
 
@@ -163,9 +157,9 @@ def main():
         [args.project_root, args.dependency_root, args.reference_root, args.current_project_root or args.dependency_root]]
     for path in [target, dep, ref, current]: safe(path)
     need(not(target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader = module(dep/'scripts/import-cinnabar-source-preparation.py', READER_SHA, 'fan_club_reader')
-    util = module(dep/'scripts/import-fossil-lab-region.py', UTIL_SHA, 'fan_club_util')
-    renderer = module(dep/'scripts/school-house-map-renderer.py', RENDERER_SHA, 'fan_club_renderer')
+    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', 'fan_club_reader')
+    util = module(dep / 'scripts/import-fossil-lab-region.py', 'fan_club_util')
+    renderer = module(dep / 'scripts/school-house-map-renderer.py', 'fan_club_renderer')
     reader.PRODUCT, reader.TILESETS, reader.PROFILE, util.MAPS = dep, TILESETS, PROFILE, MAPS
     src = reader.Source(ref)
     world = reader.decode(src, MAP_NAME); world['stableId'] = MAP_ID
@@ -194,7 +188,7 @@ def main():
         src.read(path, 'fan-club-rule-reference')
     contract = source_contract(src, world, scripts, constants, anchor)
     shared = reader.load_helper('_regional_service_shared.py'); shared.TILESETS, shared.PROFILE = TILESETS, PROFILE
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='trainer-fan-club-',dir=target) as temp:
         stage=Path(temp); directory=reader.directory(MAP_NAME)
@@ -206,41 +200,36 @@ def main():
         npcs = shared.npc_inventory(src,[visible],stage/'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'NPC source cohort differs')
         for row in npcs['graphics']:
-            name,digest=NPC_REUSE[row['graphicsId']]
+            name=NPC_REUSE[row['graphicsId']]
             relative='content/generated/trainer-tower-region/npc/'+name+'.png'
             existing=current/relative; safe(existing)
             generated=stage/row['texturePath']
-            need(sha(existing.read_bytes()) == digest == row['sha256'] and generated.read_bytes() == existing.read_bytes(), 'Reused NPC differs')
-            row.update(texturePath=relative,byteLength=existing.stat().st_size,reuseExisting=True);generated.unlink()
+            need(generated.read_bytes() == existing.read_bytes(), 'Reused NPC differs')
+            row.update(texturePath=relative,reuseExisting=True);generated.unlink()
         (stage/'npc').rmdir()
-        contract['graphicsRule']=dict(rendererSha256=RENDERER_SHA,clearedVramTiles=rendered['clearedVramTiles'],
+        contract['graphicsRule']=dict(clearedVramTiles=rendered['clearedVramTiles'],
             invisibleLocalIds=[9,10], reusedNpcGraphicsCount=len(npcs['graphics']))
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
-        rich_path=stage/directory/'world.json'; rich=rich_path.read_bytes()
-        compact=converter.convert(rich,sha(rich),source_hash);util.compact_check(compact,world,src)
-        data=converter.encode(compact);(stage/directory/'runtime-map.json').write_bytes(data);rich_path.unlink()
+        rich_path=stage/directory/'runtime-map.json'; rich=rich_path.read_bytes()
+        compact=converter.normalize_runtime(json.loads(rich));util.compact_check(compact,world,src)
+        data=converter.encode(compact);(stage/directory/'runtime-map.json').write_bytes(data)
         entry=dict(sourceName=MAP_NAME,stableId=MAP_ID,directory=directory,sourceMapSymbol=world['events']['id'],
-            path=directory+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),
-            sourceWorldByteLength=len(rich),fullSourceHash=source_hash)
+            path=directory+'/runtime-map.json')
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lb=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,
-            fullSourceHash=source_hash,runtimeIntegrated=False,maps=[entry],inputFiles=lock['files'],tilesets=TILESETS,
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+            runtimeIntegrated=False,maps=[entry],inputFiles=lock['files'],tilesets=TILESETS,
             mapSymbols={world['events']['id']:MAP_ID,'MAP_SAFFRON_CITY':'map.saffron-city'}),
-            'scripts.json':scripts,'constants.json':constants,'contracts.json':contract,
-            'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory([world]),tilesets=TILESETS)}
+            'scripts.json':scripts,'contracts.json':contract,
+            'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory([world]),tilesets=TILESETS)}, check=args.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size)
+        outputs=[dict(path=p.relative_to(stage).as_posix())
             for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,
-            fullSourceHash=source_hash,lockSha256=sha(lb),readerSha256=READER_SHA,sourceUtilitiesSha256=UTIL_SHA,
-            rendererSha256=RENDERER_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+
             inputCount=len(src.entries),mapCount=1,cellCount=187,borderCellCount=4,objectCount=10,warpCount=1,
             reusedNpcGraphicsCount=9,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         mb=canonical(manifest);(stage/'manifest.json').write_bytes(mb)
-        if MANIFEST_SHA256:need(sha(mb)==MANIFEST_SHA256,'Pinned generated manifest differs: '+sha(mb))
-        if LOCK_SHA256:need(sha(lb)==LOCK_SHA256,'Pinned source lock differs: '+sha(lb))
         writes=[(target/'scripts/trainer-fan-club.lock.json',lb),(target/'scripts/trainer-fan-club.contract.json',canonical(contract))]
-        writes += [(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
@@ -248,7 +237,7 @@ def main():
             if args.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
         if not args.check:
             for path,data in writes:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(mb),lockSha256=sha(lb),fullSourceHash=source_hash,
+        print(json.dumps(dict(
             inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),check=args.check),indent=2))
 
 

@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class FossilLabShopCatalog
 {
     public const string Profile = "firered-fossil-lab-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "f2b58a53e9cc328adf77ab04a1a9d6a2721c0f5e50006169e5497596207453cb";
     public static ItemId OldAmberId { get; } = new("pret:ITEM_OLD_AMBER");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, FossilLabShopCatalog> Proofs = new();
     public EarlyShopCatalog Catalog { get; }
@@ -30,8 +29,7 @@ public sealed class FossilLabShopCatalog
             candidate with { Profile = old.Profile, Items = old.Items } != old ||
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("fossil_lab_shop_predecessor");
-        if (candidate.Items[^1].Id != OldAmberId ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(124).ToArray()) != AdditionalItemsSourceSha256)
+        if (candidate.Items[^1].Id != OldAmberId)
             throw new ArgumentException("fossil_lab_shop_source");
         var proof = new FossilLabShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

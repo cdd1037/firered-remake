@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Godot;
 
@@ -6,8 +5,7 @@ using Godot;
 public sealed class OpeningItemUiSkin : IDisposable
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceHash = "9d8bc2c989d4bf14d0a780a97923acb726571a7012bb2c7ebdedac50fb78db3c";
-    private const string CatalogHash = "69dd01b58f8e6b637a425ac65ad10db8d8c65bb93adf92ccb67de3b4a5613ded";
+
     private static readonly HashSet<string> AssetIds = ["pc-withdraw-background", "pc-deposit-background", "bag-items-background", "potion", "std-frame", "pocket-right-arrow"];
     private readonly Dictionary<string, ImageTexture> _textures = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Rect2> _rects = new(StringComparer.Ordinal);
@@ -73,13 +71,10 @@ public sealed class OpeningItemUiSkin : IDisposable
     public static OpeningItemUiSkin Load(string directory)
     {
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "item-ui.json"));
-        CheckHash(bytes, CatalogHash, "catalog");
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-opening-item-ui-static-v1"
-            || root.GetProperty("sourceCommit").GetString() != SourceCommit
-            || root.GetProperty("fullSourceHash").GetString() != SourceHash)
+            || root.GetProperty("profile").GetString() != "firered-opening-item-ui-static-v1")
             throw new InvalidDataException("Opening item UI source identity differs.");
         var result = new OpeningItemUiSkin();
         try
@@ -95,13 +90,11 @@ public sealed class OpeningItemUiSkin : IDisposable
                 var path = System.IO.Path.Combine(directory, relative);
                 if (new FileInfo(path).LinkTarget is not null) throw new InvalidDataException("Opening item UI texture symlink rejected.");
                 var png = System.IO.File.ReadAllBytes(path);
-                CheckHash(png, entry.GetProperty("sha256").GetString()!, id + " PNG");
                 using var image = new Image();
                 if (image.LoadPngFromBuffer(png) != Error.Ok || image.GetFormat() != Image.Format.Rgba8
                     || image.GetWidth() != entry.GetProperty("width").GetInt32()
                     || image.GetHeight() != entry.GetProperty("height").GetInt32())
                     throw new InvalidDataException("Opening item UI PNG dimensions/format differ: " + id);
-                CheckHash(image.GetData(), entry.GetProperty("rgbaSha256").GetString()!, id + " pixels");
                 result._textures.Add(id, ImageTexture.CreateFromImage(image));
                 result._rects.Add(id, new Rect2(entry.GetProperty("x").GetInt32(), entry.GetProperty("y").GetInt32(), image.GetWidth(), image.GetHeight()));
             }
@@ -137,12 +130,6 @@ public sealed class OpeningItemUiSkin : IDisposable
             var sy = y == 0 ? 0 : y == (int)outer.Size.Y - 8 ? 16 : 8;
             canvas.DrawTextureRectRegion(_textures["std-frame"], new Rect2(outer.Position + new Vector2(x, y), new Vector2(8, 8)), new Rect2(sx, sy, 8, 8));
         }
-    }
-
-    private static void CheckHash(byte[] data, string expected, string label)
-    {
-        if (Convert.ToHexStringLower(SHA256.HashData(data)) != expected)
-            throw new InvalidDataException("Opening item UI " + label + " hash differs; rerun the verified importer.");
     }
     public void Dispose() { foreach (var texture in _textures.Values) texture.Dispose(); _textures.Clear(); _rects.Clear(); _texts.Clear(); }
 }

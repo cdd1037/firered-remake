@@ -9,10 +9,10 @@ public static class CeladonGymMachineRules
     public static ItemId Tm19Id => CeladonGymItemRules.Tm19Id;
     public static MoveId GigaDrainId { get; } = new("pret:MOVE_GIGA_DRAIN");
     private static readonly (string Symbol, int Id, string Bits, OpeningItemSourceRef Source)[] Added = [
-        ("VILEPLUME",45,"001001100110101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_VILEPLUME",1006,1023,"92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f")),
-        ("VICTREEBEL",71,"001101100110101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_VICTREEBEL",1641,1659,"92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f")),
-        ("EXEGGCUTE",102,"001101100100101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_EXEGGCUTE",2343,2364,"92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f")),
-        ("TANGELA",114,"001101100110101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_TANGELA",2675,2694,"92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f")),
+        ("VILEPLUME",45,"001001100110101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_VILEPLUME",1006,1023)),
+        ("VICTREEBEL",71,"001101100110101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_VICTREEBEL",1641,1659)),
+        ("EXEGGCUTE",102,"001101100100101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_EXEGGCUTE",2343,2364)),
+        ("TANGELA",114,"001101100110101",new("src/data/pokemon/tmhm_learnsets.h","SPECIES_TANGELA",2675,2694)),
     ];
     private static readonly HashSet<SpeciesId> GigaDrainSpecies = "BULBASAUR IVYSAUR VENUSAUR BUTTERFREE BEEDRILL EKANS ARBOK ZUBAT GOLBAT ODDISH PARAS PARASECT BELLSPROUT GRIMER GLOOM WEEPINBELL TENTACOOL TENTACRUEL VENOMOTH VENONAT MUK VILEPLUME VICTREEBEL EXEGGCUTE TANGELA".Split(' ').Select(s => new SpeciesId("pret:SPECIES_" + s)).ToHashSet();
     public static void ValidateCatalog(PewterMachineCatalog catalog)

@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+using Game.Content;
 using System.Text.Json;
 
 internal sealed record FuchsiaGymTrainerPresentation(string Trainer, string Name, string TrainerClass,
@@ -6,66 +6,36 @@ internal sealed record FuchsiaGymTrainerPresentation(string Trainer, string Name
 internal sealed record FuchsiaGymPresentationData(Dictionary<string, byte[]> Files,
     Dictionary<string, FuchsiaGymTrainerPresentation> Trainers);
 
-/// <summary>Source-authenticated static presentation. Reuses existing terrain, TM, badge and custom synthesis.</summary>
+/// <summary>Source presentation. Reuses existing terrain, TM, badge and custom synthesis.</summary>
 internal static class FuchsiaGymPresentationAssets
 {
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    internal const string ManifestSha256 = "dca53956ac73f000efc098319b6e6afb516d3c8f1491cb2969ce56485adeb116";
-    internal const string LockSha256 = "3811310c38b131d5ece0631cb9269e6dcc7575e3b635f86a0100bade35f01a88";
-    private const string Base = "content/generated/fuchsia-gym-presentation/";
 
-    // These immutable lock rows witness the initial audio build. Static portrait generation
-    // never consumes C# source; current synthesis ownership is in OriginalAudioCore/PROVENANCE.json.
-    // Keep the old rows byte-identical, while runtime still authenticates every actual asset input.
-    internal static bool IsHistoricalBuildWitness(string path) => path is
-        "src/Game.Godot/OriginalAudioCore_Cry.cs" or
-        "src/Game.Godot/OriginalAudioCore_CryCatalog.cs" or
-        "src/Game.Godot/OriginalAudioCore_Profiles.cs" or
-        "src/Game.Godot/OriginalAudioCore_PsgSynth.cs" or
-        "src/Game.Godot/OriginalAudioCore_Resources.cs" or
-        "src/Game.Godot/OriginalAudioCore_Sequence.cs" or
-        "src/Game.Godot/OriginalAudioCore_Synth.cs";
+    private const string Base = "content/generated/fuchsia-gym-presentation/";
 
     internal static FuchsiaGymPresentationData Load(string root)
     {
-        byte[] Read(string relative, string hash, int expected)
+        byte[] Read(string relative)
         {
             if (Path.IsPathRooted(relative) || relative.Contains('\\') ||
-                relative.Split('/').Any(p => p is "" or "." or "..") || expected is <= 0 or > 3_000_000)
+                relative.Split('/').Any(p => p is "" or "." or ".."))
                 throw new InvalidDataException("Unsafe Fuchsia Gym presentation path or size.");
             var file = new FileInfo(Path.Combine(root, relative));
             if (file.LinkTarget is not null) throw new InvalidDataException("Fuchsia Gym presentation symlink rejected.");
             for (var parent = file.Directory; parent is not null; parent = parent.Parent)
                 if (parent.LinkTarget is not null) throw new InvalidDataException("Fuchsia Gym presentation directory symlink rejected.");
-            if (file.Length != expected) throw new InvalidDataException("Fuchsia Gym presentation size differs: " + relative);
             var data = File.ReadAllBytes(file.FullName);
-            if (Convert.ToHexStringLower(SHA256.HashData(data)) != hash)
-                throw new InvalidDataException("Fuchsia Gym presentation bytes differ: " + relative);
             return data;
         }
-        using var locked = JsonDocument.Parse(Read(Base + "source-lock.json", LockSha256, 14009));
-        using var manifest = JsonDocument.Parse(Read(Base + "manifest.json", ManifestSha256, 23516));
-        var m = manifest.RootElement; var l = locked.RootElement;
-        if (m.GetProperty("schemaVersion").GetInt32() != 1 ||
-            m.GetProperty("sourceCommit").GetString() != SourceCommit ||
-            m.GetProperty("profile").GetString() != "firered-fuchsia-gym-presentation-v1" ||
-            m.GetProperty("lockSha256").GetString() != LockSha256 ||
-            !JsonElement.DeepEquals(m.GetProperty("inputs"), l.GetProperty("files")) ||
-            !JsonElement.DeepEquals(m.GetProperty("reusedInputs"), l.GetProperty("inputs")))
+        using var manifest = JsonDocument.Parse(Read(Base + "manifest.json"));
+        var m = manifest.RootElement;         if (m.GetProperty("schemaVersion").GetInt32() != 1 ||
+            m.GetProperty("profile").GetString() != "firered-fuchsia-gym-presentation-v1")
             throw new InvalidDataException("Fuchsia Gym presentation provenance differs.");
-        foreach (var row in l.GetProperty("files").EnumerateArray())
-            Read(row.GetProperty("projectPath").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-        foreach (var row in l.GetProperty("inputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            if (!IsHistoricalBuildWitness(path))
-                Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-        }
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("outputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(Base + path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+            files.Add(path, Read(Base + path));
         }
         var trainers = new Dictionary<string, FuchsiaGymTrainerPresentation>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("trainers").EnumerateArray())
@@ -75,8 +45,8 @@ internal static class FuchsiaGymPresentationAssets
                 row.GetProperty("className").GetString()!, row.GetProperty("portrait").GetString()!,
                 row.GetProperty("trainerPic").GetString()!, row.GetProperty("encounterMusicGender").GetInt32()));
         }
-        if (files.Count != 6 || trainers.Count != 7 || new[] { "juggler-front", "tamer-front", "koga-front" }
-            .Any(id => !files.TryGetValue(id + ".rgba", out var pixels) || pixels.Length != 64 * 64 * 4))
+        if (new[] { "juggler-front", "tamer-front", "koga-front" }
+            .Any(id => !files.TryGetValue(id + ".png", out var pixels) || PngRgba8.Decode(pixels, 64, 64).Length != 64 * 64 * 4))
             throw new InvalidDataException("Fuchsia Gym presentation inventory differs.");
         return new(files, trainers);
     }

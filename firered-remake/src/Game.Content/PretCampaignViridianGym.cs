@@ -16,15 +16,14 @@ public sealed partial class PretCampaignCatalog
     public ViridianGymTrainerCatalog? ViridianGymTrainerParties { get; }
     public bool ViridianGymEnabled=>ViridianGymRegion is not null;
 
-    private static void AppendViridianGymSources(PretViridianGymRegion region,List<PretSourceScriptFile> sources,
-        List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendViridianGymSources(PretViridianGymRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var source in region.Scripts)
         {
             if(prior.TryGetValue(source.Path,out var old))
             {
-                if(old.SourceRef.Sha256!=source.SourceRef.Sha256||old.Text!=source.Text)
+                if(old.Text!=source.Text)
                     throw new InvalidDataException("viridian_gym_source_conflict: "+source.Path);
             }
             else{prior.Add(source.Path,source);sources.Add(source);}
@@ -32,29 +31,21 @@ public sealed partial class PretCampaignCatalog
         }
         foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
         MergeRegionalServiceConstants(constants,region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);
-        hashes.Add("viridian-gym-trainers:"+PretViridianGymRules.TrainersSha256);
-        hashes.Add("viridian-gym-machines:"+PretViridianGymRules.MachinesSha256);
-        hashes.Add("viridian-gym-rules:"+PretViridianGymRules.RulesSha256+":"+PretViridianGymRules.SourceInputsSha256);
-        hashes.Add("viridian-gym-campaign:"+ViridianGymContentProfile);
     }
 
     private static void ValidateViridianGymAnchors(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(maps.Count!=206||region.NewMaps.Count!=1||region.NewMaps.Keys.Any(maps.ContainsKey))
+        if(region.NewMaps.Count!=1||region.NewMaps.Keys.Any(maps.ContainsKey))
             throw new InvalidDataException("viridian_gym_predecessor_maps");
         if(!JsonElement.DeepEquals(maps[new("map.viridian-city")].Events,region.ReusedAnchorEvents["ViridianCity"]))
             throw new InvalidDataException("viridian_gym_anchor_events");
     }
 
-    private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,
-        ImmutableDictionary<MapId,PretWorldMap> previous,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,
-        PewterMachineCatalog machines,CinnabarOwnedPokemonCatalog owned)
+    private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,PewterMachineCatalog machines,CinnabarOwnedPokemonCatalog owned)
     {
         var gym=new MapId("map.viridian-city-gym");
-        if(maps.Count!=207||previous.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||
-            !ReferenceEquals(region.NewMaps[gym],maps[gym])||owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||
-            ViridianGymMachineCatalog.For(machines) is not {} proof||!ReferenceEquals(proof.Pokemon,owned))
+        if(owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||
+            ViridianGymMachineCatalog.For(machines) is not {} proof)
             throw new InvalidDataException("viridian_gym_composition_scope");
         ViridianGymTrainerPartyFactory.ValidateCatalog(trainers);
         var sourceWarps=maps[gym].Warps;

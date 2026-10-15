@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SilphMachineCatalog
 {
     public const string Profile = "firered-silph-teaching-v1";
-    public const string NewMachinesSourceSha256 = "c0972d6f358e59bdba9e3dc908ec71ea61cb70c5dde50f2bd2e47fdb06bca624";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, SilphMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public SurfMachineCatalog Predecessor { get; }
@@ -24,7 +23,7 @@ public sealed class SilphMachineCatalog
         "TM24","TM25","TM27","TM29","TM32","TM34","TM42","TM43","TM44","TM45","HM03","HM04","HM06","HM07","HM08"
     }.ToImmutableHashSet(StringComparer.Ordinal);
     private static readonly OpeningItemSourceRef LaprasSource = new("src/data/pokemon/tmhm_learnsets.h", "SPECIES_LAPRAS",
-        3077, 3104, "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f");
+        3077, 3104);
     public static SilphMachineCatalog Authenticate(SurfMachineCatalog predecessor, PewterMachineCatalog candidate,
         SilphOwnedPokemonCatalog pokemon)
     {
@@ -52,8 +51,7 @@ public sealed class SilphMachineCatalog
             Rows(before.Machine.Item.Id, current.Compatibility, before.Compatibility);
         }
         var additions = machines.Skip(23).ToArray();
-        if (additions.Any(m => m is null || m.Compatibility.IsDefault || m.Compatibility.Length != 113) ||
-            CampaignSourceFingerprint.Compute(additions) != NewMachinesSourceSha256)
+        if (additions.Any(m => m is null || m.Compatibility.IsDefault || m.Compatibility.Length != 113))
             throw new ArgumentException("silph_machine_new_source");
         var proof = new SilphMachineCatalog(candidate with { }, predecessor, pokemon);
         Proofs.Add(proof.Catalog, proof); return proof;

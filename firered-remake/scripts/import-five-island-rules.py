@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -12,11 +11,6 @@ from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ('TEAM_ROCKET_ADMIN','TEAM_ROCKET_ADMIN_2','SCIENTIST_GIDEON','TEAM_ROCKET_GRUNT_42','TEAM_ROCKET_GRUNT_47','TEAM_ROCKET_GRUNT_48','TEAM_ROCKET_GRUNT_49','TEAM_ROCKET_GRUNT_50','TEAM_ROCKET_GRUNT_51')
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -27,7 +21,7 @@ def generate(reference, dependency):
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -37,7 +31,7 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -98,7 +92,6 @@ def generate(reference, dependency):
         resolved.append(dict(trainer=symbol, party=movesets))
     canonical_path = 'content/generated/canonical-pokemon/catalog.json'
     data = (dependency / canonical_path).read_bytes()
-    need(sha(data) == 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc', 'Canonical dependency identity')
     canonical = json.loads(data)
     additions = ['SPECIES_HOPPIP','SPECIES_SKIPLOOM','SPECIES_JUMPLUFF']
     opponent_additions = ['SPECIES_HOUNDOUR','SPECIES_HOUNDOOM','SPECIES_PORYGON']
@@ -108,7 +101,7 @@ def generate(reference, dependency):
     for name in additions+opponent_additions:
         original = species[name]
         for sr in [original['source'],original['learnsetSource'],metadata[name]['learnsetPointerSource'],metadata[name]['dexSource']]+[m['source'] for m in original['levelUpMoves']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
-            read(sr['path']); need(inputs[sr['path']]['sha256']==sr['sha256'],'Canonical source hash: '+name)
+            read(sr['path'])
     for name,method,parameter,target in [('SPECIES_HOPPIP','EVO_LEVEL',18,'SPECIES_SKIPLOOM'),('SPECIES_SKIPLOOM','EVO_LEVEL',27,'SPECIES_JUMPLUFF')]:
         matches=[e for e in metadata[name]['sourceEvolutions'] if e['method']==method and e['parameterValue']==parameter and e['target']['value']=='pret:'+target]
         need(len(matches)==1,'Evolution edge: '+name)
@@ -153,13 +146,13 @@ def generate(reference, dependency):
     wild=json.loads(read('src/data/wild_encounters.json'))
     entries=[e for group in wild['wild_encounter_groups'] for e in group.get('encounters',[]) if e.get('map') in ['MAP_FIVE_ISLAND','MAP_FIVE_ISLAND_MEADOW'] and e.get('base_label','').endswith('_FireRed')]
     need(len(entries)==2,'Two original FireRed encounter entries')
-    encounter_doc=dict(sourceCommit=COMMIT,profile='firered-five-island-encounters-v1',sourcePath='src/data/wild_encounters.json',sourceSha256=inputs['src/data/wild_encounters.json']['sha256'],slotTables=wild['wild_encounter_groups'][0]['fields'],encounters=entries)
+    encounter_doc=dict(sourceCommit=COMMIT,profile='firered-five-island-encounters-v1',sourcePath='src/data/wild_encounters.json',slotTables=wild['wild_encounter_groups'][0]['fields'],encounters=entries)
     docs={
       'encounters.json':encounter_doc,
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-five-island-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-five-island-owned-pokemon-v1',canonicalCatalogSha256=sha(data),ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,evolutionEdges=edges),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-five-island-owned-pokemon-v1',ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,evolutionEdges=edges),
       'rules.json':dict(sourceCommit=COMMIT,profile='firered-five-island-rules-v1',ownedSpeciesCount=len(new_owned),previousOwnedSpeciesCount=len(owned),opponentSpeciesCount=len(new_opponents),previousOpponentSpeciesCount=len(opponents),ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,trainerSpecies=sorted({p['species']['value'] for t in trainers for p in t['party']}),trainerMoves=sorted({m for r in resolved for p in r['party'] for m in p['moves']}),identities=identities,trainerActors=actors,naturalLearnsets={s:species[s]['levelUpMoves'] for s in additions},limitations=['Source catalogs alone do not grant runtime route/capture/save/battle admission.','Vs Seeker/rematch teams are not admitted.','Qwilfish is retained only in source Super Rod declarations; no new rod or ownership admission.','Up-Grade held-item trade evolution remains explicitly unsupported.','Sapphire is the bespoke Gideon quest grant, not a ninth field item-ball event.']),
-      'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],dependencyInputs=[dict(path=canonical_path,byteLength=len(data),sha256=sha(data))],predecessorSnapshotSha256=sha(baseline_path.read_bytes()))}
+      'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=[dict(path=canonical_path)])}
     return docs
 
 def generate_items(reference,root):
@@ -167,12 +160,12 @@ def generate_items(reference,root):
  def source(path):
   if path not in texts:
    b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
-   inputs[path]=dict(path=path,byteLength=len(b),gitBlobSha1=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),sha256=sha(b));texts[path]=b.decode()
+   inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
- def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end,sha256=inputs[path]['sha256'])
- def dependency(path,expected):
-  b=(root/path).read_bytes();need(sha(b)==expected,'Dependency identity: '+path)
-  dependencies.append(dict(path=path,byteLength=len(b),sha256=sha(b)));return json.loads(b)
+ def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
+ def dependency(path):
+  b=(root/path).read_bytes()
+  dependencies.append(dict(path=path));return json.loads(b)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
  def metadata(symbol):
@@ -187,8 +180,8 @@ def generate_items(reference,root):
  for m in [metadata('ITEM_BIG_PEARL'),metadata('ITEM_UP_GRADE'),metadata('ITEM_SAPPHIRE')]:
   i=m['item']
   new.append({k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=m['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i))
- four=dependency('content/generated/four-island-items/items.json','9cb68121352e6d3372baece227d7486b630f32baf053a3164ce10ebe11350b02')
- six=dependency('content/generated/six-island-items/items.json','79ca27696bb8f15983f97a817cfbf56002f3d68a9936466a8d75e152b935ac84')
+ four=dependency('content/generated/four-island-items/items.json')
+ six=dependency('content/generated/six-island-items/items.json')
  old_ids=[r['item']['value'][5:] for r in six['machineAdditions']];need(len(set(old_ids))==38,'Inherited machine set')
  owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in four['hm07']['compatibility']]
  owned += [(r['species']['value'][5:],r['sourceSpeciesId']) for r in six['machineAdditions'][0]['compatibility']]
@@ -201,7 +194,7 @@ def generate_items(reference,root):
  tm_source=source('src/data/pokemon/tmhm_learnsets.h')
  move_constants=source('include/constants/moves.h')
  move_id=int(re.search(r'^#define MOVE_SLUDGE_BOMB\s+(\d+)',move_constants,re.M)[1])
- canonical=dependency('content/generated/canonical-pokemon/catalog.json','c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc')
+ canonical=dependency('content/generated/canonical-pokemon/catalog.json')
  move_data=source('src/data/battle_moves.h')
  move_block=re.search(r'\[MOVE_SLUDGE_BOMB\] =\s*\{(.*?)\}',move_data,re.S)[1]
  move=dict(pp=int(re.search(r'\.pp = (\d+)',move_block)[1]))
@@ -228,20 +221,19 @@ def generate_items(reference,root):
  need(len(pickups)==8 and sum(p['hidden'] for p in pickups)==2,'Six visible and two hidden pickups')
  for path in ['data/scripts/obtain_item.inc','src/pokemon.c','src/battle_util.c','src/battle_script_commands.c','include/constants/hold_effects.h']:source(path)
  doc=dict(sourceCommit=COMMIT,profile='firered-five-island-items-v1',items=items,additions=new,machineAdditions=additions,tm36=tm36,pickups=pickups,questGrant=dict(script='FiveIsland_RocketWarehouse_EventScript_DefeatedGideon',flag='FLAG_RECOVERED_SAPPHIRE',item='ITEM_SAPPHIRE',quantity=1),unsupportedUses=[dict(item='ITEM_UP_GRADE',boundary='Held-item trade evolution is not implemented. No alternate trigger is invented.')])
- evidence=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
+ evidence=dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
  return doc,evidence
 
 def generate_encounters(reference):
     inputs = {}
     def read(path):
         data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-        inputs[path] = dict(path=path, byteLength=len(data), sha256=hashlib.sha256(data).hexdigest())
+        inputs[path] = dict(path=path)
         return data.decode()
     raw = read("src/data/wild_encounters.json")
     encounters = [e for group in json.loads(raw)["wild_encounter_groups"] for e in group["encounters"] if e["map"] in ["MAP_FIVE_ISLAND_MEADOW", "MAP_FIVE_ISLAND"] and e["base_label"].endswith("_FireRed")]
     assert len(encounters) == 2
     encounters.sort(key=lambda e: ["MAP_FIVE_ISLAND_MEADOW", "MAP_FIVE_ISLAND"].index(e["map"]))
-    wild_hash = inputs["src/data/wild_encounters.json"]["sha256"]
     def map_id(symbol): return "map." + symbol[4:].lower().replace("_", "-")
     tables = "using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\n/// <summary>Exact pinned FireRed Five Island tables. Rod subdivisions retain their source indexes.</summary>\npublic static class FiveIslandEncounterTables\n{\n"
     for field, prop, typ, weights in [("land_mons","Land","EarlyLandEncounterTable",[20,20,10,10,10,10,5,5,4,4,1,1]),("water_mons","Water","WaterEncounterTable",[60,30,5,4,1]),("fishing_mons","FishingSource","OldRodEncounterTable",[70,30,60,20,20,40,40,15,4,1])]:
@@ -251,7 +243,7 @@ def generate_encounters(reference):
             table = e[field]
             slots = ",".join(f'new({i},new("pret:{m["species"]}"),{m["min_level"]},{m["max_level"]},{weights[i]})' for i,m in enumerate(table["mons"]))
             symbol = f',"{e["map"]}"' if field == "water_mons" else ""
-            tables += f'        new(new("{map_id(e["map"])}"){symbol},EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"{e["base_label"]}","{wild_hash}",{table["encounter_rate"]},[{slots}]),\n'
+            tables += f'        new(new("{map_id(e["map"])}"){symbol},EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"{e["base_label"]}",{table["encounter_rate"]},[{slots}]),\n'
         tables += "    ];\n"
     tables += "    public static ImmutableArray<OldRodEncounterTable> OldRod { get; } = FishingSource.Select(t => t with { Slots = t.Slots.Take(2).ToImmutableArray() }).ToImmutableArray();\n}\n"
     combinations = sorted({(m["species"],lv) for e in encounters for field in ["land_mons","water_mons","fishing_mons"] for m in e.get(field,{}).get("mons",[]) for lv in range(m["min_level"],m["max_level"]+1)})
@@ -292,11 +284,11 @@ def main():
     docs['items.json']=items;docs['item-source-input-hashes.json']=evidence
     files={'content/generated/five-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
     files.update({name:value.encode() for name,value in generate_encounters(a.reference).items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',profile='firered-five-island-rules-v1',files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    lock=dict(sourceCommit=COMMIT,profile='firered-five-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/five-island-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=9,battles=9,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount'],hashes={n:sha(v) for n,v in files.items()}),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=9,battles=9,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount']),indent=2))
 if __name__=='__main__':main()

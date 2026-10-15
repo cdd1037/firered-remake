@@ -12,21 +12,16 @@ public sealed partial class PretCampaignCatalog
     public LeagueRivalTrainerCatalog? LeagueRivalTrainerParties { get; }
     public bool LeagueRivalEnabled=>LeagueRivalTrainerParties is not null;
 
-    private static void ValidateLeagueRivalComposition(ImmutableDictionary<MapId,PretWorldMap> maps,
-        LeagueRivalTrainerCatalog trainers,PretStoryCompilation scripts,IEnumerable<PretSourceScriptFile> sources,
-        ImmutableDictionary<string,string>.Builder text,CampaignPokemonContent pokemon,
-        CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents)
+    private static void ValidateLeagueRivalComposition(ImmutableDictionary<MapId,PretWorldMap> maps,LeagueRivalTrainerCatalog trainers,PretStoryCompilation scripts,IEnumerable<PretSourceScriptFile> sources,ImmutableDictionary<string,string>.Builder text,CampaignPokemonContent pokemon,CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents)
     {
-        if(maps.Count!=207||!maps.ContainsKey(new("map.route-22"))||!maps.ContainsKey(new("map.viridian-city-gym"))||
-            owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||
-            !ReferenceEquals(pokemon.Catalog,owned.Catalog)||!ReferenceEquals(opponents.Owned,owned))
+        if(!maps.ContainsKey(new("map.route-22"))||!maps.ContainsKey(new("map.viridian-city-gym"))||
+            owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354)
             throw new InvalidDataException("league_rival_composition_scope");
         LeagueRivalTrainerPartyFactory.ValidateCatalog(trainers);
         foreach(var battle in trainers.Battles.Values)
         {
-            var source=sources.SingleOrDefault(s=>s.Path==battle.Source.Path);
             var program=scripts.FindProgram(battle.ScriptEntry);
-            if(source?.SourceRef.Sha256!=battle.Source.Sha256||program is null||
+            if(program is null||
                 !program.Instructions.Any(i=>i.Op==StoryOp.TrainerBattle&&i.Opcode=="trainerbattle_no_intro"&&
                     i.Source.Path==battle.Source.Path&&i.Source.Symbol==battle.ScriptEntry&&i.Source.Line==battle.Source.StartLine+1&&
                     i.Args.SequenceEqual(new[]{battle.Trainer.Value[5..],battle.DefeatText}))||

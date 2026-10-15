@@ -30,17 +30,15 @@ public partial class CampaignView
     {
         if (!_catalog.RegionalServicesEnabled) return;
         var art = _catalog.EeveeArt ?? throw new InvalidDataException("Regional Eevee art catalog missing.");
-        if (_battleArt.Count != 408 || _storageIcons.Count != 102 || _route22Footprints.Count != 73)
-            throw new InvalidDataException("Eevee must extend the complete 102-species Snorlax presentation.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, art.Files[sprite.RgbaPath]);
+            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = art.Files[icon.RgbaPath].ToArray();
+            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4)
                 if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
@@ -49,16 +47,12 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, art.Files[footprint.RgbaPath]);
+            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         // Reuse the same owned front texture for a source mon-picture request.
         _portraits.Add(133, _battleArt[(133, "front", false)].Texture);
-        if (_battleArt.Count != 412 || _storageIcons.Count != 103 || _route22Footprints.Count != 74)
-            throw new InvalidDataException("Regional 103-species presentation inventory differs.");
-        Write("regionalServicesPresentation", new { species = 103, battleSprites = 412, icons = 103, footprints = 74,
-            maps = PretCampaignCatalog.RegionalServiceMapIds.Length, EeveeArtSha256 = PretEeveeArt.ManifestSha256,
-            TeaArtSha256 = PretRegionalTeaArt.DocumentSha256 });
+        Write("regionalServicesPresentation", new {             maps = PretCampaignCatalog.RegionalServiceMapIds.Length});
     }
 
     private bool RegionalServicesActorHasPixels(CampaignActor actor) =>

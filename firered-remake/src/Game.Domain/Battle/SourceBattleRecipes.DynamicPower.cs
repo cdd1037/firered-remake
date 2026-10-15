@@ -37,7 +37,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteDynamicPower(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (!HasDynamicPowerRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasDynamicPowerRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_dynamic_power_definition");
         int power = preparedDynamicPower ?? 0;
         bool weight = move.Effect == "EFFECT_LOW_KICK";

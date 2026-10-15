@@ -38,9 +38,7 @@ public static class SelphyRequestRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourcePath = "src/field_specials.c";
-    public const string SourceSha256 = "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9";
     public const string ScriptPath = "data/maps/FiveIsland_ResortGorgeous_House/scripts.inc";
-    public const string ScriptSha256 = "270a088d03b09cef871bbf99a1ff4d266a54f1f7d77b3d7451f87c53ac679d88";
     public const string HiddenInsideFlag = "FLAG_HIDE_RESORT_GORGEOUS_INSIDE_SELPHY";
     public const string ShownRequestedMonFlag = "FLAG_TEMP_2";
     public const string RequestedSpeciesVariable = "VAR_RESORT_GORGEOUS_REQUESTED_MON";

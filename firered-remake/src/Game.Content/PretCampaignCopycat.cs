@@ -12,14 +12,13 @@ public sealed partial class PretCampaignCatalog
     public PokeDollShopStock? PokeDollShopStock =>
         PokeDollInventoryCatalog.For(OrdinaryItemInventoryCatalog.BaseCatalog(EarlyShop!)) is not null ? new() : null;
 
-    private static FieldPickupDefinition CopycatHiddenPickup(PretCopycatHouse house,
-        EarlyShopCatalog shop, PretStoryCompilation scripts)
+    private static FieldPickupDefinition CopycatHiddenPickup(PretCopycatHouse house,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         EarlyShopInventoryRules.ValidateCatalog(shop);
         var map = house.NewMaps[PretCopycatHouse.Floor2MapId];
         var hidden = map.Events.GetProperty("bg_events").EnumerateArray()
             .Single(e => e.GetProperty("type").GetString() == "hidden_item");
-        const string symbol = "ITEM_NUGGET", flag = "FLAG_HIDDEN_ITEM_SAFFRON_CITY_COPYCATS_HOUSE_2F_NUGGET";
+        const string symbol = "ITEM_NUGGET",flag = "FLAG_HIDDEN_ITEM_SAFFRON_CITY_COPYCATS_HOUSE_2F_NUGGET";
         var item = shop.Items.SingleOrDefault(i => i.Id.Value == "pret:" + symbol);
         if (hidden.GetProperty("item").GetString() != symbol || hidden.GetProperty("flag").GetString() != flag ||
             hidden.GetProperty("x").GetInt32() != 2 || hidden.GetProperty("y").GetInt32() != 1 ||
@@ -31,13 +30,9 @@ public sealed partial class PretCampaignCatalog
             "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId);
     }
 
-    private static void ValidateCopycatHouseComposition(PretCopycatHouse house,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts)
+    private static void ValidateCopycatHouseComposition(PretCopycatHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {
-        if (house.NewMaps.Count != 2 || maps.Count != previous.Count + 2 ||
-            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            house.NewMaps.Any(p => previous.ContainsKey(p.Key) || !ReferenceEquals(p.Value, maps[p.Key])))
+        if (house.NewMaps.Count != 2 || maps.Count != previous.Count + 2 )
             throw new InvalidDataException("copycat_map_composition");
         var town = maps[new("map.saffron-city")];
         var first = house.NewMaps[PretCopycatHouse.Floor1MapId];

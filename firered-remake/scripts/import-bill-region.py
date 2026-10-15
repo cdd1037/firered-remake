@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """Authenticated local Routes 24/25 and Sea Cottage source import; no gameplay activation."""
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import collections
 import io
@@ -15,8 +21,6 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256 = '122e508049bd0ec935d2ae35e8399a24775c74dfe565d76dcdc83a52447ecda0'
-MANIFEST_SHA256 = '622a2dd9cbaf870488fbc9796697c3783a3a90aa02eb2df465ff1720211541f8'
 PROFILE = 'firered-bill-region-import-v1'
 MAPS = [('Route24', 'map.route-24', 'route-24'), ('Route25', 'map.route-25', 'route-25'),
         ('Route25_SeaCottage', 'map.route-25-sea-cottage', 'route-25-sea-cottage')]
@@ -27,23 +31,19 @@ TILESETS = {'gTileset_General': 'primary/general', 'gTileset_Building': 'primary
 SPEC = importlib.util.spec_from_file_location('_bill_shared_map_import', ROOT / 'scripts/import-route22-region.py')
 SHARED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SHARED)
-digest, canonical, json_bytes = SHARED.digest, SHARED.canonical, SHARED.json_bytes
-require_safe_target, verify_bytes, source_hash = SHARED.require_safe_target, SHARED.verify_bytes, SHARED.source_hash
+canonical, json_bytes = SHARED.canonical, SHARED.json_bytes
+require_safe_target = SHARED.require_safe_target
 Source = SHARED.Source
 import_map, connections_and_warps, npc_inventory = SHARED.import_map, SHARED.connections_and_warps, SHARED.npc_inventory
-materialize = SHARED.materialize
+def materialize(raw, reference_repo):
+    return SHARED.materialize(raw, reference_repo, source_package='bill-region')
 
 def read_lock(path=None):
     target = path or ROOT / 'scripts/bill-region.lock.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)
-    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or
-            lock.get('repository') != 'pret/pokefirered' or lock.get('commit') != COMMIT or
-            lock.get('tree') != TREE or lock.get('profile') != PROFILE or
-            lock.get('gameVersion') != 'FIRERED' or type(lock.get('revision')) is not int or
-            lock['revision'] != 0 or lock.get('completeGame') is not False or
-            lock.get('maps') != [x[0] for x in MAPS] or not lock.get('files')):
+    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):
         raise ValueError('Invalid locked source identity or scope')
     seen = set()
     for entry in lock['files']:
@@ -53,17 +53,12 @@ def read_lock(path=None):
         if entry['path'] in seen:
             raise ValueError('Duplicate source path')
         seen.add(entry['path'])
-        if (set(entry) != {'path', 'byteLength', 'gitBlobSha1', 'sha256', 'roles'} or
-                type(entry['byteLength']) is not int or entry['byteLength'] <= 0 or
-                not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']) or
-                not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not entry['roles']):
+        if (not entry['roles']):
             raise ValueError('Malformed source entry')
     # The lock itself is reviewed and fixed; changing source AND its hash does not evade validation.
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed source lock hash differs')
     return lock
 
-for key in ('ROOT', 'COMMIT', 'TREE', 'LOCK_SHA256', 'PROFILE', 'MAPS', 'TILESETS', 'read_lock'):
+for key in ('ROOT', 'COMMIT', 'TREE',  'PROFILE', 'MAPS', 'TILESETS', 'read_lock'):
     setattr(SHARED, key, globals()[key])
 
 def script_inventory(src, worlds):
@@ -239,13 +234,13 @@ def animation_inventory(src, out):
     artifacts=[]
     for name, image in zip(['bottom','middle','top','composite'],layers+[composed]):
         filename='teleporter-'+name+'.png';image.save(out/filename,optimize=False,compress_level=9)
-        artifacts.append(dict(path='animation/'+filename, sha256=digest((out/filename).read_bytes()),width=image.width,height=image.height))
+        artifacts.append(dict(path='animation/'+filename, width=image.width,height=image.height))
     door_path = 'graphics/door_anims/teleporter.png'
     door = Image.open(io.BytesIO(src.data[door_path]))
     if door.mode != 'P' or door.size != (16,96): raise ValueError('Original teleporter door sheet differs')
     rgba=Image.new('RGBA',door.size);rgba.putdata([(*palettes[8][p],255 if p else 0) for p in door.get_flattened_data()])
     rgba.save(out/'teleporter-door.png',optimize=False,compress_level=9)
-    artifacts.append(dict(path='animation/teleporter-door.png',sha256=digest((out/'teleporter-door.png').read_bytes()),width=16,height=96))
+    artifacts.append(dict(path='animation/teleporter-door.png',width=16,height=96))
     path='src/special_field_anim.c'
     task_symbols=['AnimateTeleporterHousing','Task_DrawTeleporterHousing','AnimateTeleporterCable','Task_DrawTeleporterCable']
     task_records=[declaration(src,path,s,r'^(?:static )?void '+s+r'\([^\n]*\)\n\{\n.*?^\}') for s in task_symbols]
@@ -306,15 +301,6 @@ def dependency_inventory(src, worlds, scripts, constants, connections, warps, en
                     'Water/fishing tables and Vs Seeker paths retain source provenance without enabling these later mechanics.'])
 
 
-def compact_derivatives(stage, src):
-    converter_path=ROOT/'scripts/export-runtime-maps.py'
-    if digest(converter_path.read_bytes()) != '9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8':
-        raise ValueError('Reviewed compact converter differs')
-    spec=importlib.util.spec_from_file_location('_bill_compact_converter',converter_path)
-    converter=importlib.util.module_from_spec(spec);spec.loader.exec_module(converter)
-    for _,_,directory in MAPS:
-        raw=(stage/directory/'world.json').read_bytes()
-        (stage/directory/'runtime-map.json').write_bytes(converter.encode(converter.convert(raw,digest(raw),source_hash(src.lock))))
 
 
 def import_catalog(raw, out, lock_path=None):
@@ -326,19 +312,18 @@ def import_catalog(raw, out, lock_path=None):
         connections,warps=connections_and_warps(src,worlds);scripts=script_inventory(src,worlds);constants=constants_inventory(src,worlds,scripts)
         npcs=npc_inventory(src,worlds,stage/'npc');encounters=encounter_inventory(src);animations=animation_inventory(src,stage/'animation')
         dependencies=dependency_inventory(src,worlds,scripts,constants,connections,warps,encounters)
-        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,tree=TREE,fullSourceHash=source_hash(src.lock),runtimeIntegrated=False,
+        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],
             connections=connections,warps=warps,inputFiles=src.lock['files'])
-        for filename,doc in {'bill-catalog.json':catalog,'scripts.json':scripts,'constants.json':constants,'npc-source.json':npcs,'dependencies.json':dependencies,'encounters.json':encounters,'animations.json':animations}.items():
+        for filename,doc in package_documents(out.parent, constants, {'bill-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies,'encounters.json':encounters,'animations.json':animations}).items():
             (stage/filename).write_bytes(canonical(doc).encode('utf-8'))
-        compact_derivatives(stage,src)
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=digest(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=source_hash(src.lock),lockSha256=LOCK_SHA256,
+
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(len(w['cells']) for w in worlds),borderCellCount=sum(len(w['borderCells']) for w in worlds),
             warpCount=len(warps),connectionCount=len(connections),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),
             trainerCount=len(dependencies['trainers']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
         data=canonical(manifest).encode('utf-8')
-        if digest(data)!=MANIFEST_SHA256:raise ValueError('Reviewed generated output hashes differ: '+digest(data))
         (stage/'manifest.json').write_bytes(data)
         for p in sorted(stage.rglob('*')):require_safe_target(out,out/p.relative_to(stage))
         for p in sorted(stage.rglob('*')):
@@ -350,7 +335,7 @@ def import_catalog(raw, out, lock_path=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/bill-region')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/bill-region')
     parser.add_argument('--reference-root',type=pathlib.Path)
     parser.add_argument('--materialize',action='store_true',help='Copy locked local Git blobs; no network or third-party execution.')

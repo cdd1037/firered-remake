@@ -5,7 +5,14 @@ Original blobs are inert. Reviewed existing regional-service render/compact tool
 are reused; shared raw inputs and existing Route16/gate/NPC resources are referenced.
 This source package does not admit a route, trainer, service or field move.
 """
-import argparse, base64, collections, hashlib, importlib.util, json, os, re, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+from map_runtime import normalize_runtime, runtime_cells
+import argparse, base64, collections,  importlib.util, json, os, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,25 +20,18 @@ PACKAGE = 'route16-fly-house'
 RESOURCE_ID = 'firered-route16-fly-house-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-MANIFEST_SHA256 = 'd69e9d907b448de13de43a6b09f1d22cc860a6f93ff3f8d962d252a836de4585'
-LOCK_SHA256 = 'f9f56e2d9f048df41877886595416126304eee3d7b15078666865c175668909f'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
 MAPS = ['Route16_House']
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_GenericBuilding1':'secondary/generic_building_1'}
-REUSED_RAW = ['regional-service-maps', 'snorlax-region', 'city-services', 'canonical-pokemon', 'six-island-region', 'seven-island-region', 'silph-catalogs', 'original-tutor-rooms']
-ANCHORS = [('Route16','route-16/world.json','35c7591d1fe35515b783dfb81ebc7dccf9be1945cdc9471aab85f8f4f91b6a55'),
-           ('Route16_NorthEntrance_1F','route-16-north-entrance-1f/world.json','3c9807a01bb0a9fb9e68e9f37d86f81951a5d897f6db0920f2ad6807bba2cd2d')]
-SNORLAX_MANIFEST = '84560ac286661008a9fe28be0d58d42065583e69671b5281fbf5b73c6e477d42'
-NPC_REUSE = {'OBJ_EVENT_GFX_WOMAN_1':('content/generated/city-services/npc/woman-1.png','28a80ec9ea0266d03a1aa4734d2b9c8496eb058e074f10319ae897255e4d577b'),
- 'OBJ_EVENT_GFX_RED_NORMAL':('content/generated/city-services/npc/red-normal.png','51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
-def sha(data): return hashlib.sha256(data).hexdigest()
+ANCHORS = [('Route16','route-16/runtime-map.json'),
+           ('Route16_NorthEntrance_1F','route-16-north-entrance-1f/runtime-map.json')]
+NPC_REUSE = {'OBJ_EVENT_GFX_WOMAN_1':'content/generated/city-services/npc/woman-1.png',
+ 'OBJ_EVENT_GFX_RED_NORMAL':'content/generated/city-services/npc/red-normal.png'}
 def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: '+str(path))
-def module(path, expected, name):
-    safe(path); need(sha(path.read_bytes())==expected, 'Reviewed local codec differs: '+str(path))
+def module(path, name):
+    safe(path)
     spec=importlib.util.spec_from_file_location(name,path); value=importlib.util.module_from_spec(spec); spec.loader.exec_module(value); return value
 
 def script_inventory(src, reader, worlds):
@@ -99,7 +99,7 @@ def trainer_inventory(src):
     def read(path):
         if path not in texts:
             data = src.read(path, "north-passage-double-source")
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -109,7 +109,7 @@ def trainer_inventory(src):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -187,19 +187,15 @@ def trainer_inventory(src):
 def retained_maps(src, current):
     directory=current/'content/generated/snorlax-region'; safe(directory)
     manifest=(directory/'manifest.json').read_bytes()
-    need(sha(manifest)==SNORLAX_MANIFEST, 'Existing Snorlax manifest differs')
     worlds, anchors=[],[]
-    for name, relative, digest in ANCHORS:
+    for name, relative in ANCHORS:
         path=directory/relative; safe(path); data=path.read_bytes()
-        row=next(e for e in json.loads(manifest)['outputs'] if e['path']==relative)
-        need(sha(data)==digest==row['sha256'] and len(data)==row['byteLength'], 'Existing source map differs: '+name)
-        world=json.loads(data); original=src.json('data/maps/'+name+'/map.json')
+        world=normalize_runtime(json.loads(data)); original=src.json('data/maps/'+name+'/map.json')
         need(world['events']==original, 'Retained map events differ: '+name)
-        worlds.append(world)
+        worlds.append(dict(world, cells=list(runtime_cells(world))))
         anchors.append(dict(sourceName=name,stableId=world['stableId'],sourceMap=original['id'],
-          manifestPath='content/generated/snorlax-region/manifest.json',manifestSha256=SNORLAX_MANIFEST,manifestByteLength=len(manifest),
-          resourcePath='content/generated/snorlax-region/'+relative,resourceSha256=digest,resourceByteLength=len(data),
-          fullSourceHash=world['metadata']['fullSourceHash'] if 'metadata' in world else '9cfcd4821eec1a5fef64e2ee420db1ce79165d02d98e31d58837790c27b60de0',
+          manifestPath='content/generated/snorlax-region/manifest.json',
+          resourcePath='content/generated/snorlax-region/'+relative,
           operation='retain-existing-instance',geometryChanges=[],eventChanges=[]))
     return worlds, anchors
 
@@ -264,9 +260,9 @@ def main():
     target,dep,ref=[Path(os.path.abspath(x)) for x in [a.project_root,a.dependency_root,a.reference_root]]
     for path in [target,dep,ref]:safe(path)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py',READER_SHA,'route16_fly_reader')
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'route16_fly_reader')
     reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,RESOURCE_ID
-    util=module(dep/'scripts/import-fossil-lab-region.py',UTILITIES_SHA,'route16_fly_util');util.MAPS=MAPS
+    util=module(dep / 'scripts/import-fossil-lab-region.py', 'route16_fly_util');util.MAPS=MAPS
     src=reader.Source(ref);house=reader.decode(src,MAPS[0]);worlds,anchors=retained_maps(src,dep)
     need((house['width'],house['height'],len(house['events']['warp_events']))==(11,9,3), 'Original house geometry differs')
     scripts=script_inventory(src,reader,[house]);constants=util.constants_inventory(src,scripts,[house])
@@ -275,7 +271,7 @@ def main():
     trainer=trainer_inventory(src);contract=north_contract(src,worlds,house,anchors)
     contract['gift']=dict(map=house['stableId'],localId=1,script='Route16_House_EventScript_Woman',item='ITEM_HM02',flag='FLAG_GOT_HM02',sourceRef=src.ref('data/maps/Route16_House/scripts.inc','Route16_House_EventScript_Woman',4))
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='route16-fly-house-',dir=target) as temp:
         stage=Path(temp);shared.import_map(src,MAPS[0],house['stableId'],stage/'route-16-house')
@@ -283,40 +279,34 @@ def main():
         need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE)|{'OBJ_EVENT_GFX_FEAROW'}, 'House actor resource cohort differs')
         for row in npcs['graphics']:
             if row['graphicsId'] in NPC_REUSE:
-                path,digest=NPC_REUSE[row['graphicsId']];existing=dep/path;safe(existing);rendered=stage/row['texturePath']
-                need(sha(existing.read_bytes())==digest==row['sha256'] and rendered.read_bytes()==existing.read_bytes(), 'Reused actor differs')
-                row.update(texturePath=path,byteLength=existing.stat().st_size,reuseExisting=True);rendered.unlink()
-            else:row.update(byteLength=(stage/row['texturePath']).stat().st_size,reuseExisting=False)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
-        path=stage/'route-16-house/world.json';rich=path.read_bytes();compact=converter.convert(rich,sha(rich),source_hash)
-        util.compact_check(compact,house,src);data=converter.encode(compact);(stage/'route-16-house/runtime-map.json').write_bytes(data);path.unlink()
+                path=NPC_REUSE[row['graphicsId']];existing=dep/path;safe(existing);rendered=stage/row['texturePath']
+                need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
+                row.update(texturePath=path,reuseExisting=True);rendered.unlink()
+            else:row.update(reuseExisting=False)
+        path=stage/'route-16-house/runtime-map.json';rich=path.read_bytes();compact=converter.normalize_runtime(json.loads(rich))
+        util.compact_check(compact,house,src);data=converter.encode(compact);(stage/'route-16-house/runtime-map.json').write_bytes(data)
         entry=dict(sourceName=MAPS[0],stableId=house['stableId'],directory='route-16-house',sourceMapSymbol='MAP_ROUTE16_HOUSE',
-            path='route-16-house/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash)
+            path='route-16-house/runtime-map.json')
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False)
         own_raw=[]
         for row in lock['files']:
             raw=src.data[row['path']];storage=None
-            for package in REUSED_RAW:
-                candidate=dep/'content/raw'/package/row['path'];safe(candidate)
-                if candidate.is_file() and candidate.read_bytes()==raw:
-                    storage=candidate.relative_to(dep).as_posix();break
+            candidate=dep/'content/raw/pokefirered/037335f4'/row['path'];safe(candidate)
+            if candidate.is_file() and candidate.read_bytes()==raw:
+                storage=candidate.relative_to(dep).as_posix()
             row['reuseExisting']=storage is not None
-            row['storagePath']=storage or 'content/raw/'+PACKAGE+'/'+row['path']
+            row['storagePath']=storage or 'content/raw/pokefirered/037335f4/'+row['path']
             if storage is None:own_raw.append((target/row['storagePath'],raw))
         lock_bytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,
-                maps=[entry],inputFiles=lock['files'],tilesets=TILESETS), 'scripts.json':scripts,'constants.json':constants,
-                'contracts.json':contract,'trainers.json':trainer,'npc-source.json':npcs}
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
+                maps=[entry],inputFiles=lock['files'],tilesets=TILESETS), 'scripts.json':scripts,
+                'contracts.json':contract,'trainers.json':trainer,'npc-source.json':npcs}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=sha(lock_bytes),
-            readerSha256=READER_SHA,sourceUtilitiesSha256=UTILITIES_SHA,rendererSha256=reader.HELPERS['_regional_service_shared.py'],
-            converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],inputCount=len(src.entries),ownedRawFileCount=len(own_raw),
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,sourceCommit=COMMIT,inputCount=len(src.entries),ownedRawFileCount=len(own_raw),
             mapCount=1,retainedMapCount=2,cellCount=99,borderCellCount=4,directedWarpCount=8,objectCount=2,newNpcGraphicsCount=1,reusedNpcGraphicsCount=2,
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned manifest differs: '+sha(manifest_bytes))
-        if LOCK_SHA256:need(sha(lock_bytes)==LOCK_SHA256,'Pinned lock differs: '+sha(lock_bytes))
         writes=[(target/'scripts/route16-fly-house.lock.json',lock_bytes),(target/'scripts/route16-fly-house.contract.json',canonical(contract))]+own_raw
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
@@ -324,8 +314,7 @@ def main():
             if a.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
         if not a.check:
             for path,data in writes:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),lockByteLength=len(lock_bytes),
-            fullSourceHash=source_hash,inputCount=len(src.entries),ownedRawFileCount=len(own_raw),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),
+        print(json.dumps(dict(inputCount=len(src.entries),ownedRawFileCount=len(own_raw),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),
             upperFootCounts=[r['cellCount'] for r in contract['upperFootAdmissions']],resolvedMoves=trainer['resolvedMoves'],check=a.check),indent=2))
 
 

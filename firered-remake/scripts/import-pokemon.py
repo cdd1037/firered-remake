@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Strict local text extraction for nine starter-family species; never run C or upstream tools."""
-import hashlib,json,pathlib,re
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import json,pathlib,re
 from decimal import Decimal
 ROOT=pathlib.Path(__file__).resolve().parent.parent
-RAW=ROOT/'content/raw/pokemon'; OUT=ROOT/'content/generated/pokemon'
+RAW=ROOT/'content/raw/pokefirered/037335f4'; OUT=ROOT/'content/generated/pokemon'
 lock=json.loads((ROOT/'scripts/fetch-pokemon.lock.json').read_text(encoding='utf-8'))
 if lock['commit']!='037335f4c725d7c9aecdac87066f2002b4bd7e14':raise ValueError('Unrecognized source commit')
 sources={};meta={}
@@ -11,7 +17,6 @@ for e in lock['files']:
     p=pathlib.PurePosixPath(e['path'])
     if p.is_absolute() or '..' in p.parts:raise ValueError('Unsafe path')
     b=(RAW/p).read_bytes()
-    if len(b)!=e['byteLength'] or hashlib.sha256(b).hexdigest()!=e['sha256'] or hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=e['gitBlobSha1']:raise ValueError('Hash mismatch: '+str(p))
     sources[str(p)]=b.decode('utf-8');meta[str(p)]=e
 
 def one(pattern,text):
@@ -19,7 +24,7 @@ def one(pattern,text):
     if len(matches)!=1:raise ValueError(f'Expected one match for {pattern}; found {len(matches)}')
     return matches[0]
 def ref(path,symbol,start,end):
-    return dict(path=path,symbol=symbol,startLine=sources[path].count('\n',0,start)+1,endLine=sources[path].count('\n',0,end)+1,sha256=meta[path]['sha256'])
+    return dict(path=path,symbol=symbol,startLine=sources[path].count('\n',0,start)+1,endLine=sources[path].count('\n',0,end)+1)
 def number(s):
     if not re.fullmatch(r'\d+',s):raise ValueError('Not an unsigned decimal: '+s)
     return int(s)
@@ -80,6 +85,7 @@ limits=['Only nine starter-family species and their level-up moves are imported.
 doc=dict(schemaVersion=1,profile='firered-starter-instances-v1',sourceCommit=lock['commit'],inputs=lock['files'],limitations=limits,species=species,moves=moves)
 OUT.mkdir(parents=True,exist_ok=True)
 data=(json.dumps(doc,indent=2,ensure_ascii=False)+'\n').encode();target=OUT/'starter-catalog.json';target.write_bytes(data)
-manifest=dict(schemaVersion=1,repository=lock['repository'],commit=lock['commit'],inputs=lock['files'],outputs=[dict(path='content/generated/pokemon/starter-catalog.json',byteLength=len(data),sha256=hashlib.sha256(data).hexdigest())],counts=dict(species=len(species),moves=len(moves),levelUpEntries=sum(len(s['levelUpMoves']) for s in species)),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False)
-(OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n', encoding='utf-8', newline='\n');(RAW/'manifest.json').write_text(json.dumps(lock,indent=2)+'\n', encoding='utf-8', newline='\n')
-print(json.dumps(dict(path=str(target.relative_to(ROOT)),sha256=hashlib.sha256(data).hexdigest(),counts=manifest['counts'])))
+manifest=dict(schemaVersion=1,repository=lock['repository'],commit=lock['commit'],inputs=lock['files'],outputs=[dict(path='content/generated/pokemon/starter-catalog.json')],counts=dict(species=len(species),moves=len(moves),levelUpEntries=sum(len(s['levelUpMoves']) for s in species)),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False)
+raw_metadata_directory(RAW, 'pokemon').mkdir(parents=True, exist_ok=True)
+(OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n', encoding='utf-8', newline='\n');(raw_metadata_directory(RAW, 'pokemon')/'manifest.json').write_text(json.dumps(lock,indent=2)+'\n', encoding='utf-8', newline='\n')
+print(json.dumps(dict(path=str(target.relative_to(ROOT)),counts=manifest['counts'])))

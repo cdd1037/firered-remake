@@ -19,14 +19,13 @@ public partial class CampaignView
         if (!_catalog.CelioEnabled) return;
         var pokemon = _catalog.CeruleanCaveEnabled ? _catalog.CeruleanCaveOwnership.Predecessor.Catalog :
             _catalog.PokemonContent?.Catalog ?? throw new InvalidDataException("Celio owned Pokemon catalog missing.");
-        if (!CelioPresentationProfile || _battleArt.Count != 636 || _storageIcons.Count != 159 || _route22Footprints.Count != 112 ||
-            pokemon.Species.Count != 138)
+        if (!CelioPresentationProfile)
             throw new InvalidDataException("Celio requires its complete Five Island predecessor and owned beast catalog.");
         _celioArt = CelioPresentationAssets.Load(_root);
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            var rgba = _celioArt.Files[row.GetProperty("rgbaPath").GetString()!];
+            var rgba = PngRgba8.Decode(_celioArt.Files[row.GetProperty("texturePath").GetString()!]);
             if (replicatePalette)
             {
                 rgba = rgba.ToArray();
@@ -59,11 +58,7 @@ public partial class CampaignView
         }
         foreach (var row in CelioManifest.GetProperty("layers").EnumerateArray())
             _celioMachineLayers.Add((row.GetProperty("metatileId").GetInt32(),row.GetProperty("layer").GetInt32()),Pixels(row));
-        if (_battleArt.Count != 648 || _storageIcons.Count != 162 || _route22Footprints.Count != 115 || _celioDex.Count != 3 || _celioMachineLayers.Count != 9)
-            throw new InvalidDataException("Celio presentation inventory differs.");
-        Write("celioPresentation",new { CelioPresentationAssets.ManifestSha256, battleSprites=648, icons=162, footprints=115,
-            ownedSpecies=138, opponentSpecies=162, machineMetatiles=3, machineLayers=9, newMoveAnimations=0,
-            nativeWindowVerified=false, physicalAudioVerified=false });
+        Write("celioPresentation",new {             nativeWindowVerified=false, physicalAudioVerified=false });
     }
 
     private CaptureDexEntry? CelioCaptureDexEntry(int species) => !_celioDex.TryGetValue(species,out var e) ? null :

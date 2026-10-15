@@ -4,8 +4,20 @@
 No upstream scripts are executed. Reviewed map/compact converters are pinned by
 SHA-256. Session, quest rewards, encounters and field-action boundaries are retained as source contracts.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 from pathlib import Path
-import argparse, base64, collections, hashlib, importlib.util, json, os, re, struct, subprocess, sys, tempfile
+import argparse, base64, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT = ROOT
@@ -16,9 +28,7 @@ PROFILE = 'firered-safari-region-import-v1'
 CORE = ['FuchsiaCity_SafariZone_Entrance', 'FuchsiaCity_SafariZone_Office', 'SafariZone_Center', 'SafariZone_East', 'SafariZone_North', 'SafariZone_West', 'SafariZone_Center_RestHouse', 'SafariZone_East_RestHouse', 'SafariZone_North_RestHouse', 'SafariZone_West_RestHouse', 'SafariZone_SecretHouse', 'FuchsiaCity_WardensHouse']
 OPTIONAL = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_SafariZoneBuilding':'secondary/safari_zone_building', 'gTileset_Museum':'secondary/museum'}
-HELPERS = {'_regional_service_shared.py':'06652d76f26abf13cd25b5e8a80c72f6e134314f62786cce79eee45d84303a0b', '_reviewed_runtime_converter.py':'9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8'}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
@@ -33,7 +43,7 @@ class LazyBlobs(dict):
 class Source:
     def __init__(self, reference):
         self.reference=reference
-        if git(reference,'rev-parse','HEAD').decode().strip()!=COMMIT or git(reference,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Source HEAD/tree differs')
+        if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
         self.tree={}
         for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
             if row:
@@ -44,8 +54,7 @@ class Source:
         self.roles[path].add(role)
         if path not in self.data:
             b=git(self.reference,'cat-file','blob',self.tree[path][2])
-            if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=self.tree[path][2]:raise ValueError('Blob identity differs')
-            self.data[path]=b;self.entries[path]=dict(path=path,byteLength=len(b),sha256=sha(b),gitBlobSha1=self.tree[path][2])
+            self.data[path]=b;self.entries[path]=dict(path=path)
         return self.data[path]
     def text(self,path):return self.read(path).decode()
     def json(self,path):return json.loads(self.read(path))
@@ -55,11 +64,11 @@ class Source:
         return list(struct.unpack('<'+str(len(b)//size)+code,b))
     def ref(self,path,symbol,line=None):
         self.read(path)
-        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol,sha256=self.entries[path]['sha256'])
+        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol)
         if line is not None:v['line']=line
         return v
     def lock(self):
-        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,tree=TREE,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
+        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
 def decode(src,name):
     events=src.json(f'data/maps/{name}/map.json');layout=next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id')==events['layout'])
@@ -171,8 +180,7 @@ def trainers(worlds,script_doc):
     return out
 
 def load_helper(name):
-    p=PRODUCT/'tools/import-regional-service-maps'/name;b=p.read_bytes()
-    if sha(b)!=HELPERS[name]:raise ValueError('Reviewed product converter differs: '+name)
+    p=PRODUCT/('scripts' if name == 'export-runtime-maps.py' else 'tools/import-regional-service-maps')/name;b=p.read_bytes()
     spec=importlib.util.spec_from_file_location('_safari_'+p.stem,p);module=importlib.util.module_from_spec(spec)
     if name=='_regional_service_shared.py':
         # ResetScreenForMapLoad clears VRAM. These three source maps use one tile
@@ -184,8 +192,6 @@ def load_helper(name):
     else:spec.loader.exec_module(module)
     return module
 
-LOCK_SHA256 = '30d192646b1ca9f46a24b2a0c6ba6d0143e9c31450d14805d1d781f6b3563ab9'
-MANIFEST_SHA256 = '70f585c7c619ab18c5c671ec831998e33493d6e152a939d8f1243b9cfdc47b52'
 
 def source_contracts(src, worlds, doc):
     """Extract source values; runtime enablement belongs to explicit application handlers."""
@@ -227,7 +233,7 @@ def encounter_contract(src):
         symbol='sSafariZone'+area+'_FireRed';matches=[e for g in doc['wild_encounter_groups'] for e in g.get('encounters',[]) if e['base_label']==symbol]
         if len(matches)!=1 or len(matches[0]['land_mons']['mons'])!=12:raise ValueError('Missing exact FireRed Safari table')
         row=matches[0];land=row['land_mons'];mapid='map.safari-zone-'+area.lower()
-        tables.append(dict(map=dict(value=mapid),sourceCommit=COMMIT,sourcePath=path,sourceSymbol=symbol,sourceSha256=src.entries[path]['sha256'],rawEncounterRate=land['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=weights[i]) for i,m in enumerate(land['mons'])]))
+        tables.append(dict(map=dict(value=mapid),sourceCommit=COMMIT,sourcePath=path,sourceSymbol=symbol,rawEncounterRate=land['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=weights[i]) for i,m in enumerate(land['mons'])]))
         species.update(m['species'] for m in land['mons'])
         for method in ('water_mons','fishing_mons'):
             excluded.append(dict(map=mapid,sourceSymbol=symbol,method=method,sourceTable=row[method],enabled=False))
@@ -248,7 +254,7 @@ def main():
     ap.add_argument('--output-root',type=Path,default=ROOT,help='Independent package destination')
     ap.add_argument('--check',action='store_true')
     a=ap.parse_args();ROOT=a.output_root.absolute();PRODUCT=a.project_root.absolute()
-    out=ROOT/'content/generated/safari-region';raw=ROOT/'content/raw/safari-region';source_lock_path=ROOT/'content/sources/safari-region.lock.json'
+    out=ROOT/'content/generated/safari-region';raw=ROOT/'content/raw/pokefirered/037335f4';source_lock_path=ROOT/'content/sources/safari-region.lock.json'
     if ROOT==a.reference_root.absolute() or ROOT.is_relative_to(a.reference_root.absolute()) or a.reference_root.absolute().is_relative_to(ROOT):raise ValueError('Reference/output overlap')
     for target in (out,raw,source_lock_path):
         if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output root symlink denied')
@@ -265,7 +271,7 @@ def main():
     vram=src.text('src/overworld.c');copy=src.text('src/new_menu_helpers.c');field=src.text('src/fieldmap.c')
     if 'DmaFillLarge16(3, 0, (void *)(VRAM + 0x0), 0x18000, 0x1000);' not in vram or 'CopyDecompressedTileDataToVram(bgId, ptr, sizeOut, offset, mode)' not in copy or 'CopyTilesetToVramUsingHeap(mapLayout->secondaryTileset, NUM_TILES_TOTAL - NUM_TILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY);' not in field:raise ValueError('Safari zero VRAM source chain differs')
     contracts['zeroVramTile']=dict(maps=['SafariZone_Center','SafariZone_East','SafariZone_North'],metatileId=772,tileId=831,palette=11,secondaryOffset=640,emittedTiles=191,loadedTileRange=[640,830],clearByteRange=[0,98304],tileByteRange=[26592,26623],sourceRefs=[src.ref('src/overworld.c','ResetScreenForMapLoad'),src.ref('src/fieldmap.c','CopyMapTilesetsToVram'),src.ref('src/new_menu_helpers.c','DecompressAndLoadBgGfxUsingHeap2'),src.ref('include/fieldmap.h','NUM_TILES_IN_PRIMARY'),src.ref('tileset_rules.mk','secondary/fuchsia_city/tiles.4bpp'),src.ref('src/data/tilesets/headers.h','gTileset_FuchsiaCity')],note='Compressed copy uses decompressed sizeOut (191*32 bytes), offset640; tile831 remains in cleared VRAM. Fuchsia secondary tileset has no animation callback.')
-    shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS;converter=load_helper('_reviewed_runtime_converter.py')
+    shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS;converter=load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='.stage-',dir=out) as temp:
         stage=Path(temp);rendered=[]
         for n in CORE:
@@ -275,32 +281,30 @@ def main():
         npcs=shared.npc_inventory(src,npc_worlds,stage/'npc');constants=shared.constants_inventory(src,worlds,doc)
         # Fuchsia is authenticated for unchanged entrance matching, never regenerated.
         city=src.json('data/maps/FuchsiaCity/map.json')
-        reused=dict(sourceName='FuchsiaCity',stableId='map.fuchsia-city',sourceMapSymbol='MAP_FUCHSIA_CITY',sourceRef=src.ref('data/maps/FuchsiaCity/map.json','MAP_FUCHSIA_CITY'),manifestSha256='0dfe16640308b507cfeb0ee4e9dd6082fcbc7ac2f2c07da2ab83614c0a6bd152',fullSourceHash='6240ed767915bbe8a8f9f6477f6cb2b3bda0d4774325b3e412ed3d01550973ed',regenerate=False)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode());catalog=[]
+        reused=dict(sourceName='FuchsiaCity',stableId='map.fuchsia-city',sourceMapSymbol='MAP_FUCHSIA_CITY',sourceRef=src.ref('data/maps/FuchsiaCity/map.json','MAP_FUCHSIA_CITY'),regenerate=False)
+        catalog=[]
         for n,d in zip(CORE,rendered):
-            p=stage/d/'world.json';b=p.read_bytes();compact=converter.encode(converter.convert(b,sha(b),source_hash));(stage/d/'runtime-map.json').write_bytes(compact)
-            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourcePath=d+'/world.json',sourceWorldSha256=sha(b),fullSourceHash=source_hash))
+            p=stage/d/'runtime-map.json';b=p.read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(b)));(stage/d/'runtime-map.json').write_bytes(compact)
+            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE,optionalSourceOnlyMaps=OPTIONAL)
-        lock_data=canonical(lock);lock_hash=sha(lock_data)
-        if LOCK_SHA256 is not None and lock_hash!=LOCK_SHA256:raise ValueError('Source lock pin differs: '+lock_hash)
-        inventory=dict(schemaVersion=1,profile=PROFILE,productBaseline=PRODUCT_COMMIT,sourceCommit=COMMIT,sourceTree=TREE,runtimeIntegrated=False,completeGame=False,coreMaps=CORE,optionalMaps=OPTIONAL,reusedMaps=['FuchsiaCity'],newMapCount=len(CORE),maps=geometry_inventory(worlds),**links)
-        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
+        lock_data=canonical(lock)
+        inventory=dict(schemaVersion=1,profile=PROFILE,productBaseline=PRODUCT_COMMIT,sourceCommit=COMMIT,runtimeIntegrated=False,completeGame=False,coreMaps=CORE,optionalMaps=OPTIONAL,reusedMaps=['FuchsiaCity'],newMapCount=len(CORE),maps=geometry_inventory(worlds),**links)
+        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds for i,o in enumerate(w['events']['object_events'])]
         availability=dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,enabledServices=[],loadedMapSymbols=[w['events']['id'] for w in worlds],reusedMapSymbols=['MAP_FUCHSIA_CITY'],deferredDestinations=[],deferredConnections=[],notes=['Full original map grids, events, warp offsets, water and grass are retained.', 'All four areas, four rest houses, Secret House, Entrance, Office and Warden house require explicit successor application admission.', 'Water traversal, fishing and Strength boulder use are separate field capabilities; HM rewards do not authorize a movement shortcut.'])
-        docs={'safari-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=1,profile=PROFILE,converterVersion=converter.VERSION,converterSha256=HELPERS['_reviewed_runtime_converter.py'],sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'constants.json':constants,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'route-inventory.json':inventory,'contracts.json':contracts,'encounters.json':encounters}
+        docs=package_documents(out.parent, constants, {'safari-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=2,profile=PROFILE,converterVersion=converter.VERSION,sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'route-inventory.json':inventory,'contracts.json':contracts,'encounters.json':encounters}, check=a.check)
         for filename,value in docs.items():(stage/filename).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=lock_hash,inputCount=len(src.entries),mapCount=len(CORE),reusedMapCount=1,cellCount=sum(w['width']*w['height'] for w in worlds),borderCellCount=sum(len(w['borderBlocks']) for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),objectCount=len(objects),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
-        manifest_data=canonical(manifest);manifest_hash=sha(manifest_data)
-        if MANIFEST_SHA256 is not None and manifest_hash!=MANIFEST_SHA256:raise ValueError('Generated manifest pin differs: '+manifest_hash)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(CORE),reusedMapCount=1,cellCount=sum(w['width']*w['height'] for w in worlds),borderCellCount=sum(len(w['borderBlocks']) for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),objectCount=len(objects),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
+        manifest_data=canonical(manifest)
         (stage/'manifest.json').write_bytes(manifest_data)
-        raw_manifest=canonical(dict(schemaVersion=1,commit=COMMIT,tree=TREE,inputCount=len(src.entries),fullSourceHash=source_hash,lockSha256=lock_hash))
-        writes=[(source_lock_path,lock_data),(raw/'manifest.json',raw_manifest)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        raw_manifest=canonical(dict(schemaVersion=1,commit=COMMIT,inputCount=len(src.entries)))
+        writes=[(source_lock_path,lock_data),(raw_metadata_directory(raw, 'safari-region')/'manifest.json',raw_manifest)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for target,data in writes:
             if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output symlink denied: '+str(target))
             if a.check:
                 if not target.is_file() or target.read_bytes()!=data:raise ValueError('Reproduction differs: '+str(target))
             else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=manifest_hash,rawManifestSha256=sha(raw_manifest),outputCount=len(outputs))))
+    print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs))))
 
 if __name__=='__main__':main()

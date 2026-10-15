@@ -32,12 +32,12 @@ def build(root):
   tiles.append(dict(symbol=symbol,metatileId=mid,rawAttributes=attribute,x=column*16,y=0,width=16,height=16))
  out={};assets=[]
  for name,layer in zip(('bottom','middle','top'),layers):
-  rgba=layer.tobytes();stem='card-key-'+name;out[stem+'.rgba']=rgba;out[stem+'.png']=art.png(layer.width,layer.height,rgba);assets.append(dict(layer=name,texturePath=stem+'.png',rgbaPath=stem+'.rgba',width=layer.width,height=layer.height,sha256=meta.sha(out[stem+'.png']),rgbaSha256=meta.sha(rgba)))
- meta.require('special DrawWholeMapView' in door and 'playse SE_UNLOCK' in door,'Card Key redraw source differs');out['manifest.json']=meta.canonical(dict(schemaVersion=1,profile='firered-silph-door-art-v1',sourceCommit=meta.COMMIT,lockSha256=meta.LOCK_SHA,tiles=tiles,layers=assets,limits=['Card Key gate switches metatiles after source fanfare, then redraws the map; it is not a sliding-door animation.','Each atlas retains bottom, middle and top BG layers; gameplay owns collision and persistent door flags.'],outputs=[dict(path=p,byteLength=len(b),sha256=meta.sha(b)) for p,b in sorted(out.items())]));return out
+  rgba=layer.tobytes();stem='card-key-'+name;out[stem+'.png']=art.png(layer.width,layer.height,rgba);assets.append(dict(layer=name, texturePath=stem + '.png', width=layer.width, height=layer.height))
+ meta.require('special DrawWholeMapView' in door and 'playse SE_UNLOCK' in door,'Card Key redraw source differs');out['manifest.json']=meta.canonical(dict(schemaVersion=1,profile='firered-silph-door-art-v1',sourceCommit=meta.COMMIT,tiles=tiles,layers=assets,limits=['Card Key gate switches metatiles after source fanfare, then redraws the map; it is not a sliding-door animation.','Each atlas retains bottom, middle and top BG layers; gameplay owns collision and persistent door flags.'],outputs=[dict(path=p) for p,b in sorted(out.items())]));return out
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args();out=build(a.project_root)
  for relative,b in out.items():
   target=meta.safe(a.project_root,'content/generated/silph-door-art/'+relative)
   if a.check:meta.require(target.read_bytes()==b,'Door art differs: '+relative)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
- print(json.dumps(dict(passed=True,metatiles=16,layers=3,manifestBytes=len(out['manifest.json']),manifestSha256=meta.sha(out['manifest.json']))))
+ print(json.dumps(dict(passed=True,metatiles=16,layers=3,manifestBytes=len(out['manifest.json']))))

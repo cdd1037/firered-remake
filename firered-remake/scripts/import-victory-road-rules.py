@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY REGION OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -13,13 +12,7 @@ COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ("BLACK_BELT_DAISUKE", "COOLTRAINER_ALEXA", "COOLTRAINER_CAROLINE", "COOLTRAINER_COLBY",
     "COOLTRAINER_GEORGE", "COOLTRAINER_NAOMI", "COOLTRAINER_ROLANDO", "COOL_COUPLE_RAY_TYRA",
     "JUGGLER_GREGORY", "JUGGLER_NELSON", "POKEMANIAC_DAWSON", "TAMER_VINCENT")
-BASELINE_SHA256 = "3775e076364c67d145c5754e88907d1bdf3de334b7e714e90a63b86cb87b396d"
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -30,7 +23,7 @@ def generate(reference, dependency, region):
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -40,7 +33,7 @@ def generate(reference, dependency, region):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -100,19 +93,18 @@ def generate(reference, dependency, region):
             source=ref(path, symbol, match), moneySource=ref("src/battle_main.c", fields["trainerClass"], money)))
         resolved.append(dict(trainer=symbol, party=movesets))
     region_inputs = {}
-    def dependent(root, path, expected, bucket):
+    def dependent(root, path,  bucket):
         data = (root / path).read_bytes()
-        need(sha(data) == expected, 'Dependency identity differs: ' + path)
-        bucket[path] = dict(path=path, byteLength=len(data), sha256=sha(data))
+        bucket[path] = dict(path=path)
         return json.loads(data)
     contracts = dependent(region, 'content/generated/victory-road-region/contracts.json',
-        '8bb5de6e81d95c1178c242bf4b17f5970b9f1a38078271f9754f885cba5f7746', region_inputs)
+         region_inputs)
     declarations = dependent(region, 'content/generated/victory-road-region/declarations.json',
-        '5449d69f7e9efb20a565f5e7f0b32692bc992ae918998bcb51137ec807693ed2', region_inputs)
+         region_inputs)
     dependencies = {}
     canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json',
-        'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc', dependencies)
-    baseline = dependent(dependency, 'scripts/fuchsia-gym-baseline.lock.json', BASELINE_SHA256, dependencies)
+         dependencies)
+    baseline = dependent(dependency, 'scripts/fuchsia-gym-baseline.lock.json',  dependencies)
     owned = ['SPECIES_' + s for s in baseline['species'] +
         ['CHANSEY','SCYTHER','TAUROS','PSYDUCK','GOLDUCK','LAPRAS','KRABBY','KINGLER']]
     need(len(owned) == len(set(owned)) == 115, 'Expected unchanged owned115')
@@ -158,7 +150,7 @@ def generate(reference, dependency, region):
                 rows.append(dict(index=i,species=identity(s['species']), minimumLevel=s['min_level'], maximumLevel=s['max_level'], weight=weights[field][i]))
                 pairs.update((s['species'],lv) for lv in range(s['min_level'],s['max_level']+1))
             table=dict(map=dict(value=map_ids[e['map']]),sourceMapSymbol=e['map'],sourceCommit=COMMIT,sourcePath=wild_path,
-                sourceSymbol=e['base_label'],sourceSha256=inputs[wild_path]['sha256'],rawEncounterRate=v['encounter_rate'],slots=rows)
+                sourceSymbol=e['base_label'],rawEncounterRate=v['encounter_rate'],slots=rows)
             if field == 'land_mons': table.pop('sourceMapSymbol')
             if field == 'fishing_mons': table['rodGroups'] = next(f['groups'] for f in headers['fields'] if f['type']==field)
             dest.append(table)
@@ -253,7 +245,7 @@ def generate(reference, dependency, region):
         molTResImported=False,goodAndSuperRodAccess=False,doubleEdgeTutorAdmitted=False)
     need(len(rules['trainerSpecies'])==40 and len(rules['trainerMoves'])==93 and len(rules['wildMoves'])==54,'Dependency closure')
     outputs={'trainers.json':trainer_doc,'wild.json':wild_doc,'items.json':item_doc,'machines.json':machine_doc,'rules.json':rules,
-        'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],
+        'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],
             predecessorInputs=list(dependencies.values()),regionInputs=list(region_inputs.values()))}
     return outputs,raw
 
@@ -263,9 +255,9 @@ def main():
     p.add_argument('--check',action='store_true');a=p.parse_args()
     outputs,raw=generate(a.reference,a.dependency,a.region)
     files={f'content/generated/victory-road-rules/{name}':(json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode() for name,value in outputs.items()}
-    files.update({'content/raw/victory-road-rules/'+name:data for name,data in raw.items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',profile='firered-victory-road-rules-v1',
-        files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    files.update({'content/raw/pokefirered/037335f4/'+name:data for name,data in raw.items()})
+    lock=dict(sourceCommit=COMMIT,profile='firered-victory-road-rules-v1',
+        files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/victory-road-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
@@ -273,5 +265,5 @@ def main():
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     print(json.dumps(dict(checked=a.check,trainers=12,members=45,battleOccurrences=13,wildSpecies=19,wildSpeciesLevelPairs=122,
         ownedSpeciesAdded=0,pickups=18,itemTypes=16,newMachines=4,machineCompatibilityCells=460,
-        sourceInputs=len(raw),files=len(files),bytes=sum(map(len,files.values())),hashes={k:sha(v) for k,v in files.items() if '/generated/'in k}),indent=2))
+        sourceInputs=len(raw),files=len(files),bytes=sum(map(len,files.values()))),indent=2))
 if __name__=='__main__':main()

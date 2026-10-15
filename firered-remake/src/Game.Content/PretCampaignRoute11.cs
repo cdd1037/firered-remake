@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
     public bool Route11Enabled => Route11Region is not null;
 
     private static IEnumerable<FieldPickupDefinition> Route11PickupDefinitions(
-        PretRoute11ItemsDocument items, PretStoryCompilation scripts)
+        PretRoute11ItemsDocument items,PretStoryCompilation scripts)
     {
         foreach (var pickup in items.Pickups)
         {

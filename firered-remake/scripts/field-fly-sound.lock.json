@@ -3,43 +3,25 @@
   "profile": "firered-field-fly-sound-v1",
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/midi.cfg",
-      "byteLength": 20338,
-      "sha256": "49b3a0b5a2809ccd8b504da3bedfb0f5168afd073b94ef6c10a3904e1ea62560",
-      "gitBlobSha1": "71a968f7b52eb1ed005695c7c97aec856cfeb980"
+      "path": "sound/songs/midi/midi.cfg"
     },
     {
-      "path": "sound/songs/midi/se_m_fly.mid",
-      "byteLength": 648,
-      "sha256": "edab8950f2372217d1cbe6db2c34f46310cc4a4a257946003c2337f3efe3b782",
-      "gitBlobSha1": "6e63f48ccc57dce28da2379b88c93e382f7f98b0"
+      "path": "sound/songs/midi/se_m_fly.mid"
     },
     {
-      "path": "src/field_effect.c",
-      "byteLength": 125868,
-      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
-      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be"
+      "path": "src/field_effect.c"
     }
   ],
   "resource": {
     "path": "content/generated/synth-audio/firered.pack",
-    "byteLength": 2565436,
-    "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d",
     "baseAddress": 138975592,
     "endAddress": 141541028,
     "songTableAddress": 139080396

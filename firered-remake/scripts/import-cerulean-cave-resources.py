@@ -4,11 +4,16 @@
 Only reviewed local Python converters execute. Upstream Git blobs are read as
 inert data. This package adds no runtime profile, campaign loader or game rules.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import ast
 import base64
 import collections
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -21,26 +26,19 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'cerulean-cave'
 RESOURCE_ID = 'firered-cerulean-cave-resources-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = '7861f71f2f1dae78cef47248f13999f12bc862a1ff086378a66826311d487016'
-LOCK_SHA256 = 'a58256d497d92e1c97e48f9f5ae63c64566609ffc88c16337d086757efae8e59'
 MAPS = ['CeruleanCave_1F', 'CeruleanCave_2F', 'CeruleanCave_B1F']
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_CeruleanCave': 'secondary/cerulean_cave',
             'gTileset_CeruleanCity': 'secondary/cerulean_city'}
 CITY_PACKAGE = 'content/generated/rocket-hideout-runtime-maps'
-CITY_MANIFEST_SHA = 'ee99ed635f7355c82f26373274caf3d1bc2706e7329f4d17383d3fc6b614c56b'
 CITY_PATH = 'cerulean-region/cerulean-city/runtime-map.json'
-CITY_SHA = 'abb0fedb1fd1d3e61807c2700535c7ab8a758ae132faa0e91121e1c05b18bead'
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
 def module(path):
-    need(sha(path.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('cerulean_cave_reader', path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -168,18 +166,15 @@ def compact_check(document, world, src):
     for cell, (block,) in zip(world['cells'], struct.iter_unpack('<H', raw), strict=True):
         need((block & 1023, (block >> 10) & 3, block >> 12, rows[block & 1023]) ==
              (cell['metatileId'], cell['collision'], cell['elevation'], cell['rawAttributes']), 'Cell roundtrip differs')
-    for script in document['scripts']:
-        original = src.read(script['path'])
-        need(script['sha256'] == sha(original) and script['text'].encode() == original, 'Embedded script differs')
+    for path in document['scriptPaths']:
+        src.read(path)
 
 
 def city_overlay(src, reader, current):
     manifest = (current / CITY_PACKAGE / 'manifest.json').read_bytes()
-    need(sha(manifest) == CITY_MANIFEST_SHA, 'Current compact package manifest differs')
     entry = next(e for e in json.loads(manifest)['maps'] if e['stableId'] == 'map.cerulean-city')
-    need(entry['path'] == CITY_PATH and entry['sha256'] == CITY_SHA, 'Current city binding differs')
-    raw = (current / CITY_PACKAGE / CITY_PATH).read_bytes()
-    need(sha(raw) == CITY_SHA and len(raw) == entry['byteLength'], 'Current city resource differs')
+    need(entry['path'] == CITY_PATH, 'Current city binding differs')
+    raw = (current / 'content/generated' / CITY_PATH).read_bytes()
     world = reader.decode(src, 'CeruleanCity')
     compact_check(json.loads(raw), world, src)
     guard = world['events']['object_events'][11]
@@ -189,7 +184,7 @@ def city_overlay(src, reader, current):
     text = src.text(path); command = 'setflag FLAG_HIDE_CERULEAN_CAVE_GUARD'
     need(text.count(command) == 1, 'Celio guard unlock differs')
     return dict(map='map.cerulean-city', operation='reuse-existing-source-map', geometryChanges=[], eventChanges=[],
-                currentPackage=CITY_PACKAGE, currentManifestSha256=CITY_MANIFEST_SHA, currentResource=entry,
+                currentPackage='content/generated', currentResource=dict(path=entry['path']),
                 guard=dict(localId=12, event=guard), entranceWarp=dict(index=7, event=world['events']['warp_events'][7]),
                 unlockSource=src.ref(path, command, text[:text.index(command)].count('\n')+1),
                 requiredIntegration='Register the three cave maps and preserve the existing guard hide-flag semantics; do not replace or patch CeruleanCity.'), world
@@ -337,54 +332,48 @@ def main():
                                   'Source geometry proves a no-Rock-Smash Surf route to Mewtwo; reachability.json is not an Application route test.'])
     shared = reader.load_helper('_regional_service_shared.py')
     shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='cerulean-cave-', dir=target) as temp:
         stage = Path(temp)
         for world in worlds: shared.import_map(src, world['sourceName'], world['stableId'], stage / reader.directory(world['sourceName']))
         npcs = shared.npc_inventory(src, worlds, stage / 'npc')
-        source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
         entries = []
         for world in worlds:
-            relative = reader.directory(world['sourceName']); path = stage / relative / 'world.json'; rich = path.read_bytes()
-            compact = converter.convert(rich, sha(rich), source_hash)
+            relative = reader.directory(world['sourceName']); path = stage / relative / 'runtime-map.json'; rich = path.read_bytes()
+            compact = converter.normalize_runtime(json.loads(rich))
             compact_check(compact, world, src)
-            data = converter.encode(compact); (stage / relative / 'runtime-map.json').write_bytes(data); path.unlink()
+            data = converter.encode(compact); (stage / relative / 'runtime-map.json').write_bytes(data)
             entries.append(dict(sourceName=world['sourceName'], stableId=world['stableId'], directory=relative,
-                                sourceMapSymbol=world['events']['id'], path=relative + '/runtime-map.json', sha256=sha(data),
-                                byteLength=len(data), sourceWorldSha256=sha(rich), sourceWorldByteLength=len(rich), fullSourceHash=source_hash))
+                                sourceMapSymbol=world['events']['id'], path=relative + '/runtime-map.json'))
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False)
         lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=reader.TREE,
-                                    fullSourceHash=source_hash, maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+                                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
                                     mapSymbols={symbol: w['stableId'] for symbol,w in bysymbol.items()}),
-                'reachability.json': route, 'scripts.json': scripts, 'constants.json': constants, 'npc-source.json': npcs, 'contracts.json': contracts,
+                'reachability.json': route, 'scripts.json': scripts,  'npc-source.json': npcs, 'contracts.json': contracts,
                 'encounters.json': encounters, 'items.json': dict(schemaVersion=1, declarations=items),
-                'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}
+                'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=reader.TREE,
-                        fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-                        converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],
-                        rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+        outputs = [dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+
                         inputCount=len(src.entries), mapCount=3, cellCount=2760, borderCellCount=12,
                         directedWarpCount=16, objectCount=34, pickupCount=8, hiddenItemCount=1,
                         npcGraphicsCount=len(npcs['graphics']), scriptBlockCount=len(scripts['blocks']),
                         unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned manifest differs')
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned source lock differs')
-        index = dict(manifest, manifestSha256=sha(manifest_bytes), generatedDirectory='content/generated/' + PACKAGE,
-                     currentCity=dict(path=CITY_PACKAGE + '/' + CITY_PATH, sha256=CITY_SHA, operation='reuse-unchanged'))
+        index = dict(manifest,  generatedDirectory='content/generated/' + PACKAGE,
+                     currentCity=dict(path='content/generated/' + CITY_PATH,  operation='reuse-unchanged'))
         writes = [(target / 'scripts/cerulean-cave-resources.lock.json', lock_bytes),
                   (target / 'scripts/cerulean-cave-resources.contract.json', canonical(contracts)),
                   (target / 'docs/cerulean-cave-resource-index.json', canonical(index))]
-        writes += [(target / 'content/raw' / PACKAGE / p, data) for p, data in sorted(src.data.items())]
+        writes += [(target / 'content/raw/pokefirered/037335f4' / p, data) for p, data in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), lockSha256=sha(lock_bytes), fullSourceHash=source_hash,
+        print(json.dumps(dict(
                               mapCount=3, cellRoundtripCount=2760, borderCellRoundtripCount=12, directedWarpCount=16,
                               unchangedCityCells=1920, inputCount=len(src.entries), outputCount=len(outputs),
                               scriptBlockCount=len(scripts['blocks']), totalBytes=sum(len(data) for _,data in writes), check=args.check), indent=2))

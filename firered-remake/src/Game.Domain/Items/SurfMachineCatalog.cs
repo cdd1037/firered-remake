@@ -22,7 +22,6 @@ public sealed class SurfMachineCatalog
         "TM01","TM03","TM04","TM06","TM07","TM10","TM13","TM14","TM17","TM18","TM21","TM23",
         "TM27","TM28","TM31","TM32","TM40","TM42","TM43","TM44","TM45","HM03","HM04","HM05","HM06","HM07","HM08"
     }.ToImmutableHashSet(StringComparer.Ordinal);
-    private const string SourceHash = "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f";
     public static SurfMachineCatalog Authenticate(SafariMachineCatalog predecessor,
         PewterMachineCatalog candidate, SurfOwnedPokemonCatalog pokemon)
     {
@@ -42,7 +41,7 @@ public sealed class SurfMachineCatalog
             {
                 var id = SurfOwnedPokemonCatalog.AdditionalSpecies[i];
                 var source = new OpeningItemSourceRef("src/data/pokemon/tmhm_learnsets.h", id.Value[5..],
-                    i == 0 ? 1207 : 1235, i == 0 ? 1233 : 1262, SourceHash);
+                    i == 0 ? 1207 : 1235, i == 0 ? 1233 : 1262);
                 string symbol = machine.Value[10..];
                 bool learns = PsyduckMachines.Contains(symbol) || i == 1 && symbol == "TM15";
                 if (rows[110+i] != new PewterMachineCompatibility(id, 54+i, learns, source))

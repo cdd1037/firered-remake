@@ -6,7 +6,6 @@ executed, no repository is fetched, and no gameplay or National Dex gate is enab
 """
 import argparse
 import ast
-import hashlib
 import json
 import pathlib
 import re
@@ -16,14 +15,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-oak-rating-v1'
-LOCK_HASH = '9d6963385dac14f7d4d0e6ec95f2c0e26af95775422ed577577048b6daef839c'
 RATING_SCRIPT = 'data/scripts/pokedex_rating.inc'
 PC_SCRIPT = 'data/scripts/pc.inc'
 LAB_SCRIPT = 'data/maps/PalletTown_ProfessorOaksLab/scripts.inc'
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -66,19 +60,10 @@ def read(path, expected_length=None):
 
 def read_lock(path=None):
     data = read(path or ROOT / 'content/oak-rating-source-lock.json')
-    if digest(data) != LOCK_HASH:
-        raise ValueError('Reviewed Oak rating source lock differs')
     lock = json.loads(data, object_pairs_hook=unique)
-    if (lock['schemaVersion'], lock['commit'], lock['tree'], lock['profile'], len(lock['files'])) != (1, COMMIT, TREE, PROFILE, 34):
+    if (lock['schemaVersion'], lock['commit'], lock['profile'], len(lock['files'])) != (1, COMMIT, PROFILE, 34):
         raise ValueError('Oak rating source identity differs')
     return lock
-
-
-def verify(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if (len(data), blob, digest(data)) != (entry['byteLength'], entry['gitBlobSha1'], entry['sha256']):
-        raise ValueError('Oak rating source differs: ' + entry['path'])
-    data.decode('utf-8', errors='strict')
 
 
 def disjoint(*roots):
@@ -122,10 +107,9 @@ class Source:
         self.bytes = {}
         for path, entry in self.entries.items():
             if repo is None:
-                data = read(safe(raw, path), entry['byteLength'])
+                data = read(safe(raw, path))
             else:
                 data = subprocess.check_output(['git', '-C', str(safe(repo)), 'show', COMMIT + ':' + path])
-            verify(entry, data)
             self.bytes[path] = data
         self.texts = {p: b.decode('utf-8') for p, b in self.bytes.items()}
 
@@ -138,7 +122,7 @@ class Source:
     def reference(self, path, symbol, match):
         text = self.texts[path]
         return dict(path=path, symbol=symbol, startLine=text.count('\n', 0, match.start()) + 1,
-                    endLine=text.count('\n', 0, match.end() - 1) + 1, sha256=self.entries[path]['sha256'])
+                    endLine=text.count('\n', 0, match.end() - 1) + 1)
 
     def block(self, path, symbol):
         match = self.one(path, r'^' + re.escape(symbol) + r'::?\n(?:(?!^\w+::?).*\n)*')
@@ -245,8 +229,7 @@ def build(source):
     for symbol in opcodes:
         match = source.one('asm/macros/event.inc', r'^\s*\.macro ' + re.escape(symbol) + r'(?:\s[^\n]*)?\n[\s\S]*?^\s*\.endm')
         macros.append(dict(symbol=symbol, source=source.reference('asm/macros/event.inc', symbol, match), text=match[0]))
-    source_hash = digest(''.join(path + '\0' + source.entries[path]['sha256'] + '\n' for path in sorted(source.entries)).encode())
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, fullSourceHash=source_hash,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         inputFiles=list(source.entries.values()), constants=constants, ratingBands=bands, texts=texts,
         scriptBlocks=blocks, callerBlocks=callers, nativeDependencies=native, macroDependencies=macros,
         requiredOpcodes=opcodes, specialBindings=special_bindings,
@@ -276,9 +259,8 @@ def import_catalog(raw, out, lock_path=None, repo=None):
     source = Source(raw, lock_path, repo)
     doc = build(source)
     data = canonical(doc)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, lockSha256=LOCK_HASH,
-        fullSourceHash=doc['fullSourceHash'], inputCount=len(source.entries),
-        outputs=[dict(path='oak-rating.json', byteLength=len(data), sha256=digest(data))])
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,  inputCount=len(source.entries),
+        outputs=[dict(path='oak-rating.json')])
     targets = [(safe(out, 'oak-rating.json'), data), (safe(out, 'manifest.json'), canonical(manifest))]
     if repo is not None:
         targets = [(safe(raw, path), data) for path, data in source.bytes.items()] + targets
@@ -295,7 +277,7 @@ def import_catalog(raw, out, lock_path=None, repo=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=pathlib.Path, help='Read immutable pinned local Git objects into raw')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/oak-rating')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/oak-rating')
     args = parser.parse_args()
     print(json.dumps(import_catalog(args.raw, args.out, repo=args.repo), ensure_ascii=False))

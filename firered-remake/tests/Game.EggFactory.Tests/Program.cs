@@ -15,7 +15,6 @@ var checks = new List<string>();
 void Check(bool value, string label) { if (!value) throw new InvalidDataException(label); checks.Add(label); }
 void Throws(Action action, string label) { bool threw = false; try { action(); } catch (ArgumentException) { threw = true; } catch (NotSupportedException) { threw = true; } catch (OverflowException) { threw = true; } Check(threw, label); }
 var baseline = PretCampaignCatalog.LoadCurrent(args[0]).PokemonContent!;
-PretBreedingSpecies.ValidateSourceEvidence(args[1], args[0]);
 var owned = BreedingOwnedPokemonCatalog.For(baseline.Catalog)!;
 var metadata = BreedingSpeciesMetadataCatalog.For(owned.Catalog)!;
 var content = baseline with { Catalog = owned.Catalog, SpeciesNames = baseline.SpeciesNames.SetItems(

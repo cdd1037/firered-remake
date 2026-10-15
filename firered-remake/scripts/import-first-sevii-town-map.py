@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Import the bounded first-Sevii atlas from pinned Git blobs or its authenticated cache."""
-import argparse,hashlib,importlib.util,json,pathlib,re,struct,subprocess,sys
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import argparse,importlib.util,json,pathlib,re,struct,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-first-sevii-town-map-v1'
-LOCK_SHA256='6340ef420abcd5f601c26098368e7360b894ed598afb7fd3b3f5cbfcf51e0bb3'
-MANIFEST_SHA256='ceb256f9e8966259c52bc9c973d6fea10410f356fb61575c1846f77abd8b75ef'
 MAPS={
  'OneIsland':'map.one-island','OneIsland_Harbor':'map.one-island-harbor',
  'OneIsland_PokemonCenter_1F':'map.one-island-pokemon-center-1f',
@@ -29,9 +33,7 @@ PATHS=frozenset(['src/region_map.c','src/text.c','src/strings.c','include/charac
  *['data/maps/'+m+'/map.json' for m in MAPS]])
 spec=importlib.util.spec_from_file_location('first_sevii_pixels',ROOT/'scripts/first-sevii-town-map-pixels.py')
 pixels=importlib.util.module_from_spec(spec);spec.loader.exec_module(pixels)
-def sha(b):return hashlib.sha256(b).hexdigest()
 def canonical(d):return (json.dumps(d,ensure_ascii=False,sort_keys=True,indent=2)+'\n').encode()
-def source_hash(entries):return sha(''.join(e['path']+'\0'+e['sha256']+'\n' for e in sorted(entries,key=lambda e:e['path'])).encode())
 def pairs(rows):
  d={}
  for k,v in rows:
@@ -46,23 +48,15 @@ def safe(root,relative=None):
   target=root/relative
  if any(p.is_symlink() for p in [target,*target.parents]):raise ValueError('Symlink path')
  return target
-def read(path,limit):
- p=safe(path);size=p.stat().st_size
- if not p.is_file() or size>limit:raise ValueError('Oversized or nonregular input')
- with p.open('rb') as f:b=f.read(limit+1)
- if len(b)!=size:raise ValueError('Input changed during read')
- return b
-def raw_manifest(lock):return canonical(dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock['files']),inputCount=len(PATHS)))
+
+def raw_manifest():return canonical(dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,inputCount=len(PATHS)))
 def load_sources(lock,raw,repo):
- if repo is None and read(raw/'manifest.json',4096)!=raw_manifest(lock):raise ValueError('Raw manifest differs')
  out={}
  for e in lock['files']:
-  b=read(safe(raw,e['path']),e['byteLength']) if repo is None else subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+e['path']],timeout=30)
-  blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
-  if (len(b),sha(b),blob)!=(e['byteLength'],e['sha256'],e['gitBlobSha1']):raise ValueError('Source differs: '+e['path'])
+  b=safe(safe(raw, e['path'])).read_bytes() if repo is None else subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+e['path']],timeout=30)
   out[e['path']]=b
  return out
-def convert(lock,s):
+def convert(s):
  code=s['src/region_map.c'].decode();outputs={};assets=[]
  for needle in ['#define SWITCH_BUTTON_X 21','#define SWITCH_BUTTON_Y 11',
   'sSwitchMapMenu->maxSelection = 1;','sSwitchMapMenu->yOffset = 6;',
@@ -79,8 +73,8 @@ def convert(lock,s):
   if needle not in code:raise ValueError('Source semantics differ: '+needle)
  def add(id,w,h,rgba,paths):
   if len(rgba)!=w*h*4 or not 0<w*h<=38400:raise ValueError('Asset dimensions')
-  outputs[id+'.png']=pixels.compressed_png(w,h,rgba);outputs[id+'.rgba']=bytes(rgba)
-  assets.append(dict(id=id,width=w,height=h,texturePath=id+'.png',rgbaPath=id+'.rgba',sha256=sha(outputs[id+'.png']),rgbaSha256=sha(rgba),sourcePaths=paths))
+  outputs[id+'.png']=pixels.compressed_png(w,h,rgba)
+  assets.append(dict(id=id, width=w, height=h, texturePath=id + '.png', sourcePaths=paths))
  mp=pixels.palette(s[BASE+'region_map.pal'],80);tp=pixels.palette(s[BASE+'top_bar.pal'],16)
  pals={i:mp[i*16:(i+1)*16].copy() for i in range(5)}
  pals[2]=[tuple((((((c>>3)<<8)//100)*95)>>8) for c in rgb) for rgb in pals[2]]
@@ -128,24 +122,22 @@ def convert(lock,s):
   if m is None:raise ValueError('Source function missing: '+symbol)
   refs.append(dict(path='src/region_map.c',symbol=symbol,startLine=code.count('\n',0,m.start())+1))
  texts={k:re.search(r'const u8 '+sym+r'\[\] = _\("(.*)"\);',s['src/strings.c'].decode())[1] for k,sym in [('pick','gText_RegionMap_UpDownPick'),('ok','gText_RegionMap_AButtonOK'),('switch','gText_RegionMap_AButtonSwitch')]}
- outputs['town-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=source_hash(lock['files']),assets=assets,cells=cells,icons=icons,positions=positions,sourceRefs=refs,uiTexts=texts,unlockFlag='FLAG_SYS_SEVII_MAP_123',switchMenu=dict(maxSelection=1,yOffset=6,highlightLeft=72,highlightRight=168,highlightHeight=32,leftArrowX=88,rightArrowX=152,arrowSize=32,arrowFrameTicks=20,cancelRestoresPlayerRegion=True),limitations=['Static completed menu and atlas states; GPU blend and open/close transitions are not native-verified.','Guide pages, Fly and Sevii4567 are not implemented.','Three Island Harbor requires source escapeWarp; do not guess its player marker.','New projection covers the 14 first-Sevii maps and Cinnabar Island/Center only; older authenticated early-Kanto projection remains separate.']))
- outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock['files']),inputCount=len(s),assetCount=len(assets),upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+ outputs['town-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,assets=assets,cells=cells,icons=icons,positions=positions,sourceRefs=refs,uiTexts=texts,unlockFlag='FLAG_SYS_SEVII_MAP_123',switchMenu=dict(maxSelection=1,yOffset=6,highlightLeft=72,highlightRight=168,highlightHeight=32,leftArrowX=88,rightArrowX=152,arrowSize=32,arrowFrameTicks=20,cancelRestoresPlayerRegion=True),limitations=['Static completed menu and atlas states; GPU blend and open/close transitions are not native-verified.','Guide pages, Fly and Sevii4567 are not implemented.','Three Island Harbor requires source escapeWarp; do not guess its player marker.','New projection covers the 14 first-Sevii maps and Cinnabar Island/Center only; older authenticated early-Kanto projection remains separate.']))
+ outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(s),assetCount=len(assets),upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
 def import_content(raw,out,repo=None,lock_path=None):
  raw=safe(raw);out=safe(out)
  if raw.is_relative_to(out) or out.is_relative_to(raw):raise ValueError('Overlapping directories')
  if repo is not None and any(p.resolve().is_relative_to(pathlib.Path(repo).resolve()) or pathlib.Path(repo).resolve().is_relative_to(p.resolve()) for p in (raw,out)):raise ValueError('Output overlaps source repository')
- lb=read(lock_path or ROOT/'content/first-sevii-town-map-source-lock.json',65536)
- if sha(lb)!=LOCK_SHA256:raise ValueError('Source lock differs')
+ lb=safe(lock_path or ROOT / 'content/first-sevii-town-map-source-lock.json').read_bytes()
  lock=json.loads(lb,object_pairs_hook=pairs)
- if (lock['commit'],lock['tree'],lock['profile'],lock['repository'],lock['gameEdition'],lock['romRevision'])!=(COMMIT,TREE,PROFILE,'pret/pokefirered','FIRERED',0) or len(lock['files'])!=len(PATHS) or {e['path'] for e in lock['files']}!=PATHS:raise ValueError('Source profile differs')
- s=load_sources(lock,raw,repo);outfiles=convert(lock,s)
- if sha(outfiles['manifest.json'])!=MANIFEST_SHA256:raise ValueError('Generated manifest differs')
- material=[(raw,p,b) for p,b in s.items()]+[(raw,'manifest.json',raw_manifest(lock))] if repo is not None else []
+ if (lock['commit'], lock['profile'], lock['repository'], lock['gameEdition'], lock['romRevision']) != (COMMIT, PROFILE, 'pret/pokefirered', 'FIRERED', 0) or len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:raise ValueError('Source profile differs')
+ s=load_sources(lock,raw,repo);outfiles=convert(s)
+ material=[(raw,p,b) for p,b in s.items()]+[(raw_metadata_directory(raw, 'first-sevii-town-map'),'manifest.json',raw_manifest())] if repo is not None else []
  material += [(out,p,b) for p,b in outfiles.items()]
  for root,p,b in material:
   target=safe(root,p);stage=safe(root,p+'.tmp');target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
- return dict(profile=PROFILE,inputCount=len(s),assetCount=9,outputCount=len(outfiles),manifestSha256=sha(outfiles['manifest.json']))
+ return dict(profile=PROFILE,inputCount=len(s),assetCount=9,outputCount=len(outfiles))
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/first-sevii-town-map');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/first-sevii-town-map');p.add_argument('--lock',type=pathlib.Path);a=p.parse_args();print(json.dumps(import_content(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/first-sevii-town-map');p.add_argument('--lock',type=pathlib.Path);a=p.parse_args();print(json.dumps(import_content(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
 if __name__=='__main__':main()

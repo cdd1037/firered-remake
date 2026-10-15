@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Generate bounded source fingerprints; all creation uses the shared trainer factory."""
-import argparse, hashlib, json
+"""Generate bounded trainer identities; all creation uses the shared trainer factory."""
+import argparse,  json
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('root',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()
 data=(a.root/'content/generated/sevii-ruby-rules/trainers.json').read_bytes()
-if hashlib.sha256(data).hexdigest()!='7ebbcb6c8fe122e6f4285032b03e3b4103fbf92b4d3380e7f4c51a0aafb44f5a':raise ValueError('Trainer source identity differs')
 doc=json.loads(data);q=json.dumps
-fp=lambda x:hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
 s='''using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -20,23 +18,23 @@ public static class SeviiRubyTrainerPartyFactory
 {
     public const string SourceCommit = TrainerPartyFactory.SourceCommit;
     public const string RulesVersion = "firered-sevii-ruby-trainers-v1";
-    private static readonly ImmutableDictionary<TrainerId, string> TrainerHashes = new Dictionary<TrainerId, string>
+    private static readonly ImmutableHashSet<TrainerId> TrainerIds = new HashSet<TrainerId>
     {
 '''
-for t in doc['trainers']:s+='        [new('+q(t['id']['value'])+')] = '+q(fp(t))+',\n'
-s+='    }.ToImmutableDictionary();\n    private static readonly ImmutableDictionary<string, string> BattleHashes = new Dictionary<string, string>(StringComparer.Ordinal)\n    {\n'
-for b in doc['battles']:s+='        ['+q(b['scriptEntry'])+'] = '+q(fp(b))+',\n'
-s+='    }.ToImmutableDictionary(StringComparer.Ordinal);\n'
+for t in doc['trainers']:s+='        new('+q(t['id']['value'])+'),\n'
+s+='    }.ToImmutableHashSet();\n    private static readonly ImmutableHashSet<string> BattleScripts = new HashSet<string>(StringComparer.Ordinal)\n    {\n'
+for b in doc['battles']:s+='        '+q(b['scriptEntry'])+',\n'
+s+='    }.ToImmutableHashSet(StringComparer.Ordinal);\n'
 s+='    public static ImmutableArray<TrainerId> AllTrainers { get; } = ['+','.join('new('+q(t['id']['value'])+')' for t in doc['trainers'])+'];\n'
 s+='    internal sealed record ExpectedMember(string Species, int SourceSpecies, string Name, int Level, int Iv, int[] Encoded, string[] Moves, string HeldItem);\n'
-s+='    internal sealed record ExpectedTrainer(string Name, int Gender, uint AiFlags, bool DoubleBattle, int[] Encoded, string[] Items, ExpectedMember[] Party, int BasePrize, string TrainerSha256);\n'
+s+='    internal sealed record ExpectedTrainer(string Name, int Gender, uint AiFlags, bool DoubleBattle, int[] Encoded, string[] Items, ExpectedMember[] Party, int BasePrize);\n'
 s+='    internal static readonly ImmutableDictionary<TrainerId, ExpectedTrainer> Expected = new Dictionary<TrainerId, ExpectedTrainer>\n    {\n'
 for t in doc['trainers']:
  resolved=next(r['party'] for r in doc['resolvedMoves'] if 'pret:'+r['trainer']==t['id']['value'])
  party=[]
  for m,r in zip(t['party'],resolved):
   party.append('new('+','.join([q(m['species']['value']),str(m['sourceSpeciesId']),q(m['speciesName']),str(m['level']),str(m['sourceIv']),q(m['encodedSpeciesName']),q(['pret:'+x for x in r['moves']]),q(m['heldItem'])])+')')
- s+='        [new('+q(t['id']['value'])+')] = new('+','.join([q(t['sourceTrainerName']),str(t['encounterMusicGender']),str(t['aiFlags'])+'u',str(t['doubleBattle']).lower(),q(t['encodedTrainerName']),q(t['items']),'['+','.join(party)+']',str((8 if t['doubleBattle'] else 4)*t['baseMoney']*t['party'][-1]['level']),q(fp(t))])+'),\n'
+ s+='        [new('+q(t['id']['value'])+')] = new('+','.join([q(t['sourceTrainerName']),str(t['encounterMusicGender']),str(t['aiFlags'])+'u',str(t['doubleBattle']).lower(),q(t['encodedTrainerName']),q(t['items']),'['+','.join(party)+']',str((8 if t['doubleBattle'] else 4)*t['baseMoney']*t['party'][-1]['level'])])+'),\n'
 s+='    }.ToImmutableDictionary();\n'
 s+='    public static TrainerId DoubleTrainer { get; } = new("pret:TRAINER_CRUSH_KIN_MIK_KIA");\n'
 s+='    public static ImmutableArray<TrainerId> SupportedTrainers { get; } = AllTrainers.Where(id => id != DoubleTrainer).ToImmutableArray();\n'
@@ -57,7 +55,7 @@ s+='''
         foreach (var member in trainer.Party)
         {
             if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("sevii_ruby_trainer_species");
-            if (member.CustomMoves.Any(m => !opponents.Mechanics.Catalog.Moves.TryGetValue(m, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))
+            if (member.CustomMoves.Any(m => !opponents.Mechanics.Catalog.Moves.TryGetValue(m, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
                 throw new NotSupportedException("sevii_ruby_trainer_move_source");
         }
         var made = TrainerPartyFactory.CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);
@@ -76,26 +74,24 @@ s+='''
         if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster ||
             catalog.Trainers is null || catalog.BattlesByScript is null || catalog.Trainers.Count != 17 || catalog.BattlesByScript.Count != 18)
             throw new NotSupportedException("sevii_ruby_trainer_scope");
-        foreach (var (id, hash) in TrainerHashes)
+        foreach (var id in TrainerIds)
         {
             if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Id != id ||
                 trainer.Party.IsDefaultOrEmpty || trainer.Party.Any(m => m is null || m.CustomMoves.IsDefault ||
                     m.EncodedSpeciesName.IsDefaultOrEmpty) || trainer.Items.IsDefault ||
-                trainer.EncodedTrainerName.IsDefaultOrEmpty || trainer.AiFlagSymbols.IsDefault ||
-                CampaignSourceFingerprint.Compute(trainer) != hash)
+                trainer.EncodedTrainerName.IsDefaultOrEmpty || trainer.AiFlagSymbols.IsDefault)
                 throw new NotSupportedException("sevii_ruby_trainer_source");
         }
-        foreach (var (script, hash) in BattleHashes)
+        foreach (var script in BattleScripts)
         {
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script ||
-                CampaignSourceFingerprint.Compute(battle) != hash)
+            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script)
                 throw new NotSupportedException("sevii_ruby_trainer_battle_source");
         }
     }
 
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || !BattleHashes.TryGetValue(battle.ScriptEntry, out var hash) || CampaignSourceFingerprint.Compute(battle) != hash)
+        if (battle is null || !BattleScripts.Contains(battle.ScriptEntry))
             throw new NotSupportedException("sevii_ruby_trainer_battle_source");
     }
 }

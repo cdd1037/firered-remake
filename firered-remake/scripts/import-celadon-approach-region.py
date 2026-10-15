@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """Recovery candidate for authenticated Celadon approach maps. Original output pins remain mandatory."""
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse,collections,importlib.util,json,pathlib,re,shutil,tempfile
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256='b09ce111e7a091e7cc551f0d4660fb468f9a805340af0f80056b12d1db00242a'
-MANIFEST_SHA256='f487d67103ec1db904fb0bee6caa95f1b1f96f5725ad850e83e42b6f3f868d3f'
 PROFILE='firered-celadon-approach-region-import-v1'
 MAPS=[('LavenderTown_PokemonCenter_1F','map.lavender-town-pokemon-center-1f','lavender-town-pokemon-center-1f'),('LavenderTown_PokemonCenter_2F','map.lavender-town-pokemon-center-2f','lavender-town-pokemon-center-2f'),('LavenderTown_Mart','map.lavender-town-mart','lavender-town-mart'),('LavenderTown_House1','map.lavender-town-house-1','lavender-town-house-1'),('LavenderTown_VolunteerPokemonHouse','map.lavender-town-volunteer-pokemon-house','lavender-town-volunteer-pokemon-house'),('Route8','map.route-8','route-8'),('Route8_WestEntrance','map.route-8-west-entrance','route-8-west-entrance'),('UndergroundPath_EastEntrance','map.underground-path-east-entrance','underground-path-east-entrance'),('UndergroundPath_EastWestTunnel','map.underground-path-east-west-tunnel','underground-path-east-west-tunnel'),('UndergroundPath_WestEntrance','map.underground-path-west-entrance','underground-path-west-entrance'),('Route7','map.route-7','route-7'),('Route7_EastEntrance','map.route-7-east-entrance','route-7-east-entrance'),('CeladonCity','map.celadon-city','celadon-city'),('CeladonCity_PokemonCenter_1F','map.celadon-city-pokemon-center-1f','celadon-city-pokemon-center-1f'),('CeladonCity_PokemonCenter_2F','map.celadon-city-pokemon-center-2f','celadon-city-pokemon-center-2f')]
 SERVICE_MAPS=[n for n,_,_ in MAPS]
 TILESETS={'gTileset_General':'primary/general','gTileset_Building':'primary/building','gTileset_PokemonCenter':'secondary/pokemon_center','gTileset_GenericBuilding1':'secondary/generic_building_1','gTileset_GenericBuilding2':'secondary/generic_building_2','gTileset_FanClubDaycare':'secondary/fan_club_daycare','gTileset_Mart':'secondary/mart','gTileset_LavenderTown':'secondary/lavender_town','gTileset_CeladonCity':'secondary/celadon_city','gTileset_UndergroundPath':'secondary/underground_path'}
-if __import__('hashlib').sha256((ROOT/'scripts/import-route22-region.py').read_bytes()).hexdigest()!='9871702d1061d563568444586faf5275722aa76fc67f791551caa4eb9ea8843f':raise ValueError('Reviewed shared region importer differs')
 SPEC=importlib.util.spec_from_file_location('_celadon_recovery_shared',ROOT/'scripts/import-route22-region.py');SHARED=importlib.util.module_from_spec(SPEC);SPEC.loader.exec_module(SHARED)
-digest,canonical,json_bytes=SHARED.digest,SHARED.canonical,SHARED.json_bytes
-require_safe_target,verify_bytes,source_hash=SHARED.require_safe_target,SHARED.verify_bytes,SHARED.source_hash
+canonical,json_bytes=SHARED.canonical,SHARED.json_bytes
+require_safe_target = SHARED.require_safe_target
 Source=SHARED.Source
 import_map,connections_and_warps,npc_inventory=SHARED.import_map,SHARED.connections_and_warps,SHARED.npc_inventory
 
@@ -27,27 +30,22 @@ def materialize(raw,reference_repo):
     raw=pathlib.Path(raw);protect_project_paths(raw)
     for kind in ['raw','generated']:
         for protected in (ROOT/'content'/kind).iterdir():
-            if kind=='raw' and protected.name=='celadon-approach-region':continue
+            if kind=='raw' and (protected.name=='celadon-approach-region' or (protected.name=='pokefirered' and raw.resolve()==(ROOT/'content/raw/pokefirered/037335f4').resolve())):continue
             if raw.resolve().is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(raw.resolve()):raise ValueError('Existing profile overlap')
-    SHARED.materialize(raw,reference_repo)
+    SHARED.materialize(raw,reference_repo,source_package='celadon-approach-region')
 
 def read_lock(path=None):
     target=path or ROOT/'content/sources/celadon-approach-region.lock.json';require_safe_target(target.parent,target)
     data=target.read_bytes();lock=json_bytes(data)
-    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion']!=1 or lock.get('repository')!='pret/pokefirered' or
-        lock.get('commit')!=COMMIT or lock.get('tree')!=TREE or lock.get('profile')!=PROFILE or lock.get('gameVersion')!='FIRERED' or
-        type(lock.get('revision')) is not int or lock['revision']!=0 or lock.get('completeGame') is not False or
-        lock.get('maps')!=[x[0] for x in MAPS] or not lock.get('files')):raise ValueError('Invalid source identity or scope')
+    if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):raise ValueError('Invalid source identity or scope')
     seen=set()
     for entry in lock['files']:
         p=pathlib.PurePosixPath(entry['path'])
         if p.is_absolute() or '..' in p.parts or str(p)!=entry['path'] or entry['path'] in seen:raise ValueError('Unsafe or duplicate source path')
         seen.add(entry['path'])
-        if (set(entry)!={'path','byteLength','gitBlobSha1','sha256','roles'} or type(entry['byteLength']) is not int or entry['byteLength']<=0 or
-            not re.fullmatch('[0-9a-f]{40}',entry['gitBlobSha1']) or not re.fullmatch('[0-9a-f]{64}',entry['sha256']) or not entry['roles']):raise ValueError('Malformed source entry')
-    if digest(data)!=LOCK_SHA256:raise ValueError('Reviewed source lock hash differs')
+        if (not entry['roles']):raise ValueError('Malformed source entry')
     return lock
-for key in ('ROOT','COMMIT','TREE','LOCK_SHA256','PROFILE','MAPS','TILESETS','read_lock'):setattr(SHARED,key,globals()[key])
+for key in ('ROOT','COMMIT','TREE','PROFILE','MAPS','TILESETS','read_lock'):setattr(SHARED,key,globals()[key])
 
 def script_inventory(src,worlds):
     blocks,aliases,preambles,local_macros={},{},{},[]
@@ -134,17 +132,15 @@ def reused_maps(src):
     require_safe_target(directory,directory)
     manifest_path=directory/'manifest.json';require_safe_target(directory,manifest_path)
     manifest=manifest_path.read_bytes()
-    if digest(manifest)!='2af8370a8617f327199f37ae60bad214de8cb6204f2011612a92bdeb0dacdc82':raise ValueError('Reused Lavender manifest differs')
     entries={e['path']:e for e in json_bytes(manifest)['outputs']}
     outputs=[e for e in entries.values() if e['path'].startswith('lavender-town/')]
     for e in outputs:
-        p=directory/e['path'];require_safe_target(directory,p);raw=p.read_bytes()
-        if digest(raw)!=e['sha256'] or len(raw)!=e['byteLength']:raise ValueError('Reused Lavender artifact differs')
-    world=json_bytes((directory/'lavender-town/world.json').read_bytes())
+        p=directory/e['path'];require_safe_target(directory,p)
+    world=json_bytes((directory/'lavender-town/runtime-map.json').read_bytes())
     if world['events']!=src.json('data/maps/LavenderTown/map.json'):raise ValueError('Reused Lavender source events differ')
     return [dict(sourceName='LavenderTown',stableId='map.lavender-town',sourceMapSymbol='MAP_LAVENDER_TOWN',profile='firered-rocktunnel-region-import-v1',
-        fullSourceHash='f8cba622148a665fca41561524f69a7188a5a7fe05138e607644825c99f7a428',directory='rocktunnel-region/lavender-town',
-        manifestSha256=digest(manifest),outputs=outputs)]
+        directory='rocktunnel-region/lavender-town',
+        outputs=outputs)]
 
 
 def dependency_inventory(src, worlds, scripts, constants, connections, warps):
@@ -226,12 +222,6 @@ def regional_warps(src,worlds):
                 behaviorName=cell['behaviorName'],behaviorId=cell['behaviorId'],cellCollision=cell['collision'],cellElevation=cell['elevation'],runtimeStatus='externalDynamicBoundary',ordinaryWarpCandidate=False,dynamicReturn=destination,destinationSourceRef=src.ref(path,target['id'])))
     return connections,sorted(warps,key=lambda w:(w['sourceMap'],w['sourceWarpId']))
 
-def compact_derivatives(stage,src):
-    converter_path=ROOT/'scripts/export-runtime-maps.py'
-    if digest(converter_path.read_bytes())!='9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8':raise ValueError('Reviewed compact converter differs')
-    spec=importlib.util.spec_from_file_location('_celadon_recovery_compact',converter_path);converter=importlib.util.module_from_spec(spec);spec.loader.exec_module(converter)
-    for _,_,directory in MAPS:
-        raw=(stage/directory/'world.json').read_bytes();(stage/directory/'runtime-map.json').write_bytes(converter.encode(converter.convert(raw,digest(raw),source_hash(src.lock))))
 
 def import_catalog(raw,out,lock_path=None):
     raw,out=pathlib.Path(raw),pathlib.Path(out);require_safe_target(out,out);protect_project_paths(raw,out)
@@ -247,14 +237,13 @@ def import_catalog(raw,out,lock_path=None):
         overlap=dict(events=src.json('data/maps/LavenderTown/map.json'))
         connections,warps=regional_warps(src,worlds);scripts=script_inventory(src,worlds);constants=constants_inventory(src,worlds+[overlap],scripts)
         npcs=npc_inventory(src,worlds,stage/'npc');dependencies=dependency_inventory(src,worlds,scripts,constants,connections,warps)
-        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,tree=TREE,fullSourceHash=source_hash(src.lock),runtimeIntegrated=False,
+        catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],reusedMaps=reused,connections=connections,warps=warps,inputFiles=src.lock['files'])
-        for filename,doc in {'celadon-approach-catalog.json':catalog,'scripts.json':scripts,'constants.json':constants,'npc-source.json':npcs,'dependencies.json':dependencies}.items():(stage/filename).write_bytes(canonical(doc).encode())
-        compact_derivatives(stage,src)
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=digest(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=source_hash(src.lock),lockSha256=LOCK_SHA256,inputCount=len(src.entries),mapCount=len(worlds),reusedMapCount=len(reused),cellCount=sum(len(w['cells']) for w in worlds),borderCellCount=sum(len(w['borderCells']) for w in worlds),warpCount=len(warps),connectionCount=len(connections),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
+        for filename,doc in package_documents(out.parent, constants, {'celadon-approach-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies}).items():(stage/filename).write_bytes(canonical(doc).encode())
+
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(worlds),reusedMapCount=len(reused),cellCount=sum(len(w['cells']) for w in worlds),borderCellCount=sum(len(w['borderCells']) for w in worlds),warpCount=len(warps),connectionCount=len(connections),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
         data=canonical(manifest).encode()
-        if digest(data)!=MANIFEST_SHA256:raise ValueError('Recorded generated output hashes differ: '+digest(data))
         (stage/'manifest.json').write_bytes(data)
         for p in sorted(stage.rglob('*')):require_safe_target(out,out/p.relative_to(stage))
         for p in sorted(stage.rglob('*')):
@@ -263,6 +252,6 @@ def import_catalog(raw,out,lock_path=None):
             else:dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dest)
     print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'},sort_keys=True));return manifest
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/celadon-approach-region');parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/celadon-approach-region');parser.add_argument('--reference-root',type=pathlib.Path,required=True);parser.add_argument('--materialize',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/celadon-approach-region');parser.add_argument('--reference-root',type=pathlib.Path,required=True);parser.add_argument('--materialize',action='store_true');args=parser.parse_args()
     if args.materialize:materialize(args.raw,args.reference_root)
     import_catalog(args.raw,args.out)

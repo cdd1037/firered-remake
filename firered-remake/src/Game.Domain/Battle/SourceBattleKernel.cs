@@ -63,7 +63,7 @@ public static class SourceBattleKernel
             return "source_kernel_struggle_not_required";
         if (struggle && action.Target.Side == action.Actor.Slot.Side) return "source_kernel_target_mode";
         if (!catalog.Moves.TryGetValue(struggle ? WildBattleRules.StruggleMove : actor.Pokemon.Moves[action.ChosenSlot].Move, out var move) ||
-            !MetronomeSourceMoveDefinition.Matches(move)) return "source_kernel_move_definition";
+            !SourceMoveDefinitionRules.IsValid(move)) return "source_kernel_move_definition";
         var recharge = frame.Get(action.Actor.Slot).Registers.Turn?.Lock;
         if (called is not null) move = called;
         else if (recharge is not null)
@@ -164,27 +164,27 @@ public static class SourceBattleKernel
     internal static bool SupportsTurnLock(PokemonCatalog catalog, SourceTurnLock locked) => SupportsRecharge(catalog, locked) ||
         locked.Kind == WildBattleCalledLockKind.Bide && locked.TurnsRemaining is >= 1 and <= 2 && !locked.UnableToUseMove &&
         (locked.StoredDamage == 0) == (locked.StoredDamageSource is null) &&
-        catalog.Moves.TryGetValue(locked.Move, out var bideMove) && bideMove.Effect == "EFFECT_BIDE" && MetronomeSourceMoveDefinition.Matches(bideMove) ||
+        catalog.Moves.TryGetValue(locked.Move, out var bideMove) && bideMove.Effect == "EFFECT_BIDE" && SourceMoveDefinitionRules.IsValid(bideMove) ||
         locked.Kind == WildBattleCalledLockKind.Uproar && locked.TurnsRemaining is >= 1 and <= 5 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null &&
-        catalog.Moves.TryGetValue(locked.Move, out var uproarMove) && uproarMove.Effect == "EFFECT_UPROAR" && MetronomeSourceMoveDefinition.Matches(uproarMove) ||
+        catalog.Moves.TryGetValue(locked.Move, out var uproarMove) && uproarMove.Effect == "EFFECT_UPROAR" && SourceMoveDefinitionRules.IsValid(uproarMove) ||
         locked.Kind == WildBattleCalledLockKind.Rampage && locked.TurnsRemaining is >= 1 and <= 3 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null &&
-        catalog.Moves.TryGetValue(locked.Move, out var rampageMove) && rampageMove.Effect == "EFFECT_RAMPAGE" && MetronomeSourceMoveDefinition.Matches(rampageMove) ||
+        catalog.Moves.TryGetValue(locked.Move, out var rampageMove) && rampageMove.Effect == "EFFECT_RAMPAGE" && SourceMoveDefinitionRules.IsValid(rampageMove) ||
         locked.Kind == WildBattleCalledLockKind.Charge && locked.TurnsRemaining == 1 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null && !locked.UnableToUseMove &&
-        catalog.Moves.TryGetValue(locked.Move,out var chargeMove) && SourceRecipeContext.HasChargeRecipe(chargeMove.Effect) && MetronomeSourceMoveDefinition.Matches(chargeMove) ||
+        catalog.Moves.TryGetValue(locked.Move,out var chargeMove) && SourceRecipeContext.HasChargeRecipe(chargeMove.Effect) && SourceMoveDefinitionRules.IsValid(chargeMove) ||
         locked.Kind == WildBattleCalledLockKind.Rollout && locked.TurnsRemaining is >= 1 and <= 4 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null && !locked.UnableToUseMove &&
-        catalog.Moves.TryGetValue(locked.Move, out var move) && move.Effect == "EFFECT_ROLLOUT" && MetronomeSourceMoveDefinition.Matches(move);
+        catalog.Moves.TryGetValue(locked.Move, out var move) && move.Effect == "EFFECT_ROLLOUT" && SourceMoveDefinitionRules.IsValid(move);
 
     internal static bool SupportsRecharge(PokemonCatalog catalog, SourceTurnLock recharge) =>
         recharge.Kind == WildBattleCalledLockKind.Recharge && recharge.TurnsRemaining is 1 or 2 &&
         recharge.StoredDamage == 0 && recharge.StoredDamageSource is null && !recharge.UnableToUseMove &&
         catalog.Moves.TryGetValue(recharge.Move, out var sourceMove) && sourceMove.Effect == "EFFECT_RECHARGE" &&
-        MetronomeSourceMoveDefinition.Matches(sourceMove);
+        SourceMoveDefinitionRules.IsValid(sourceMove);
 
-    public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
+    public static bool SupportsRecipe(PokemonMoveDefinition move) => SourceMoveDefinitionRules.IsValid(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_RANDOM" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" or "MOVE_TARGET_DEPENDS" &&
         (SourceRecipeContext.HasFieldUtilityRecipe(move.Effect) || SourceRecipeContext.HasMiscTargetRecipe(move.Effect) || SourceRecipeContext.HasPursuitBeatUpRecipe(move.Effect) || SourceRecipeContext.HasStockpileChargeRecipe(move.Effect) || SourceRecipeContext.HasDelayedRecipe(move.Effect) || move.Effect == "EFFECT_HEAL_BELL" || SourceRecipeContext.HasPreparedMoveRecipe(move.Effect) || SourceRecipeContext.HasConditionalHitRecipe(move.Effect) || SourceRecipeContext.HasAbilityExchangeRecipe(move.Effect) || SourceRecipeContext.HasLateTurnRecipe(move.Effect) || SourceRecipeContext.HasCallerRecipe(move.Effect) || SourceRecipeContext.HasWeatherHitRecipe(move.Effect) || SourceRecipeContext.HasUtilityHpRecipe(move.Effect) || SourceRecipeContext.HasMoveRestrictionRecipe(move.Effect) || SourceRecipeContext.HasGroundSpreadRecipe(move.Effect) || SourceRecipeContext.HasSleepAttackRecipe(move.Effect) || SourceRecipeContext.HasCopyStateRecipe(move.Effect) || SourceRecipeContext.HasRechargeRampageRecipe(move.Effect) || SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
          SourceRecipeContext.HasTypeChangeRecipe(move.Effect) || SourceRecipeContext.HasRetaliationRecipe(move.Effect) || SourceRecipeContext.HasFixedDamageRecipe(move.Effect) ||

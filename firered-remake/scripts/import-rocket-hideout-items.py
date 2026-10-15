@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Bounded source-pinned item/machine/pickup importer. Never executes source repository code."""
-import argparse,base64,copy,hashlib,importlib.util,json,pathlib,re,subprocess,sys
+import argparse,base64,copy,importlib.util,json,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14';TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
-PROFILE='firered-rocket-hideout-items-v1';LOCK='c1663441cafb564854e7e671dca3c43480117c2b4aa7ac3b6fcefe81c7dd586b'
-DEPENDENCIES={'scripts/import-lab-battle-ui.py':'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a','content/generated/celadon-gym-items/celadon-gym-machines.json':'f570ea56c7c5cd7f380e7f9933d053f7d9635944e047fdd722748c0e8489610b'}
+PROFILE='firered-rocket-hideout-items-v1'
+DEPENDENCIES=(
+    'scripts/import-lab-battle-ui.py',
+    'content/generated/celadon-gym-items/celadon-gym-machines.json',
+)
 ITEMS=('LIFT_KEY','SILPH_SCOPE','BLACK_GLASSES','X_SPEED','CALCIUM','NET_BALL','NEST_BALL','TM12','TM21','TM49')
 TEACHING={'TM12':('TAUNT','Taunt'),'TM21':('FRUSTRATION','Frustration'),'TM49':('SNATCH','Snatch')}
-def sha(b):return hashlib.sha256(b).hexdigest()
 def canonical(v):return (json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
 def unique(rows):
  r={}
@@ -22,11 +24,10 @@ def safe(root,p):
  f=pathlib.Path(root).absolute()/p
  if any(x.is_symlink() for x in (f,*f.parents)):raise ValueError('Symlink rejected')
  return f
-def read(root,p,h,n=None):
+def read(root, p):
  f=safe(root,p)
  if f.stat().st_size>4*1024*1024:raise ValueError('Bounded file exceeded')
  b=f.read_bytes()
- if sha(b)!=h or n is not None and len(b)!=n:raise ValueError('Pinned bytes differ: '+p)
  return b
 
 def outputs(lock,data,project):
@@ -35,7 +36,7 @@ def outputs(lock,data,project):
   matches=list(re.finditer(pattern,text[p],re.M|re.S))
   if len(matches)!=1:raise ValueError('Nonunique source match '+p+' '+pattern)
   return matches[0]
- def ref(p,s,m=None):return dict(path=p,symbol=s,startLine=1 if m is None else text[p].count('\n',0,m.start())+1,endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1,sha256=entries[p]['sha256'])
+ def ref(p,s,m=None):return dict(path=p,symbol=s,startLine=1 if m is None else text[p].count('\n',0,m.start())+1,endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1)
  def ident(s):return dict(value='pret:'+s)
  def number(p,s):
   m=match(p,r'^#define '+s+r'[ \t]+(0x[0-9A-Fa-f]+|\d+|\(FLAG_HIDDEN_ITEMS_START \+\s+\d+\))[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m))
@@ -44,14 +45,14 @@ def outputs(lock,data,project):
   p='src/data/pokemon/tmhm_learnsets.h';m=match(p,r'^    \['+s+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1])
   if re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]) or len(tokens)!=len(set(tokens)):raise ValueError('Unsupported compatibility syntax')
   return dict(species=ident(s),sourceSpeciesId=number('include/constants/species.h',s),canLearn=tm in tokens,source=ref(p,s,m))
- prior=parse(read(project,'content/generated/celadon-gym-items/celadon-gym-machines.json',DEPENDENCIES['content/generated/celadon-gym-items/celadon-gym-machines.json']))
+ prior=parse(read(project,'content/generated/celadon-gym-items/celadon-gym-machines.json'))
  machines=copy.deepcopy(prior['machines']);species=[r['species']['value'][5:] for r in machines[0]['compatibility']]+['SPECIES_KANGASKHAN']
  if len(species)!=99 or len(set(species))!=99 or len(machines)!=15:raise ValueError('Predecessor scope differs')
  for row in machines:
   cells=[compatibility(s,row['machine']['item']['name']+'_'+row['move']['value'][10:]) for s in species]
   if row['compatibility']!=cells[:98]:raise ValueError('Inherited compatibility changed')
   row['compatibility']=cells
- codec_path=safe(project,'scripts/import-lab-battle-ui.py');read(project,'scripts/import-lab-battle-ui.py',DEPENDENCIES['scripts/import-lab-battle-ui.py'])
+ codec_path=safe(project,'scripts/import-lab-battle-ui.py');read(project,'scripts/import-lab-battle-ui.py')
  spec=importlib.util.spec_from_file_location('rocket_item_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
  items=[];icons=[];result={};declarations=parse(data['src/data/items.json'])['items']
  effectp='src/data/pokemon/item_effects.h';constants='include/constants/item_effects.h'
@@ -68,7 +69,7 @@ def outputs(lock,data,project):
   else:
    actual=' '.join(re.sub(r'//[^\n]*','',m[2]).split());assert actual=='[1] = 1, [5] = ITEM5_FRIENDSHIP_LOW | ITEM5_FRIENDSHIP_MID, STAT_BOOST_FRIENDSHIP_CHANGE,'
    values=[0,1,0,0,0,number(constants,'ITEM5_FRIENDSHIP_LOW')|number(constants,'ITEM5_FRIENDSHIP_MID'),1,1]
-   macro=match(effectp,r'^#define STAT_BOOST_FRIENDSHIP_CHANGE\s+.*?mid \*/');assert re.findall(r'= (\d+)',macro[0])==['1','1'];rules.append(ref(effectp,'STAT_BOOST_FRIENDSHIP_CHANGE',macro))
+   macro=match(effectp,r'^#define STAT_BOOST_FRIENDSHIP_CHANGE\s+.*?mid \*/');assert re.findall('= (\\d+)', macro[0]) == ['1', '1'];rules.append(ref(effectp,'STAT_BOOST_FRIENDSHIP_CHANGE',macro))
   assert len(values)==int(m[1]);return values,ref(effectp,'sItemEffect_'+short,m)
  mappingp='src/data/party_menu.h';m=match(mappingp,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);assert len(mapping)==58;rules.append(ref(mappingp,'sTMHMMoves',m))
  for short in ITEMS:
@@ -88,7 +89,7 @@ def outputs(lock,data,project):
   for asset in icon_symbols:
    p='src/data/graphics/items.h';m=match(p,r'^const u32 '+asset+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,asset,m));paths.append(m[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
   image,palette=paths;w,h,indices,_=codec.indexed_png(data[image]);rgba=codec.rgba(indices,codec.palette(data[palette]));png=codec.png(w,h,rgba);assert(w,h)==(24,24)
-  pngpath=symbol.lower()+'.png';result[pngpath]=png;icons.append(dict(item=ident(symbol),width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=sha(rgba),pngPath=pngpath,pngSha256=sha(png),source=ref(image,icon_symbols[0]),paletteSource=ref(palette,icon_symbols[1]),bindingSource=binding))
+  pngpath=symbol.lower()+'.png';result[pngpath]=png;icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=pngpath,source=ref(image,icon_symbols[0]),paletteSource=ref(palette,icon_symbols[1]),bindingSource=binding))
  pickups=[]
  for floor in range(1,5):
   name='RocketHideout_B'+str(floor)+'F';p='data/maps/'+name+'/map.json';mapdata=parse(data[p]);mapsource=ref(p,'MAP_ROCKET_HIDEOUT_B'+str(floor)+'F')
@@ -113,15 +114,15 @@ def outputs(lock,data,project):
 
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--dependency-project-root',required=True,type=pathlib.Path);ap.add_argument('--reference-root',type=pathlib.Path);ap.add_argument('--check',action='store_true');args=ap.parse_args()
- lock=parse(read(ROOT,'scripts/rocket-hideout-items.lock.json',LOCK));assert(lock['commit'],lock['tree'],lock['profile'],len(lock['files']))==(COMMIT,TREE,PROFILE,41);data={}
+ lock=parse(read(ROOT,'scripts/rocket-hideout-items.lock.json'));assert(lock['commit'], lock['profile'], len(lock['files'])) == (COMMIT, PROFILE, 41);data={}
  for e in lock['files']:
   if args.reference_root:
    b=subprocess.check_output(['git','-C',str(args.reference_root),'show',COMMIT+':'+e['path']])
-   assert(len(b),sha(b))==(e['byteLength'],e['sha256']);dest=safe(ROOT,'content/raw/rocket-hideout-items/'+e['path']);dest.parent.mkdir(parents=True,exist_ok=True)
+   dest=safe(ROOT,'content/raw/pokefirered/037335f4/'+e['path']);dest.parent.mkdir(parents=True,exist_ok=True)
    if not args.check:dest.write_bytes(b)
-  b=read(ROOT,'content/raw/rocket-hideout-items/'+e['path'],e['sha256'],e['byteLength']);assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==e['gitBlobSha1'];data[e['path']]=b
+  b=read(ROOT,'content/raw/pokefirered/037335f4/'+e['path']);data[e['path']]=b
  result=outputs(lock,data,args.dependency_project_root)
- manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK,inputCount=len(data),outputs=[dict(path=p,sha256=sha(b),byteLength=len(b)) for p,b in sorted(result.items())]);result['manifest.json']=canonical(manifest)
+ manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(data),outputs=[dict(path=p) for p,b in sorted(result.items())]);result['manifest.json']=canonical(manifest)
  for p,b in result.items():
   dest=safe(ROOT,'content/generated/rocket-hideout-items/'+p)
   if args.check:

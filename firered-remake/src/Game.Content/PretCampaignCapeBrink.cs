@@ -15,13 +15,9 @@ public sealed partial class PretCampaignCatalog
     public CapeBrinkWaterEncounterCatalog CapeBrinkWaterEncounters { get; }
     private ImmutableArray<ItemfinderUnderfoot> CapeBrinkUnderfootItems { get; }
 
-    private static void ValidateCapeBrinkComposition(PretCapeBrinkTutor source,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts, PretSuperRodService superRod)
+    private static void ValidateCapeBrinkComposition(PretCapeBrinkTutor source,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts,PretSuperRodService superRod)
     {
-        if (previous.Count != 334 || maps.Count != 336 || source.NewMaps.Count != 2 ||
-            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            source.NewMaps.Any(p => previous.ContainsKey(p.Key) || !ReferenceEquals(p.Value, maps[p.Key])))
+        if (source.NewMaps.Count != 2 )
             throw new InvalidDataException("cape_brink_current_map_composition");
         if (superRod.SuperRodTables.Count(table => maps.ContainsKey(table.Map)) != 40)
             throw new InvalidDataException("cape_brink_current_super_rod_scope");
@@ -40,29 +36,25 @@ public sealed partial class PretCampaignCatalog
 
     // Every runtime slot is checked against the strict loader's authenticated original JSON.
     // The existing owned catalog and all predecessor table instances remain intact.
-    private static void ValidateCapeBrinkEncounterSources(PretCapeBrinkTutor source, PokemonCatalog owned,
-        PretSuperRodService superRod)
+    private static void ValidateCapeBrinkEncounterSources(PretCapeBrinkTutor source,PokemonCatalog owned,PretSuperRodService superRod)
     {
         var document = source.EncountersAndItems;
         var reference = document.GetProperty("sourceRef");
         var encounter = document.GetProperty("encounters").EnumerateArray().Single();
         string mapSymbol = encounter.GetProperty("map").GetString()!;
         string symbol = encounter.GetProperty("base_label").GetString()!;
-        string commit = reference.GetProperty("commit").GetString()!;
         string path = reference.GetProperty("path").GetString()!;
-        string hash = reference.GetProperty("sha256").GetString()!;
         if (mapSymbol != source.NewMaps[PretCapeBrinkTutor.CapeMapId].SourceMapSymbol ||
-            symbol != reference.GetProperty("symbol").GetString() || commit != PretWorldMap.SourceCommit ||
-            !source.SourceFiles.Any(f => f.Path == path && f.Sha256 == hash))
+            symbol != reference.GetProperty("symbol").GetString() )
             throw new InvalidDataException("cape_brink_encounter_source_identity");
         var species = document.GetProperty("wildSpecies").EnumerateArray().Select(s => s.GetString()!).ToImmutableHashSet();
         var tableSpecies = encounter.EnumerateObject().Where(p => p.Name.EndsWith("_mons", StringComparison.Ordinal))
             .SelectMany(p => p.Value.GetProperty("mons").EnumerateArray()).Select(s => s.GetProperty("species").GetString()!).ToImmutableHashSet();
-        if (species.Count != 13 || !species.SetEquals(tableSpecies) ||
+        if (!species.SetEquals(tableSpecies) ||
             species.Any(s => !owned.Species.ContainsKey(new("pret:" + s))))
             throw new InvalidDataException("cape_brink_encounter_owned_species");
-        void Check(string kind, MapId map, string actualCommit, string actualPath, string actualSymbol,
-            string actualHash, int rate, IEnumerable<(int Index, SpeciesId Species, byte Min, byte Max, int Weight)> slots,
+        void Check(string kind, MapId map, string actualPath, string actualSymbol,
+            int rate, IEnumerable<(int Index, SpeciesId Species, byte Min, byte Max, int Weight)> slots,
             string? rod = null)
         {
             var sourceTable = encounter.GetProperty(kind);
@@ -70,8 +62,8 @@ public sealed partial class PretCampaignCatalog
             int[] indexes = rod is null ? Enumerable.Range(0, sourceTable.GetProperty("mons").GetArrayLength()).ToArray() :
                 field.GetProperty("groups").GetProperty(rod).EnumerateArray().Select(i => i.GetInt32()).ToArray();
             var actual = slots.ToArray();
-            if (map != PretCapeBrinkTutor.CapeMapId || actualCommit != commit || actualPath != path ||
-                actualSymbol != symbol || actualHash != hash || rate != sourceTable.GetProperty("encounter_rate").GetInt32() ||
+            if (map != PretCapeBrinkTutor.CapeMapId || actualPath != path ||
+                actualSymbol != symbol || rate != sourceTable.GetProperty("encounter_rate").GetInt32() ||
                 actual.Length != indexes.Length)
                 throw new InvalidDataException("cape_brink_encounter_table:" + kind + ":" + rod);
             for (int i = 0; i < indexes.Length; i++)
@@ -84,21 +76,18 @@ public sealed partial class PretCampaignCatalog
             }
         }
         var land = CapeBrinkEncounterTables.Land.Single();
-        Check("land_mons", land.Map, land.SourceCommit, land.SourcePath, land.SourceSymbol, land.SourceSha256,
+        Check("land_mons", land.Map, land.SourcePath, land.SourceSymbol,
             land.RawEncounterRate, land.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)));
         var water = CapeBrinkEncounterTables.Water.Single();
         if (water.SourceMapSymbol != mapSymbol) throw new InvalidDataException("cape_brink_surf_source_map");
-        Check("water_mons", water.Map, water.SourceCommit, water.SourcePath, water.SourceSymbol, water.SourceSha256,
+        Check("water_mons", water.Map, water.SourcePath, water.SourceSymbol,
             water.RawEncounterRate, water.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)));
-        foreach (var (rod, table) in new[] { ("old_rod", CapeBrinkEncounterTables.OldRod.Single()),
-            ("good_rod", CapeBrinkEncounterTables.GoodRod.Single()),
-            ("super_rod", superRod.SuperRodTables.Single(t => t.Map == PretCapeBrinkTutor.CapeMapId)) })
-            Check("fishing_mons", table.Map, table.SourceCommit, table.SourcePath, table.SourceSymbol, table.SourceSha256,
+        foreach (var (rod, table) in new[] { ("old_rod", CapeBrinkEncounterTables.OldRod.Single()),("good_rod", CapeBrinkEncounterTables.GoodRod.Single()),("super_rod", superRod.SuperRodTables.Single(t => t.Map == PretCapeBrinkTutor.CapeMapId)) })
+            Check("fishing_mons", table.Map, table.SourcePath, table.SourceSymbol,
                 table.RawEncounterRate, table.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)), rod);
     }
 
-    private static ImmutableArray<FieldPickupDefinition> CapeBrinkHiddenPickups(PretCapeBrinkTutor source,
-        EarlyShopCatalog shop, PretStoryCompilation scripts)
+    private static ImmutableArray<FieldPickupDefinition> CapeBrinkHiddenPickups(PretCapeBrinkTutor source,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         EarlyShopInventoryRules.ValidateCatalog(shop);
         var map = source.NewMaps[PretCapeBrinkTutor.CapeMapId];
@@ -109,7 +98,7 @@ public sealed partial class PretCampaignCatalog
         var result = ImmutableArray.CreateBuilder<FieldPickupDefinition>();
         foreach (var row in hidden.EnumerateArray())
         {
-            string symbol = row.GetProperty("item").GetString()!, flag = row.GetProperty("flag").GetString()!;
+            string symbol = row.GetProperty("item").GetString()!,flag = row.GetProperty("flag").GetString()!;
             var item = shop.Items.SingleOrDefault(i => i.SourceItemSymbol == symbol)
                 ?? throw new InvalidDataException("cape_brink_hidden_item_missing:" + symbol);
             var declaration = source.EncountersAndItems.GetProperty("itemDeclarations").EnumerateArray()

@@ -2,72 +2,39 @@
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "inputs": [
     {
-      "path": "src/data/items.json",
-      "byteLength": 194280,
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c"
+      "path": "src/data/items.json"
     },
     {
-      "path": "include/constants/items.h",
-      "byteLength": 12436,
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3"
+      "path": "include/constants/items.h"
     },
     {
-      "path": "src/data/pokemon/item_effects.h",
-      "byteLength": 12207,
-      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25",
-      "gitBlobSha1": "db57298b6ceeea0b3605bf3e65aaa9d2d6be1010"
+      "path": "src/data/pokemon/item_effects.h"
     },
     {
-      "path": "include/constants/item_effects.h",
-      "byteLength": 3009,
-      "sha256": "71075ef690c612f81cb68d5fae62874e39d452208cc1e94890c3973f774fd0f9",
-      "gitBlobSha1": "888cb685362ce4bcedef6204bf1b64ea6fb19c5e"
+      "path": "include/constants/item_effects.h"
     },
     {
-      "path": "src/pokemon.c",
-      "byteLength": 221865,
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "src/item_use.c",
-      "byteLength": 28138,
-      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98",
-      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f"
+      "path": "src/item_use.c"
     },
     {
-      "path": "src/party_menu.c",
-      "byteLength": 211085,
-      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
-      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223"
+      "path": "src/party_menu.c"
     },
     {
-      "path": "src/battle_main.c",
-      "byteLength": 171904,
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428"
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/battle_util.c",
-      "byteLength": 136791,
-      "sha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
-      "gitBlobSha1": "bb66a0144b6144a72e1d9b22321c541e22302f7e"
+      "path": "src/battle_util.c"
     },
     {
-      "path": "data/battle_scripts_2.s",
-      "byteLength": 6616,
-      "sha256": "83e1211907cc9a21cd1d94e65a065af5abf683d4e88e7ee690e78faf40651133",
-      "gitBlobSha1": "6f41e3ce138c9276bdef763e1a659b37124ae768"
+      "path": "data/battle_scripts_2.s"
     }
   ],
   "output": {
-    "path": "content/generated/source-battle-items/catalog.json",
-    "byteLength": 70297,
-    "sha256": "ce2edeb1dc28481c2f3496126bca38664667ba93520f1096b20c34d85f9f93ab"
+    "path": "content/generated/source-battle-items/catalog.json"
   },
-  "semanticSha256": "ebebc7d3e8b6074a20d71a43f7c58509f8289a01573333022484a4e0bab48a63",
   "rawRows": 375,
   "identities": 307,
   "fixedBattleEffects": 48,

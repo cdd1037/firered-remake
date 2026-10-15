@@ -2,40 +2,22 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 10824,
-      "gitBlobSha1": "3245a5bef5cbe14d6035f3fa02f430b7d542a808",
-      "path": "data/field_effect_scripts.s",
-      "sha256": "ebcc3ca762e1c9a6da8a455368651155f4c1d7058a7b0da3b4fcb9b3bbdc9c6e"
+      "path": "data/field_effect_scripts.s"
     },
     {
-      "byteLength": 155,
-      "gitBlobSha1": "eb2e56fafe64bb0051072996ded1ffcf10a894da",
-      "path": "graphics/field_effects/pics/pokeball_glow.png",
-      "sha256": "0d5be3d6fbfd0dab08e67225fea7fe0f6a72defb4b3ae63777db8a390ec7cb84"
+      "path": "graphics/field_effects/pics/pokeball_glow.png"
     },
     {
-      "byteLength": 244,
-      "gitBlobSha1": "54117cf6b8e653729647b8dbf2682572a1538b0b",
-      "path": "graphics/field_effects/pics/pokemoncenter_monitor.png",
-      "sha256": "e710b611fcc0abe78e330c4b1e136c8e565c853758abdac423932ed59ca06579"
+      "path": "graphics/field_effects/pics/pokemoncenter_monitor.png"
     },
     {
-      "byteLength": 125868,
-      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be",
-      "path": "src/field_effect.c",
-      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a"
+      "path": "src/field_effect.c"
     },
     {
-      "byteLength": 15232,
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e",
-      "path": "src/sound.c",
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+      "path": "src/sound.c"
     },
     {
-      "byteLength": 48783,
-      "gitBlobSha1": "d0198d53004775c8664dcccf57833e178833776e",
-      "path": "src/sprite.c",
-      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae"
+      "path": "src/sprite.c"
     }
   ],
   "profile": "firered-center-healing-art-v1",

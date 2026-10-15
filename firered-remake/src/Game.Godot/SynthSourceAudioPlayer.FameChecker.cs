@@ -1,11 +1,9 @@
 public partial class SynthSourceAudioPlayer
 {
     /// <summary>Verify the three inherited Fame Checker effects and admit its one missing source effect.</summary>
-    private static SynthCue[] ExtendFameCheckerCues(SynthCue[] cues, string sourceCommit)
+    private static SynthCue[] ExtendFameCheckerCues(SynthCue[] cues)
     {
         const string source = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-        if (sourceCommit != source)
-            throw new InvalidDataException("Fame Checker audio source revision differs.");
         SynthCue[] inherited =
         [
             new("SE_SELECT", source, "SE_SELECT", "sound/songs/midi/se_select.mid", 2, 5, null, 0x086B5720, 0, false),
@@ -22,7 +20,7 @@ public partial class SynthSourceAudioPlayer
             "sound/songs/midi/se_m_lock_on.mid", 1, 4, null, 0x086BA80C, 0, false);
         if (cues.Any(c => c.Id == addition.Id))
             throw new InvalidDataException("Duplicated Fame Checker sound binding.");
-        // The constructor authenticates the pack and validates every song header.
+        // The constructor validates every song header in the source pack.
         // Existing PlaySoundEffect routing owns priority and SE1/SE2 replacement.
         return [.. cues, addition];
     }

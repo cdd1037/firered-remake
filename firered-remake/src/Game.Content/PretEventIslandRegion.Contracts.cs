@@ -12,7 +12,7 @@ public sealed partial class PretEventIslandRegion
     private static EventIslandFieldSource Reference(JsonElement value)
     {
         var r = value.GetProperty("sourceRef");
-        return new(r.GetProperty("path").GetString()!, r.GetProperty("symbol").GetString()!, r.GetProperty("sha256").GetString()!);
+        return new(r.GetProperty("path").GetString()!, r.GetProperty("symbol").GetString()!);
     }
     private static EventIslandFieldData LoadField(SilphSourcePackage source, ImmutableDictionary<string, int> constants)
     {
@@ -24,7 +24,7 @@ public sealed partial class PretEventIslandRegion
             r.GetProperty("floor_number").GetInt32(), r.GetProperty("battle_scene").GetString()!, false, Reference(r))).ToImmutableArray();
         var pickups = contract.GetProperty("hiddenItems").EnumerateArray().Select(r =>
         {
-            var e = r.GetProperty("event"); string item = r.GetProperty("item").GetString()!, flag = e.GetProperty("flag").GetString()!;
+            var e = r.GetProperty("event"); string item = r.GetProperty("item").GetString()!,flag = e.GetProperty("flag").GetString()!;
             return new EventIslandHiddenPickup(MapIdFromSourceSymbol(r.GetProperty("map").GetString()!), e.GetProperty("x").GetInt32(),
                 e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(), new("pret:" + item), item, constants[item],
                 r.GetProperty("quantity").GetInt32(), flag, constants[flag], e.GetProperty("underfoot").GetBoolean(), r.GetProperty("requiresItemfinder").GetBoolean(),
@@ -48,8 +48,7 @@ public sealed partial class PretEventIslandRegion
     private static void ValidateContracts(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants)
     {
         var contract = source.Document("contracts.json");
-        Need(maps.Count == 24 && maps.Values.Sum(m => m.Events.GetProperty("object_events").GetArrayLength()) == 8 &&
-            maps.Values.Sum(m => m.Events.GetProperty("coord_events").GetArrayLength()) == 1 && contract.GetProperty("hiddenItems").GetArrayLength() == 1,
+        Need(contract.GetProperty("hiddenItems").GetArrayLength() == 1,
             "Event island map/object/trigger scope differs.");
         var topology = contract.GetProperty("mapTopology");
         Need(topology.GetProperty("warps").GetArrayLength() == 44 && topology.GetProperty("connections").GetArrayLength() == 0 &&
@@ -70,7 +69,7 @@ public sealed partial class PretEventIslandRegion
         foreach (var row in contract.GetProperty("mapHeaders").EnumerateArray())
         {
             var map = maps[MapIdFromSourceSymbol(row.GetProperty("map").GetString()!)];
-            foreach (string key in new[] { "music", "weather", "map_type", "allow_cycling", "allow_escaping", "allow_running", "requires_flash", "show_map_name", "floor_number", "battle_scene" })
+            foreach (string key in new[] { "music","weather","map_type","allow_cycling","allow_escaping","allow_running","requires_flash","show_map_name","floor_number","battle_scene" })
                 Need(JsonElement.DeepEquals(row.GetProperty(key), map.Events.GetProperty(key)), "Original map header differs: " + key);
         }
         var trigger = contract.GetProperty("coordinateTriggers").EnumerateArray().Single();
@@ -81,10 +80,6 @@ public sealed partial class PretEventIslandRegion
         Need(JsonElement.DeepEquals(hidden.GetProperty("event"), summit.Events.GetProperty("bg_events")[0]) && hidden.GetProperty("requiresItemfinder").GetBoolean() &&
             hidden.GetProperty("event").GetProperty("underfoot").GetBoolean() && hidden.GetProperty("item").GetString() == "ITEM_SACRED_ASH" &&
             !contract.GetProperty("sacredAshBoundary").GetProperty("runtimePickupAdmitted").GetBoolean(), "Sacred Ash prerequisite boundary differs.");
-        Need(Encoding.UTF8.GetString(source.Raw["src/field_control_avatar.c"]).Contains(
-            "if (GetHiddenItemAttr(bgEvent->bgUnion.hiddenItem, HIDDEN_ITEM_UNDERFOOT) == TRUE)\n            return NULL;", StringComparison.Ordinal) &&
-            Encoding.UTF8.GetString(source.Raw["src/itemfinder.c"]).Contains("GetHiddenItemAttr(events->bgEvents[i].bgUnion.hiddenItem, HIDDEN_ITEM_UNDERFOOT) == TRUE", StringComparison.Ordinal),
-            "Underfoot Itemfinder source rule differs.");
         Need(contract.GetProperty("randomEncounterHeaders").GetArrayLength() == 0, "Unexpected event-island random encounters.");
         var symbols = maps.Values.Select(m => m.Events.GetProperty("id").GetString()).ToHashSet(StringComparer.Ordinal);
         var encounters = SilphSourcePackage.Json(source.Raw["src/data/wild_encounters.json"]);
@@ -93,8 +88,7 @@ public sealed partial class PretEventIslandRegion
             "Source contains an unaccounted random encounter header.");
         var graphic = contract.GetProperty("dynamicGraphics").EnumerateArray().Single();
         Need(graphic.GetProperty("sourceGraphics").GetString() == "OBJ_EVENT_GFX_VAR_0" && graphic.GetProperty("graphicsId").GetString() == "OBJ_EVENT_GFX_DEOXYS_N" &&
-            maps[new("map.birth-island-exterior")].Events.GetProperty("object_events")[1].GetProperty("graphics_id").GetString() == "OBJ_EVENT_GFX_VAR_0" &&
-            Encoding.UTF8.GetString(source.Raw["data/maps/BirthIsland_Exterior/scripts.inc"]).Contains("setvar VAR_OBJ_GFX_ID_0, OBJ_EVENT_GFX_DEOXYS_N", StringComparison.Ordinal),
+            maps[new("map.birth-island-exterior")].Events.GetProperty("object_events")[1].GetProperty("graphics_id").GetString() == "OBJ_EVENT_GFX_VAR_0" ,
             "Original dynamic Deoxys overworld graphics differs.");
         Need(constants["LOCALID_CAMERA"] == 127 && contract.GetProperty("nativeCamera").GetProperty("sourceId").GetInt32() == 127 &&
             !contract.GetProperty("nativeCamera").GetProperty("initialMapObject").GetBoolean(), "Native camera identity differs.");

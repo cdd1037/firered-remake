@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -9,7 +7,7 @@ using Game.Domain.Events;
 var tests=new List<(string,Action)>();
 void Test(string id,Action action)=>tests.Add((id,action));
 void Check(bool condition,string message){if(!condition)throw new Exception(message);}
-PretStoryCompilation Compile(string text)=>PretStoryCompiler.Compile([new("fixture.inc",text,new(SourceKind.OriginalFixture,"fixture.inc","fixture",Sha256:Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text))))) ]);
+PretStoryCompilation Compile(string text)=>PretStoryCompiler.Compile([new("fixture.inc",text,new(SourceKind.OriginalFixture,"fixture.inc","fixture")) ]);
 const string route=".equ COUNTER, VAR_TEMP_1\nStart::\n setvar COUNTER, 1\n call Check\n msgbox Greeting\n setflag FLAG_DONE\n end\nCheck::\n call_if_eq COUNTER, 1, Increment\n return\nIncrement::\n setvar COUNTER, 2\n return";
 Test("compiler.alias.and.call",()=>{var c=Compile(route);var r=StoryRules.Start(StoryState.Empty,"Start",c);Check(r.Status==TransitionStatus.Accepted&&r.State.Variables["VAR_TEMP_1"]==2&&r.State.Wait?.Kind==StoryWaitKind.Dialog,"alias/call failed");Check(!r.State.Flags.ContainsKey("FLAG_DONE"),"executed past dialogue");var next=StoryRules.Continue(r.State,r.State.Wait!.CorrelationId,c);Check(next.State.Completed&&next.State.Flags["FLAG_DONE"],"resume failed");});
 Test("vm.rejected.ack.atomic",()=>{var c=Compile(route);var r=StoryRules.Start(StoryState.Empty,"Start",c);var before=CanonicalJson.Hash(r.State);var bad=StoryRules.Continue(r.State,"wrong",c);Check(bad.Status==TransitionStatus.Rejected&&before==CanonicalJson.Hash(bad.State)&&bad.Effects.IsEmpty,"bad ack mutated");});

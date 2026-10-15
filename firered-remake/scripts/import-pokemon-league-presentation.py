@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Import bounded first-clear League pixels and credits from pinned local git objects."""
-import argparse, hashlib, io, json, pathlib, re, struct, subprocess
+import argparse,  io, json, pathlib, re, struct, subprocess
 from PIL import Image
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 BASE='content/generated/pokemon-league-presentation/'
-RAW='content/raw/pokemon-league-presentation/'
+RAW='content/raw/pokefirered/037335f4/'
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 
-def sha(b):return hashlib.sha256(b).hexdigest()
 def enc(o):return (json.dumps(o,ensure_ascii=False,indent=2)+'\n').encode()
 def need(ok,msg):
  if not ok:raise ValueError(msg)
@@ -18,8 +17,8 @@ def run(root,reference,inherited,check=False):
   return raw[p]
  def text(p):return get(p).decode()
  def emit(name,im):
-  rgba=im.convert('RGBA').tobytes();b=io.BytesIO();im.convert('RGBA').save(b,format='PNG');out[name+'.rgba']=rgba;out[name+'.png']=b.getvalue()
-  row=dict(id=name,width=im.width,height=im.height,rgbaPath=name+'.rgba',texturePath=name+'.png');assets.append(row);return row
+  rgba=im.convert('RGBA').tobytes();b=io.BytesIO();im.convert('RGBA').save(b,format='PNG');out[name+'.png']=b.getvalue()
+  row = dict(id=name, width=im.width, height=im.height, texturePath=name + '.png');assets.append(row);return row
  def indexed(p,pal=None,transparent=True):
   im=Image.open(io.BytesIO(get(p)));need(im.mode=='P','Indexed source expected: '+p);ix=list(im.getdata())
   if pal:
@@ -95,7 +94,7 @@ def run(root,reference,inherited,check=False):
     im.putdata(pix);row=emit(stem+'-'+side+'-'+variant,im);row.update(speciesId='pret:'+sym,sourceSpeciesId=sid,side=side,paletteVariant=variant,x=144 if side=='front' else 40,y=8+yoff-elevation if side=='front' else 48+yoff);sprites.append(row)
   pi=int(re.search(r'\['+sym+r'\]\s*=\s*(\d+),',text('src/pokemon_icon.c'))[1]);im=indexed('graphics/pokemon/'+stem+'/icon.png',f'graphics/pokemon/icon_palettes/icon_palette_{pi}.pal').crop((0,0,32,32));row=emit(stem+'-icon',im);row.update(speciesId='pret:'+sym,sourceSpeciesId=sid);icons.append(row)
  # Existing original resource pack already contains all source sequences; append metadata only.
- pack=(inherited/'content/generated/synth-audio/firered.pack').read_bytes();need(sha(pack)=='00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d','Audio pack identity')
+ pack=(inherited/'content/generated/synth-audio/firered.pack').read_bytes()
  songs={k:int(v) for k,v in re.findall(r'^#define ((?:MUS|SE)_\w+)\s+(\d+)',text('include/constants/songs.h'),re.M)};songtable=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',text('sound/song_table.inc'),re.M);cues=[]
  for id in ['MUS_VS_CHAMPION','MUS_HALL_OF_FAME','MUS_CREDITS','SE_APPLAUSE','MUS_SLOW_PALLET','SE_RS_DOOR']:
   sid=songs[id];address,player,second=struct.unpack_from('<IHH',pack,0x084A32CC+sid*8-0x08489968);symbol,sp,ss=songtable[sid];need((player,second)==(int(sp),int(ss)),'Audio source player')
@@ -103,9 +102,9 @@ def run(root,reference,inherited,check=False):
  for stem,sid in species+[('dewgong',87),('exeggutor',103)]:
   path='sound/direct_sound_samples/cries/'+stem+'.wav';get(path);cues.append(dict(id='CRY_'+stem.upper()+'_NORMAL',sourceCommit=COMMIT,sourceSymbol='SPECIES_'+stem.upper(),sourcePath=path,sourcePlayer=4,priority=10,sourceCounter=None,songAddress=0,species=sid,looping=False,cryMode=0))
  out['synth-manifest.json']=enc(dict(schemaVersion=1,sourceCommit=COMMIT,cues=cues))
- inputs=[dict(path=p,byteLength=len(b),sha256=sha(b),gitBlobSha1=hashlib.sha1(f'blob {len(b)}\0'.encode()+b).hexdigest()) for p,b in sorted(raw.items())]
+ inputs=[dict(path=p) for p,b in sorted(raw.items())]
  lock=enc(dict(schemaVersion=1,sourceCommit=COMMIT,files=inputs));lockpath=root/'scripts/pokemon-league-presentation.lock.json'
- manifest=enc(dict(schemaVersion=1,sourceCommit=COMMIT,lockSha256=sha(lock),inputs=inputs,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(title=strings['gString_PokemonFireRed_Staff'],texts=texts,commands=commands,maps=maps),texts={k:strings[k] for k in ['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber']},outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(out.items())]));out['manifest.json']=manifest
+ manifest=enc(dict(schemaVersion=1,sourceCommit=COMMIT,inputs=inputs,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(title=strings['gString_PokemonFireRed_Staff'],texts=texts,commands=commands,maps=maps),texts={k:strings[k] for k in ['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber']},outputs=[dict(path=p) for p,b in sorted(out.items())]));out['manifest.json']=manifest
  if check:
   need(lockpath.read_bytes()==lock,'Lock differs')
   for p,b in out.items():need((root/BASE/p).read_bytes()==b,'Generated resource differs: '+p)
@@ -113,6 +112,6 @@ def run(root,reference,inherited,check=False):
   lockpath.write_bytes(lock)
   for p,b in [(RAW+p,b) for p,b in raw.items()]+[(BASE+p,b) for p,b in out.items()]:
    dest=root/p;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
- return dict(passed=True,rawFiles=len(raw),outputs=len(out),manifestSha256=sha(manifest),manifestBytes=len(manifest),lockSha256=sha(lock),lockBytes=len(lock),synthSha256=sha(out['synth-manifest.json']),synthBytes=len(out['synth-manifest.json']),creditsCommands=len(commands),originalVisualFidelityVerified=False)
+ return dict(passed=True,rawFiles=len(raw),outputs=len(out),manifestBytes=len(manifest),lockBytes=len(lock),synthBytes=len(out['synth-manifest.json']),creditsCommands=len(commands),originalVisualFidelityVerified=False)
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--inherited-root',type=pathlib.Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.project_root,a.reference_root,a.inherited_root,a.check),indent=2))

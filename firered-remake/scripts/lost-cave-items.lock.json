@@ -1,103 +1,63 @@
 {
-  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
-  "profile": "firered-ordinary-item-supplement-v1",
-  "importerSha256": "23ebd11c626ee38c221d87f87b274b811dc47797699f9bac71cd67a867d69259",
   "files": [
     {
-      "path": "content/generated/lost-cave-items/items.json",
-      "byteLength": 10833,
-      "sha256": "c0aaff2bcc856dc2686d26c29c35aa77c0258cbe521baf8b03256f57aca9125d"
+      "path": "content/generated/lost-cave-items/items.json"
     },
     {
-      "path": "content/generated/lost-cave-items/lax-incense.png",
-      "byteLength": 590,
-      "sha256": "ca53ccf43e3dae859120e0b425fe8499a69f8aaad112a8275d5befae66abd670"
+      "path": "content/generated/lost-cave-items/lax-incense.png"
     },
     {
-      "path": "content/generated/lost-cave-items/lax-incense.rgba",
-      "byteLength": 2304,
-      "sha256": "2a0c76cd5b9b4e823e6b36deeeb0e3640aa93fba0ce407241fda1a9e66f08788"
+      "path": "content/generated/lost-cave-items/lax-incense.png"
     },
     {
-      "path": "content/generated/lost-cave-items/luxury-ball.png",
-      "byteLength": 526,
-      "sha256": "4118e7cdd73839a7bd3195522b36202842be3f89770c3739f72f3a160756b40c"
+      "path": "content/generated/lost-cave-items/luxury-ball.png"
     },
     {
-      "path": "content/generated/lost-cave-items/luxury-ball.rgba",
-      "byteLength": 2304,
-      "sha256": "bf16c2ce063d56e4a750816ba1dde55563797ba196b6e0cb2e629a4e0df85267"
+      "path": "content/generated/lost-cave-items/luxury-ball.png"
     },
     {
-      "path": "content/generated/lost-cave-items/sea-incense.png",
-      "byteLength": 562,
-      "sha256": "6a259655a5a8e483a962da42c57079d30793db624f26c6e4feb033e2a428c874"
+      "path": "content/generated/lost-cave-items/sea-incense.png"
     },
     {
-      "path": "content/generated/lost-cave-items/sea-incense.rgba",
-      "byteLength": 2304,
-      "sha256": "aefa34c79da925ba5521324dde43441228731092838b6237b75c4d7bb41dbef0"
+      "path": "content/generated/lost-cave-items/sea-incense.png"
     },
     {
-      "path": "content/generated/lost-cave-items/silk-scarf.png",
-      "byteLength": 583,
-      "sha256": "f2c2c3bcaca340a6117ea98a6f7e8acb34f8b2a268db21f33f9a1450e1a3480a"
+      "path": "content/generated/lost-cave-items/silk-scarf.png"
     },
     {
-      "path": "content/generated/lost-cave-items/silk-scarf.rgba",
-      "byteLength": 2304,
-      "sha256": "8b4beea463d47e7325eb1d06cff70ce43ea2264baf72aa11aa9263e1b1b222d4"
+      "path": "content/generated/lost-cave-items/silk-scarf.png"
     },
     {
-      "path": "content/generated/lost-cave-items/source-contract.json",
-      "byteLength": 14355,
-      "sha256": "4e00a42cca9f3415dd0a582514d9a843303f457c978f6e59a5ae384da0041583"
+      "path": "content/generated/lost-cave-items/source-contract.json"
     },
     {
-      "path": "content/generated/lost-cave-items/source-input-hashes.json",
-      "byteLength": 4840,
-      "sha256": "7ccbb4772519d5728b4a26aa01a515208dab0f1d29365d83584195873fe6eff2"
+      "path": "content/generated/lost-cave-items/source-input-hashes.json"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icon_palettes/lax_incense.pal",
-      "byteLength": 175,
-      "sha256": "9ef27bfa0a217d108e928a180162e2495974f22f4d4270b367246730cc0a6b3b"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/lax_incense.pal"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icon_palettes/luxury_ball.pal",
-      "byteLength": 193,
-      "sha256": "1b42e7f754536175eaae35d3457933252b073c1ee05d36c089005e41a602308d"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/luxury_ball.pal"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icon_palettes/sea_incense.pal",
-      "byteLength": 179,
-      "sha256": "a8cba8bbe37c66a680a3831adf7fa88688b4b105da37d78502a1ffabcd3b50a9"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/sea_incense.pal"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icon_palettes/silk_scarf.pal",
-      "byteLength": 167,
-      "sha256": "0eb56cde44609e39c3886e841d1639dee9dc2a1628f96c906f5d08734eaed680"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/silk_scarf.pal"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icons/lax_incense.png",
-      "byteLength": 303,
-      "sha256": "c161793602442eddd747581725c592bdc1e7f4760e87e6b4725f4a179f2d1759"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icons/lax_incense.png"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icons/luxury_ball.png",
-      "byteLength": 277,
-      "sha256": "724593c5d1bfd5b92c066d1485a90602cd5ad3f910eb6d70c799f6f1ef7720d0"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icons/luxury_ball.png"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icons/sea_incense.png",
-      "byteLength": 300,
-      "sha256": "8752030d628cb75f1ce159acf2215e3dcbb9d5a53e194c3249306ff8ee44c071"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icons/sea_incense.png"
     },
     {
-      "path": "content/raw/lost-cave-items/graphics/items/icons/silk_scarf.png",
-      "byteLength": 322,
-      "sha256": "de4fcc525f0747c590bc7b1d82d987f8814bcb08d698ff80e594f7260e75d947"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icons/silk_scarf.png"
     }
-  ]
+  ],
+  "profile": "firered-ordinary-item-supplement-v1",
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 }

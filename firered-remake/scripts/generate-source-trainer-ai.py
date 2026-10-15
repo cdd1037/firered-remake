@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the three pinned FireRed trainer scripts. Reads, never executes upstream code."""
-import ast, hashlib, json, operator, re, struct, subprocess, sys
+import ast,  json, operator, re, struct, subprocess, sys
 from pathlib import Path
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -72,19 +72,14 @@ def assemble(source):
         and k not in ['STAT_STAGE_MIN', 'STAT_STAGE_MAX']}
     items = json.loads(read('src/data/items.json'))['items']
     item_values = {item['itemId']: (value(item['itemId']), value(item['holdEffect'])) for item in items}
-    return dict(code=output, labels=labels, lines=lines, constants=constants, items=item_values,
-        hashes={p: hashlib.sha256(t.encode()).hexdigest() for p,t in sources.items()}, script=selected)
+    return dict(code=output, labels=labels, lines=lines, constants=constants, items=item_values, script=selected)
 
 def generate(source, destination):
     p = assemble(source)
-    payload = dict(sourceCommit=COMMIT, scriptSha256=p['hashes']['data/battle_ai_scripts.s'],
-        programSha256=hashlib.sha256(p['code']).hexdigest(), program=list(p['code']),
-        entries={x:p['labels'][x] for x in ['AI_CheckBadMove','AI_CheckViability','AI_TryToFaint']},
-        constants=p['constants'], items={k:dict(id=v[0],effect=v[1]) for k,v in p['items'].items()}, sourceHashes=p['hashes'])
+    payload = dict(sourceCommit=COMMIT, program=list(p['code']), entries={x: p['labels'][x] for x in ['AI_CheckBadMove', 'AI_CheckViability', 'AI_TryToFaint']}, constants=p['constants'], items={k: dict(id=v[0], effect=v[1]) for k, v in p['items'].items()})
     target=Path(destination);target.parent.mkdir(parents=True,exist_ok=True)
     data=(json.dumps(payload,sort_keys=True,separators=(',',':'))+'\n').encode()
     target.write_bytes(data)
-    print(json.dumps(dict(source=COMMIT, packSha256=hashlib.sha256(data).hexdigest(), programBytes=len(p['code']),
-        viabilityDispatches=len(re.findall(r'^\s*if_effect ',p['script'].split('AI_CheckViability::')[1].split('\n\tend')[0],re.M)))))
+    print(json.dumps(dict(source=COMMIT, programBytes=len(p['code']), viabilityDispatches=len(re.findall('^\\s*if_effect ', p['script'].split('AI_CheckViability::')[1].split('\n\tend')[0], re.M)))))
 
 if __name__ == '__main__': generate(*sys.argv[1:])

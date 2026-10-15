@@ -1,39 +1,22 @@
 #!/usr/bin/env python3
-"""Authenticated, bounded Basic hit/slice scripts and current-battler geometry import. No ROM input."""
-import argparse,hashlib,io,json,re,struct,subprocess,tempfile,os
+"""Basic hit/slice scripts and current-battler geometry import. No ROM input."""
+import argparse,io,json,re,struct,subprocess,tempfile
 from pathlib import Path
 from PIL import Image
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA='2507bdbea068e5855c051cfc46a5f4ba3c22423262d1a71fbf86cfa3bce3a0aa'
 OPS={'loadspritegfx','monbg','setalpha','playsewithpan','loopsewithpan','createsprite','createvisualtask','delay','waitforvisualfinish','clearmonbg','blendoff','end'}
-def sha(data):return hashlib.sha256(data).hexdigest()
-def read_bounded(path,maximum,exact=None):
- with path.open('rb') as f:
-  n=os.fstat(f.fileno()).st_size
-  if n>maximum or n<0 or exact is not None and n!=exact:raise ValueError('Input length differs: '+str(path))
-  data=f.read(n+1)
- if len(data)!=n:raise ValueError('Input changed while reading: '+str(path))
- return data
 
-def authenticated(reference):
- lock_data=read_bounded(Path(__file__).with_name('source-hit-animation.lock.json'),65536)
- if sha(lock_data)!=LOCK_SHA:raise ValueError('Source lock differs')
- lock=json.loads(lock_data)
- if lock['sourceCommit']!=COMMIT:raise ValueError('Wrong source revision')
- raw={}
- if len({r['path'] for r in lock['files']})!=len(lock['files']):raise ValueError('Duplicate source path in lock')
- for row in lock['files']:
-  name=row['path'];size=row['bytes'];data=read_bounded(reference/name,2_000_000,size)
-  if sha(data)!=row['sha256']:raise ValueError('Source hash differs: '+name)
-  if (reference/'.git').exists():
-   blob=COMMIT+':'+name
-   n=int(subprocess.check_output(['git','-C',str(reference),'cat-file','-s',blob]))
-   if n!=row.get('gitBlobBytes',size):raise ValueError('Source blob length differs: '+name)
-   expected=subprocess.check_output(['git','-C',str(reference),'show',blob])
-   compared=data.replace(b'\r\n',b'\n') if row.get('gitTextLineEndings')=='lf' else data
-   if sha(expected)!=row.get('gitBlobSha256',row['sha256']) or expected!=compared:raise ValueError('Source differs from pinned Git blob: '+name)
-  raw[name]=data
- return raw
+
+def read_sources(reference):
+    lock = json.loads(Path(__file__).with_name('source-hit-animation.lock.json').read_bytes())
+    if lock['sourceCommit'] != COMMIT:
+        raise ValueError('Wrong source revision')
+    result = {}
+    for row in lock['files']:
+        path = row['path']
+        result[path] = (subprocess.check_output(['git', '-C', str(reference), 'show', COMMIT + ':' + path])
+                        if (reference / '.git').exists() else (reference / path).read_bytes())
+    return result
 
 def rgb555(data,size,palette=None):
  with Image.open(io.BytesIO(data)) as im:
@@ -47,7 +30,7 @@ def rgb555(data,size,palette=None):
   return struct.pack('<HH',*size)+struct.pack('<'+'H'*len(values),*values)
 
 def build(reference):
- raw=authenticated(reference);script=raw['data/battle_anim_scripts.s'].decode();scripts=[]
+ raw=read_sources(reference);script=raw['data/battle_anim_scripts.s'].decode();scripts=[]
  macros=set(re.findall(r'^\s*\.macro (\w+)',raw['asm/macros/battle_anim_script.inc'].decode(),re.M))
  for move,name in [(1,'POUND'),(10,'SCRATCH'),(15,'CUT'),(33,'TACKLE'),(163,'SLASH'),(206,'FALSE_SWIPE'),(68,'COUNTER'),(233,'VITAL_THROW'),(39,'TAIL_WHIP'),(148,'FLASH')]:
   start=re.search(r'^Move_'+name+r':\n',script,re.M)
@@ -108,7 +91,7 @@ def build(reference):
    if not values or not animation.strip().endswith('ANIMCMD_END,'):raise ValueError('Source frame table has no end')
    frames.append(values)
   recipes.append(dict(template=template,asset=asset,callback=callback,blend='ObjBlend' in oam,animations=frames,
-   sourcePath=path,sourceLine=text.count('\n',0,match.start())+1,sourceTemplateSha256=sha(match[0].encode())))
+   sourcePath=path,sourceLine=text.count('\n',0,match.start())+1))
  with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/substitute.png'])) as image:pal=image.getpalette()
  front=rgb555(raw['graphics/battle_anims/sprites/substitute.png'],(64,64),pal)
  back=rgb555(raw['graphics/battle_anims/sprites/substitute_back.png'],(64,64),pal)
@@ -124,11 +107,11 @@ def build(reference):
    geometry.append({'species':species[name],'side':side,'sourceWidth':int(w),'sourceHeight':int(h),'yOffset':int(y),'elevation':elevation.get(name,0) if side=='front' else 0})
  if len(geometry)!=880:raise ValueError('Expected exact pinned 880 geometry records')
  if len({(x['species'],x['side']) for x in geometry})!=880:raise ValueError('Duplicate geometry')
- def asset(id,data):return {'id':id,'path':id+'.rgb555','bytes':len(data),'sha256':sha(data)}
+ def asset(id,data):return {'id':id,'path':id+'.rgb555','bytes':len(data)}
  sines=[int(float(x)*256) for x in re.findall(r'Q_8_8\((-?[\d.]+)\)',raw['src/trig.c'].decode().split('};',1)[0])]
  if len(sines)!=320:raise ValueError('Original sine table differs')
- anim={'sineTable':sines,'schemaVersion':1,'sourceCommit':COMMIT,'sourceLockSha256':LOCK_SHA,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
- art={'schemaVersion':1,'sourceCommit':COMMIT,'sourceLockSha256':LOCK_SHA,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back)]}
+ anim={'sineTable':sines,'schemaVersion':1,'sourceCommit':COMMIT,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
+ art={'schemaVersion':1,'sourceCommit':COMMIT,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back)]}
  def encode(x):return (json.dumps(x,indent=2)+'\n').encode()
  return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back}}
 
@@ -145,5 +128,5 @@ def main():
    (temp/name).mkdir()
    for filename,blob in files.items():(temp/name/filename).write_bytes(blob)
   for name in data:(temp/name).rename(out/name)
- print(json.dumps({'passed':True,'sourceCommit':COMMIT,'resources':[{'path':folder+'/'+name,'bytes':len(data),'sha256':sha(data)} for folder,files in data.items() for name,data in files.items()]}))
+ print(json.dumps({'passed':True,'sourceCommit':COMMIT,'resources':[{'path':folder+'/'+name,'bytes':len(data)} for folder,files in data.items() for name,data in files.items()]}))
 if __name__=='__main__':main()

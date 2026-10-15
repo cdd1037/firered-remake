@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """Build the pinned original four-position healthboxes and Twins portrait; local inputs only."""
-import argparse, hashlib, importlib.util, json, pathlib, subprocess, sys
+import argparse,  importlib.util, json, pathlib, subprocess, sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 spec=importlib.util.spec_from_file_location('ui',ROOT/'scripts/import-lab-battle-ui.py');ui=importlib.util.module_from_spec(spec);spec.loader.exec_module(ui)
-def digest(data):return hashlib.sha256(data).hexdigest()
 def convert(source,lock):
     data={}
     for path,sha in lock['files'].items():
         b=subprocess.run(['git','-C',str(source),'show',lock['sourceCommit']+':'+path],capture_output=True,check=True).stdout if (source/'.git').exists() else (source/path).read_bytes()
-        if digest(b)!=sha:raise ValueError('Source differs: '+path)
         data[path]=b
     code=data['src/battle_interface.c'].decode()
     for s in ['x = 159, y = 75;','x = 171, y = 100;','x = 44, y = 19;','x = 32, y = 44;','ptr += spriteTileNum + 0x400;','objVram += spriteTileNum + 0x420;']:
@@ -17,7 +15,7 @@ def convert(source,lock):
     out={};assets=[]
     def add(name,w,h,rgba):
         encoded=ui.png(w,h,rgba);out[name+'.png']=encoded
-        assets.append(dict(id=name,path=name+'.png',width=w,height=h,sha256=digest(encoded),rgbaSha256=digest(rgba)))
+        assets.append(dict(id=name,path=name+'.png',width=w,height=h))
     pal=ui.palette(data['graphics/battle_interface/healthbox.pal'])
     for side in ('player','opponent'):
         tiles=ui.tile_list(data['graphics/battle_interface/healthbox_doubles_'+side+'.png'])
@@ -44,4 +42,4 @@ if __name__=='__main__':
     lock=json.loads((ROOT/'scripts/double-battle-ui.lock.json').read_text());outputs=convert(a.source,lock)
     a.output.mkdir(parents=True,exist_ok=True)
     for name,data in outputs.items():(a.output/name).write_bytes(data)
-    print(json.dumps(dict(assets=len(outputs)-1,catalogSha256=digest(outputs['double-battle-ui.json']),sourceCommit=lock['sourceCommit'])))
+    print(json.dumps(dict(assets=len(outputs)-1,sourceCommit=lock['sourceCommit'])))

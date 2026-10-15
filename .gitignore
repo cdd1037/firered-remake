@@ -1,0 +1,20 @@
+# Runtime assets and local data stay in the engineering ZIP, not Git.
+/firered-remake/content/raw/
+/firered-remake/content/generated/
+/firered-remake/src/Game.Godot/Assets/
+/firered-audio-player/resources/
+/checkpoints/
+/reference/
+/audio-reference-build/
+**/bin/
+**/obj/
+**/.godot/
+**/__pycache__/
+**/.tools/
+**/.play/
+*.user
+
+# Source-derived cue data is shipped for runtime/import, not source Git.
+/firered-remake/scripts/synth-ssanne-cues.json
+/firered-remake/content/sources/seven-island-region.lock.json
+/firered-remake/content/sources/fuchsia-gym-source/

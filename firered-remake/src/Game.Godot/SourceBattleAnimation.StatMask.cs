@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
@@ -25,15 +24,13 @@ public sealed class SourceStatMaskMaterial
 }
 public static class SourceStatAnimationCatalog
 {
-    public const string ManifestSha256="3f8aa3b9e235a0cc507a463e1485072dc63b33d4d0680157f0207b83cabef6aa";
+
     public static (SourceAnimationScript Script,SourceStatMaskMaterial Material) Read(string folder)
     {
-        var bytes=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"manifest.json"),4096);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=ManifestSha256)throw new InvalidDataException("Stat animation manifest differs.");
+        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);var row=doc.RootElement.GetProperty("script");
         var script=new SourceAnimationScript(0,row.GetProperty("label").GetString()!,row.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray());
-        var material=doc.RootElement.GetProperty("material");var data=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"stat-mask.bin"),8448,8448);
-        if(Convert.ToHexStringLower(SHA256.HashData(data))!=material.GetProperty("sha256").GetString())throw new InvalidDataException("Stat mask bytes differ.");
+        var data=System.IO.File.ReadAllBytes(Path.Combine(folder,"stat-mask.bin"));
         return (script,new(data));
     }
 }

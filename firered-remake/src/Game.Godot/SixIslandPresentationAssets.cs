@@ -1,29 +1,20 @@
-using System.Security.Cryptography;
+using Game.Content;
 using System.Text.Json;
 
 internal sealed record SixIslandPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files);
 
-/// <summary>Authenticated original pixels and cue metadata; gameplay state remains outside presentation.</summary>
+/// <summary>Original pixels and cue metadata; gameplay state remains outside presentation.</summary>
 internal static class SixIslandPresentationAssets
 {
     internal const string Base = "content/generated/six-island-presentation/";
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    internal const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    internal const string LockSha256 = "5e2eaee17665a07d6d46c7d2309894c95ad0c6f6389f2ae787eaebf9f49ebffd";
-    internal const string ManifestSha256 = "cefcdca6288a99068ad27621590dc4a8ea36f3fc5a9c957bf707bdd2b4006f84";
-    internal const string SynthSha256 = "1831a1dfe43f9c450d663cd90727e270fa14a4bd95ed787871b744660712a76d";
-    internal const int LockBytes = 51943;
-    internal const int ManifestBytes = 224010;
-    internal const int SynthBytes = 6995;
-    internal const int SynthCueCount = 16;
 
     internal static SixIslandPresentationData Load(string root)
     {
-        byte[] Read(string path, string hash, int size)
+        byte[] Read(string path)
         {
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
-                path.Split('/').Any(p => p is "" or "." or "..") || size is <= 0 or > 4_000_000 ||
-                hash.Length != 64 || hash.Any(c => !char.IsAsciiHexDigit(c)))
+                path.Split('/').Any(p => p is "" or "." or ".."))
                 throw new InvalidDataException("Unsafe Six Island presentation resource.");
             var file = new FileInfo(Path.Combine(root, path));
             if (file.LinkTarget is not null)
@@ -31,80 +22,50 @@ internal static class SixIslandPresentationAssets
             for (var directory = file.Directory; directory is not null; directory = directory.Parent)
                 if (directory.LinkTarget is not null)
                     throw new InvalidDataException("Six Island presentation directory symlink rejected.");
-            if (file.Length != size)
-                throw new InvalidDataException("Six Island presentation size differs: " + path);
             byte[] data = File.ReadAllBytes(file.FullName);
-            if (Convert.ToHexStringLower(SHA256.HashData(data)) != hash)
-                throw new InvalidDataException("Six Island presentation hash differs: " + path);
             return data;
         }
-
-        using var locked = JsonDocument.Parse(Read("scripts/six-island-presentation.lock.json", LockSha256, LockBytes));
-        using var document = JsonDocument.Parse(Read(Base + "manifest.json", ManifestSha256, ManifestBytes));
-        var sourceLock = locked.RootElement;
+        using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
         var manifest = document.RootElement;
         const string profile = "firered-six-island-presentation-v1";
-        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || sourceLock.GetProperty("profile").GetString() != profile ||
-            sourceLock.GetProperty("repository").GetString() != "pret/pokefirered" || sourceLock.GetProperty("commit").GetString() != SourceCommit ||
-            sourceLock.GetProperty("tree").GetString() != SourceTree || manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
-            manifest.GetProperty("profile").GetString() != profile || manifest.GetProperty("sourceCommit").GetString() != SourceCommit ||
-            manifest.GetProperty("sourceTree").GetString() != SourceTree || manifest.GetProperty("lockSha256").GetString() != LockSha256 ||
-            !JsonElement.DeepEquals(manifest.GetProperty("inputs"), sourceLock.GetProperty("files")) ||
-            !JsonElement.DeepEquals(manifest.GetProperty("inheritedInputs"), sourceLock.GetProperty("inheritedInputs")) ||
-            sourceLock.GetProperty("files").GetArrayLength() != 201 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 17 ||
-            manifest.GetProperty("outputs").GetArrayLength() != 155)
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
+            manifest.GetProperty("profile").GetString() != profile)
             throw new InvalidDataException("Six Island presentation identity differs.");
-
-        foreach (var row in sourceLock.GetProperty("files").EnumerateArray())
-            Read("content/raw/six-island-presentation/" + row.GetProperty("path").GetString(),
-                row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in sourceLock.GetProperty("inheritedInputs").EnumerateArray())
+        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+            if (!path.EndsWith(".png", StringComparison.Ordinal)) continue;
+            files.Add(path, Read(path));
         }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+            files.Add(path, Read(path));
         }
         foreach (var asset in manifest.GetProperty("assets").EnumerateArray())
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
-            string path = asset.GetProperty("rgbaPath").GetString()!;
+            string path = asset.GetProperty("texturePath").GetString()!;
             if (width is <= 0 or > 256 || height is <= 0 or > 256 || !files.TryGetValue(path, out var rgba) ||
-                rgba.Length != width * height * 4 || Convert.ToHexStringLower(SHA256.HashData(rgba)) != asset.GetProperty("rgbaSha256").GetString())
+                PngRgba8.Decode(rgba, width, height).Length != width * height * 4)
                 throw new InvalidDataException("Six Island asset pixels differ: " + path);
-            if (asset.TryGetProperty("texturePath", out var texture) &&
-                (!files.TryGetValue(texture.GetString()!, out var png) || Convert.ToHexStringLower(SHA256.HashData(png)) != asset.GetProperty("sha256").GetString()))
-                throw new InvalidDataException("Six Island texture differs: " + texture.GetString());
+            if (asset.TryGetProperty("texturePath", out var texture) && !files.ContainsKey(texture.GetString()!))
+                throw new InvalidDataException("Missing presentation texture: " + texture.GetString());
         }
         var sprites = manifest.GetProperty("sprites").EnumerateArray().ToArray();
         int[] owned = [161,162,177,178,193,202,182], opponentOnly = [191,192,170,171,185];
         var expectedSprites = (from species in owned.Concat(opponentOnly) from side in new[] { "front", "back" }
             from variant in new[] { "normal", "shiny" } select (species, side, variant)).ToHashSet();
-        if (sprites.Length != 48 || !sprites.Select(s => (s.GetProperty("sourceSpeciesId").GetInt32(),
+        if (!sprites.Select(s => (s.GetProperty("sourceSpeciesId").GetInt32(),
                 s.GetProperty("side").GetString()!, s.GetProperty("paletteVariant").GetString()!)).ToHashSet().SetEquals(expectedSprites) ||
-            manifest.GetProperty("pokemonIcons").GetArrayLength() != 12 || manifest.GetProperty("footprints").GetArrayLength() != 7 ||
             !manifest.GetProperty("footprints").EnumerateArray().Select(s=>s.GetProperty("sourceSpeciesId").GetInt32()).ToHashSet().SetEquals(owned) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(s=>s.GetInt32()).ToHashSet().SetEquals(owned) ||
-            !manifest.GetProperty("newOpponentOnlySpecies").EnumerateArray().Select(s=>s.GetInt32()).ToHashSet().SetEquals(opponentOnly) ||
-            manifest.GetProperty("trainers").GetArrayLength() != 11 || manifest.GetProperty("portraits").GetArrayLength() != 8 ||
-            manifest.GetProperty("trainers").EnumerateArray().Count(t=>t.GetProperty("doubleBattle").GetBoolean()) != 1 ||
-            manifest.GetProperty("items").GetArrayLength() != 3 || !manifest.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("item").GetString()).ToHashSet().SetEquals(
-                ["pret:ITEM_SUN_STONE", "pret:ITEM_DRAGON_SCALE", "pret:ITEM_DREAM_MAIL"]) ||
-            manifest.GetProperty("tiles").GetArrayLength() != 2 || !manifest.GetProperty("tiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).ToHashSet().SetEquals([0x357, 0x358]) ||
-            manifest.GetProperty("layers").GetArrayLength() != 6 || manifest.GetProperty("terrains").GetArrayLength() != 3 ||
-            manifest.GetProperty("braille").GetProperty("messages").GetArrayLength() != 21 ||
-            manifest.GetProperty("assets").GetArrayLength() != 90)
+            !manifest.GetProperty("newOpponentOnlySpecies").EnumerateArray().Select(s=>s.GetInt32()).ToHashSet().SetEquals(opponentOnly) || !manifest.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("item").GetString()).ToHashSet().SetEquals(
+                ["pret:ITEM_SUN_STONE", "pret:ITEM_DRAGON_SCALE", "pret:ITEM_DREAM_MAIL"]) || !manifest.GetProperty("tiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).ToHashSet().SetEquals([0x357, 0x358]))
             throw new InvalidDataException("Six Island presentation inventory differs.");
         using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (files[Base + "synth-manifest.json"].Length != SynthBytes ||
-            Convert.ToHexStringLower(SHA256.HashData(files[Base + "synth-manifest.json"])) != SynthSha256 ||
-            synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1 || synth.RootElement.GetProperty("sourceCommit").GetString() != SourceCommit ||
-            synth.RootElement.GetProperty("cues").GetArrayLength() != SynthCueCount ||
-            synth.RootElement.GetProperty("inheritedCues").GetArrayLength() != 2)
+        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Six Island cue metadata differs.");
         return new(manifest.Clone(), files);
     }

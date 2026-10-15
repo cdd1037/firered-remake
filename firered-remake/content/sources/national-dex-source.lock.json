@@ -3,283 +3,190 @@
   "completeGame": false,
   "files": [
     {
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
       "path": "asm/macros/event.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      ]
     },
     {
-      "byteLength": 13520,
-      "gitBlobSha1": "775efb245218d4ef374794b9704b668c0a69ed15",
       "path": "asm/macros/movement.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "31ca0f9417c2450e7ce07619ba617d1d2e70b98132eda048b8e5e391f910654b"
+      ]
     },
     {
-      "byteLength": 55643,
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
       "path": "data/event_scripts.s",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+      ]
     },
     {
-      "byteLength": 4087,
-      "gitBlobSha1": "802d32dc6de7688fe2de8c833d4e040d9137f6c1",
       "path": "data/maps/PalletTown/map.json",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "2816338934241bac34f52dae8b101ac3add59e0ebdde3e3fb6575f3b525b01c3"
+      ]
     },
     {
-      "byteLength": 11418,
-      "gitBlobSha1": "1384b7d6c6bb5d2b93538ebaf5e92defde2d41e5",
       "path": "data/maps/PalletTown/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ca9ae01d210ebfeda42895a152145940b7c444a03b6416b26353ceb0adac9190"
+      ]
     },
     {
-      "byteLength": 2109,
-      "gitBlobSha1": "726aea8c67812ef2bc72e51b2d8ee38e21fd4863",
       "path": "data/maps/PalletTown/text.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "6fe28872b8f6ad72ad26dc64a6f6922258cf187f5efb40dfeddc9e2d1f2469b2"
+      ]
     },
     {
-      "byteLength": 7962,
-      "gitBlobSha1": "be72653587b49da2eb65f72a3519b57ed511d05c",
       "path": "data/maps/PalletTown_ProfessorOaksLab/map.json",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "37906ed851a344cc63b41b303b41b6da091328b97b05b6e38d2570486d104704"
+      ]
     },
     {
-      "byteLength": 47604,
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
       "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d"
+      ]
     },
     {
-      "byteLength": 13281,
-      "gitBlobSha1": "849a643c3a8c7d38efc6853f850698d9cf50a4ee",
       "path": "data/maps/PalletTown_ProfessorOaksLab/text.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "fb03a0a75876da386c54137e2eeed0dfb0da0d6fdaf3bc8c66cd83d36c2d724f"
+      ]
     },
     {
-      "byteLength": 1182,
-      "gitBlobSha1": "7fede6987415696ca223e2c9efe3a5d7dd57e182",
       "path": "data/scripts/hall_of_fame.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c47616f23fe35a6c11228143a4277c86b4e4b9a803378389f8b9c30bce10e6c4"
+      ]
     },
     {
-      "byteLength": 1147,
-      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5",
       "path": "data/scripts/movement.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64"
+      ]
     },
     {
-      "byteLength": 5866,
-      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9",
       "path": "data/scripts/obtain_item.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d"
+      ]
     },
     {
-      "byteLength": 2621,
-      "gitBlobSha1": "6a4ed07511f68b0af8e9e60ce4515b85dac5bc73",
       "path": "data/scripts/pokedex_rating.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1296caff62f2ee448b5b5f5b2e08ab9e710307c463673a997282326666ec92e5"
+      ]
     },
     {
-      "byteLength": 15782,
-      "gitBlobSha1": "d880bf6b9dc9fd765f0b85e6d698411e3da81d5d",
       "path": "data/specials.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "2dcf5aae5ded1a99026a9b944e31679c2eda389fbca36089c0f8c5d2f4015788"
+      ]
     },
     {
-      "byteLength": 3759,
-      "gitBlobSha1": "3aa1080aa2174a8f6479e235bcdf73bddab78521",
       "path": "data/text/pokedex_rating.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "02375e8e33a2940c2d5ee64c1196497d29e4475f5bc2ef40a338d59a161d1cc0"
+      ]
     },
     {
-      "byteLength": 19206,
-      "gitBlobSha1": "936ef4dfdd84bc2ad533dc466072cd4a9632da85",
       "path": "include/constants/event_object_movement.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "3d12e9868383a42afef346e968031a12504dc8fc4dda12a17623af3f9df6ecba"
+      ]
     },
     {
-      "byteLength": 7965,
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
       "path": "include/constants/event_objects.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947"
+      ]
     },
     {
-      "byteLength": 95397,
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
       "path": "include/constants/flags.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+      ]
     },
     {
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
       "path": "include/constants/global.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      ]
     },
     {
-      "byteLength": 1861,
-      "gitBlobSha1": "628703d3e142c5bfb7daf145886244d8f996ce3b",
       "path": "include/constants/help_system.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "01d10a298364d262a01200af867d917971e52fd8493f81247fc0078b472da364"
+      ]
     },
     {
-      "byteLength": 443,
-      "gitBlobSha1": "1353de360cf1e00b6efbb26ec59c4822c99b59bf",
       "path": "include/constants/map_scripts.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "02f8c3a4dd660d5b11f7d4af1f5a6d4530a994df33ba8304024e2a5ba004afc8"
+      ]
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
       "path": "include/constants/opponents.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      ]
     },
     {
-      "byteLength": 21092,
-      "gitBlobSha1": "7ee1b3760e58411f2c765da05825d544baaac119",
       "path": "include/constants/pokedex.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "aac527819623140d7f44ad99b72654bab59ca5679a80cca33361828cc7e7d0c6"
+      ]
     },
     {
-      "byteLength": 17891,
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
       "path": "include/constants/songs.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+      ]
     },
     {
-      "byteLength": 17306,
-      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
       "path": "include/constants/vars.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+      ]
     },
     {
-      "byteLength": 2518,
-      "gitBlobSha1": "5521e942c00cc2c263b842ae7608dfb7ac881a76",
       "path": "include/gba/defines.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b"
+      ]
     },
     {
-      "byteLength": 3314,
-      "gitBlobSha1": "8e27bbe56806d06a597f27cd7c34ac91eeabd92a",
       "path": "include/pokedex.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b1e28d1c626692f55a03fcd4f1013e75b3e2297ef27adfcf64ed11bf6b26753d"
+      ]
     },
     {
-      "byteLength": 8913,
-      "gitBlobSha1": "da9391cf0ef74c1addf550def8616c81f16e89e3",
       "path": "src/event_data.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "163fcef03561426fc185b499eef1088dc7a4334b612968a82df3a0fa6131d06f"
+      ]
     },
     {
-      "byteLength": 3065,
-      "gitBlobSha1": "9146267187521792ddf5d9ba9508d3e37efca32f",
       "path": "src/pokedex.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b6283039a19fe1a5b781f6dd7ef3f61b1a022c460ce2588b8b6f99932a4682b7"
+      ]
     },
     {
-      "byteLength": 2956,
-      "gitBlobSha1": "93d8b97f2ba225ef9eef46c1e57c18e820149cfa",
       "path": "src/prof_pc.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "56a55f3c6c7827dcf599730da9e8877c3c981c820a4be0716cee901a37c20304"
+      ]
     },
     {
-      "byteLength": 28254,
-      "gitBlobSha1": "8d8ec4e4e6e1c011b06f00819abe40bad10d19d5",
       "path": "tools/mapjson/mapjson.cpp",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c8a4af233a24c70ee49f2739bec7b313da8f50e15d2a25b31db1d40cc179aab9"
+      ]
     }
   ],
   "gameVersion": "FIRERED",
@@ -287,6 +194,5 @@
   "profile": "firered-national-dex-source-v1",
   "repository": "pret/pokefirered",
   "revision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

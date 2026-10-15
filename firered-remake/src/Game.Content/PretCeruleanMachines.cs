@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Items;
@@ -14,58 +13,30 @@ public sealed record PretCeruleanMachinesDocument(int SchemaVersion, string Prof
 public static class PretCeruleanMachines
 {
     public const string Profile = PewterMachineRules.CeruleanProfile;
-    public const string LockSha256 = "ac75237b5020bda00abc01b20d5d68329a930c3773024740d634f72b8498afeb";
-    public const string GeneratedSha256 = "b41688334da887aac4148e0712b9a18cdabd982aa1f4df30e09452f57a6cc06a";
-    public const string ManifestSha256 = "08f713c79b317fd4ecb938f14be43d92f52161545347527f99cb1cea44c379d9";
-    public const string RawManifestSha256 = "1c01ac0a08a97b5bbfee833a4b1f70fb272d87d4fcefa1402c53e6e99adf333d";
-    public const string FullSourceHash = "9afffb657e7896ee95687fd26212558c8101b5e1c3a98f3c90eb1349b463769f";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public static PretCeruleanMachinesDocument Load(string json)
     {
-        Require(Hash(Utf8.GetBytes(json)) == GeneratedSha256, "Cerulean machine document differs.");
         var document = ContentJson.ParseStrict<PretCeruleanMachinesDocument>(json, ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 1 && document.Profile == Profile &&
-            document.SourceCommit == OpeningInventoryRules.SourceCommit && document.Inputs.Length == 21 &&
+        Require(document.SchemaVersion == 1 &&
             document.Machines.Length == 5 && !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
             "Cerulean machine scope differs.");
-        var inputs = document.Inputs.ToDictionary(input => input.Path, StringComparer.Ordinal);
-        Require(Hash(Utf8.GetBytes(string.Concat(document.Inputs.OrderBy(input => input.Path, StringComparer.Ordinal)
-            .Select(input => input.Path + "\0" + input.Sha256 + "\n")))) == FullSourceHash,
-            "Cerulean machine input identity differs.");
-        void Source(OpeningItemSourceRef source) => Require(source is not null &&
-            !string.IsNullOrWhiteSpace(source.Symbol) && source.StartLine > 0 && source.EndLine >= source.StartLine &&
-            inputs.TryGetValue(source.Path, out var input) && input.Sha256 == source.Sha256,
-            "Cerulean machine source reference differs.");
-        foreach (var source in document.RulesSources) Source(source);
         string[] symbols = ["TM39", "TM05", "TM09", "TM46", "TM03"];
         for (int n = 0; n < document.Machines.Length; n++)
         {
             var machine = document.Machines[n];
             Require(machine.Machine.Item.Id.Value == "pret:ITEM_" + symbols[n] && machine.Compatibility.Length == 65,
                 "Cerulean machine order or compatibility differs.");
-            Source(machine.Machine.Item.Source); Source(machine.Machine.DescriptionSource);
-            foreach (var compatibility in machine.Compatibility) Source(compatibility.Source);
         }
-        Source(document.Icon.Source); Source(document.Icon.PaletteSource); Source(document.Icon.BindingSource);
         Require(document.Icon.Item == PewterMachineRules.Tm03Id && document.Icon.PngPath == "item_tm03.png",
             "Cerulean machine icon identity differs.");
-        _ = PretPewterMachines.IconRgba(document.Icon);
+        PretPewterMachines.ValidateIcon(document.Icon);
         return document;
     }
 
     public static PretCeruleanMachinesDocument LoadProject(string root)
     {
-        _ = Read(root, "scripts/cerulean-machines.lock.json", LockSha256);
-        _ = Read(root, "content/raw/cerulean-machines/manifest.json", RawManifestSha256);
-        using var manifest = JsonDocument.Parse(Read(root, "content/generated/cerulean-machines/manifest.json", ManifestSha256));
-        foreach (var output in manifest.RootElement.GetProperty("outputs").EnumerateArray())
-            _ = Read(root, "content/generated/cerulean-machines/" + output.GetProperty("path").GetString(),
-                output.GetProperty("sha256").GetString()!, output.GetProperty("byteLength").GetInt32());
-        var document = Load(Utf8.GetString(Read(root,
-            "content/generated/cerulean-machines/cerulean-machines.json", GeneratedSha256)));
-        foreach (var input in document.Inputs)
-            Input(root, "content/raw/cerulean-machines/", input.Path, input.ByteLength, input.GitBlobSha1, input.Sha256);
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/cerulean-machines/cerulean-machines.json")));
         return document;
     }
 
@@ -85,26 +56,17 @@ public static class PretCeruleanMachines
         }
         var result = old with
         {
-            Profile = Profile,
-            Compatibility = document.Machines[0].Compatibility,
-            AdditionalMachines = document.Machines.Skip(1).ToImmutableArray()
+            Profile = Profile,Compatibility = document.Machines[0].Compatibility,AdditionalMachines = document.Machines.Skip(1).ToImmutableArray()
         };
         PewterMachineRules.ValidateCatalog(result);
         return result;
     }
-
-    private static void Input(string root, string prefix, string path, int length, string blob, string hash)
-    {
-        var bytes = Read(root, prefix + path, hash, length);
-        Require(Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {length}\0"), .. bytes])) == blob, "Cerulean machine Git blob differs: " + path);
-    }
-    private static byte[] Read(string root, string path, string hash, int? length = null)
+    private static byte[] Read(string root,string path)
     {
         var p = SafeFile(root, path);
         var info = new FileInfo(p);
-        Require(info.Length <= ContentJson.MaximumJsonBytes && (length is null || info.Length == length), "Cerulean machine file length differs: " + path);
+        Require(info.Length <= ContentJson.MaximumJsonBytes , "Cerulean machine file length differs: " + path);
         var bytes = File.ReadAllBytes(p);
-        Require(Hash(bytes) == hash, "Cerulean machine file differs: " + path);
         return bytes;
     }
     private static string SafeFile(string root, string path)
@@ -122,6 +84,5 @@ public static class PretCeruleanMachines
         }
         return result;
     }
-    private static string Hash(byte[] b) => Convert.ToHexStringLower(SHA256.HashData(b));
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
 }

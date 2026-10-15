@@ -14,7 +14,7 @@
   "inputs": [
     {
       "path": "data/maps/CeladonCity/scripts.inc",
-      "localPath": "content/raw/celadon-approach-region/data/maps/CeladonCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/CeladonCity/scripts.inc",
       "shared": true,
       "byteLength": 2404,
       "sha256": "73c4199f8fbe1dfc540694e4c01e351389c0c35a935db5119205956385e9976a",
@@ -22,7 +22,7 @@
     },
     {
       "path": "data/maps/CeruleanCity/scripts.inc",
-      "localPath": "content/raw/bill-items/data/maps/CeruleanCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/CeruleanCity/scripts.inc",
       "shared": true,
       "byteLength": 9369,
       "sha256": "d4e99c027ed400707ad2ce259ac0f8efc77ecbb8f5adff118be84b05ed29e49b",
@@ -30,7 +30,7 @@
     },
     {
       "path": "data/maps/CinnabarIsland/scripts.inc",
-      "localPath": "content/raw/cinnabar-source-preparation/data/maps/CinnabarIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/CinnabarIsland/scripts.inc",
       "shared": true,
       "byteLength": 9965,
       "sha256": "58ee5ed2f19deb369e24ff9b1cd4009b872ce1d49ed2e8fe453bf70a668e6a8b",
@@ -38,7 +38,7 @@
     },
     {
       "path": "data/maps/FiveIsland/scripts.inc",
-      "localPath": "content/raw/five-island-region/data/maps/FiveIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/FiveIsland/scripts.inc",
       "shared": true,
       "byteLength": 463,
       "sha256": "83e9d96d3e4e2038b117d389a5cc66d1d0ab7f048d38e677a77f3a65ff461ec0",
@@ -46,7 +46,7 @@
     },
     {
       "path": "data/maps/FourIsland/scripts.inc",
-      "localPath": "content/raw/four-island-region/data/maps/FourIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/FourIsland/scripts.inc",
       "shared": true,
       "byteLength": 4489,
       "sha256": "e9d41ce813c9c853df0ccd4d54dc03f3b0bd2a18f75645f32fa19785372d7e76",
@@ -54,7 +54,7 @@
     },
     {
       "path": "data/maps/FuchsiaCity/scripts.inc",
-      "localPath": "content/raw/fuchsia-route-region/data/maps/FuchsiaCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/FuchsiaCity/scripts.inc",
       "shared": true,
       "byteLength": 3178,
       "sha256": "e3703838a2fdcccf4b0c4800f5531169915e2733c9de132bb48ad0cf7895a226",
@@ -62,7 +62,7 @@
     },
     {
       "path": "data/maps/IndigoPlateau_Exterior/scripts.inc",
-      "localPath": "content/raw/pokemon-league-region/data/maps/IndigoPlateau_Exterior/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/IndigoPlateau_Exterior/scripts.inc",
       "shared": true,
       "byteLength": 4287,
       "sha256": "f7bd3facc7d833e7483571ba2328694410d65aab9671e3d9dbc3cf5ed3850a05",
@@ -70,7 +70,7 @@
     },
     {
       "path": "data/maps/LavenderTown/scripts.inc",
-      "localPath": "content/raw/rocktunnel-region/data/maps/LavenderTown/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/LavenderTown/scripts.inc",
       "shared": true,
       "byteLength": 1232,
       "sha256": "c2c373f451734358501c3b44a8a9ff3ca8436104be18f69a0e9d186a528d2276",
@@ -78,7 +78,7 @@
     },
     {
       "path": "data/maps/OneIsland/scripts.inc",
-      "localPath": "content/raw/first-sevii-region/data/maps/OneIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/OneIsland/scripts.inc",
       "shared": true,
       "byteLength": 2421,
       "sha256": "c9ebd8700a79b59c5a0a817a13a5df1c199748e853286c5ba1a8a77a002575f6",
@@ -86,7 +86,7 @@
     },
     {
       "path": "data/maps/PalletTown/scripts.inc",
-      "localPath": "content/raw/five-island-region/data/maps/PalletTown/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PalletTown/scripts.inc",
       "shared": true,
       "byteLength": 11418,
       "sha256": "ca9ae01d210ebfeda42895a152145940b7c444a03b6416b26353ceb0adac9190",
@@ -94,7 +94,7 @@
     },
     {
       "path": "data/maps/PewterCity/scripts.inc",
-      "localPath": "content/raw/pewter-region/data/maps/PewterCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PewterCity/scripts.inc",
       "shared": true,
       "byteLength": 17694,
       "sha256": "8cdad0daad04002a4dff3e9878884da4e478626ac48181ea7aa48616fe295e6d",
@@ -102,7 +102,7 @@
     },
     {
       "path": "data/maps/Route10_PokemonCenter_1F/scripts.inc",
-      "localPath": "content/raw/rocktunnel-items/data/maps/Route10_PokemonCenter_1F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/Route10_PokemonCenter_1F/scripts.inc",
       "shared": true,
       "byteLength": 2098,
       "sha256": "53a34278cab6835a7056f5f2420a5e53f78095fe99760663bd1db4edcfa9e48b",
@@ -110,7 +110,7 @@
     },
     {
       "path": "data/maps/Route16_House/scripts.inc",
-      "localPath": "content/raw/route16-fly-house/data/maps/Route16_House/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/Route16_House/scripts.inc",
       "shared": false,
       "byteLength": 814,
       "sha256": "406a9f3221438603f5cbcca8852385301e2ccf0dec2ebfec5180211d20591b28",
@@ -118,7 +118,7 @@
     },
     {
       "path": "data/maps/Route4_PokemonCenter_1F/scripts.inc",
-      "localPath": "content/raw/route3-pokemon/data/maps/Route4_PokemonCenter_1F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/Route4_PokemonCenter_1F/scripts.inc",
       "shared": true,
       "byteLength": 4575,
       "sha256": "477f1daae58c6c03ecc9e0e84af190511a96748267dc1f9c0e7c9a60ea476c1c",
@@ -126,7 +126,7 @@
     },
     {
       "path": "data/maps/SaffronCity/scripts.inc",
-      "localPath": "content/raw/fighting-dojo-region/data/maps/SaffronCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/SaffronCity/scripts.inc",
       "shared": true,
       "byteLength": 3106,
       "sha256": "7d0cb333fbac18872344c2e06f15ee6e1ff9a0093cb2211a2fab3178fcff8c29",
@@ -134,7 +134,7 @@
     },
     {
       "path": "data/maps/SevenIsland/scripts.inc",
-      "localPath": "content/raw/seven-island-region/data/maps/SevenIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/SevenIsland/scripts.inc",
       "shared": true,
       "byteLength": 472,
       "sha256": "93577c3de7ef6fa248dc3be8b3c048679cee33cbae98094c70b685a63f9c4305",
@@ -142,7 +142,7 @@
     },
     {
       "path": "data/maps/SixIsland/scripts.inc",
-      "localPath": "content/raw/six-island-region/data/maps/SixIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/SixIsland/scripts.inc",
       "shared": true,
       "byteLength": 446,
       "sha256": "5dfd28f0fbad872ca4da6cbc4f7bdc348eec3f07d483a4e0d342a9209648c5f7",
@@ -150,7 +150,7 @@
     },
     {
       "path": "data/maps/ThreeIsland/scripts.inc",
-      "localPath": "content/raw/first-sevii-region/data/maps/ThreeIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/ThreeIsland/scripts.inc",
       "shared": true,
       "byteLength": 12367,
       "sha256": "c3638f71aa947c752cc31d07dc789c4d487bca290c144de519cd988ed6355071",
@@ -158,7 +158,7 @@
     },
     {
       "path": "data/maps/TwoIsland/scripts.inc",
-      "localPath": "content/raw/first-sevii-region/data/maps/TwoIsland/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/TwoIsland/scripts.inc",
       "shared": true,
       "byteLength": 6119,
       "sha256": "e2fddf4e3e169d9ca8107fe93daeb3b48a82d6e40bdef10d54de50e1dc2558c4",
@@ -166,7 +166,7 @@
     },
     {
       "path": "data/maps/VermilionCity/scripts.inc",
-      "localPath": "content/raw/event-island-region/data/maps/VermilionCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/VermilionCity/scripts.inc",
       "shared": true,
       "byteLength": 8180,
       "sha256": "f6b97403b5ba7b183e00c60052155b4515fac4037945c08a734e65c25fde3465",
@@ -174,7 +174,7 @@
     },
     {
       "path": "data/maps/ViridianCity/scripts.inc",
-      "localPath": "content/raw/move-tutors/data/maps/ViridianCity/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/ViridianCity/scripts.inc",
       "shared": true,
       "byteLength": 6935,
       "sha256": "2f23053443e399983324ed7461923bba1267ca3d3c8961ce33a6d10be140f72d",
@@ -182,7 +182,7 @@
     },
     {
       "path": "data/maps/map_groups.json",
-      "localPath": "content/raw/bill-region/data/maps/map_groups.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/map_groups.json",
       "shared": true,
       "byteLength": 16262,
       "sha256": "ce296c9b54c8bb85cc35870b30a533ab017e72107fd40cf471224a42127af79a",
@@ -190,7 +190,7 @@
     },
     {
       "path": "include/constants/flags.h",
-      "localPath": "content/raw/bill-region/include/constants/flags.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/flags.h",
       "shared": true,
       "byteLength": 95397,
       "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493",
@@ -198,7 +198,7 @@
     },
     {
       "path": "include/constants/items.h",
-      "localPath": "content/raw/bill-items/include/constants/items.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/items.h",
       "shared": true,
       "byteLength": 12436,
       "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
@@ -206,7 +206,7 @@
     },
     {
       "path": "include/constants/map_types.h",
-      "localPath": "content/raw/pokemon-league-region/include/constants/map_types.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/map_types.h",
       "shared": true,
       "byteLength": 1034,
       "sha256": "21b9dc465effd752f859c25d22fee121da8f56e245b1f65ad022af0f9a8008fa",
@@ -214,7 +214,7 @@
     },
     {
       "path": "include/constants/moves.h",
-      "localPath": "content/raw/bill-machines/include/constants/moves.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/moves.h",
       "shared": true,
       "byteLength": 10249,
       "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
@@ -222,7 +222,7 @@
     },
     {
       "path": "include/constants/opponents.h",
-      "localPath": "content/raw/bill-pokemon/include/constants/opponents.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/opponents.h",
       "shared": true,
       "byteLength": 39946,
       "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee",
@@ -230,7 +230,7 @@
     },
     {
       "path": "include/constants/party_menu.h",
-      "localPath": "content/raw/cape-brink-tutor/include/constants/party_menu.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/party_menu.h",
       "shared": true,
       "byteLength": 5326,
       "sha256": "6986cb5b65efaab2a0f16e5cd88952153a5aaf295ed8f9ace903693dbe170cf7",
@@ -238,7 +238,7 @@
     },
     {
       "path": "src/data/battle_moves.h",
-      "localPath": "content/raw/bill-machines/src/data/battle_moves.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/battle_moves.h",
       "shared": true,
       "byteLength": 121457,
       "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
@@ -246,7 +246,7 @@
     },
     {
       "path": "src/data/heal_locations.json",
-      "localPath": "content/raw/bill-region/src/data/heal_locations.json",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/heal_locations.json",
       "shared": true,
       "byteLength": 4453,
       "sha256": "b1529aa7f732c3df085535e65b89ee12c183f9f0e4c884b39ec8170867d78c74",
@@ -254,7 +254,7 @@
     },
     {
       "path": "src/data/item_icon_table.h",
-      "localPath": "content/raw/bill-items/src/data/item_icon_table.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/item_icon_table.h",
       "shared": true,
       "byteLength": 30370,
       "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c",
@@ -262,7 +262,7 @@
     },
     {
       "path": "src/data/items.json",
-      "localPath": "content/raw/bill-items/src/data/items.json",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/items.json",
       "shared": true,
       "byteLength": 194280,
       "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
@@ -270,7 +270,7 @@
     },
     {
       "path": "src/data/party_menu.h",
-      "localPath": "content/raw/bill-machines/src/data/party_menu.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/party_menu.h",
       "shared": true,
       "byteLength": 36157,
       "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7",
@@ -278,7 +278,7 @@
     },
     {
       "path": "src/data/pokemon/tmhm_learnsets.h",
-      "localPath": "content/raw/bill-machines/src/data/pokemon/tmhm_learnsets.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h",
       "shared": true,
       "byteLength": 559340,
       "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f",
@@ -286,7 +286,7 @@
     },
     {
       "path": "src/data/region_map/region_map_sections.json",
-      "localPath": "content/raw/first-sevii-town-map/src/data/region_map/region_map_sections.json",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/region_map/region_map_sections.json",
       "shared": true,
       "byteLength": 19656,
       "sha256": "82e456cbe86a57ebc4bd0d88d6e000e83e28340895ac038079c38d415bc6de5f",
@@ -294,7 +294,7 @@
     },
     {
       "path": "src/field_effect.c",
-      "localPath": "content/raw/celadon-approach-region/src/field_effect.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/field_effect.c",
       "shared": true,
       "byteLength": 125868,
       "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
@@ -302,7 +302,7 @@
     },
     {
       "path": "src/move_descriptions.c",
-      "localPath": "content/raw/bill-machines/src/move_descriptions.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/move_descriptions.c",
       "shared": true,
       "byteLength": 62085,
       "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b",
@@ -310,7 +310,7 @@
     },
     {
       "path": "src/overworld.c",
-      "localPath": "content/raw/bill-region/src/overworld.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/overworld.c",
       "shared": true,
       "byteLength": 103643,
       "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
@@ -318,7 +318,7 @@
     },
     {
       "path": "src/party_menu.c",
-      "localPath": "content/raw/bill-machines/src/party_menu.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/party_menu.c",
       "shared": true,
       "byteLength": 211085,
       "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
@@ -326,7 +326,7 @@
     },
     {
       "path": "src/region_map.c",
-      "localPath": "content/raw/first-sevii-town-map/src/region_map.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/region_map.c",
       "shared": true,
       "byteLength": 138368,
       "sha256": "b761f02803a1c5aada4465b9a93bf2b02c5ef1118432e677a30a5a4a4b78e0cb",

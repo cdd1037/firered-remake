@@ -2,7 +2,6 @@
 """Extract bounded Route 1 Pokemon data from verified text; never execute upstream code."""
 import argparse
 from decimal import Decimal
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -20,9 +19,9 @@ fetcher = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fetcher)
 
 
-def import_catalog(raw, out, tree_path=None, lock_path=None):
+def import_catalog(raw, out, lock_path=None):
     # This verifies the reviewed lock, fixed tree and every source byte before extraction.
-    lock, verified = fetcher.verify_sources(raw, tree_path=tree_path, lock_path=lock_path)
+    lock, verified = fetcher.verify_sources(raw, lock_path=lock_path)
     if lock['commit'] != COMMIT or lock['profile'] != PROFILE or lock['speciesSymbols'] != ['SPECIES_' + n for n, _ in SPECIES]:
         raise ValueError('Unknown source identity or species scope')
     sources = {p: b.decode('utf-8') for p, b in verified.items()}
@@ -36,7 +35,7 @@ def import_catalog(raw, out, tree_path=None, lock_path=None):
 
     def ref(path, symbol, start, end):
         return dict(path=path, symbol=symbol, startLine=sources[path].count('\n', 0, start) + 1,
-                    endLine=sources[path].count('\n', 0, end) + 1, sha256=meta[path]['sha256'])
+                    endLine=sources[path].count('\n', 0, end) + 1)
 
     def number(value):
         if not re.fullmatch(r'\d+', value):
@@ -157,9 +156,8 @@ def import_catalog(raw, out, tree_path=None, lock_path=None):
                     limitations=limitations, species=species, moves=moves, speciesNames=species_names, moveNames=move_names)
     data = (json.dumps(document, indent=2, ensure_ascii=False) + '\n').encode('utf-8')
     manifest = dict(schemaVersion=1, repository=lock['repository'], commit=COMMIT, profile=PROFILE,
-                    lockSha256=fetcher.LOCK_SHA256, inputs=lock['files'],
-                    outputs=[dict(path='content/generated/route1-pokemon/catalog.json', byteLength=len(data),
-                                  sha256=hashlib.sha256(data).hexdigest())],
+                     inputs=lock['files'],
+                    outputs=[dict(path='content/generated/route1-pokemon/catalog.json')],
                     counts=dict(species=len(species), moves=len(moves),
                                 levelUpEntries=sum(len(s['levelUpMoves']) for s in species),
                                 evolutions=sum(len(s['evolutions']) for s in species)),
@@ -177,10 +175,9 @@ def import_catalog(raw, out, tree_path=None, lock_path=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/route1-pokemon')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/route1-pokemon')
-    parser.add_argument('--tree', type=pathlib.Path)
     parser.add_argument('--lock', type=pathlib.Path)
     args = parser.parse_args()
-    result = import_catalog(args.raw, args.output, args.tree, args.lock)
+    result = import_catalog(args.raw, args.output, args.lock)
     print(json.dumps(dict(outputs=result['outputs'], counts=result['counts']), sort_keys=True))

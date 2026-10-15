@@ -48,7 +48,7 @@ public static class SourceMoveTargeting
         SourceTargetResult Fail(string code) => new(null, frame.Rng, [], false, code);
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(invalid);
         if (actor.Value >= frame.BattlerCount || selected.Value >= frame.BattlerCount || frame.Get(actor).Body is null ||
-            !MetronomeSourceMoveDefinition.Matches(move)) return Fail("source_target_input");
+            !SourceMoveDefinitionRules.IsValid(move)) return Fail("source_target_input");
         string targetMode = targetOverride ?? move.Target;
         if (targetMode is not ("MOVE_TARGET_SELECTED" or "MOVE_TARGET_RANDOM" or "MOVE_TARGET_BOTH" or
             "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or

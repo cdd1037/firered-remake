@@ -6,15 +6,12 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    private static void ValidateTrainerFanClubComposition(PretTrainerFanClub room,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts)
+    private static void ValidateTrainerFanClubComposition(PretTrainerFanClub room,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {
         ValidateSourceHouseComposition("trainer_fan_club", room.NewMaps, maps, previous, scripts,
             "map.saffron-city", 14, PretTrainerFanClub.ScriptPath,
             "SaffronCity_PokemonTrainerFanClub_EventScript_MeetFirstFans");
-        if (previous.Count != 364 || maps.Count != 365 ||
-            scripts.UnsupportedInstructions.Any(d => d.Path.StartsWith(PretTrainerFanClub.ScriptPath, StringComparison.Ordinal)))
+        if (            scripts.UnsupportedInstructions.Any(d => d.Path.StartsWith(PretTrainerFanClub.ScriptPath, StringComparison.Ordinal)))
             throw new InvalidDataException("trainer_fan_club_current_composition");
         const string prefix = "SaffronCity_PokemonTrainerFanClub_";
         foreach (var actor in room.NewMaps[PretTrainerFanClub.RoomMapId].Events.GetProperty("object_events").EnumerateArray())

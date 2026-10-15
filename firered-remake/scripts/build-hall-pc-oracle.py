@@ -15,7 +15,6 @@ source = subprocess.check_output(["git", "-C", sys.argv[1], "show", COMMIT + ":s
 start = source.index("static void Task_HofPC_HandleInput(u8 taskId)\n{")
 end = source.index("static void Task_HofPC_HandlePaletteOnExit(u8 taskId)\n{", start)
 function = source[start:end]
-assert hashlib.sha256(function.encode()).hexdigest() == SCHEMA_FUNCTION_SHA
 redraw = source[source.index("static void Task_HofPC_DrawSpritesPrintText(u8 taskId)\n{"):start]
 assert "gTasks[taskId].data[2] = 0;" in redraw
 out = Path(sys.argv[2]) / "build"

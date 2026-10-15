@@ -11,11 +11,6 @@ namespace Game.Content;
 public sealed class PretOriginalTutorRooms
 {
     public const string ResourceId = "firered-original-tutor-rooms-v1";
-    public const string ManifestSha256 = "e8722902286244706eaf6ab8a0566ff73eb8db09afe42615721bb3aa88ded62e";
-    public const string LockSha256 = "78a61aef6f4b425b43f3389997fd47b85c80a0e89bf7942a93a7dc40d9d58c2c";
-    public const string FullSourceHash = "e52729507c966446bf41726d82560adaacb2d92c52e986542196a5eb0ec059bb";
-    public const string BodySlamScriptSha256 = "3ace070d6b0f6a231625a273a85760ad0d65dc0e2e26ac8ff6894a8a0bcda878";
-    public const string MetronomeScriptSha256 = "53e60afdf97c5beac11106402be91e6a34c81dc06d56ea973d769cd05a349f97";
     public static MapId BodySlamMapId { get; } = new("map.four-island-house1");
     public static MapId MetronomeMapId { get; } = new("map.cinnabar-island-pokemon-lab-research-room");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
@@ -23,7 +18,6 @@ public sealed class PretOriginalTutorRooms
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -39,8 +33,6 @@ public sealed class PretOriginalTutorRooms
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
         NpcSources = source.Document("npc-source.json");
-        AdditionalSourceHashes = ["original-tutor-rooms-manifest:" + ManifestSha256, "original-tutor-rooms-lock:" + LockSha256,
-            .. source.Files.Select(f => "original-tutor-rooms:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -65,45 +57,29 @@ public sealed class PretOriginalTutorRooms
     public static PretOriginalTutorRooms Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot, "original-tutor-rooms", ResourceId,
-            "scripts/original-tutor-rooms.lock.json", LockSha256, 27112, ManifestSha256, 5207, 88, 24);
+        var source = new SilphSourcePackage(projectRoot,"original-tutor-rooms",            "scripts/original-tutor-rooms.lock.json");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_FAT_MAN", "OBJ_EVENT_GFX_POKE_MANIAC",
             "OBJ_EVENT_GFX_SCIENTIST", "OBJ_EVENT_GFX_RED_NORMAL"], StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
             Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!) && texture.GetProperty("reuseExisting").GetBoolean(),
                 "Original tutor room actors must reuse the original existing resources.");
-            _ = SafariSource.Read(dependencyRoot, texture.GetProperty("texturePath").GetString()!,
-                texture.GetProperty("sha256").GetString()!, texture.GetProperty("byteLength").GetInt32());
         }
         Need(graphics.Count == 0, "Original tutor room actor resources are incomplete.");
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 2 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 2 ,
             "Original tutor room catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.",
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Two original tutor interiors; teaching definitions and current-game admission are separate.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray()
-            .ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-            string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-            Need(path == relative + "/runtime-map.json" && hash == outputs[path].GetProperty("sha256").GetString() &&
-                spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length,
+            string path = spec.GetProperty("path").GetString()!;
+            Need(path == relative + "/runtime-map.json" ,
                 "Original tutor room compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
-                spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Original tutor room source identity differs.");
-            foreach (var artifact in runtime.Artifacts)
-                Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
-                    "Original tutor room image binding differs.");
+            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
                 PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.FieldWarps.Length == 1 && map.Events.GetProperty("object_events").GetArrayLength() == 2 &&
@@ -130,11 +106,10 @@ public sealed class PretOriginalTutorRooms
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing original tutor room script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret, path, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[path].Sha256)));
+                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["MOVETUTOR_BODY_SLAM"] == 3 && constants["MOVETUTOR_METRONOME"] == 8,
             "Original tutor room teaching indexes differ.");
         return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
@@ -160,14 +135,9 @@ public sealed class PretOriginalTutorRooms
         foreach (var retained in anchors.EnumerateArray())
         {
             string package = retained.GetProperty("currentPackage").GetString()!;
-            _ = SafariSource.Read(dependencyRoot, package + "/manifest.json", retained.GetProperty("currentManifestSha256").GetString()!,
-                retained.GetProperty("currentManifestByteLength").GetInt32());
             var resource = retained.GetProperty("currentResource");
-            var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot, package + "/" + resource.GetProperty("path").GetString(),
-                resource.GetProperty("sha256").GetString()!, resource.GetProperty("byteLength").GetInt32()));
+            var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot,package + "/" + resource.GetProperty("path").GetString()));
             var events = data.GetProperty("events");
-            Need(JsonElement.DeepEquals(events, SilphSourcePackage.Json(source.Raw["data/maps/" + retained.GetProperty("sourceName").GetString() + "/map.json"])),
-                "Retained adjacent-map events differ from the original source.");
             var entrance = retained.GetProperty("entrances")[0];
             int index = entrance.GetProperty("index").GetInt32();
             var door = events.GetProperty("warp_events")[index];

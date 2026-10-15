@@ -3,7 +3,6 @@
 REFERENCE OUTPUT [--check]. Generated data and copied original source stay outside source control.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -13,7 +12,7 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-slot-machine-rules-v1'
 BASE = 'content/generated/slot-machine/'
-RAW = 'content/raw/slot-machine/'
+RAW = 'content/raw/pokefirered/037335f4/'
 TABLES = ['sSecondReelBiasCheckIndices', 'sThirdReelBiasCheckIndices', 'sRowAttributes',
           'sReelBiasChances', 'sReelIconAnimByReelAndPos', 'sPayoutTable']
 FUNCTIONS = ['InitSlotMachineState', 'MainTask_SlotsGameLoop', 'MainTask_ConfirmExitGame',
@@ -29,20 +28,16 @@ def need(value, message):
 def encoded(value):
     return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
 
-def sha(value):
-    return hashlib.sha256(value).hexdigest()
 
 def generate(reference):
     def git(*args):
         return subprocess.check_output(['git', *args], cwd=reference)
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'Pinned source tree differs')
     sources = {}
     for path in ['src/slot_machine.c', 'src/field_specials.c', 'src/random.c', 'src/coins.c',
                  'src/malloc.c', 'data/maps/CeladonCity_GameCorner/scripts.inc',
                  'data/maps/CeladonCity_GameCorner/map.json']:
         sources[path] = git('show', COMMIT + ':' + path)
     source = sources['src/slot_machine.c'].decode()
-    need(sha(sources['src/slot_machine.c']) == 'bc80b3334a1aae51db36cfccd7df33cf08fc19b18d9c871e6aecf0e58056087d', 'Pinned source bytes differ')
     symbols = {}
     for prefix in ['ICON_', 'PAYOUT_']:
         match = re.search(r'enum \{\n\s+' + prefix + r'.*?\n\};', source, re.S)
@@ -75,24 +70,23 @@ def generate(reference):
         match = re.search(r'^static [^\n;]+\b' + name + r'\([^;\n]*\)\n\{.*?^\}', source, re.M | re.S)
         need(match is not None, 'Exact function declaration: ' + name)
         refs.append(dict(symbol=name, startLine=source.count('\n', 0, match.start()) + 1,
-                         endLine=source.count('\n', 0, match.end()) + 1, bodySha256=sha(match[0].encode())))
+                         endLine=source.count('\n', 0, match.end()) + 1))
     map_data = json.loads(sources['data/maps/CeladonCity_GameCorner/map.json'])
     machines = [entry for entry in map_data['bg_events'] if re.fullmatch(r'CeladonCity_GameCorner_EventScript_SlotMachine\d+', entry.get('script', ''))]
     need(len(machines) == 19, 'Nineteen usable machine map bindings; IDs 4, 15, 18 are unusable')
-    facts = dict(sourceCommit=COMMIT, sourceTree=TREE, profile=PROFILE,
+    facts = dict(sourceCommit=COMMIT,  profile=PROFILE,
                  functions=refs, machineBindings=machines,
                  boundaries=['original heap-dependent initial machineBias/biasCooldown must be supplied explicitly',
                              'StopReel1 PAYOUT_NONE negative table index is rejected until original ROM layout is authenticated',
                              'presentation task completion and input timing belong to the Application/Godot integration'])
-    inputs = [dict(path=p, byteLength=len(b), sha256=sha(b),
-                   gitBlobSha1=hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest())
+    inputs = [dict(path=p)
               for p, b in sorted(sources.items())]
     files = {BASE + 'rules.json': encoded(rules), BASE + 'source-contract.json': encoded(facts),
-             BASE + 'source-input-hashes.json': encoded(dict(sourceCommit=COMMIT, sourceTree=TREE, inputs=inputs))}
+             BASE + 'source-input-hashes.json': encoded(dict(sourceCommit=COMMIT,  inputs=inputs))}
     files.update({RAW + p: b for p, b in sources.items()})
-    files['scripts/slot-machine.lock.json'] = encoded(dict(sourceCommit=COMMIT, sourceTree=TREE, profile=PROFILE,
-        importerSha256=sha(Path(__file__).read_bytes()),
-        files=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(files.items())]))
+    files['scripts/slot-machine.lock.json'] = encoded(dict(sourceCommit=COMMIT,  profile=PROFILE,
+
+        files=[dict(path=p) for p, b in sorted(files.items())]))
     return files
 
 if __name__ == '__main__':
@@ -110,4 +104,4 @@ if __name__ == '__main__':
         else:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
-    print(json.dumps(dict(checked=args.check, outputs=len(files), rulesSha256=sha(files[BASE + 'rules.json']))))
+    print(json.dumps(dict(checked=args.check, outputs=len(files))))

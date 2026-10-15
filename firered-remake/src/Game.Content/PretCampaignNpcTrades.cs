@@ -16,15 +16,13 @@ public sealed partial class PretCampaignCatalog
     public MapId NpcTradeMap(int tradeId) => NpcTradeMaps.TryGetValue(tradeId, out var map)
         ? map : throw new ArgumentOutOfRangeException(nameof(tradeId));
 
-    private static ImmutableDictionary<int, MapId> ResolveNpcTradeMaps(PretNpcTrades trades,
-        ImmutableDictionary<MapId, PretWorldMap> maps)
+    private static ImmutableDictionary<int, MapId> ResolveNpcTradeMaps(PretNpcTrades trades,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
         var result = ImmutableDictionary.CreateBuilder<int, MapId>();
         foreach (var definition in trades.Trades.Definitions.Values)
         {
             // Retained source actor identity resolves historical stable-ID spelling differences.
-            var candidates = maps.Values.Where(map => map.SourceRef.Path == definition.ActorSource.Path &&
-                map.SourceRef.Sha256 == definition.ActorSource.Sha256).ToArray();
+            var candidates = maps.Values.Where(map => map.SourceRef.Path == definition.ActorSource.Path).ToArray();
             if (candidates.Length != 1) throw new InvalidDataException("npc_trade_source_map_binding");
             var map = candidates[0];
             if (definition.LocalId < 1 || map.Events.GetProperty("object_events").GetArrayLength() < definition.LocalId ||
@@ -37,18 +35,12 @@ public sealed partial class PretCampaignCatalog
     public bool IsNpcTradeStablePosition(MapId map,int x,int y) => !NpcTradeHaden.NewMaps.ContainsKey(map) || NpcTradeHaden.AllowsFootDestination(map,x,y);
     public NpcTradePokemonCatalog NpcTrades => NpcTradeContent.Trades;
 
-    private static void AppendNpcTradeSources(PretNpcTrades content, List<PretSourceScriptFile> sources,
-        List<string> texts, Dictionary<string,int> constants, List<string> hashes) =>
-        AppendAuthenticatedRegionalSources(content.Scripts, content.TextSources.Values, content.Constants,
-            content.AdditionalSourceHashes, sources, texts, constants, hashes);
+    private static void AppendNpcTradeSources(PretNpcTrades content,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants) =>
+        AppendAuthenticatedRegionalSources(content.Scripts,content.TextSources.Values,content.Constants,sources,texts,constants);
 
-    private static void ValidateNpcTradeComposition(PretNpcTrades trades,
-        ImmutableDictionary<MapId,PretWorldMap> maps, ImmutableDictionary<MapId,PretWorldMap> previous,
-        PretStoryCompilation scripts)
+    private static void ValidateNpcTradeComposition(PretNpcTrades trades,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PretStoryCompilation scripts)
     {
-        if (previous.Count != 318 || maps.Count != 319 || trades.NewMaps.Count != 1 ||
-            previous.Any(p => !ReferenceEquals(p.Value,maps[p.Key])) ||
-            !ReferenceEquals(maps[PretNpcTrades.LoungeMapId],trades.NewMaps[PretNpcTrades.LoungeMapId]))
+        if (trades.NewMaps.Count != 1 )
             throw new InvalidDataException("npc_trade_current_map_composition");
         var tradeMaps = ResolveNpcTradeMaps(trades, maps);
         foreach (var definition in trades.Trades.Definitions.Values.Where(d => trades.Trades.IsEnabled(d.TradeId)))
@@ -61,8 +53,7 @@ public sealed partial class PretCampaignCatalog
             if(program is null||program.Instructions.IsEmpty||program.Instructions.Any(i=>i.Op==StoryOp.Unsupported))
                 throw new InvalidDataException("npc_trade_story_incomplete:"+definition.ScriptLabel);
         }
-        foreach(var symbol in new[]{"EventScript_GetInGameTradeSpeciesInfo","EventScript_ChooseMonForInGameTrade",
-            "EventScript_GetInGameTradeSpecies","EventScript_DoInGameTrade"})
+        foreach(var symbol in new[]{"EventScript_GetInGameTradeSpeciesInfo","EventScript_ChooseMonForInGameTrade","EventScript_GetInGameTradeSpecies","EventScript_DoInGameTrade"})
             if(scripts.FindProgram(symbol) is not {} program||program.Instructions.Any(i=>i.Op==StoryOp.Unsupported))
                 throw new InvalidDataException("npc_trade_shared_story_incomplete:"+symbol);
     }

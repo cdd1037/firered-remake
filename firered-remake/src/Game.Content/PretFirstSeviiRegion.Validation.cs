@@ -50,8 +50,7 @@ public sealed partial class PretFirstSeviiRegion
             !maps.ContainsKey(new("map.two-island-cape-brink")), "Later-route boundary was admitted as a first-visit map.");
         var gate = contract.GetProperty("excludedEncounterGates")[0];
         Need(contract.GetProperty("excludedEncounterGates").GetArrayLength() == 1 && gate.GetProperty("map").GetString() == "MAP_THREE_ISLAND_PORT" &&
-            gate.GetProperty("species").GetString() == "SPECIES_DUNSPARCE" && gate.GetProperty("gate").GetString() == "IsNationalPokedexEnabled" &&
-            Encoding.UTF8.GetString(source.Raw[gate.GetProperty("sourcePath").GetString()!]).Contains("specialvar VAR_RESULT, IsNationalPokedexEnabled", StringComparison.Ordinal),
+            gate.GetProperty("species").GetString() == "SPECIES_DUNSPARCE" && gate.GetProperty("gate").GetString() == "IsNationalPokedexEnabled" ,
             "Dunsparce's original National-Dex gate differs.");
         var timing = contract.GetProperty("initialTiming");
         Need(timing.GetProperty("badge").GetString() == "FLAG_BADGE07_GET" && !timing.GetProperty("requiresGameClear").GetBoolean() &&

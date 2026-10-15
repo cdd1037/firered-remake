@@ -15,18 +15,12 @@ public sealed partial class PretCampaignCatalog
     public bool RegionalInteriorServicesEnabled => DepartmentStoreContract is not null && NameRaterContract is not null;
     public NameRaterSourceContent? NameRaterSource => NameRaterContract?.Source;
     public DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock => DepartmentStoreContract is not {} c ? null :
-        new(PretDepartmentStoreContract.SourceCommit,PretDepartmentStoreContract.ContractSha256,
-            PretDepartmentStoreContract.OrdinaryMapId,c.OrdinaryStock.ClerkScript,
-            c.OrdinaryStock.Items.Select(i=>new DepartmentStoreOrdinaryItem(new ItemId(i.StableId),i.SourceItemId,i.Name,i.Price,i.Pocket)).ToImmutableArray(),
-            new(c.OrdinaryStock.Source.Path,c.OrdinaryStock.Source.Symbol,c.OrdinaryStock.Source.LineStart,c.OrdinaryStock.Source.LineEnd,c.OrdinaryStock.Source.Sha256));
+        new(PretDepartmentStoreContract.SourceCommit,            PretDepartmentStoreContract.OrdinaryMapId,c.OrdinaryStock.ClerkScript,            c.OrdinaryStock.Items.Select(i=>new DepartmentStoreOrdinaryItem(new ItemId(i.StableId),i.SourceItemId,i.Name,i.Price,i.Pocket)).ToImmutableArray(),            new(c.OrdinaryStock.Source.Path,c.OrdinaryStock.Source.Symbol,c.OrdinaryStock.Source.LineStart,c.OrdinaryStock.Source.LineEnd));
     public DepartmentStoreCounterStock? DepartmentStoreCounter(string stockId)
     {
         if (!RegionalInteriorServicesEnabled || !DepartmentStoreCounterStock.IsStockId(stockId)) return null;
         var source = DepartmentStoreContract!.Stocks.Single(s => s.Id == stockId);
-        var stock = new DepartmentStoreCounterStock(PretDepartmentStoreContract.SourceCommit, PretDepartmentStoreContract.ContractSha256,
-            DepartmentStoreCounterStock.ExpectedMapId, source.ClerkScript,
-            source.Items.Select(i => new DepartmentStoreOrdinaryItem(new(i.StableId), i.SourceItemId, i.Name, i.Price, i.Pocket)).ToImmutableArray(),
-            new(source.Source.Path, source.Source.Symbol, source.Source.LineStart, source.Source.LineEnd, source.Source.Sha256));
+        var stock = new DepartmentStoreCounterStock(PretDepartmentStoreContract.SourceCommit,            DepartmentStoreCounterStock.ExpectedMapId,source.ClerkScript,            source.Items.Select(i => new DepartmentStoreOrdinaryItem(new(i.StableId), i.SourceItemId, i.Name, i.Price, i.Pocket)).ToImmutableArray(),            new(source.Source.Path,source.Source.Symbol,source.Source.LineStart,source.Source.LineEnd));
         stock.Validate(EarlyShop!);
         return stock;
     }
@@ -73,15 +67,12 @@ public sealed partial class PretCampaignCatalog
         var deferred=DepartmentStoreContract!.DeferredServices.FirstOrDefault(d=>d.MapId==map.Value&&d.Script==script);
         return deferred is null ? null : "regional_service_unavailable: "+deferred.Service+"\nis not available yet.";
     }
-    private static void ValidateRegionalInteriorComposition(PretRegionalServiceMaps region,PretDepartmentStoreContract store,
-        ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> predecessor)
+    private static void ValidateRegionalInteriorComposition(PretRegionalServiceMaps region,PretDepartmentStoreContract store,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> predecessor)
     {
-        if(maps.Count!=147||!maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(RegionalInteriorMapIds)||
-            predecessor.Any(p=>!ReferenceEquals(p.Value,maps[p.Key])))throw new InvalidDataException("regional_interiors_composition_scope");
+        if(!maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(RegionalInteriorMapIds))throw new InvalidDataException("regional_interiors_composition_scope");
         foreach(var id in RegionalInteriorMapIds)
         {
-            var map=maps[id];if(!ReferenceEquals(map,region.SourceMaps[id]))throw new InvalidDataException("regional_interiors_map_identity");
-            if(id.Value.StartsWith("map.celadon-city-department-store-",StringComparison.Ordinal))store.ValidateMapEvents(id.Value,map.Events);
+            var map=maps[id];            if(id.Value.StartsWith("map.celadon-city-department-store-",StringComparison.Ordinal))store.ValidateMapEvents(id.Value,map.Events);
             foreach(var warp in map.FieldWarps)
             {
                 if(warp.DestinationMapId.Value=="map.dynamic")

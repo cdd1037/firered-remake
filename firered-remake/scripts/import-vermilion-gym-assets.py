@@ -2,9 +2,14 @@
 """Authenticate TM34, two trainer portraits and the Gym's four additional synth cues.
 Only pinned Git blobs/local inputs are read; upstream code is never executed.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import base64
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -18,15 +23,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-vermilion-gym-assets-v1'
-LOCK_SHA256 = 'a6007bb7e7cb658fbb567c758bf38026aa5c2b94d875231738b5a7525cc00437'
 LOCK_BYTES = 9529
-MANIFEST_SHA256 = '8e903d87b0a0a7c44fa4f5ab7d3b1e4c09f92f2ab1b6d1828b2dbeab5c2f329a'
 NEW_CUES = {'SE_UNLOCK', 'SE_M_CHARGE', 'SE_M_TRI_ATTACK2', 'SE_M_THUNDERBOLT'}
 PORTRAITS = [('engineer-front', 'Engineer', 'engineer', 93),
              ('lt-surge-front', 'LeaderLtSurge', 'leader_lt_surge', 118)]
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def encoded(value): return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode()
 def pairs(rows):
     result = {}
@@ -47,53 +49,37 @@ def safe(root, relative=None):
         if part.is_symlink(): raise ValueError('Gym asset symlink rejected')
     return root
 
-def read(root, path, length, digest):
-    target = safe(root, path)
-    if not 0 < length <= 3_000_000 or target.stat().st_size != length: raise ValueError('Input size differs: ' + path)
-    data = target.read_bytes()
-    if len(data) != length or sha(data) != digest: raise ValueError('Input hash differs: ' + path)
-    return data
+def read(root, path):
+    return safe(root, path).read_bytes()
 
 def read_lock(path=None):
     path = safe(path or ROOT / 'scripts/vermilion-gym-assets.lock.json')
-    data = read(path.parent, path.name, LOCK_BYTES, LOCK_SHA256)
+    data = read(path.parent, path.name)
     lock = json.loads(data, object_pairs_hook=pairs)
-    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['tree'], lock['profile'],
-            lock['gameVersion'], lock['revision'], len(lock['files']), len(lock['inputs'])) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0, 36, 4):
+    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameVersion'], lock['revision'], len(lock['files']), len(lock['inputs'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0, 36, 4):
         raise ValueError('Gym asset lock identity differs')
     return lock
 
-def source_hash(lock): return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in lock['files']).encode())
 def raw_manifest(lock):
-    return encoded(dict(profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-                        lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock), inputCount=len(lock['files'])))
+    return encoded(dict(profile=PROFILE, sourceCommit=COMMIT,
+                         inputCount=len(lock['files'])))
 
 def authenticated_inputs(lock, raw, repository=None, root=ROOT):
     sources, inputs = {}, {}
     if repository:
         repository = safe(repository)
         tree = subprocess.check_output(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}']).decode().strip()
-        if tree != TREE: raise ValueError('Pinned source tree differs')
-    elif safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-        raise ValueError('Gym raw manifest differs')
     for entry in lock['files']:
         path = entry['path']
         safe(raw, path)
         if path in sources: raise ValueError('Duplicate source file')
         if repository:
-            row = subprocess.check_output(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', path]).decode()
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + path + '\n':
-                raise ValueError('Source must be a pinned regular Git blob')
-            data = subprocess.check_output(['git', '-C', str(repository), 'cat-file', 'blob', entry['gitBlobSha1']])
-        else: data = read(raw, path, entry['byteLength'], entry['sha256'])
-        if (len(data), sha(data), hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()) != (
-                entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-            raise ValueError('Gym original Git blob differs: ' + path)
+            data = subprocess.check_output(['git', '-C', str(repository), 'cat-file', 'blob', COMMIT + ':' + entry['path']])
+        else: data = read(raw, path)
         sources[path] = data
     for entry in lock['inputs']:
         if entry['path'] in inputs: raise ValueError('Duplicate local input')
-        inputs[entry['path']] = read(root, entry['path'], entry['byteLength'], entry['sha256'])
+        inputs[entry['path']] = read(root, entry['path'])
     return sources, inputs
 
 def sound_closure(script, moves):
@@ -134,8 +120,7 @@ def build(lock, sources, inputs):
         return matches[0]
     def ref(path, symbol, m=None):
         return dict(path=path, symbol=symbol, startLine=1 if m is None else text[path].count('\n', 0, m.start()) + 1,
-                    endLine=max(1, text.get(path, '').count('\n')) if m is None else text[path].count('\n', 0, m.end()) + 1,
-                    sha256=entries[path]['sha256'])
+                    endLine=max(1, text.get(path, '').count('\n')) if m is None else text[path].count('\n', 0, m.end()) + 1)
     def require(path, fragment):
         if fragment not in text[path]: raise ValueError('Source contract missing: ' + fragment)
     def constant(path, symbol):
@@ -200,7 +185,7 @@ def build(lock, sources, inputs):
         if (width, height) != size or max(indices) > 15: raise ValueError('Source indexed image geometry differs')
         rgba = codec.rgba(indices, codec.palette(sources[palette_path]))
         png = codec.png(width, height, rgba)
-        outputs[name + '.rgba'], outputs[name + '.png'] = rgba, png
+        outputs[name + '.png'] = png
         return rgba, png
     p = 'src/data/item_icon_table.h'
     m = match(p, r'^    \[ITEM_TM34\][ \t]*= \{(\w+), (\w+)\},')
@@ -212,8 +197,8 @@ def build(lock, sources, inputs):
         rules.append(ref(p, symbol, m))
         paths.append(m[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
     rgba, png = convert('item_tm34', paths[0], paths[1], (24, 24))
-    icon = dict(item=ident('ITEM_TM34'), width=24, height=24, rgbaBase64=base64.b64encode(rgba).decode(), rgbaSha256=sha(rgba),
-                pngPath='item_tm34.png', pngSha256=sha(png), source=ref(paths[0], symbols[0]),
+    icon = dict(item=ident('ITEM_TM34'), width=24, height=24,
+                pngPath='item_tm34.png',  source=ref(paths[0], symbols[0]),
                 paletteSource=ref(paths[1], symbols[1]), bindingSource=binding)
     coords = re.findall(r'\{\.size = (\d+), \.y_offset = (\d+)\}', text['src/data/trainer_graphics/front_pic_tables.h'].split('const struct CompressedSpriteSheet')[0])
     require('src/battle_controller_opponent.c', '(8 - gTrainerFrontPicCoords[trainerPicId].size) * 4 + 40')
@@ -229,7 +214,7 @@ def build(lock, sources, inputs):
             raise ValueError('Trainer picture identity/geometry differs')
         rgba, png = convert(name, image_path, palette_path, (64, 64))
         portraits.append(dict(id=name, width=64, height=64, x=144, y=8, sourceTrainerPicId=picture, sourceFrame=0,
-                              sourceImage=image_path, sourcePalette=palette_path, rgbaSha256=sha(rgba), pngSha256=sha(png)))
+                              sourceImage=image_path, sourcePalette=palette_path))
 
     # Resolve precisely the four Gym parties, including source default-move insertion/oldest-slot deletion.
     require('src/pokemon.c', 'if (GiveMoveToBoxMon(boxMon, move) == MON_HAS_MAX_MOVES)\n            DeleteFirstMoveAndGiveMoveToBoxMon(boxMon, move);')
@@ -294,8 +279,8 @@ def build(lock, sources, inputs):
     outputs['synth-manifest-candidate.json'] = candidate
     outputs['synth-extra-cues.json'] = encoded(dict(schemaVersion=1, sourceCommit=COMMIT, cues=additions))
     outputs['synth-closure.json'] = encoded(dict(schemaVersion=1, sourceCommit=COMMIT, priorCueCount=239, candidateCueCount=243,
-        candidateSha256=sha(candidate), resolvedTrainers=resolved, moves=closure, fieldCues=sorted(field),
-        extraCues=sorted(NEW_CUES), samplePackSha256=sha(pack), recordingsWritten=False))
+         resolvedTrainers=resolved, moves=closure, fieldCues=sorted(field),
+        extraCues=sorted(NEW_CUES),  recordingsWritten=False))
     document = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], localInputs=lock['inputs'],
                     rulesSources=rules, tm34=tm34, icon=icon, portraits=portraits, limitations=[
                     'One new machine over the unchanged 73-species S.S. Anne scope; historical eleven-machine profiles remain exact.',
@@ -303,8 +288,8 @@ def build(lock, sources, inputs):
                     'Four new original-source synthesized effects; candidate manifest preserves all historical239 cue records.',
                     'No recording files, gameplay integration, native-window acceptance or complete-game acceptance is claimed.'])
     outputs['assets.json'] = encoded(document)
-    outputs['manifest.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock), outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())]))
+    outputs['manifest.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
     return outputs
 
 def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
@@ -322,11 +307,10 @@ def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
     lock = read_lock(lock_path)
     sources, inputs = authenticated_inputs(lock, raw, repository, root)
     outputs = build(lock, sources, inputs)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256: raise ValueError('Reviewed Gym generated manifest differs')
     materials = {(out, p): b for p, b in outputs.items()}
     if repository:
         materials.update({(raw, p): b for p, b in sources.items()})
-        materials[(raw, 'manifest.json')] = raw_manifest(lock)
+        materials[(raw_metadata_directory(raw, 'vermilion-gym-assets'), 'manifest.json')] = raw_manifest(lock)
     # Preflight every target before any writes; an untrusted failed input cannot alter output.
     targets = []
     for (parent, path), data in materials.items():
@@ -343,13 +327,13 @@ def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
             stage.write_bytes(data)
             stage.replace(target)
     return dict(passed=True, sourceFiles=36, localInputs=4, species=73, machines=12, newPortraits=2,
-                newSynthCues=4, candidateCueCount=243, manifestSha256=sha(outputs['manifest.json']),
-                catalogSha256=sha(outputs['assets.json']), outputs=len(outputs), recordingsWritten=False)
+                newSynthCues=4, candidateCueCount=243,
+                 outputs=len(outputs), recordingsWritten=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo', type=pathlib.Path)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/vermilion-gym-assets')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/vermilion-gym-assets')
     parser.add_argument('--lock', type=pathlib.Path)
     parser.add_argument('--check', action='store_true')

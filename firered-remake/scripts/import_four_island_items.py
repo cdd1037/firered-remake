@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Import Four Island items, source shop/pickups and exact 38x125 teaching. No upstream execution."""
-import argparse, hashlib, json, re, subprocess
+import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-def sha(b):return hashlib.sha256(b).hexdigest()
-def digest(v):return sha(json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())
 def need(v,m):
  if not v:raise ValueError(m)
 def generate(reference,root):
@@ -12,12 +10,12 @@ def generate(reference,root):
  def source(path):
   if path not in texts:
    b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
-   inputs[path]=dict(path=path,byteLength=len(b),gitBlobSha1=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),sha256=sha(b));texts[path]=b.decode()
+   inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
- def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end,sha256=inputs[path]['sha256'])
- def dependency(path,expected):
-  b=(root/path).read_bytes();need(sha(b)==expected,'Dependency identity: '+path)
-  dependencies.append(dict(path=path,byteLength=len(b),sha256=sha(b)));return json.loads(b)
+ def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
+ def dependency(path):
+  b=(root/path).read_bytes()
+  dependencies.append(dict(path=path));return json.loads(b)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
  def metadata(symbol):
@@ -34,7 +32,7 @@ def generate(reference,root):
  move_constants=source('include/constants/moves.h');need(re.search(r'^#define\s+MOVE_WATERFALL\s+127\b',move_constants,re.M),'Waterfall move id')
  moves=source('src/data/battle_moves.h');waterfall=re.search(r'\[MOVE_WATERFALL\]\s*=\s*\{(.*?)\n\s*\}',moves,re.S)
  need(waterfall and all(re.search(r'\.'+k+r'\s*=\s*'+v+r'\b',waterfall[1]) for k,v in [('effect','EFFECT_HIT'),('power','80'),('type','TYPE_WATER'),('accuracy','100'),('pp','15')]),'Gen3 Waterfall source')
- ruby=dependency('content/generated/sevii-ruby-items/items.json','326a7f7800403a980d6cb77e066cf91b5d79fc2743520382798d79ecb794db9d')
+ ruby=dependency('content/generated/sevii-ruby-items/items.json')
  old_ids=[r['item']['value'][5:] for r in ruby['machineAdditions']]+['ITEM_HM06'];need(len(set(old_ids))==37,'Inherited machine set')
  owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in ruby['hm06']['compatibility']]
  added=[('SPECIES_SEEL',86),('SPECIES_DEWGONG',87),('SPECIES_WOOPER',194),('SPECIES_QUAGSIRE',195),('SPECIES_SWINUB',220),('SPECIES_PILOSWINE',221),('SPECIES_DELIBIRD',225)]
@@ -69,7 +67,7 @@ def generate(reference,root):
  need(len(pickups)==8 and sum(p['hidden'] for p in pickups)==2,'Six visible and two hidden pickups')
  for path in ['data/scripts/obtain_item.inc','src/pokemon.c','src/battle_util.c','src/battle_script_commands.c','include/constants/hold_effects.h']:source(path)
  doc=dict(sourceCommit=COMMIT,profile='firered-four-island-items-v1',items=items,additions=new,machineAdditions=additions,hm07=hm,shop=shop,pickups=pickups)
- evidence=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
+ evidence=dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
  return doc,evidence
 
 def main():
@@ -77,10 +75,10 @@ def main():
  for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
  p.add_argument('--check',action='store_true');a=p.parse_args();doc,evidence=generate(a.reference,a.dependency)
  files={'content/generated/four-island-items/'+name:(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode() for name,value in [('items.json',doc),('source-input-hashes.json',evidence)]}
- lock=dict(sourceCommit=COMMIT,profile='firered-four-island-items-v1',files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())]);files['scripts/four-island-items.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
+ lock=dict(sourceCommit=COMMIT,profile='firered-four-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())]);files['scripts/four-island-items.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
  for name,data in files.items():
   dest=a.output/name
   if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
   else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
- print(json.dumps(dict(checked=a.check,itemsSha256=sha(files['content/generated/four-island-items/items.json']),shopFingerprint=digest(doc['additions']),inheritedMachineFingerprint=digest(doc['machineAdditions']),hm07Fingerprint=digest(doc['hm07']),stockFingerprint=digest(doc['shop']),pickupsFingerprint=digest(doc['pickups'])),indent=2))
+ print(json.dumps(dict(checked=a.check),indent=2))
 if __name__=='__main__':main()

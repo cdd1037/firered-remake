@@ -23,15 +23,14 @@ public partial class SynthSourceAudioPlayer
         }
         var extension = JsonSerializer.Deserialize<SynthManifest>(art.Files[PretBreedingPresentation.Base + "synth-manifest.json"], options)
             ?? throw new InvalidDataException("Breeding synth extension missing.");
-        if (extension.SchemaVersion != 1 || extension.SourceCommit != PretBreedingPresentation.SourceCommit ||
+        if (extension.SchemaVersion != 1 ||
             !extension.Cues.Select(c => c.Species).SequenceEqual(new[] { 172, 173, 174, 236, 239, 360 }))
             throw new InvalidDataException("Breeding source cue inventory differs.");
         foreach (var normal in extension.Cues)
         {
             string name = art.DexEntries[normal.Species].Name;
             if (normal.Id != "CRY_" + name + "_NORMAL" || normal.CryMode != 0 || normal.SourcePlayer != 4 || normal.Priority != 10 ||
-                normal.SourceSymbol != "SPECIES_" + name || normal.SourcePath != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" ||
-                normal.SourceCommit != PretBreedingPresentation.SourceCommit || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
+                normal.SourceSymbol != "SPECIES_" + name || normal.SourcePath != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
                 _catalog.ContainsKey(normal.Id))
                 throw new InvalidDataException("Breeding normal source cue binding differs.");
         }

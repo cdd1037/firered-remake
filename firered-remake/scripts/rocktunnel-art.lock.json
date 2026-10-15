@@ -2,67 +2,38 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "graphics/field_effects/pics/field_move_streaks_indoors.bin",
-      "byteLength": 640,
-      "sha256": "fcae5b76d621ca4094bfd1048192cc0bb4397ffd670e632a25318c6eefd1eb42",
-      "gitBlobSha1": "f7c2f21420c81285c223b2dee626661a996ea8c5"
+      "path": "graphics/field_effects/pics/field_move_streaks_indoors.bin"
     },
     {
-      "path": "graphics/field_effects/pics/field_move_streaks_indoors.png",
-      "byteLength": 153,
-      "sha256": "9094ff8e463deccfd2d25be4aa66b6e9a2ae9db1e3aebabb7faf55304e59ac3a",
-      "gitBlobSha1": "62d4f6965d3e930ae352b2ce844ebb35ea649798"
+      "path": "graphics/field_effects/pics/field_move_streaks_indoors.png"
     },
     {
-      "path": "graphics/trainers/front_pics/pokemaniac_front_pic.png",
-      "byteLength": 821,
-      "sha256": "edf55aa598cca80b928327cc7a05eee78774ca6c8584972025c1ae1c77f1ff0b",
-      "gitBlobSha1": "61422329c6336b50ed4093dc5108e2a92a951146"
+      "path": "graphics/trainers/front_pics/pokemaniac_front_pic.png"
     },
     {
-      "path": "graphics/trainers/palettes/pokemaniac.pal",
-      "byteLength": 192,
-      "sha256": "3c4f6d7c2081805103ec9a49d083cd4d2a51a79d539bd6c957e5137b9703b55f",
-      "gitBlobSha1": "2a41e2be4b6f1e47f95c0fa63008873d068f8541"
+      "path": "graphics/trainers/palettes/pokemaniac.pal"
     },
     {
-      "path": "include/constants/trainers.h",
-      "byteLength": 20887,
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9",
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e"
+      "path": "include/constants/trainers.h"
     },
     {
-      "path": "src/data/graphics/trainers.h",
-      "byteLength": 34300,
-      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
-      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088"
+      "path": "src/data/graphics/trainers.h"
     },
     {
-      "path": "src/data/trainer_graphics/front_pic_tables.h",
-      "byteLength": 24042,
-      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f",
-      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda"
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
     },
     {
-      "path": "src/field_effect.c",
-      "byteLength": 125868,
-      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
-      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be"
+      "path": "src/field_effect.c"
     }
   ],
   "inputs": [
     {
-      "path": "scripts/fetch-lab-battle-ui.py",
-      "byteLength": 5843,
-      "sha256": "805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"
+      "path": "scripts/fetch-lab-battle-ui.py"
     },
     {
-      "path": "scripts/import-lab-battle-ui.py",
-      "byteLength": 13082,
-      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+      "path": "scripts/import-lab-battle-ui.py"
     }
   ]
 }

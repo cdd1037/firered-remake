@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Options;
@@ -45,8 +44,7 @@ public partial class CampaignView
         var asset = VsSeekerArt.Asset(id);
         using var image = new Image();
         if (image.LoadPngFromBuffer(VsSeekerArt.ReadPng(id)) != Error.Ok || image.GetWidth() != asset.Width ||
-            image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8 ||
-            Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
+            image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8)
             throw new InvalidDataException("Vs Seeker source pixels differ: " + id);
         var texture = ImageTexture.CreateFromImage(image); _vsSeekerTextures.Add(id, texture); return texture;
     }
@@ -63,7 +61,7 @@ public partial class CampaignView
         {
             Items = document.Items.Add(new("pret:ITEM_VS_SEEKER", "ITEM_VS_SEEKER", item.GetProperty("name").GetString()!,
                 item.GetProperty("description").GetString()!, icon.Id, "FieldUseFunc_VsSeeker")),
-            Assets = document.Assets.Add(new(icon.Id, icon.Path, 24, 24, position.X, position.Y, icon.Sha256, icon.RgbaSha256))
+            Assets = document.Assets.Add(new(icon.Id,icon.Path,24,24,position.X,position.Y))
         };
     }
 

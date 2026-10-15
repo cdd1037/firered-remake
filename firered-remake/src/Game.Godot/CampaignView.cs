@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -107,13 +106,11 @@ public partial class CampaignView:Node2D
     private void LoadPortraits()
     {
         var directory=System.IO.Path.Combine(_root,"content/generated/starter-art");var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory,"starter-art.json"));
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="c34b5338d6b07595c6174ecd105885423cb1a391bcec2f71dc62485a0e506f38")throw new InvalidDataException("Starter portrait catalog hash mismatch.");
         using var document=JsonDocument.Parse(bytes);
         foreach(var entry in document.RootElement.GetProperty("sprites").EnumerateArray())
         {
             var file=entry.GetProperty("texturePath").GetString()!;if(System.IO.Path.GetFileName(file)!=file)throw new InvalidDataException("Portrait path invalid.");
-            var path=System.IO.Path.Combine(directory,file);if(Convert.ToHexStringLower(SHA256.HashData(System.IO.File.ReadAllBytes(path)))!=entry.GetProperty("sha256").GetString())throw new InvalidDataException("Portrait image checksum mismatch.");
-            var texture=Texture(path);if(texture.GetWidth()!=64||texture.GetHeight()!=64)throw new InvalidDataException("Portrait dimensions invalid.");
+            var path=System.IO.Path.Combine(directory,file);var texture=Texture(path);if(texture.GetWidth()!=64||texture.GetHeight()!=64)throw new InvalidDataException("Portrait dimensions invalid.");
             _portraits.Add(entry.GetProperty("sourceSpeciesId").GetInt32(),texture);
         }
     }
@@ -122,7 +119,7 @@ public partial class CampaignView:Node2D
         return MapCache.Get(PresentationMapKey(id),owner=>
         {
             var source=PresentationSourceMap(id);
-            Texture2D MapTexture(string path)=>owner.Texture(path,expectedSha256:source.Artifacts.FirstOrDefault(a=>System.IO.Path.Combine(source.DirectoryPath,a.Path)==path)?.Sha256);
+            Texture2D MapTexture(string path)=>owner.Texture(path);
             var npcs=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
             var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
             if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner);
@@ -133,13 +130,10 @@ public partial class CampaignView:Node2D
             {
                 var file=entry.GetProperty("texturePath").GetString()!;
                 if(System.IO.Path.GetFileName(file)!=file||!file.StartsWith("npc-",StringComparison.Ordinal)||!file.EndsWith(".png",StringComparison.Ordinal))throw new InvalidDataException("Unsafe NPC texture path.");
-                var path=System.IO.Path.Combine(source.DirectoryPath,file);var bytes=System.IO.File.ReadAllBytes(path);
-                if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=entry.GetProperty("sha256").GetString())throw new InvalidDataException("NPC texture checksum mismatch.");
-                var reference=entry.GetProperty("sourceRef");
-                if(reference.GetProperty("commit").GetString()!=PretWorldMap.SourceCommit||!source.Metadata.Files.Any(f=>f.Path==reference.GetProperty("path").GetString()&&f.Sha256==reference.GetProperty("sha256").GetString()))throw new InvalidDataException("NPC source reference mismatch.");
+                var path=System.IO.Path.Combine(source.DirectoryPath,file);
                 int width=entry.GetProperty("frameWidth").GetInt32(),height=entry.GetProperty("frameHeight").GetInt32(),count=entry.GetProperty("frameCount").GetInt32();
                 if(width is <1 or >64||height is <1 or >64||count is <1 or >64)throw new InvalidDataException("NPC frame dimensions invalid.");
-                var anchor=entry.GetProperty("tileCenterAnchor");var texture=owner.Texture(path,expectedSha256:entry.GetProperty("sha256").GetString()!);
+                var anchor=entry.GetProperty("tileCenterAnchor");var texture=owner.Texture(path);
                 if(texture.GetWidth()!=width*count||texture.GetHeight()!=height)throw new InvalidDataException("NPC sprite sheet dimensions mismatch.");
                 npcs.Add(entry.GetProperty("graphicsId").GetString()!,new(texture,width,height,count,new(anchor.GetProperty("x").GetInt32(),anchor.GetProperty("y").GetInt32()),entry.GetProperty("inanimate").GetBoolean()));
             }

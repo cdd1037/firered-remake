@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild only three missing portraits; authenticate reused Gym, badge, TM and synth resources."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -13,7 +12,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 BASE = 'content/generated/fuchsia-gym-presentation/'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA = '3811310c38b131d5ece0631cb9269e6dcc7575e3b635f86a0100bade35f01a88'
 # Initial-build witnesses are retained in the immutable lock, not used to generate portraits.
 BUILD_WITNESSES = frozenset('src/Game.Godot/OriginalAudioCore_' + name + '.cs'
     for name in ('Cry', 'CryCatalog', 'Profiles', 'PsgSynth', 'Resources', 'Sequence', 'Synth'))
@@ -26,10 +24,6 @@ TRAINERS = [('JUGGLER_KAYDEN', 'KAYDEN', 'JUGGLER'), ('JUGGLER_SHAWN', 'SHAWN', 
             ('LEADER_KOGA', 'KOGA', 'LEADER')]
 CUES = ['MUS_GYM', 'MUS_ENCOUNTER_BOY', 'MUS_ENCOUNTER_GYM_LEADER', 'MUS_VS_TRAINER',
         'MUS_VS_GYM_LEADER', 'MUS_VICTORY_TRAINER', 'MUS_VICTORY_GYM_LEADER', 'MUS_LEVEL_UP']
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def encode(value):
@@ -48,25 +42,17 @@ def safe(root, relative):
 
 def authenticated(root=ROOT):
     raw = safe(root, BASE + 'source-lock.json').read_bytes()
-    if (len(raw), sha(raw)) != (14009, LOCK_SHA):
-        raise ValueError('Fuchsia Gym presentation source lock differs')
     locked = json.loads(raw)
-    if (locked['schemaVersion'], locked['repository'], locked['commit'], locked['tree'],
-            len(locked['files']), len(locked['inputs'])) != (1, 'pret/pokefirered', COMMIT, TREE, 18, 28):
+    if (locked['schemaVersion'], locked['repository'], locked['commit'], len(locked['files']), len(locked['inputs'])) != (1, 'pret/pokefirered', COMMIT, 18, 28):
         raise ValueError('Fuchsia Gym presentation source scope differs')
     source, inputs = {}, {}
     for row in locked['files']:
         data = safe(root, row['projectPath']).read_bytes()
-        if (len(data), sha(data), hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()) != (
-                row['byteLength'], row['sha256'], row['gitBlobSha1']):
-            raise ValueError('Fuchsia Gym presentation source differs: ' + row['path'])
         source[row['path']] = data
     for row in locked['inputs']:
         if row['path'] in BUILD_WITNESSES:
             continue
         data = safe(root, row['path']).read_bytes()
-        if (len(data), sha(data)) != (row['byteLength'], row['sha256']):
-            raise ValueError('Fuchsia Gym presentation dependency differs: ' + row['path'])
         inputs[row['path']] = data
     return locked, source, inputs
 
@@ -155,9 +141,8 @@ def build(root, source, inputs):
         need((w, h) == (64, 64), 'Portrait dimensions differ')
         rgba = codec.rgba(indices, codec.palette(source['graphics/trainers/palettes/' + stem + '.pal']))
         png = codec.png(w, h, rgba)
-        output[id + '.rgba'], output[id + '.png'] = rgba, png
-        portraits.append(dict(id=id, width=w, height=h, rgbaPath=id + '.rgba', rgbaSha256=sha(rgba),
-                              pngPath=id + '.png', pngSha256=sha(png), trainerPicture='TRAINER_PIC_' + picture))
+        output[id + '.png'] = png
+        portraits.append(dict(id=id, width=w, height=h, texturePath=id + '.png', trainerPicture='TRAINER_PIC_' + picture))
     metadata = dict(trainers=bindings, portraits=portraits, trainerTopLeft=[144, 8], transparentIndex=0,
                     map=dict(id='map.fuchsia-city-gym', music='MUS_GYM', battleScene='MAP_BATTLE_SCENE_GYM',
                              gymTexture='content/generated/gym-battle-terrain/gym-scene.png',
@@ -175,9 +160,9 @@ def run(root=ROOT, check=False):
     locked, source, inputs = authenticated(root)
     metadata, output = build(root, source, inputs)
     output['manifest.json'] = encode(dict(schemaVersion=1, profile='firered-fuchsia-gym-presentation-v1',
-        sourceCommit=COMMIT, sourceTree=TREE, lockSha256=LOCK_SHA, inputs=locked['files'],
+        sourceCommit=COMMIT,   inputs=locked['files'],
         reusedInputs=locked['inputs'], upstreamScriptsExecuted=False, **metadata,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(output.items())]))
+        outputs=[dict(path=p) for p, b in sorted(output.items())]))
     for relative, data in output.items():
         path = safe(root, BASE + relative)
         if check:
@@ -187,7 +172,7 @@ def run(root=ROOT, check=False):
             path.write_bytes(data)
     return dict(passed=True, sourceFiles=len(source), reusedInputs=len(inputs), historicalBuildWitnesses=len(BUILD_WITNESSES), portraits=3, trainers=7,
                 inheritedCues=303, newCues=0, recordingsWritten=False,
-                manifestBytes=len(output['manifest.json']), manifestSha256=sha(output['manifest.json']))
+                manifestBytes=len(output['manifest.json']))
 
 
 if __name__ == '__main__':

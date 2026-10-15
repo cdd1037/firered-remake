@@ -2,91 +2,63 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 722,
-      "gitBlobSha1": "61697824343cdbd8ef8e0e6eeefba66771380c2b",
       "path": "data/maps/CinnabarIsland_Mart/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f9a3d744dab7e62f3517cab34d7542f2fe1e0bda64fb63c159800c3886ebe4ac"
+      ]
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
       "path": "include/constants/items.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      ]
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
       "path": "include/constants/moves.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      ]
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      ]
     },
     {
-      "byteLength": 121457,
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
       "path": "src/data/battle_moves.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+      ]
     },
     {
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
       "path": "src/data/items.json",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      ]
     },
     {
-      "byteLength": 36157,
-      "gitBlobSha1": "6b4ebc1f7c0c5f72eb28f656c31be10f86e02094",
       "path": "src/data/party_menu.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7"
+      ]
     },
     {
-      "byteLength": 559340,
-      "gitBlobSha1": "0aa21e85be2f970536c8ed901c556013c16327e5",
       "path": "src/data/pokemon/tmhm_learnsets.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+      ]
     },
     {
-      "byteLength": 62085,
-      "gitBlobSha1": "8ece0e12d5fa10eb170bb6ad3ecf9a2ccf1ca624",
       "path": "src/move_descriptions.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+      ]
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-cinnabar-items-source-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

@@ -1,648 +1,391 @@
 {
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "treeSha1": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "rights": "Local reference import only. No repository-wide license established. Original game assets and marks belong to their respective rightsholders; do not redistribute. tools/gbagfx/LICENSE only covers that tool.",
   "files": [
     {
-      "path": "README.md",
-      "gitBlobSha1": "819422657623aae0cb0d2d0d23893b2927fcf0d7",
-      "byteLength": 1149
+      "path": "README.md"
     },
     {
-      "path": "data/layouts/PalletTown/border.bin",
-      "gitBlobSha1": "a701312cfff9ef56ae960aed042d8b9e68eefb84",
-      "byteLength": 8
+      "path": "data/layouts/PalletTown/border.bin"
     },
     {
-      "path": "data/layouts/PalletTown/map.bin",
-      "gitBlobSha1": "f2113394f22d6f0180f364071301b5ed06588773",
-      "byteLength": 960
+      "path": "data/layouts/PalletTown/map.bin"
     },
     {
-      "path": "data/layouts/PalletTown_PlayersHouse_1F/border.bin",
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
-      "byteLength": 8
+      "path": "data/layouts/PalletTown_PlayersHouse_1F/border.bin"
     },
     {
-      "path": "data/layouts/PalletTown_PlayersHouse_1F/map.bin",
-      "gitBlobSha1": "b93d823c96d05035267a23b48ac140dd198bef5b",
-      "byteLength": 260
+      "path": "data/layouts/PalletTown_PlayersHouse_1F/map.bin"
     },
     {
-      "path": "data/layouts/PalletTown_PlayersHouse_2F/border.bin",
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
-      "byteLength": 8
+      "path": "data/layouts/PalletTown_PlayersHouse_2F/border.bin"
     },
     {
-      "path": "data/layouts/PalletTown_PlayersHouse_2F/map.bin",
-      "gitBlobSha1": "b5d3bee2deee8f8dd3926aa356bc2f738dfb3988",
-      "byteLength": 216
+      "path": "data/layouts/PalletTown_PlayersHouse_2F/map.bin"
     },
     {
-      "path": "data/layouts/PalletTown_ProfessorOaksLab/border.bin",
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
-      "byteLength": 8
+      "path": "data/layouts/PalletTown_ProfessorOaksLab/border.bin"
     },
     {
-      "path": "data/layouts/PalletTown_ProfessorOaksLab/map.bin",
-      "gitBlobSha1": "1067109ab0843e5ededaa96558c30c64e0dab04a",
-      "byteLength": 364
+      "path": "data/layouts/PalletTown_ProfessorOaksLab/map.bin"
     },
     {
-      "path": "data/layouts/PalletTown_RivalsHouse/border.bin",
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
-      "byteLength": 8
+      "path": "data/layouts/PalletTown_RivalsHouse/border.bin"
     },
     {
-      "path": "data/layouts/PalletTown_RivalsHouse/map.bin",
-      "gitBlobSha1": "a29b5dbdc63de4e6154cf6b3061c4165fc208e52",
-      "byteLength": 260
+      "path": "data/layouts/PalletTown_RivalsHouse/map.bin"
     },
     {
-      "path": "data/layouts/layouts.json",
-      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
-      "byteLength": 158096
+      "path": "data/layouts/layouts.json"
     },
     {
-      "path": "data/maps/PalletTown/map.json",
-      "gitBlobSha1": "802d32dc6de7688fe2de8c833d4e040d9137f6c1",
-      "byteLength": 4087
+      "path": "data/maps/PalletTown/map.json"
     },
     {
-      "path": "data/maps/PalletTown/scripts.inc",
-      "gitBlobSha1": "1384b7d6c6bb5d2b93538ebaf5e92defde2d41e5",
-      "byteLength": 11418
+      "path": "data/maps/PalletTown/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown/text.inc",
-      "gitBlobSha1": "726aea8c67812ef2bc72e51b2d8ee38e21fd4863",
-      "byteLength": 2109
+      "path": "data/maps/PalletTown/text.inc"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_1F/map.json",
-      "gitBlobSha1": "2643219a599a4159746c5530b07fb7fdfba77b8b",
-      "byteLength": 1745
+      "path": "data/maps/PalletTown_PlayersHouse_1F/map.json"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_1F/scripts.inc",
-      "gitBlobSha1": "889472d3c8ca3b98d61b454f311a03c60f7d343c",
-      "byteLength": 1870
+      "path": "data/maps/PalletTown_PlayersHouse_1F/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_1F/text.inc",
-      "gitBlobSha1": "6b339b46c746de6c6d6d8247fb3e0d17f6ae8936",
-      "byteLength": 1348
+      "path": "data/maps/PalletTown_PlayersHouse_1F/text.inc"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_2F/map.json",
-      "gitBlobSha1": "05337daa497275f6f2ec6eaa4217331cd47332cd",
-      "byteLength": 1335
+      "path": "data/maps/PalletTown_PlayersHouse_2F/map.json"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_2F/scripts.inc",
-      "gitBlobSha1": "edc6ac371d8f04ac9bdff0547d9b4983b9629c77",
-      "byteLength": 1494
+      "path": "data/maps/PalletTown_PlayersHouse_2F/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_PlayersHouse_2F/text.inc",
-      "gitBlobSha1": "cf981a03a7bf067f4d2d7b6a3c1f677c7faf1a0c",
-      "byteLength": 332
+      "path": "data/maps/PalletTown_PlayersHouse_2F/text.inc"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/map.json",
-      "gitBlobSha1": "be72653587b49da2eb65f72a3519b57ed511d05c",
-      "byteLength": 7962
+      "path": "data/maps/PalletTown_ProfessorOaksLab/map.json"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
-      "byteLength": 47604
+      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/text.inc",
-      "gitBlobSha1": "849a643c3a8c7d38efc6853f850698d9cf50a4ee",
-      "byteLength": 13281
+      "path": "data/maps/PalletTown_ProfessorOaksLab/text.inc"
     },
     {
-      "path": "data/maps/PalletTown_RivalsHouse/map.json",
-      "gitBlobSha1": "d3efdba831ddbdb174ba20deaafee3f35d96a97c",
-      "byteLength": 2474
+      "path": "data/maps/PalletTown_RivalsHouse/map.json"
     },
     {
-      "path": "data/maps/PalletTown_RivalsHouse/scripts.inc",
-      "gitBlobSha1": "a9e5e29b85d913ecd1d6547a7bf50fac65e5c173",
-      "byteLength": 5691
+      "path": "data/maps/PalletTown_RivalsHouse/scripts.inc"
     },
     {
-      "path": "data/maps/PalletTown_RivalsHouse/text.inc",
-      "gitBlobSha1": "bde0f854c4d3851b6ac6c51f79f5bf263f84bc2b",
-      "byteLength": 4543
+      "path": "data/maps/PalletTown_RivalsHouse/text.inc"
     },
     {
-      "path": "data/tilesets/primary/building/metatile_attributes.bin",
-      "gitBlobSha1": "3dbc31883fdd14f31c7b86981508cc08ed3cc395",
-      "byteLength": 2560
+      "path": "data/tilesets/primary/building/metatile_attributes.bin"
     },
     {
-      "path": "data/tilesets/primary/building/metatiles.bin",
-      "gitBlobSha1": "024797c8ee2b805df8566a62fb4e65f3244dac39",
-      "byteLength": 10240
+      "path": "data/tilesets/primary/building/metatiles.bin"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/00.pal",
-      "gitBlobSha1": "3b6416376ec903750b97307c613328b124481489",
-      "byteLength": 203
+      "path": "data/tilesets/primary/building/palettes/00.pal"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/01.pal",
-      "gitBlobSha1": "66561f6d3326d5c3c717426abed1b9b5ce771c29",
-      "byteLength": 203
+      "path": "data/tilesets/primary/building/palettes/01.pal"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/02.pal",
-      "gitBlobSha1": "87a022102f199020c802e20c91a39c6e3461f929",
-      "byteLength": 200
+      "path": "data/tilesets/primary/building/palettes/02.pal"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/03.pal",
-      "gitBlobSha1": "783496dcd9bf89b72ffc26a29991f49600a8c355",
-      "byteLength": 203
+      "path": "data/tilesets/primary/building/palettes/03.pal"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/04.pal",
-      "gitBlobSha1": "89eace6050ad504ce38e5ee5615def5d5109d3bf",
-      "byteLength": 206
+      "path": "data/tilesets/primary/building/palettes/04.pal"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/05.pal",
-      "gitBlobSha1": "c7780e5c7515197b8faf0eda54968653ed5e8c04",
-      "byteLength": 195
+      "path": "data/tilesets/primary/building/palettes/05.pal"
     },
     {
-      "path": "data/tilesets/primary/building/palettes/06.pal",
-      "gitBlobSha1": "1d08ce9a2024a64b883c14bc907b448733603a8a",
-      "byteLength": 119
+      "path": "data/tilesets/primary/building/palettes/06.pal"
     },
     {
-      "path": "data/tilesets/primary/building/tiles.png",
-      "gitBlobSha1": "8d864f27e2f1167e5879d3e8ec5b8546311208ba",
-      "byteLength": 7011
+      "path": "data/tilesets/primary/building/tiles.png"
     },
     {
-      "path": "data/tilesets/primary/general/metatile_attributes.bin",
-      "gitBlobSha1": "45f6f352ef262d9c34b0f3e5ff379d9fc6b5eee6",
-      "byteLength": 2560
+      "path": "data/tilesets/primary/general/metatile_attributes.bin"
     },
     {
-      "path": "data/tilesets/primary/general/metatiles.bin",
-      "gitBlobSha1": "7a228eeaea2f928545b294505b1181618ec9c429",
-      "byteLength": 10240
+      "path": "data/tilesets/primary/general/metatiles.bin"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/00.pal",
-      "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c",
-      "byteLength": 186
+      "path": "data/tilesets/primary/general/palettes/00.pal"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/01.pal",
-      "gitBlobSha1": "09828f4f1f27fd489057d5efb68941ca3947f9fe",
-      "byteLength": 192
+      "path": "data/tilesets/primary/general/palettes/01.pal"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/02.pal",
-      "gitBlobSha1": "6b019b884c96679a0000222fd58ce78d8ee2c165",
-      "byteLength": 192
+      "path": "data/tilesets/primary/general/palettes/02.pal"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/03.pal",
-      "gitBlobSha1": "205c464c79d6e0b30b4d80a37558fe44fde62f60",
-      "byteLength": 195
+      "path": "data/tilesets/primary/general/palettes/03.pal"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/04.pal",
-      "gitBlobSha1": "9b094a6aaa24bec00b20dfd68bed519959054d97",
-      "byteLength": 199
+      "path": "data/tilesets/primary/general/palettes/04.pal"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/05.pal",
-      "gitBlobSha1": "c5a653979a010ae3b699a00b247fa72cc0a65fbb",
-      "byteLength": 198
+      "path": "data/tilesets/primary/general/palettes/05.pal"
     },
     {
-      "path": "data/tilesets/primary/general/palettes/06.pal",
-      "gitBlobSha1": "cdf41b2983e5466152336b36c7ac4a3da4c7b4d4",
-      "byteLength": 198
+      "path": "data/tilesets/primary/general/palettes/06.pal"
     },
     {
-      "path": "data/tilesets/primary/general/tiles.png",
-      "gitBlobSha1": "84ba7b2f987ce0134e5936faf083f7df15665a64",
-      "byteLength": 8671
+      "path": "data/tilesets/primary/general/tiles.png"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/metatile_attributes.bin",
-      "gitBlobSha1": "be95e451cd25ba56db5e830427fd37f0433d2ebb",
-      "byteLength": 96
+      "path": "data/tilesets/secondary/generic_building_1/metatile_attributes.bin"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/metatiles.bin",
-      "gitBlobSha1": "806d040ce610b7b1e2704f4de10cb5586849cbed",
-      "byteLength": 384
+      "path": "data/tilesets/secondary/generic_building_1/metatiles.bin"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/palettes/07.pal",
-      "gitBlobSha1": "c1e7c3d5c579c24997b6530692a6e52e3d9c13e9",
-      "byteLength": 162
+      "path": "data/tilesets/secondary/generic_building_1/palettes/07.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/palettes/08.pal",
-      "gitBlobSha1": "18480092bee784156a935de6f9a746aec1e27edd",
-      "byteLength": 197
+      "path": "data/tilesets/secondary/generic_building_1/palettes/08.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/palettes/09.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/generic_building_1/palettes/09.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/palettes/10.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/generic_building_1/palettes/10.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/palettes/11.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/generic_building_1/palettes/11.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/palettes/12.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/generic_building_1/palettes/12.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_1/tiles.png",
-      "gitBlobSha1": "19128719751b5a94b37839d0701f6e5e339e5eb1",
-      "byteLength": 748
+      "path": "data/tilesets/secondary/generic_building_1/tiles.png"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/metatile_attributes.bin",
-      "gitBlobSha1": "18d7517d9aa397477114da79d3419e7a901618cb",
-      "byteLength": 736
+      "path": "data/tilesets/secondary/generic_building_2/metatile_attributes.bin"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/metatiles.bin",
-      "gitBlobSha1": "0943dc7afe8568adda716cccef0a3098588d0e77",
-      "byteLength": 2944
+      "path": "data/tilesets/secondary/generic_building_2/metatiles.bin"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/palettes/07.pal",
-      "gitBlobSha1": "c62a40b0d0249a1b59d1167c15e7ee78f157f197",
-      "byteLength": 201
+      "path": "data/tilesets/secondary/generic_building_2/palettes/07.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/palettes/08.pal",
-      "gitBlobSha1": "8c66b4998189918ff67b13da8ccef254af060218",
-      "byteLength": 192
+      "path": "data/tilesets/secondary/generic_building_2/palettes/08.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/palettes/09.pal",
-      "gitBlobSha1": "25d5d7019354a14012b29eef502ea0f5fd11036e",
-      "byteLength": 197
+      "path": "data/tilesets/secondary/generic_building_2/palettes/09.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/palettes/10.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/generic_building_2/palettes/10.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/palettes/11.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/generic_building_2/palettes/11.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/palettes/12.pal",
-      "gitBlobSha1": "2903bb074c9e13eb17c83efde5359d7f0a7b315e",
-      "byteLength": 199
+      "path": "data/tilesets/secondary/generic_building_2/palettes/12.pal"
     },
     {
-      "path": "data/tilesets/secondary/generic_building_2/tiles.png",
-      "gitBlobSha1": "ca6e21f03c56920f5ca9b3c35ed68f9738c72b36",
-      "byteLength": 1407
+      "path": "data/tilesets/secondary/generic_building_2/tiles.png"
     },
     {
-      "path": "data/tilesets/secondary/lab/metatile_attributes.bin",
-      "gitBlobSha1": "0d685881c8407672f8a4157b406e03da1ee84204",
-      "byteLength": 700
+      "path": "data/tilesets/secondary/lab/metatile_attributes.bin"
     },
     {
-      "path": "data/tilesets/secondary/lab/metatiles.bin",
-      "gitBlobSha1": "a7833446f030fbae8ced830f5e0c7b7302088fbf",
-      "byteLength": 2800
+      "path": "data/tilesets/secondary/lab/metatiles.bin"
     },
     {
-      "path": "data/tilesets/secondary/lab/palettes/07.pal",
-      "gitBlobSha1": "3d7f8bd898ab55e9e2210224461962b005c98c8f",
-      "byteLength": 199
+      "path": "data/tilesets/secondary/lab/palettes/07.pal"
     },
     {
-      "path": "data/tilesets/secondary/lab/palettes/08.pal",
-      "gitBlobSha1": "7fce49d063f3dde6fe0f8d4d03d1cb7e67d2b95d",
-      "byteLength": 194
+      "path": "data/tilesets/secondary/lab/palettes/08.pal"
     },
     {
-      "path": "data/tilesets/secondary/lab/palettes/09.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/lab/palettes/09.pal"
     },
     {
-      "path": "data/tilesets/secondary/lab/palettes/10.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/lab/palettes/10.pal"
     },
     {
-      "path": "data/tilesets/secondary/lab/palettes/11.pal",
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
-      "byteLength": 117
+      "path": "data/tilesets/secondary/lab/palettes/11.pal"
     },
     {
-      "path": "data/tilesets/secondary/lab/palettes/12.pal",
-      "gitBlobSha1": "3c32c9fd43263f12be8ed82e4c24d7c64594bbb2",
-      "byteLength": 204
+      "path": "data/tilesets/secondary/lab/palettes/12.pal"
     },
     {
-      "path": "data/tilesets/secondary/lab/tiles.png",
-      "gitBlobSha1": "6caeac8a8c868e1e712dd09d6c239cf9324b6bbc",
-      "byteLength": 1308
+      "path": "data/tilesets/secondary/lab/tiles.png"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/metatile_attributes.bin",
-      "gitBlobSha1": "2ba2894bc2e11a75b7ec3f11cc340c767e7cfb85",
-      "byteLength": 356
+      "path": "data/tilesets/secondary/pallet_town/metatile_attributes.bin"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/metatiles.bin",
-      "gitBlobSha1": "41db2701509573f5a57d38ddb349e9a243b518ee",
-      "byteLength": 1424
+      "path": "data/tilesets/secondary/pallet_town/metatiles.bin"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/palettes/07.pal",
-      "gitBlobSha1": "995731c23cc045acf66daa3297353845cbb9db3e",
-      "byteLength": 115
+      "path": "data/tilesets/secondary/pallet_town/palettes/07.pal"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/palettes/08.pal",
-      "gitBlobSha1": "dcecb9c407189e58cde4d27ca554aae4d6957b16",
-      "byteLength": 199
+      "path": "data/tilesets/secondary/pallet_town/palettes/08.pal"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/palettes/09.pal",
-      "gitBlobSha1": "90bb7751719782413faddaa574bc33b5a4eb8a99",
-      "byteLength": 200
+      "path": "data/tilesets/secondary/pallet_town/palettes/09.pal"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/palettes/10.pal",
-      "gitBlobSha1": "1958eff11b300c3c32791d4ac4e5673554942f30",
-      "byteLength": 195
+      "path": "data/tilesets/secondary/pallet_town/palettes/10.pal"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/palettes/11.pal",
-      "gitBlobSha1": "896c79281af5dc57e8ce29b34fbe51ffd5d3328d",
-      "byteLength": 189
+      "path": "data/tilesets/secondary/pallet_town/palettes/11.pal"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/palettes/12.pal",
-      "gitBlobSha1": "2bfc45b6d384336b43df8be66a18ed2158b555ae",
-      "byteLength": 170
+      "path": "data/tilesets/secondary/pallet_town/palettes/12.pal"
     },
     {
-      "path": "data/tilesets/secondary/pallet_town/tiles.png",
-      "gitBlobSha1": "771eed906cc7721e5126a6badd7a1df3136e0fe3",
-      "byteLength": 929
+      "path": "data/tilesets/secondary/pallet_town/tiles.png"
     },
     {
-      "path": "graphics/object_events/palettes/npc_blue.pal",
-      "gitBlobSha1": "c62e8ce063b6fffc53a5f02d4008d72e838dfda2",
-      "byteLength": 186
+      "path": "graphics/object_events/palettes/npc_blue.pal"
     },
     {
-      "path": "graphics/object_events/palettes/npc_green.pal",
-      "gitBlobSha1": "0c60b08a5b8b6e54123283eb221df86b06e2db59",
-      "byteLength": 185
+      "path": "graphics/object_events/palettes/npc_green.pal"
     },
     {
-      "path": "graphics/object_events/palettes/npc_white.pal",
-      "gitBlobSha1": "1646e805e636837f975619827060764e7aa48293",
-      "byteLength": 186
+      "path": "graphics/object_events/palettes/npc_white.pal"
     },
     {
-      "path": "graphics/object_events/palettes/player.pal",
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
-      "byteLength": 189
+      "path": "graphics/object_events/palettes/player.pal"
     },
     {
-      "path": "graphics/object_events/pics/misc/item_ball.png",
-      "gitBlobSha1": "5b91624c73faf52c650db9f7eff704f716050bb5",
-      "byteLength": 205
+      "path": "graphics/object_events/pics/misc/item_ball.png"
     },
     {
-      "path": "graphics/object_events/pics/misc/pokedex.png",
-      "gitBlobSha1": "9089df95920c4a823cf6150b2daa5e3b060332d5",
-      "byteLength": 206
+      "path": "graphics/object_events/pics/misc/pokedex.png"
     },
     {
-      "path": "graphics/object_events/pics/misc/town_map.png",
-      "gitBlobSha1": "1afb1921ee161f8abe55ae591d50b08c8e7bdb48",
-      "byteLength": 210
+      "path": "graphics/object_events/pics/misc/town_map.png"
     },
     {
-      "path": "graphics/object_events/pics/people/blue.png",
-      "gitBlobSha1": "80cd7518a1e5029711cad58b4e103f46fc281ee8",
-      "byteLength": 727
+      "path": "graphics/object_events/pics/people/blue.png"
     },
     {
-      "path": "graphics/object_events/pics/people/daisy.png",
-      "gitBlobSha1": "3fad24b03e3b6fc9ecc88887a862c89f75aeae3a",
-      "byteLength": 679
+      "path": "graphics/object_events/pics/people/daisy.png"
     },
     {
-      "path": "graphics/object_events/pics/people/fat_man.png",
-      "gitBlobSha1": "76dd076588edf2128cb39e8f06484f8af3b5da75",
-      "byteLength": 733
+      "path": "graphics/object_events/pics/people/fat_man.png"
     },
     {
-      "path": "graphics/object_events/pics/people/mom.png",
-      "gitBlobSha1": "b5d6c18e7b8818a979ee73e19044b2d104ad7be8",
-      "byteLength": 467
+      "path": "graphics/object_events/pics/people/mom.png"
     },
     {
-      "path": "graphics/object_events/pics/people/prof_oak.png",
-      "gitBlobSha1": "037b0f9668806cc7424c0d18dd0907e30e4cfc37",
-      "byteLength": 789
+      "path": "graphics/object_events/pics/people/prof_oak.png"
     },
     {
-      "path": "graphics/object_events/pics/people/red_normal.png",
-      "gitBlobSha1": "377224e2f5c6bca2ff5d762f22fc214a6982f772",
-      "byteLength": 742
+      "path": "graphics/object_events/pics/people/red_normal.png"
     },
     {
-      "path": "graphics/object_events/pics/people/scientist.png",
-      "gitBlobSha1": "9ea707eea440c50dcb35d69f4c876c036879c471",
-      "byteLength": 821
+      "path": "graphics/object_events/pics/people/scientist.png"
     },
     {
-      "path": "graphics/object_events/pics/people/woman_1.png",
-      "gitBlobSha1": "73fef57d09f6343b7b18adf2d0a644b619666b89",
-      "byteLength": 744
+      "path": "graphics/object_events/pics/people/woman_1.png"
     },
     {
-      "path": "graphics/object_events/pics/people/worker_f.png",
-      "gitBlobSha1": "d6f592e3df37cf8b0f6605f68f15326306986efb",
-      "byteLength": 671
+      "path": "graphics/object_events/pics/people/worker_f.png"
     },
     {
-      "path": "include/constants/event_objects.h",
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
-      "byteLength": 7965
+      "path": "include/constants/event_objects.h"
     },
     {
-      "path": "include/constants/global.h",
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "byteLength": 3785
+      "path": "include/constants/global.h"
     },
     {
-      "path": "include/constants/metatile_behaviors.h",
-      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
-      "byteLength": 3471
+      "path": "include/constants/metatile_behaviors.h"
     },
     {
-      "path": "include/fieldmap.h",
-      "gitBlobSha1": "639e329a9a0f721abd7e40001228859cb9466005",
-      "byteLength": 2226
+      "path": "include/fieldmap.h"
     },
     {
-      "path": "include/global.fieldmap.h",
-      "gitBlobSha1": "e2828ec0cb1439718e830fbef4366770b3b77b1c",
-      "byteLength": 12127
+      "path": "include/global.fieldmap.h"
     },
     {
-      "path": "src/data/object_events/object_event_anims.h",
-      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d",
-      "byteLength": 37750
+      "path": "src/data/object_events/object_event_anims.h"
     },
     {
-      "path": "src/data/object_events/object_event_graphics.h",
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
-      "byteLength": 23522
+      "path": "src/data/object_events/object_event_graphics.h"
     },
     {
-      "path": "src/data/object_events/object_event_graphics_info.h",
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
-      "byteLength": 97115
+      "path": "src/data/object_events/object_event_graphics_info.h"
     },
     {
-      "path": "src/data/object_events/object_event_graphics_info_pointers.h",
-      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
-      "byteLength": 23651
+      "path": "src/data/object_events/object_event_graphics_info_pointers.h"
     },
     {
-      "path": "src/data/object_events/object_event_pic_tables.h",
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
-      "byteLength": 82763
+      "path": "src/data/object_events/object_event_pic_tables.h"
     },
     {
-      "path": "src/data/object_events/object_event_subsprites.h",
-      "gitBlobSha1": "76b4f6576d751293e9a959ae11c73e21f0349185",
-      "byteLength": 35944
+      "path": "src/data/object_events/object_event_subsprites.h"
     },
     {
-      "path": "src/data/tilesets/graphics.h",
-      "gitBlobSha1": "5e6791a66f03876f2aaabe94bde3083e68f5bf2e",
-      "byteLength": 83873
+      "path": "src/data/tilesets/graphics.h"
     },
     {
-      "path": "src/data/tilesets/headers.h",
-      "gitBlobSha1": "676bd21050e753822a61aa127310c338938c3c00",
-      "byteLength": 21121
+      "path": "src/data/tilesets/headers.h"
     },
     {
-      "path": "src/data/tilesets/metatiles.h",
-      "gitBlobSha1": "a9f267159b45291c4a8f28a7577609d9f15b655f",
-      "byteLength": 15339
+      "path": "src/data/tilesets/metatiles.h"
     },
     {
-      "path": "src/event_object_movement.c",
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
-      "byteLength": 326145
+      "path": "src/event_object_movement.c"
     },
     {
-      "path": "src/field_camera.c",
-      "gitBlobSha1": "88f94bff08ef951523facf2b579fbc3d4d8455b2",
-      "byteLength": 16987
+      "path": "src/field_camera.c"
     },
     {
-      "path": "src/field_control_avatar.c",
-      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
-      "byteLength": 40928
+      "path": "src/field_control_avatar.c"
     },
     {
-      "path": "src/field_effect_helpers.c",
-      "gitBlobSha1": "278364803e7c9a989863a1014e8a733ea4590dfa",
-      "byteLength": 49443
+      "path": "src/field_effect_helpers.c"
     },
     {
-      "path": "src/field_player_avatar.c",
-      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
-      "byteLength": 67969
+      "path": "src/field_player_avatar.c"
     },
     {
-      "path": "src/field_screen_effect.c",
-      "gitBlobSha1": "af00120974fad2cf9a461c6b7c0094e61cad36e5",
-      "byteLength": 14429
+      "path": "src/field_screen_effect.c"
     },
     {
-      "path": "src/fieldmap.c",
-      "gitBlobSha1": "41567772299000ba5855419e5c39ad9373a34c20",
-      "byteLength": 28166
+      "path": "src/fieldmap.c"
     },
     {
-      "path": "src/graphics.c",
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
-      "byteLength": 99258
+      "path": "src/graphics.c"
     },
     {
-      "path": "src/metatile_behavior.c",
-      "gitBlobSha1": "ce273664764b6ec93cd4f3014f0e5aad1a3025de",
-      "byteLength": 24340
+      "path": "src/metatile_behavior.c"
     },
     {
-      "path": "src/overworld.c",
-      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
-      "byteLength": 103643
+      "path": "src/overworld.c"
     },
     {
-      "path": "src/tileset_anims.c",
-      "gitBlobSha1": "04854a2e46a1d2ca89626e7be92955d6a20490e5",
-      "byteLength": 15026
+      "path": "src/tileset_anims.c"
     },
     {
-      "path": "src/tilesets.c",
-      "gitBlobSha1": "2cc1da81d388022d22921619446a998e7015b2a9",
-      "byteLength": 178
+      "path": "src/tilesets.c"
     },
     {
-      "path": "tileset_rules.mk",
-      "gitBlobSha1": "a868248cf07750504eec7d87c772e089c60aa211",
-      "byteLength": 7240
+      "path": "tileset_rules.mk"
     },
     {
-      "path": "tools/gbagfx/LICENSE",
-      "gitBlobSha1": "b66bf81c0fca318338a52fd17434c26020865d38",
-      "byteLength": 1055
+      "path": "tools/gbagfx/LICENSE"
     },
     {
-      "path": "tools/gbagfx/convert_png.c",
-      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
-      "byteLength": 7511
+      "path": "tools/gbagfx/convert_png.c"
     }
   ]
 }

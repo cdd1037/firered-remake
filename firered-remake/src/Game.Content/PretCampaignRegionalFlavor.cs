@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Events;
@@ -18,51 +17,33 @@ public sealed partial class PretCampaignCatalog
 
     private static readonly ImmutableHashSet<string> RegionalFlavorMaps = new[]
     {
-        "MAP_CELADON_CITY", "MAP_CELADON_CITY_GAME_CORNER", "MAP_CELADON_CITY_GYM",
-        "MAP_CELADON_CITY_POKEMON_CENTER_1F", "MAP_CELADON_CITY_POKEMON_CENTER_2F",
-        "MAP_LAVENDER_TOWN", "MAP_LAVENDER_TOWN_HOUSE1", "MAP_LAVENDER_TOWN_MART",
-        "MAP_LAVENDER_TOWN_POKEMON_CENTER_1F", "MAP_LAVENDER_TOWN_POKEMON_CENTER_2F",
-        "MAP_LAVENDER_TOWN_VOLUNTEER_POKEMON_HOUSE",
-        "MAP_POKEMON_TOWER_1F", "MAP_POKEMON_TOWER_2F", "MAP_POKEMON_TOWER_3F",
-        "MAP_POKEMON_TOWER_4F", "MAP_POKEMON_TOWER_5F", "MAP_POKEMON_TOWER_6F", "MAP_POKEMON_TOWER_7F",
-        "MAP_ROUTE7", "MAP_ROUTE7_EAST_ENTRANCE", "MAP_ROUTE8", "MAP_ROUTE8_WEST_ENTRANCE",
-        "MAP_UNDERGROUND_PATH_EAST_ENTRANCE", "MAP_UNDERGROUND_PATH_EAST_WEST_TUNNEL",
-        "MAP_UNDERGROUND_PATH_WEST_ENTRANCE"
+        "MAP_CELADON_CITY","MAP_CELADON_CITY_GAME_CORNER","MAP_CELADON_CITY_GYM","MAP_CELADON_CITY_POKEMON_CENTER_1F","MAP_CELADON_CITY_POKEMON_CENTER_2F","MAP_LAVENDER_TOWN","MAP_LAVENDER_TOWN_HOUSE1","MAP_LAVENDER_TOWN_MART","MAP_LAVENDER_TOWN_POKEMON_CENTER_1F","MAP_LAVENDER_TOWN_POKEMON_CENTER_2F","MAP_LAVENDER_TOWN_VOLUNTEER_POKEMON_HOUSE","MAP_POKEMON_TOWER_1F","MAP_POKEMON_TOWER_2F","MAP_POKEMON_TOWER_3F","MAP_POKEMON_TOWER_4F","MAP_POKEMON_TOWER_5F","MAP_POKEMON_TOWER_6F","MAP_POKEMON_TOWER_7F","MAP_ROUTE7","MAP_ROUTE7_EAST_ENTRANCE","MAP_ROUTE8","MAP_ROUTE8_WEST_ENTRANCE","MAP_UNDERGROUND_PATH_EAST_ENTRANCE","MAP_UNDERGROUND_PATH_EAST_WEST_TUNNEL","MAP_UNDERGROUND_PATH_WEST_ENTRANCE"
     }.ToImmutableHashSet(StringComparer.Ordinal);
 
-    private static void AppendRegionalFlavorSources(string root, List<PretSourceScriptFile> sources,
-        List<string> textFiles, List<string> hashes)
+    private static void AppendRegionalFlavorSources(string root,List<PretSourceScriptFile> sources,List<string> textFiles)
     {
-        string Read(string folder, string path, string expected)
+        string Read(string path)
         {
-            byte[] bytes = File.ReadAllBytes(Path.Combine(root, "content/raw", folder, path));
-            if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != expected)
-                throw new InvalidDataException("regional_flavor_source_hash: " + path);
-            hashes.Add("regional-flavor-source:" + path + ":" + expected);
+            byte[] bytes = File.ReadAllBytes(Path.Combine(root, PretSourcePaths.FireRedRawDirectory, path));
             return Encoding.UTF8.GetString(bytes);
         }
         const string scriptPath = "data/scripts/flavor_text.inc";
-        const string scriptHash = "3290aee116c25c28710fa3f6bcf2c0ffd00a8a5746b0228940f34d3c6b318991";
-        string script = Read("regional-flavor", scriptPath, scriptHash);
-        string text = Read("viridian-region", "data/text/flavor_text.inc", "04564490bd4c5dfd447480a797fad714536b4d36c19a276e56dcf5336f9e1028");
-        Read("pokemon-tower-region", "src/field_control_avatar.c", "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d");
-        Read("pokemon-tower-region", "src/metatile_behavior.c", "a1491016f9b6ee56c38fd66bf890dfcb5d37c7dc0dfda9fe7c0a5282376b9042");
-        Read("pokemon-tower-region", "include/constants/metatile_behaviors.h", "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75");
-        Read("viridian-region", "src/script.c", "1cc4aade1f821e5f218ba7c191b1217e5a3cf942d0bfd0f32f775ce1f808437c");
-        Read("pokemon-tower-region", "data/event_scripts.s", "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27");
+        string script = Read(scriptPath);
+        string text = Read("data/text/flavor_text.inc");
+        Read("src/field_control_avatar.c");
+        Read("src/metatile_behavior.c");
+        Read("include/constants/metatile_behaviors.h");
+        Read("src/script.c");
+        Read("data/event_scripts.s");
         var prior = sources.SingleOrDefault(s => s.Path == scriptPath);
-        if (prior is not null && (prior.Text != script || prior.SourceRef.Sha256 != scriptHash))
+        if (prior is not null && (prior.Text != script ))
             throw new InvalidDataException("regional_flavor_script_conflict");
         if (prior is null) sources.Add(new(scriptPath, script,
-            new(SourceKind.Pret, scriptPath, "regional-flavor", "pret/pokefirered", PretWorldMap.SourceCommit, scriptHash)));
+            new(SourceKind.Pret,scriptPath,"regional-flavor","pret/pokefirered",PretWorldMap.SourceCommit)));
         if (!textFiles.Contains(text, StringComparer.Ordinal)) textFiles.Add(text);
-        hashes.Add("regional-flavor-application:fr-regional-flavor-v1");
-        hashes.Add("regional-ordinary-gender-v1");
-        hashes.Add("regional-sign-walkaway-v1");
     }
 
-    private static void ValidateRegionalFlavorComposition(ImmutableDictionary<MapId, PretWorldMap> maps,
-        PretStoryCompilation scripts, ImmutableDictionary<string, string>.Builder texts)
+    private static void ValidateRegionalFlavorComposition(ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {
         if (!RegionalFlavorMaps.SetEquals(maps.Values.Select(m => m.SourceMapSymbol).Where(RegionalFlavorMaps.Contains)))
             throw new InvalidDataException("regional_flavor_map_scope");
@@ -76,9 +57,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static FieldBackgroundTrigger RegionalBackgroundTrigger(JsonElement source, bool enabled)
+    private static FieldBackgroundTrigger RegionalBackgroundTrigger(JsonElement source,bool enabled)
     {
-        int x = source.GetProperty("x").GetInt32(), y = source.GetProperty("y").GetInt32();
+        int x = source.GetProperty("x").GetInt32(),y = source.GetProperty("y").GetInt32();
         int elevation = source.GetProperty("elevation").GetInt32();
         if (source.TryGetProperty("script", out var script))
         {

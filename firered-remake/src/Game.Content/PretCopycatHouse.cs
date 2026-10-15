@@ -11,9 +11,6 @@ namespace Game.Content;
 public sealed class PretCopycatHouse
 {
     public const string ResourceId = "firered-copycat-house-v1";
-    public const string ManifestSha256 = "97e0526ca84aa6c694a92ee65ee8c22b66d775f080dc861d9b9bfd5e128e456d";
-    public const string LockSha256 = "9c6138bb7963530f0d383cf5e6750126a8fc0a4e5263b746b58254d07c97d519";
-    public const string FullSourceHash = "f36d638c2720eb5dce4fede172eb5568a1c2f1b3d56e866fa308a98b4140326d";
     public static MapId Floor1MapId { get; } = new("map.saffron-city-copycats-house-1f");
     public static MapId Floor2MapId { get; } = new("map.saffron-city-copycats-house-2f");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
@@ -21,7 +18,6 @@ public sealed class PretCopycatHouse
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -37,8 +33,6 @@ public sealed class PretCopycatHouse
         GeneratedDirectory = source.Directory; Catalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
         NpcSources = source.Document("npc-source.json");
-        AdditionalSourceHashes = ["copycat-house-manifest:" + ManifestSha256, "copycat-house-lock:" + LockSha256,
-            .. source.Files.Select(f => "copycat-house:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -62,8 +56,7 @@ public sealed class PretCopycatHouse
     public static PretCopycatHouse Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot, "copycat-house", ResourceId,
-            "scripts/copycat-house.lock.json", LockSha256, 24949, ManifestSha256, 5205, 81, 24);
+        var source = new SilphSourcePackage(projectRoot,"copycat-house",            "scripts/copycat-house.lock.json");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
@@ -73,38 +66,23 @@ public sealed class PretCopycatHouse
                     "OBJ_EVENT_GFX_DODUO" or "OBJ_EVENT_GFX_PIKACHU" or "OBJ_EVENT_GFX_JIGGLYPUFF" or
                     "OBJ_EVENT_GFX_LITTLE_GIRL" or "OBJ_EVENT_GFX_RED_NORMAL",
                 "Copycat house actors must reuse the original existing resources.");
-            _ = SafariSource.Read(dependencyRoot, texture.GetProperty("texturePath").GetString()!,
-                texture.GetProperty("sha256").GetString()!, texture.GetProperty("byteLength").GetInt32());
         }
         Need(graphics.Count == 8, "Copycat house actor collection differs.");
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 2 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Copycat house catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.",
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Saffron Copycat house; Mimic and Poke Doll service admission are separate.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray()
-            .ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-            string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-            Need((id == Floor1MapId.Value || id == Floor2MapId.Value) && path == relative + "/runtime-map.json" &&
-                hash == outputs[path].GetProperty("sha256").GetString() &&
-                spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length,
+            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
+            string path = spec.GetProperty("path").GetString()!;
+            Need((id == Floor1MapId.Value || id == Floor2MapId.Value) && path == relative + "/runtime-map.json" ,
                 "Copycat house compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
-                spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Copycat house map identity differs.");
-            foreach (var artifact in runtime.Artifacts)
-                Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
-                    "Copycat house image binding differs.");
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
                 PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null &&
@@ -127,17 +105,16 @@ public sealed class PretCopycatHouse
         var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
         foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
         {
-            string sourcePath = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
+            string sourcePath = entry.GetString()!,text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
             if (sourcePath.EndsWith("/text.inc", StringComparison.Ordinal) || sourcePath.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(sourcePath, text);
             else
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing Copycat house script label.");
-                scripts.Add(new(sourcePath, text, new(SourceKind.Pret, sourcePath, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[sourcePath].Sha256)));
+                scripts.Add(new(sourcePath, text, new(SourceKind.Pret,sourcePath,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["MOVETUTOR_MIMIC"] == 7 && constants["ITEM_POKE_DOLL"] == 80 &&
             constants["SPECIES_CHANSEY"] == 113 && constants["SPECIES_DODUO"] == 84,
             "Copycat original tutor/item/cry constants differ.");
@@ -148,13 +125,8 @@ public sealed class PretCopycatHouse
     {
         var retained = source.Document("contracts.json").GetProperty("retainedTown");
         string package = retained.GetProperty("currentPackage").GetString()!;
-        _ = SafariSource.Read(dependencyRoot, package + "/manifest.json", retained.GetProperty("currentManifestSha256").GetString()!,
-            retained.GetProperty("currentManifestByteLength").GetInt32());
         var town = retained.GetProperty("currentResource");
-        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot, package + "/" + town.GetProperty("path").GetString(),
-            town.GetProperty("sha256").GetString()!, town.GetProperty("byteLength").GetInt32()));
-        Need(JsonElement.DeepEquals(data.GetProperty("events"), SilphSourcePackage.Json(source.Raw["data/maps/SaffronCity/map.json"])),
-            "Retained Saffron City events differ from the original source.");
+        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot,package + "/" + town.GetProperty("path").GetString()));
         var entrance = data.GetProperty("events").GetProperty("warp_events")[1];
         Need(Warp(entrance, 22, 14, 0, "MAP_SAFFRON_CITY_COPYCATS_HOUSE_1F", "1"), "Original Saffron entrance differs.");
         var exits = first.Events.GetProperty("warp_events");

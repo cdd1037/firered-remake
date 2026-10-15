@@ -4,9 +4,8 @@ using Game.Domain.Ids;
 namespace Game.Domain.Encounters;
 public static class LostCaveEncounterTables
 {
-    public const string SourceSha256 = "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c";
     public static ImmutableArray<EarlyLandEncounterTable> Land { get; } = [
-        new(new("map.five-island-lost-cave-room1"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom1_FireRed", SourceSha256, 1, [
+        new(new("map.five-island-lost-cave-room1"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom1_FireRed", 1, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -20,7 +19,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room2"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom2_FireRed", SourceSha256, 2, [
+        new(new("map.five-island-lost-cave-room2"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom2_FireRed", 2, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -34,7 +33,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room3"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom3_FireRed", SourceSha256, 3, [
+        new(new("map.five-island-lost-cave-room3"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom3_FireRed", 3, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -48,7 +47,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room4"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom4_FireRed", SourceSha256, 4, [
+        new(new("map.five-island-lost-cave-room4"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom4_FireRed", 4, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -62,7 +61,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room5"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom5_FireRed", SourceSha256, 5, [
+        new(new("map.five-island-lost-cave-room5"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom5_FireRed", 5, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -76,7 +75,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room6"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom6_FireRed", SourceSha256, 6, [
+        new(new("map.five-island-lost-cave-room6"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom6_FireRed", 6, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -90,7 +89,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room7"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom7_FireRed", SourceSha256, 7, [
+        new(new("map.five-island-lost-cave-room7"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom7_FireRed", 7, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -104,7 +103,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room8"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom8_FireRed", SourceSha256, 8, [
+        new(new("map.five-island-lost-cave-room8"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom8_FireRed", 8, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -118,7 +117,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room9"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom9_FireRed", SourceSha256, 9, [
+        new(new("map.five-island-lost-cave-room9"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom9_FireRed", 9, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -132,7 +131,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room10"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom10_FireRed", SourceSha256, 10, [
+        new(new("map.five-island-lost-cave-room10"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom10_FireRed", 10, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -146,7 +145,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room11"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom11_FireRed", SourceSha256, 5, [
+        new(new("map.five-island-lost-cave-room11"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom11_FireRed", 5, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -160,7 +159,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room12"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom12_FireRed", SourceSha256, 5, [
+        new(new("map.five-island-lost-cave-room12"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom12_FireRed", 5, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -174,7 +173,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room13"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom13_FireRed", SourceSha256, 5, [
+        new(new("map.five-island-lost-cave-room13"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom13_FireRed", 5, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -188,7 +187,7 @@ public static class LostCaveEncounterTables
             new(10, new("pret:SPECIES_HAUNTER"), 52, 52, 1),
             new(11, new("pret:SPECIES_MURKROW"), 22, 22, 1),
         ]),
-        new(new("map.five-island-lost-cave-room14"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom14_FireRed", SourceSha256, 5, [
+        new(new("map.five-island-lost-cave-room14"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandLostCaveRoom14_FireRed", 5, [
             new(0, new("pret:SPECIES_GASTLY"), 40, 40, 20),
             new(1, new("pret:SPECIES_ZUBAT"), 37, 37, 20),
             new(2, new("pret:SPECIES_HAUNTER"), 44, 44, 10),
@@ -204,14 +203,14 @@ public static class LostCaveEncounterTables
         ]),
     ];
     public static ImmutableArray<WaterEncounterTable> Water { get; } = [
-        new(new("map.five-island-resort-gorgeous"), "MAP_FIVE_ISLAND_RESORT_GORGEOUS", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandResortGorgeous_FireRed", SourceSha256, 2, [
+        new(new("map.five-island-resort-gorgeous"), "MAP_FIVE_ISLAND_RESORT_GORGEOUS", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandResortGorgeous_FireRed", 2, [
             new(0, new("pret:SPECIES_TENTACOOL"), 5, 35, 60),
             new(1, new("pret:SPECIES_HOPPIP"), 5, 15, 30),
             new(2, new("pret:SPECIES_TENTACOOL"), 35, 40, 5),
             new(3, new("pret:SPECIES_TENTACRUEL"), 35, 40, 4),
             new(4, new("pret:SPECIES_TENTACRUEL"), 35, 40, 1),
         ]),
-        new(new("map.five-island-water-labyrinth"), "MAP_FIVE_ISLAND_WATER_LABYRINTH", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandWaterLabyrinth_FireRed", SourceSha256, 2, [
+        new(new("map.five-island-water-labyrinth"), "MAP_FIVE_ISLAND_WATER_LABYRINTH", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandWaterLabyrinth_FireRed", 2, [
             new(0, new("pret:SPECIES_TENTACOOL"), 5, 20, 60),
             new(1, new("pret:SPECIES_HOPPIP"), 5, 15, 30),
             new(2, new("pret:SPECIES_TENTACOOL"), 35, 40, 5),
@@ -220,22 +219,22 @@ public static class LostCaveEncounterTables
         ]),
     ];
     public static ImmutableArray<OldRodEncounterTable> OldRod { get; } = [
-        new(new("map.five-island-resort-gorgeous"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandResortGorgeous_FireRed", SourceSha256, 20, [
+        new(new("map.five-island-resort-gorgeous"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandResortGorgeous_FireRed", 20, [
             new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70),
             new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30),
         ]),
-        new(new("map.five-island-water-labyrinth"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandWaterLabyrinth_FireRed", SourceSha256, 20, [
+        new(new("map.five-island-water-labyrinth"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandWaterLabyrinth_FireRed", 20, [
             new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70),
             new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30),
         ]),
     ];
     public static ImmutableArray<OldRodEncounterTable> GoodRod { get; } = [
-        new(new("map.five-island-resort-gorgeous"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandResortGorgeous_FireRed", SourceSha256, 20, [
+        new(new("map.five-island-resort-gorgeous"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandResortGorgeous_FireRed", 20, [
             new(2, new("pret:SPECIES_HORSEA"), 5, 15, 60),
             new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20),
             new(4, new("pret:SPECIES_HORSEA"), 5, 15, 20),
         ]),
-        new(new("map.five-island-water-labyrinth"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandWaterLabyrinth_FireRed", SourceSha256, 20, [
+        new(new("map.five-island-water-labyrinth"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sFiveIslandWaterLabyrinth_FireRed", 20, [
             new(2, new("pret:SPECIES_HORSEA"), 5, 15, 60),
             new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20),
             new(4, new("pret:SPECIES_HORSEA"), 5, 15, 20),

@@ -2,82 +2,57 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 194,
-      "gitBlobSha1": "1f0ba5049d9c8d1d75666ea26fe23ff9d88b18ce",
       "path": "graphics/items/icon_palettes/fire_tm_hm.pal",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "abf93622b18caf0ddd7fbf4d7dcc74ce3280d4a18e84fe99032d11afcf5a25cc"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "3a0a441cee56c71f56554de3710797d1aab017f2",
       "path": "graphics/items/icon_palettes/grass_tm_hm.pal",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "e3a7c7210f7b86d3503715205540632005488d0be4695ee1385a3a362659d9ad"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "83192ed29bb4d51701736f52d9c51224f50cc593",
       "path": "graphics/items/icon_palettes/ice_tm_hm.pal",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f74f06ec10b6b56f189ab5c337e2d7fdf65629ea9028b948f117e853a879b018"
+      ]
     },
     {
-      "byteLength": 189,
-      "gitBlobSha1": "d0bf3faba6c1c939e41772d262260ede1d365815",
       "path": "graphics/items/icon_palettes/secret_key.pal",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "27fd3b11234646eb6f48d229a36b3aadc2b0207cec76e2572ab363033e0ae6af"
+      ]
     },
     {
-      "byteLength": 283,
-      "gitBlobSha1": "7b7426d698a10f8988c3bd2ba14bf5ee44c5cd23",
       "path": "graphics/items/icons/secret_key.png",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "9e4469f176399fa54b708e92d2f3c4ad253edd05df7d0f3d20e2fd6a026d5f35"
+      ]
     },
     {
-      "byteLength": 344,
-      "gitBlobSha1": "c4e6d1df78a0498443ae3567ec7c9f3839e7713a",
       "path": "graphics/items/icons/tm_hm.png",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ad43897b481aa49e13dd85f205fe5fe9496212e47266eb3e9359113ad03d77bf"
+      ]
     },
     {
-      "byteLength": 46353,
-      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
       "path": "src/data/graphics/items.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+      ]
     },
     {
-      "byteLength": 30370,
-      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
       "path": "src/data/item_icon_table.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+      ]
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-cinnabar-item-art-source-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

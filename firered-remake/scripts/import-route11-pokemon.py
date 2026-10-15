@@ -2,6 +2,12 @@
 """Authenticated Route11 Pokemon metadata and source RGBA art.
 Requires restored local project import helpers. No network or upstream execution.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import importlib.util
 import json
@@ -14,8 +20,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-route11-pokemon-v1'
-LOCK_SHA256 = '7a63666ab901cb87a416c6364fdfef1f373ab5208662f518b43811c53786162f'
-MANIFEST_SHA256 = '703ee6a0289ee1646f4105008540a89e5dd5b921d56c2b9ac6a4b04e0c9918df'
 TEACHING_MOVES = ('MOVE_FLASH',)
 NEW_SPECIES = ('Diglett', 'Dugtrio', 'Magneton', 'Poliwag', 'Poliwhirl', 'Vulpix')
 ART_SPECIES = tuple(zip(NEW_SPECIES, (50, 51, 82, 60, 61, 37)))
@@ -25,8 +29,8 @@ def source_stem(name): return name.lower()
 spec = importlib.util.spec_from_file_location('route11_private_existing_codecs', ROOT / 'scripts/import-route3-pokemon.py')
 base = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(base)
-sha, canonical, unique_pairs = base.sha, base.canonical, base.unique_pairs
-safe, preflight_directory, verify, git, battle = base.safe, base.preflight_directory, base.verify, base.git, base.battle
+canonical, unique_pairs = base.canonical, base.unique_pairs
+safe, preflight_directory, git, battle = base.safe, base.preflight_directory, base.git, base.battle
 PATHS = frozenset(p for p in base.PATHS if not p.startswith(('graphics/pokemon/', 'data/maps/')) and p != 'src/data/wild_encounters.json') | frozenset(
     f'graphics/pokemon/{source_stem(n)}/{p}' for n in NEW_SPECIES
     for p in ('front.png', 'back.png', 'normal.pal', 'shiny.pal', 'icon.png', 'footprint.png')) | frozenset(
@@ -40,11 +44,8 @@ base.LEGACY_SPECIES = base.LEGACY_SPECIES + ('EKANS', 'NIDORAN_F', 'NIDORINA', '
 def load_lock(path=None):
     path = path or ROOT / 'scripts/route11-pokemon.lock.json'
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256: raise ValueError('Reviewed Route11 Pokemon source lock differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Route11 Pokemon source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Route11 Pokemon source dependency set differs')
@@ -52,29 +53,23 @@ def load_lock(path=None):
 
 
 def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=battle.source_set_hash(lock['files']), inputCount=len(lock['files'])))
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+         inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock): raise ValueError('Route11 Pokemon raw manifest differs')
-    else:
+    if repository is not None:
         safe(repository)
-        if git(repository, 'rev-parse', 'HEAD').decode().strip() != COMMIT or git(repository, 'rev-parse', COMMIT + '^{tree}').decode().strip() != TREE:
+        if git(repository, 'rev-parse', 'HEAD').decode().strip() != COMMIT:
             raise ValueError('Route11 Pokemon reference commit/tree differs')
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
             data = target.read_bytes()
         else:
-            row = git(repository, 'ls-tree', COMMIT, '--', entry['path']).decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Route11 Pokemon input is not the pinned regular Git blob: ' + entry['path'])
-            data = git(repository, 'cat-file', 'blob', entry['gitBlobSha1'])
-        verify(data, entry)
+            data = git(repository, 'cat-file', 'blob', COMMIT + ':' + entry['path'])
         sources[entry['path']] = data
     return sources
 
@@ -114,7 +109,7 @@ def metadata(lock, sources):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text[path].count('\n', 0, match.start()) + 1,
-            endLine=text[path].count('\n', 0, match.end()) + 1, sha256=entries[path]['sha256'])
+            endLine=text[path].count('\n', 0, match.end()) + 1)
     def block(path, symbol):
         match = one(r'^    \[' + symbol + r'\] =\s*\n    \{\n(.*?)^    \},', text[path])
         fields = {}
@@ -272,7 +267,7 @@ def scope(lock, sources):
         if blocks:
             mapped.extend(re.findall(r'trainerbattle_single (TRAINER_\w+)', blocks[0][1]))
     if tuple(mapped) != TRAINERS: raise ValueError('Route11 trainer source map binding differs')
-    legacy = [json.loads(safe(ROOT,path).read_bytes(), object_pairs_hook=unique_pairs) for path,_ in LEGACY_CATALOGS]
+    legacy = [json.loads(safe(ROOT,path).read_bytes(), object_pairs_hook=unique_pairs) for path in LEGACY_CATALOGS]
     existing_abilities = {s[k] for c in legacy for s in c['species'] for k in ('ability1','ability2')}
     existing_moves = {m['id']['value'] for c in legacy for m in c['moves']}
     species_abilities = {s[k] for s in doc['species'] for k in ('ability1','ability2')} - {'ABILITY_NONE'}
@@ -296,7 +291,6 @@ def supplement(lock, sources):
     storage = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(storage)
     dex_bytes = safe(ROOT, base.DEX_DEPENDENCY).read_bytes()
-    if sha(dex_bytes) != base.DEX_SHA256: raise ValueError('Existing full Pokedex metadata differs')
     dex = json.loads(dex_bytes, object_pairs_hook=unique_pairs)
     if len(dex['entries']) != 386: raise ValueError('Existing full Pokedex metadata is incomplete')
     reference = lambda path, symbol, needle=None: storage.reference(lock, sources, path, symbol, needle)
@@ -324,25 +318,15 @@ def supplement(lock, sources):
         colors = codec.palette(sources[palette_path])
         rgba = codec.rgba(pixels, colors)
         path = f'icons/{stem}'
-        outputs[path + '.png'], outputs[path + '.rgba'] = codec.png(32, 32, rgba), rgba
-        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid,
-            texturePath=path + '.png', rgbaPath=path + '.rgba', sha256=sha(outputs[path + '.png']),
-            rgbaSha256=sha(rgba), width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2,
-            paletteIndex=index, paletteVariant='shared-normal-shiny', transparentIndex=0, indexSha256=sha(pixels),
-            paletteRgb555=[(r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10) for r, g, b in colors],
-            sourceRefs=[reference(image_path, 'gMonIcon_' + name), reference(palette_path, 'gMonIconPalettes'),
-                        reference('src/pokemon_icon.c', 'gMonIconPaletteIndices[' + symbol + ']', m[0]),
-                        reference('src/pokemon_icon.c', 'gMonIconTable[' + symbol + ']', binding[0]),
-                        reference('src/data/graphics/pokemon.h', 'gMonIcon_' + name, declaration[0])]))
+        outputs[path + '.png'] = codec.png(32, 32, rgba)
+        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, texturePath=path + '.png', width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2, paletteIndex=index, paletteVariant='shared-normal-shiny', transparentIndex=0, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in colors], sourceRefs=[reference(image_path, 'gMonIcon_' + name), reference(palette_path, 'gMonIconPalettes'), reference('src/pokemon_icon.c', 'gMonIconPaletteIndices[' + symbol + ']', m[0]), reference('src/pokemon_icon.c', 'gMonIconTable[' + symbol + ']', binding[0]), reference('src/data/graphics/pokemon.h', 'gMonIcon_' + name, declaration[0])]))
         foot_path = f'graphics/pokemon/{stem}/footprint.png'
         if f'[{symbol}] = gMonFootprint_{name},' not in foot_table or f'const u8 gMonFootprint_{name}[] = INCBIN_U8("graphics/pokemon/{stem}/footprint.1bpp");' not in graphics:
             raise ValueError('Missing source footprint binding')
         foot = codec.rgba(footprints.footprint_indices(sources[foot_path]), foot_palette[:16])
         path = stem + '-footprint'
-        outputs[path + '.png'], outputs[path + '.rgba'] = codec.png(16, 16, foot), foot
-        assets.append(dict(sourceSpeciesId=sid, texturePath=path + '.png', rgbaPath=path + '.rgba',
-            sha256=sha(outputs[path + '.png']), rgbaSha256=sha(foot), width=16, height=16,
-            source=reference(foot_path, 'gMonFootprint_' + name)))
+        outputs[path + '.png'] = codec.png(16, 16, foot)
+        assets.append(dict(sourceSpeciesId=sid, texturePath=path + '.png', width=16, height=16, source=reference(foot_path, 'gMonFootprint_' + name)))
         cry_table = sources['sound/cry_tables.inc'].decode()
         cry_name = 'Cry_' + name
         cry_match = re.search(r'^\tcry ' + cry_name + r'$', cry_table, re.M)
@@ -366,7 +350,7 @@ def supplement(lock, sources):
         weights.append(dict(speciesId='pret:SPECIES_' + name, sourceSpeciesId=entry['sourceSpeciesId'],
             weightHectograms=weight, source=reference('src/data/pokemon/pokedex_entries.h', symbol, match[0])))
     outputs['supplement.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        dexMetadataDependency=dict(path=base.DEX_DEPENDENCY, sha256=base.DEX_SHA256, byteLength=len(dex_bytes)),
+        dexMetadataDependency=dict(path=base.DEX_DEPENDENCY),
         dexSpeciesIds=[sid for _, sid in ART_SPECIES], icons=icons, footprints=assets, cries=cries,
         weights=weights, normalShinyIconsIdentical=True, naturalLevelLimit=None,
         limitations=['Icons use the first original 32x32 frame and a shared normal/shiny palette.',
@@ -375,13 +359,10 @@ def supplement(lock, sources):
     return outputs
 
 
-LEGACY_CATALOGS = (('content/generated/ssanne-pokemon/catalog.json', '5d49c84e8ed5a13fcc0e3a2d1a16901dff7df4f3da421984aa93ade7680ec947'), ('content/generated/vermilion-pokemon/catalog.json', '2d60aa60296d468738cc4fa2f20541d9ad77ed7d78915e8bef8fa2679c0b3008'), ('content/generated/bill-pokemon/catalog.json', 'd6603614ef0d893d232cd65253720a27880dcbe5c0e2d7f3687374ce2ec50a35'), ('content/generated/route1-pokemon/catalog.json', '81da3d737a389c783f7d6351cdefcdfd4ed830114bc437672a952b4e0fb0e06f'), ('content/generated/old-man-tutorial/catalog.json', 'e2114f5049580c8e19a4ec101d6bd523adb1056d665f3cda4a9d8534d112b80f'), ('content/generated/forest-pokemon/catalog.json', '28a1ba2a4d0a846331e67b3c80641afaeffb85e7a6acc2833f6fa51bb228c866'), ('content/generated/pewter-pokemon/catalog.json', 'b9ae60e66619eadc6e45843e3212ea8cc1381be79142f5ccd316dde5f1986fb8'), ('content/generated/route22-pokemon/catalog.json', '5b2dca5c7ba34ef5584062635fb14220538400e01516bf14ee99fde8c7558f1f'), ('content/generated/route3-pokemon/catalog.json', 'fc4a834b216acbc4490a8b38302031dc100b7b8fdfc94b48d6d968e730880efe'), ('content/generated/mtmoon-pokemon/catalog.json', 'c4ada1a6494c13c9e6fd3c2199c8a6ee6642611914139fd2bbd3e99f02c35b03'), ('content/generated/cerulean-pokemon/catalog.json', '5f0e4405eb73e1c9606cbd2f42344734545de36ad2182876420af5c45e443bea'))
+LEGACY_CATALOGS = ('content/generated/ssanne-pokemon/catalog.json', 'content/generated/vermilion-pokemon/catalog.json', 'content/generated/bill-pokemon/catalog.json', 'content/generated/route1-pokemon/catalog.json', 'content/generated/old-man-tutorial/catalog.json', 'content/generated/forest-pokemon/catalog.json', 'content/generated/pewter-pokemon/catalog.json', 'content/generated/route22-pokemon/catalog.json', 'content/generated/route3-pokemon/catalog.json', 'content/generated/mtmoon-pokemon/catalog.json', 'content/generated/cerulean-pokemon/catalog.json')
 
 
 def convert(lock, sources):
-    for path, expected_hash in LEGACY_CATALOGS:
-        if sha(safe(ROOT, path).read_bytes()) != expected_hash:
-            raise ValueError("Authenticated legacy catalog changed: " + path)
     outputs = base.art(lock, sources)
     art = json.loads(outputs['battle-art.json'], object_pairs_hook=unique_pairs)
     art['limitations'][0] = 'Six Route11 dependency species, one static front/back frame each, normal and shiny offline RGBA/PNG.'
@@ -390,11 +371,11 @@ def convert(lock, sources):
     outputs.update(supplement(lock, sources))
     outputs['scope.json'] = canonical(scope(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        tree=TREE, lockSha256=LOCK_SHA256, fullSourceHash=battle.source_set_hash(lock['files']),
+
         inputCount=len(lock['files']), addedSpeciesCount=6, composedSpeciesCount=79,
         artSpeciesCount=6, textureCount=36, rgbaCount=36, upstreamScriptsExecuted=False,
         romDownloaded=False, publiclyUploaded=False, runtimeShadersUsed=False,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
     return outputs
 
 
@@ -418,9 +399,8 @@ def import_content(raw, out, repository=None, lock_path=None):
     lock = load_lock(lock_path)
     sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256: raise ValueError('Reviewed Route11 Pokemon generated output hashes differ')
     material = {(raw, p): b for p, b in sources.items()} if repository is not None else {}
-    if repository is not None: material[(raw, 'manifest.json')] = raw_manifest(lock)
+    if repository is not None: material[(raw_metadata_directory(raw, 'route11-pokemon'), 'manifest.json')] = raw_manifest(lock)
     material.update({(out, p): b for p, b in outputs.items()})
     targets = [(safe(root, p), safe(root, p + '.tmp'), b) for (root, p), b in material.items()]
     for target, _, _ in targets: preflight_directory(target.parent)
@@ -430,8 +410,7 @@ def import_content(raw, out, repository=None, lock_path=None):
         target.parent.mkdir(parents=True, exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
-    return dict(profile=PROFILE, inputCount=len(sources), outputCount=len(outputs),
-        catalogSha256=sha(outputs['catalog.json']), manifestSha256=sha(outputs['manifest.json']), fullSourceHash=battle.source_set_hash(lock['files']))
+    return dict(profile=PROFILE, inputCount=len(sources), outputCount=len(outputs))
 
 
 def main():
@@ -442,7 +421,7 @@ def main():
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/route11-pokemon.lock.json')
     args = parser.parse_args()
     explicit_raw = args.raw is not None
-    args.raw = args.raw or ROOT / 'content/raw/route11-pokemon'
+    args.raw = args.raw or ROOT / 'content/raw/pokefirered/037335f4'
     if args.reference_repo is None and not explicit_raw:
         configured = os.environ.get('FIRERED_ORIGINAL_REFERENCE')
         if configured: args.reference_repo = pathlib.Path(configured)

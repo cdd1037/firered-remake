@@ -6,7 +6,7 @@ decl=json.loads((source/'content/generated/cinnabar-source-preparation/declarati
 text={}; hashes={}
 def read(p):
  if p not in text:
-  choices=[source/'content/raw/cinnabar-source-preparation'/p,base/'content/raw/saffron-gym-catalogs'/p,base/'content/raw/silph-catalogs'/p]
+  choices=[source/'content/raw/pokefirered/037335f4'/p,base/'content/raw/pokefirered/037335f4'/p]
   f=next((x for x in choices if x.exists()),None)
   if f is None: raise ValueError('missing source '+p)
   data=f.read_bytes();text[p]=data.decode();hashes[p]=hashlib.sha256(data).hexdigest()

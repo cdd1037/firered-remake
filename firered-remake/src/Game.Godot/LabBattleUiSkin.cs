@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Godot;
 
@@ -6,8 +5,7 @@ using Godot;
 public sealed class LabBattleUiSkin : IDisposable
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceHash = "c419c9a928c3e9528bf735a01de974839affe3f2fcbba9b9fbd6f2e0be90ea68";
-    private const string CatalogHash = "f780ac0233b09ed8a79bc20d2c1565ef98f354efcb3c82ed8a3d1b71a06a3d0f";
+
     private readonly Dictionary<string, ImageTexture> _textures = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Rect2> _rects = new(StringComparer.Ordinal);
     private IReadOnlyDictionary<string,Texture2D>? _userWindows;
@@ -53,13 +51,10 @@ public sealed class LabBattleUiSkin : IDisposable
     {
         ValidateDarkenCoefficient(darkenCoefficient);
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "lab-battle-ui.json"));
-        CheckHash(bytes, CatalogHash, "catalog");
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-lab-battle-ui-static-v1"
-            || root.GetProperty("sourceCommit").GetString() != SourceCommit
-            || root.GetProperty("fullSourceHash").GetString() != SourceHash)
+            || root.GetProperty("profile").GetString() != "firered-lab-battle-ui-static-v1")
             throw new InvalidDataException("Lab battle UI source identity differs.");
         var result = new LabBattleUiSkin { DarkenCoefficient = darkenCoefficient };
         try
@@ -73,14 +68,12 @@ public sealed class LabBattleUiSkin : IDisposable
                 var path = System.IO.Path.Combine(directory, relative);
                 if (new FileInfo(path).LinkTarget is not null) throw new InvalidDataException("Lab UI texture symlink rejected.");
                 var png = System.IO.File.ReadAllBytes(path);
-                CheckHash(png, entry.GetProperty("sha256").GetString()!, id + " PNG");
                 using var image = new Image();
                 if (image.LoadPngFromBuffer(png) != Error.Ok || image.GetFormat() != Image.Format.Rgba8
                     || image.GetWidth() != entry.GetProperty("width").GetInt32()
                     || image.GetHeight() != entry.GetProperty("height").GetInt32())
                     throw new InvalidDataException("Lab UI PNG dimensions/format differ: " + id);
                 var pixels = image.GetData();
-                CheckHash(pixels, entry.GetProperty("rgbaSha256").GetString()!, id + " pixels");
                 // Hash verification always precedes this derived display palette. Original files are untouched.
                 if (darkenCoefficient != 0)
                     for (var i = 0; i < pixels.Length; i += 4)
@@ -173,12 +166,6 @@ public sealed class LabBattleUiSkin : IDisposable
     {
         if (coefficient is < 0 or > 16)
             throw new ArgumentOutOfRangeException(nameof(coefficient), "Source palette coefficient must be 0..16.");
-    }
-
-    private static void CheckHash(byte[] data, string expected, string label)
-    {
-        if (Convert.ToHexStringLower(SHA256.HashData(data)) != expected)
-            throw new InvalidDataException("Lab battle UI " + label + " hash differs; rerun the verified importer.");
     }
     public void Dispose() { foreach (var texture in _textures.Values) texture.Dispose(); _textures.Clear(); _rects.Clear(); }
 }

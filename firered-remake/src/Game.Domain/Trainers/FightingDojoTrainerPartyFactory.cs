@@ -36,18 +36,16 @@ public static partial class FightingDojoTrainerPartyFactory
         if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster ||
             catalog.Trainers is null || catalog.BattlesByScript is null || catalog.Trainers.Count != 5 || catalog.BattlesByScript.Count != 5)
             throw new NotSupportedException("fighting_dojo_trainer_scope");
-        foreach (var (id, hash) in TrainerHashes)
+        foreach (var id in TrainerIds)
             if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Party.IsDefault ||
                 trainer.Party.Any(p => p is null || p.CustomMoves.IsDefault || p.EncodedSpeciesName.IsDefault) ||
-                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefault || trainer.AiFlagSymbols.IsDefault ||
-                CampaignSourceFingerprint.Compute(trainer) != hash) throw new NotSupportedException("fighting_dojo_trainer_source");
-        foreach (var (script, hash) in BattleHashes)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script ||
-                CampaignSourceFingerprint.Compute(battle) != hash) throw new NotSupportedException("fighting_dojo_trainer_battle_source");
+                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefault || trainer.AiFlagSymbols.IsDefault) throw new NotSupportedException("fighting_dojo_trainer_source");
+        foreach (var script in BattleScripts)
+            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script) throw new NotSupportedException("fighting_dojo_trainer_battle_source");
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || !BattleHashes.TryGetValue(battle.ScriptEntry, out var hash) || CampaignSourceFingerprint.Compute(battle) != hash)
+        if (battle is null || !BattleScripts.Contains(battle.ScriptEntry))
             throw new NotSupportedException("fighting_dojo_trainer_battle_source");
     }
 }

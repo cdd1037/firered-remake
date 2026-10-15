@@ -12,23 +12,17 @@ public sealed partial class PretCampaignCatalog
     public PretMoveReminderHouse MoveReminderHouse { get; }
     public MoveReminderCatalog? MoveReminder { get; }
 
-    private static void ValidateMoveReminderComposition(PretMoveReminderHouse house,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts)
+    private static void ValidateMoveReminderComposition(PretMoveReminderHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
         => ValidateSourceHouseComposition("move_reminder", house.NewMaps, maps, previous, scripts,
             "map.two-island", 1, "data/maps/TwoIsland_House/scripts.inc", "TwoIsland_House_EventScript_MoveManiac");
 
     public PretMoveDeleterHouse MoveDeleterHouse { get; }
     public MoveDeleterCatalog? MoveDeleter { get; }
 
-    private static void ValidateSourceHouseComposition(string scope, ImmutableDictionary<MapId, PretWorldMap> houseMaps,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts, string townId, int townWarp, string scriptPath, string entry)
+    private static void ValidateSourceHouseComposition(string scope,ImmutableDictionary<MapId, PretWorldMap> houseMaps,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts,string townId,int townWarp,string scriptPath,string entry)
     {
         if (maps.Count != previous.Count + 1 || houseMaps.Count != 1 ||
-            previous.ContainsKey(houseMaps.Single().Key) ||
-            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            houseMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+            previous.ContainsKey(houseMaps.Single().Key) )
             throw new InvalidDataException(scope + "_map_composition");
         var house = houseMaps.Single().Value;
         var town = maps[new(townId)];

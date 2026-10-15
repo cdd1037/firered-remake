@@ -28,7 +28,7 @@ public sealed partial class PretCampaignCatalog
         RocketHideoutRegion?.DynamicExits.Select(e => new CampaignRocketDynamicExit(e.WarpIndex, e.X, e.Y,
             e.Elevation, e.SourceWarpId)).ToImmutableArray() ?? [];
     public ImmutableArray<CampaignMapMetatilePatch> RocketHideoutInitialPatches(
-        bool entranceOpened, bool b1GuardDefeated, bool bothB4GuardsDefeated) =>
+        bool entranceOpened,bool b1GuardDefeated,bool bothB4GuardsDefeated) =>
         RocketHideoutRegion?.InitialPatches(entranceOpened, b1GuardDefeated, bothB4GuardsDefeated)
             .Select(CampaignRocketPatch).ToImmutableArray() ?? [];
 
@@ -36,7 +36,7 @@ public sealed partial class PretCampaignCatalog
         new(patch.Label, patch.MapId, patch.Cells.Select(c => new CampaignMapMetatileCell(c.X, c.Y,
             c.MetatileId, c.Collision, c.Elevation, c.RawAttributes, c.AtlasPath, c.AtlasX, c.AtlasY)).ToImmutableArray());
 
-    private static PokemonCatalog RocketHideoutCampaignPokemon(PokemonCatalog catalog, PokemonCatalog previous)
+    private static PokemonCatalog RocketHideoutCampaignPokemon(PokemonCatalog catalog,PokemonCatalog previous)
     {
         PokemonFactory.ValidateCatalog(catalog);
         PokemonFactory.ValidateCatalog(previous);
@@ -48,7 +48,7 @@ public sealed partial class PretCampaignCatalog
         {
             if (moves.TryGetValue(id, out var current))
             {
-                if (current with { Flags = move.Flags, Source = move.Source } != move ||
+                if (current with { Flags = move.Flags,Source = move.Source } != move ||
                     !current.Flags.SequenceEqual(move.Flags))
                     throw new InvalidDataException("Conflicting Rocket Hideout predecessor move: " + id);
             }
@@ -60,7 +60,7 @@ public sealed partial class PretCampaignCatalog
         return result;
     }
 
-    private FieldMetatileDefinition? RocketHideoutMetatileDefinition(MapId map, int id)
+    private FieldMetatileDefinition? RocketHideoutMetatileDefinition(MapId map,int id)
     {
         var cells = RocketHideoutRegion!.MetatilePatches.Where(p => p.MapId == map)
             .SelectMany(p => p.Cells).Where(c => c.MetatileId == id).ToArray();
@@ -72,8 +72,7 @@ public sealed partial class PretCampaignCatalog
     }
 
     private static IEnumerable<FieldPickupDefinition> RocketHideoutPickupDefinitions(
-        PretRocketHideoutPickupsDocument pickups, EarlyShopCatalog shop, PewterMachineCatalog machines,
-        PretRocketHideoutRegion region, PretStoryCompilation scripts)
+        PretRocketHideoutPickupsDocument pickups,EarlyShopCatalog shop,PewterMachineCatalog machines,PretRocketHideoutRegion region,PretStoryCompilation scripts)
     {
         foreach (var pickup in pickups.Pickups)
         {

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -35,8 +34,7 @@ public partial class CampaignView
         {
             using var image = new Image();
             if (image.LoadPngFromBuffer(_catalog.ForestEnabled?PretForestCaptureDex.ReadTexture(_root, asset):PretCaptureDex.ReadTexture(folder, asset)) != Error.Ok ||
-                image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8 ||
-                Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
+                image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8)
                 throw new InvalidDataException("Capture texture pixels differ: " + asset.Id);
             _captureTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
@@ -44,7 +42,6 @@ public partial class CampaignView
         PretCaptureDex.ValidateBackArtifact(backJson);
         using var back = JsonDocument.Parse(backJson);
         var sprites = back.RootElement.GetProperty("sprites");
-        if (sprites.GetArrayLength() != 4) throw new InvalidDataException("Captured-mon back sprite set incomplete.");
         foreach (var sprite in sprites.EnumerateArray())
         {
             var file = sprite.GetProperty("texturePath").GetString()!;

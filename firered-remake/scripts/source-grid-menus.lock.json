@@ -2,80 +2,55 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      ]
     },
     {
-      "byteLength": 6143,
-      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde",
       "path": "include/constants/menu.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4"
+      ]
     },
     {
-      "byteLength": 30627,
-      "gitBlobSha1": "9ee9968cbce6a271e37cee856234a38c07904537",
       "path": "src/menu.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "19158e25455ffed14afa516f0aa89c3412b3243dd11b5d7050cd41402db2a8ad"
+      ]
     },
     {
-      "byteLength": 27834,
-      "gitBlobSha1": "08c032027cda2c34bf0dded37458adeb250aa553",
       "path": "src/new_menu_helpers.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d115f81a76f93ba1a34894acd58f266a1920215784176f94188e4bad8ba51b1c"
+      ]
     },
     {
-      "byteLength": 56954,
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
       "path": "src/scrcmd.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+      ]
     },
     {
-      "byteLength": 44041,
-      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a",
       "path": "src/script_menu.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8"
+      ]
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
       "path": "src/strings.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      ]
     },
     {
-      "byteLength": 63210,
-      "gitBlobSha1": "f3eef07ce6dea8269980a5ecfdd6902c1c9c13d2",
       "path": "src/text.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "5696f49443eeaaac74b530421ac7f0cbfc71996c557399583788111c322dd80c"
+      ]
     }
   ],
   "profile": "firered-source-grid-menus-v1",
   "repository": "pret/pokefirered",
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

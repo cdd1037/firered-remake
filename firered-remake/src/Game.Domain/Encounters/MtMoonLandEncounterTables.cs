@@ -74,8 +74,7 @@ public static class MtMoonLandEncounterTables
     public static bool IsCave(MapId map) => map.Value is "map.mt-moon-1f" or "map.mt-moon-b1f" or "map.mt-moon-b2f";
 
     private static EarlyLandEncounterTable Create(string map, string symbol, int rate, (string Species, byte Level)[] slots) =>
-        new(new(map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol,
-            "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c", rate,
+        new(new(map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol, rate,
             slots.Select((s, i) => new EarlyLandEncounterSlot(i, new("pret:SPECIES_" + s.Species), s.Level, s.Level,
                 EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

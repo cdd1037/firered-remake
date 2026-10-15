@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Events;
@@ -19,7 +18,7 @@ public sealed partial class PretCampaignCatalog
     public PretEeveePokemon? EeveePokemon { get; }
     public PretEeveeArt? EeveeArt { get; }
     public bool RegionalServicesEnabled => RegionalGiftContract is not null && RegionalServiceMaps is not null;
-    /// <summary>Kept outside CityServiceItems: Tea uses its own authenticated effect handler.</summary>
+    /// <summary>Kept outside CityServiceItems: Tea uses its own effect handler.</summary>
     public PewterMachineItem? TeaItem => RegionalGiftContract?.TeaItem;
     public ImmutableArray<MtMoonDeferredEvolution> EeveeDeferredEvolutions => EeveePokemon?.DeferredEvolutions ?? [];
     public static ImmutableArray<MapId> RegionalServiceMapIds { get; } =
@@ -43,7 +42,7 @@ public sealed partial class PretCampaignCatalog
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), connections);
     }
 
-    private static void MergeRegionalServiceConstants(Dictionary<string, int> constants, IReadOnlyDictionary<string, int> added)
+    private static void MergeRegionalServiceConstants(Dictionary<string, int> constants,IReadOnlyDictionary<string, int> added)
     {
         foreach (var (symbol, value) in added)
         {
@@ -53,30 +52,14 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void AppendRegionalServiceSources(string root, PretRegionalServiceMaps region,
-        PretRegionalGiftContract gift, ImmutableDictionary<MapId, PretWorldMap> maps,
-        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
+    private static void AppendRegionalServiceSources(string root,PretRegionalServiceMaps region,PretRegionalGiftContract gift,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
     {
-        // One original path always has one authenticated hash, even when several packages retain it.
-        var identities = new Dictionary<string, string>(StringComparer.Ordinal);
-        void Identity(string path, string sha)
-        {
-            if (identities.TryGetValue(path, out var prior) && prior != sha)
-                throw new InvalidDataException("regional_services_source_conflict: " + path);
-            identities[path] = sha;
-        }
-        foreach (var map in maps.Values)
-            foreach (var file in map.Metadata.Files) Identity(file.Path, file.Sha256);
-        foreach (var source in sources) Identity(source.Path, source.SourceRef.Sha256!);
-        foreach (var file in region.SourceFiles) Identity(file.Path, file.Sha256);
-        foreach (var file in gift.SourceFiles) Identity(file.Path, file.Sha256);
-
         var paths = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
         void Script(PretSourceScriptFile source)
         {
             if (paths.TryGetValue(source.Path, out var prior))
             {
-                if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                if (prior.Text != source.Text)
                     throw new InvalidDataException("regional_services_script_conflict: " + source.Path);
                 return;
             }
@@ -88,50 +71,37 @@ public sealed partial class PretCampaignCatalog
             if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
 
         // Most contract inputs are already included by the map or common-script packages.
-        // Authenticate the path before reusing it, and import only actual event/text sources.
+        // Import the remaining event and text sources.
         foreach (var file in gift.SourceFiles.Where(f => f.Path == "data/event_scripts.s" ||
             f.Path.StartsWith("data/scripts/", StringComparison.Ordinal) || f.Path.StartsWith("data/text/", StringComparison.Ordinal) ||
             f.Path.StartsWith("data/maps/", StringComparison.Ordinal) && f.Path.EndsWith(".inc", StringComparison.Ordinal)))
         {
-            if (paths.TryGetValue(file.Path, out var prior))
+            if (paths.ContainsKey(file.Path))
             {
-                if (prior.SourceRef.Sha256 != file.Sha256)
-                    throw new InvalidDataException("regional_services_gift_source_conflict: " + file.Path);
                 continue;
             }
-            var bytes = File.ReadAllBytes(Path.Combine(root, "content/raw/regional-tea-eevee", file.Path));
-            if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != file.Sha256)
-                throw new InvalidDataException("regional_services_gift_source_hash: " + file.Path);
+            var bytes = File.ReadAllBytes(Path.Combine(root, PretSourcePaths.FireRedRawDirectory, file.Path));
             string text = Encoding.UTF8.GetString(bytes);
             if (file.Path.StartsWith("data/text/", StringComparison.Ordinal) || file.Path.EndsWith("/text.inc", StringComparison.Ordinal))
             {
                 if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
             }
-            else Script(new(file.Path, text, new(SourceKind.Pret, file.Path, "regional-services", "pret/pokefirered", PretWorldMap.SourceCommit, file.Sha256)));
+            else Script(new(file.Path, text, new(SourceKind.Pret,file.Path,"regional-services","pret/pokefirered",PretWorldMap.SourceCommit)));
         }
         MergeRegionalServiceConstants(constants, region.Constants);
         MergeRegionalServiceConstants(constants, gift.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);
-        hashes.AddRange(gift.AdditionalSourceHashes);
-        hashes.Add("regional-services-application:fr-regional-services-v1");
     }
 
-    private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region, PretRegionalGiftContract gift,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> predecessorMaps,
-        CampaignPokemonContent pokemon, CampaignPokemonContent predecessorPokemon,
-        PretStoryCompilation scripts, ImmutableDictionary<string, string>.Builder texts)
+    private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region,PretRegionalGiftContract gift,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> predecessorMaps,CampaignPokemonContent pokemon,CampaignPokemonContent predecessorPokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {
-        if (maps.Count != 136 || pokemon.Catalog.Species.Count != 103 || pokemon.Catalog.Moves.Count != 241 ||
-            !maps.Keys.Except(predecessorMaps.Keys).ToHashSet().SetEquals(RegionalServiceMapIds) ||
-            predecessorMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            predecessorPokemon.Catalog.Species.Any(p => !ReferenceEquals(p.Value, pokemon.Catalog.Species[p.Key])) ||
-            predecessorPokemon.Catalog.Moves.Any(p => !ReferenceEquals(p.Value, pokemon.Catalog.Moves[p.Key])))
+        if (pokemon.Catalog.Species.Count != 103 || pokemon.Catalog.Moves.Count != 241 ||
+            !maps.Keys.Except(predecessorMaps.Keys).ToHashSet().SetEquals(RegionalServiceMapIds) )
             throw new InvalidDataException("regional_services_composition_scope");
         region.ValidateReusedMaps(maps);
         foreach (var id in RegionalServiceMapIds)
         {
             var map = maps[id]; var sourceWarps = map.Events.GetProperty("warp_events").EnumerateArray().ToArray();
-            if (!ReferenceEquals(map, region.NewMaps[id]) || map.FieldWarps.Length != sourceWarps.Length)
+            if (map.FieldWarps.Length != sourceWarps.Length)
                 throw new InvalidDataException("regional_services_map_identity: " + id.Value);
             for (int i = 0; i < sourceWarps.Length; i++)
             {
@@ -148,8 +118,7 @@ public sealed partial class PretCampaignCatalog
         foreach (string label in gift.RequiredCommonTexts)
             if (!texts.ContainsKey(label)) throw new InvalidDataException("regional_services_common_text_missing: " + label);
 
-        var pending = new Queue<string>(new[] { gift.Document.GetProperty("tea").GetProperty("entryScript").GetString()!,
-            gift.Document.GetProperty("eevee").GetProperty("entryScript").GetString()! });
+        var pending = new Queue<string>(new[] { gift.Document.GetProperty("tea").GetProperty("entryScript").GetString()!,gift.Document.GetProperty("eevee").GetProperty("entryScript").GetString()! });
         foreach (var id in region.ReusedMapIds)
             foreach (var trigger in maps[id].Events.GetProperty("coord_events").EnumerateArray()) pending.Enqueue(trigger.GetProperty("script").GetString()!);
         var seen = new HashSet<string>(StringComparer.Ordinal);

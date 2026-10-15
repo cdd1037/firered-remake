@@ -14,11 +14,10 @@ public static class PretPewterTrainers
         var files = region.SourceFiles.ToDictionary(x => x.Path, StringComparer.Ordinal);
         TrainerSourceRef Ref(PretPewterSourceLocation value)
         {
-            if (value.Kind != SourceKind.Pret || value.Repository != "pret/pokefirered" ||
-                value.Commit != PewterTrainerPartyFactory.SourceCommit || value.Line < 1 ||
-                !files.TryGetValue(value.Path, out var file) || file.Sha256 != value.Sha256)
+            if (value.Kind != SourceKind.Pret || value.Line < 1 ||
+                !files.TryGetValue(value.Path, out var file) )
                 throw new InvalidDataException("Pewter trainer source identity differs.");
-            return new(value.Path, value.Symbol, value.Line, value.Line, value.Sha256);
+            return new(value.Path,value.Symbol,value.Line,value.Line);
         }
         var trainers = ImmutableDictionary.CreateBuilder<TrainerId, TrainerDefinition>();
         var battles = ImmutableDictionary.CreateBuilder<TrainerId, PewterTrainerBattleDefinition>();
@@ -36,13 +35,12 @@ public static class PretPewterTrainers
             var party = t.Party.Select(m => new TrainerPartyMemberDefinition(new("pret:" + m.Species),
                 m.SourceSpeciesId, m.SpeciesName, m.SpeciesName.Select(c => 0xbb + c - 'A').ToImmutableArray(),
                 m.Level, m.SourceIv, m.HeldItem, m.CustomMoves.Select(x => new MoveId("pret:" + x)).ToImmutableArray(),
-                Ref(t.PartySourceRef), new(speciesSource.Path, m.Species, m.SourceSpeciesId + 2,
-                    m.SourceSpeciesId + 2, speciesSource.Sha256))).ToImmutableArray();
+                Ref(t.PartySourceRef), new(speciesSource.Path,m.Species,m.SourceSpeciesId + 2,                    m.SourceSpeciesId + 2))).ToImmutableArray();
             trainers.Add(id, new(id, t.SourceTrainerId, d["trainerClass"], t.SourceTrainerClass,
                 d["trainerPic"], t.SourceTrainerPic, t.Name, t.EncodedName, t.EncounterMusicGender,
                 ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"], false, t.PartyFlags, (uint)t.AiFlags,
                 ai.Split(" | ", StringSplitOptions.None).ToImmutableArray(), t.BaseMoney, party,
-                Ref(t.SourceRef), new(moneySource.Path, d["trainerClass"], brock ? 453 : 482, brock ? 453 : 482, moneySource.Sha256)));
+                Ref(t.SourceRef), new(moneySource.Path,d["trainerClass"],brock ? 453 : 482,brock ? 453 : 482)));
             battles.Add(id, new(id, brock ? 1 : 0, 8, t.ScriptEntry, t.IntroText, t.DefeatText,
                 "PewterCity_Gym_Text_" + (brock ? "Brock" : "Liam") + "PostBattle", t.PostBattleScript, t.MusicOption,
                 "EventScript_TryDoNormalTrainerBattle", "CB2_EndTrainerBattle", Ref(t.ScriptSourceRef)));

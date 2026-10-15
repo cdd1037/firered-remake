@@ -5,7 +5,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Items;
 
-public sealed record OpeningItemSourceRef(string Path, string Symbol, int StartLine, int EndLine, string Sha256);
+public sealed record OpeningItemSourceRef(string Path, string Symbol, int StartLine, int EndLine);
 public sealed record InventoryStack(ItemId Item, int Quantity);
 public sealed record InventoryLimits(int BagItemSlots, int PcItemSlots, int MaximumStack);
 public sealed record OpeningPotionDefinition(ItemId Id, int SourceItemId, string Name, int Price,

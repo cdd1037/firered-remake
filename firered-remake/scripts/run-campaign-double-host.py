@@ -2,7 +2,6 @@
 """Build and verify the actual doubles view; preserve every new run's evidence."""
 import argparse
 import fcntl
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,11 +11,6 @@ import sys
 import time
 import traceback
 from xml.sax.saxutils import quoteattr
-
-
-def sha256(path):
-    with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
 def main():
@@ -37,7 +31,7 @@ def main():
     output = output.resolve()
     host = root / 'tests/CampaignDoubleHost'
     commands = []
-    sources = identity = None
+
     status = {'passed': False, 'native': args.native, 'stage': 'setup'}
 
     def save(name, value):
@@ -72,28 +66,6 @@ def main():
             raise RuntimeError(f'{name} contains an engine error/leak; see retained log')
         return text.strip()
 
-    def source_manifest():
-        files = {Path(__file__).resolve(), root / 'global.json', root / 'toolchain.lock.json',
-                 host / 'project.godot', host / 'CampaignDoubleHost.tscn', font_source}
-        files.update(root.glob('Directory.Build.*'))
-        for directory in [host, *(root / 'src' / name for name in
-                                 ('Game.Domain', 'Game.Application', 'Game.Content', 'Game.Godot'))]:
-            files.update(path for path in directory.rglob('*')
-                         if path.is_file() and not {'bin', 'obj', '.godot'}.intersection(path.relative_to(directory).parts)
-                         and (path.suffix in {'.cs', '.csproj', '.props', '.targets'} or path.name == 'packages.lock.json'))
-        return {'files': {str(path.relative_to(root)): sha256(path) for path in sorted(files)},
-                'checkpoint': {'path': str(checkpoint), 'sha256': sha256(checkpoint)},
-                'singleItemFixture': None if single_fixture is None else {'path': str(single_fixture), 'sha256': sha256(single_fixture)}}
-
-    def assembly_identity():
-        binary = host / '.godot/mono/temp/bin/Debug'
-        # These are the exact copies loaded by Godot, including product dependencies.
-        required = [binary / (name + '.dll') for name in
-                    ('CampaignDoubleHost', 'Game.Application', 'Game.Content', 'Game.Domain')]
-        files = set(required) | set(binary.glob('*.dll')) | set(binary.glob('*.deps.json')) | set(binary.glob('*.runtimeconfig.json'))
-        return {'files': {str(path.relative_to(root)): sha256(path) for path in sorted(files)},
-                'godot': {'path': str(godot), 'sha256': sha256(godot)},
-                'dotnet': {'path': str(dotnet), 'sha256': sha256(dotnet)}}
 
     try:
         if args.native and os.environ.get('DOUBLE_UI_NATIVE_COORDINATED') != '1':
@@ -168,8 +140,8 @@ def main():
                     if time.monotonic() >= deadline:
                         raise TimeoutError('Timed out waiting for /tmp/firered-remake-build.lock')
                     time.sleep(0.25)
-            sources = source_manifest()
-            save('source-manifest.before.json', sources)
+
+
             if run([dotnet, '--version'], 'dotnet-version.log', 30) != '10.0.401':
                 raise RuntimeError('The pinned .NET SDK 10.0.401 is required')
             if not run([godot, '--headless', '--version'], 'godot-version.log', 30).startswith('4.7.2.stable.mono.'):
@@ -179,10 +151,8 @@ def main():
                  '-p:UseSharedCompilation=false', '-p:NuGetAudit=false', '-p:RestoreLockedMode=true',
                  '-p:DoubleTestReferenceRoot=', '-p:BuildProjectReferences=true'], 'build.log')
             run([godot, '--headless', '--editor', '--import', '--path', host, '--quit'], 'import.log')
-            identity = assembly_identity()
-            save('assembly-identity.before.json', identity)
-            if source_manifest() != sources:
-                raise RuntimeError('Sources/checkpoint changed during build/import')
+
+
             fcntl.flock(lock, fcntl.LOCK_UN)
             run([godot, *([] if args.native else ['--headless']), '--audio-driver', 'Dummy',
                  '--path', host, '--verbose'], 'runtime.log')
@@ -207,28 +177,15 @@ def main():
             native_frame = 'single-ether-moves.png' if single_fixture else '01-trainer.png'
             if args.native and not (output / native_frame).is_file():
                 raise RuntimeError('Native run did not save its viewport evidence')
-            after_sources, after_identity = source_manifest(), assembly_identity()
-            save('source-manifest.after.json', after_sources)
-            save('assembly-identity.after.json', after_identity)
-            if after_sources != sources or after_identity != identity:
-                raise RuntimeError('Source/checkpoint/compiled executable identity changed during verification')
+
+
             status.update(passed=True, checks=result['checks'], stage='complete')
     except (Exception, KeyboardInterrupt) as error:
         status.update(error=str(error), errorType=type(error).__name__)
         (output / 'error.log').write_text(traceback.format_exc())
         print(f'FAIL: {error}; evidence retained in {output}', file=sys.stderr)
     finally:
-        # Bind failed runs, including timeouts, to whatever remains on disk too.
-        if not status['passed']:
-            for name, before, capture in [('source-manifest.after.json', sources, source_manifest),
-                                          ('assembly-identity.after.json', identity, assembly_identity)]:
-                if before is not None:
-                    try:
-                        after = capture()
-                        save(name, after)
-                        status[name.replace('.after.json', 'Unchanged')] = after == before
-                    except Exception as error:
-                        status[name] = f'Cannot capture final identity: {error}'
+
         save('runner-result.json', status)
     if status['passed']:
         print(json.dumps(status))

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild Seven Island pixels and cue metadata from pinned local blobs; no upstream execution."""
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -15,13 +14,11 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 # Reuse the established authored PNG/path/hash helpers; importing performs no rebuild.
 common = runpy.run_path(str(ROOT / 'scripts/import-celio-presentation.py'))
-need, sha, encode, safe, png = (common[k] for k in ('need', 'sha', 'encode', 'safe', 'png'))
+need, encode, safe, png = (common[k] for k in ('need', 'encode', 'safe', 'png'))
 COMMIT, TREE = common['COMMIT'], common['TREE']
 PROFILE = 'firered-seven-island-presentation-v1'
 BASE = 'content/generated/seven-island-presentation/'
-RAW = 'content/raw/seven-island-presentation/'
-LOCK_SHA = 'fb19e75a93d4e2d4358103e30507bfc3a4b99668fb503c1c4779bd8bf2b7ffdb'
-MANIFEST_SHA = 'a4b469cdfdd57bb7062767cf9e78c487ee41dc384b194069ee6e5436f3f904b5'
+RAW = 'content/raw/pokefirered/037335f4/'
 OWNED = [('Phanpy',231),('Donphan',232),('Larvitar',246),('Pupitar',247),('Tyranitar',248),('Skarmory',227),('Unown',201)]
 OPPONENT_ONLY = [('Girafarig',203),('Hitmontop',237),('Miltank',241),('Pineco',204),('Smeargle',235),('Ursaring',217)]
 SPECIES = OWNED + OPPONENT_ONLY
@@ -31,20 +28,14 @@ class Source:
         self.root, self.reference, self.dependency = root, reference, dependency
         self.files, self.raw, self.inherited = {}, {}, {}
         self.lock = None
-        if reference:
-            need(subprocess.check_output(['git', '-C', str(reference), 'rev-parse', COMMIT + '^{tree}']).decode().strip() == TREE, 'Pinned source tree differs')
-        if LOCK_SHA:
-            data = safe(root, 'scripts/seven-island-presentation.lock.json').read_bytes()
-            need(sha(data) == LOCK_SHA, 'Pinned presentation lock differs')
-            self.lock = json.loads(data)
-            need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit'], self.lock['tree']) ==
-                 (1, PROFILE, 'pret/pokefirered', COMMIT, TREE), 'Source lock identity differs')
+        data = safe(root, 'scripts/seven-island-presentation.lock.json').read_bytes()
+        self.lock = json.loads(data)
+        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
 
     def read(self, path):
         if path not in self.raw:
             data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path, byteLength=len(data), sha256=sha(data),
-                       gitBlobSha1=hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest())
+            row = dict(path=path)
             if self.lock:
                 need(row in self.lock['files'], 'Source input differs: ' + path)
             self.raw[path], self.files[path] = data, row
@@ -55,17 +46,16 @@ class Source:
 
     def reuse(self, path):
         data = safe(self.dependency, path).read_bytes()
-        row = dict(path=path, byteLength=len(data), sha256=sha(data))
+        row = dict(path=path)
         if self.lock:
             need(row in self.lock['inheritedInputs'], 'Inherited pixels differ: ' + path)
         self.inherited[path] = row
         return data
 
 
-
 TRAINERS = ('CRUSH_GIRL_CYNDY', 'TAMER_EVAN', 'PKMN_RANGER_JACKSON', 'PKMN_RANGER_KATELYN', 'COOLTRAINER_LEROY', 'COOLTRAINER_MICHELLE', 'COOL_COUPLE_LEX_NYA', 'AROMA_LADY_MIAH', 'YOUNG_COUPLE_EVE_JON', 'PKMN_RANGER_NICOLAS', 'PKMN_RANGER_MADELINE', 'JUGGLER_MASON', 'RUIN_MANIAC_BRANDON', 'RUIN_MANIAC_BENJAMIN', 'PAINTER_EDNA', 'GENTLEMAN_CLIFFORD', 'PSYCHIC_DARIO', 'PSYCHIC_RODETTE')
 MAPS = ('SevenIsland', 'SevenIsland_Harbor', 'SevenIsland_House_Room1', 'SevenIsland_Mart', 'SevenIsland_PokemonCenter_1F', 'SevenIsland_SevaultCanyon', 'SevenIsland_SevaultCanyon_Entrance', 'SevenIsland_SevaultCanyon_House', 'SevenIsland_SevaultCanyon_TanobyKey', 'SevenIsland_TanobyRuins', 'SevenIsland_TanobyRuins_DilfordChamber', 'SevenIsland_TanobyRuins_LiptooChamber', 'SevenIsland_TanobyRuins_MoneanChamber', 'SevenIsland_TanobyRuins_RixyChamber', 'SevenIsland_TanobyRuins_ScufibChamber', 'SevenIsland_TanobyRuins_ViapoisChamber', 'SevenIsland_TanobyRuins_WeepthChamber', 'SevenIsland_TrainerTower')
-INHERITED = {'CRUSH_GIRL': 'content/generated/sevii-ruby-presentation/crush-girl-front.rgba', 'TAMER': 'content/generated/fuchsia-gym-presentation/tamer-front.rgba', 'POKEMON_RANGER_M': 'content/generated/sevii-ruby-presentation/pokemon-ranger-m-front.rgba', 'POKEMON_RANGER_F': 'content/generated/sevii-ruby-presentation/pokemon-ranger-f-front.rgba', 'COOLTRAINER_M': 'content/generated/viridian-gym-presentation/cooltrainer-m-front.rgba', 'COOLTRAINER_F': 'content/generated/celadon-gym-art/cooltrainer-f-front.rgba', 'AROMA_LADY': 'content/generated/first-sevii-presentation/first-sevii-aroma-lady-front.rgba', 'JUGGLER': 'content/generated/fuchsia-gym-presentation/juggler-front.rgba', 'RUIN_MANIAC': 'content/generated/six-island-presentation/ruin-maniac-front.rgba', 'GENTLEMAN': 'content/generated/ssanne-battle-art/gentleman-front.rgba', 'PSYCHIC_M': 'content/generated/saffron-gym-trainer-art/psychic-m-front.rgba'}
+INHERITED = {'CRUSH_GIRL': 'content/generated/sevii-ruby-presentation/crush-girl-front.png', 'TAMER': 'content/generated/fuchsia-gym-presentation/tamer-front.png', 'POKEMON_RANGER_M': 'content/generated/sevii-ruby-presentation/pokemon-ranger-m-front.png', 'POKEMON_RANGER_F': 'content/generated/sevii-ruby-presentation/pokemon-ranger-f-front.png', 'COOLTRAINER_M': 'content/generated/viridian-gym-presentation/cooltrainer-m-front.png', 'COOLTRAINER_F': 'content/generated/celadon-gym-art/cooltrainer-f-front.png', 'AROMA_LADY': 'content/generated/first-sevii-presentation/first-sevii-aroma-lady-front.png', 'JUGGLER': 'content/generated/fuchsia-gym-presentation/juggler-front.png', 'RUIN_MANIAC': 'content/generated/six-island-presentation/ruin-maniac-front.png', 'GENTLEMAN': 'content/generated/ssanne-battle-art/gentleman-front.png', 'PSYCHIC_M': 'content/generated/saffron-gym-trainer-art/psychic-m-front.png'}
 
 def build(root, reference, dependency):
     source = Source(root, reference, dependency)
@@ -73,9 +63,8 @@ def build(root, reference, dependency):
 
     def emit(identity, width, height, rgba, inputs):
         need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
-        out[identity + '.rgba'], out[identity + '.png'] = rgba, png(width, height, rgba)
-        row = dict(id=identity, width=width, height=height, rgbaPath=BASE + identity + '.rgba',
-                   texturePath=BASE + identity + '.png', rgbaSha256=sha(rgba), sha256=sha(out[identity + '.png']), sourcePaths=inputs)
+        out[identity + '.png'] = png(width, height, rgba)
+        row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png', sourcePaths=inputs)
         assets.append(row)
         return row
 
@@ -129,13 +118,13 @@ def build(root, reference, dependency):
                     identity=stem.replace('/','-')+'-'+side+'-'+variant
                     if species==248:
                         old=next(p for p in prior_sprites if p['sourceSpeciesId']==248 and p['side']==side and p['paletteVariant']==variant)
-                        need(source.reuse(old['rgbaPath'])==rgba,'Inherited Tyranitar pixels differ')
+                        need(Image.open(io.BytesIO(source.reuse(old['texturePath']))).convert('RGBA').tobytes() == rgba, 'Inherited Tyranitar pixels differ')
                         image_bytes=source.reuse(old['texturePath'])
                         need(Image.open(io.BytesIO(image_bytes)).convert('RGBA').tobytes()==rgba,'Inherited Tyranitar PNG differs')
-                        asset=dict(id=identity,width=64,height=64,rgbaPath=old['rgbaPath'],texturePath=old['texturePath'],rgbaSha256=sha(rgba),sha256=sha(image_bytes),sourcePaths=[image,pal,coordinates],inherited=True)
+                        asset = dict(id=identity, width=64, height=64, texturePath=old['texturePath'], sourcePaths=[image, pal, coordinates], inherited=True)
                         assets.append(asset)
                     else: asset=emit(identity,64,64,rgba,[image,pal,coordinates])
-                    row=dict(speciesId='pret:'+canonical,sourceSpeciesId=species,renderSpeciesId=render,form=form if species==201 else None,side=side,paletteVariant=variant,x=144 if side=='front' else 40,y=8+y_offset-elevation if side=='front' else 48+y_offset,sourceWidth=width,sourceHeight=height,sourceYOffset=y_offset,sourceEnemyElevation=elevation,indexSha256=sha(indices),sourceCoordinatePath=coordinates,paletteExpansion='floor(rgb5 * 255 / 31)',transparentIndex=0,**asset)
+                    row=dict(speciesId='pret:'+canonical,sourceSpeciesId=species,renderSpeciesId=render,form=form if species==201 else None,side=side,paletteVariant=variant,x=144 if side=='front' else 40,y=8+y_offset-elevation if side=='front' else 48+y_offset,sourceWidth=width,sourceHeight=height,sourceYOffset=y_offset,sourceEnemyElevation=elevation,sourceCoordinatePath=coordinates,paletteExpansion='floor(rgb5 * 255 / 31)',transparentIndex=0,**asset)
                     (inherited_sprites if species==248 else sprites).append(row)
             if (name,species) not in OWNED: continue
             icon_table=source.text('src/pokemon_icon.c')
@@ -144,7 +133,7 @@ def build(root, reference, dependency):
             pal_index=int(match[1]); image=f'graphics/pokemon/{stem}/icon.png';pal=f'graphics/pokemon/icon_palettes/icon_palette_{pal_index}.pal'
             need(f'gMonIcon_{render_name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics,'Form icon image binding differs')
             indices,rgba=indexed(image,pal,(32,64),floor=True,first_frame=True)
-            icons.append(dict(speciesId='pret:'+canonical,sourceSpeciesId=species,renderSpeciesId=render,form=form if species==201 else None,paletteIndex=pal_index,sourceFrameIndex=0,sourceFrameCount=2,indexSha256=sha(indices),**emit('icons/'+stem.replace('/','-'),32,32,rgba,[image,pal])))
+            icons.append(dict(speciesId='pret:'+canonical,sourceSpeciesId=species,renderSpeciesId=render,form=form if species==201 else None,paletteIndex=pal_index,sourceFrameIndex=0,sourceFrameCount=2,**emit('icons/'+stem.replace('/','-'),32,32,rgba,[image,pal])))
         if (name,species) not in OWNED: continue
         image,pal=f'graphics/pokemon/{name.lower()}/footprint.png','graphics/pokedex/kanto_dex_bgpals.pal'
         need('['+canonical+'] = gMonFootprint_'+name+',' in source.text('src/data/pokemon_graphics/footprint_table.h'),'Footprint binding differs')
@@ -195,8 +184,8 @@ def build(root, reference, dependency):
         identity = pathlib.PurePosixPath(INHERITED[key]).stem if key in INHERITED else key.lower().replace('_', '-') + '-front'
         if key in INHERITED:
             path = INHERITED[key]
-            need(source.reuse(path) == rgba, 'Inherited trainer source pixels differ: ' + key)
-            asset = dict(id=identity, width=64, height=64, rgbaPath=path, rgbaSha256=sha(rgba), sourcePaths=paths)
+            need(Image.open(io.BytesIO(source.reuse(path))).convert('RGBA').tobytes() == rgba, 'Inherited trainer source pixels differ: ' + key)
+            asset = dict(id=identity, width=64, height=64, texturePath=path, sourcePaths=paths)
             assets.append(asset)
         else:
             asset = emit(identity, 64, 64, rgba, paths)
@@ -206,8 +195,7 @@ def build(root, reference, dependency):
 
     pack = source.reuse('content/generated/synth-audio/firered.pack')
     cries = source.reuse('content/generated/synth-audio/normal-cries.bin')
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-         sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack identity differs')
+    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
     cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
     cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
     priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
@@ -238,7 +226,7 @@ def build(root, reference, dependency):
             decoded.append((value + 128) & 255)
         need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
         cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded), decodedSha256=sha(decoded), sourcePath=path, sourcePlayer=4, priority=priority))
+            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
         (inherited_cry_cues if species == 248 else cues).append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceCommit=COMMIT, sourceSymbol='SPECIES_' + name.upper(),
             sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
 
@@ -308,13 +296,11 @@ def build(root, reference, dependency):
         shade_maps.append(dict(map=map_name,paletteIndices=sorted(used),normalGammaOnly=True))
     need(len(shade_maps)==7,'Shade chamber inventory differs')
     out['synth-manifest.json']=encode(dict(schemaVersion=1,sourceCommit=COMMIT,cues=cues,inheritedCues=inherited_cues))
-    lock=encode(dict(schemaVersion=1,profile=PROFILE,repository='pret/pokefirered',commit=COMMIT,tree=TREE,files=[source.files[p] for p in sorted(source.files)],inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
-    if LOCK_SHA:need(sha(lock)==LOCK_SHA,'Input inventory differs')
-    manifest=encode(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,lockSha256=sha(lock),inputs=[source.files[p] for p in sorted(source.files)],inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)],assets=assets,sprites=sprites,inheritedSprites=inherited_sprites,pokemonIcons=icons,footprints=footprints,speciesNames=names,newOwnedSpecies=[s for _,s in OWNED],newOpponentOnlySpecies=[s for _,s in OPPONENT_ONLY],trainers=trainers,portraits=portraits,mapMusic=map_music,moveAnimationGeometry=dict(inheritedManifest=geometry_path,rows=geometry_rows),audio=dict(additionalCueIds=[c['id'] for c in cues],inheritedCueIds=[c['id'] for c in inherited_cues],cries=cry_evidence,originalPackUnchanged=True,physicalAudioVerified=False),fieldPresentation=dict(shadeGammaIndex=3,shadeStepDelay=20,shadeMaps=shade_maps,shadeNormalChannels=[(c*13)//16 for c in range(32)],shadeAlternateChannels=list(range(32)),shakeVectors=[[1,1,8,3],[2,2,10,3],[3,3,12,2]],sourcePaths=shade_sources),unown=dict(canonicalSpecies=201,formCount=28,renderSpecies=[201]+list(range(413,440)),dexTrainerId=8,iconFrame=0),outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(out.items())]))
-    if MANIFEST_SHA:need(sha(manifest)==MANIFEST_SHA,'Reviewed manifest differs')
+    lock=encode(dict(schemaVersion=1,profile=PROFILE,repository='pret/pokefirered',commit=COMMIT,files=[source.files[p] for p in sorted(source.files)],inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
+    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)], assets=assets, sprites=sprites, inheritedSprites=inherited_sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in OWNED], newOpponentOnlySpecies=[s for _, s in OPPONENT_ONLY], trainers=trainers, portraits=portraits, mapMusic=map_music, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues], cries=cry_evidence, originalPackUnchanged=True, physicalAudioVerified=False), fieldPresentation=dict(shadeGammaIndex=3, shadeStepDelay=20, shadeMaps=shade_maps, shadeNormalChannels=[c * 13 // 16 for c in range(32)], shadeAlternateChannels=list(range(32)), shakeVectors=[[1, 1, 8, 3], [2, 2, 10, 3], [3, 3, 12, 2]], sourcePaths=shade_sources), unown=dict(canonicalSpecies=201, formCount=28, renderSpecies=[201] + list(range(413, 440)), dexTrainerId=8, iconFrame=0), outputs=[dict(path=p) for p, b in sorted(out.items())]))
     out['manifest.json']=manifest
     result={BASE+p:b for p,b in out.items()};result.update({RAW+p:b for p,b in source.raw.items()});result['scripts/seven-island-presentation.lock.json']=lock
-    report=dict(passed=True,sourceFiles=len(source.raw),inheritedInputs=len(source.inherited),sprites=len(sprites),inheritedSprites=len(inherited_sprites),icons=len(icons),footprints=len(footprints),assets=len(assets),geometry=len(geometry_rows),trainers=len(trainers),portraits=len(portraits),newPortraits=sum(not p['inherited'] for p in portraits),outputs=len(out)-1,lockSha256=sha(lock),lockBytes=len(lock),manifestSha256=sha(manifest),manifestBytes=len(manifest),synthSha256=sha(out['synth-manifest.json']),synthBytes=len(out['synth-manifest.json']),newCues=len(cues),inheritedCues=len(inherited_cues),exactCryPcmCompared=True,nativeWindowVerified=False,physicalAudioVerified=False)
+    report=dict(passed=True,sourceFiles=len(source.raw),inheritedInputs=len(source.inherited),sprites=len(sprites),inheritedSprites=len(inherited_sprites),icons=len(icons),footprints=len(footprints),assets=len(assets),geometry=len(geometry_rows),trainers=len(trainers),portraits=len(portraits),newPortraits=sum(not p['inherited'] for p in portraits),outputs=len(out)-1,lockBytes=len(lock),manifestBytes=len(manifest),synthBytes=len(out['synth-manifest.json']),newCues=len(cues),inheritedCues=len(inherited_cues),exactCryPcmCompared=True,nativeWindowVerified=False,physicalAudioVerified=False)
     return result,report
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

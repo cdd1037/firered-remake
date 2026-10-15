@@ -107,7 +107,7 @@ static u8 GetLevelFromBoxMonExp(struct BoxPokemon*b){return b->level;}
   src=pathlib.Path(tmp)/'oracle.c';exe=pathlib.Path(tmp)/'oracle';src.write_text(code)
   subprocess.run(['cc','-std=c11','-O0','-Wall','-Wextra','-Werror',str(src),'-o',str(exe)],check=True)
   vectors=json.loads(subprocess.check_output([str(exe)]))
- output=imp.canonical(dict(schemaVersion=1,sourceCommit=imp.COMMIT,sourceLockSha256=imp.LOCK_SHA256,extractedBlocks=[dict(name=n,sha256=hashlib.sha256(b.encode()).hexdigest()) for n,b in blocks.items()],harness='Original NPC, move queue, no-shiny loop and RNG; memory-only accessors and CreateMon capture stub. Does not independently verify stats, battle or callback execution.',vectors=vectors))
+ output=imp.canonical(dict(schemaVersion=1,sourceCommit=imp.COMMIT,extractedBlocks=[dict(name=n,sha256=hashlib.sha256(b.encode()).hexdigest()) for n,b in blocks.items()],harness='Original NPC, move queue, no-shiny loop and RNG; memory-only accessors and CreateMon capture stub. Does not independently verify stats, battle or callback execution.',vectors=vectors))
  for path,data in [('source-vectors.c',code.encode()),('source-vectors.json',output)]:
   dest=directory/path
   if check:

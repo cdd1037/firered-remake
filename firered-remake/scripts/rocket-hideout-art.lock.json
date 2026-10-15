@@ -2,61 +2,35 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "graphics/trainers/front_pics/leader_giovanni_front_pic.png",
-      "byteLength": 653,
-      "sha256": "c5859fac3adcc6c789434bfd52253f04958533dc07235ce751064eeef6b77409",
-      "gitBlobSha1": "09f8dd3346824e6acfc11f6d8d4650c719b5a1d6"
+      "path": "graphics/trainers/front_pics/leader_giovanni_front_pic.png"
     },
     {
-      "path": "graphics/trainers/front_pics/rocket_grunt_m_front_pic.png",
-      "byteLength": 673,
-      "sha256": "a608eae43c47031e25af52e3bf238814b65258bf7e7b9a38053edee188a43d04",
-      "gitBlobSha1": "de95d378dd729f79e4ec3cdcca4e555500e07d19"
+      "path": "graphics/trainers/front_pics/rocket_grunt_m_front_pic.png"
     },
     {
-      "path": "graphics/trainers/palettes/leader_giovanni.pal",
-      "byteLength": 191,
-      "sha256": "5c37d38a2fe5c4186ba8bb6ec73770958b15e3be495df8f85e44ddb41da60bd4",
-      "gitBlobSha1": "3ed4f87b82cbd448d436e9c980478a1aa51f7691"
+      "path": "graphics/trainers/palettes/leader_giovanni.pal"
     },
     {
-      "path": "graphics/trainers/palettes/rocket_grunt_m.pal",
-      "byteLength": 191,
-      "sha256": "053a8f8d0b3a18dfea902ac0f75d011d5e430e899b16dfac2284c4651048b878",
-      "gitBlobSha1": "18a2b433ee3fe13f432d0635807b88a0d98992e6"
+      "path": "graphics/trainers/palettes/rocket_grunt_m.pal"
     },
     {
-      "path": "src/data/graphics/trainers.h",
-      "byteLength": 34300,
-      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
-      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088"
+      "path": "src/data/graphics/trainers.h"
     },
     {
-      "path": "src/data/trainer_graphics/front_pic_tables.h",
-      "byteLength": 24042,
-      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f",
-      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda"
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
     },
     {
-      "path": "src/data/trainers.h",
-      "byteLength": 302118,
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc",
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538"
+      "path": "src/data/trainers.h"
     }
   ],
   "inputs": [
     {
-      "path": "scripts/import-lab-battle-ui.py",
-      "byteLength": 13082,
-      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+      "path": "scripts/import-lab-battle-ui.py"
     },
     {
-      "path": "scripts/fetch-lab-battle-ui.py",
-      "byteLength": 5843,
-      "sha256": "805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"
+      "path": "scripts/fetch-lab-battle-ui.py"
     }
   ]
 }

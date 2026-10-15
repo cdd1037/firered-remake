@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
   <ItemGroup><ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" /></ItemGroup>
-  <ItemGroup><None Include="Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
 </Project>

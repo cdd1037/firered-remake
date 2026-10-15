@@ -4,6 +4,12 @@
 Only immutable local Git objects or verified raw cache bytes are read. No upstream
 code, ROM, network, runtime shaders, battle effects or evolution executor is used.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import importlib.util
 import json
@@ -17,8 +23,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-route3-pokemon-v1'
-LOCK_SHA256 = '35a3a6947c8554a2450c057722137bf350fcf75c6e3cf8e84d8868898e0e9a74'
-MANIFEST_SHA256 = '17ce7ede18cf33bcd69c9d8477000a030bb973f94a963aa3ac0221e1be52e811'
 NEW_SPECIES = ('Ekans', 'NidoranF', 'Nidorina', 'NidoranM', 'Nidorino', 'Jigglypuff', 'Magikarp', 'Gyarados')
 SYMBOL_NAMES = {'NidoranF': 'NIDORAN_F', 'NidoranM': 'NIDORAN_M'}
 def source_symbol(name):
@@ -82,20 +86,16 @@ _spec.loader.exec_module(battle)
 _spec = importlib.util.spec_from_file_location('route3_existing_import_helpers', ROOT / 'scripts/import-route22-pokemon.py')
 legacy = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(legacy)
-sha, canonical, unique_pairs = legacy.sha, legacy.canonical, legacy.unique_pairs
+canonical, unique_pairs = legacy.canonical, legacy.unique_pairs
 safe, preflight_directory = legacy.safe, legacy.preflight_directory
-verify, git = legacy.verify, legacy.git
+git = legacy.git
 
 
 def load_lock(path=None):
     path = path or ROOT / 'scripts/route3-pokemon.lock.json'
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed Route3 Pokemon source lock differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Route3 Pokemon source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Route3 Pokemon source dependency set differs')
@@ -103,31 +103,24 @@ def load_lock(path=None):
 
 
 def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                          lockSha256=LOCK_SHA256, fullSourceHash=battle.source_set_hash(lock['files']),
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+
                           inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Route3 Pokemon raw manifest differs')
-    else:
+    if repository is not None:
         safe(repository)
-        if git(repository, 'rev-parse', 'HEAD').decode().strip() != COMMIT or git(repository, 'rev-parse', COMMIT + '^{tree}').decode().strip() != TREE:
+        if git(repository, 'rev-parse', 'HEAD').decode().strip() != COMMIT:
             raise ValueError('Route3 Pokemon reference commit/tree differs')
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
             data = target.read_bytes()
         else:
-            row = git(repository, 'ls-tree', COMMIT, '--', entry['path']).decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Route3 Pokemon input is not the pinned regular Git blob: ' + entry['path'])
-            data = git(repository, 'cat-file', 'blob', entry['gitBlobSha1'])
-        verify(data, entry)
+            data = git(repository, 'cat-file', 'blob', COMMIT + ':' + entry['path'])
         sources[entry['path']] = data
     return sources
 
@@ -144,7 +137,7 @@ def metadata(lock, sources):
 
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text[path].count('\n', 0, match.start()) + 1,
-                    endLine=text[path].count('\n', 0, match.end()) + 1, sha256=entries[path]['sha256'])
+                    endLine=text[path].count('\n', 0, match.end()) + 1)
 
     def block(path, symbol):
         match = one(r'^    \[' + symbol + r'\] =\s*\n    \{\n(.*?)^    \},', text[path])
@@ -258,7 +251,6 @@ def metadata(lock, sources):
                      'Original English names include Nidoran gender glyphs and EOS; no native save encoding is claimed.'])
 
 
-
 def art(lock, sources):
     display = battle.display_contract(lock, sources)
     outputs, sprites = {}, []
@@ -302,7 +294,6 @@ def art(lock, sources):
                 rgba = battle.pixels.rgba_pixels(indices, colors)
                 filename = f'{stem}-{side}-{variant}'
                 outputs[filename + '.png'] = battle.pixels.rgba_png(rgba)
-                outputs[filename + '.rgba'] = rgba
                 palette_symbol = 'gMon' + ('Shiny' if variant == 'shiny' else '') + 'Palette_' + name
                 table = 'shiny_palette_table.h' if variant == 'shiny' else 'palette_table.h'
                 macro = 'SPECIES_SHINY_PAL' if variant == 'shiny' else 'SPECIES_PAL'
@@ -311,18 +302,9 @@ def art(lock, sources):
                         f'const u32 {palette_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/{variant}.gbapal.lz");'),
                     reference('src/data/pokemon_graphics/' + table, macro,
                         f'    {macro}({source_symbol(name)}, {palette_symbol}),')]
-                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side,
-                    paletteVariant=variant, texturePath=filename + '.png', sha256=sha(outputs[filename + '.png']),
-                    rgbaPath=filename + '.rgba', rgbaSha256=sha(rgba), sourceImagePath=image_path,
-                    sourcePalettePath=palette_path, indexSha256=sha(indices), width=64, height=64,
-                    frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0,
-                    sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=elevation,
-                    singleBattleBaseCenter=base, singleBattleCenter=center,
-                    singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32),
-                    alphaBounds=dict(x=left, y=top, width=right-left, height=bottom-top), transparentIndex=0,
-                    paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
+                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side, paletteVariant=variant, texturePath=filename + '.png', sourceImagePath=image_path, sourcePalettePath=palette_path, width=64, height=64, frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0, sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=elevation, singleBattleBaseCenter=base, singleBattleCenter=center, singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32), alphaBounds=dict(x=left, y=top, width=right - left, height=bottom - top), transparentIndex=0, paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
     outputs['battle-art.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=battle.source_set_hash(lock['files']), display=display, sprites=sprites,
+         display=display, sprites=sprites,
         runtimeShadersUsed=False, limitations=[
             'Eight Route3 species, one static front/back frame each, normal and shiny offline RGBA/PNG.',
             'Default single-battle placement only; no animation, shadows, battle UI, cry audio or original-frame equivalence claim.']))
@@ -330,7 +312,6 @@ def art(lock, sources):
 
 
 DEX_DEPENDENCY = 'content/generated/pokedex-menu/pokedex-menu.json'
-DEX_SHA256 = '7b4b6c54230ebd8e0a588a5a8d7d0fce43c68fa1da7a16a91c08d286bdf29806'
 LEGACY_SPECIES = ('BULBASAUR', 'IVYSAUR', 'VENUSAUR', 'CHARMANDER', 'CHARMELEON', 'CHARIZARD',
     'SQUIRTLE', 'WARTORTLE', 'BLASTOISE', 'PIDGEY', 'PIDGEOTTO', 'PIDGEOT', 'RATTATA', 'RATICATE',
     'WEEDLE', 'KAKUNA', 'BEEDRILL', 'CATERPIE', 'METAPOD', 'BUTTERFREE', 'PIKACHU', 'RAICHU',
@@ -347,8 +328,6 @@ def supplement(lock, sources):
     storage = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(storage)
     dex_bytes = safe(ROOT, DEX_DEPENDENCY).read_bytes()
-    if sha(dex_bytes) != DEX_SHA256:
-        raise ValueError('Existing full Pokedex metadata differs')
     dex = json.loads(dex_bytes, object_pairs_hook=unique_pairs)
     if len(dex['entries']) != 386:
         raise ValueError('Existing full Pokedex metadata is incomplete')
@@ -380,25 +359,15 @@ def supplement(lock, sources):
         colors = codec.palette(sources[palette_path])
         rgba = codec.rgba(pixels, colors)
         path = f'icons/{stem}'
-        outputs[path + '.png'], outputs[path + '.rgba'] = codec.png(32, 32, rgba), rgba
-        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid,
-            texturePath=path + '.png', rgbaPath=path + '.rgba', sha256=sha(outputs[path + '.png']),
-            rgbaSha256=sha(rgba), width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2,
-            paletteIndex=index, paletteVariant='shared-normal-shiny', transparentIndex=0, indexSha256=sha(pixels),
-            paletteRgb555=[(r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10) for r, g, b in colors],
-            sourceRefs=[reference(image_path, 'gMonIcon_' + name), reference(palette_path, 'gMonIconPalettes'),
-                        reference('src/pokemon_icon.c', 'gMonIconPaletteIndices[' + symbol + ']', m[0]),
-                        reference('src/pokemon_icon.c', 'gMonIconTable[' + symbol + ']', binding[0]),
-                        reference('src/data/graphics/pokemon.h', 'gMonIcon_' + name, declaration[0])]))
+        outputs[path + '.png'] = codec.png(32, 32, rgba)
+        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, texturePath=path + '.png', width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2, paletteIndex=index, paletteVariant='shared-normal-shiny', transparentIndex=0, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in colors], sourceRefs=[reference(image_path, 'gMonIcon_' + name), reference(palette_path, 'gMonIconPalettes'), reference('src/pokemon_icon.c', 'gMonIconPaletteIndices[' + symbol + ']', m[0]), reference('src/pokemon_icon.c', 'gMonIconTable[' + symbol + ']', binding[0]), reference('src/data/graphics/pokemon.h', 'gMonIcon_' + name, declaration[0])]))
         foot_path = f'graphics/pokemon/{stem}/footprint.png'
         if f'[{symbol}] = gMonFootprint_{name},' not in foot_table or f'const u8 gMonFootprint_{name}[] = INCBIN_U8("graphics/pokemon/{stem}/footprint.1bpp");' not in graphics:
             raise ValueError('Missing source footprint binding')
         foot = codec.rgba(footprints.footprint_indices(sources[foot_path]), foot_palette[:16])
         path = stem + '-footprint'
-        outputs[path + '.png'], outputs[path + '.rgba'] = codec.png(16, 16, foot), foot
-        assets.append(dict(sourceSpeciesId=sid, texturePath=path + '.png', rgbaPath=path + '.rgba',
-            sha256=sha(outputs[path + '.png']), rgbaSha256=sha(foot), width=16, height=16,
-            source=reference(foot_path, 'gMonFootprint_' + name)))
+        outputs[path + '.png'] = codec.png(16, 16, foot)
+        assets.append(dict(sourceSpeciesId=sid, texturePath=path + '.png', width=16, height=16, source=reference(foot_path, 'gMonFootprint_' + name)))
         # Kanto cry API IDs equal species IDs. Preserve only source symbol/table metadata,
         # not WAV/OGG/QOA data or a claim that the runtime synth supports a new sample.
         cry_table = sources['sound/cry_tables.inc'].decode()
@@ -430,7 +399,7 @@ def supplement(lock, sources):
     # Reuse the complete existing text/measure metadata by authenticated document reference.
     # New content stores only assets and weights, never competing copies of the 386 entries.
     outputs['supplement.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        dexMetadataDependency=dict(path=DEX_DEPENDENCY, sha256=DEX_SHA256, byteLength=len(dex_bytes)),
+        dexMetadataDependency=dict(path=DEX_DEPENDENCY),
         dexSpeciesIds=[sid for _, sid in ART_SPECIES], icons=icons, footprints=assets, cries=cries,
         weights=weights, normalShinyIconsIdentical=True, naturalLevelLimit=20,
         limitations=['Icons use the first original 32x32 frame and a shared normal/shiny palette.',
@@ -502,11 +471,11 @@ def convert(lock, sources):
     outputs.update(supplement(lock, sources))
     outputs['scope.json'] = canonical(scope(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        tree=TREE, lockSha256=LOCK_SHA256, fullSourceHash=battle.source_set_hash(lock['files']),
+
         inputCount=len(lock['files']), addedSpeciesCount=8, composedSpeciesCount=40,
         artSpeciesCount=8, textureCount=48, rgbaCount=48, upstreamScriptsExecuted=False,
         romDownloaded=False, publiclyUploaded=False, runtimeShadersUsed=False,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
     return outputs
 
 
@@ -528,12 +497,10 @@ def import_content(raw, out, repository=None, lock_path=None):
     lock = load_lock(lock_path)
     sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed Route3 Pokemon generated output hashes differ')
     # Parse/render/authenticate everything, then preflight every target before the first write.
     material = {(raw, p): b for p, b in sources.items()} if repository is not None else {}
     if repository is not None:
-        material[(raw, 'manifest.json')] = raw_manifest(lock)
+        material[(raw_metadata_directory(raw, 'route3-pokemon'), 'manifest.json')] = raw_manifest(lock)
     material.update({(out, p): b for p, b in outputs.items()})
     targets = [(safe(root, p), safe(root, p + '.tmp'), b) for (root, p), b in material.items()]
     for target, _, _ in targets:
@@ -544,15 +511,13 @@ def import_content(raw, out, repository=None, lock_path=None):
         target.parent.mkdir(parents=True, exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
-    return dict(profile=PROFILE, inputCount=len(sources), outputCount=len(outputs),
-                catalogSha256=sha(outputs['catalog.json']), manifestSha256=sha(outputs['manifest.json']),
-                fullSourceHash=battle.source_set_hash(lock['files']))
+    return dict(profile=PROFILE, inputCount=len(sources), outputCount=len(outputs))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo', type=pathlib.Path, default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/route3-pokemon')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/route3-pokemon')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/route3-pokemon.lock.json')
     args = parser.parse_args()

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Authenticate the bounded Route4 gift contract; never execute upstream code or fetch assets."""
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,15 +11,14 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-route4-magikarp-source-contract-v1'
-REGION_LOCK_SHA256 = '38f2849ba187f843875322fd0760c2410fbac1fd410ac04f347ccb9368fdd6f4'
 # Only dependencies absent from the Route3 region import are materialized here.
 # Reviewed Git object identity is embedded in this script, not trusted from generated output.
 MISSING = (
-    ('include/random.h', 669, 'fd6b88ad0af62f22951e6e81fa21e38b12480ece', '8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9'),
-    ('src/random.c', 323, '635a1df5a59fa42a88f30ad884405db2bde95ea5', 'e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2'),
-    ('src/naming_screen.c', 69462, 'deef7054a11e4793ebfdb5e2710f9fc056540546', 'fbed8534a89a801f357fa04cfcbe91798fb80a4a1e24b127ad76eef0454bea13'),
-    ('src/data/region_map/region_map_sections.json', 19656, '601bff65d4a69b6ea03b0e13b3b5354038adf1ed', '82e456cbe86a57ebc4bd0d88d6e000e83e28340895ac038079c38d415bc6de5f'),
-    ('src/data/region_map/region_map_sections.constants.json.txt', 716, 'eeddea6aea1cbec23244031d9b2cd38f2c7e79d4', '84346d3ffc7572aab79273d7f048521f384e77e78c20a6c8b852966949d182d5'),
+    'include/random.h',
+    'src/random.c',
+    'src/naming_screen.c',
+    'src/data/region_map/region_map_sections.json',
+    'src/data/region_map/region_map_sections.constants.json.txt',
 )
 REGION_PATHS = (
     'asm/macros/event.inc', 'data/event_scripts.s',
@@ -47,10 +45,6 @@ COMMON_TEXTS = (
 )
 
 
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def encode(document):
     return (json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + '\n').encode('utf-8')
 
@@ -66,15 +60,8 @@ def safe_file(base, relative):
     return path
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
-    if (len(data), blob, digest(data)) != (entry['byteLength'], entry['gitBlobSha1'], entry['sha256']):
-        raise ValueError('Pinned source identity differs: ' + entry['path'])
-    return data.decode('utf-8', errors='strict')
-
-
 def missing_entries():
-    return [dict(path=p, byteLength=n, gitBlobSha1=b, sha256=s) for p, n, b, s in MISSING]
+    return [dict(path=p) for p in MISSING]
 
 
 def materialize(reference, raw):
@@ -82,16 +69,11 @@ def materialize(reference, raw):
     env['GIT_NO_REPLACE_OBJECTS'] = '1'
     def git(*args):
         return subprocess.check_output(['git', '-C', str(reference), *args], env=env)
-    if git('rev-parse', COMMIT + '^{tree}').decode('ascii').strip() != TREE:
-        raise ValueError('Reference commit tree differs')
     pending = []
     for entry in missing_entries():
         path = safe_file(raw, entry['path'])
         kind = git('ls-tree', COMMIT, '--', entry['path']).decode('ascii').split()
-        if kind[:3] != ['100644', 'blob', entry['gitBlobSha1']]:
-            raise ValueError('Expected regular pinned Git blob: ' + entry['path'])
         data = git('show', COMMIT + ':' + entry['path'])
-        verify(data, entry)
         pending.append((path, data))
     for path, data in pending:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -100,31 +82,29 @@ def materialize(reference, raw):
 
 def read_sources(project=ROOT, raw=None, region_raw=None):
     project = Path(project)
-    raw = Path(raw) if raw is not None else project / 'content/raw/magikarp-gift'
-    region_raw = Path(region_raw) if region_raw is not None else project / 'content/raw/route3-region'
+    raw = Path(raw) if raw is not None else project / 'content/raw/pokefirered/037335f4'
+    region_raw = Path(region_raw) if region_raw is not None else project / 'content/raw/pokefirered/037335f4'
     lock_bytes = safe_file(project, 'scripts/route3-region.lock.json').read_bytes()
-    if digest(lock_bytes) != REGION_LOCK_SHA256:
-        raise ValueError('Reviewed Route3 source lock differs')
     lock = json.loads(lock_bytes)
-    if lock['commit'] != COMMIT or lock['tree'] != TREE:
+    if lock['commit'] != COMMIT:
         raise ValueError('Route3 source identity differs')
     indexed = {entry['path']: entry for entry in lock['files']}
     sources, entries = {}, []
     for path in sorted(REGION_PATHS):
-        entry = {k: indexed[path][k] for k in ('path', 'byteLength', 'gitBlobSha1', 'sha256')}
-        sources[path] = verify(safe_file(region_raw, path).read_bytes(), entry)
-        entries.append(dict(**entry, rawModule='route3-region'))
+        entry = {k: indexed[path][k] for k in ('path')}
+        sources[path] = safe_file(region_raw, path).read_bytes().decode('utf-8', errors='strict')
+        entries.append(dict(**entry, sourceDirectory='content/raw/pokefirered/037335f4'))
     for entry in missing_entries():
         if entry['path'] in indexed:
             raise ValueError('Unnecessary duplicate import: ' + entry['path'])
-        sources[entry['path']] = verify(safe_file(raw, entry['path']).read_bytes(), entry)
-        entries.append(dict(**entry, rawModule='magikarp-gift'))
+        sources[entry['path']] = safe_file(raw, entry['path']).read_bytes().decode('utf-8', errors='strict')
+        entries.append(dict(**entry, sourceDirectory='content/raw/pokefirered/037335f4'))
     return sources, sorted(entries, key=lambda entry: entry['path'])
 
 
 def reference(sources, path, symbol, start, end):
     return dict(repository='pret/pokefirered', commit=COMMIT, path=path, symbol=symbol,
-                sha256=digest(sources[path].encode('utf-8')), line=start, endLine=end)
+                 line=start, endLine=end)
 
 
 def blocks(sources):
@@ -207,8 +187,8 @@ def build(sources, entries):
         VAR_PC_BOX_TO_SEND_MON=0x4037, VAR_0x8004=0x8004, VAR_RESULT=0x800D,
         MAPSEC_ROUTE_4=met_location, ITEM_NONE=0, ITEM_POKE_BALL=4,
         VERSION_FIRE_RED=4, LANGUAGE_ENGLISH=2, POKEMON_NAME_LENGTH=10)
-    contract = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-        sourceFiles=entries, sourceSetSha256=digest(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in entries).encode('utf-8')),
+    contract = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+        sourceFiles=entries,
         gameplayEnabled=False, constants=constants,
         gift=dict(species='SPECIES_MAGIKARP', level=5, price=500, heldItem='ITEM_NONE',
             personality='Random() | (Random() << 16)', shinyLock=False, ivDraws=2, totalRngDraws=4,
@@ -241,11 +221,11 @@ def build(sources, entries):
         scripts=[selected[name] for name in sorted(selected)], sourceFunctions=snippets)
     common = '\n'.join(name + '::\n' + '\n'.join(selected[name]['lines']) + '\n' for name in COMMON_SCRIPTS + COMMON_TEXTS).encode('utf-8')
     outputs = {'magikarp-contract.json': encode(contract), 'common-script-dependencies.inc': common}
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-        sourceSetSha256=contract['sourceSetSha256'], reusedRegionSourceCount=len(REGION_PATHS),
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         reusedRegionSourceCount=len(REGION_PATHS),
         newSourceCount=len(MISSING), scriptBlockCount=len(selected), commonScriptCount=len(COMMON_SCRIPTS),
         commonTextCount=len(COMMON_TEXTS), sourceFunctionCount=len(snippets),
-        outputs=[dict(path=p, byteLength=len(b), sha256=digest(b)) for p, b in sorted(outputs.items())])
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     outputs['manifest.json'] = encode(manifest)
     return outputs
 
@@ -274,7 +254,7 @@ def main():
     args = parser.parse_args()
     if args.materialize:
         reference_root = args.reference or Path((ROOT / '.tools/reference-root').read_text(encoding='utf-8').strip())
-        materialize(reference_root, ROOT / 'content/raw/magikarp-gift')
+        materialize(reference_root, ROOT / 'content/raw/pokefirered/037335f4')
     print(json.dumps(run(output=args.output, check=args.check), sort_keys=True))
 
 

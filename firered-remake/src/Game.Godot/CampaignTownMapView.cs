@@ -27,8 +27,7 @@ public partial class CampaignView
         _questPocketTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         document = document with
         {
-            Assets = document.Assets.Add(new(asset.Id, asset.TexturePath, asset.Width, asset.Height,
-                placement.X, placement.Y, asset.Sha256, asset.RgbaSha256)),
+            Assets = document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,                placement.X,placement.Y)),
             Items = document.Items.Add(new(map.Item.Id.Value, map.Item.SourceItemSymbol, map.Item.Name,
                 map.ItemDescription, asset.Id, map.Item.FieldUseFunction))
         };
@@ -156,8 +155,7 @@ public partial class CampaignView
             if (TownMapCursorOnSwitch) { OpenTownMapSwitchMenu(); return true; }
             if (_townMapCursor == new Vector2I(map.Layout.Cancel.X, map.Layout.Cancel.Y))
             { SourceSound("SE_M_HYPER_BEAM2"); CloseTownMap(); }
-            else if (TrySelectFlyDestination()) { }
-            else if (!WallTownMapActive && CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
+            else if(!(TrySelectFlyDestination()))if (!WallTownMapActive && CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
                 _session.State.Script.Flags.GetValueOrDefault(i.VisitedFlag)))
                 _townMapNotice = "Detailed guide pages are not\navailable yet.";
         }

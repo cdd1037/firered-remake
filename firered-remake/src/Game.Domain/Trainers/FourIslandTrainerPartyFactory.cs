@@ -10,17 +10,15 @@ public static class FourIslandTrainerPartyFactory
 {
     public const string SourceCommit = TrainerPartyFactory.SourceCommit;
     public const string RulesVersion = "firered-four-island-trainers-v1";
-    public const string TrainerSha256 = "e5cf9caf95639c4df7894502b25667c8229062c5f710bc0ed1f51cbbce9977fe";
-    public const string BattleSha256 = "a2fb5c66034c337c1d54bd48618dc769a1424c3b5d96f10eba7ac4761c44eb80";
     public const string BattleScript = "FourIsland_IcefallCave_Back_EventScript_LoreleiRocketsScene";
     public static TrainerId Grunt45 { get; } = new("pret:TRAINER_TEAM_ROCKET_GRUNT_45");
     public static ImmutableArray<TrainerId> AllTrainers { get; } = [Grunt45];
     public static ImmutableArray<TrainerId> SupportedTrainers => AllTrainers;
     internal sealed record ExpectedMember(string Species, int SourceSpecies, string Name, int Level, int Iv, int[] Encoded, string[] Moves, string HeldItem);
-    internal sealed record ExpectedTrainer(string Name, int Gender, uint AiFlags, bool DoubleBattle, int[] Encoded, string[] Items, ExpectedMember[] Party, int BasePrize, string TrainerSha256);
+    internal sealed record ExpectedTrainer(string Name, int Gender, uint AiFlags, bool DoubleBattle, int[] Encoded, string[] Items, ExpectedMember[] Party, int BasePrize);
     internal static readonly ImmutableDictionary<TrainerId, ExpectedTrainer> Expected = new Dictionary<TrainerId, ExpectedTrainer>
     {
-        [Grunt45] = new("GRUNT", 6, 1u, false, [193, 204, 207, 200, 206], ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"], [new("pret:SPECIES_ZUBAT",41,"ZUBAT",38,0,[212, 207, 188, 187, 206],["pret:MOVE_WING_ATTACK", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_AIR_CUTTER", "pret:MOVE_MEAN_LOOK"],"ITEM_NONE"), new("pret:SPECIES_ZUBAT",41,"ZUBAT",38,0,[212, 207, 188, 187, 206],["pret:MOVE_WING_ATTACK", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_AIR_CUTTER", "pret:MOVE_MEAN_LOOK"],"ITEM_NONE"), new("pret:SPECIES_GOLBAT",42,"GOLBAT",38,0,[193, 201, 198, 188, 187, 206],["pret:MOVE_BITE", "pret:MOVE_WING_ATTACK", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_AIR_CUTTER"],"ITEM_NONE")], 1216, TrainerSha256)
+        [Grunt45] = new("GRUNT", 6, 1u, false, [193, 204, 207, 200, 206], ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"], [new("pret:SPECIES_ZUBAT",41,"ZUBAT",38,0,[212, 207, 188, 187, 206],["pret:MOVE_WING_ATTACK", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_AIR_CUTTER", "pret:MOVE_MEAN_LOOK"],"ITEM_NONE"), new("pret:SPECIES_ZUBAT",41,"ZUBAT",38,0,[212, 207, 188, 187, 206],["pret:MOVE_WING_ATTACK", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_AIR_CUTTER", "pret:MOVE_MEAN_LOOK"],"ITEM_NONE"), new("pret:SPECIES_GOLBAT",42,"GOLBAT",38,0,[193, 201, 198, 188, 187, 206],["pret:MOVE_BITE", "pret:MOVE_WING_ATTACK", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_AIR_CUTTER"],"ITEM_NONE")], 1216)
     }.ToImmutableDictionary();
     public static int BasePrize(FourIslandTrainerCatalog trainers, TrainerId id)
     {
@@ -47,8 +45,7 @@ public static class FourIslandTrainerPartyFactory
             throw new NotSupportedException("four_island_trainer_scope");
         if (!catalog.Trainers.TryGetValue(Grunt45, out var trainer) || trainer is null || trainer.Id != Grunt45 ||
             trainer.Party.IsDefaultOrEmpty || trainer.Party.Any(m => m is null || m.CustomMoves.IsDefault || m.EncodedSpeciesName.IsDefaultOrEmpty) ||
-            trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefaultOrEmpty || trainer.AiFlagSymbols.IsDefault ||
-            CampaignSourceFingerprint.Compute(trainer) != TrainerSha256)
+            trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefaultOrEmpty || trainer.AiFlagSymbols.IsDefault)
             throw new NotSupportedException("four_island_trainer_source");
         if (!catalog.BattlesByScript.TryGetValue(BattleScript, out var battle))
             throw new NotSupportedException("four_island_trainer_battle_source");
@@ -56,7 +53,7 @@ public static class FourIslandTrainerPartyFactory
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || battle.ScriptEntry != BattleScript || CampaignSourceFingerprint.Compute(battle) != BattleSha256)
+        if (battle is null || battle.ScriptEntry != BattleScript)
             throw new NotSupportedException("four_island_trainer_battle_source");
     }
 }

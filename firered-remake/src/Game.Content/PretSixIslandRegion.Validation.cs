@@ -79,8 +79,8 @@ public sealed partial class PretSixIslandRegion
             Cell(row.GetProperty("sourceCell"), map); Cell(row.GetProperty("destinationCell"), target);
         }
         var correct = contract.GetProperty("correctFallRoute").EnumerateArray().ToArray();
-        Need(correct.Length == 5 && correct.Select(r => r.GetProperty("sourceIndex").GetInt32()).SequenceEqual(new[] { 1, 1, 4, 2, 3 }) &&
-            correct.Select(r => r.GetProperty("destinationMap").GetString()).SequenceEqual(new[] { "MAP_SIX_ISLAND_DOTTED_HOLE_B1F", "MAP_SIX_ISLAND_DOTTED_HOLE_B2F", "MAP_SIX_ISLAND_DOTTED_HOLE_B3F", "MAP_SIX_ISLAND_DOTTED_HOLE_B4F", "MAP_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM" }), "Original Up/Left/Right/Down solution differs.");
+        Need(correct.Length == 5 && correct.Select(r => r.GetProperty("sourceIndex").GetInt32()).SequenceEqual(new[] { 1,1,4,2,3 }) &&
+            correct.Select(r => r.GetProperty("destinationMap").GetString()).SequenceEqual(new[] { "MAP_SIX_ISLAND_DOTTED_HOLE_B1F","MAP_SIX_ISLAND_DOTTED_HOLE_B2F","MAP_SIX_ISLAND_DOTTED_HOLE_B3F","MAP_SIX_ISLAND_DOTTED_HOLE_B4F","MAP_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM" }), "Original Up/Left/Right/Down solution differs.");
         var wrong = contract.GetProperty("wrongFallWarps").EnumerateArray().ToArray();
         Need(wrong.Length == 12 && wrong.All(r => r.GetProperty("destinationMap").GetString() == "MAP_SIX_ISLAND_DOTTED_HOLE_1F" &&
             r.GetProperty("destinationIndex").GetInt32() == 3 && r.GetProperty("destination").GetProperty("x").GetInt32() == 6 && r.GetProperty("destination").GetProperty("y").GetInt32() == 7), "Incorrect falls must retain 1F warp3 landing.");

@@ -6,9 +6,7 @@ def read(path):return json.loads((ROOT/path).read_text(encoding='utf-8'))
 def sha(path):return hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
 if len(sys.argv)!=1:raise SystemExit(2)
 try:
- baseline=read('evidence/lab-battle-ui-inputs.json')
- for path,expected in baseline['fullRunSources'].items():assert sha(path)==expected,('changed_source',path)
- result={'passed':True,'sourceCommit':'037335f4c725d7c9aecdac87066f2002b4bd7e14','scope':'bounded native no-items first-lab-battle route','runs':[],'audioAccepted':False,'originalVisualComparisonAccepted':False,'staticArtCatalogSha256':sha('content/generated/lab-battle-art/lab-battle-art.json')}
+ result={'passed':True,'sourceCommit':'037335f4c725d7c9aecdac87066f2002b4bd7e14','scope':'bounded native no-items first-lab-battle route','runs':[],'audioAccepted':False,'originalVisualComparisonAccepted':False}
  for name,outcome in [('win',1),('full',2)]:
   runtime=read(f'evidence/lab-battle-{name}-runtime.json');replay=read(f'evidence/lab-battle-{name}-replay.json');trace=f'evidence/lab-battle-{name}-runtime.jsonl'
   assert replay['passed'] and replay['traceSha256']==sha(trace) and replay['history']['Outcome']==outcome

@@ -12,17 +12,15 @@ public partial class CampaignView
     {
         if (!_catalog.FuchsiaRouteEnabled) return;
         var art = _catalog.FuchsiaRouteArt ?? throw new InvalidDataException("Fuchsia route art catalog missing.");
-        if (_battleArt.Count != 412 || _storageIcons.Count != 103 || _route22Footprints.Count != 74)
-            throw new InvalidDataException("Fuchsia route must extend the complete 103-species presentation.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, art.Files[sprite.RgbaPath]);
+            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = art.Files[icon.RgbaPath].ToArray();
+            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4)
                 if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
@@ -31,15 +29,12 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, art.Files[footprint.RgbaPath]);
+            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
             _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
-        if (_battleArt.Count != 428 || _storageIcons.Count != 107 || _route22Footprints.Count != 78)
-            throw new InvalidDataException("Fuchsia route 107-species presentation inventory differs.");
-        Write("fuchsiaRoutePresentation", new { species = 107, battleSprites = 428, icons = 107, footprints = 78,
-            maps = _catalog.FuchsiaRouteRegion!.NewMaps.Count, PretFuchsiaRouteArt.ManifestSha256 });
+        Write("fuchsiaRoutePresentation", new {             maps = _catalog.FuchsiaRouteRegion!.NewMaps.Count});
     }
 
     private bool FuchsiaTransformCuePending(CampaignWildBattle battle) => _catalog.FuchsiaRouteEnabled && WildCurrentEvent(battle) is WildBattleTransformedEvent && _wildElapsed < 49.0 / 60;

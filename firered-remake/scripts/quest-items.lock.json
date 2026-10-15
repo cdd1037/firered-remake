@@ -10,76 +10,40 @@
   ],
   "files": [
     {
-      "path": "asm/macros/event.inc",
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "asm/macros/event.inc"
     },
     {
-      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
-      "byteLength": 47604,
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
-      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d"
+      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc"
     },
     {
-      "path": "data/maps/ViridianCity_Mart/scripts.inc",
-      "byteLength": 2302,
-      "gitBlobSha1": "1210dd8263d35d9916db57c272ffa2041724dfd3",
-      "sha256": "b8ffccc716ae3d79be432c37213e3284849c5d5dd160757a8a1a9f1c5bc61e8b"
+      "path": "data/maps/ViridianCity_Mart/scripts.inc"
     },
     {
-      "path": "include/constants/global.h",
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      "path": "include/constants/global.h"
     },
     {
-      "path": "include/constants/items.h",
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      "path": "include/constants/items.h"
     },
     {
-      "path": "include/global.h",
-      "byteLength": 25663,
-      "gitBlobSha1": "77155b09014aa854fcf87260e6ad2969e222da53",
-      "sha256": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429"
+      "path": "include/global.h"
     },
     {
-      "path": "include/item.h",
-      "byteLength": 2873,
-      "gitBlobSha1": "1271e0d005aa22e34638d84121124476ac86498b",
-      "sha256": "a2cf9f23cfcd63067550c722f4cacf72491b9a614cf1587f7898b347b6a412a4"
+      "path": "include/item.h"
     },
     {
-      "path": "src/data/items.json",
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      "path": "src/data/items.json"
     },
     {
-      "path": "src/data/items.json.txt",
-      "byteLength": 1170,
-      "gitBlobSha1": "a389a5c83f1caa1b11cb490c6b03e5b33d359fd1",
-      "sha256": "dfdcaaec0169aee61a443304ed3b19be5880caa39f98259cac87d1d24d7ed1a9"
+      "path": "src/data/items.json.txt"
     },
     {
-      "path": "src/item.c",
-      "byteLength": 17534,
-      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
-      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+      "path": "src/item.c"
     },
     {
-      "path": "src/item_menu.c",
-      "byteLength": 79276,
-      "gitBlobSha1": "8f52ead00ec1e34df74dadb71aa23439d507b073",
-      "sha256": "155bd6b0943e8df179cbc9892e573cee52fd8f67a1d0dd39b962bdbec2e3546a"
+      "path": "src/item_menu.c"
     },
     {
-      "path": "src/scrcmd.c",
-      "byteLength": 56954,
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+      "path": "src/scrcmd.c"
     }
   ]
 }

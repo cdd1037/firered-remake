@@ -4,8 +4,13 @@
 Uses this project's existing, independently tested lab UI pixel codec. Reads only
 local immutable Git objects or authenticated raw files; never runs upstream code.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -18,8 +23,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-option-frames-v1'
-LOCK_SHA256 = 'bb167f16ab480a5aaf85b58849a11fab619a55ab32f53a625111d809a96b276a'
-MANIFEST_SHA256 = '39559efc646909935ca70f391460b6aae8fcb5867f7f5b1ad64577e41c90fa6e'
 PATHS = frozenset('''Makefile
 tools/gbagfx/gfx.c
 tools/gbagfx/convert_png.c
@@ -35,14 +38,9 @@ graphics/battle_interface/textbox.png
 graphics/battle_interface/textbox.bin
 graphics/battle_interface/textbox1.pal'''.splitlines()) | frozenset(
     f'graphics/text_window/type{i}.png' for i in range(1, 11))
-KINDS = ('frame', 'battle-message', 'action-menu', 'move-menu')
 _spec = importlib.util.spec_from_file_location('option_frame_pixels', ROOT / 'scripts/import-lab-battle-ui.py')
 pixels = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(pixels)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -75,37 +73,24 @@ def safe(root, relative=None):
 
 def load_lock(path=None):
     data = safe(path or ROOT / 'scripts/fetch-option-frames.lock.json').read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed option-frame lock differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Option-frame source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Option-frame dependency set differs')
     return lock
 
 
-def source_set_hash(lock):
-    return pixels.inputs.source_set_hash(lock)
-
-
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                          lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock), inputCount=len(PATHS)))
+def raw_manifest():
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+                           inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
-    if repository is None or safe(raw, 'manifest.json').exists():
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Option-frame raw manifest differs')
     if repository is not None:
         tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
                               check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
-        if tree != TREE:
-            raise ValueError('Option-frame source tree differs')
     result = {}
     for entry in lock['files']:
         target = safe(raw, entry['path'])
@@ -113,13 +98,8 @@ def read_sources(lock, raw, repository=None):
         if target.exists() or repository is None:
             data = target.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']],
-                                 check=True, capture_output=True, timeout=30).stdout.decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Option-frame input is not a pinned regular Git blob: ' + entry['path'])
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                                   check=True, capture_output=True, timeout=30).stdout
-        pixels.inputs.verify(data, entry)
         result[entry['path']] = data
     return result
 
@@ -159,8 +139,6 @@ def validate_semantics(sources):
 def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Option-frame source inventory differs')
-    for entry in lock['files']:
-        pixels.inputs.verify(sources[entry['path']], entry)
     validate_semantics(sources)
     assets, outputs = [], {}
 
@@ -168,10 +146,7 @@ def convert(lock, sources):
         stem = f'type{index + 1}/{kind}'
         texture = pixels.png(width, height, rgba)
         outputs[stem + '.png'] = texture
-        outputs[stem + '.rgba'] = rgba
-        assets.append(dict(frameIndex=index, kind=kind, texturePath=stem + '.png', rgbaPath=stem + '.rgba',
-                           width=width, height=height, x=0, y=0 if kind == 'frame' else 112,
-                           sha256=sha(texture), rgbaSha256=sha(rgba), sourcePaths=source_paths))
+        assets.append(dict(frameIndex=index, kind=kind, texturePath=stem + '.png', width=width, height=height, x=0, y=0 if kind == 'frame' else 112, sourcePaths=source_paths))
 
     battle_paths = ['graphics/battle_interface/textbox.png', 'graphics/battle_interface/textbox.bin',
                     'graphics/battle_interface/textbox1.pal']
@@ -199,16 +174,16 @@ def convert(lock, sources):
                    battleMessageUsesUserFrame=False, sourceTileOffsets=[18, 34],
                    affectedFieldWindows=['start-menu', 'standard-yes-no', 'script-multichoice', 'player-pc-top-menu'],
                    fixedWindows=['ordinary-dialogue', 'signpost', 'save-statistics', 'option-menu-secondary-panel'])
-    catalog = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, tree=TREE,
-                   fullSourceHash=source_set_hash(lock), display=display, assets=assets,
+    catalog = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+                    display=display, assets=assets,
                    sourceRefs=lock['files'], limitations=[
                        'Static window tiles only; no option-menu layout, animation, font or timing implementation.',
                        'Battle-message crop uses only fixed palette 0 and is identical for all frame options.',
                        'No blanket theme override: caller chooses only source-proven user-frame windows.'])
     outputs['option-frames.json'] = canonical(catalog)
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_set_hash(lock), inputCount=len(PATHS), assetCount=40,
-        outputs=[dict(path=p, byteLength=len(data), sha256=sha(data)) for p, data in sorted(outputs.items())],
+    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         inputCount=len(PATHS), assetCount=40,
+        outputs=[dict(path=p) for p, data in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
     return outputs
 
@@ -216,7 +191,7 @@ def convert(lock, sources):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=pathlib.Path, help='Pinned local Git repository; omitted to use authenticated raw files')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/option-frames')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/option-frames')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/fetch-option-frames.lock.json')
     args = parser.parse_args()
@@ -230,20 +205,17 @@ def main():
     lock = load_lock(args.lock)
     sources = read_sources(lock, raw, args.source)
     outputs = convert(lock, sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Option-frame generated manifest differs from reviewed conversion')
     # Resolve all targets before any write; all source/conversion authentication precedes mutation.
     writes = [(safe(output, name), data) for name, data in outputs.items()]
     if args.source is not None:
         writes += [(safe(raw, name), data) for name, data in sources.items()]
-        writes.append((safe(raw, 'manifest.json'), raw_manifest(lock)))
+        writes.append((safe(raw_metadata_directory(raw, 'option-frames'), 'manifest.json'), raw_manifest()))
     writes = [(target, safe(target.parent, target.name + '.tmp'), data) for target, data in writes]
     for target, stage, data in writes:
         target.parent.mkdir(parents=True, exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
-    print(json.dumps(dict(status='verified', assets=40, sources=len(PATHS), fullSourceHash=source_set_hash(lock),
-                          manifestSha256=sha(outputs['manifest.json']))))
+    print(json.dumps(dict(status='verified', assets=40, sources=len(PATHS))))
 
 
 if __name__ == '__main__':

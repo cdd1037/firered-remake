@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 namespace Game.Content;
@@ -10,10 +9,9 @@ public static class PretBattleText
     public static ImmutableSortedDictionary<string,string> Load(string root)
     {
         var result=ImmutableSortedDictionary.CreateBuilder<string,string>(StringComparer.Ordinal);
-        foreach(var (path,expected) in new[]{("src/battle_message.c","257be289b56dbfe63da9cf956a87d91219d45eb72a47d2dff681caa684f2b6de"),("src/strings.c","08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1")})
+        foreach (var path in new[] { "src/battle_message.c", "src/strings.c" })
         {
-            var bytes=File.ReadAllBytes(Path.Combine(root,"content/raw/lab-battle-extra",path));
-            if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=expected)throw new InvalidDataException("Battle text source differs: "+path);
+            var bytes=File.ReadAllBytes(Path.Combine(root,PretSourcePaths.FireRedRawDirectory,path));
             foreach(Match m in Regex.Matches(Encoding.UTF8.GetString(bytes),"(?:static )?const u8 ([A-Za-z0-9_]+)\\[\\] = _\\(\"((?:\\\\.|[^\"\\\\])*)\"\\);",RegexOptions.CultureInvariant))
                 result.TryAdd(m.Groups[1].Value,m.Groups[2].Value);
         }

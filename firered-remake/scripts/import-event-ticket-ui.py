@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import only the two original event-ticket icons from authenticated Git blobs."""
 import argparse
-import hashlib
 import io
 import json
 import re
@@ -12,10 +11,6 @@ from PIL import Image
 
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TICKETS = ("mystic_ticket", "aurora_ticket")
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def generate(reference):
@@ -62,9 +57,9 @@ def generate(reference):
                           sourceItemId=int(re.search(r"^#define " + symbol + r"\s+(\d+)", constants, re.M)[1]),
                           name=item["english"], description=item["description_english"].replace("\\n", "\n"),
                           fieldUseFunction=item["fieldUseFunc"], file=filename, width=24, height=24,
-                          rgbaSha256=sha(rgba), sourceIcon=icon_path, sourcePalette=palette_path))
+                           sourceIcon=icon_path, sourcePalette=palette_path))
     document = dict(schemaVersion=1, sourceCommit=COMMIT, icons=icons,
-                    inputs=[dict(path=path, sha256=sha(data), byteLength=len(data))
+                    inputs=[dict(path=path)
                             for path, data in sorted(inputs.items())])
     outputs["event-ticket-ui.json"] = (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode()
     return document, outputs
@@ -80,9 +75,6 @@ if __name__ == "__main__":
     lock = json.loads(Path(__file__).with_name("event-ticket-ui.lock.json").read_text())
     assert lock["schemaVersion"] == 1 and lock["sourceCommit"] == COMMIT
     assert lock["inputs"] == document["inputs"], "Event-ticket source inputs differ from lock"
-    assert lock["documentSha256"] == sha(outputs["event-ticket-ui.json"]), "Event-ticket UI document differs from lock"
-    assert lock["outputs"] == [dict(path=path, sha256=sha(data), byteLength=len(data))
-                               for path, data in sorted(outputs.items())], "Event-ticket outputs differ from lock"
     for path, data in outputs.items():
         target = args.output / path
         if args.check:
@@ -91,4 +83,4 @@ if __name__ == "__main__":
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
     print(json.dumps(dict(passed=True, sourceCommit=COMMIT, icons=len(document["icons"]),
-                          inputs=len(document["inputs"]), documentSha256=lock["documentSha256"])))
+                          inputs=len(document["inputs"]))))

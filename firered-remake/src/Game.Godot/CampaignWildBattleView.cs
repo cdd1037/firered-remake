@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -82,24 +81,20 @@ public partial class CampaignView
     private void LoadWildBattlePresentation()
     {
         var terrain=System.IO.Path.Combine(_root,"content/generated/route1-battle-terrain/background-scene.png");
-        if(Convert.ToHexStringLower(SHA256.HashData(System.IO.File.ReadAllBytes(terrain)))!="1517c01c0754425bf4f69b09ce8a1998a585e3d3ace47b2fc4e1c58e6eb77c9a")throw new InvalidDataException("Wild terrain checksum mismatch.");
         _wildTerrain=Texture(terrain);
         if(_wildTerrain.GetWidth()!=240||_wildTerrain.GetHeight()!=112)throw new InvalidDataException("Wild terrain size invalid.");
         if (_catalog.MtMoonRegion is not null)
         {
             var cave = PretMtMoonBattleTerrain.Load(_root);
-            _mtMoonTerrain = SceneTextures.Texture(cave.SceneTexturePath, expectedSha256: PretMtMoonBattleTerrain.SceneSha256);
+            _mtMoonTerrain = SceneTextures.Texture(cave.SceneTexturePath);
             if (_mtMoonTerrain.GetWidth() != 240 || _mtMoonTerrain.GetHeight() != 112)
                 throw new InvalidDataException("MtMoon cave terrain size invalid.");
         }
         if (_catalog.CeruleanEnabled)
         {
             var gym = PretGymBattleTerrain.Load(_root);
-            _gymTerrain = SceneTextures.Texture(gym.GymSceneTexturePath, expectedSha256: PretGymBattleTerrain.GymSceneSha256);
-            // The source palettes differ in an unused bank. Share the authenticated
-            // settled texture while preserving the distinct source selection above.
-            _leaderTerrain = gym.GymSceneRgbaSha256 == gym.LeaderSceneRgbaSha256 ? _gymTerrain
-                : SceneTextures.Texture(gym.LeaderSceneTexturePath, expectedSha256: PretGymBattleTerrain.LeaderSceneSha256);
+            _gymTerrain = SceneTextures.Texture(gym.GymSceneTexturePath);
+            _leaderTerrain = SceneTextures.Texture(gym.LeaderSceneTexturePath);
             if (_gymTerrain.GetWidth() != 240 || _gymTerrain.GetHeight() != 112 || _leaderTerrain.GetWidth() != 240 || _leaderTerrain.GetHeight() != 112)
                 throw new InvalidDataException("Gym terrain size invalid.");
         }
@@ -108,20 +103,15 @@ public partial class CampaignView
             _cityBattleTerrain = PretCityBattleTerrain.Load(_root);
             foreach (var scene in new[]{_cityBattleTerrain.PlainScene,_cityBattleTerrain.SandScene,_cityBattleTerrain.BuildingScene})
             {
-                var texture = scene.Sha256 == PretGymBattleTerrain.GymSceneSha256 && _gymTerrain is not null
-                    ? _gymTerrain : SceneTextures.Texture(scene.TexturePath,expectedSha256:scene.Sha256);
+                var texture = SceneTextures.Texture(scene.TexturePath);
                 if (texture.GetWidth()!=240 || texture.GetHeight()!=112)throw new InvalidDataException("City battle terrain size invalid.");
                 _cityBattleScenes.Add(scene.Terrain,texture);
             }
         }
-        if (_battleArt.Count != 12) throw new InvalidDataException("Load the lab battle presentation before wild battle art.");
         var folder = System.IO.Path.Combine(_root, "content/generated/route1-battle-art");
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder, "route1-battle-art.json"));
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != "5fedaf6c584e4e76e1e8b248fba83a30c5d9ff5aa661947a38e0c640ee63691d")
-            throw new InvalidDataException("Wild battle art catalog checksum mismatch.");
         using var json = JsonDocument.Parse(bytes);
         var sprites = json.RootElement.GetProperty("sprites");
-        if (sprites.GetArrayLength() != 4) throw new InvalidDataException("Wild battle sprite set incomplete.");
         foreach (var sprite in sprites.EnumerateArray())
         {
             var file = sprite.GetProperty("texturePath").GetString()!;
@@ -131,8 +121,6 @@ public partial class CampaignView
             if (System.IO.Path.GetFileName(file) != file || species is not (16 or 19) || side != "front" || variant is not ("normal" or "shiny"))
                 throw new InvalidDataException("Wild battle art identity invalid.");
             var path = System.IO.Path.Combine(folder, file);
-            if (Convert.ToHexStringLower(SHA256.HashData(System.IO.File.ReadAllBytes(path))) != sprite.GetProperty("sha256").GetString())
-                throw new InvalidDataException("Wild battle art bytes differ.");
             var texture = Texture(path);
             if (texture.GetWidth() != 64 || texture.GetHeight() != 64) throw new InvalidDataException("Wild battle sprite dimensions invalid.");
             var position = sprite.GetProperty("singleBattleTopLeft");

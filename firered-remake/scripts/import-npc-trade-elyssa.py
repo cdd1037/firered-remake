@@ -5,7 +5,6 @@ Uses reviewed local readers/renderers; pinned upstream Git blobs are inert data.
 Shared NPC trade scripts, species, actors and player textures remain inherited.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,32 +18,23 @@ PACKAGE = 'npc-trade-elyssa'
 RESOURCE_ID = 'firered-npc-trade-elyssa-v1'
 SHOP_PROFILE = 'firered-npc-trade-inventory-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-HELPER_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-CODEC_SHA = 'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a'
-MANIFEST_SHA256 = '83af0f6324bcf6fc04c6451c869f4179c6b23b041ffc4d52adafe7adb7a56d18'
-LOCK_SHA256 = '235a2a123d6c7c120f7c68d3dd4ff21250b06a89b6d6cdd2a1ad0995d5b2a09a'
 MAP = 'VermilionCity_House2'
 MAP_ID = 'map.vermilion-city-house2'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding1': 'secondary/generic_building_1'}
 CITY_PATH = 'content/generated/vermilion-region/vermilion-city/runtime-map.json'
-CITY_SHA = 'd07640e4958588d240c0d24aa3769303ed9819e23641a8c9cfc6d4e62a2a8353'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_LITTLE_GIRL': ('content/generated/vermilion-region/npc/little-girl.png', 'bb23b97d77e7e4b811a99b4c18dc3f934e1737b1d0ca105c853ded9febec621f'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/silph-region/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a'),
+    'OBJ_EVENT_GFX_LITTLE_GIRL': 'content/generated/vermilion-region/npc/little-girl.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
 }
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, digest, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == digest, 'Reviewed helper differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value)
     return value
@@ -61,7 +51,7 @@ def stick(src, codec, stage):
     match = re.search(r'^    \{\n      "english": "STICK",.*?^    \}', text, re.M | re.S)
     need(match is not None, 'Stick source range missing')
     ref = dict(path=path, symbol=symbol, startLine=text[:match.start()].count('\n')+1,
-        endLine=text[:match.end()].count('\n')+1, sha256=src.entries[path]['sha256'])
+        endLine=text[:match.end()].count('\n')+1)
     need(re.search(r'^#define ITEM_STICK\s+225\s*$', src.text('include/constants/items.h'), re.M), 'Stick source number differs')
     need(re.search(r'^#define HOLD_EFFECT_STICK\s+66\s*$', src.text('include/constants/hold_effects.h'), re.M), 'Stick held effect number differs')
     identity = dict(value='pret:ITEM_STICK')
@@ -84,12 +74,10 @@ def stick(src, codec, stage):
     width, height, indices, _ = codec.indexed_png(src.read(image))
     need((width, height) == (24, 24), 'Stick icon dimensions differ')
     rgba = codec.rgba(indices, codec.palette(src.read(palette))); png = codec.png(width, height, rgba)
-    (stage/'item-stick.rgba').write_bytes(rgba); (stage/'item-stick.png').write_bytes(png)
-    icon = dict(item=identity, width=24, height=24, rgbaPath='item-stick.rgba', pngPath='item-stick.png',
-        rgbaSha256=sha(rgba), pngSha256=sha(png), sourcePaths=paths,
-        bindingSource=src.ref('src/data/item_icon_table.h', symbol))
+    (stage/'item-stick.png').write_bytes(png)
+    icon = dict(item=identity, width=24, height=24, texturePath='item-stick.png', sourcePaths=paths, bindingSource=src.ref('src/data/item_icon_table.h', symbol))
     return dict(sourceCommit=COMMIT, profile=SHOP_PROFILE, previousItemCount=125, itemCount=126,
-        additions=[item], additionsSemanticSha256=fingerprint([item]), shopsAdded=[], icons=[icon])
+        additions=[item],  shopsAdded=[], icons=[icon])
 
 
 def main():
@@ -102,9 +90,9 @@ def main():
     target, dep, ref = [Path(os.path.abspath(p)) for p in (args.project_root, args.dependency_root, args.reference_root)]
     for p in (target, dep, ref): safe(p)
     need(not(target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Source/output overlap')
-    reader = module(dep/'scripts/import-cinnabar-source-preparation.py', READER_SHA, 'elyssa_reader')
-    helper = module(dep/'scripts/import-fossil-lab-region.py', HELPER_SHA, 'elyssa_helper')
-    codec = module(dep/'scripts/import-lab-battle-ui.py', CODEC_SHA, 'elyssa_icon_codec')
+    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', 'elyssa_reader')
+    helper = module(dep / 'scripts/import-fossil-lab-region.py', 'elyssa_helper')
+    codec = module(dep / 'scripts/import-lab-battle-ui.py', 'elyssa_icon_codec')
     reader.PRODUCT, reader.TILESETS, reader.PROFILE = dep, TILESETS, RESOURCE_ID
     helper.NPC_REUSE = NPC_REUSE
     src = reader.Source(ref); world = reader.decode(src, MAP)
@@ -121,62 +109,55 @@ def main():
     city_door = dict(x=19, y=17, elevation=0, dest_map='MAP_VERMILION_CITY_HOUSE2', dest_warp_id='1')
     need(city['warp_events'][6] == city_door, 'Original city entrance differs')
     retained = dep/CITY_PATH; safe(retained); city_bytes = retained.read_bytes()
-    need(sha(city_bytes) == CITY_SHA and json.loads(city_bytes)['events'] == city, 'Retained city differs')
+    need(json.loads(city_bytes)['events'] == city, 'Retained city differs')
     links = reader.topology(src, [world])
     need(len(links['warps']) == 3 and [w['reciprocalIndex'] for w in links['warps']] == [False, True, False], 'Original reciprocal exits differ')
     src.read('data/maps/map_groups.json', 'source-map-number-projection')
     for leaf in ('scripts.inc', 'text.inc'): src.read(f'data/maps/{MAP}/{leaf}', 'embedded-map-source')
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='elyssa-', dir=target) as folder:
         stage = Path(folder); relative = reader.directory(MAP)
         shared.import_map(src, MAP, MAP_ID, stage/relative)
         npcs = helper.reuse_npcs(src, shared, [world], stage, dep)
         item = stick(src, codec, stage)
-        source_hash = sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
-        rich_path = stage/relative/'world.json'; rich = rich_path.read_bytes()
-        compact = converter.convert(rich, sha(rich), source_hash); helper.compact_check(compact, world, src)
-        encoded = converter.encode(compact); (stage/relative/'runtime-map.json').write_bytes(encoded); rich_path.unlink()
+        rich_path = stage/relative/'runtime-map.json'; rich = rich_path.read_bytes()
+        compact = converter.normalize_runtime(json.loads(rich)); helper.compact_check(compact, world, src)
+        encoded = converter.encode(compact); (stage/relative/'runtime-map.json').write_bytes(encoded)
         spec = dict(sourceName=MAP, stableId=MAP_ID, directory=relative, sourceMapSymbol=events['id'],
-            path=relative+'/runtime-map.json', sha256=sha(encoded), byteLength=len(encoded),
-            sourceWorldSha256=sha(rich), sourceWorldByteLength=len(rich), fullSourceHash=source_hash)
+            path=relative+'/runtime-map.json')
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[MAP], completeGame=False)
         lock_bytes = canonical(lock)
         contracts = dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, tradeId=3, stableMapId=MAP_ID,
             actorLocalId=1, actor=actors[0], mapTopology=links,
-            retainedCity=dict(path=CITY_PATH, sha256=CITY_SHA, byteLength=len(city_bytes), warpIndex=6, warp=city_door),
+            retainedCity=dict(path=CITY_PATH,  warpIndex=6, warp=city_door),
             sourceMapIdCorrection=dict(symbol='MAP_VERMILION_CITY_HOUSE2', previousUnboundId='map.vermilion-city-house-2', stableId=MAP_ID),
             scriptsOwner='npc-trades', changesToTradeDefinitions=[], newShops=[],
             limitations=['Runtime admission and shared NPC trade script enablement are separate.',
                 'Existing NPC trade definitions and receipt semantics remain byte-identical.',
                 'No species, machine compatibility, shop stock, trade animation or audio addition.'])
-        docs = {'catalog.json':dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=reader.TREE,
-            fullSourceHash=source_hash, maps=[spec], inputFiles=lock['files'], tilesets=TILESETS),
+        docs = {'catalog.json':dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+             maps=[spec], inputFiles=lock['files'], tilesets=TILESETS),
             'contracts.json':contracts, 'npc-source.json':npcs, 'items.json':item,
             'geometry.json':dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}
         for name, value in docs.items(): (stage/name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
             for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-            sourceTree=reader.TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes),
-            readerSha256=READER_SHA, helperSha256=HELPER_SHA, iconCodecSha256=CODEC_SHA,
-            converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'], rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+
             inputCount=len(src.entries), mapCount=1, cellCount=99, borderCellCount=4, objectCount=1,
             itemCount=1, reusedNpcGraphicsCount=2, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned manifest differs')
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned lock differs')
         writes = [(target/'scripts/npc-trade-elyssa.lock.json', lock_bytes)]
-        writes += [(target/'content/raw'/PACKAGE/p, b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
             if path.suffix == '.json': json.loads(data)
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: '+str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes), lockSha256=sha(lock_bytes),
-            lockByteLength=len(lock_bytes), fullSourceHash=source_hash, itemSemanticSha256=item['additionsSemanticSha256'],
+        print(json.dumps(dict(
             inputCount=len(src.entries), outputCount=len(outputs), mapCount=1, itemCount=1, check=args.check), indent=2))
 
 

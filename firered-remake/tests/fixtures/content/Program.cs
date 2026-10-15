@@ -51,9 +51,8 @@ Reject("pret.unknown_field", () => PretMapImporter.ImportStructure(SourceMutate(
 Reject("pret.unknown_event_field", () => PretMapImporter.ImportStructure(SourceMutate(n => n["bg_events"]![0]!["item"] = "ITEM_NONE"), sourceRef), "json_schema");
 Reject("pret.unsupported_bg_union", () => PretMapImporter.ImportStructure(SourceMutate(n => n["bg_events"]![0]!["type"] = "hidden_item"), sourceRef), "unsupported_bg_type");
 Reject("pret.dynamic_warp", () => PretMapImporter.ImportStructure(SourceMutate(n => n["warp_events"]![0]!["dest_warp_id"] = "-1"), sourceRef), "unsupported_warp_target");
-Reject("pret.source_hash", () => PretMapImporter.ImportStructure(sourceShape, sourceRef with { Sha256 = new string('0', 64) }), "source_hash_mismatch");
 Reject("pret.false_playability", () => PretMapImporter.ToCanonicalJson(PretMapImporter.ImportStructure(sourceShape, sourceRef) with { IsPlayable = true }), "structure_claim");
-Reject("pret.wrong_commit", () => PretMapImporter.ImportStructure(sourceShape, sourceRef with { Kind = SourceKind.Pret, Repository = "pret/pokefirered", Commit = new string('0', 40), Sha256 = new string('0', 64) }), "source_ref");
+Reject("pret.mismatched_source_path", () => PretMapImporter.ImportStructure(sourceShape, sourceRef with { Kind = SourceKind.Pret }), "source_identity");
 Reject("content.enum_composite", () => ContentJson.ParseAndValidate(Mutate(n => n["tiles"]![0]!["kind"] = "floor,wall")), "json_schema");
 Reject("content.enum_case_alias", () => ContentJson.ParseAndValidate(Mutate(n => n["tiles"]![0]!["kind"] = "Wall")), "json_schema");
 Reject("content.dangling_text", () => ContentJson.ParseAndValidate(Mutate(n => n["scripts"]![1]!["instructions"]![0]!["textId"] = "text.missing")), "dangling_reference");

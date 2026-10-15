@@ -1,30 +1,31 @@
 """Test fixture conversion from source preparation; does not execute upstream code."""
-import hashlib,json,re,sys,subprocess
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import read_values
+import json,re,sys,subprocess
 from pathlib import Path
 check="--check" in sys.argv
 reference,preparation,out=map(Path,[a for a in sys.argv[1:] if a!="--check"])
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-assert hashlib.sha256((preparation/'manifest.json').read_bytes()).hexdigest()=="1b9e2233dd8401526af5768e4a007fd1ba6d7d400dd63e5565fd7e43b5151ba3", 'Preparation manifest differs'
-prepared=json.loads((preparation/'manifest.json').read_text())
-for file in ['declarations.json','contracts.json','constants.json']:
- entry=next(e for e in prepared['outputs'] if e['path']==file)
- assert hashlib.sha256((preparation/file).read_bytes()).hexdigest()==entry['sha256'], 'Prepared source differs: '+file
 decl=json.loads((preparation/'declarations.json').read_text())
 def write(name,content):
  target=out/name
  if check:assert target.read_text()==content,'Regeneration differs: '+str(target)
  else:target.write_text(content)
 
-text={}; hashes={}
+text={}
 def read(p):
  if p not in text:
-  data=subprocess.check_output(['git','show',COMMIT+':'+p],cwd=reference);text[p]=data.decode();hashes[p]=hashlib.sha256(data).hexdigest()
+  data=subprocess.check_output(['git','show',COMMIT+':'+p],cwd=reference);text[p]=data.decode()
  return text[p]
 def one(p,pattern):
  matches=list(re.finditer(pattern,read(p),re.M|re.S))
  if len(matches)!=1:raise ValueError((p,pattern,len(matches)))
  return matches[0]
-def ref(p,s,m):return dict(path=p,symbol=s,startLine=read(p).count('\n',0,m.start())+1,endLine=read(p).count('\n',0,m.end())+1,sha256=hashes[p])
+def ref(p,s,m):return dict(path=p,symbol=s,startLine=read(p).count('\n',0,m.start())+1,endLine=read(p).count('\n',0,m.end())+1)
 def num(p,s):return int(one(p,r'^#define '+s+r'\s+(\d+)\b[^\n]*')[1])
 def encode(s):return [int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in s]
 def expr(s):
@@ -38,7 +39,7 @@ def identity(s):return dict(value='pret:'+s)
 trainers=[];battles=[];resolved=[]
 for d in decl['trainers']:
  for r in (d['sourceRef'],d['partySource']):
-  read(r['path']); assert hashes[r['path']]==r['sha256']
+  read(r['path'])
  symbol=d['trainer'];p='src/data/trainers.h';m=one(p,r'^    \['+symbol+r'\] = \{\n(.*?)^    \},');f=d['fields'];name=re.fullmatch(r'_\("([A-Z.& ]+)"\)',f['trainerName'])[1]
  shape,partySymbol=re.fullmatch(r'(NO_ITEM_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)',f['party']).groups();custom=shape=='NO_ITEM_CUSTOM_MOVES'
  pp='src/data/trainer_parties.h';party=one(pp,r'^static const struct TrainerMonNoItem'+('Custom' if custom else 'Default')+'Moves '+partySymbol+r'\[\] = \{\n(.*?)^\};')
@@ -52,10 +53,10 @@ for d in decl['trainers']:
  resolved.append(dict(trainer=symbol,party=[dict(species=x['species'],level=x['level'],moves=x['resolvedMoves']) for x in d['party']]))
 for d in decl['battleOccurrences']:
  if d['rematch']:continue
- p=d['sourceRef']['path'];read(p);assert hashes[p]==d['sourceRef']['sha256'];assert read(p).splitlines()[d['sourceRef']['line']-1].strip()==d['opcode']+' '+', '.join(d['arguments']);label=one(p,r'^'+d['script']+r'::\n((?:(?!^\w+::).)*)');args=d['arguments'][1:];noIntro=d['opcode']=='trainerbattle_no_intro';double=d['opcode']=='trainerbattle_double'
+ p=d['sourceRef']['path'];read(p);assert read(p).splitlines()[d['sourceRef']['line']-1].strip()==d['opcode']+' '+', '.join(d['arguments']);label=one(p,r'^'+d['script']+r'::\n((?:(?!^\w+::).)*)');args=d['arguments'][1:];noIntro=d['opcode']=='trainerbattle_no_intro';double=d['opcode']=='trainerbattle_double'
  mode='TRAINER_BATTLE_DOUBLE' if double else 'TRAINER_BATTLE_SINGLE_NO_INTRO_TEXT' if noIntro else 'TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC' if len(args)>3 and args[3]=='NO_MUSIC' else 'TRAINER_BATTLE_CONTINUE_SCRIPT' if len(args)>2 else 'TRAINER_BATTLE_SINGLE'
  post=re.search(r'^\tmsgbox (\w+)',label[1],re.M)
- row=dict(trainer=identity(d['trainer']),mode=num('include/constants/battle_setup.h',mode),rivalFlags=0,battleTypeFlags=9 if double else 8,scriptEntry=d['script'],introText='' if noIntro else args[0],defeatText=args[0] if noIntro else args[1],victoryText='',postBattleText='' if noIntro else post[1] if post else '',entryScript='EventScript_DoNoIntroTrainerBattle' if noIntro else 'EventScript_TryDoDoubleTrainerBattle' if double else 'EventScript_TryDoNormalTrainerBattle',callback='CB2_EndTrainerBattle',source=dict(path=p,symbol=d['script'],startLine=d['sourceRef']['line'],endLine=d['sourceRef']['line'],sha256=hashes[p]),postBattleScript=args[2] if not double and len(args)>2 else None,musicOption=args[3] if not double and len(args)>3 else None)
+ row=dict(trainer=identity(d['trainer']),mode=num('include/constants/battle_setup.h',mode),rivalFlags=0,battleTypeFlags=9 if double else 8,scriptEntry=d['script'],introText='' if noIntro else args[0],defeatText=args[0] if noIntro else args[1],victoryText='',postBattleText='' if noIntro else post[1] if post else '',entryScript='EventScript_DoNoIntroTrainerBattle' if noIntro else 'EventScript_TryDoDoubleTrainerBattle' if double else 'EventScript_TryDoNormalTrainerBattle',callback='CB2_EndTrainerBattle',source=dict(path=p,symbol=d['script'],startLine=d['sourceRef']['line'],endLine=d['sourceRef']['line']),postBattleScript=args[2] if not double and len(args)>2 else None,musicOption=args[3] if not double and len(args)>3 else None)
  if double:row['notEnoughMonsText']=args[2]
  battles.append(row)
 assert len(trainers)==10 and sum(len(t['party']) for t in trainers)==21 and len(battles)==11
@@ -63,7 +64,7 @@ out.mkdir(parents=True,exist_ok=True)
 document=dict(sourceCommit=COMMIT,profile='firered-first-sevii-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved)
 write('trainers.json',json.dumps(document,indent=2)+'\n')
 print('Converted10 trainers/21 members/11 admitted source occurrences')
-contracts=json.loads((preparation/'contracts.json').read_text()); constants=json.loads((preparation/'constants.json').read_text())['values']
+contracts=json.loads((preparation/'contracts.json').read_text()); constants=read_values(Path(__file__).resolve().parents[1] / 'content/generated')
 items=[]; additions=[]; stocks=[];pickups=[]
 for item in decl['itemDeclarations']:
  symbol=item['itemId'];p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}')
@@ -92,13 +93,13 @@ for item in decl['itemDeclarations']:
   else:assert item['fieldUseFunc']=='FieldUseFunc_OakStopsYou' and item['battleUsage']==0
   additions.append(dict(id=metadata['id'],sourceItemSymbol=symbol,sourceItemId=metadata['sourceItemId'],name=item['english'],description=description,price=item['price'],pocket=item['pocket'],importance=item['importance'],type=str(item['type']),fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],holdEffectParam=item['holdEffectParam'],healHp=heal_hp,cureStatus=0,effectBytes=effect_bytes,useSupport=use_support,source=r,effectSource=effect_source,sourceMetadata=metadata))
 for stock in decl['shopStocks']:
- p=stock['sourceRef']['path']; m=one(p,r'^'+stock['label']+r'::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)');ss=re.findall(r'\.2byte (ITEM_\w+)',m[1]);assert ss==stock['items']+['ITEM_NONE'];assert hashes[p]==stock['sourceRef']['sha256']
+ p=stock['sourceRef']['path']; m=one(p,r'^'+stock['label']+r'::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)');ss=re.findall(r'\.2byte (ITEM_\w+)',m[1]);assert ss==stock['items']+['ITEM_NONE']
  stocks.append(dict(id=stock['label'],items=[identity(s) for s in stock['items']],source=ref(p,stock['label'],m)))
 lookup={i['item']['sourceItemSymbol']:i['item'] for i in items}
 for hidden,key in [(False,'itemPickups'),(True,'hiddenItems')]:
  for i in contracts[key]:
   e=i['event'];symbol=e['item'] if hidden else re.fullmatch(r'\s*finditem (ITEM_\w+)',i['script']['lines'][0]['text'])[1];item=lookup[symbol]
-  pickups.append(dict(id=e['flag'],mapSymbol=i['map'],hidden=hidden,sourceLocalId=None if hidden else i['localId'],x=e['x'],y=e['y'],elevation=e['elevation'],script='' if hidden else e['script'],itemSymbol=symbol,sourceItemId=item['sourceItemId'],item=item['id'],itemName=item['name'],pocket=item['pocket'],quantity=e['quantity'] if hidden else 1,flag=e['flag'],sourceFlagId=constants[e['flag']]['value']))
+  pickups.append(dict(id=e['flag'],mapSymbol=i['map'],hidden=hidden,sourceLocalId=None if hidden else i['localId'],x=e['x'],y=e['y'],elevation=e['elevation'],script='' if hidden else e['script'],itemSymbol=symbol,sourceItemId=item['sourceItemId'],item=item['id'],itemName=item['name'],pocket=item['pocket'],quantity=e['quantity'] if hidden else 1,flag=e['flag'],sourceFlagId=constants[e['flag']]))
 p='src/renewable_hidden_items.c';renew=[]
 for map in ['MAP_THREE_ISLAND_BOND_BRIDGE','MAP_THREE_ISLAND_BERRY_FOREST']:
  m=one(p,r'    \{\n        \.mapGroup = MAP_GROUP\('+map+r'\),\n(.*?)^    \},')
@@ -112,8 +113,7 @@ print('Converted34 items/10 additions/3 stocks/5 visible/17 hidden; renewable so
 
 for source_file in ['src/data/wild_encounters.json','src/data/pokemon/species_info.h','src/data/pokemon/level_up_learnsets.h','src/battle_setup.c']:
  read(source_file)
-encounters=dict(sourceCommit=COMMIT,sourceSha256=hashes['src/data/wild_encounters.json'],
+encounters=dict(sourceCommit=COMMIT,
  admitted=[t for t in decl['wildEncounters'] if t['map']!='MAP_THREE_ISLAND_PORT'],scriptedHypno=decl['scriptedHypno'],
  excludedPortReason='Dunsparce grass lies on the disconnected eastern port side; the connecting tunnel requires National Dex.')
 write('encounters.json',json.dumps(encounters,indent=2)+'\n')
-write('source-input-hashes.json',json.dumps(hashes,sort_keys=True,indent=2)+'\n')

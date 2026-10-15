@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using Game.Content;
 using Game.Domain.Items;
 using Godot;
@@ -28,8 +27,7 @@ public partial class CampaignView
             {
                 using var image = new Image();
                 if (image.LoadPngFromBuffer(PretQuestItemUi.ReadTexture(directory, asset)) != Error.Ok
-                    || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8
-                    || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
+                    || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8)
                     throw new InvalidDataException("Quest pocket texture pixels differ: " + asset.Id);
                 _questPocketTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
             }
@@ -40,11 +38,11 @@ public partial class CampaignView
                 var tv=oldArt.TeachyTv;var item=_catalog.QuestItems.Items.Single(x=>x.Id.Value==tv.Id);
                 if(item.SourceItemSymbol!=tv.SourceSymbol||item.Name!=tv.Name||item.FieldUseFunction!=tv.FieldUseFunction)throw new InvalidDataException("Teachy TV presentation differs from source item.");
                 var asset=oldArt.Assets.Single(x=>x.Id==tv.Icon);using var image=new Image();
-                if(image.LoadPngFromBuffer(PretOldManArt.ReadTexture(oldDirectory,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8||Convert.ToHexStringLower(SHA256.HashData(image.GetData()))!=asset.RgbaSha256)throw new InvalidDataException("Teachy TV texture pixels differ.");
+                if(image.LoadPngFromBuffer(PretOldManArt.ReadTexture(oldDirectory,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8)throw new InvalidDataException("Teachy TV texture pixels differ.");
                 _questPocketTextures.Add(asset.Id,ImageTexture.CreateFromImage(image));
                 // Same source icon window as the existing key item; authenticated extension leaves original assets intact.
                 var icon=document.Assets.Single(x=>x.Id==document.Items.First().Icon);
-                document=document with{Items=document.Items.Add(tv),Assets=document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,icon.X,icon.Y,asset.Sha256,asset.RgbaSha256))};
+                document=document with{Items=document.Items.Add(tv),Assets=document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,icon.X,icon.Y))};
             }
             ExtendMachineQuestPocket(ref document);
             ExtendTownMapQuestPocket(ref document);

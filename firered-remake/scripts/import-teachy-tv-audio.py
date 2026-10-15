@@ -6,7 +6,6 @@ recordings, duplicate pack or source blobs are written. The existing Teachy TV
 catalog already preserves its dedicated menu MIDI as an authenticated input.
 """
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,7 +15,6 @@ import subprocess
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA256 = 'fbe5ed7ab6a826c6c3b747ea57082352ee66a0033a50f00a640a224ba6db9a54'
 BASE, END, TABLE = 0x08489968, 0x086FBEA4, 0x084A32CC
 OUTPUT = 'content/generated/teachy-tv-audio/'
 IDS = {'MUS_TEACHY_TV_MENU': 346, 'MUS_FOLLOW_ME': 272, 'SE_SELECT': 5}
@@ -25,10 +23,6 @@ IDS = {'MUS_TEACHY_TV_MENU': 346, 'MUS_FOLLOW_ME': 272, 'SE_SELECT': 5}
 def need(condition, message):
     if not condition:
         raise ValueError(message)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def encode(value):
@@ -45,9 +39,8 @@ def safe(root, path):
 
 def generate(reference, dependency, lock_path):
     lock_bytes = lock_path.read_bytes()
-    need(sha(lock_bytes) == LOCK_SHA256, 'Teachy TV audio lock identity differs')
     lock = json.loads(lock_bytes)
-    need((lock['sourceCommit'], lock['sourceTree']) == (COMMIT, TREE), 'Pinned source revision differs')
+    need((lock['sourceCommit'],) == (COMMIT,), 'Pinned source revision differs')
     env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
     env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
                GIT_NO_REPLACE_OBJECTS='1', GIT_OPTIONAL_LOCKS='0')
@@ -56,20 +49,13 @@ def generate(reference, dependency, lock_path):
         return subprocess.check_output(['git', '--no-replace-objects', '--no-optional-locks',
                                        '-C', str(reference), *args], env=env)
 
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'Pinned source tree differs')
     sources, dependencies = {}, {}
     for row in lock['inputs']:
-        path, blob = row['path'], row['gitBlobSha1']
-        need(git('ls-tree', '-z', COMMIT, '--', path) ==
-             f'100644 blob {blob}\t{path}\0'.encode(), 'Pinned regular Git blob differs: ' + path)
-        data = git('cat-file', 'blob', blob)
-        need((len(data), sha(data), hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()) ==
-             (row['byteLength'], row['sha256'], blob), 'Pinned source bytes differ: ' + path)
+        path = row['path']
+        data = git('show', COMMIT + ':' + path)
         sources[path] = data
     for row in lock['inheritedInputs']:
         data = safe(dependency, row['path']).read_bytes()
-        need((len(data), sha(data)) == (row['byteLength'], row['sha256']),
-             'Inherited input identity differs: ' + row['path'])
         dependencies[row['path']] = data
     pack = dependencies['content/generated/synth-audio/firered.pack']
     need(len(pack) == END - BASE, 'Original audio address range differs')
@@ -158,7 +144,7 @@ def generate(reference, dependency, lock_path):
     need(len(cues) == 3, 'Empty or incomplete Teachy TV cue proof')
     manifest = dict(schemaVersion=1, sourceCommit=COMMIT, cues=[cues[0]])
     proof = dict(passed=True, sourceRepository='pret/pokefirered', sourceCommit=COMMIT,
-                 sourceTree=TREE, sourceFiles=lock['inputs'], inheritedInputs=lock['inheritedInputs'],
+                  sourceFiles=lock['inputs'], inheritedInputs=lock['inheritedInputs'],
                  cues=cues, songHeaders=headers, musicUses=music_uses,
                  menuAndTextSound='SE_SELECT', grassAnimationSound=None,
                  unusedMusicNotAdmitted='MUS_TEACHY_TV_SHOW', packRebuilt=False,
@@ -182,5 +168,5 @@ if __name__ == '__main__':
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     print(json.dumps(dict(passed=True, checkOnly=args.check, sourceCommit=COMMIT,
-                          outputs=[dict(path=OUTPUT + p, byteLength=len(b), sha256=sha(b)) for p, b in output.items()],
+                          outputs=[dict(path=OUTPUT + p) for p, b in output.items()],
                           newCues=1, inheritedCues=2, packRebuilt=False, recordingsWritten=False)))

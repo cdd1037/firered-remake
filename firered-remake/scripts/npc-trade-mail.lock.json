@@ -3,310 +3,208 @@
   "completeGame": false,
   "files": [
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      ]
     },
     {
-      "byteLength": 1745,
-      "gitBlobSha1": "7e9abe77f4cfe7280c25fdce6505fd1cd576dc2b",
       "path": "data/maps/CeruleanCity_House3/map.json",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1f238ffb43a41c649814db5e8ff41ff7d0711f429bdcd7caaa4b13abbd7233d2"
+      ]
     },
     {
-      "byteLength": 1215,
-      "gitBlobSha1": "2e391369646c25398f0063256a5bb0d75a5050c1",
       "path": "data/maps/CeruleanCity_House3/scripts.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0a8ed4d17b6c5f94b1e84a014b34f06519ebce4dd44aa838409fafa1e8833f27"
+      ]
     },
     {
-      "byteLength": 242,
-      "gitBlobSha1": "502551bfb017972445f210c824f076f5fa0bf3af",
       "path": "data/maps/CeruleanCity_House3/text.inc",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "9f0c77868bb6645a01e23c84829fd96e887dd54490077930b4b46d3e8f0f77d6"
+      ]
     },
     {
-      "byteLength": 152,
-      "gitBlobSha1": "1ccad3cc3b194270af5188a3f289806cc97c3402",
       "path": "graphics/items/icon_palettes/fab_mail.pal",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c1dfe3e1e3fbadf718f9359d61a1030a5b6fe5ca7a927d9e3897bd84dbc5c63f"
+      ]
     },
     {
-      "byteLength": 257,
-      "gitBlobSha1": "969faaf3116688190b5e4836fdb924ae39562182",
       "path": "graphics/items/icons/fab_mail.png",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "9591fe53d27c8efa265a91e9cb7aac76734f6418d07d17fc8bea9f8beb408f13"
+      ]
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "b11121bdf5346bccf0f762cef84d7b7b7b89f272",
       "path": "graphics/mail/fab/map.bin",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c0ab1bd8315296872cdb4f49dc239e5f7f254ddcde5bff19d9a715577d9fc9a5"
+      ]
     },
     {
-      "byteLength": 174,
-      "gitBlobSha1": "17e1afcc33683f4756753e502cb7f669bf277900",
       "path": "graphics/mail/fab/palette.pal",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "43978e00190b631d7eadf22b9b8839cbd614c896204a790ed7962ff5e9018408"
+      ]
     },
     {
-      "byteLength": 388,
-      "gitBlobSha1": "99e9cac71e841c7796e372a4990ccef269f61193",
       "path": "graphics/mail/fab/tiles.png",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "e1287078cada72ef66093b018c4bf0c55e4068eda80eb25852aa6d723699f7ed"
+      ]
     },
     {
-      "byteLength": 63891,
-      "gitBlobSha1": "982b79d2d5f9be1e3c94eac09f0215d3afd7493a",
       "path": "include/constants/easy_chat.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1e101455bcec956bd8243da12eb74156cef5795d7a7d5cd9753001b5bff4d91c"
+      ]
     },
     {
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
       "path": "include/constants/global.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      ]
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
       "path": "include/constants/items.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      ]
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      ]
     },
     {
-      "byteLength": 1985,
-      "gitBlobSha1": "04e667eb0828173525f93cae4df2498415124628",
       "path": "include/constants/trade.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "15b093885ccdada14b62af66cde222d8c62a451540eefe4e8d4a2a0a173b09d4"
+      ]
     },
     {
-      "byteLength": 25663,
-      "gitBlobSha1": "77155b09014aa854fcf87260e6ad2969e222da53",
       "path": "include/global.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429"
+      ]
     },
     {
-      "byteLength": 11276,
-      "gitBlobSha1": "cfb47a725b0c64586c36c6ca7597185143a8fc86",
       "path": "src/data/easy_chat/easy_chat_group_conditions.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "450e70af131106dd990f2fffe89ae7c7d957f682fda9e77d65bcd634e44b806e"
+      ]
     },
     {
-      "byteLength": 10898,
-      "gitBlobSha1": "40087762163525e36db919f4835a876def12b5da",
       "path": "src/data/easy_chat/easy_chat_group_endings.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "f2bbca29c87a062d00afd68ed7be1ba0243594e57d11151b2e192360ce8da6b9"
+      ]
     },
     {
-      "byteLength": 4642,
-      "gitBlobSha1": "26211eec526e3f35b5be74edd90045a9ea99b384",
       "path": "src/data/easy_chat/easy_chat_group_pokemon2.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "41629bdc92cad5da62b83083b616dbe95483243b43c2acd367861fa787c3bd80"
+      ]
     },
     {
-      "byteLength": 9737,
-      "gitBlobSha1": "f76c7e06a24e1176109ae8253596ac0f72ac1d6f",
       "path": "src/data/easy_chat/easy_chat_group_speech.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "4b9527df8a0f133a8a78a5529aefe05a6eb90156b51087630ecb4838fa6582d7"
+      ]
     },
     {
-      "byteLength": 10139,
-      "gitBlobSha1": "e58b86894007200633503e965d54e9fe16fcc56c",
       "path": "src/data/easy_chat/easy_chat_group_voices.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "3fca9a615ec6b1448b6d0bac14c7fb8e388db1369517aa593cdf6888f21cfb5e"
+      ]
     },
     {
-      "byteLength": 3612,
-      "gitBlobSha1": "3620982051ba3813b2e27d68265f0e298b823d65",
       "path": "src/data/easy_chat/easy_chat_groups.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "8937481ad53e4234c8871b876cf3018cbcc4cf020789db1de835ed37b3cdda2a"
+      ]
     },
     {
-      "byteLength": 46353,
-      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
       "path": "src/data/graphics/items.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+      ]
     },
     {
-      "byteLength": 3614,
-      "gitBlobSha1": "86d827b4984be287969f285eda44e2c7e0cd65ca",
       "path": "src/data/graphics/mail.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "c3c644273c1d4cf9b00a9f13ac5c75fd9a7db2c26403844922e41d3a7ffd0588"
+      ]
     },
     {
-      "byteLength": 5460,
-      "gitBlobSha1": "864be813bec993ee53b724812e53f9ee198461d8",
       "path": "src/data/ingame_trades.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "57149576e97191983aefed0ed4afd6969f34b5afdb34e1842573834fcd64c45f"
+      ]
     },
     {
-      "byteLength": 30370,
-      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
       "path": "src/data/item_icon_table.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+      ]
     },
     {
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
       "path": "src/data/items.json",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      ]
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
       "path": "src/data/text/species_names.h",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      ]
     },
     {
-      "byteLength": 18854,
-      "gitBlobSha1": "4a08a1afbd92bbe8ff7d3d48f46513eb1556b4b4",
       "path": "src/easy_chat.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "1ec5c2e3b49ae192ffc692b839b5d80f2813544cbd7f76deb5f85e92bac99719"
+      ]
     },
     {
-      "byteLength": 22414,
-      "gitBlobSha1": "27b63c1db40b4dc860873e35c13cb14eb1fb5b38",
       "path": "src/mail.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0721a9f8ce60d6484bc9dcfead8454e5c6d4a2ef1d8f0f860f3dc458d3b717fc"
+      ]
     },
     {
-      "byteLength": 4853,
-      "gitBlobSha1": "9bff74b6dcabe1e56e5cb7c592a8a08979e2899f",
       "path": "src/mail_data.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "b2ff299f10da19be3dc2ad9ea55d06f0e8f2794dd02d96116b6fa00e60ec3856"
+      ]
     },
     {
-      "byteLength": 211085,
-      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223",
       "path": "src/party_menu.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b"
+      ]
     },
     {
-      "byteLength": 22341,
-      "gitBlobSha1": "d48282032d2400805e0b58e9c71678eae240a0ce",
       "path": "src/player_pc.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "0f458b68a43999cf207e6f30bb203100dafa6bbe3da899e8be4c0015395405eb"
+      ]
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
       "path": "src/strings.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      ]
     },
     {
-      "byteLength": 100901,
-      "gitBlobSha1": "98d129039a8cb641eacf45d7d3e1228800a838b1",
       "path": "src/trade_scene.c",
       "roles": [
         "source-dependency"
-      ],
-      "sha256": "529eb344f332cb9339206769eb758520677b36e5763305261fd3295a51ae2c14"
+      ]
     }
   ],
   "gameVersion": "FIRERED",
@@ -314,6 +212,5 @@
   "profile": "firered-npc-trade-mail-v1",
   "repository": "pret/pokefirered",
   "revision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

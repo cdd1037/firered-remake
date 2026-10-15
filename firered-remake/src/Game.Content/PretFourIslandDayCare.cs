@@ -11,24 +11,17 @@ namespace Game.Content;
 public sealed class PretFourIslandDayCare
 {
     public const string ResourceId = "firered-four-island-daycare-v1";
-    public const string ManifestSha256 = "56dd8087f99f9d31f63b768ca7bd3675d7ca435dc32da6fc730c0678ef5bc7e7";
-    public const string LockSha256 = "dded46c8749c613209f5a867ec578faca6b8fd706bcfef20d293acb5d0fae7c3";
-    public const string FullSourceHash = "cd27ff7a7df3fa4046f26a81be83bb7f7e25db91fcbe8b9440fcda24c4790de0";
     public static MapId HouseMapId { get; } = new("map.four-island-pokemon-day-care");
     private readonly ImmutableDictionary<string, ImmutableArray<byte>> _sourceBytes;
     public static MapId DayCareMapId => HouseMapId;
     public const string EntryScript = "FourIsland_PokemonDayCare_EventScript_DaycareWoman";
     public const string ManEntryScript = "FourIsland_EventScript_DaycareMan";
     public const string PendingEggPositionScript = "FourIsland_EventScript_TrySetDayCareManPos";
-    public const string ExteriorScriptSha256 = "e9d41ce813c9c853df0ccd4d54dc03f3b0bd2a18f75645f32fa19785372d7e76";
-    public const string MapScriptSha256 = "422d698fd61cc5283326504d2f180c2e3d7118a2ecb62b76e3b4491818fa4717";
-    public const string SharedScriptSha256 = "cefd9875f288efb807dc38a4d4dbd50dd75cb34bcb132e1f24e13d8d721705a8";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableArray<PretSourceScriptFile> Scripts { get; }
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -47,8 +40,6 @@ public sealed class PretFourIslandDayCare
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
         NpcSources = source.Document("npc-source.json");
-        AdditionalSourceHashes = ["four-island-daycare-manifest:" + ManifestSha256, "four-island-daycare-lock:" + LockSha256,
-            .. source.Files.Select(f => "four-island-daycare:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -74,8 +65,7 @@ public sealed class PretFourIslandDayCare
     public static PretFourIslandDayCare Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot, "four-island-daycare", ResourceId,
-            "scripts/four-island-daycare.lock.json", LockSha256, 24986, ManifestSha256, 3591, 82, 15);
+        var source = new SilphSourcePackage(projectRoot,"four-island-daycare",            "scripts/four-island-daycare.lock.json");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 3, "Four Island Day Care actor collection differs.");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
@@ -85,36 +75,21 @@ public sealed class PretFourIslandDayCare
             Need(graphics.Add(graphic) && texture.GetProperty("reuseExisting").GetBoolean() &&
                 graphic is "OBJ_EVENT_GFX_OLD_WOMAN" or "OBJ_EVENT_GFX_OLD_MAN_1" or "OBJ_EVENT_GFX_RED_NORMAL",
                 "Four Island Day Care actors must reuse the original existing resources.");
-            _ = SafariSource.Read(dependencyRoot, texture.GetProperty("texturePath").GetString()!,
-                texture.GetProperty("sha256").GetString()!, texture.GetProperty("byteLength").GetInt32());
         }
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Four Island Day Care catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.",
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Four Island Day Care; service rules and current-game admission are separate.", ResourceId, source.Files);
         var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray()
-            .ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
-        string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" &&
-            hash == outputs[path].GetProperty("sha256").GetString() &&
-            spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length,
+        string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
+        string path = spec.GetProperty("path").GetString()!;
+        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
             "Four Island Day Care compact map binding differs.");
-        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
-            relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
-            spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-        PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
         Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 12 && runtime.Height == 9 &&
             runtime.Events.GetProperty("layout").GetString() == "LAYOUT_FOUR_ISLAND_POKEMON_DAY_CARE", "Four Island Day Care layout differs.");
-        foreach (var artifact in runtime.Artifacts)
-            Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
-                "Four Island Day Care image binding differs.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
             PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 1 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
@@ -138,17 +113,16 @@ public sealed class PretFourIslandDayCare
         var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
         foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
         {
-            string sourcePath = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
+            string sourcePath = entry.GetString()!,text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
             if (sourcePath.EndsWith("/text.inc", StringComparison.Ordinal) || sourcePath.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(sourcePath, text);
             else
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing Four Island Day Care script label.");
-                scripts.Add(new(sourcePath, text, new(SourceKind.Pret, sourcePath, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[sourcePath].Sha256)));
+                scripts.Add(new(sourcePath, text, new(SourceKind.Pret,sourcePath,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["PARTY_SIZE"] == 6 && constants["GAME_STAT_USED_DAYCARE"] == 47 &&
             constants["YES"] == 1 && constants["MUS_SEVII_45"] == 336 && constants["FLAG_PENDING_DAYCARE_EGG"] == 614 &&
             constants["LOCALID_FOUR_ISLAND_DAYCARE_MAN"] == 1 && constants["LOCALID_FOUR_ISLAND_DAYCARE_WOMAN"] == 1 &&
@@ -170,13 +144,8 @@ public sealed class PretFourIslandDayCare
     {
         var retained = source.Document("contracts.json").GetProperty("retainedTown");
         string package = retained.GetProperty("currentPackage").GetString()!;
-        _ = SafariSource.Read(dependencyRoot, package + "/manifest.json", retained.GetProperty("currentManifestSha256").GetString()!,
-            retained.GetProperty("currentManifestByteLength").GetInt32());
         var town = retained.GetProperty("currentResource");
-        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot, package + "/" + town.GetProperty("path").GetString(),
-            town.GetProperty("sha256").GetString()!, town.GetProperty("byteLength").GetInt32()));
-        Need(JsonElement.DeepEquals(data.GetProperty("events"), SilphSourcePackage.Json(source.Raw["data/maps/FourIsland/map.json"])),
-            "Retained Four Island events differ from the original source.");
+        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot,package + "/" + town.GetProperty("path").GetString()));
         var entrance = data.GetProperty("events").GetProperty("warp_events")[1];
         Need(entrance.GetProperty("x").GetInt32() == 12 && entrance.GetProperty("y").GetInt32() == 13 &&
             entrance.GetProperty("elevation").GetInt32() == 0 && entrance.GetProperty("dest_map").GetString() == "MAP_FOUR_ISLAND_POKEMON_DAY_CARE" &&

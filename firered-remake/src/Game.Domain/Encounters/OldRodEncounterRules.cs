@@ -8,7 +8,6 @@ namespace Game.Domain.Encounters;
 public static class OldRodEncounterRules
 {
     public const string SourcePath = "src/data/wild_encounters.json";
-    public const string SourceSha256 = "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c";
     public static SpeciesId Magikarp { get; } = new("pret:SPECIES_MAGIKARP");
     public static ImmutableArray<OldRodEncounterTable> Tables { get; } =
     [
@@ -29,7 +28,7 @@ public static class OldRodEncounterRules
     internal static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) || MapsWithoutFishingMons.Contains(map);
 
     private static OldRodEncounterTable Table(string map, string symbol, int rate, byte max = 5) =>
-        new(new("map." + map), OldRodFishingRules.SourceCommit, SourcePath, "s" + symbol + "_FireRed", SourceSha256,
+        new(new("map." + map), OldRodFishingRules.SourceCommit, SourcePath, "s" + symbol + "_FireRed",
             rate, [new(0, Magikarp, 5, max, 70), new(1, Magikarp, 5, max, 30)]);
 
     /// <summary>Fishing uses no land cooldown/rate RNG, Repel, lead ability or table encounter-rate roll.</summary>

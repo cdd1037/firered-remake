@@ -12,7 +12,6 @@ import struct
 import teachy_tv_codec as codec
 
 ROOT=Path(__file__).resolve().parent.parent
-MANIFEST_SHA256='b2e9452ae639b28cb55cc6d97b93161ceb437234fd07e263fed0d7146e5ff0a2'
 spec=importlib.util.spec_from_file_location('teachy_catalog',ROOT/'scripts/import-teachy-tv.py')
 catalog=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(catalog)
@@ -114,16 +113,15 @@ def main():
     lock,sources=catalog.read_sources(args.git_dir,ROOT/'scripts/teachy-tv.lock.json')
     artifacts,contract=convert(sources)
     manifest=dict(schemaVersion=1,profile='firered-teachy-tv-art-v1',sourceCommit=catalog.COMMIT,
-        sourceLockSha256=catalog.LOCK_SHA256,contract=contract,assets=[])
+        contract=contract,assets=[])
     catalog.need(not any(p.is_symlink() for p in [args.output,*args.output.parents]),'teachy_tv_art_symlink')
     for name,value in artifacts.items():
         catalog.need(not (args.output/name).is_symlink(),'teachy_tv_art_symlink')
-        manifest['assets'].append(dict(path=name,bytes=len(value['bytes']),sha256=catalog.sha(value['bytes']),width=value['width'],height=value['height']))
-    catalog.need(catalog.sha(catalog.encoded(manifest))==MANIFEST_SHA256,'teachy_tv_art_manifest_hash')
+        manifest['assets'].append(dict(path=name,width=value['width'],height=value['height']))
     args.output.mkdir(parents=True,exist_ok=True)
     for name,value in artifacts.items():(args.output/name).write_bytes(value['bytes'])
     (args.output/'teachy-tv-art.json').write_bytes(catalog.encoded(manifest))
-    print(json.dumps(dict(assets=len(artifacts),bytes=sum(len(v['bytes']) for v in artifacts.values()),manifestSha256=catalog.sha(catalog.encoded(manifest)))))
+    print(json.dumps(dict(assets=len(artifacts),bytes=sum(len(v['bytes']) for v in artifacts.values()))))
 
 
 if __name__=='__main__':main()

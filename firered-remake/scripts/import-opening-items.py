@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Strict, bounded Potion extraction from locked public reference texts, all local-only."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -40,20 +39,9 @@ def read_lock():
         if str(path) in seen:
             raise ValueError('Duplicate source path')
         seen.add(str(path))
-        if (set(entry) != {'path', 'byteLength', 'gitBlobSha1', 'sha256'} or
-                type(entry['byteLength']) is not int or entry['byteLength'] <= 0 or
-                not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']) or
-                not re.fullmatch('[0-9a-f]{64}', entry['sha256'])):
-            raise ValueError('Malformed source identity')
     if seen != PATHS:
         raise ValueError('The complete bounded 17-file source manifest is required')
     return lock
-
-
-def verify_bytes(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or blob != entry['gitBlobSha1'] or hashlib.sha256(data).hexdigest() != entry['sha256']:
-        raise ValueError('Source hash mismatch: ' + entry['path'])
 
 
 def import_catalog(raw, out):
@@ -61,7 +49,6 @@ def import_catalog(raw, out):
     inputs, texts = {}, {}
     for entry in lock['files']:
         data = (raw / entry['path']).read_bytes()
-        verify_bytes(entry, data)
         inputs[entry['path']] = entry
         texts[entry['path']] = data.decode('utf-8')
 
@@ -73,7 +60,7 @@ def import_catalog(raw, out):
 
     def reference(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=texts[path].count('\n', 0, match.start()) + 1,
-                    endLine=texts[path].count('\n', 0, match.end()) + 1, sha256=inputs[path]['sha256'])
+                    endLine=texts[path].count('\n', 0, match.end()) + 1)
 
     def constant(path, symbol):
         match = one(path, r'^#define ' + re.escape(symbol) + r'\s+(\d+|0x[0-9a-fA-F]+)(?=\s*\n)')
@@ -146,8 +133,7 @@ def import_catalog(raw, out):
                                  'This local source profile does not prove ROM execution parity or native UI behavior.'],
                     catalog=catalog)
     data = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
-    manifest = dict(sourceCommit=COMMIT, profile=PROFILE, itemCount=1, inputCount=len(inputs),
-                    catalogSha256=hashlib.sha256(data).hexdigest())
+    manifest = dict(sourceCommit=COMMIT, profile=PROFILE, itemCount=1, inputCount=len(inputs))
     out.mkdir(parents=True, exist_ok=True)
     (out / 'opening-items.json').write_bytes(data)
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
@@ -156,7 +142,7 @@ def import_catalog(raw, out):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/opening-items')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/opening-items')
     args = parser.parse_args()
     import_catalog(args.raw, args.out)

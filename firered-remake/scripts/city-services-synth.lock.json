@@ -2,147 +2,63 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "priorManifest": {
     "path": "content/generated/vermilion-gym-assets/synth-manifest-candidate.json",
-    "byteLength": 87317,
-    "sha256": "fe4aedaa4a2a86a4cd78d14c182ab2d764cea5be66acb83deec131e86f79c3e6",
     "cueCount": 243
   },
   "files": [
     {
-      "path": "data/maps/VermilionCity_PokemonFanClub/scripts.inc",
-      "byteLength": 3731,
-      "sha256": "82a5ec8f76bc292fe2cc7031a19c4bd0d73a64ff823ee1c3f718daba1300dcda",
-      "gitBlobSha1": "c2bad77226a10910a2919fe8fefdd13bda3b1108"
+      "path": "data/maps/VermilionCity_PokemonFanClub/scripts.inc"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/sound.h",
-      "byteLength": 2051,
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+      "path": "include/constants/sound.h"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "sound/cry_tables.inc",
-      "byteLength": 16533,
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "path": "sound/direct_sound_samples/cries/seel.wav",
-      "byteLength": 8986,
-      "sha256": "759235b224b97ccac83717fe78e9010c7aa0fdb573dd4cb115ff02188738455e",
-      "gitBlobSha1": "95e027d5e8876eb2f72256179c270d5ea4bf61e6"
+      "path": "sound/direct_sound_samples/cries/seel.wav"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/mus_cycling.mid",
-      "byteLength": 8344,
-      "sha256": "c9623bf14a58f5aeaf6cdc6c64b8e6857671b5ce0660b47dff442e04dd10b3fc",
-      "gitBlobSha1": "270bc8a75bc1324b83cf7ee448dc09fba211598d"
+      "path": "sound/songs/midi/mus_cycling.mid"
     },
     {
-      "path": "sound/songs/midi/se_bike_bell.mid",
-      "byteLength": 68,
-      "sha256": "9df76a200b3052db035f941a2644ddc3030f4a2aff26a067cbaaffee784f6a1d",
-      "gitBlobSha1": "9d5de6cbdbd2d6d6ce72687c01eb2d991673f500"
+      "path": "sound/songs/midi/se_bike_bell.mid"
     },
     {
-      "path": "src/bike.c",
-      "byteLength": 14482,
-      "sha256": "39b63a7a80e7d861b4051245e9201506e7e023d39f68bdb66d39ec3681345253",
-      "gitBlobSha1": "be9cd8e50e69ab5896cb8f387fc89889facb78c8"
+      "path": "src/bike.c"
     },
     {
-      "path": "src/item_use.c",
-      "byteLength": 28138,
-      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98",
-      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f"
+      "path": "src/item_use.c"
     },
     {
-      "path": "src/sound.c",
-      "byteLength": 15232,
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+      "path": "src/sound.c"
     }
   ],
   "inputs": [
     {
-      "path": "content/generated/synth-audio/firered.pack",
-      "byteLength": 2565436,
-      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+      "path": "content/generated/synth-audio/firered.pack"
     },
     {
-      "path": "content/generated/synth-audio/normal-cries.bin",
-      "byteLength": 6188,
-      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+      "path": "content/generated/synth-audio/normal-cries.bin"
     },
     {
-      "path": "content/generated/vermilion-gym-assets/synth-manifest-candidate.json",
-      "byteLength": 87317,
-      "sha256": "fe4aedaa4a2a86a4cd78d14c182ab2d764cea5be66acb83deec131e86f79c3e6"
+      "path": "content/generated/vermilion-gym-assets/synth-manifest-candidate.json"
     },
     {
-      "path": "scripts/audit-early-audio.py",
-      "byteLength": 21672,
-      "sha256": "e7db8de67b65dcc69dc6d7c41153340c9204913bcb5a3d35f585b5e9ab8525c5"
+      "path": "scripts/audit-early-audio.py"
     },
     {
-      "path": "scripts/synth-city-services-cues.json",
-      "byteLength": 88374,
-      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
-      "byteLength": 4642,
-      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
-      "byteLength": 2705,
-      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
-      "byteLength": 2372,
-      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
-      "byteLength": 4767,
-      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
-      "byteLength": 2676,
-      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
-      "byteLength": 9512,
-      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
-      "byteLength": 37803,
-      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+      "path": "scripts/synth-city-services-cues.json"
     }
   ]
 }

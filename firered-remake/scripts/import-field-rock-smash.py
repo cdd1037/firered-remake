@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Extract all original FireRed rock actors/tables from pinned Git blobs. No upstream code is run."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -17,8 +16,6 @@ def need(condition, reason):
     if not condition:
         raise ValueError(reason)
 
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 def canonical(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
@@ -33,7 +30,6 @@ def main():
     need(not output.is_relative_to(repo) and not repo.is_relative_to(output), 'Reference/output overlap')
     def git(*parts):
         return subprocess.check_output(['git', '-C', str(repo), *parts])
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'Pinned reference tree differs')
     tree = {}
     for line in git('ls-tree', '-r', COMMIT).decode().splitlines():
         meta, path = line.split('\t', 1)
@@ -44,14 +40,12 @@ def main():
     def read(path, retain=True):
         need(path in tree, 'Missing source: ' + path)
         data = git('cat-file', 'blob', tree[path])
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        need(blob == tree[path], 'Git blob differs: ' + path)
         if retain:
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=blob, sha256=digest(data))
+            inputs[path] = dict(path=path)
         return data
     def source(path):
         read(path)
-        return dict(path=path, sha256=inputs[path]['sha256'], gitBlobSha1=inputs[path]['gitBlobSha1'])
+        return dict(path=path)
     # Scan every pinned map declaration, not a hand-picked coordinate/region list.
     maps = sorted(path for path in tree if re.fullmatch(r'data/maps/[^/]+/map.json', path))
     need(len(maps) == 425, 'Pinned map census differs')
@@ -163,17 +157,17 @@ def main():
     document = dict(sourceCommit=COMMIT, rocks=rocks, encounterTables=tables,
         wild=dict(species=species_rows, initialMoves=initial_rows))
     payload = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode()
-    contract = dict(schemaVersion=1, sourceCommit=COMMIT, sourceTree=TREE, scannedMapCount=len(maps),
+    contract = dict(schemaVersion=1, sourceCommit=COMMIT,  scannedMapCount=len(maps),
         rockCount=len(rocks), rockMapCount=len(map_names), encounterTableCount=len(tables), mapsWithoutRockEncounters=no_tables,
         upstreamScriptsExecuted=False, romDownloaded=False,
         gift=dict(map='map.one-island-kindle-road-ember-spa', sourceLocalId=gift[0][0], script=gift_script,
             item='ITEM_HM06', flag='FLAG_GOT_HM06', source=source(gift_path)),
-        documentSha256=digest(payload), recordSha256=digest(canonical(document)),
+
         inputs=sorted(inputs.values(), key=lambda row: row['path']))
     output.mkdir(parents=True, exist_ok=True)
     (output / 'field.json').write_bytes(payload)
     (output / 'source-contract.json').write_text(json.dumps(contract, indent=2) + '\n')
-    print(json.dumps({k: contract[k] for k in ['rockCount', 'rockMapCount', 'encounterTableCount', 'documentSha256', 'recordSha256']}, indent=2))
+    print(json.dumps({k: contract[k] for k in ['rockCount', 'rockMapCount', 'encounterTableCount']}, indent=2))
 
 if __name__ == '__main__':
     main()

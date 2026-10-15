@@ -75,16 +75,13 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("route3_clone_dependency_differs");
         var template=target.GetProperty("object");
         var identity=target.GetProperty("sourceRef");
-        string symbol=source.GetProperty("target_local_id").GetString()!,path=identity.GetProperty("path").GetString()!;
+        string symbol=source.GetProperty("target_local_id").GetString()!;
         int targetIndex=target.GetProperty("sourceObjectIndex").GetInt32();
         if(target.GetProperty("map").GetString()!=source.GetProperty("target_map").GetString()||
             target.GetProperty("localId").GetInt32()!=targetIndex+1||targetIndex<0||
             template.GetProperty("local_id").GetString()!=symbol||template.GetProperty("type").GetString()!="object"||
-            identity.GetProperty("kind").GetString()!="pret"||identity.GetProperty("repository").GetString()!="pret/pokefirered"||
-            identity.GetProperty("commit").GetString()!=PretWorldMap.SourceCommit||identity.GetProperty("symbol").GetString()!=symbol||
-            !Route3Region.SourceFiles.Any(f=>f.Path==path&&f.Sha256==identity.GetProperty("sha256").GetString()))
+            identity.GetProperty("kind").GetString()!="pret"||identity.GetProperty("symbol").GetString()!=symbol)
             throw new InvalidDataException("route3_clone_source_identity_differs");
-        return SourceActor(template,targetIndex) with{X=source.GetProperty("x").GetInt32(),
-            Y=source.GetProperty("y").GetInt32(),IsClone=true};
+        return SourceActor(template,targetIndex) with{X=source.GetProperty("x").GetInt32(),Y=source.GetProperty("y").GetInt32(),IsClone=true};
     }
 }

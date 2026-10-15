@@ -6,11 +6,9 @@ namespace Game.Content;
 /// <summary>Source fanfare task counters only. This does not implement or verify audible playback.</summary>
 public sealed record PretPresentationCues(ImmutableSortedDictionary<string,int> FanfareCounters)
 {
-    public const string SourceSha256="851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958";
     public static PretPresentationCues Load(string root)
     {
-        var bytes=File.ReadAllBytes(Path.Combine(root,"content/raw/presentation-cues/src/sound.c"));
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=SourceSha256)throw new InvalidDataException("Fanfare timing source checksum mismatch.");
+        var bytes=File.ReadAllBytes(Path.Combine(root,PretSourcePaths.FireRedRawDirectory + "/src/sound.c"));
         var table=Regex.Match(Encoding.UTF8.GetString(bytes),@"static const struct Fanfare sFanfares\[\] = \{(.*?)\n\};",RegexOptions.Singleline|RegexOptions.CultureInvariant);
         if(!table.Success)throw new InvalidDataException("Fanfare source table missing.");
         var counters=ImmutableSortedDictionary.CreateBuilder<string,int>(StringComparer.Ordinal);

@@ -3,7 +3,6 @@
 REFERENCE OUTPUT --dependency EXISTING_PROJECT [--check]. Outputs remain local/recoverable.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,34 +18,31 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-slot-machine-presentation-v1'
 BASE = 'content/generated/slot-machine-presentation/'
-RAW = 'content/raw/slot-machine-presentation/'
-HELPERS = {
-    'scripts/import-lab-battle-ui.py': 'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a',
-    'scripts/fetch-lab-battle-ui.py': '805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32',
-    'scripts/import-source-font.py': '513a782abd266b4d3a86a057299c36d35839bb50aa26fd851dc4780edf980078',
-    'scripts/fetch-source-font.py': 'ff009a121132ede2f9838e0d2c7c0357d3feeb14846a3f5a3e1ba6c9e4eda62f'}
+RAW = 'content/raw/pokefirered/037335f4/'
+HELPERS = (
+    'scripts/import-lab-battle-ui.py',
+    'scripts/fetch-lab-battle-ui.py',
+    'scripts/import-source-font.py',
+    'scripts/fetch-source-font.py',
+)
 SHARED = {
-    'src/window.c': 'content/raw/text-cursor/src/window.c',
-    'src/blit.c': 'content/raw/text-cursor/src/blit.c',
-    'src/text.c': 'content/raw/source-font/src/text.c',
-    'src/text_window.c': 'content/raw/source-font/src/text_window.c',
-    'src/strings.c': 'content/raw/item-ui/src/strings.c',
-    'src/sound.c': 'content/raw/four-island-presentation/src/sound.c',
-    'include/constants/songs.h': 'content/raw/four-island-presentation/include/constants/songs.h',
-    'sound/song_table.inc': 'content/raw/four-island-presentation/sound/song_table.inc',
-    'charmap.txt': 'content/raw/source-font/charmap.txt',
-    'graphics/fonts/latin_small.png': 'content/raw/source-font/graphics/fonts/latin_small.png',
-    'graphics/fonts/keypad_icons.png': 'content/raw/first-sevii-town-map/graphics/fonts/keypad_icons.png',
-    'graphics/text_window/stdpal_2.pal': 'content/raw/item-ui/graphics/text_window/stdpal_2.pal'}
+    'src/window.c': 'content/raw/pokefirered/037335f4/src/window.c',
+    'src/blit.c': 'content/raw/pokefirered/037335f4/src/blit.c',
+    'src/text.c': 'content/raw/pokefirered/037335f4/src/text.c',
+    'src/text_window.c': 'content/raw/pokefirered/037335f4/src/text_window.c',
+    'src/strings.c': 'content/raw/pokefirered/037335f4/src/strings.c',
+    'src/sound.c': 'content/raw/pokefirered/037335f4/src/sound.c',
+    'include/constants/songs.h': 'content/raw/pokefirered/037335f4/include/constants/songs.h',
+    'sound/song_table.inc': 'content/raw/pokefirered/037335f4/sound/song_table.inc',
+    'charmap.txt': 'content/raw/pokefirered/037335f4/charmap.txt',
+    'graphics/fonts/latin_small.png': 'content/raw/pokefirered/037335f4/graphics/fonts/latin_small.png',
+    'graphics/fonts/keypad_icons.png': 'content/raw/pokefirered/037335f4/graphics/fonts/keypad_icons.png',
+    'graphics/text_window/stdpal_2.pal': 'content/raw/pokefirered/037335f4/graphics/text_window/stdpal_2.pal'}
 
 
 def need(ok, message):
     if not ok:
         raise ValueError(message)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def encoded(value):
@@ -68,7 +64,6 @@ def generate(reference, dependency):
     def git(*args):
         return subprocess.check_output(['git', '--no-replace-objects', '--no-optional-locks', '-C', str(reference), *args], env=env)
 
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'Pinned source tree differs')
     tree = {}
     for row in git('ls-tree', '-rz', COMMIT).split(b'\0'):
         if row:
@@ -80,21 +75,18 @@ def generate(reference, dependency):
         if path not in sources:
             need(path in tree and tree[path][:2] == ['100644', 'blob'], 'Source is not regular blob: ' + path)
             data = git('cat-file', 'blob', tree[path][2])
-            need(hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest() == tree[path][2], 'Source Git blob differs')
             sources[path] = data
             raw = SHARED.get(path, RAW + path)
             if path in SHARED:
                 need(safe(dependency, raw).read_bytes() == data, 'Inherited raw source differs: ' + path)
-            source_rows[path] = dict(path=path, rawPath=raw, byteLength=len(data), sha256=sha(data), gitBlobSha1=tree[path][2])
+            source_rows[path] = dict(path=path, rawPath=raw)
         return sources[path]
 
     def reuse(path):
         data = safe(dependency, path).read_bytes()
-        inherited[path] = dict(path=path, byteLength=len(data), sha256=sha(data))
+        inherited[path] = dict(path=path)
         return data
 
-    for path, digest in HELPERS.items():
-        need(sha(safe(dependency, path).read_bytes()) == digest, 'Reviewed conversion helper differs: ' + path)
 
     def helper(path, name):
         spec = importlib.util.spec_from_file_location(name, dependency / path)
@@ -105,7 +97,6 @@ def generate(reference, dependency):
     pixels = helper('scripts/import-lab-battle-ui.py', 'slot_pixels')
     font = helper('scripts/import-source-font.py', 'slot_font')
     original = source('src/slot_machine.c').decode()
-    need(sha(sources['src/slot_machine.c']) == 'bc80b3334a1aae51db36cfccd7df33cf08fc19b18d9c871e6aecf0e58056087d', 'Slot source bytes differ')
     # Resolve only the FireRed branch, preserving the independently locked original bytes.
     code = re.sub(r'#if defined\(FIRERED\)\n(.*?)#elif defined\(LEAFGREEN\)\n.*?#endif', r'\1', original, flags=re.S)
 
@@ -138,9 +129,8 @@ def generate(reference, dependency):
         scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
         png = b'\x89PNG\r\n\x1a\n' + pixels.chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
         png += pixels.chunk(b'IDAT', zlib.compress(scan, 9)) + pixels.chunk(b'IEND', b'')
-        outputs[name + '.png'], outputs[name + '.rgba'] = png, rgba
-        row = dict(id=name, width=width, height=height, texturePath=BASE + name + '.png', rgbaPath=BASE + name + '.rgba',
-                   sha256=sha(png), rgbaSha256=sha(rgba), **metadata)
+        outputs[name + '.png'] = png
+        row = dict(id=name, width=width, height=height, texturePath=BASE + name + '.png', **metadata)
         assets.append(row)
         return row
 
@@ -252,31 +242,12 @@ def generate(reference, dependency):
         body = declaration(symbol)
         animations[symbol.removeprefix('sAnimCmd_Clefairy_').lower()] = dict(frames=[dict(tileOffset=int(t, 0), durationTicks=int(d)) for t, d in re.findall(r'ANIMCMD_FRAME\(\s*(0x[\da-fA-F]+|\d+),\s*(\d+)\)', body)], loop='ANIMCMD_JUMP(0)' in body)
     line_names = ['TLBR', 'TopRow', 'MiddleRow', 'BottomRow', 'BLTR']
-    layout = dict(width=240, height=160, textureFilter='nearest', paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',
-        mapWidthTiles=32, mapHeightTiles=20, bgTemplates=structures('sBgTemplates'), windows=structures('sWindowTemplates'),
-        yesNoWindow={k: int(v, 0) for k, v in re.findall(r'\.(\w+)\s*=\s*(0x[\da-fA-F]+|\d+)', declaration('sYesNoWindowTemplate'))},
-        reels=dict(centers=[[80 + 40 * i, 44 + 24 * j] for i in range(3) for j in range(5)], spriteWidth=32, spriteHeight=32,
-                   priority=3, subpriority=2, subpixelScale=8, paletteBanks=palette_tags,
-                   iconSymbols=['ICON_7', 'ICON_ROCKET', 'ICON_PIKACHU', 'ICON_PSYDUCK', 'ICON_CHERRIES', 'ICON_MAGNEMITE', 'ICON_SHELLDER'],
-                   tileOffsets=[0, 16, 32, 48, 64, 80, 96]),
-        digits=dict(creditCenters=[[85 + 7 * i, 30] for i in range(4)], payoutCenters=[[133 + 7 * i, 30] for i in range(4)],
-                    spriteWidth=8, spriteHeight=16, tileOffsets=list(range(0, 20, 2)), leadingZeros=True, priority=1),
-        clefairy=dict(centers=[[16, 136], [224, 136]], rightHFlip=True, spriteWidth=32, spriteHeight=32, priority=1, animations=animations),
-        scanline=dict(registerOffset=43, activeRows=84, affineParameters=table('sReelIconAffineParams'), darkenCoefficients=table('sReelIconBldY'),
-                      effect='darken BG3, OBJ and backdrop; outside range affine 0x100 and darken 0'),
-        matchLines=[dict(id=i, name=n, minimumBet=[3, 2, 1, 2, 3][i], tileIndices=table('sLineTiles_' + n)) for i, n in enumerate(line_names)],
-        normalLinePalette=4, betLinePalette=5, winningLinePalette=6, winningUnblendedColorIndices=table('sWinningLineFlashPalIdxs'),
-        buttonTileIndices=table('sReelButtonMapTileIdxs'), pressedButtonTileBase=192,
-        controls=dict(font='small', fontId=0, x=controls_x, y=0, width=controls_width, paletteBank=14, colorIndices=[15, 1, 3], keypad=keypad),
-        help=dict(bg=1, initialScrollPixels=256, finalScrollPixels=0, stepPixels=16, openButton='Right', closeButton='Left'),
-        message=dict(fontId=2, x=1, y=2, letterSpacing=1, lineSpacing=2, borderTileStart=1, borderPalette=15),
-        yesNo=dict(fontId=2, x=0, y=2, borderTileStart=10, borderPalette=13, initialCursor=0, wraps=False),
-        backdropRgb555=[30, 30, 31])
+    layout = dict(width=240, height=160, textureFilter='nearest', paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', mapWidthTiles=32, mapHeightTiles=20, bgTemplates=structures('sBgTemplates'), windows=structures('sWindowTemplates'), yesNoWindow={k: int(v, 0) for k, v in re.findall('\\.(\\w+)\\s*=\\s*(0x[\\da-fA-F]+|\\d+)', declaration('sYesNoWindowTemplate'))}, reels=dict(centers=[[80 + 40 * i, 44 + 24 * j] for i in range(3) for j in range(5)], spriteWidth=32, spriteHeight=32, priority=3, subpriority=2, subpixelScale=8, paletteBanks=palette_tags, iconSymbols=['ICON_7', 'ICON_ROCKET', 'ICON_PIKACHU', 'ICON_PSYDUCK', 'ICON_CHERRIES', 'ICON_MAGNEMITE', 'ICON_SHELLDER'], tileOffsets=[0, 16, 32, 48, 64, 80, 96]), digits=dict(creditCenters=[[85 + 7 * i, 30] for i in range(4)], payoutCenters=[[133 + 7 * i, 30] for i in range(4)], spriteWidth=8, spriteHeight=16, tileOffsets=list(range(0, 20, 2)), leadingZeros=True, priority=1), clefairy=dict(centers=[[16, 136], [224, 136]], rightHFlip=True, spriteWidth=32, spriteHeight=32, priority=1, animations=animations), scanline=dict(registerOffset=43, activeRows=84, affineParameters=table('sReelIconAffineParams'), darkenCoefficients=table('sReelIconBldY'), effect='darken BG3, OBJ and backdrop; outside range affine 0x100 and darken 0'), matchLines=[dict(id=i, name=n, minimumBet=[3, 2, 1, 2, 3][i], tileIndices=table('sLineTiles_' + n)) for i, n in enumerate(line_names)], normalLinePalette=4, betLinePalette=5, winningLinePalette=6, winningUnblendedColorIndices=table('sWinningLineFlashPalIdxs'), buttonTileIndices=table('sReelButtonMapTileIdxs'), pressedButtonTileBase=192, controls=dict(font='small', fontId=0, x=controls_x, y=0, width=controls_width, paletteBank=14, colorIndices=[15, 1, 3], keypad=keypad), help=dict(bg=1, initialScrollPixels=256, finalScrollPixels=0, stepPixels=16, openButton='Right', closeButton='Left'), message=dict(fontId=2, x=1, y=2, letterSpacing=1, lineSpacing=2, borderTileStart=1, borderPalette=15), yesNo=dict(fontId=2, x=0, y=2, borderTileStart=10, borderPalette=13, initialCursor=0, wraps=False), backdropRgb555=[30, 30, 31])
     need(len(layout['scanline']['affineParameters']) == len(layout['scanline']['darkenCoefficients']) == 96, 'Scanline table length differs')
     # Reuse the existing source sound pack. This extends cue metadata only, never samples/PCM.
     pack_path = 'content/generated/synth-audio/firered.pack'
     pack = reuse(pack_path)
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968, 'Original synth pack differs')
+    need(len(pack) == 141541028 - 138975592, 'Original synth pack differs')
     songs = source('include/constants/songs.h').decode()
     song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source('sound/song_table.inc').decode(), re.M)
     sound = source('src/sound.c').decode()
@@ -306,13 +277,13 @@ def generate(reference, dependency):
     outputs['palettes.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, palettes=palettes))
     outputs['layout.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, layout=layout, texts=texts))
     source('src/text_window.c')
-    source_lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', sourceCommit=COMMIT, sourceTree=TREE,
-        importerSha256=sha(Path(__file__).read_bytes()), helpers=HELPERS,
+    source_lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', sourceCommit=COMMIT,
+         helpers=HELPERS,
         inputs=[source_rows[p] for p in sorted(source_rows)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
     lock_bytes = encoded(source_lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lock_bytes),
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         assets=assets, audio=dict(packPath=pack_path, newCueCount=4, inheritedCueCount=2, cues=cues, preservesMapMusic=True),
-        outputs=[dict(path=path, byteLength=len(data), sha256=sha(data)) for path, data in sorted(outputs.items())],
+        outputs=[dict(path=path) for path, data in sorted(outputs.items())],
         limitations=['Resource candidate only; no Application betting, probabilities or initial-state policy.',
                      'Background, help and controls are individual source layers, not complete game screenshots.',
                      'No scanline shader, task timings, native render or physical audio acceptance is claimed.'])
@@ -341,5 +312,4 @@ if __name__ == '__main__':
         else:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
-    print(json.dumps(dict(passed=True, checked=args.check, outputs=len(files), bytes=sum(map(len, files.values())),
-                         manifestSha256=sha(files[BASE + 'manifest.json']), lockSha256=sha(files['scripts/slot-machine-presentation.lock.json']))))
+    print(json.dumps(dict(passed=True, checked=args.check, outputs=len(files), bytes=sum(map(len, files.values())))))

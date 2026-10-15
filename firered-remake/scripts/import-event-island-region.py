@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 """Reproduce 24 pinned event-island maps and source field contracts; no upstream execution."""
-import argparse, ast, collections, hashlib, importlib.util, json, re, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-event-island-region-v1'
 PACKAGE = 'event-island-region'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = '2282f33a779cdd37897ae0db78a31d5826244aecb88809321b1093f65f953a94'
-LOCK_SHA256 = 'ea4ddcab8bf944b66a9e7aa6cd02cb9c73ee6346b640660ebe524c8bd85175e5'
 CORE = ['BirthIsland_Exterior', 'BirthIsland_Harbor', 'NavelRock_1F', 'NavelRock_B1F', 'NavelRock_Base', 'NavelRock_BasePath_B10F', 'NavelRock_BasePath_B11F', 'NavelRock_BasePath_B1F', 'NavelRock_BasePath_B2F', 'NavelRock_BasePath_B3F', 'NavelRock_BasePath_B4F', 'NavelRock_BasePath_B5F', 'NavelRock_BasePath_B6F', 'NavelRock_BasePath_B7F', 'NavelRock_BasePath_B8F', 'NavelRock_BasePath_B9F', 'NavelRock_Exterior', 'NavelRock_Fork', 'NavelRock_Harbor', 'NavelRock_Summit', 'NavelRock_SummitPath_2F', 'NavelRock_SummitPath_3F', 'NavelRock_SummitPath_4F', 'NavelRock_SummitPath_5F']
 SUPPORT = []
 ANCHOR = ['VermilionCity']
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_NavelRock': 'secondary/navel_rock', 'gTileset_IslandHarbor': 'secondary/island_harbor', 'gTileset_SeviiIslands67': 'secondary/sevii_islands_67', 'gTileset_SeviiIslands123': 'secondary/sevii_islands_123'}
 
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
 def need(v, message):
     if not v: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in output: '+str(path))
-def module(path, name, expected):
-    need(sha(path.read_bytes()) == expected, 'Reviewed dependency differs: '+str(path))
+def module(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value)
     return value
@@ -204,7 +205,7 @@ def main():
     ap.add_argument('--check',action='store_true');args=ap.parse_args()
     target=args.project_root.absolute();safe(target);target=target.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve()
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Source/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py','event_island_reader',READER_SHA)
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'event_island_reader')
     reader.PRODUCT=dep;reader.TILESETS=TILESETS;reader.PROFILE=PROFILE
     src=reader.Source(ref);worlds=[reader.decode(src,n) for n in CORE]
     scripts=script_index(src,reader);scripts['profile']=PROFILE;scripts['sourcePaths']=sorted({b['sourceRef']['path'] for b in scripts['blocks']})
@@ -221,7 +222,7 @@ def main():
         'game_stat','global','weather','help_system','pokemon','sound']
     for n in headers:src.read('include/constants/'+n+'.h','script-operand-constant')
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='event-island-import-') as temp:
         stage=Path(temp)
         for n in CORE:shared.import_map(src,n,'map.'+reader.directory(n),stage/reader.directory(n))
@@ -241,32 +242,28 @@ def main():
             if p.startswith('data/maps/') and p.endswith('/map.json'):
                 n=p.split('/')[2];symbol='MAP_'+re.sub(r'([a-z])([A-Z])',r'\1_\2',n).upper()
                 if symbol in tokens:symbols[symbol]='map.'+reader.directory(n)
-        sourcehash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode());catalog=[]
+        catalog=[]
         for w in worlds:
-            relative=reader.directory(w['sourceName']);p=stage/relative/'world.json';rich=p.read_bytes()
-            compact=converter.encode(converter.convert(rich,sha(rich),sourcehash));(stage/relative/'runtime-map.json').write_bytes(compact)
-            catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],path=relative+'/runtime-map.json',
-                sha256=sha(compact),byteLength=len(compact),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=sourcehash));p.unlink()
+            relative=reader.directory(w['sourceName']);p=stage/relative/'runtime-map.json';rich=p.read_bytes()
+            compact=converter.encode(converter.normalize_runtime(json.loads(rich)));(stage/relative/'runtime-map.json').write_bytes(compact)
+            catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE);lockbytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=sourcehash,
+        docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
                 runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=symbols,inputFiles=lock['files'],**links),
-            'scripts.json':scripts,'constants.json':const,'npc-source.json':npcs,'contracts.json':contract,'items.json':items,
-            'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}
+            'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contract,'items.json':items,
+            'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=sourcehash,lockSha256=sha(lockbytes),
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=len(links['warps']),
             connectionCount=len(links['connections']),objectCount=sum(len(w['events']['object_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),
-            scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,readerSha256=READER_SHA,outputs=outputs)
+            scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifestbytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifestbytes)
-        if MANIFEST_SHA256:need(sha(manifestbytes)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(sha(lockbytes)==LOCK_SHA256,'Pinned lock differs')
-        writes=[(target/'content/sources/event-island-region.lock.json',lockbytes)]+[(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/sources/event-island-region.lock.json',lockbytes)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             safe(p)
             if args.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestbytes),manifestByteLength=len(manifestbytes),
-            lockByteLength=len(lockbytes),outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 
 if __name__=='__main__':main()

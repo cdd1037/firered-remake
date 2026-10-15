@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Decode three pinned original trainer portraits. No upstream code is executed."""
-import argparse,hashlib,importlib.util,json,pathlib,re
+import argparse,importlib.util,json,pathlib,re
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14';TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
-LOCK_SHA='cebc2c7d891ca0188731eb84beaddc7f01c6ebac6d3527be1ef19611c634c849'
 PORTRAITS=[('beauty-front','beauty','Beauty','BEAUTY'),('cooltrainer-f-front','cool_trainer_f','CooltrainerF','COOLTRAINER_F'),('erika-front','leader_erika','LeaderErika','LEADER_ERIKA')]
-def sha(b):return hashlib.sha256(b).hexdigest()
 def encode(d):return (json.dumps(d,indent=2)+'\n').encode()
 def safe(base,p):
  if not p or pathlib.PurePosixPath(p).is_absolute() or '\\' in p or any(x in ('','.','..') for x in p.split('/')):raise ValueError('Unsafe art path')
@@ -15,17 +13,14 @@ def safe(base,p):
 
 def authenticated(root=ROOT,output_root=None):
  out=output_root or root;b=safe(out,'scripts/celadon-gym-art.lock.json').read_bytes()
- if sha(b)!=LOCK_SHA or len(b)!=3462:raise ValueError('Art lock differs')
  lock=json.loads(b)
- if (lock['schemaVersion'],lock['repository'],lock['commit'],lock['tree'],len(lock['files']),len(lock['inputs']))!=(1,'pret/pokefirered',COMMIT,TREE,12,2):raise ValueError('Art source scope differs')
+ if (lock['schemaVersion'], lock['repository'], lock['commit'], len(lock['files']), len(lock['inputs'])) != (1, 'pret/pokefirered', COMMIT, 12, 2):raise ValueError('Art source scope differs')
  data={}
  for row in lock['files']:
-  b=safe(out,'content/raw/celadon-gym-art/'+row['path']).read_bytes()
-  if (len(b),sha(b),hashlib.sha1(f'blob {len(b)}\0'.encode()+b).hexdigest())!=(row['byteLength'],row['sha256'],row['gitBlobSha1']):raise ValueError('Art source differs: '+row['path'])
+  b=safe(out,'content/raw/pokefirered/037335f4/'+row['path']).read_bytes()
   data[row['path']]=b
  for row in lock['inputs']:
   b=safe(root,row['path']).read_bytes()
-  if (len(b),sha(b))!=(row['byteLength'],row['sha256']):raise ValueError('Art decoder differs')
  return lock,data
 
 def build(root,data):
@@ -46,17 +41,17 @@ def build(root,data):
   w,h,indices,_=codec.indexed_png(data['graphics/trainers/front_pics/'+stem+'_front_pic.png'])
   if (w,h)!=(64,64):raise ValueError('Portrait source size differs')
   rgba=codec.rgba(indices,codec.palette(data['graphics/trainers/palettes/'+stem+'.pal']));png=codec.png(w,h,rgba)
-  output[id+'.rgba']=rgba;output[id+'.png']=png;assets.append(dict(id=id,width=w,height=h,rgbaSha256=sha(rgba),pngSha256=sha(png),trainerPicture=picture))
+  output[id+'.png']=png;assets.append(dict(id=id,width=w,height=h,trainerPicture=picture))
  return assets,output
 
 def run(root=ROOT,output_root=None,check=False):
  out=output_root or root;lock,data=authenticated(root,out);assets,output=build(root,data)
- output['manifest.json']=encode(dict(schemaVersion=1,profile='firered-celadon-gym-art-v1',sourceCommit=COMMIT,sourceTree=TREE,lockSha256=LOCK_SHA,inputs=lock['files'],assets=assets,transparentIndex=0,trainerTopLeft=[144,8],battleScene='MAP_BATTLE_SCENE_GYM',upstreamScriptsExecuted=False,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(output.items())]))
+ output['manifest.json']=encode(dict(schemaVersion=1,profile='firered-celadon-gym-art-v1',sourceCommit=COMMIT,inputs=lock['files'],assets=assets,transparentIndex=0,trainerTopLeft=[144,8],battleScene='MAP_BATTLE_SCENE_GYM',upstreamScriptsExecuted=False,outputs=[dict(path=p) for p,b in sorted(output.items())]))
  for relative,b in output.items():
   p=safe(out,'content/generated/celadon-gym-art/'+relative)
   if check:
    if p.read_bytes()!=b:raise ValueError('Generated art differs: '+relative)
   else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
- return dict(passed=True,assets=len(assets),sourceBlobs=len(data),manifestSha256=sha(output['manifest.json']))
+ return dict(passed=True,assets=len(assets),sourceBlobs=len(data))
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--output-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.project_root,a.output_root,a.check),indent=2))

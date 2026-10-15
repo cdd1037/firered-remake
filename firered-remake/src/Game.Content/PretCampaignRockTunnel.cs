@@ -17,7 +17,7 @@ public sealed partial class PretCampaignCatalog
     public JsonElement? RockTunnelCenter => RockTunnelRegion?.Center;
     public bool RockTunnelEnabled => RockTunnelRegion is not null;
 
-    private static PokemonCatalog RockTunnelCampaignPokemon(PokemonCatalog catalog, PokemonCatalog previous)
+    private static PokemonCatalog RockTunnelCampaignPokemon(PokemonCatalog catalog,PokemonCatalog previous)
     {
         PokemonFactory.ValidateCatalog(catalog);
         PokemonFactory.ValidateCatalog(previous);
@@ -30,7 +30,7 @@ public sealed partial class PretCampaignCatalog
         {
             if (moves.TryGetValue(id, out var current))
             {
-                if (current with { Flags = move.Flags, Source = move.Source } != move ||
+                if (current with { Flags = move.Flags,Source = move.Source } != move ||
                     !current.Flags.SequenceEqual(move.Flags))
                     throw new InvalidDataException("Conflicting RockTunnel predecessor move: " + id);
             }
@@ -42,7 +42,7 @@ public sealed partial class PretCampaignCatalog
     }
 
     private static IEnumerable<FieldPickupDefinition> RockTunnelPickupDefinitions(
-        PretRockTunnelItemsDocument items, EarlyShopCatalog shop, PewterMachineCatalog machines, PretStoryCompilation scripts)
+        PretRockTunnelItemsDocument items,EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
     {
         foreach (var pickup in items.Pickups)
         {

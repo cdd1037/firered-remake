@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Read pinned original Git blobs; reuse imported source files, emit no art or audio."""
-import argparse, hashlib, json, pathlib, re, subprocess
+import argparse,  json, pathlib, re, subprocess
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return json.dumps(v, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--source', required=True); ap.add_argument('--root', required=True); args=ap.parse_args()
@@ -11,9 +10,8 @@ def main():
     raw={}; inputs=[]
     for row in contract['inputs']:
         data=subprocess.check_output(['git','-C',args.source,'show',COMMIT+':'+row['path']])
-        assert sha(data)==row['sha256'], row['path']
         raw[row['path']]=data.decode(); inputs.append(row)
-    def ref(path,symbol,start,end): return {'path':path,'symbol':symbol,'startLine':start,'endLine':end,'sha256':sha(raw[path].encode())}
+    def ref(path,symbol,start,end): return {'path':path,'symbol':symbol,'startLine':start,'endLine':end}
     path='src/data/items.json'; text=raw[path]; all_items=json.loads(text)['items']; item=next(x for x in all_items if x['itemId']=='ITEM_TM15')
     pos=text.index('"itemId": "ITEM_TM15"'); start=text.rfind('{',0,pos); end=text.index('}',pos)
     # Existing machine metadata references start at the english field, matching the source import convention.
@@ -46,12 +44,12 @@ def main():
     icons=raw['src/data/item_icon_table.h']
     for tm in ['TM05','TM15']:
         assert re.search(r'\[ITEM_'+tm+r'\]\s*=\s*\{gItemIcon_TMHM, gItemIconPalette_NormalTMHM\}',icons)
-    document={'schemaVersion':1,'sourceCommit':COMMIT,'contractSha256':sha((root/'scripts/department-machine-stock.contract.json').read_bytes()),
+    document={'schemaVersion':1,'sourceCommit':COMMIT,
         'stockId':'CeladonCity_DepartmentStore_2F_TMs','stockItems':['pret:'+s for s in symbols[:-1]],
         'inheritedMachineCount':41,'machineCount':42,'speciesCount':163,'inputs':inputs,
-        'tm15SemanticSha256':sha(canonical(tm15)),'tm15':tm15,
+        'tm15':tm15,
         'movePower':150,'moveAccuracy':90,'moveType':'TYPE_NORMAL','moveEffect':'EFFECT_RECHARGE','iconSourceItem':'pret:ITEM_TM05'}
     out=root/'content/generated/department-machine-stock';out.mkdir(parents=True,exist_ok=True)
     target=out/'machines.json';target.write_text(json.dumps(document,ensure_ascii=False,indent=2)+'\n')
-    print(json.dumps({'generatedSha256':sha(target.read_bytes()),'tm15SemanticSha256':document['tm15SemanticSha256'],'species':len(rows),'compatible':sum(r['canLearn'] for r in rows)}))
+    print(json.dumps({'species':len(rows),'compatible':sum(r['canLearn'] for r in rows)}))
 if __name__=='__main__': main()

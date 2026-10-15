@@ -6,10 +6,9 @@ public sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, 
 /// <summary>Exact FireRed Power Plant table, generated only from pinned source.</summary>
 public static class PowerPlantEncounterTables
 {
-    public const string SourceSha256 = "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c";
     public static MapId Map { get; } = new("map.power-plant");
     public static EarlyLandEncounterTable Land { get; } = new(Map, EarlyLandEncounterRules.SourceCommit,
-        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", SourceSha256, 7,
+        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", 7,
         [new(0,new("pret:SPECIES_VOLTORB"),22,22,20),
             new(1,new("pret:SPECIES_MAGNEMITE"),22,22,20),
             new(2,new("pret:SPECIES_VOLTORB"),25,25,10),

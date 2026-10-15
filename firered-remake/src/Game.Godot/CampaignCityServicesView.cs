@@ -32,11 +32,11 @@ public partial class CampaignView
         {
             var icon=icons.Single(a=>a.Item==item.Item.Id);
             string id="city-service-"+item.Item.SourceItemSymbol;
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,PretPewterMachines.IconRgba(icon));
+            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba(icon.Item.Value switch { "pret:ITEM_GOOD_ROD" => "good-rod-service", "pret:ITEM_SUPER_ROD" => "super-rod-service", "pret:ITEM_COIN_CASE" => "game-corner-coins", _ => "city-services" }, icon));
             _questPocketTextures.Add(id,ImageTexture.CreateFromImage(image));
             document=document with
             {
-                Assets=document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,position.X,position.Y,icon.PngSha256,icon.RgbaSha256)),
+                Assets=document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,position.X,position.Y)),
                 Items=document.Items.Add(new(item.Item.Id.Value,item.Item.SourceItemSymbol,item.Item.Name,item.Description,id,item.Item.FieldUseFunction))
             };
         }

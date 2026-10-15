@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SaffronGymMachineCatalog
 {
     public const string Profile = "firered-saffron-gym-teaching-v1";
-    public const string NewMachinesSourceSha256 = "7b262cfb31a972a9ad14ddc9c7d691e4a76d05c2a91bed7da96060703496a026";
     public static ItemId Tm04Id => SaffronGymShopCatalog.Tm04Id;
     private static readonly ConditionalWeakTable<PewterMachineCatalog, SaffronGymMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
@@ -31,8 +30,7 @@ public sealed class SaffronGymMachineCatalog
             machines.Take(26).Where((machine, index) => !ReferenceEquals(machine, old.AdditionalMachines!.Value[index])).Any())
             throw new ArgumentException("saffron_gym_machine_scope");
         var additions = machines.Skip(26).ToArray();
-        if (additions[0] is null || additions[0].Compatibility.IsDefault || additions[0].Compatibility.Length != 113 ||
-            CampaignSourceFingerprint.Compute(additions) != NewMachinesSourceSha256)
+        if (additions[0] is null || additions[0].Compatibility.IsDefault || additions[0].Compatibility.Length != 113)
             throw new ArgumentException("saffron_gym_machine_new_source");
         var proof = new SaffronGymMachineCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

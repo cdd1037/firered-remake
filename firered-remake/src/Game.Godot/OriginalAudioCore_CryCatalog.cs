@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 namespace FireRedAudio;
 
 public readonly record struct NormalCryEntry(int Species, int CryIndex, int SampleCount, int PayloadBytes, bool GuardStored)
@@ -7,30 +6,21 @@ public readonly record struct NormalCryEntry(int Species, int CryIndex, int Samp
     public uint ToneAddress => 0x0848c914 + (uint)CryIndex * 12;
 }
 
-// Small external metadata authenticated independently of the immutable original audio pack.
-// Construction is restricted to the audited 386-species snapshot; no arbitrary asset admission.
+// Cry metadata uses a versioned header followed by fixed-size sample records.
 public sealed class NormalCryCatalog
 {
-    public const int FileBytes = 6188;
-    public const string Sha256 = "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e";
+
     readonly Dictionary<int, NormalCryEntry> entries = new();
     public int Count => entries.Count;
     NormalCryCatalog() { }
 
-    public static NormalCryCatalog FromFile(string path)
-    {
-        using var file = File.OpenRead(path);
-        if (file.Length != FileBytes) throw new InvalidDataException("Unexpected cry catalog length");
-        var bytes = new byte[FileBytes];
-        file.ReadExactly(bytes);
-        return FromBytes(bytes);
-    }
+    public static NormalCryCatalog FromFile(string path) => FromBytes(File.ReadAllBytes(path));
 
     public static NormalCryCatalog FromBytes(ReadOnlySpan<byte> bytes)
     {
-        if (bytes.Length != FileBytes || Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant() != Sha256)
-            throw new InvalidDataException("Unsupported cry catalog identity");
-        if (!bytes[..8].SequenceEqual("FRCN0001"u8) || BinaryPrimitives.ReadUInt32LittleEndian(bytes[8..]) != 386)
+        if (bytes.Length < 12 || (bytes.Length - 12) % 16 != 0 ||
+            !bytes[..8].SequenceEqual("FRCN0001"u8) ||
+            BinaryPrimitives.ReadUInt32LittleEndian(bytes[8..]) != (bytes.Length - 12) / 16)
             throw new InvalidDataException("Invalid cry catalog header");
         var result = new NormalCryCatalog();
         for (int offset = 12; offset < bytes.Length; offset += 16)

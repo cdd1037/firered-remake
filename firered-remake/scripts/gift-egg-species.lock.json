@@ -1,28 +1,18 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-gift-egg-species-v1",
-  "importerSha256": "63a416050e4dc1e11c5152c648ee37fb5f0e10056688e24662199c90f8342264",
   "files": [
     {
-      "path": "content/generated/gift-egg-species/machines.json",
-      "byteLength": 56814,
-      "sha256": "8b4377ab237f2c1ba6662c3a6ca1fa33212c7eeffa7150325163ca81b33b3544"
+      "path": "content/generated/gift-egg-species/machines.json"
     },
     {
-      "path": "content/generated/gift-egg-species/metadata.json",
-      "byteLength": 4687,
-      "sha256": "0a4bf59b2cba8faa43d2de7aed412818bc1c107d7948b4268ffac78b1c86e3e5"
+      "path": "content/generated/gift-egg-species/metadata.json"
     },
     {
-      "path": "content/generated/gift-egg-species/pokemon.json",
-      "byteLength": 1203,
-      "sha256": "bb0487c6a2984b1baeb75f9e764e50ca46964ca8c3d6c2b655428866b71b08e6"
+      "path": "content/generated/gift-egg-species/pokemon.json"
     },
     {
-      "path": "content/generated/gift-egg-species/source-input-hashes.json",
-      "byteLength": 5661,
-      "sha256": "b7d9e98699dfdbf378d35bb384ffa55863f40584bc863eac942dc5f2dd60e3e2"
+      "path": "content/generated/gift-egg-species/source-input-hashes.json"
     }
   ]
 }

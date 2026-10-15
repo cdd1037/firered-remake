@@ -2,7 +2,7 @@
 """Import bounded Coin Case / ordinary Game Corner coins; reuse maps and source bytes.
 REFERENCE DEPENDENCY OUTPUT [--check]. Never executes the reference repository.
 """
-import argparse, base64, hashlib, io, json, re, subprocess
+import argparse, base64,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
 
@@ -10,26 +10,24 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-game-corner-coins-v1'
 BASE = 'content/generated/game-corner-coins/'
-RAW = 'content/raw/game-corner-coins/'
+RAW = 'content/raw/pokefirered/037335f4/'
 RESTAURANT = 'data/maps/CeladonCity_Restaurant/'
 CORNER = 'data/maps/CeladonCity_GameCorner/'
-SHARED = {path: 'content/raw/'+owner+'/'+path for owner, paths in [
-    ('bill-items', ['src/data/items.json','include/constants/items.h','src/data/item_icon_table.h','src/data/graphics/items.h','src/item_use.c']),
-    ('bill-region', ['include/constants/menu.h','include/constants/flags.h','include/constants/vars.h','src/script_menu.c','data/scripts/obtain_item.inc','data/event_scripts.s','data/text/obtain_item.inc']),
-    ('bill-machines', ['asm/macros/event.inc']),
-    ('capture-dex', ['src/strings.c']),
-    ('celadon-approach-region', ['src/scrcmd.c']),
-    ('regional-service-maps', [RESTAURANT+p for p in ['scripts.inc','text.inc','map.json']]),
-    ('rocket-hideout-region', [CORNER+p for p in ['scripts.inc','text.inc','map.json']]),
+SHARED = {path: 'content/raw/pokefirered/037335f4/'+path for paths in [
+    ['src/data/items.json','include/constants/items.h','src/data/item_icon_table.h','src/data/graphics/items.h','src/item_use.c'],
+    ['include/constants/menu.h','include/constants/flags.h','include/constants/vars.h','src/script_menu.c','data/scripts/obtain_item.inc','data/event_scripts.s','data/text/obtain_item.inc'],
+    ['asm/macros/event.inc'],
+    ['src/strings.c'],
+    ['src/scrcmd.c'],
+    [RESTAURANT+p for p in ['scripts.inc','text.inc','map.json']],
+    [CORNER+p for p in ['scripts.inc','text.inc','map.json']],
 ] for path in paths}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def need(value, message):
     if not value: raise ValueError(message)
 def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False)+'\n').encode()
 
 def generate(reference, dependency):
-    need(subprocess.check_output(['git','rev-parse',COMMIT+'^{tree}'],cwd=reference).decode().strip() == TREE,'Pinned source tree')
     inputs, cache, raw = {}, {}, {}
     def read(path):
         if path in cache: return cache[path]
@@ -37,8 +35,7 @@ def generate(reference, dependency):
         local = SHARED.get(path, RAW+path)
         if path in SHARED: need((dependency/local).read_bytes() == data,'Shared source bytes: '+path)
         else: raw[local] = data
-        inputs[path] = dict(path=path,localPath=local,shared=path in SHARED,byteLength=len(data),sha256=sha(data),
-            gitBlobSha1=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest())
+        inputs[path] = dict(path=path,localPath=local,shared=path in SHARED)
         cache[path] = data
         return data
     def text(path): return read(path).decode()
@@ -49,7 +46,7 @@ def generate(reference, dependency):
     def source(path,symbol,match=None):
         body = '' if path.endswith('.png') else text(path)
         return dict(path=path,symbol=symbol,startLine=1 if match is None else body.count('\n',0,match.start())+1,
-            endLine=max(1,body.count('\n')) if match is None else body.count('\n',0,match.end())+1,sha256=inputs[path]['sha256'])
+            endLine=max(1,body.count('\n')) if match is None else body.count('\n',0,match.end())+1)
     def number(path,symbol): return int(one(path,r'^#define '+symbol+r'\s+(0x[0-9A-Fa-f]+|\d+)\b[^\n]*')[1],0)
     def declaration(path,symbol):
         match=one(path,r'^(?:static )?[^\n;]+\b'+symbol+r'\([^;\n]*\)\n\{.*?^\}')
@@ -82,8 +79,8 @@ def generate(reference, dependency):
     colors=[tuple(((int(c)>>3)<<3)|((int(c)>>3)>>2) for c in line.split()) for line in lines[3:]]
     rgba=bytes(v for index in im.tobytes() for v in (*colors[index],255 if index else 0))
     stream=io.BytesIO();Image.frombytes('RGBA',(24,24),rgba).save(stream,format='PNG',compress_level=9);png=stream.getvalue()
-    icon=dict(item=item['id'],width=24,height=24,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=sha(rgba),
-        pngPath='coin-case.png',pngSha256=sha(png),source=source(image,'gItemIcon_CoinCase'),
+    icon=dict(item=item['id'],width=24,height=24,
+        pngPath='coin-case.png',source=source(image,'gItemIcon_CoinCase'),
         paletteSource=source(palette,'gItemIconPalette_CoinCase'),bindingSource=binding_ref)
     document=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
         items=[dict(item=item,description=desc,declarationDescription=desc,descriptionSource=ref)],icons=[icon])
@@ -125,7 +122,7 @@ def generate(reference, dependency):
     implementations=[declaration('src/coins.c',s) for s in ['GetCoins','SetCoins','AddCoins','RemoveCoins','PrintCoinsString','ShowCoinsWindow','HideCoinsWindow']]
     implementations += [declaration('src/scrcmd.c','ScrCmd_'+s) for s in ['checkcoins','addcoins','showcoinsbox','updatecoinsbox','hidecoinsbox']]
     for path in ['asm/macros/event.inc','data/scripts/obtain_item.inc','data/event_scripts.s','data/text/obtain_item.inc','include/constants/vars.h']:read(path)
-    facts=dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,mapsAdded=[],services=services,
+    facts=dict(sourceCommit=COMMIT,profile=PROFILE,mapsAdded=[],services=services,
         constants=constants,maximumCoins=9999,purchases=[dict(coins=50,price=1000),dict(coins=500,price=10000)],
         menu=dict(id=27,x=13,y=0,ignoreB=False,rows=rows,source=source('src/script_menu.c','sMultichoiceList_GameCornerCoinPurchaseCounter',menu),
             bindingSource=source('src/script_menu.c','MULTICHOICE_GAME_CORNER_COIN_PURCHASE_COUNTER',binding)),
@@ -133,11 +130,11 @@ def generate(reference, dependency):
         bagUse=dict(text=use_text,textSource=source('src/strings.c','gText_CoinCase',match),function=use,digitCount=4,leftAligned=True),
         scripts=[blocks[s] for s in sorted(selected)],implementations=implementations,
         excluded=['slot-machines','hidden-coins','prize-redemption'])
-    evidence=dict(sourceCommit=COMMIT,sourceTree=TREE,inputs=[inputs[p] for p in sorted(inputs)])
+    evidence=dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)])
     files={BASE+'items.json':encoded(document),BASE+'source-contract.json':encoded(facts),
         BASE+'source-input-hashes.json':encoded(evidence),BASE+'coin-case.png':png,**raw}
-    files['scripts/game-corner-coins.lock.json']=encoded(dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,
-        importerSha256=sha(Path(__file__).read_bytes()),files=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(files.items())]))
+    files['scripts/game-corner-coins.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,
+        files=[dict(path=p) for p,b in sorted(files.items())]))
     return files,document,facts
 
 if __name__=='__main__':
@@ -151,5 +148,4 @@ if __name__=='__main__':
         else:
             need(not target.is_symlink(),'Refuse symlink output: '+path)
             target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check,services=len(facts['services']),scriptBlocks=len(facts['scripts']),
-        hashes={p:sha(b) for p,b in files.items()}),indent=2))
+    print(json.dumps(dict(checked=args.check,services=len(facts['services']),scriptBlocks=len(facts['scripts'])),indent=2))

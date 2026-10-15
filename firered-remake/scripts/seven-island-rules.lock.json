@@ -1,42 +1,27 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-seven-island-rules-v1",
   "files": [
     {
-      "path": "content/generated/seven-island-rules/encounters.json",
-      "byteLength": 24682,
-      "sha256": "6c6235616f729cef763a957b92050f96624366678f8968ce03467fbefca04fcf"
+      "path": "content/generated/seven-island-rules/encounters.json"
     },
     {
-      "path": "content/generated/seven-island-rules/items.json",
-      "byteLength": 41126,
-      "sha256": "c2ad699c7771cfb315953dce2c0b9373fc86d1f0b668f347089389dd3af84ad6"
+      "path": "content/generated/seven-island-rules/items.json"
     },
     {
-      "path": "content/generated/seven-island-rules/machines.json",
-      "byteLength": 125851,
-      "sha256": "a9bb573db76700ac35b25510b6452ac3acd36993e6b8aecb2cc6b03407659653"
+      "path": "content/generated/seven-island-rules/machines.json"
     },
     {
-      "path": "content/generated/seven-island-rules/pokemon.json",
-      "byteLength": 100440,
-      "sha256": "5c8d7774206cb06ce8798abde68b0c36048bebdc214b4e61c80bfdbf45e70d38"
+      "path": "content/generated/seven-island-rules/pokemon.json"
     },
     {
-      "path": "content/generated/seven-island-rules/rules.json",
-      "byteLength": 57006,
-      "sha256": "e42712385db170eabda9867577741628338d38b18f1ab7ec1dd3941951fdbfd2"
+      "path": "content/generated/seven-island-rules/rules.json"
     },
     {
-      "path": "content/generated/seven-island-rules/source-input-hashes.json",
-      "byteLength": 11085,
-      "sha256": "e2dc56766ca84297eda3ab6bcf9162936e6332ce96bc8c3e3b3453ad80a41136"
+      "path": "content/generated/seven-island-rules/source-input-hashes.json"
     },
     {
-      "path": "content/generated/seven-island-rules/trainers.json",
-      "byteLength": 111759,
-      "sha256": "afc9f5e2fe6b4d20edcb20d9425cc867b2e9484a85c74efee4260ac6725ca5c5"
+      "path": "content/generated/seven-island-rules/trainers.json"
     }
   ]
 }

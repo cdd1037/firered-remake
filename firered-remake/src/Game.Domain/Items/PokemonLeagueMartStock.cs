@@ -11,8 +11,7 @@ public sealed record PokemonLeagueMartStock(string SourceCommit, ImmutableArray<
     public const string ExpectedStockId="IndigoPlateau_PokemonCenter_1F_Items";
     public const string ExpectedClerkScript="IndigoPlateau_PokemonCenter_1F_EventScript_Clerk";
     public const string ExpectedSourcePath="data/maps/IndigoPlateau_PokemonCenter_1F/scripts.inc";
-    public const string ExpectedSourceSha256="4f83364d4a0b4dfeefc93d993f83ed4bab769ccc3e939df06e331bc9ffbc9f81";
-    private static readonly OpeningItemSourceRef ExpectedSource=new(ExpectedSourcePath,ExpectedStockId,53,63,ExpectedSourceSha256);
+    private static readonly OpeningItemSourceRef ExpectedSource=new(ExpectedSourcePath,ExpectedStockId,53,63);
     private static readonly ImmutableArray<(string Symbol,int SourceId,string Name,int Price,string Pocket)> ExpectedEntries=[
         ("ITEM_ULTRA_BALL",2,"ULTRA BALL",1200,"POCKET_POKE_BALLS"),
         ("ITEM_GREAT_BALL",3,"GREAT BALL",600,"POCKET_POKE_BALLS"),

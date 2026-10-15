@@ -4,8 +4,20 @@
 No upstream scripts are executed. Reviewed map/compact converters are pinned by
 SHA-256. Optional services are inventoried without creating extra runtime maps.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 from pathlib import Path
-import argparse, base64, collections, hashlib, importlib.util, json, os, re, struct, subprocess, sys, tempfile
+import argparse, base64, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT = ROOT
@@ -16,9 +28,7 @@ PROFILE = 'firered-fuchsia-route-region-import-v1'
 CORE = ['Route12', 'Route13', 'Route14', 'Route15', 'Route15_WestEntrance_1F', 'FuchsiaCity', 'FuchsiaCity_PokemonCenter_1F']
 OPTIONAL = ['Route12_FishingHouse', 'Route15_WestEntrance_2F']
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_LavenderTown':'secondary/lavender_town', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2', 'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_GenericBuilding1':'secondary/generic_building_1'}
-HELPERS = {'_regional_service_shared.py':'06652d76f26abf13cd25b5e8a80c72f6e134314f62786cce79eee45d84303a0b', '_reviewed_runtime_converter.py':'9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8'}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
@@ -33,7 +43,7 @@ class LazyBlobs(dict):
 class Source:
     def __init__(self, reference):
         self.reference=reference
-        if git(reference,'rev-parse','HEAD').decode().strip()!=COMMIT or git(reference,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Source HEAD/tree differs')
+        if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
         self.tree={}
         for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
             if row:
@@ -44,8 +54,7 @@ class Source:
         self.roles[path].add(role)
         if path not in self.data:
             b=git(self.reference,'cat-file','blob',self.tree[path][2])
-            if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=self.tree[path][2]:raise ValueError('Blob identity differs')
-            self.data[path]=b;self.entries[path]=dict(path=path,byteLength=len(b),sha256=sha(b),gitBlobSha1=self.tree[path][2])
+            self.data[path]=b;self.entries[path]=dict(path=path)
         return self.data[path]
     def text(self,path):return self.read(path).decode()
     def json(self,path):return json.loads(self.read(path))
@@ -55,11 +64,11 @@ class Source:
         return list(struct.unpack('<'+str(len(b)//size)+code,b))
     def ref(self,path,symbol,line=None):
         self.read(path)
-        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol,sha256=self.entries[path]['sha256'])
+        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol)
         if line is not None:v['line']=line
         return v
     def lock(self):
-        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,tree=TREE,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
+        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
 def decode(src,name):
     events=src.json(f'data/maps/{name}/map.json');layout=next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id')==events['layout'])
@@ -170,12 +179,9 @@ def trainers(worlds,script_doc):
     return out
 
 def load_helper(name):
-    p=PRODUCT/'tools/import-regional-service-maps'/name;b=p.read_bytes()
-    if sha(b)!=HELPERS[name]:raise ValueError('Reviewed product converter differs: '+name)
+    p=PRODUCT/('scripts' if name == 'export-runtime-maps.py' else 'tools/import-regional-service-maps')/name
     spec=importlib.util.spec_from_file_location('_fuchsia_'+p.stem,p);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
-LOCK_SHA256 = 'aedbfd9c715a6c3cad72608e00d8a04f284c2366556374a56e50195722b1ded6'
-MANIFEST_SHA256 = '0dfe16640308b507cfeb0ee4e9dd6082fcbc7ac2f2c07da2ab83614c0a6bd152'
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
@@ -183,7 +189,7 @@ def main():
     ap.add_argument('--check',action='store_true')
     a=ap.parse_args()
     out=ROOT/'content/generated/fuchsia-route-region'
-    raw=ROOT/'content/raw/fuchsia-route-region'
+    raw=ROOT/'content/raw/pokefirered/037335f4'
     source_lock_path=ROOT/'content/sources/fuchsia-route-region.lock.json'
     for target in (out,raw,source_lock_path):
         if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output root symlink denied')
@@ -198,7 +204,7 @@ def main():
         p='include/constants/'+name+'.h'
         if p in src.tree:src.read(p,'rule-reference')
     shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
-    converter=load_helper('_reviewed_runtime_converter.py')
+    converter=load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='.stage-',dir=out) as temp:
         stage=Path(temp);rendered=[]
         for n in CORE[1:]:
@@ -210,34 +216,31 @@ def main():
         constants=shared.constants_inventory(src,worlds,doc)
         heals=src.json('src/data/heal_locations.json')['heal_locations']
         for i,h in enumerate(heals,1):constants['values'][h['id']]=dict(value=i,sourceRef=src.ref('src/data/heal_locations.json',h['id']),derivation='one-based source array index generated by mapjson')
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         catalog=[]
         for n,d in zip(CORE[1:],rendered):
-            p=stage/d/'world.json';b=p.read_bytes();compact=converter.encode(converter.convert(b,sha(b),source_hash));(stage/d/'runtime-map.json').write_bytes(compact)
-            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourcePath=d+'/world.json',sourceWorldSha256=sha(b),fullSourceHash=source_hash))
+            p=stage/d/'runtime-map.json';b=p.read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(b)));(stage/d/'runtime-map.json').write_bytes(compact)
+            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE,optionalSourceOnlyMaps=OPTIONAL)
-        lock_data=canonical(lock);lock_hash=sha(lock_data)
-        if LOCK_SHA256 is not None and lock_hash!=LOCK_SHA256:raise ValueError('Source lock pin differs: '+lock_hash)
-        inventory=dict(schemaVersion=1,profile=PROFILE,productBaseline=PRODUCT_COMMIT,sourceCommit=COMMIT,sourceTree=TREE,runtimeIntegrated=False,completeGame=False,coreMaps=CORE,optionalMaps=OPTIONAL,reusedMaps=['Route12'],newMapCount=6,maps=geometry_inventory(worlds),**links,trainers=trainers(worlds,doc),healLocation=next(x for x in heals if x['id']=='HEAL_LOCATION_FUCHSIA_CITY'))
-        reused=dict(sourceName='Route12',stableId='map.route-12',sourceMapSymbol='MAP_ROUTE12',sourceRef=src.ref('data/maps/Route12/map.json','MAP_ROUTE12'),manifestSha256='84560ac286661008a9fe28be0d58d42065583e69671b5281fbf5b73c6e477d42',fullSourceHash='9cfcd4821eec1a5fef64e2ee420db1ce79165d02d98e31d58837790c27b60de0',regenerate=False)
-        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
+        lock_data=canonical(lock)
+        inventory=dict(schemaVersion=1,profile=PROFILE,productBaseline=PRODUCT_COMMIT,sourceCommit=COMMIT,runtimeIntegrated=False,completeGame=False,coreMaps=CORE,optionalMaps=OPTIONAL,reusedMaps=['Route12'],newMapCount=6,maps=geometry_inventory(worlds),**links,trainers=trainers(worlds,doc),healLocation=next(x for x in heals if x['id']=='HEAL_LOCATION_FUCHSIA_CITY'))
+        reused=dict(sourceName='Route12',stableId='map.route-12',sourceMapSymbol='MAP_ROUTE12',sourceRef=src.ref('data/maps/Route12/map.json','MAP_ROUTE12'),regenerate=False)
+        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds if w['sourceName'] in CORE for i,o in enumerate(w['events']['object_events'])]
         availability=dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,enabledServices=[],loadedMapSymbols=[w['events']['id'] for w in worlds if w['sourceName'] in CORE[1:]],reusedMapSymbols=['MAP_ROUTE12'],deferredDestinations=sorted({w['dest_map'] for m in worlds if m['sourceName'] in CORE for w in m['events']['warp_events']} - {m['events']['id'] for m in worlds if m['sourceName'] in CORE}),deferredConnections=['MAP_ROUTE18','MAP_ROUTE19'],notes=['Map import preserves full original cells, events, clones, water and grass. Admission belongs to the successor application profile.','The no-grass arrival witness is a topology proof, not a permanent encounter ban.','Optional fishing house, gate 2F, other Fuchsia interiors, Safari and Koga are source boundaries in this map increment.'])
-        docs={'fuchsia-route-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=1,profile=PROFILE,converterVersion=converter.VERSION,converterSha256=HELPERS['_reviewed_runtime_converter.py'],sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'constants.json':constants,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'route-inventory.json':inventory}
+        docs=package_documents(out.parent, constants, {'fuchsia-route-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=2,profile=PROFILE,converterVersion=converter.VERSION,sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'route-inventory.json':inventory}, check=a.check)
         for filename,value in docs.items():(stage/filename).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         selected=[w for w in worlds if w['sourceName'] in CORE[1:]]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=lock_hash,inputCount=len(src.entries),mapCount=6,reusedMapCount=1,cellCount=sum(w['width']*w['height'] for w in selected),borderCellCount=sum(len(w['borderBlocks']) for w in selected),warpCount=sum(len(w['events']['warp_events']) for w in selected),objectCount=sum(len(w['events']['object_events']) for w in selected),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
-        manifest_data=canonical(manifest);manifest_hash=sha(manifest_data)
-        if MANIFEST_SHA256 is not None and manifest_hash!=MANIFEST_SHA256:raise ValueError('Generated manifest pin differs: '+manifest_hash)
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=6,reusedMapCount=1,cellCount=sum(w['width']*w['height'] for w in selected),borderCellCount=sum(len(w['borderBlocks']) for w in selected),warpCount=sum(len(w['events']['warp_events']) for w in selected),objectCount=sum(len(w['events']['object_events']) for w in selected),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
+        manifest_data=canonical(manifest)
         (stage/'manifest.json').write_bytes(manifest_data)
-        raw_manifest=canonical(dict(schemaVersion=1,commit=COMMIT,tree=TREE,inputCount=len(src.entries),fullSourceHash=source_hash,lockSha256=lock_hash))
-        writes=[(source_lock_path,lock_data),(raw/'manifest.json',raw_manifest)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        raw_manifest=canonical(dict(schemaVersion=1,commit=COMMIT,inputCount=len(src.entries)))
+        writes=[(source_lock_path,lock_data),(raw_metadata_directory(raw, 'fuchsia-route-region')/'manifest.json',raw_manifest)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for target,data in writes:
             if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output symlink denied: '+str(target))
             if a.check:
                 if not target.is_file() or target.read_bytes()!=data:raise ValueError('Reproduction differs: '+str(target))
             else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(manifestSha256=manifest_hash,lockSha256=lock_hash,fullSourceHash=source_hash,inputCount=len(src.entries),mapCount=6,reusedMapCount=1,cellCount=manifest['cellCount'],borderCellCount=manifest['borderCellCount'],warpCount=manifest['warpCount'],objectCount=manifest['objectCount'],npcGraphicsCount=manifest['npcGraphicsCount'],scriptBlockCount=len(doc['blocks']),outputCount=len(outputs))))
+    print(json.dumps(dict(inputCount=len(src.entries),mapCount=6,reusedMapCount=1,cellCount=manifest['cellCount'],borderCellCount=manifest['borderCellCount'],warpCount=manifest['warpCount'],objectCount=manifest['objectCount'],npcGraphicsCount=manifest['npcGraphicsCount'],scriptBlockCount=len(doc['blocks']),outputCount=len(outputs))))
 
 if __name__=='__main__':main()

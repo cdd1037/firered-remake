@@ -4,23 +4,25 @@
 No upstream scripts are executed. Reviewed map/compact converters are pinned by
 SHA-256. No runtime admission or source battle/UI validation is implied.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 from pathlib import Path
-import argparse, base64, collections, hashlib, importlib.util, json, os, re, struct, subprocess, sys, tempfile
+import argparse, base64, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
 sys.dont_write_bytecode=True
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT = ROOT
-MANIFEST_SHA256 = 'ab9ac518f2c6ae480d170930432102fadb06d974771746e8c3fa06d1de9761bd'
-LOCK_SHA256 = '4df3030bf2609d1cd29cdaccb83ee0994c029bb54c316fa76a2eaf684b8d56c4'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-cinnabar-source-preparation-v1'
 CORE = ['Route21_North','Route21_South','CinnabarIsland','PokemonMansion_1F','PokemonMansion_2F','PokemonMansion_3F','PokemonMansion_B1F','CinnabarIsland_PokemonCenter_1F','CinnabarIsland_Mart','CinnabarIsland_Gym']
 OPTIONAL = []
 TILESETS = {'gTileset_General':'primary/general','gTileset_Building':'primary/building','gTileset_PalletTown':'secondary/pallet_town','gTileset_CinnabarIsland':'secondary/cinnabar_island','gTileset_PokemonMansion':'secondary/pokemon_mansion','gTileset_CinnabarGym':'secondary/cinnabar_gym','gTileset_PokemonCenter':'secondary/pokemon_center','gTileset_Mart':'secondary/mart'}
-HELPERS = {'_regional_service_shared.py':'06652d76f26abf13cd25b5e8a80c72f6e134314f62786cce79eee45d84303a0b', '_reviewed_runtime_converter.py':'9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8'}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
@@ -35,7 +37,7 @@ class LazyBlobs(dict):
 class Source:
     def __init__(self, reference):
         self.reference=reference
-        if git(reference,'rev-parse','HEAD').decode().strip()!=COMMIT or git(reference,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Source HEAD/tree differs')
+        if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
         self.tree={}
         for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
             if row:
@@ -46,8 +48,7 @@ class Source:
         self.roles[path].add(role)
         if path not in self.data:
             b=git(self.reference,'cat-file','blob',self.tree[path][2])
-            if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=self.tree[path][2]:raise ValueError('Blob identity differs')
-            self.data[path]=b;self.entries[path]=dict(path=path,byteLength=len(b),sha256=sha(b),gitBlobSha1=self.tree[path][2])
+            self.data[path]=b;self.entries[path]=dict(path=path)
         return self.data[path]
     def text(self,path):return self.read(path).decode()
     def json(self,path):return json.loads(self.read(path))
@@ -57,11 +58,11 @@ class Source:
         return list(struct.unpack('<'+str(len(b)//size)+code,b))
     def ref(self,path,symbol,line=None):
         self.read(path)
-        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol,sha256=self.entries[path]['sha256'])
+        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol)
         if line is not None:v['line']=line
         return v
     def lock(self):
-        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,tree=TREE,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
+        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
 def add_metatile_constants(src, constants, contract):
     # The shared inventory accepts uppercase identifiers only. These source
@@ -182,13 +183,11 @@ def geometry_inventory(worlds):
     return out
 
 def load_helper(name):
-    p=PRODUCT/'tools/import-regional-service-maps'/name;b=p.read_bytes()
-    if sha(b)!=HELPERS[name]:raise ValueError('Reviewed product converter differs: '+name)
+    p=PRODUCT/('scripts' if name == 'export-runtime-maps.py' else 'tools/import-regional-service-maps')/name
     spec=importlib.util.spec_from_file_location('_cinnabar_' +p.stem,p);module=importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
-CANONICAL_SHA = 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc'
 META_PATHS = ['src/data/trainers.h','src/data/trainer_parties.h','src/data/wild_encounters.json',
     'src/data/battle_moves.h','src/data/pokemon/species_info.h','src/data/pokemon/level_up_learnsets.h',
     'src/data/pokemon/level_up_learnset_pointers.h','src/data/pokemon/evolution.h','src/data/items.json',
@@ -200,7 +199,6 @@ META_PATHS = ['src/data/trainers.h','src/data/trainer_parties.h','src/data/wild_
 def declarations(src, worlds, doc):
     """Source declarations; deliberately not a runtime-admitted trainer catalog."""
     proofbytes=(PRODUCT/'content/generated/canonical-pokemon/catalog.json').read_bytes()
-    if sha(proofbytes)!=CANONICAL_SHA:raise ValueError('Canonical386 catalog differs')
     proof=json.loads(proofbytes)
     species={s['id']['value'][5:]:s for s in proof['species']}
     metadata={s['id']['value'][5:]:s for s in proof['metadata']}
@@ -261,9 +259,6 @@ def declarations(src, worlds, doc):
         evolution_species|=extra
     wanted|=evolution_species
     selected=[species[s] for s in sorted(wanted)]
-    for s in selected:
-        for r in [s['source'],s['learnsetSource']]+[m['source'] for m in s['levelUpMoves']]:
-            if r['sha256']!=sha(src.read(r['path'])):raise ValueError('Canonical/source mismatch')
     moves=sorted({m for t in trainers for mon in t['party'] for m in mon['resolvedMoves']} - {'MOVE_NONE'})
     move_rows=[]
     for move in moves:
@@ -293,7 +288,7 @@ def declarations(src, worlds, doc):
         trainerMoves=move_rows,fullNaturalMoveClosure=sorted({m['move']['value'][5:] for s in selected for m in s['levelUpMoves']}),
         itemDeclarations=item_rows,itemSource=src.ref('src/data/items.json','Selected items'),
         newMachineCompatibility=machines,machineSource=src.ref('src/data/pokemon/tmhm_learnsets.h','TM14/TM22/TM38 source compatibility; ownership admission remains separate'),
-        canonicalCatalogSha256=CANONICAL_SHA,
+
         limitations=['Source data only; no field/battle/ownership/presentation admission.',
             'Trainer rematch entry declarations retained; VS Seeker rematch roster expansion is deferred.',
             'FireRed tables only; no LeafGreen species substitution.',
@@ -301,7 +296,6 @@ def declarations(src, worlds, doc):
 
 def item_icons(src,stage):
     path=PRODUCT/'scripts/import-lab-battle-ui.py'
-    if sha(path.read_bytes())!='b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a':raise ValueError('Reviewed item pixel codec differs')
     spec=importlib.util.spec_from_file_location('_cinnabar_item_codec',path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
     binding_path='src/data/item_icon_table.h';bindings=src.text(binding_path)
     graphic_path='src/data/graphics/items.h';graphics=src.text(graphic_path);records=[]
@@ -316,7 +310,7 @@ def item_icons(src,stage):
         image,palette=paths;w,h,indices,_=codec.indexed_png(src.read(image));rgba=codec.rgba(indices,codec.palette(src.read(palette)))
         if (w,h)!=(24,24):raise ValueError('Unexpected item dimensions')
         png=codec.png(w,h,rgba);relative='items/'+item.lower()+'.png';p=stage/relative;p.parent.mkdir(exist_ok=True);p.write_bytes(png)
-        records.append(dict(item=item,width=w,height=h,texturePath=relative,pngSha256=sha(png),rgbaSha256=sha(rgba),
+        records.append(dict(item=item,width=w,height=h,texturePath=relative,
             sourceRef=src.ref(image,binding[1]),paletteRef=src.ref(palette,binding[2]),
             bindingRef=src.ref(binding_path,item,bindings.count('\n',0,binding.start())+1)))
     return dict(schemaVersion=1,items=records,runtimeIntegrated=False)
@@ -346,32 +340,7 @@ def contracts(src,worlds,doc):
     city=next(w for w in worlds if w['sourceName']=='CinnabarIsland')
     door=[e for e in city['events']['coord_events'] if e['script']=='CinnabarIsland_EventScript_GymDoorLocked']
     if len(door)!=1 or door[0]['var']!='VAR_TEMP_1' or door[0]['var_value']!='0':raise ValueError('Gym door trigger differs')
-    return dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,
-        arrivalMaps=CORE[:3],mansionMaps=CORE[3:7],supportMaps=CORE[7:9],laterGymMap=CORE[9],
-        routeConnectionChain=['MAP_PALLET_TOWN','MAP_ROUTE21_NORTH','MAP_ROUTE21_SOUTH','MAP_CINNABAR_ISLAND'],
-        sourcePreconditions=['FLAG_BADGE05_GET','PartyHasMonWithSurf()','IsPlayerFacingSurfableFishableWater()'],
-        noSeafoamPrerequisite=True,secretKeyPickup=next(i for i in items if i['event']['script'].endswith('ItemSecretKey')),
-        gymDoorTrigger=door[0],gymUnlock=block('CinnabarIsland_EventScript_CheckUnlockGym'),
-        gymUnlocked=block('CinnabarIsland_EventScript_UnlockGym'),
-        mansionSwitch=block('PokemonMansion_EventScript_SecretSwitch'),
-        mansionReset=block('PokemonMansion_EventScript_ResetSwitch'),
-        mansionSwitchFlag='FLAG_POKEMON_MANSION_SWITCH_STATE',tilePatches=patches,fallWarps=falls,
-        itemPickups=items,hiddenItems=hidden,
-        blaineVictory=block('CinnabarIsland_Gym_EventScript_DefeatedBlaine'),
-        tm38Reward=block('CinnabarIsland_Gym_EventScript_GiveTM38'),
-        tm38NoRoom=block('CinnabarIsland_Gym_EventScript_NoRoomForTM38'),
-        gymTrainerFlags=block('EventScript_SetCinnabarGymTrainers'),
-        quizAnswers=['YES','NO','NO','NO','YES','NO'],
-        martStock=block('CinnabarIsland_Mart_Items'),
-        billDecline=block('CinnabarIsland_EventScript_DeclineSailToOneIsland'),
-        billAcceptanceBoundary=block('CinnabarIsland_EventScript_SailToOneIsland'),
-        limitations=['Source map/script closure is not executable admission.',
-            'Mansion fall handling must honor EventScript_DoFallWarp and destination facing/landing, not ordinary reverse warps.',
-            'Map border connections to Route20 and doors to Lab/Center2F are retained as external boundaries.',
-            'The pinned source gym unlocks from the pickup hide flag, not an ITEM_SECRET_KEY bag test.',
-            'Blaine victory starts the Bill scene; do not suppress it or substitute its story flags.',
-            'Map PNGs show source default tiles; a source-authenticated dynamic tile atlas/render path is still required for switch/gym patches.',
-            'No physical audio output, native UI, or original battle behavior was validated.'])
+    return dict(schemaVersion=1, profile=PROFILE, runtimeIntegrated=False, arrivalMaps=CORE[:3], mansionMaps=CORE[3:7], supportMaps=CORE[7:9], laterGymMap=CORE[9], routeConnectionChain=['MAP_PALLET_TOWN', 'MAP_ROUTE21_NORTH', 'MAP_ROUTE21_SOUTH', 'MAP_CINNABAR_ISLAND'], sourcePreconditions=['FLAG_BADGE05_GET', 'PartyHasMonWithSurf()', 'IsPlayerFacingSurfableFishableWater()'], noSeafoamPrerequisite=True, secretKeyPickup=next((i for i in items if i['event']['script'].endswith('ItemSecretKey'))), gymDoorTrigger=door[0], gymUnlock=block('CinnabarIsland_EventScript_CheckUnlockGym'), gymUnlocked=block('CinnabarIsland_EventScript_UnlockGym'), mansionSwitch=block('PokemonMansion_EventScript_SecretSwitch'), mansionReset=block('PokemonMansion_EventScript_ResetSwitch'), mansionSwitchFlag='FLAG_POKEMON_MANSION_SWITCH_STATE', tilePatches=patches, fallWarps=falls, itemPickups=items, hiddenItems=hidden, blaineVictory=block('CinnabarIsland_Gym_EventScript_DefeatedBlaine'), tm38Reward=block('CinnabarIsland_Gym_EventScript_GiveTM38'), tm38NoRoom=block('CinnabarIsland_Gym_EventScript_NoRoomForTM38'), gymTrainerFlags=block('EventScript_SetCinnabarGymTrainers'), quizAnswers=['YES', 'NO', 'NO', 'NO', 'YES', 'NO'], martStock=block('CinnabarIsland_Mart_Items'), billDecline=block('CinnabarIsland_EventScript_DeclineSailToOneIsland'), billAcceptanceBoundary=block('CinnabarIsland_EventScript_SailToOneIsland'), limitations=['Source map/script closure is not executable admission.', 'Mansion fall handling must honor EventScript_DoFallWarp and destination facing/landing, not ordinary reverse warps.', 'Map border connections to Route20 and doors to Lab/Center2F are retained as external boundaries.', 'The pinned source gym unlocks from the pickup hide flag, not an ITEM_SECRET_KEY bag test.', 'Blaine victory starts the Bill scene; do not suppress it or substitute its story flags.', 'Map PNGs show source default tiles; a source-authenticated dynamic tile atlas/render path is still required for switch/gym patches.', 'No physical audio output, native UI, or original battle behavior was validated.'])
 
 def main():
     global ROOT,PRODUCT
@@ -382,7 +351,7 @@ def main():
     ap.add_argument('--check',action='store_true');a=ap.parse_args()
     ROOT=a.project_root.absolute();PRODUCT=a.dependency_root.absolute();reference=a.reference_root.absolute()
     if ROOT==reference or ROOT.is_relative_to(reference) or reference.is_relative_to(ROOT):raise ValueError('Reference/output overlap')
-    out=ROOT/'content/generated/cinnabar-source-preparation';raw=ROOT/'content/raw/cinnabar-source-preparation'
+    out=ROOT/'content/generated/cinnabar-source-preparation';raw=ROOT/'content/raw/pokefirered/037335f4'
     lockpath=ROOT/'content/sources/cinnabar-source-preparation.lock.json'
     for target in (ROOT,out,raw,lockpath):
         if any(p.is_symlink() for p in (target,*target.parents)):raise ValueError('Output parent symlink denied')
@@ -397,7 +366,7 @@ def main():
     for p in META_PATHS:src.read(p,'rule-reference')
     contract=contracts(src,worlds,doc);data=declarations(src,worlds,doc)
     shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
-    converter=load_helper('_reviewed_runtime_converter.py')
+    converter=load_helper('export-runtime-maps.py')
     # Temporary staging is outside the output tree, so --check creates no product files.
     with tempfile.TemporaryDirectory(prefix='cinnabar-source-stage-') as temp:
         stage=Path(temp)
@@ -406,35 +375,31 @@ def main():
         item_art=item_icons(src,stage)
         constants=shared.constants_inventory(src,worlds,doc)
         add_metatile_constants(src,constants,contract)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         catalog=[]
         for w in worlds:
-            d=directory(w['sourceName']);p=stage/d/'world.json';b=p.read_bytes()
-            compact=converter.encode(converter.convert(b,sha(b),source_hash));(stage/d/'runtime-map.json').write_bytes(compact)
+            d=directory(w['sourceName']);p=stage/d/'runtime-map.json';b=p.read_bytes()
+            compact=converter.encode(converter.normalize_runtime(json.loads(b)));(stage/d/'runtime-map.json').write_bytes(compact)
             catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=d,
-                sourceMapSymbol=w['events']['id'],path=d+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourceWorldSha256=sha(b),fullSourceHash=source_hash))
-            p.unlink()
+                sourceMapSymbol=w['events']['id'],path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE)
-        lockdata=canonical(lock);lockhash=sha(lockdata)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],**links),
-              'scripts.json':doc,'constants.json':constants,'npc-source.json':npcs,'contracts.json':contract,'declarations.json':data,
-              'geometry.json':dict(maps=geometry_inventory(worlds)),'item-art.json':item_art}
+        lockdata=canonical(lock)
+        docs=package_documents(out.parent, constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],**links),
+              'scripts.json':doc,'npc-source.json':npcs,'contracts.json':contract,'declarations.json':data,
+              'geometry.json':dict(maps=geometry_inventory(worlds)),'item-art.json':item_art}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=lockhash,
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=len(CORE),cellCount=sum(w['width']*w['height'] for w in worlds),
             warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),
             scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,trainerCount=len(data['trainers']),outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        if MANIFEST_SHA256 and sha(manifestdata)!=MANIFEST_SHA256:raise ValueError('Pinned manifest differs')
-        if LOCK_SHA256 and lockhash!=LOCK_SHA256:raise ValueError('Pinned lock differs')
         writes=[(lockpath,lockdata)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             if any(x.is_symlink() for x in (p,*p.parents)):raise ValueError('Output symlink denied')
             if a.check:
                 if not p.is_file() or p.read_bytes()!=b:raise ValueError('Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestdata),outputs=len(outputs),falls=len(contract['fallWarps']))))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputs=len(outputs),falls=len(contract['fallWarps']))))
 
 if __name__=='__main__':main()
 

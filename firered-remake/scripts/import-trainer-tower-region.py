@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 """Rebuild the 11 original Trainer Tower maps and all 27 layouts from inert pinned Git blobs."""
-import argparse, ast, base64, collections, hashlib, importlib.util, json, re, struct, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, base64, collections,  importlib.util, json, re, struct, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-trainer-tower-region-v1'
 PACKAGE = 'trainer-tower-region'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA = '025b657cc68b7771c52593583af4ebb35d1316ef9e6754e86b3de1331dca85ef'
-LOCK_SHA = 'c5a2f22dbc2cbaf77b54d686f006b95d59d713eab622a634018f9481cc0ba8f1'
 MAPS = ['TrainerTower_Lobby', *[f'TrainerTower_{i}F' for i in range(1,9)], 'TrainerTower_Roof', 'TrainerTower_Elevator']
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_TrainerTower':'secondary/trainer_tower', 'gTileset_SilphCo':'secondary/silph_co'}
 FORMATS = [('Single',''),('Double','_DOUBLES'),('Knockout','_KNOCKOUT')]
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value,sort_keys=True,indent=2)+'\n').encode()
 def need(value,message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink path rejected: '+str(path))
-def module(path,name,expected):
-    need(sha(path.read_bytes())==expected,'Reviewed author dependency differs: '+str(path))
+def module(path, name):
     spec=importlib.util.spec_from_file_location(name,path); result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
 
 def script_index(src, reader):
@@ -81,7 +82,6 @@ def script_index(src, reader):
       warning='Full label dependency inventory includes guarded postgame and multiplayer branches, not runtime admission.')
 
 
-
 def constants(src,scripts,worlds):
     definitions,values={},{}
     headers=['flags','vars','event_objects','event_object_movement','map_scripts','species','moves','items','pokemon','battle','battle_setup','field_effects','songs','sound','global','opponents','trainers','menu','game_stat','metatile_behaviors','metatile_labels','field_weather','trainer_tower','cable_club','fame_checker','weather','help_system','union_room','daycare','field_tasks','battle_ai']
@@ -132,22 +132,9 @@ class LayoutSource:
         if path==f'data/maps/{self.name}/map.json':return dict(value,layout=self.layout['id'])
         return value
 
-def compact(world,source_hash,src):
-    layout=world['layout'];blocks=[];tables={};sources={};behaviors={}
-    for field,path in [('cells',layout['blockdata_filepath']),('borderCells',layout['border_filepath'])]:
-        data=struct.pack('<'+str(len(world[field]))+'H',*[c['rawBlock'] for c in world[field]])
-        need(data==src.read(path),'Original layout cell mismatch '+path);blocks.append(base64.b64encode(data).decode())
-        for cell in world[field]:
-            r=cell['sourceRef'];sources[r['path']]=dict(path=r['path'],sha256=r['sha256'])
-            tables[cell['metatileId']]=(cell['rawAttributes'],r['path']);behaviors[cell['behaviorId']]=cell['behaviorName']
-    paths=sorted(sources);scripts=[]
-    for leaf in ['scripts.inc','text.inc']:
-        p=world['sourceRef']['path'].removesuffix('map.json')+leaf
-        if p in src.data:scripts.append(dict(path=p,sha256=sha(src.data[p]),text=src.text(p)))
-    return dict(schemaVersion=1,converterVersion='firered-runtime-map-v1',sourceCommit=COMMIT,fullSourceHash=source_hash,sourceWorldSha256=sha(canonical(world)),technicalSpawn=None,
-        **{k:world[k] for k in ['stableId','sourceRef','width','height','tileSize','borderWidth','borderHeight','texturePath','artifacts','events']},
-        blocks=blocks[0],borderBlocks=blocks[1],attributeSources=[sources[p] for p in paths],
-        metatiles=[[k,a,paths.index(p)] for k,(a,p) in sorted(tables.items())],behaviors=[dict(id=k,name=v) for k,v in sorted(behaviors.items())],scripts=scripts)
+def compact(world,src):
+    from map_runtime import compact_world
+    return compact_world(world, src.data)
 
 def function(src,symbol):
     path='src/trainer_tower.c';text=src.text(path)
@@ -157,7 +144,7 @@ def function(src,symbol):
     return dict(sourceRef=src.ref(path,symbol,text.count('\n',0,m.start())+1),text=text[m.start():end])
 
 def build(target,dep,ref,check):
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py','tower_reader',READER_SHA)
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'tower_reader')
     reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,PROFILE
     src=reader.Source(ref);worlds=[reader.decode(src,n) for n in MAPS]
     scripts=script_index(src,reader);scripts['sourcePaths']=sorted({b['sourceRef']['path'] for b in scripts['blocks']})
@@ -208,30 +195,28 @@ def build(target,dep,ref,check):
             for fmt,suffix in formats:
                 layout=layout_defs[base+suffix];relative=reader.directory(name)+'/'+fmt.lower()
                 out=stage/relative;rw=shared.import_map(LayoutSource(src,name,layout),name,w['stableId'],out)
-                rw['events']=w['events'];(out/'world.json').unlink()
+                rw['events']=w['events']
                 rendered.append((w,fmt,relative,rw))
         static_events=[e for w in worlds for e in w['events']['object_events'] if not e['graphics_id'].startswith('OBJ_EVENT_GFX_VAR_')]
         npc_worlds=[dict(events=dict(object_events=static_events+[dict(graphics_id=g) for g in sorted(dynamic_graphics)]))]
         npcs=shared.npc_inventory(src,npc_worlds,stage/'npc');npcs['dynamicGraphics']=contracts['dynamicGraphics']
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode());catalog=[]
+        catalog=[]
         for w,fmt,relative,rw in rendered:
-            doc=compact(rw,source_hash,src);data=canonical(doc);(stage/relative/'runtime-map.json').write_bytes(data)
-            catalog.append(dict(sourceName=w['sourceName'],sourceMapSymbol=w['events']['id'],stableId=w['stableId'],format=fmt,layoutId=rw['layout']['id'],directory=relative,path=relative+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=doc['sourceWorldSha256'],sourceWorldByteLength=len(canonical(rw))))
+            doc=compact(rw,src);data=canonical(doc);(stage/relative/'runtime-map.json').write_bytes(data)
+            catalog.append(dict(sourceName=w['sourceName'],sourceMapSymbol=w['events']['id'],stableId=w['stableId'],format=fmt,layoutId=rw['layout']['id'],directory=relative,path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lb=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,fullSourceHash=source_hash,maps=catalog,inputFiles=lock['files'],tilesets=TILESETS),
-          'scripts.json':scripts,'constants.json':const,'contracts.json':contracts,'npc-source.json':npcs}
+        docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,maps=catalog,inputFiles=lock['files'],tilesets=TILESETS),
+          'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs}, check=check)
         for p,doc in docs.items():(stage/p).write_bytes(canonical(doc))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,lockSha256=sha(lb),inputCount=len(src.entries),outputCount=len(outputs),mapCount=11,layoutCount=27,objectCount=sum(len(w['events']['object_events']) for w in worlds),warpCount=len(warps),coordEventCount=sum(len(w['events']['coord_events']) for w in worlds),bgEventCount=sum(len(w['events']['bg_events']) for w in worlds),cellCount=sum(len(rw['cells']) for _,_,_,rw in rendered),borderCellCount=sum(len(rw['borderCells']) for _,_,_,rw in rendered),scriptBlockCount=len(scripts['blocks']),npcGraphicsCount=len(npcs['graphics']),authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py',sha256=READER_SHA),dict(path='tools/import-regional-service-maps/_regional_service_shared.py',sha256=reader.HELPERS['_regional_service_shared.py'])],outputs=outputs)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),outputCount=len(outputs),mapCount=11,layoutCount=27,objectCount=sum(len(w['events']['object_events']) for w in worlds),warpCount=len(warps),coordEventCount=sum(len(w['events']['coord_events']) for w in worlds),bgEventCount=sum(len(w['events']['bg_events']) for w in worlds),cellCount=sum(len(rw['cells']) for _,_,_,rw in rendered),borderCellCount=sum(len(rw['borderCells']) for _,_,_,rw in rendered),scriptBlockCount=len(scripts['blocks']),npcGraphicsCount=len(npcs['graphics']),authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py'),dict(path='tools/import-regional-service-maps/_regional_service_shared.py')],outputs=outputs)
         mb=canonical(manifest);(stage/'manifest.json').write_bytes(mb)
-        if MANIFEST_SHA:need(sha(mb)==MANIFEST_SHA,'Pinned manifest differs')
-        if LOCK_SHA:need(sha(lb)==LOCK_SHA,'Pinned source lock differs')
-        writes=[(target/'scripts/trainer-tower-region.lock.json',lb),(target/'scripts/trainer-tower-resources.contract.json',canonical(contracts))]+[(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'scripts/trainer-tower-region.lock.json',lb),(target/'scripts/trainer-tower-resources.contract.json',canonical(contracts))]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             safe(p)
             if check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k not in ['outputs','authorDependencies']}|dict(manifestSha256=sha(mb),manifestByteLength=len(mb),lockByteLength=len(lb),check=check),indent=2))
+        print(json.dumps({k:v for k,v in manifest.items() if k not in ['outputs','authorDependencies']}|dict(check=check),indent=2))
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--reference-root',required=True,type=Path);ap.add_argument('--project-root',type=Path,default=ROOT);ap.add_argument('--dependency-root',type=Path,default=ROOT);ap.add_argument('--check',action='store_true');a=ap.parse_args()

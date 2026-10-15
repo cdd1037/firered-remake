@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text.Json;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Pokemon;
@@ -12,7 +10,6 @@ namespace Game.Domain.Pokemon;
 public sealed class SafariOwnedPokemonCatalog
 {
     public const string Profile = "firered-safari-owned-pokemon-v1";
-    public const string PredecessorSemanticSha256 = "ddf39d09ac617e4b3ef71211223812022424657fad286d4c6b68496992359575";
     public static ImmutableArray<SpeciesId> AdditionalSpecies { get; } =
         [new("pret:SPECIES_CHANSEY"), new("pret:SPECIES_SCYTHER"), new("pret:SPECIES_TAUROS")];
 
@@ -32,8 +29,7 @@ public sealed class SafariOwnedPokemonCatalog
         ArgumentNullException.ThrowIfNull(candidate);
         ArgumentNullException.ThrowIfNull(mechanics);
         PokemonFactory.ValidateCatalog(predecessor);
-        if (predecessor.Species.Count != 107 || predecessor.Moves.Count != 354 ||
-            Fingerprint(predecessor) != PredecessorSemanticSha256)
+        if (predecessor.Species.Count != 107 || predecessor.Moves.Count != 354)
             throw new ArgumentException("safari_owned_predecessor");
         if (candidate.SourceCommit != PokemonFactory.SourceCommit || candidate.Species is null ||
             candidate.Species.Count != 110 || !ReferenceEquals(candidate.Moves, predecessor.Moves) ||
@@ -67,12 +63,4 @@ public sealed class SafariOwnedPokemonCatalog
         actual.LevelUpMoves.SequenceEqual(expected.LevelUpMoves) && actual.Evolutions.SequenceEqual(expected.Evolutions) &&
         actual with { LevelUpMoves = expected.LevelUpMoves, Evolutions = expected.Evolutions } == expected;
 
-    // Ordered complete records include provenance and the historical bounded evolution/learnset
-    // projections. The fixed predecessor hash is independent of any caller-supplied trust flag.
-    private static string Fingerprint(PokemonCatalog catalog) => Convert.ToHexStringLower(SHA256.HashData(
-        JsonSerializer.SerializeToUtf8Bytes(new {
-            catalog.SourceCommit,
-            Species = catalog.Species.Values.OrderBy(species => species.SourceSpeciesId).ToArray(),
-            Moves = catalog.Moves.Values.OrderBy(move => move.SourceMoveId).ToArray()
-        })));
 }

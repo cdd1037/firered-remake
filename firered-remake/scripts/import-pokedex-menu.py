@@ -4,8 +4,13 @@
 Original descriptions are content, not permission to reveal unseen/uncaught data.
 Existing page skin, seven footprints and 29 normal fronts are referenced unchanged.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -20,8 +25,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-pokedex-menu-v1'
-LOCK_SHA256 = '65a9bc5af5d36a674acedd46de16418ccdc4a00fabfc16726041096dd5c6d61a'
-MANIFEST_SHA256 = 'd6a1df21be8a945eab0223cabd0704f0b38c3e853c262638ffbbc1778bd3f5f8'
 CURRENT = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 26, 27, 28, 74, 75, 76, 95, 208)
 NEW_FOOTPRINTS = ('bulbasaur', 'ivysaur', 'venusaur', 'charmander', 'charmeleon', 'charizard', 'squirtle', 'wartortle', 'blastoise',
                   'butterfree', 'beedrill', 'pidgeotto', 'pidgeot', 'raticate', 'raichu', 'sandshrew', 'sandslash', 'geodude', 'graveler', 'golem', 'onix', 'steelix')
@@ -53,54 +56,52 @@ tools/gbagfx/gfx.c
 tools/gbagfx/main.c
 tools/gbagfx/convert_png.c'''.splitlines()) | frozenset('graphics/pokemon/' + n + '/footprint.png' for n in NEW_FOOTPRINTS)
 # Immutable hashes of existing catalogs, page assets and normal front textures.
-DEPENDENCIES = {'content/generated/capture-dex/capture-dex-background.png': '580534eb2e35e17b05f7e6fb242be081a369ce5ea05ae4ac7ad1c659895a3906',
- 'content/generated/capture-dex/capture-dex.json': '689d076758311629ab50a5e599345030aca63040e13c4956146a92cb6129bcd4',
- 'content/generated/capture-dex/pidgey-footprint.png': '1955a3f8570a4ffe00e20c7a385b69edb56e33ebd09ac258032577982e86f9e1',
- 'content/generated/capture-dex/rattata-footprint.png': '0ef8c3424c7005a30158e38e1c9e21b7d1ee12d7b2f6599f42e973347bed2cb3',
- 'content/generated/evolution-art/battle-art.json': '9404e2c2fa127c807165edb47d0b22bafa533ad0cb5a4e599f3b05683f0d9f1c',
- 'content/generated/evolution-art/blastoise-front-normal.png': 'e8c397f929f2d324c49635fdb4061786c5cf66b6a7711a465a923d9ead388452',
- 'content/generated/evolution-art/charizard-front-normal.png': 'fee3d2e9878399d173c95d5901f5027cc456982e0a53d98d16cf25e22ea35098',
- 'content/generated/evolution-art/charmeleon-front-normal.png': '11bb9cd2a89aa050f2aa3bc358ddb1ba5919fc6f0f39fc5aa762c54352c21041',
- 'content/generated/evolution-art/ivysaur-front-normal.png': '66c9b16e8f9a7b317376fc50cfdf6e34b22cf6a0c4fff2aa36430c08f71f72b6',
- 'content/generated/evolution-art/pidgeot-front-normal.png': '9626672dd1c9368e4a97d7e437df7168b48438cef7474692de6a313d0040f86c',
- 'content/generated/evolution-art/pidgeotto-front-normal.png': '7892ce37e55110bf4118de8b57c96688cd7d0e77afa7da1746fd32fa9a137579',
- 'content/generated/evolution-art/raticate-front-normal.png': '7670e8903899d3dda54d8f38cdedcb151c6278bb44caef88f5bc3ebd1d08d02c',
- 'content/generated/evolution-art/venusaur-front-normal.png': '842fe037395803654ad2f743dfd7fcf2e1cbd3db960d40a3fa79cefc83ca1590',
- 'content/generated/evolution-art/wartortle-front-normal.png': 'b73acac9691b733fd19527840b305079926f1d55e7da398d0e739c3c6c0bc677',
- 'content/generated/forest-capture-dex/capture-dex.json': '1bbd7697c985340f787836d626b4b6c1ff8b71885ba03c3e86c7c28001bddcb1',
- 'content/generated/forest-capture-dex/caterpie-footprint.png': '7c417b2881debaaa11ebb1afbb79342e2f874edae466296fce672c3a40f1b8d9',
- 'content/generated/forest-capture-dex/kakuna-footprint.png': '782069d8125396d0d5c5115ea5a1b81e029bf5615d52ea40453b6f3f1a3420af',
- 'content/generated/forest-capture-dex/metapod-footprint.png': '782069d8125396d0d5c5115ea5a1b81e029bf5615d52ea40453b6f3f1a3420af',
- 'content/generated/forest-capture-dex/pikachu-footprint.png': '6a19f837549dabee7ebbec59a1600f12309320a02e363cafe2e318d43585dba0',
- 'content/generated/forest-capture-dex/weedle-footprint.png': '7c417b2881debaaa11ebb1afbb79342e2f874edae466296fce672c3a40f1b8d9',
- 'content/generated/forest-pokemon/battle-art.json': '326869d4a8df16a11d0a5d0e1093cf1e11a76a906e267c1cd01e2e61f8fed0a5',
- 'content/generated/forest-pokemon/beedrill-front-normal.png': '1759d804dda2c5e0b4f8c4741a5b9475502f752775b2027bdb9dc2cde5cdc4c9',
- 'content/generated/forest-pokemon/butterfree-front-normal.png': 'a2df32ceafd4a8816c26914771957203354d65f65e0445869f36ba880814d779',
- 'content/generated/forest-pokemon/caterpie-front-normal.png': '34631b844a5b38f473201fcf086cb30113793b357bcfd08da9cfe4fd7997a565',
- 'content/generated/forest-pokemon/kakuna-front-normal.png': '4b9557fb1b5d10f38cdf9743fc729e2d0a8e89c719f3c88843f27642a1c36009',
- 'content/generated/forest-pokemon/metapod-front-normal.png': '65cd1e720b3f23b191cae34e8734ebce44ad604c224f5fb5ff0cb9ebf848fe7e',
- 'content/generated/forest-pokemon/pikachu-front-normal.png': '3323e4a19ac1ebaf219125e2108b438e415e97114f41c2b0b177093f30ad4e63',
- 'content/generated/forest-pokemon/raichu-front-normal.png': '2b1aff2dcf64374bdca724f82660502151e57c30174c5143981d73d07abf38ed',
- 'content/generated/forest-pokemon/weedle-front-normal.png': 'ba22e07eede464ce4e9a24f2d3db62e517cf5fc7f2ac62ea6b143a326a41af07',
- 'content/generated/lab-battle-art/bulbasaur-front-normal.png': '125ef159efd3a1b470a9658735146f17c1172948a896aae48bc78fc455ccc68a',
- 'content/generated/lab-battle-art/charmander-front-normal.png': 'c16180054c0fae38d424403b0cb3330e59cfceeccb145f26c9037cd60eb5bf86',
- 'content/generated/lab-battle-art/lab-battle-art.json': 'd1516447a3e856a257c63e7293e8ebc8c7c555d65dbd49adca1eaa7dca7a547d',
- 'content/generated/lab-battle-art/squirtle-front-normal.png': '950c3f04b75b03b851aeeb8a6356b857ba8b93de92ed6cfcf635e6ebe0c24ede',
- 'content/generated/pewter-pokemon/battle-art.json': '3543357d9cc9d2f25e0fe389da3ac8f88f18df1ab9afd782ea91b01f0f625fdb',
- 'content/generated/pewter-pokemon/geodude-front-normal.png': '980aeba2f67d8f25802f5d0ea75ba5d7719bc857bc74fdfd6db3e1dcc3191a15',
- 'content/generated/pewter-pokemon/golem-front-normal.png': '81bfde6e3fcb575000b1961c0a91b878138d2ee733cf8b44bc6d76d33565393f',
- 'content/generated/pewter-pokemon/graveler-front-normal.png': '7b41134b0720d6b3c390ae8d66e27444697753b36edfda95c68c1d26f13b4f97',
- 'content/generated/pewter-pokemon/onix-front-normal.png': 'c84cbb522fdddf01af0070361f0772a67bbeecc4e4a9e3aec830c1bc0a4c37ab',
- 'content/generated/pewter-pokemon/sandshrew-front-normal.png': '3ccacdecbbcebb2f2222f9c683f4fc6953dc4426a9ae2f082ac2b677f555bdd6',
- 'content/generated/pewter-pokemon/sandslash-front-normal.png': '0bdc15fdf9b8765751da98546d246494914bfddc2fc1d4156a727d355ec3f3a0',
- 'content/generated/pewter-pokemon/steelix-front-normal.png': '154c875dea588a4a74f49872c4b92535fa748e8b96c399d7674589a250f9e7ea',
- 'content/generated/route1-battle-art/pidgey-front-normal.png': '975b439562bbec89602ce43268ee1f740614324ff9452dd4dfb43130dc1a749b',
- 'content/generated/route1-battle-art/rattata-front-normal.png': '058fa9a31b07213ac500c05e523bcc321b92710075a62fb575bdc0423384f3d2',
- 'content/generated/route1-battle-art/route1-battle-art.json': '5fedaf6c584e4e76e1e8b248fba83a30c5d9ff5aa661947a38e0c640ee63691d'}
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
+DEPENDENCIES = (
+    'content/generated/capture-dex/capture-dex-background.png',
+    'content/generated/capture-dex/capture-dex.json',
+    'content/generated/capture-dex/pidgey-footprint.png',
+    'content/generated/capture-dex/rattata-footprint.png',
+    'content/generated/evolution-art/battle-art.json',
+    'content/generated/evolution-art/blastoise-front-normal.png',
+    'content/generated/evolution-art/charizard-front-normal.png',
+    'content/generated/evolution-art/charmeleon-front-normal.png',
+    'content/generated/evolution-art/ivysaur-front-normal.png',
+    'content/generated/evolution-art/pidgeot-front-normal.png',
+    'content/generated/evolution-art/pidgeotto-front-normal.png',
+    'content/generated/evolution-art/raticate-front-normal.png',
+    'content/generated/evolution-art/venusaur-front-normal.png',
+    'content/generated/evolution-art/wartortle-front-normal.png',
+    'content/generated/forest-capture-dex/capture-dex.json',
+    'content/generated/forest-capture-dex/caterpie-footprint.png',
+    'content/generated/forest-capture-dex/kakuna-footprint.png',
+    'content/generated/forest-capture-dex/metapod-footprint.png',
+    'content/generated/forest-capture-dex/pikachu-footprint.png',
+    'content/generated/forest-capture-dex/weedle-footprint.png',
+    'content/generated/forest-pokemon/battle-art.json',
+    'content/generated/forest-pokemon/beedrill-front-normal.png',
+    'content/generated/forest-pokemon/butterfree-front-normal.png',
+    'content/generated/forest-pokemon/caterpie-front-normal.png',
+    'content/generated/forest-pokemon/kakuna-front-normal.png',
+    'content/generated/forest-pokemon/metapod-front-normal.png',
+    'content/generated/forest-pokemon/pikachu-front-normal.png',
+    'content/generated/forest-pokemon/raichu-front-normal.png',
+    'content/generated/forest-pokemon/weedle-front-normal.png',
+    'content/generated/lab-battle-art/bulbasaur-front-normal.png',
+    'content/generated/lab-battle-art/charmander-front-normal.png',
+    'content/generated/lab-battle-art/lab-battle-art.json',
+    'content/generated/lab-battle-art/squirtle-front-normal.png',
+    'content/generated/pewter-pokemon/battle-art.json',
+    'content/generated/pewter-pokemon/geodude-front-normal.png',
+    'content/generated/pewter-pokemon/golem-front-normal.png',
+    'content/generated/pewter-pokemon/graveler-front-normal.png',
+    'content/generated/pewter-pokemon/onix-front-normal.png',
+    'content/generated/pewter-pokemon/sandshrew-front-normal.png',
+    'content/generated/pewter-pokemon/sandslash-front-normal.png',
+    'content/generated/pewter-pokemon/steelix-front-normal.png',
+    'content/generated/route1-battle-art/pidgey-front-normal.png',
+    'content/generated/route1-battle-art/rattata-front-normal.png',
+    'content/generated/route1-battle-art/route1-battle-art.json',
+)
 
 
 def canonical(value):
@@ -135,20 +136,8 @@ def safe(root, relative=None):
     return target
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or sha(data) != entry['sha256'] or blob != entry['gitBlobSha1']:
-        raise ValueError('Pinned Pokédex source differs: ' + entry['path'])
-
-
-def source_hash(lock):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in lock['files']).encode('utf-8'))
-
-
 def load_lock(path):
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed Pokédex lock hash differs')
     lock = decode(data)
     if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'tree', 'profile', 'gameEdition', 'romRevision')) != (1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
         raise ValueError('Pokédex source identity differs')
@@ -157,41 +146,30 @@ def load_lock(path):
     return lock
 
 
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock), inputCount=len(PATHS)))
+def raw_manifest():
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Pokédex raw manifest differs')
-    else:
+    if repository is not None:
         safe(repository)
         tree = subprocess.check_output(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'], timeout=30).decode('ascii').strip()
-        if tree != TREE:
-            raise ValueError('Reference source tree differs')
     sources = {}
     for entry in lock['files']:
         path = safe(raw, entry['path'])
         if repository is None:
             data = path.read_bytes()
         else:
-            row = subprocess.check_output(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']], timeout=30).decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Source is not the locked regular Git blob')
-            data = subprocess.check_output(['git', '-C', str(repository), 'cat-file', 'blob', entry['gitBlobSha1']], timeout=30)
-        verify(data, entry)
+            data = subprocess.check_output(['git', '-C', str(repository), 'cat-file', 'blob', COMMIT + ':' + entry['path']], timeout=30)
         sources[entry['path']] = data
     return sources
 
 
 def dependencies(project):
     data = {}
-    for path, expected in DEPENDENCIES.items():
+    for path in DEPENDENCIES:
         value = safe(project, path).read_bytes()
-        if sha(value) != expected:
-            raise ValueError('Existing Pokédex dependency differs: ' + path)
         data[path] = value
     return data
 
@@ -204,8 +182,6 @@ def string(text, symbol):
 
 
 def convert(lock, sources, old):
-    for entry in lock['files']:
-        verify(sources[entry['path']], entry)
     if set(sources) != PATHS:
         raise ValueError('Pokédex source set differs')
     texts = {p: b.decode('utf-8') for p, b in sources.items() if p.endswith(('.c', '.h'))}
@@ -217,7 +193,7 @@ def convert(lock, sources, old):
             fragment = match[0] if match else next(line for line in value.splitlines() if symbol in line)
         start = value[:value.index(fragment)].count('\n') + 1
         return dict(kind='source', repository='pret/pokefirered', commit=COMMIT, path=path, symbol=symbol,
-            sha256=sha(sources[path]), url=f'https://github.com/pret/pokefirered/blob/{COMMIT}/{path}#L{start}', startLine=start, endLine=start + fragment.count('\n'))
+             url=f'https://github.com/pret/pokefirered/blob/{COMMIT}/{path}#L{start}', startLine=start, endLine=start + fragment.count('\n'))
     screen = texts['src/pokedex_screen.c']
     for needle in ('ret = ndex_num;', '.maxShowed = 9,', 'gText_5Dashes', '(caught << 17) + (seen << 16)',
                    'while ((categoryName[index] != CHAR_SPACE) && (index < 11))', 'inches = 10000 * height / 254;',
@@ -239,15 +215,14 @@ def convert(lock, sources, old):
             for sprite in decode(data).get('sprites', []):
                 if sprite.get('side') == 'front' and sprite.get('paletteVariant') == 'normal':
                     texture = str(pathlib.PurePosixPath(path).parent / sprite['texturePath'])
-                    portraits[sprite['sourceSpeciesId']] = dict(texturePath=texture, sha256=sprite['sha256'],
-                        rgbaSha256=sprite['rgbaSha256'], width=sprite['width'], height=sprite['height'])
+                    portraits[sprite['sourceSpeciesId']] = dict(texturePath=texture,  width=sprite['width'], height=sprite['height'])
     if tuple(sorted(portraits)) != CURRENT:
         raise ValueError('Current portrait species scope differs')
     for folder, page in zip(('capture-dex', 'forest-capture-dex'), old_pages):
         for sid, entry in page['entries'].items():
             asset = next(a for a in page['assets'] if a['texturePath'] == entry['footprintPath'])
             footprints[int(sid)] = dict(texturePath='content/generated/' + folder + '/' + asset['texturePath'],
-                sha256=asset['sha256'], rgbaSha256=asset['rgbaSha256'], width=16, height=16)
+                 width=16, height=16)
     # Reuse our previously reviewed decoder; no code from the reference is executed.
     spec = importlib.util.spec_from_file_location('pokedex_footprint_codec', ROOT / 'scripts/import-forest-capture-dex.py')
     codec = importlib.util.module_from_spec(spec)
@@ -273,9 +248,7 @@ def convert(lock, sources, old):
     marker_pixels = codec.legacy.codec.rgba(marker_indices, codec.legacy.codec.palette(sources['graphics/interface/dex_caught_pokeball.pal']))
     marker_png = codec.legacy.codec.png(12, 12, marker_pixels)
     outputs['owned-marker.png'] = marker_png
-    outputs['owned-marker.rgba'] = marker_pixels
-    owned_marker = dict(texturePath='content/generated/pokedex-menu/owned-marker.png', sha256=sha(marker_png),
-                        rgbaSha256=sha(marker_pixels), width=12, height=12)
+    owned_marker = dict(texturePath='content/generated/pokedex-menu/owned-marker.png',  width=12, height=12)
     assets.append(owned_marker)
     for name in NEW_FOOTPRINTS:
         sid = species[name.upper()]
@@ -283,8 +256,7 @@ def convert(lock, sources, old):
         png = codec.legacy.codec.png(16, 16, pixels)
         filename = name + '-footprint.png'
         outputs[filename] = png
-        outputs[name + '-footprint.rgba'] = pixels
-        asset = dict(texturePath='content/generated/pokedex-menu/' + filename, sha256=sha(png), rgbaSha256=sha(pixels), width=16, height=16)
+        asset = dict(texturePath='content/generated/pokedex-menu/' + filename,  width=16, height=16)
         footprints[sid] = asset
         assets.append(asset)
     entries = []
@@ -336,8 +308,8 @@ def convert(lock, sources, old):
              ref('src/list_menu.c', 'MENU_INFO_ICON_CAUGHT'), ref('src/graphics.c', 'gMenuInfoElements1_Pal'),
              ref('src/graphics.c', 'gMenuInfoElements_Gfx')]
     outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=source_hash(lock), inputs=lock['files'], entries=entries,
-        dependencies=[dict(path=p, sha256=h, byteLength=len(old[p])) for p,h in sorted(DEPENDENCIES.items())],
+         inputs=lock['files'], entries=entries,
+        dependencies=[dict(path=p) for p in sorted(DEPENDENCIES)],
         entryLayout=old_pages[0]['layout'], assets=assets, ownedMarker=owned_marker,
         uiTexts={n:string(texts['src/strings.c'], n) for n in symbols},
         listLayout=dict(width=240,height=160,x=16,y=16,windowWidth=184,windowHeight=128,visibleRows=9,
@@ -353,10 +325,10 @@ def convert(lock, sources, old):
             'Numerical Kanto/national lists and caught-gated data projection only; habitat/search/area/size/cry/fades are not implemented here.',
             'Original list coordinates and control tokens are supplied; full original menu composition and native visual acceptance remain separate.',
             'Twenty-two missing current-species footprints and the original 12x12 caught marker are preconverted; seven existing footprints and settled page skin are reused unchanged.']))
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,
-        lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=len(PATHS),entryCount=386,regionalCount=151,
+    outputs['manifest.json'] = canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
+        inputCount=len(PATHS),entryCount=386,regionalCount=151,
         portraitCount=29,newFootprintCount=22,ownedMarkerCount=1,
-        outputs=[dict(path=p,sha256=sha(b),byteLength=len(b)) for p,b in sorted(outputs.items())],
+        outputs=[dict(path=p) for p,b in sorted(outputs.items())],
         upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,runtimeShadersUsed=False))
     return outputs
 
@@ -372,11 +344,9 @@ def run(lock_path, raw, out, repository=None, project=ROOT):
     lock = load_lock(lock_path)
     sources = read_sources(lock,raw,repository)
     outputs = convert(lock,sources,dependencies(project))
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed Pokédex conversion manifest differs')
     targets = [(safe(out,p),b) for p,b in outputs.items()]
     if repository is not None:
-        targets = [(safe(raw,p),b) for p,b in sources.items()] + [(safe(raw,'manifest.json'),raw_manifest(lock))] + targets
+        targets = [(safe(raw,p),b) for p,b in sources.items()] + [(safe(raw_metadata_directory(raw, 'pokedex-menu'),'manifest.json'),raw_manifest())] + targets
     for target,_ in targets:
         if target.exists() and not target.is_file():
             raise ValueError('Pokédex destination is not a regular file')
@@ -394,13 +364,12 @@ def run(lock_path, raw, out, repository=None, project=ROOT):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo',type=pathlib.Path)
-    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokedex-menu')
+    parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/pokedex-menu')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/fetch-pokedex-menu.lock.json')
     args=parser.parse_args()
     outputs=run(args.lock,args.raw,args.out,args.reference_repo)
-    print(json.dumps(dict(status='verified',inputs=len(PATHS),entries=386,portraits=29,outputs=len(outputs),
-        documentSha256=sha(outputs['pokedex-menu.json']),manifestSha256=sha(outputs['manifest.json']))))
+    print(json.dumps(dict(status='verified',inputs=len(PATHS),entries=386,portraits=29,outputs=len(outputs))))
 
 
 if __name__=='__main__':

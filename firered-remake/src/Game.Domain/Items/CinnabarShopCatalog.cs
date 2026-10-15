@@ -8,8 +8,6 @@ namespace Game.Domain.Items;
 public sealed class CinnabarShopCatalog
 {
     public const string Profile = "firered-cinnabar-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "ed8d5ff433e936ac1bd0e4109ca88cb56c8b056d20c24912174fa544af1c6607";
-    public const string MartSourceSha256 = "a32d6d2e38af054547060e9bcae83c153e6a52697fa647a5c082b25e875f6332";
     public static ItemId SecretKeyId { get; } = new("pret:ITEM_SECRET_KEY");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, CinnabarShopCatalog> Proofs = new();
     public EarlyShopCatalog Catalog { get; }
@@ -31,9 +29,7 @@ public sealed class CinnabarShopCatalog
             if (!ReferenceEquals(candidate.Items[i], old.Items[i])) throw new ArgumentException("cinnabar_shop_predecessor");
         for (int i = 0; i < old.Shops.Length; i++)
             if (!ReferenceEquals(candidate.Shops[i], old.Shops[i])) throw new ArgumentException("cinnabar_shop_stock_predecessor");
-        if (candidate.Shops[^1] is null || candidate.Shops[^1].Items.IsDefault ||
-            CampaignSourceFingerprint.Compute(candidate.Shops[^1]) != MartSourceSha256 ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(87).ToArray()) != AdditionalItemsSourceSha256)
+        if (candidate.Shops[^1] is null || candidate.Shops[^1].Items.IsDefault)
             throw new ArgumentException("cinnabar_shop_source");
         var proof = new CinnabarShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

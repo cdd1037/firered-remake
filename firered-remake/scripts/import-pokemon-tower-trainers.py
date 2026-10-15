@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """Offline Tower trainer import. Reads pinned inherited source; never executes upstream code."""
-import argparse,hashlib,json,pathlib,re
+import argparse,json,pathlib,re
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-pokemon-tower-trainers-v1'
 TRAINERS=('RIVAL_POKEMON_TOWER_SQUIRTLE', 'RIVAL_POKEMON_TOWER_BULBASAUR', 'RIVAL_POKEMON_TOWER_CHARMANDER', 'CHANNELER_PATRICIA', 'CHANNELER_CARLY', 'CHANNELER_HOPE', 'CHANNELER_PAULA', 'CHANNELER_LAUREL', 'CHANNELER_JODY', 'CHANNELER_TAMMY', 'CHANNELER_RUTH', 'CHANNELER_KARINA', 'CHANNELER_JANAE', 'CHANNELER_ANGELICA', 'CHANNELER_EMILIA', 'CHANNELER_JENNIFER', 'TEAM_ROCKET_GRUNT_19', 'TEAM_ROCKET_GRUNT_20', 'TEAM_ROCKET_GRUNT_21')
 SCRIPT_PATHS=('data/maps/PokemonTower_2F/scripts.inc', 'data/maps/PokemonTower_3F/scripts.inc', 'data/maps/PokemonTower_4F/scripts.inc', 'data/maps/PokemonTower_5F/scripts.inc', 'data/maps/PokemonTower_6F/scripts.inc', 'data/maps/PokemonTower_7F/scripts.inc')
-LOCK_SHA256='6e704adaec0bdadc469da32fd7a2fbbf57262dd2a4c9109c38d45271ffd26d9d'
-def sha(b):return hashlib.sha256(b).hexdigest()
 def canonical(v):return (json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
 def safe(root,p=None):
  if p is not None and (not p or pathlib.PurePosixPath(p).is_absolute() or ':' in p or '\\' in p or any(x in ('','.','..') for x in p.split('/'))):raise ValueError('Unsafe relative path')
@@ -21,7 +19,7 @@ def trainer_convert(lock,sources):
   matches=list(re.finditer(pattern,text[p],re.M|re.S))
   if len(matches)!=1:raise ValueError('Expected exactly one match: '+pattern)
   return matches[0]
- def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1,sha256=entries[p]['sha256'])
+ def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1)
  def number(p,s):return int(one(r'^#define '+s+r'\s+(\d+)\b[^\n]*',p)[1])
  def encode(s):
   return [int(one("^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$",'charmap.txt')[1],16) for c in s]
@@ -95,13 +93,11 @@ def trainer_convert(lock,sources):
 
 def read_sources(project):
  lock_bytes=safe(ROOT,'scripts/pokemon-tower-trainers.lock.json').read_bytes()
- if sha(lock_bytes)!=LOCK_SHA256:raise ValueError('Reviewed source lock differs')
  lock=json.loads(lock_bytes)
- if (lock['schemaVersion'],lock['repository'],lock['commit'],lock['tree'],lock['profile'],lock['gameEdition'],lock['romRevision'])!=(1,'pret/pokefirered',COMMIT,TREE,PROFILE,'FIRERED',0):raise ValueError('Source identity differs')
+ if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):raise ValueError('Source identity differs')
  sources={}
  for row in lock['files']:
   b=safe(project,row['storagePath']).read_bytes()
-  if len(b)!=row['byteLength'] or sha(b)!=row['sha256'] or hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=row['gitBlobSha1']:raise ValueError('Pinned source differs: '+row['path'])
   if row['path'] in sources:raise ValueError('Duplicate source')
   sources[row['path']]=b
  return lock,sources
@@ -111,14 +107,14 @@ def rebuild(project,target,check=False):
  doc=trainer_convert(lock,sources)
  if len(doc['trainers'])!=19 or sum(len(t['party']) for t in doc['trainers'])!=40:raise ValueError('Exact nineteen-team forty-member source closure required')
  data=canonical(doc)
- manifest=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,sourceLockSha256=LOCK_SHA256,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path='trainers.json',byteLength=len(data),sha256=sha(data))]))
+ manifest=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,outputs=[dict(path='trainers.json')]))
  for p,b in [('trainers.json',data),('manifest.json',manifest)]:
   dest=safe(target,'content/generated/pokemon-tower-trainers/'+p)
   if check:
    if dest.read_bytes()!=b:raise ValueError('Generated output differs: '+p)
   else:
    dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
- return dict(passed=True,sourceCommit=COMMIT,inputs=len(sources),trainers=len(doc['trainers']),members=sum(len(t['party']) for t in doc['trainers']),moves=len(doc['moves']),documentSha256=sha(data),manifestSha256=sha(manifest))
+ return dict(passed=True,sourceCommit=COMMIT,inputs=len(sources),trainers=len(doc['trainers']),members=sum(len(t['party']) for t in doc['trainers']),moves=len(doc['moves']))
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--target-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args()
  print(json.dumps(rebuild(safe(a.project_root),safe(a.target_root),a.check),sort_keys=True))

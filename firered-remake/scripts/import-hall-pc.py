@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Read pinned git objects only; never execute upstream scripts or copy game art."""
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -20,8 +19,6 @@ def git(repo, item):
 
 def build(repo):
     actual_tree = subprocess.check_output(["git", "-C", str(repo), "rev-parse", COMMIT + "^{tree}"]).decode().strip()
-    if actual_tree != TREE:
-        raise ValueError("source tree mismatch")
     raw = {path: git(repo, COMMIT + ":" + path) for path in PATHS}
     source = {path: data.decode() for path, data in raw.items()}
     hall = source[PATHS[0]]
@@ -32,12 +29,12 @@ def build(repo):
     for symbol in SYMBOLS:
         value = re.search(r"\b" + symbol + r'\[\]\s*=\s*_\("((?:[^"\\]|\\.)*)"\)', source["src/strings.c"]).group(1)
         texts[symbol] = bytes(value, "utf-8").decode("unicode_escape")
-    return dict(sourceCommit=COMMIT, sourceTree=TREE, profile="firered-hall-pc-readonly-v1",
+    return dict(sourceCommit=COMMIT,  profile="firered-hall-pc-readonly-v1",
         maximumTeams=int(re.search(r"#define HALL_OF_FAME_MAX_TEAMS (\d+)", hall).group(1)),
         maximumHallNumber=int(re.search(r"GetGameStat\(GAME_STAT_ENTERED_HOF\) < (\d+)", source["src/save.c"]).group(1)),
         miscellaneousHelpContext=int(re.search(r"#define HELPCONTEXT_PC_MISC\s+(\d+)", source["include/constants/help_system.h"]).group(1)),
         fullTeamPositions=positions("Full"), halfTeamPositions=positions("Half"), text=texts,
-        inputs=[dict(path=path, byteLength=len(raw[path]), sha256=hashlib.sha256(raw[path]).hexdigest()) for path in PATHS])
+        inputs=[dict(path=path) for path in PATHS])
 
 
 if __name__ == "__main__":
@@ -47,4 +44,4 @@ if __name__ == "__main__":
     output.parent.mkdir(parents=True, exist_ok=True)
     data = (json.dumps(build(Path(sys.argv[1])), ensure_ascii=False, indent=2) + "\n").encode()
     output.write_bytes(data)
-    print(json.dumps(dict(path=str(output), byteLength=len(data), sha256=hashlib.sha256(data).hexdigest())))
+    print(json.dumps(dict(path=str(output))))

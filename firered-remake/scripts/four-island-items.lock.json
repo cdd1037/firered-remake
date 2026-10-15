@@ -3,14 +3,10 @@
   "profile": "firered-four-island-items-v1",
   "files": [
     {
-      "path": "content/generated/four-island-items/items.json",
-      "byteLength": 182618,
-      "sha256": "9cb68121352e6d3372baece227d7486b630f32baf053a3164ce10ebe11350b02"
+      "path": "content/generated/four-island-items/items.json"
     },
     {
-      "path": "content/generated/four-island-items/source-input-hashes.json",
-      "byteLength": 4109,
-      "sha256": "dd006e3982bf184e658ec1f000b576328477f7b0f9f614e0d37d4633e0271b9f"
+      "path": "content/generated/four-island-items/source-input-hashes.json"
     }
   ]
 }

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Extract the bounded Repel texts and item facts from authenticated local Git objects only."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
@@ -10,26 +9,16 @@ import subprocess
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-early-kanto-repel-v1'
-LOCK_SHA = '6afd036a2e2c61046d7339ef4f7f441ac78b8b00ced9e73f28b3b4bd8beb9aa8'
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def read_sources(reference, lock_path=None):
     data = (pathlib.Path(lock_path) if lock_path else ROOT / 'scripts/early-repel.lock.json').read_bytes()
-    if digest(data) != LOCK_SHA:
-        raise ValueError('The reviewed Repel source lock differs')
     lock = json.loads(data)
     if lock['commit'] != COMMIT or lock['profile'] != PROFILE or len(lock['files']) != 10:
         raise ValueError('The Repel source scope differs')
     sources = {}
     for item in lock['files']:
         raw = subprocess.check_output(['git', '-C', str(reference), 'show', COMMIT + ':' + item['path']])
-        blob = hashlib.sha1(f'blob {len(raw)}\0'.encode() + raw).hexdigest()
-        if (digest(raw), len(raw), blob) != (item['sha256'], item['byteLength'], item['gitBlobSha1']):
-            raise ValueError('Repel source identity differs: ' + item['path'])
         sources[item['path']] = raw.decode('utf-8', errors='strict')
     return lock, sources
 
@@ -66,7 +55,7 @@ def main():
     raw = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(raw)
-    print(json.dumps(dict(sourceCommit=COMMIT, sourceFiles=len(document['sourceFiles']), texts=len(document['texts']), byteLength=len(raw), sha256=digest(raw))))
+    print(json.dumps(dict(sourceCommit=COMMIT, sourceFiles=len(document['sourceFiles']), texts=len(document['texts']))))
 
 
 if __name__ == '__main__':

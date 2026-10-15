@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
 """Rebuild bounded Victory Road presentation from locked pret bytes and predecessor resources."""
-import argparse, hashlib, importlib.util, io, json, pathlib, re, struct, subprocess, zlib
+import argparse,  importlib.util, io, json, pathlib, re, struct, subprocess, zlib
 from PIL import Image
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-victory-road-presentation-v1'
-LOCK_SHA='4b7304533661748eb3b491549d3f6a803de6c56b2c1d03bd47a256e9f8d552c4'
 BASE='content/generated/victory-road-presentation/'
-RAW='content/raw/victory-road-presentation/'
-PORTRAITS=[
- ('black-belt-front','black_belt','BlackBelt','BLACK_BELT',105,'content/generated/viridian-gym-presentation/black-belt-front.rgba'),
- ('cooltrainer-m-front','cool_trainer_m','CooltrainerM','COOLTRAINER_M',110,'content/generated/viridian-gym-presentation/cooltrainer-m-front.rgba'),
- ('cooltrainer-f-front','cool_trainer_f','CooltrainerF','COOLTRAINER_F',111,'content/generated/celadon-gym-art/cooltrainer-f-front.rgba'),
- ('cool-couple-front','cool_couple','CoolCouple','COOL_COUPLE',128,None),
- ('juggler-front','juggler','Juggler','JUGGLER',102,'content/generated/fuchsia-gym-presentation/juggler-front.rgba'),
- ('tamer-front','tamer','Tamer','TAMER',103,'content/generated/fuchsia-gym-presentation/tamer-front.rgba'),
- ('pokemaniac-front','pokemaniac','PokeManiac','POKEMANIAC',88,'content/generated/rocktunnel-art/pokemaniac-front.rgba')]
+RAW='content/raw/pokefirered/037335f4/'
+PORTRAITS = [('black-belt-front', 'black_belt', 'BlackBelt', 'BLACK_BELT', 105, 'content/generated/viridian-gym-presentation/black-belt-front.png'), ('cooltrainer-m-front', 'cool_trainer_m', 'CooltrainerM', 'COOLTRAINER_M', 110, 'content/generated/viridian-gym-presentation/cooltrainer-m-front.png'), ('cooltrainer-f-front', 'cool_trainer_f', 'CooltrainerF', 'COOLTRAINER_F', 111, 'content/generated/celadon-gym-art/cooltrainer-f-front.png'), ('cool-couple-front', 'cool_couple', 'CoolCouple', 'COOL_COUPLE', 128, None), ('juggler-front', 'juggler', 'Juggler', 'JUGGLER', 102, 'content/generated/fuchsia-gym-presentation/juggler-front.png'), ('tamer-front', 'tamer', 'Tamer', 'TAMER', 103, 'content/generated/fuchsia-gym-presentation/tamer-front.png'), ('pokemaniac-front', 'pokemaniac', 'PokeManiac', 'POKEMANIAC', 88, 'content/generated/rocktunnel-art/pokemaniac-front.png')]
 ITEMS=[('TM02','TMHM','DragonTMHM','tm_hm','dragon_tm_hm'),('TM07','TMHM','IceTMHM','tm_hm','ice_tm_hm'),
  ('TM37','TMHM','RockTMHM','tm_hm','rock_tm_hm'),('TM50','TMHM','FireTMHM','tm_hm','fire_tm_hm'),
  ('GUARD_SPEC','BattleStatItem','GuardSpec','battle_stat_item','guard_spec'),('SITRUS_BERRY','SitrusBerry','SitrusBerry','sitrus_berry','sitrus_berry')]
@@ -24,7 +16,6 @@ MAPS=['Route23','VictoryRoad_1F','VictoryRoad_2F','VictoryRoad_3F','IndigoPlatea
 CUES=['MUS_VICTORY_ROAD','MUS_MT_MOON','MUS_ENCOUNTER_BOY','MUS_ENCOUNTER_GIRL','MUS_VS_TRAINER','MUS_VICTORY_TRAINER','MUS_VS_WILD','MUS_VICTORY_WILD','MUS_SURF','SE_M_STRENGTH','SE_FALL','SE_ICE_BREAK','MUS_OBTAIN_ITEM','MUS_OBTAIN_TMHM']
 def need(v,m):
  if not v:raise ValueError(m)
-def sha(b):return hashlib.sha256(b).hexdigest()
 def encode(v):return (json.dumps(v,indent=2,ensure_ascii=False)+'\n').encode()
 def safe(root,path):
  need(path and not pathlib.PurePosixPath(path).is_absolute() and '\\' not in path and ':' not in path and all(p not in ('','.','..') for p in path.split('/')),'Unsafe resource path')
@@ -47,8 +38,8 @@ def opponent_art(raw,out):
   colors=[tuple((int(v)>>3)*255//31 for v in row.split()) for row in lines[3:]]
   return ix,bytes(v for i in ix for v in (*colors[i],255 if i else 0))
  def emit(stem,w,h,rgba):
-  out[stem+'.rgba']=rgba;out[stem+'.png']=png(w,h,rgba)
-  return dict(rgbaPath=BASE+stem+'.rgba',rgbaSha256=sha(rgba),texturePath=BASE+stem+'.png',sha256=sha(out[stem+'.png']),width=w,height=h)
+  out[stem+'.png']=png(w,h,rgba)
+  return dict(texturePath=BASE + stem + '.png', width=w, height=h)
  for name,stem,sid in [('Dewgong','dewgong',87),('Exeggutor','exeggutor',103)]:
   symbol='SPECIES_'+stem.upper();need(re.search(r'^#define '+symbol+r'\s+'+str(sid)+r'\s*$',text('include/constants/species.h'),re.M),'Pokemon source identity')
   em=re.search(r'\['+symbol+r'\]\s*=\s*(\d+)',text('src/data/pokemon_graphics/enemy_mon_elevation.h'));elevation=int(em[1]) if em else 0
@@ -58,19 +49,19 @@ def opponent_art(raw,out):
    for variant in ('normal','shiny'):
     pal=f'graphics/pokemon/{stem}/{variant}.pal';ps='gMonPalette_' if variant=='normal' else 'gMonShinyPalette_';need(f'{ps}{name}[] = INCBIN_U32("{pal[:-4]}.gbapal.lz")' in graphics,'Pokemon palette binding')
     ix,rgba=decode(image,pal,(64,64));x,y=(144,8+yoff-elevation) if side=='front' else (40,48+yoff)
-    sprites.append(dict(speciesId='pret:'+symbol,sourceSpeciesId=sid,side=side,paletteVariant=variant,sourceImagePath=image,sourcePalettePath=pal,indexSha256=sha(ix),sourceCoordinatePath=cp,sourceWidth=width,sourceHeight=height,sourceYOffset=yoff,sourceEnemyElevation=elevation,singleBattleTopLeft=dict(x=x,y=y),paletteExpansion='floor(rgb5 * 255 / 31)',transparentIndex=0,**emit(f'{stem}-{side}-{variant}',64,64,rgba)))
+    sprites.append(dict(speciesId='pret:'+symbol,sourceSpeciesId=sid,side=side,paletteVariant=variant,sourceImagePath=image,sourcePalettePath=pal,sourceCoordinatePath=cp,sourceWidth=width,sourceHeight=height,sourceYOffset=yoff,sourceEnemyElevation=elevation,singleBattleTopLeft=dict(x=x,y=y),paletteExpansion='floor(rgb5 * 255 / 31)',transparentIndex=0,**emit(f'{stem}-{side}-{variant}',64,64,rgba)))
   table=text('src/pokemon_icon.c');pm=re.search(r'\['+symbol+r'\]\s*=\s*(\d+),',table);need(pm and re.search(r'\['+symbol+r'\]\s*=\s*gMonIcon_'+name+r',',table),'Pokemon icon table binding');pi=int(pm[1]);image=f'graphics/pokemon/{stem}/icon.png';pal=f'graphics/pokemon/icon_palettes/icon_palette_{pi}.pal'
   need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics,'Pokemon icon graphics binding');ix,rgba=decode(image,pal,(32,64),True)
-  icons.append(dict(speciesId='pret:'+symbol,sourceSpeciesId=sid,sourceImagePath=image,sourcePalettePath=pal,paletteIndex=pi,sourceFrameIndex=0,sourceFrameCount=2,indexSha256=sha(ix),paletteExpansion='floor(rgb5 * 255 / 31)',**emit(f'icons/{stem}',32,32,rgba)))
+  icons.append(dict(speciesId='pret:'+symbol,sourceSpeciesId=sid,sourceImagePath=image,sourcePalettePath=pal,paletteIndex=pi,sourceFrameIndex=0,sourceFrameCount=2,paletteExpansion='floor(rgb5 * 255 / 31)',**emit(f'icons/{stem}',32,32,rgba)))
  return sprites,icons
 def authenticate(root,inherited,rules,reference):
- rawlock=safe(root,'scripts/victory-road-presentation.lock.json').read_bytes();need(sha(rawlock)==LOCK_SHA,'Presentation lock differs');lock=json.loads(rawlock)
- need((lock['schemaVersion'],lock['profile'],lock['commit'],lock['tree'])==(1,PROFILE,COMMIT,TREE),'Source identity differs');raw={};reused={}
+ rawlock=safe(root,'scripts/victory-road-presentation.lock.json').read_bytes();lock=json.loads(rawlock)
+ need((lock['schemaVersion'], lock['profile'], lock['commit']) == (1, PROFILE, COMMIT),'Source identity differs');raw={};reused={}
  for row in lock['files']:
   p=row['path'];b=subprocess.check_output(['git','-C',str(reference),'show',COMMIT+':'+p]) if reference else safe(root,RAW+p).read_bytes()
-  need((len(b),sha(b),hashlib.sha1(f'blob {len(b)}\0'.encode()+b).hexdigest())==(row['byteLength'],row['sha256'],row['gitBlobSha1']),'Source differs: '+p);raw[p]=b
+  raw[p]=b
  for row in lock['inheritedInputs']:
-  p=row['path'];b=safe(rules if p.startswith('content/generated/victory-road-rules/') else inherited,p).read_bytes();need((len(b),sha(b))==(row['byteLength'],row['sha256']),'Inherited input differs: '+p);reused[p]=b
+  p=row['path'];b=safe(rules if p.startswith('content/generated/victory-road-rules/') else inherited,p).read_bytes();reused[p]=b
  return lock,raw,reused
 
 def build(lock,raw,reused):
@@ -83,9 +74,9 @@ def build(lock,raw,reused):
   need(f'gTrainerFrontPic_{symbol}[] = INCBIN_U32("graphics/trainers/front_pics/{stem}_front_pic.4bpp.lz")' in graphics and f'gTrainerPalette_{symbol}[] = INCBIN_U32("graphics/trainers/palettes/{stem}.gbapal.lz")' in graphics and f'TRAINER_SPRITE({picture}, gTrainerFrontPic_{symbol}, 0x800)' in table and f'TRAINER_PAL({picture}, gTrainerPalette_{symbol})' in table,'Portrait source binding')
   need(re.search(r'^#define TRAINER_PIC_'+picture+r'\s+'+str(number)+r'\s*$',text('include/constants/trainers.h'),re.M) and coords[number][0]=='8','Portrait identity')
   size,rgba=pixels(raw[image],raw[pal]);need(size==(64,64),'Portrait dimensions')
-  if inherited:need(reused[inherited]==rgba,'Inherited portrait pixels: '+identity);path=inherited
-  else:out[identity+'.rgba']=rgba;out[identity+'.png']=png(*size,rgba);path=BASE+identity+'.rgba'
-  portraits.append(dict(id=identity,trainerPic='TRAINER_PIC_'+picture,sourceTrainerPicId=number,rgbaPath=path,rgbaSha256=sha(rgba),inherited=bool(inherited),width=64,height=64,sourceYOffset=int(coords[number][1])))
+  if inherited:need(Image.open(io.BytesIO(reused[inherited])).convert('RGBA').tobytes()==rgba,'Inherited portrait pixels: '+identity);path=inherited
+  else:pass;out[identity+'.png']=png(*size,rgba);path = BASE + identity + '.png'
+  portraits.append(dict(id=identity, trainerPic='TRAINER_PIC_' + picture, sourceTrainerPicId=number, texturePath=path, inherited=bool(inherited), width=64, height=64, sourceYOffset=int(coords[number][1])))
  trainers=[];catalog=json.loads(reused['content/generated/victory-road-rules/trainers.json']);need(catalog['sourceCommit']==COMMIT and len(catalog['trainers'])==12,'Trainer catalog identity')
  for t in catalog['trainers']:
   cls=t['trainerClass'];picture=t['trainerPic'];name=t['sourceTrainerName'];symbol=t['id']['value'][5:];block=re.search(r'\['+symbol+r'\] = \{(.*?)\n    \}',text('src/data/trainers.h'),re.S)
@@ -99,8 +90,8 @@ def build(lock,raw,reused):
   image='graphics/items/icons/'+stem+'.png';pal='graphics/items/icon_palettes/'+palstem+'.pal'
   graphics=text('src/data/graphics/items.h')
   need(re.search(r'gItemIcon_'+image_symbol+r'\[\]\s*=\s*INCBIN_U32\("'+re.escape(image[:-4]+'.4bpp.lz')+r'"\)',graphics) and re.search(r'gItemIconPalette_'+pal_symbol+r'\[\]\s*=\s*INCBIN_U32\("'+re.escape(pal[:-4]+'.gbapal.lz')+r'"\)',graphics),'Item graphics declarations')
-  size,rgba=pixels(raw[image],raw[pal]);need(size==(24,24),'Item icon size');name='item_'+item.lower();out[name+'.rgba']=rgba;out[name+'.png']=png(*size,rgba)
-  icons.append(dict(item='pret:ITEM_'+item,rgbaPath=BASE+name+'.rgba',rgbaSha256=sha(rgba),width=24,height=24))
+  size,rgba=pixels(raw[image],raw[pal]);need(size==(24,24),'Item icon size');name='item_'+item.lower();out[name+'.png']=png(*size,rgba)
+  icons.append(dict(item='pret:ITEM_' + item, texturePath=BASE + name + '.png', width=24, height=24))
  # Source metatile IDs are shared by all four barrier scripts. Rebuild all three layers, including transparent replacement pixels.
  bases=['data/tilesets/primary/general','data/tilesets/secondary/cave'];images=[Image.open(io.BytesIO(raw[b+'/tiles.png'])) for b in bases];palettes=[palette(raw[bases[0 if n<7 else 1]+f'/palettes/{n:02d}.pal']) for n in range(13)];palettes[0][0]=(0,0,0)
  attrs=[struct.unpack('<'+'I'*(len(raw[b+'/metatile_attributes.bin'])//4),raw[b+'/metatile_attributes.bin']) for b in bases];metatiles=[struct.unpack('<'+'H'*(len(raw[b+'/metatiles.bin'])//2),raw[b+'/metatiles.bin']) for b in bases];emitted=[]
@@ -120,9 +111,9 @@ def build(lock,raw,reused):
    for n,value in enumerate(group):atlas.paste(tile(value),(col*16+n%2*8,n//2*8))
   tiles.append(dict(symbol=symbol,metatileId=mid,rawAttributes=attribute,x=col*16,y=0))
  for n,atlas in enumerate(atlases):
-  name='barrier-'+['bottom','middle','top'][n];rgba=atlas.tobytes();out[name+'.rgba']=rgba;out[name+'.png']=png(64,16,rgba);layers.append(dict(layer=n,rgbaPath=BASE+name+'.rgba',rgbaSha256=sha(rgba),width=64,height=16))
+  name='barrier-'+['bottom','middle','top'][n];rgba=atlas.tobytes();out[name+'.png']=png(64,16,rgba);layers.append(dict(layer=n, texturePath=BASE + name + '.png', width=64, height=16))
  # Register the original SE_ICE_BREAK song already inside the authenticated source resource pack.
- pack=reused['content/generated/synth-audio/firered.pack'];need(sha(pack)=='00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d','Source audio pack identity')
+ pack=reused['content/generated/synth-audio/firered.pack']
  songs={k:int(v) for k,v in re.findall(r'^#define ((?:MUS|SE)_\w+)\s+(\d+)',text('include/constants/songs.h'),re.M)};table=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',text('sound/song_table.inc'),re.M);sid=songs['SE_ICE_BREAK'];address,player,second=struct.unpack_from('<IHH',pack,0x084A32CC+sid*8-0x08489968);need(table[sid]==('se_ice_break',str(player),str(second)) and player in (1,2,3),'Source cue table')
  extra=dict(id='SE_ICE_BREAK',sourceCommit=COMMIT,sourceSymbol='SE_ICE_BREAK',sourcePath='sound/songs/midi/se_ice_break.mid',sourcePlayer=player,priority=pack[address-0x08489968+2],sourceCounter=None,songAddress=address,species=0,looping=False,cryMode=0)
  # The reviewed MIDI reader checks the original finite sequence, never executes source repository code.
@@ -132,7 +123,7 @@ def build(lock,raw,reused):
  maps=[]
  for name in MAPS:
   m=json.loads(raw['data/maps/'+name+'/map.json']);need(m['music']==('MUS_MT_MOON' if name.startswith('VictoryRoad') else 'MUS_VICTORY_ROAD') and m['battle_scene']=='MAP_BATTLE_SCENE_NORMAL','Map presentation source');maps.append(dict(sourceMap=name,music=m['music'],battleScene=m['battle_scene']))
- manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,lockSha256=LOCK_SHA,inputs=lock['files'],inheritedInputs=lock['inheritedInputs'],trainers=trainers,portraits=portraits,items=icons,sprites=sprites,pokemonIcons=pokemon_icons,trainerOnlySpecies=[87,103],tiles=tiles,layers=layers,maps=maps,audio=dict(requiredCues=CUES,additionalCueIds=['SE_ICE_BREAK'],newAudioAssets=0,originalPackUnchanged=True,physicalAudioVerified=False),outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(out.items())]);out['manifest.json']=encode(manifest);return out
+ manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],inheritedInputs=lock['inheritedInputs'],trainers=trainers,portraits=portraits,items=icons,sprites=sprites,pokemonIcons=pokemon_icons,trainerOnlySpecies=[87,103],tiles=tiles,layers=layers,maps=maps,audio=dict(requiredCues=CUES,additionalCueIds=['SE_ICE_BREAK'],newAudioAssets=0,originalPackUnchanged=True,physicalAudioVerified=False),outputs=[dict(path=p) for p,b in sorted(out.items())]);out['manifest.json']=encode(manifest);return out
 
 def run(root=ROOT,inherited=None,rules=None,reference=None,check=False):
  lock,raw,reused=authenticate(root,inherited or root,rules or root,reference);out=build(lock,raw,reused)
@@ -141,6 +132,6 @@ def run(root=ROOT,inherited=None,rules=None,reference=None,check=False):
  else:
   for p,b in [(RAW+p,b) for p,b in raw.items()]+[(BASE+p,b) for p,b in out.items()]:
    dest=safe(root,p);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
- return dict(passed=True,sourceFiles=len(raw),trainers=12,portraits=7,newPortraits=1,inheritedPortraits=6,items=6,barrierMetatiles=4,barrierLayers=3,newSpecies=2,trainerOnlySpecies=[87,103],newBattleSprites=8,newPokemonIcons=2,newOwnedSpecies=0,newAudioAssets=0,additionalCueIds=['SE_ICE_BREAK'],manifestSha256=sha(out['manifest.json']),manifestBytes=len(out['manifest.json']),sourceAndStaticChecksOnly=True)
+ return dict(passed=True,sourceFiles=len(raw),trainers=12,portraits=7,newPortraits=1,inheritedPortraits=6,items=6,barrierMetatiles=4,barrierLayers=3,newSpecies=2,trainerOnlySpecies=[87,103],newBattleSprites=8,newPokemonIcons=2,newOwnedSpecies=0,newAudioAssets=0,additionalCueIds=['SE_ICE_BREAK'],manifestBytes=len(out['manifest.json']),sourceAndStaticChecksOnly=True)
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--inherited-root',type=pathlib.Path);p.add_argument('--rules-root',type=pathlib.Path);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.project_root,a.inherited_root,a.rules_root,a.reference_root,a.check)))

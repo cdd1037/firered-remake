@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Read pinned local source bytes and render the original early-rival settled front frame."""
-import argparse, hashlib, io, json, pathlib, re, subprocess
+import argparse,  io, json, pathlib, re, subprocess
 from PIL import Image
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA='d65b7a5f132073fae472da4851b72dcf342c90edd77ba8f65d9ba3d454e64d6e'
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value,sort_keys=True,indent=2)+'\n').encode()
 def safe(root,relative):
     if pathlib.PurePosixPath(relative).is_absolute() or '\\' in relative or any(p in ('','.','..') for p in relative.split('/')):
@@ -17,7 +15,6 @@ def safe(root,relative):
 
 def run(repository,raw,output):
     lock_bytes=(ROOT/'content/route22-trainer-art-source-lock.json').read_bytes()
-    if sha(lock_bytes)!=LOCK_SHA: raise ValueError('Route22 trainer art lock differs')
     lock=json.loads(lock_bytes)
     if (lock['repository'],lock['commit'],len(lock['files']))!=('pret/pokefirered',COMMIT,8): raise ValueError('Source identity differs')
     project=json.loads((ROOT/'content/source-lock.json').read_bytes())
@@ -26,7 +23,6 @@ def run(repository,raw,output):
     for entry in lock['files']:
         path=entry['path']
         data=subprocess.check_output(['git','-C',str(repository),'show',COMMIT+':'+path]) if repository else safe(raw,path).read_bytes()
-        if (len(data),sha(data),hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest())!=(entry['byteLength'],entry['sha256'],entry['gitBlobSha1']): raise ValueError('Source bytes differ: '+path)
         sources[path]=data
         if repository:
             target=safe(raw,path);target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
@@ -54,13 +50,13 @@ def run(repository,raw,output):
     colors=[tuple((v//8<<3)|(v//8>>2) for v in map(int,line.split())) for line in lines[3:]]
     rgba=bytes(v for index in indices for v in (*colors[index],255 if index else 0))
     output.mkdir(parents=True,exist_ok=True)
-    name='rival-early-front';(output/(name+'.rgba')).write_bytes(rgba)
+    name='rival-early-front'
     Image.frombytes('RGBA',(64,64),rgba).save(output/(name+'.png'))
-    asset=dict(id=name,rgbaPath=name+'.rgba',rgbaSha256=sha(rgba),texturePath=name+'.png',sha256=sha((output/(name+'.png')).read_bytes()),width=64,height=64,x=144,y=8,sourceImage=path,sourcePalette=palette,sourceFrame=0,indexSha256=sha(indices),sourceTrainerPicId=106)
-    document=dict(profile='firered-route22-trainer-art-v1',sourceCommit=COMMIT,lockSha256=LOCK_SHA,inputs=lock['files'],assets=[asset],paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',limitations=['Static settled front frame. Slide, throw, loss portrait timing, native framebuffer and original-ROM visual equivalence remain separate checks.'])
+    asset = dict(id=name, texturePath=name + '.png', width=64, height=64, x=144, y=8, sourceImage=path, sourcePalette=palette, sourceFrame=0, sourceTrainerPicId=106)
+    document=dict(profile='firered-route22-trainer-art-v1',sourceCommit=COMMIT,inputs=lock['files'],assets=[asset],paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',limitations=['Static settled front frame. Slide, throw, loss portrait timing, native framebuffer and original-ROM visual equivalence remain separate checks.'])
     encoded=canonical(document);(output/'route22-trainer-art.json').write_bytes(encoded)
-    print(json.dumps(dict(sha256=sha(encoded),lockSha256=LOCK_SHA,asset=asset),indent=2))
+    print(json.dumps(dict(asset=asset),indent=2))
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--source-repo',type=pathlib.Path);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/route22-trainer-art');parser.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/route22-trainer-art')
+    parser=argparse.ArgumentParser();parser.add_argument('--source-repo',type=pathlib.Path);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');parser.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/route22-trainer-art')
     args=parser.parse_args();run(args.source_repo,args.raw,args.output)

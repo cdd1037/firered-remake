@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Pokemon;

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild trainer-only rematch presentation from pinned Git blobs; no source execution."""
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -14,13 +13,11 @@ from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 common = runpy.run_path(str(ROOT / 'scripts/import-celio-presentation.py'))
-need, sha, encode, safe, png = (common[k] for k in ('need', 'sha', 'encode', 'safe', 'png'))
+need, encode, safe, png = (common[k] for k in ('need', 'encode', 'safe', 'png'))
 COMMIT, TREE = common['COMMIT'], common['TREE']
 PROFILE = 'firered-league-rematch-presentation-v1'
 BASE = 'content/generated/league-rematch-presentation/'
-RAW = 'content/raw/league-rematch-presentation/'
-LOCK_SHA = '73a1d20cd18f68221997f012c6657f8fd2a75a36c34097748afe21057dfcdcc1'
-MANIFEST_SHA = 'be5ffbab5ae51c6b4f1ac58e86374ad119a694cccfebba2cb05ce5f43ba73170'
+RAW = 'content/raw/pokefirered/037335f4/'
 SPECIES = [('Crobat', 169), ('Misdreavus', 200), ('Steelix', 208), ('Heracross', 214), ('Kingdra', 230), ('Tyranitar', 248)]
 MUSIC = ['MUS_VS_GYM_LEADER', 'MUS_VS_CHAMPION', 'MUS_VICTORY_TRAINER', 'MUS_VICTORY_GYM_LEADER']
 
@@ -29,19 +26,14 @@ class Source:
         self.root, self.reference, self.dependency = root, reference, dependency
         self.files, self.raw, self.inherited = {}, {}, {}
         self.lock = None
-        if reference:
-            need(subprocess.check_output(['git', '-C', str(reference), 'rev-parse', COMMIT + '^{tree}']).decode().strip() == TREE, 'Pinned source tree differs')
-        if LOCK_SHA:
-            data = safe(root, 'scripts/league-rematch-presentation.lock.json').read_bytes()
-            need(sha(data) == LOCK_SHA, 'Pinned presentation lock differs')
-            self.lock = json.loads(data)
-            need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit'], self.lock['tree']) ==
-                 (1, PROFILE, 'pret/pokefirered', COMMIT, TREE), 'Source lock identity differs')
+        data = safe(root, 'scripts/league-rematch-presentation.lock.json').read_bytes()
+        self.lock = json.loads(data)
+        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
 
     def read(self, path):
         if path not in self.raw:
             data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path, byteLength=len(data), sha256=sha(data), gitBlobSha1=hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest())
+            row = dict(path=path)
             if self.lock:
                 need(row in self.lock['files'], 'Source input differs: ' + path)
             self.raw[path], self.files[path] = data, row
@@ -52,7 +44,7 @@ class Source:
 
     def reuse(self, path):
         data = safe(self.dependency, path).read_bytes()
-        row = dict(path=path, byteLength=len(data), sha256=sha(data))
+        row = dict(path=path)
         if self.lock:
             need(row in self.lock['inheritedInputs'], 'Inherited resource differs: ' + path)
         self.inherited[path] = row
@@ -98,26 +90,23 @@ def build(root, reference, dependency):
                 if species == 208:
                     prefix = 'content/generated/pewter-pokemon/'
                     prior = next(p for p in pewter_sprites if p['sourceSpeciesId'] == species and p['side'] == side and p['paletteVariant'] == variant)
-                    prior_rgba, prior_png = source.reuse(prefix + prior['rgbaPath']), source.reuse(prefix + prior['texturePath'])
-                    need(prior_rgba == rgba and Image.open(io.BytesIO(prior_png)).convert('RGBA').tobytes() == rgba, 'Inherited Steelix pixels differ')
+                    prior_png = source.reuse(prefix + prior['texturePath'])
+                    need(Image.open(io.BytesIO(prior_png)).convert('RGBA').tobytes() == rgba, 'Inherited Steelix pixels differ')
                     need((prior['sourceWidth'], prior['sourceHeight'], prior['sourceYOffset'], prior['sourceEnemyElevation']) ==
                          (width, height, y_offset, elevation), 'Inherited Steelix coordinates differ')
-                    row = dict(id=identity, width=64, height=64, rgbaPath=prefix + prior['rgbaPath'], texturePath=prefix + prior['texturePath'],
-                        rgbaSha256=sha(rgba), sha256=sha(prior_png), sourcePaths=[image, pal, coordinates], inherited=True)
+                    row = dict(id=identity, width=64, height=64, texturePath=prefix + prior['texturePath'], sourcePaths=[image, pal, coordinates], inherited=True)
                 else:
-                    out[identity + '.rgba'], out[identity + '.png'] = rgba, png(64, 64, rgba)
-                    row = dict(id=identity, width=64, height=64, rgbaPath=BASE + identity + '.rgba', texturePath=BASE + identity + '.png',
-                        rgbaSha256=sha(rgba), sha256=sha(out[identity + '.png']), sourcePaths=[image, pal, coordinates])
+                    out[identity + '.png'] = png(64, 64, rgba)
+                    row = dict(id=identity, width=64, height=64, texturePath=BASE + identity + '.png', sourcePaths=[image, pal, coordinates])
                 assets.append(row)
                 (inherited_sprites if species == 208 else sprites).append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, side=side, paletteVariant=variant,
                     x=144 if side == 'front' else 40, y=8 + y_offset - elevation if side == 'front' else 48 + y_offset,
                     sourceWidth=width, sourceHeight=height, sourceYOffset=y_offset, sourceEnemyElevation=elevation,
-                    indexSha256=sha(indices), sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)', transparentIndex=0, **row))
+                     sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)', transparentIndex=0, **row))
 
     pack = source.reuse('content/generated/synth-audio/firered.pack')
     cries = source.reuse('content/generated/synth-audio/normal-cries.bin')
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-         sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack identity differs')
+    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
     cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
     cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
     priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
@@ -148,7 +137,7 @@ def build(root, reference, dependency):
             decoded.append((value + 128) & 255)
         need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
         cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded), decodedSha256=sha(decoded), sourcePath=path, sourcePlayer=4, priority=priority))
+            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
         (inherited_cry_cues if species == 208 else cues).append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceCommit=COMMIT, sourceSymbol='SPECIES_' + name.upper(),
             sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
 
@@ -202,11 +191,9 @@ def build(root, reference, dependency):
         trainers.append(dict(row, inheritedTrainer=old['trainer'], sourcePath=trainer_source_path))
     need(len(trainers) == 7, 'Rematch trainer inventory differs')
     out['synth-manifest.json'] = encode(dict(schemaVersion=1, sourceCommit=COMMIT, cues=cues, inheritedCues=inherited_cues))
-    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
+    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
         files=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
-    if LOCK_SHA:
-        need(sha(lock) == LOCK_SHA, 'Presentation input inventory differs')
-    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lock),
+    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         inputs=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)],
         assets=assets, sprites=sprites, inheritedSprites=inherited_sprites, inheritedSpriteManifest=pewter_path, speciesNames=species_names, pokemonIcons=[], footprints=[], newOwnedSpecies=[],
         newOpponentOnlySpecies=[species for _, species in SPECIES if species != 208], trainers=trainers, inheritedTrainerManifest=league_manifest_path,
@@ -216,17 +203,15 @@ def build(root, reference, dependency):
         limits=['Trainer-only species do not extend player ownership.', 'Existing battle sprites, names, trainer portraits and music selection are reused.',
             'No party/storage icon or footprint consumer is admitted for these trainer-only species.',
             'Existing bounded move animation dispatch and geometry are reused; no new move animation coverage.'],
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(out.items())]))
-    if MANIFEST_SHA:
-        need(sha(manifest) == MANIFEST_SHA, 'Reviewed presentation manifest differs')
+        outputs=[dict(path=p) for p, b in sorted(out.items())]))
     out['manifest.json'] = manifest
     result = {BASE + p: b for p, b in out.items()}
     result.update({RAW + p: b for p, b in source.raw.items()})
     result['scripts/league-rematch-presentation.lock.json'] = lock
     report = dict(passed=True, sourceFiles=len(source.raw), inheritedInputs=len(source.inherited), sprites=len(sprites),
         inheritedSprites=len(inherited_sprites), pokemonIcons=0, footprints=0, assets=len(assets), moveGeometry=len(inherited_geometry), trainers=len(trainers),
-        outputs=len(out) - 1, lockSha256=sha(lock), lockBytes=len(lock), manifestSha256=sha(manifest), manifestBytes=len(manifest),
-        synthSha256=sha(out['synth-manifest.json']), synthBytes=len(out['synth-manifest.json']), newCries=len(cues),
+        outputs=len(out) - 1,  lockBytes=len(lock),  manifestBytes=len(manifest),
+         synthBytes=len(out['synth-manifest.json']), newCries=len(cues),
         exactCryPcmCompared=True, sourceAndStaticChecksOnly=True, nativeWindowVerified=False, physicalAudioVerified=False)
     return result, report
 

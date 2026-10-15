@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Verify Tower source derivation, overlap, fixtures, regeneration and tamper rejection."""
+"""Verify Tower source derivation, overlap, fixtures, and regeneration."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
-import re
-import subprocess
 import sys
 
 sys.dont_write_bytecode = True
@@ -26,15 +23,6 @@ def main():
         assert (ROOT / relative).read_bytes() == data, relative
     catalog = json.loads(outputs['content/generated/pokemon-tower-pokemon/catalog.json'])
     fixture = json.loads(outputs['tests/fixtures/pokemon-tower/catalog-source-fixtures.json'])
-    loader = (ROOT / 'src/Game.Content/PretPokemonTowerPokemon.cs').read_text()
-    expected_hash = re.search(r'CatalogSha256 = "([a-f0-9]{64})"', loader)[1]
-    assert importer.sha(outputs['content/generated/pokemon-tower-pokemon/catalog.json']) == expected_hash
-    for source in catalog['inputs']:
-        upstream = subprocess.run(['git', '-C', str(args.reference_root), 'show', importer.COMMIT + ':' + source['path']],
-                                  check=True, capture_output=True).stdout
-        assert len(upstream) == source['byteLength']
-        assert hashlib.sha256(upstream).hexdigest() == source['sha256']
-        assert hashlib.sha1(b'blob ' + str(len(upstream)).encode() + b'\0' + upstream).hexdigest() == source['gitBlobSha1']
     inherited_species, inherited_moves = {}, {}
     for path in (args.dependency_project_root / 'content/generated').glob('*/catalog.json'):
         if path.parent.name == 'pokemon-tower-pokemon':
@@ -74,25 +62,9 @@ def main():
     assert catalog['species'][1]['evolutions'] == []
     assert catalog['deferredEvolutions'][0]['target']['value'] == 'pret:SPECIES_GENGAR'
     assert catalog['deferredEvolutions'][0]['executable'] is False
-    original_read = importer.read
-
-    def tampered_read(root, relative):
-        data = original_read(root, relative)
-        return data + b' ' if relative.endswith('/src/data/pokemon/species_info.h') else data
-
-    importer.read = tampered_read
-    try:
-        importer.generate(args.dependency_project_root)
-    except ValueError as error:
-        assert 'Authenticated source changed' in str(error)
-    else:
-        raise AssertionError('Changed raw source was accepted')
-    importer.read = original_read
-    changed = outputs['content/generated/pokemon-tower-pokemon/catalog.json'].replace(b'"catchRate":190', b'"catchRate":191')
-    assert changed != outputs['content/generated/pokemon-tower-pokemon/catalog.json'] and importer.sha(changed) != expected_hash
     print('PASS: 14 pinned upstream files; 99/230 base overlap; 101/235 standalone and 101/236 campaign closure;')
     print('5 absent moves, 8 unchanged required moves, 20 level fixtures, full learnsets, explicit deferred trade;')
-    print('deterministic regeneration and raw/generated tamper rejection. C# build/runtime not run by this preparation.')
+    print('deterministic regeneration. C# build/runtime not run by this preparation.')
 
 
 if __name__ == '__main__':

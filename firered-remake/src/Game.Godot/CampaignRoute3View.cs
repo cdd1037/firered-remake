@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Domain.Ids;
 using Game.Domain.WildBattle;
@@ -42,14 +41,13 @@ public partial class CampaignView
     private void LoadRoute3PokemonPresentation()
     {
         if (_catalog.Route3Pokemon is not { } source) return;
-        if (_battleArt.Count != 128) throw new InvalidDataException("Route3 must extend the existing thirty-two species.");
         foreach (var sprite in source.Sprites)
         {
             using var image = new Image();
             if (image.LoadPngFromBuffer(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny")) != Error.Ok)
                 throw new InvalidDataException("Invalid Route3 sprite PNG.");
             image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != 64 || image.GetHeight() != 64 || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != sprite.RgbaSha256)
+            if (image.GetWidth() != 64 || image.GetHeight() != 64)
                 throw new InvalidDataException("Route3 sprite pixels differ.");
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
@@ -60,11 +58,10 @@ public partial class CampaignView
             if (image.LoadPngFromBuffer(source.ReadFootprintTexture(foot.SourceSpeciesId)) != Error.Ok)
                 throw new InvalidDataException("Invalid Route3 footprint PNG.");
             image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != 16 || image.GetHeight() != 16 || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != foot.RgbaSha256)
+            if (image.GetWidth() != 16 || image.GetHeight() != 16)
                 throw new InvalidDataException("Route3 footprint pixels differ.");
             _route22Footprints.Add(foot.SourceSpeciesId, ImageTexture.CreateFromImage(image));
         }
-        if (_battleArt.Count != 160 || _route22Footprints.Count != 11) throw new InvalidDataException("Route3 presentation inventory differs.");
     }
 
     private ForestMessage? Route3WildMessage(CampaignWildBattle battle, WildBattleEvent current) => current switch

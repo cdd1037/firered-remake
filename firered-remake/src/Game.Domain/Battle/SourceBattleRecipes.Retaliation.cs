@@ -16,7 +16,7 @@ internal abstract partial class SourceRecipeContext
         PokemonMoveDefinition move, string purpose, ref bool handled)
     {
         if (!HasRetaliationRecipe(move.Effect)) return;
-        if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
+        if (Invocation is null || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_retaliation_definition");
         handled = true;
         // Vital Throw is the ordinary EffectHit script with an accuracy-helper bypass.

@@ -21,94 +21,49 @@
   ],
   "files": [
     {
-      "path": "data/maps/LavenderTown_House2/map.json",
-      "bytes": 1341,
-      "sha256": "486ddad464eec7df503fea0014fa25dad138037ca275c40e1911588344d2e1c3",
-      "gitBlobSha1": "688eeddc9ef40bf3b9bf2d9e1d5a445503cbbfc0"
+      "path": "data/maps/LavenderTown_House2/map.json"
     },
     {
-      "path": "data/maps/LavenderTown_House2/scripts.inc",
-      "bytes": 2209,
-      "sha256": "67150c4c203a171bc6be1ce3ed63ca415f590b54f96647cde72e53a0cdc573ed",
-      "gitBlobSha1": "8e353ecfcb68064434d18591d607fd0d9de7a804"
+      "path": "data/maps/LavenderTown_House2/scripts.inc"
     },
     {
-      "path": "data/maps/LavenderTown_House2/text.inc",
-      "bytes": 1627,
-      "sha256": "a2976ba7675b0343b5fe028416cc5934f1626b9a0949e3e71ba4939c05c4b3d7",
-      "gitBlobSha1": "8ec6f8ddebee725fc4ebeeeee1ad7a00f38dd612"
+      "path": "data/maps/LavenderTown_House2/text.inc"
     },
     {
-      "path": "data/event_scripts.s",
-      "bytes": 55643,
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0"
+      "path": "data/event_scripts.s"
     },
     {
-      "path": "data/specials.inc",
-      "bytes": 15782,
-      "sha256": "2dcf5aae5ded1a99026a9b944e31679c2eda389fbca36089c0f8c5d2f4015788",
-      "gitBlobSha1": "d880bf6b9dc9fd765f0b85e6d698411e3da81d5d"
+      "path": "data/specials.inc"
     },
     {
-      "path": "src/field_specials.c",
-      "bytes": 77314,
-      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9",
-      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d"
+      "path": "src/field_specials.c"
     },
     {
-      "path": "src/party_menu_specials.c",
-      "bytes": 3352,
-      "sha256": "72faa4aa41f1b8f4798a509250fe2180511809d429a47f2439d94520ce5561e5",
-      "gitBlobSha1": "d71c6a495783c49bf2006d7bf7ab686e7c92b11c"
+      "path": "src/party_menu_specials.c"
     },
     {
-      "path": "src/party_menu.c",
-      "bytes": 211085,
-      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
-      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223"
+      "path": "src/party_menu.c"
     },
     {
-      "path": "src/naming_screen.c",
-      "bytes": 69462,
-      "sha256": "fbed8534a89a801f357fa04cfcbe91798fb80a4a1e24b127ad76eef0454bea13",
-      "gitBlobSha1": "deef7054a11e4793ebfdb5e2710f9fc056540546"
+      "path": "src/naming_screen.c"
     },
     {
-      "path": "src/string_util.c",
-      "bytes": 14320,
-      "sha256": "ed9519d4eaf51ed660a522915366dc0ebf2916d592a91a1d7fc2a012e4f3f17e",
-      "gitBlobSha1": "5c26d151a61274caac3a16c3b9c4eb73bf9a9e26"
+      "path": "src/string_util.c"
     },
     {
-      "path": "src/data/party_menu.h",
-      "bytes": 36157,
-      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7",
-      "gitBlobSha1": "6b4ebc1f7c0c5f72eb28f656c31be10f86e02094"
+      "path": "src/data/party_menu.h"
     },
     {
-      "path": "src/strings.c",
-      "bytes": 96631,
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600"
+      "path": "src/strings.c"
     },
     {
-      "path": "include/constants/party_menu.h",
-      "bytes": 5326,
-      "sha256": "6986cb5b65efaab2a0f16e5cd88952153a5aaf295ed8f9ace903693dbe170cf7",
-      "gitBlobSha1": "1321a4ced83823a5b9779dc88e6287804bad3afd"
+      "path": "include/constants/party_menu.h"
     },
     {
-      "path": "include/constants/global.h",
-      "bytes": 3785,
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c",
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9"
+      "path": "include/constants/global.h"
     },
     {
-      "path": "include/constants/species.h",
-      "bytes": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+      "path": "include/constants/species.h"
     }
   ]
 }

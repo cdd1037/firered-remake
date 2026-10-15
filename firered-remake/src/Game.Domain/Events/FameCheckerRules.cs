@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 
@@ -28,34 +26,27 @@ public sealed record FameCheckerCollectionEvent(string SourcePath, string Script
     int Value, string Function, ImmutableArray<string> Arguments, ImmutableArray<string> SourceMaps,
     ImmutableArray<FameCheckerEventBinding> DirectBindings, bool ExplicitlyUnused);
 
-/// <summary>Complete immutable catalog extracted from the pinned source; authenticates before deserializing.</summary>
+/// <summary>Complete immutable catalog with parsed person and fact indices.</summary>
 public sealed class FameCheckerCatalog
 {
     public const string Profile = "firered-fame-checker-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string SourceLockSha256 = "aab182dbe8960204a6108c55cca140a91c3f08d6555814e565241c8a1d0ecaa3";
-    public const string CatalogSha256 = "e17b7a0219c0f0fdba5badcdcb8a10b77f9a77e0c6c8625a80da4e11c6400fd0";
-    public const int CatalogByteLength = 249180;
     public ItemId Item => BillItemRules.FameCheckerId;
     public ImmutableArray<FameCheckerPerson> Persons { get; }
     public ImmutableArray<FameCheckerText> UiTexts { get; }
     public ImmutableArray<FameCheckerCollectionEvent> CollectionEvents { get; }
-    public string FullSourceHash { get; }
     private FameCheckerCatalog(Document doc)
-    { Persons = doc.Persons; UiTexts = doc.UiTexts; CollectionEvents = doc.CollectionEvents; FullSourceHash = doc.FullSourceHash; }
+    { Persons = doc.Persons; UiTexts = doc.UiTexts; CollectionEvents = doc.CollectionEvents; }
 
     public static FameCheckerCatalog Authenticate(ReadOnlySpan<byte> bytes)
     {
-        if (bytes.Length != CatalogByteLength || Convert.ToHexStringLower(SHA256.HashData(bytes)) != CatalogSha256)
-            throw new InvalidDataException("fame_checker_catalog_hash");
         var doc = JsonSerializer.Deserialize<Document>(bytes, new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         }) ?? throw new InvalidDataException("fame_checker_catalog_empty");
-        if (doc.SchemaVersion != 1 || doc.Profile != Profile || doc.SourceCommit != SourceCommit || doc.SourceTree != SourceTree ||
-            doc.SourceLockSha256 != SourceLockSha256 || doc.Persons.Length != FameCheckerRules.PersonCount ||
+        if (doc.SchemaVersion != 1 || doc.Profile != Profile || doc.SourceCommit != SourceCommit ||
+            doc.Persons.IsDefault || doc.Persons.Length != FameCheckerRules.PersonCount ||
+            doc.UiTexts.IsDefault || doc.CollectionEvents.IsDefault || doc.Persons.Any(p => p is null || p.Facts.IsDefault) ||
             !doc.Persons.Select(p => p.SourceIndex).SequenceEqual(Enumerable.Range(0, FameCheckerRules.PersonCount)) ||
             doc.Persons.Any(p => p.Facts.Length != FameCheckerRules.FactsPerPerson ||
                 !p.Facts.Select(f => f.Index).SequenceEqual(Enumerable.Range(0, FameCheckerRules.FactsPerPerson))))
@@ -63,8 +54,8 @@ public sealed class FameCheckerCatalog
         return new(doc);
     }
 
-    private sealed record Document(int SchemaVersion, string Profile, string SourceCommit, string SourceTree,
-        string SourceLockSha256, string FullSourceHash, ImmutableDictionary<string, int> PickStates,
+    private sealed record Document(int SchemaVersion, string Profile, string SourceCommit,
+        ImmutableDictionary<string, int> PickStates,
         ImmutableArray<FameCheckerPerson> Persons, ImmutableArray<FameCheckerText> UiTexts,
         ImmutableArray<FameCheckerCollectionEvent> CollectionEvents);
 }

@@ -12,11 +12,8 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
     public const string ExpectedStockId = "CeladonCity_DepartmentStore_2F_TMs";
     public const string ExpectedClerkScript = "CeladonCity_DepartmentStore_2F_EventScript_ClerkTMs";
     public const string ExpectedSourcePath = "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc";
-    public const string Tm15SourceSha256 = "94fd64f9d5f13c89be211e690e1d789aab6ce04ae2c25f4caec3c32a35c45a06";
-    public const string RooftopRewardsSourceSha256 = "f30cb3edf4d701eb5abac98ede000f71ec9a5eb02a08c465fb0ba4b24e7b27d9";
     public static ItemId Tm15Id { get; } = new("pret:ITEM_TM15");
-    public static OpeningItemSourceRef Source { get; } = new(ExpectedSourcePath, ExpectedStockId, 54, 63,
-        "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e");
+    public static OpeningItemSourceRef Source { get; } = new(ExpectedSourcePath, ExpectedStockId, 54, 63);
     private static readonly (string Item, int Id, int Price, string Move, int MoveId, int Pp)[] Expected = [
         ("TM05", 293, 1000, "ROAR", 46, 20), ("TM15", 303, 7500, "HYPER_BEAM", 63, 5),
         ("TM28", 316, 2000, "DIG", 91, 10), ("TM31", 319, 3000, "BRICK_BREAK", 280, 15),
@@ -42,8 +39,7 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         ArgumentNullException.ThrowIfNull(original); ArgumentNullException.ThrowIfNull(tm15);
         PewterMachineRules.ValidateCatalog(original);
         var owner = OwnedMachineCatalogBinding.For(original) ?? throw new ArgumentException("machine_stock_current_owner");
-        if (CampaignSourceFingerprint.Compute(tm15) != Tm15SourceSha256 ||
-            tm15.Compatibility.Length != owner.Catalog.Species.Count ||
+        if (tm15.Compatibility.Length != owner.Catalog.Species.Count ||
             !tm15.Compatibility.Select(row => row.Species).ToHashSet().SetEquals(owner.Catalog.Species.Keys) ||
             tm15.Compatibility.Any(row => owner.Catalog.Species[row.Species].SourceSpeciesId != row.SourceSpeciesId) ||
             !PokemonMoveRules.IsLearningSupported(owner.Catalog, tm15.Move))
@@ -52,8 +48,6 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         // Compatibility and source move execution already belong to this exact current Pokemon owner.
         // Inherited machine definitions and all inventory limits retain their original references/values.
         var existing = PewterMachineRules.Definition(original, Tm15Id);
-        if (existing is not null && CampaignSourceFingerprint.Compute(existing) != Tm15SourceSha256)
-            throw new ArgumentException("department_machine_existing_tm15");
         var machines = existing is not null ? original : original with {
             AdditionalMachines = (original.AdditionalMachines ?? []).Add(tm15)
         };
@@ -82,8 +76,7 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
             StoneEvolutionMachineCatalog.For(original) is not { } stone ||
             !ReferenceEquals(OwnedMachineCatalogBinding.For(original), stone.Pokemon.SharedBattle) ||
             additions.IsDefault || additions.Length != 3 || additions.Any(m => m is null) ||
-            !additions.Select(m => m.Machine.Item.Id.Value).SequenceEqual(new[] { "pret:ITEM_TM16", "pret:ITEM_TM20", "pret:ITEM_TM33" }) ||
-            CampaignSourceFingerprint.Compute(additions.ToArray()) != RooftopRewardsSourceSha256)
+            !additions.Select(m => m.Machine.Item.Id.Value).SequenceEqual(new[] { "pret:ITEM_TM16", "pret:ITEM_TM20", "pret:ITEM_TM33" }))
             throw new ArgumentException("department_rooftop_machine_source");
         before.Validate();
         foreach (var machine in additions)

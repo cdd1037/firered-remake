@@ -20,8 +20,7 @@ public static class VermilionItemRules
         BillItemRules.ValidateShop(catalog with { Profile = BillItemRules.Profile, Shops = catalog.Shops.Take(3).ToImmutableArray() });
         var shop = catalog.Shops[3];
         if (shop is null || shop.Id != Mart || shop.Items.IsDefault || !shop.Items.SequenceEqual(Stock) ||
-            shop.Source is not { Path: "data/maps/VermilionCity_Mart/scripts.inc", Symbol: Mart, StartLine: 24, EndLine: 32,
-                Sha256: "627828d09474aaeb10d1369e461a6ca67fa3d4d37ac8f3aefbae018512278a0f" })
+            shop.Source is not { Path: "data/maps/VermilionCity_Mart/scripts.inc", Symbol: Mart, StartLine: 24, EndLine: 32 })
             throw new NotSupportedException("Vermilion source stock differs.");
     }
 }

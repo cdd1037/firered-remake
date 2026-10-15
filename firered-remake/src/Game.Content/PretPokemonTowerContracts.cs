@@ -46,7 +46,6 @@ public sealed record PretTowerPickup(MapId MapId, int? LocalId, int? BackgroundE
     // Underfoot items cannot be admitted through ordinary adjacent A interaction.
     public bool AllowsOrdinaryInteraction => !Underfoot;
 }
-public sealed record PretTowerNpcSprite(string GraphicsId, string TexturePath, string Sha256,
-    int FrameWidth, int FrameHeight, int FrameCount, int AnchorX, int AnchorY,
-    SourceRef Source, SourceRef PaletteSource, ImmutableArray<SourceRef> FrameSources);
+public sealed record PretTowerNpcSprite(string GraphicsId, string TexturePath, int FrameWidth, int FrameHeight, int FrameCount, int AnchorX,
+    int AnchorY, SourceRef Source, SourceRef PaletteSource, ImmutableArray<SourceRef> FrameSources);
 public sealed record PretTowerRivalBranch(int StarterVariableValue, string TrainerSymbol, int TrainerConstant);

@@ -2,54 +2,40 @@
   "command": "python3 scripts/import-bill-pokemon.py",
   "existingCatalogs": [
     {
-      "path": "content/generated/route1-pokemon/catalog.json",
-      "sha256": "81da3d737a389c783f7d6351cdefcdfd4ed830114bc437672a952b4e0fb0e06f"
+      "path": "content/generated/route1-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/old-man-tutorial/catalog.json",
-      "sha256": "e2114f5049580c8e19a4ec101d6bd523adb1056d665f3cda4a9d8534d112b80f"
+      "path": "content/generated/old-man-tutorial/catalog.json"
     },
     {
-      "path": "content/generated/forest-pokemon/catalog.json",
-      "sha256": "28a1ba2a4d0a846331e67b3c80641afaeffb85e7a6acc2833f6fa51bb228c866"
+      "path": "content/generated/forest-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/pewter-pokemon/catalog.json",
-      "sha256": "b9ae60e66619eadc6e45843e3212ea8cc1381be79142f5ccd316dde5f1986fb8"
+      "path": "content/generated/pewter-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/route22-pokemon/catalog.json",
-      "sha256": "5b2dca5c7ba34ef5584062635fb14220538400e01516bf14ee99fde8c7558f1f"
+      "path": "content/generated/route22-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/route3-pokemon/catalog.json",
-      "sha256": "fc4a834b216acbc4490a8b38302031dc100b7b8fdfc94b48d6d968e730880efe"
+      "path": "content/generated/route3-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/mtmoon-pokemon/catalog.json",
-      "sha256": "c4ada1a6494c13c9e6fd3c2199c8a6ee6642611914139fd2bbd3e99f02c35b03"
+      "path": "content/generated/mtmoon-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/cerulean-pokemon/catalog.json",
-      "sha256": "5f0e4405eb73e1c9606cbd2f42344734545de36ad2182876420af5c45e443bea"
+      "path": "content/generated/cerulean-pokemon/catalog.json"
     }
   ],
   "profile": "firered-bill-pokemon-v1",
   "recordedAudioImported": false,
   "schemaVersion": 1,
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "summary": {
-    "artSha256": "1f38200c8c2a67a8f72cd5e846ac44e9c9dd8c211b389afae7cb1237dd088a26",
-    "catalogSha256": "d6603614ef0d893d232cd65253720a27880dcbe5c0e2d7f3687374ce2ec50a35",
     "composedMoves": 188,
     "constants": 9,
     "deferred": 5,
     "encoded": 66,
-    "fullSourceHash": "44a05db7d95ce6df53b6e84cc16db1216dcff33cdadf48c11ea6341ad0a19a49",
     "inputCount": 70,
-    "lockSha256": "13c7f3f5e2e14c4838bce8acb2c60ce5b2478d55e04322cc23c6975ed1065871",
-    "manifestSha256": "97201aaf7d551a9ea7518c465a7e7b52ad3c0f143e636027328883c337633cf6",
     "moves": 63,
     "newMoves": [
       "pret:MOVE_AMNESIA",
@@ -59,7 +45,6 @@
       "pret:MOVE_YAWN"
     ],
     "outputCount": 41,
-    "rawManifestSha256": "5f11f2298fedf1262b1fc6f1644e776fb5ea66873e8e5935d77f308f4d2ed9a3",
     "species": 3
   },
   "upstreamScriptsExecuted": false

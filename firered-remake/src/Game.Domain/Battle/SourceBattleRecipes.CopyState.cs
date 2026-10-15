@@ -44,7 +44,7 @@ internal abstract partial class SourceRecipeContext
             !permanent && copiedId.Value.Value is "pret:MOVE_METRONOME" or "pret:MOVE_MIMIC")
         { Fail("copy-forbidden"); return; }
         if (body.Pokemon.Moves.Any(m => m.Move == copiedId.Value)) { Fail("copy-already-known"); return; }
-        if (!catalog.Moves.TryGetValue(copiedId.Value, out var definition) || !MetronomeSourceMoveDefinition.Matches(definition))
+        if (!catalog.Moves.TryGetValue(copiedId.Value, out var definition) || !SourceMoveDefinitionRules.IsValid(definition))
             throw new SourceRecipeUnsupported("copy_move_definition");
         int position = Invocation!.PpSlot;
         if (position < 0 || position >= body.Pokemon.Moves.Length) throw new SourceRecipeUnsupported("copy_move_slot");

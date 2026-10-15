@@ -1,43 +1,27 @@
 {
-  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
-  "profile": "firered-department-fourth-floor-v1",
-  "importerSha256": "6c2e3740fde11f2dc52074dc485dd0bf38772d56a0df146eb8ad43b0bf8bc73c",
   "files": [
     {
-      "path": "content/generated/department-fourth-floor/items.json",
-      "byteLength": 2933,
-      "sha256": "ea45e7040951ccb8e92444093da5b303d4da194cdf365a60f597cf5368de124c"
+      "path": "content/generated/department-fourth-floor/items.json"
     },
     {
-      "path": "content/generated/department-fourth-floor/retro-mail.png",
-      "byteLength": 347,
-      "sha256": "9090a76322b2d4af933eae232033f4963604a131a034f932afa9aa9db5999ec4"
+      "path": "content/generated/department-fourth-floor/retro-mail.png"
     },
     {
-      "path": "content/generated/department-fourth-floor/retro-mail.rgba",
-      "byteLength": 2304,
-      "sha256": "4cd1196296e8494467514dd84479badf47139af87886142c8a1e30b4d4240b8f"
+      "path": "content/generated/department-fourth-floor/retro-mail.png"
     },
     {
-      "path": "content/generated/department-fourth-floor/source-contract.json",
-      "byteLength": 8467,
-      "sha256": "b8e4529d0dbe3f73f65a8387e60151bf8355bf91266e3e55be23a57211ac523a"
+      "path": "content/generated/department-fourth-floor/source-contract.json"
     },
     {
-      "path": "content/generated/department-fourth-floor/source-input-hashes.json",
-      "byteLength": 3619,
-      "sha256": "e5793e214e54ff546174730caa51e25ed35a66f3427b1411a1cbe26edd64de12"
+      "path": "content/generated/department-fourth-floor/source-input-hashes.json"
     },
     {
-      "path": "content/raw/department-fourth-floor/graphics/items/icon_palettes/retro_mail.pal",
-      "byteLength": 156,
-      "sha256": "0c140f2efff9731c91ec1fc261e76662758dbc5194d7ee655eb9540124dfb79a"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/retro_mail.pal"
     },
     {
-      "path": "content/raw/department-fourth-floor/graphics/items/icons/retro_mail.png",
-      "byteLength": 239,
-      "sha256": "586274afb7dd5bb735b336040abee2697fbed1c823dbdf294d5e96b897ef8178"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icons/retro_mail.png"
     }
-  ]
+  ],
+  "profile": "firered-department-fourth-floor-v1",
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 }

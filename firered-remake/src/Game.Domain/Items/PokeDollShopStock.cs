@@ -11,7 +11,6 @@ public sealed record PokeDollShopStock : AuthenticatedShopStock
     public const string ExpectedStockId = "CeladonCity_DepartmentStore_4F_Items";
     public const string ExpectedClerkScript = "CeladonCity_DepartmentStore_4F_EventScript_Clerk";
     public const string ExpectedSourcePath = "data/maps/CeladonCity_DepartmentStore_4F/scripts.inc";
-    public const string SourceSha256 = "5b7518184e31879a034d326a9cf954fb8e081ec975895d3f441dd98de076c81a";
     public override string Id => ExpectedStockId;
     private static readonly ImmutableArray<DepartmentStoreOrdinaryItem> Entries = [
         new(new("pret:ITEM_POKE_DOLL"), 80, "POKé DOLL", 1000, "POCKET_ITEMS"),

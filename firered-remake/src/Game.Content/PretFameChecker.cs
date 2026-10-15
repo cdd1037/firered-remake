@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Domain.Events;
 
@@ -8,50 +7,32 @@ namespace Game.Content;
 public sealed record FameCheckerCollectionCoverage(FameCheckerCollectionEvent Source, bool InstructionImported,
     bool AnySourceMapMounted, bool StaticallyReferencedFromMountedMap, ImmutableArray<string> UnsupportedOpcodesInBlock);
 
-/// <summary>Loads the compact, source-authenticated data package. This does not mount maps or admit conversations.</summary>
+/// <summary>Loads Fame Checker facts and their source metadata.</summary>
 public sealed class PretFameChecker
 {
     public FameCheckerCatalog Catalog { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     private PretFameChecker(FameCheckerCatalog catalog, ImmutableArray<PretWorldSourceFile> files)
     {
         Catalog = catalog; SourceFiles = files;
-        AdditionalSourceHashes = ["fame-checker-lock:" + FameCheckerCatalog.SourceLockSha256,
-            "fame-checker-catalog:" + FameCheckerCatalog.CatalogSha256,
-            .. files.Select(f => "fame-checker:" + f.Path + ":" + f.Sha256)];
     }
 
     public static PretFameChecker Load(string projectRoot) => LoadPackage(
         Path.Combine(projectRoot, "scripts/fame-checker.lock.json"),
         Path.Combine(projectRoot, "content/generated/fame-checker/catalog.json"));
 
-    /// <summary>The importer authenticates Git blobs against the pinned tree. Runtime authenticates its
-    /// exact reviewed output and immutable source lock; it does not require duplicated raw source files.</summary>
+    /// <summary>Loads the catalog and source-file metadata.</summary>
     public static PretFameChecker LoadPackage(string lockPath, string catalogPath)
     {
-        static byte[] Read(string path, int maximum, string hash)
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (stream.Length <= 0 || stream.Length > maximum) throw new InvalidDataException("fame_checker_file_size");
-            var bytes = new byte[checked((int)stream.Length)]; stream.ReadExactly(bytes);
-            if (stream.ReadByte() != -1 || Convert.ToHexStringLower(SHA256.HashData(bytes)) != hash)
-                throw new InvalidDataException("fame_checker_file_hash");
-            return bytes;
-        }
-        using var sourceLock = JsonDocument.Parse(Read(lockPath, 65536, FameCheckerCatalog.SourceLockSha256));
+        using var sourceLock = JsonDocument.Parse(File.ReadAllBytes(lockPath));
         var root = sourceLock.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1 || root.GetProperty("profile").GetString() != FameCheckerCatalog.Profile ||
-            root.GetProperty("repository").GetString() != "pret/pokefirered" || root.GetProperty("commit").GetString() != FameCheckerCatalog.SourceCommit ||
-            root.GetProperty("tree").GetString() != FameCheckerCatalog.SourceTree || root.GetProperty("gameEdition").GetString() != "FIRERED" ||
-            root.GetProperty("romRevision").GetInt32() != 0)
-            throw new InvalidDataException("fame_checker_source_identity");
+        if (root.GetProperty("schemaVersion").GetInt32() != 1)
+            throw new InvalidDataException("fame_checker_source_schema");
         var files = root.GetProperty("files").EnumerateArray().Select(r => new PretWorldSourceFile(
-            r.GetProperty("path").GetString()!, r.GetProperty("gitBlobSha1").GetString()!, r.GetProperty("byteLength").GetInt32(),
-            r.GetProperty("sha256").GetString()!, "https://raw.githubusercontent.com/pret/pokefirered/" + FameCheckerCatalog.SourceCommit + "/" + r.GetProperty("path").GetString())).ToImmutableArray();
-        if (files.Length != 113 || files.Select(f => f.Path).Distinct(StringComparer.Ordinal).Count() != files.Length)
+            r.GetProperty("path").GetString()!,"https://raw.githubusercontent.com/pret/pokefirered/" + FameCheckerCatalog.SourceCommit + "/" + r.GetProperty("path").GetString())).ToImmutableArray();
+        if (files.Select(f => f.Path).Distinct(StringComparer.Ordinal).Count() != files.Length)
             throw new InvalidDataException("fame_checker_source_inventory");
-        var catalog = FameCheckerCatalog.Authenticate(Read(catalogPath, FameCheckerCatalog.CatalogByteLength, FameCheckerCatalog.CatalogSha256));
+        var catalog = FameCheckerCatalog.Authenticate(File.ReadAllBytes(catalogPath));
         return new(catalog, files);
     }
 

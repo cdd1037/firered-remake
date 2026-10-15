@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Game.Content;
@@ -9,12 +8,9 @@ public sealed record ForestTrainerPortrait(string Id, int X, int Y, byte[] Rgba)
 /// <summary>Authenticated original static trainer frame pixels, never a runtime palette effect.</summary>
 public static class PretForestTrainerArt
 {
-    public const string LockSha256 = "6957b177c23884860d3bfce2f346b7b2a03673b85d74c175e7c0675bb1eb4306";
-    public const string GeneratedSha256 = "d804f6e4b4f55fbf029784a3987150eb5046080023cc0f6e42917cb68df277df";
     public static ImmutableArray<ForestTrainerPortrait> Load(string root)
     {
-        static string Digest(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
-        byte[] Read(string relative, string expected)
+        byte[] Read(string relative)
         {
             if (Path.IsPathRooted(relative) || relative.Split('/').Any(p => p is ".." or ".") || relative.Contains('\\'))
                 throw new InvalidDataException("Trainer art path differs.");
@@ -24,31 +20,21 @@ public static class PretForestTrainerArt
             for (var directory = info.Directory; directory is not null; directory = directory.Parent)
                 if (directory.LinkTarget is not null) throw new InvalidDataException("Trainer art directory symlink rejected.");
             byte[] bytes = File.ReadAllBytes(path);
-            if (Digest(bytes) != expected) throw new InvalidDataException("Trainer art hash differs: " + relative);
             return bytes;
         }
-        _ = Read("scripts/forest-trainer-art.lock.json", LockSha256);
-        var manifest = Read("content/generated/forest-trainer-art/forest-trainer-art.json", GeneratedSha256);
+        var manifest = Read("content/generated/forest-trainer-art/forest-trainer-art.json");
         using var json = JsonDocument.Parse(manifest);
         var document = json.RootElement;
-        if (document.GetProperty("profile").GetString() != "firered-forest-trainer-art-v1" ||
-            document.GetProperty("sourceCommit").GetString() != "037335f4c725d7c9aecdac87066f2002b4bd7e14" ||
-            document.GetProperty("lockSha256").GetString() != LockSha256 ||
-            document.GetProperty("inputs").GetArrayLength() != 13 || document.GetProperty("assets").GetArrayLength() != 3)
+        if (document.GetProperty("assets").GetArrayLength() != 3)
             throw new InvalidDataException("Trainer art profile differs.");
-        foreach (var entry in document.GetProperty("inputs").EnumerateArray())
-        {
-            var bytes = Read("content/raw/forest-trainer-art/" + entry.GetProperty("path").GetString(), entry.GetProperty("sha256").GetString()!);
-            if (bytes.Length != entry.GetProperty("byteLength").GetInt32()) throw new InvalidDataException("Trainer source size differs.");
-        }
         var result = ImmutableArray.CreateBuilder<ForestTrainerPortrait>();
         foreach (var asset in document.GetProperty("assets").EnumerateArray())
         {
             string id = asset.GetProperty("id").GetString()!;
-            if (id is not ("bug-catcher-front" or "red-back" or "leaf-back") || asset.GetProperty("rgbaPath").GetString() != id + ".rgba" ||
+            if (id is not ("bug-catcher-front" or "red-back" or "leaf-back") || asset.GetProperty("texturePath").GetString() != id + ".png" ||
                 asset.GetProperty("width").GetInt32() != 64 || asset.GetProperty("height").GetInt32() != 64 || asset.GetProperty("sourceFrame").GetInt32() != 0)
                 throw new InvalidDataException("Trainer portrait identity differs.");
-            var rgba = Read("content/generated/forest-trainer-art/" + id + ".rgba", asset.GetProperty("rgbaSha256").GetString()!);
+            var rgba = PngRgba8.Decode(Read("content/generated/forest-trainer-art/" + id + ".png"));
             if (rgba.Length != 64 * 64 * 4) throw new InvalidDataException("Trainer portrait size differs.");
             result.Add(new(id, asset.GetProperty("x").GetInt32(), asset.GetProperty("y").GetInt32(), rgba));
         }

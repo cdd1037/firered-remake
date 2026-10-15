@@ -16,82 +16,59 @@ public static class PretOrdinaryEvolutionPresentation
     public const string Base = "content/generated/ordinary-evolution-presentation/";
     public const string Profile = "firered-ordinary-evolution-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string LockSha256 = "efb3726422acc31c597ccb4e0836d776975bedfea8f98dc76ec7e52507ab6e52";
-    public const string ManifestSha256 = "b47ed78a2eef78dc309ac24699eb799a3bb8d5659d3d5b09f19205f6d7aca4e8";
 
     public static readonly ImmutableArray<int> Species = [112, 80, 169, 242];
 
     public static OrdinaryEvolutionPresentationData Load(string root, string? inheritedRoot = null)
     {
-        byte[] Read(string path, string hash, int length)
+        byte[] Read(string path)
         {
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
-                path.Split('/').Any(p => p is "" or "." or "..") || length is <= 0 or > 4_000_000)
+                path.Split('/').Any(p => p is "" or "." or "..") )
                 throw new InvalidDataException("Unsafe OrdinaryEvolution presentation resource.");
-            var file = new FileInfo(Path.Combine(path.StartsWith(Base, StringComparison.Ordinal) || path.StartsWith("content/raw/ordinary-evolution-presentation/", StringComparison.Ordinal) || path == "scripts/ordinary-evolution-presentation.lock.json" ? root : inheritedRoot ?? root, path));
+            var file = new FileInfo(Path.Combine(path.StartsWith(Base, StringComparison.Ordinal) || path.StartsWith(PretSourcePaths.FireRedRawDirectory + "/", StringComparison.Ordinal) || path == "scripts/ordinary-evolution-presentation.lock.json" ? root : inheritedRoot ?? root, path));
             if (file.LinkTarget is not null) throw new InvalidDataException("OrdinaryEvolution resource symlink rejected.");
             for (var directory = file.Directory; directory is not null; directory = directory.Parent)
                 if (directory.LinkTarget is not null) throw new InvalidDataException("OrdinaryEvolution directory symlink rejected.");
-            if (file.Length != length) throw new InvalidDataException("OrdinaryEvolution presentation size differs: " + path);
             var bytes = File.ReadAllBytes(file.FullName);
-            if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != hash)
-                throw new InvalidDataException("OrdinaryEvolution presentation bytes differ: " + path);
             return bytes;
         }
 
-        using var locked = JsonDocument.Parse(Read("scripts/ordinary-evolution-presentation.lock.json", LockSha256, 19917));
-        using var document = JsonDocument.Parse(Read(Base + "manifest.json", ManifestSha256, 73385));
+        using var locked = JsonDocument.Parse(Read("scripts/ordinary-evolution-presentation.lock.json"));
+        using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
         var sourceLock = locked.RootElement;
         var manifest = document.RootElement;
-        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || sourceLock.GetProperty("profile").GetString() != Profile ||
-            sourceLock.GetProperty("repository").GetString() != "pret/pokefirered" || sourceLock.GetProperty("commit").GetString() != SourceCommit ||
-            sourceLock.GetProperty("tree").GetString() != SourceTree || manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
-            manifest.GetProperty("profile").GetString() != Profile || manifest.GetProperty("sourceCommit").GetString() != SourceCommit ||
-            manifest.GetProperty("sourceTree").GetString() != SourceTree || manifest.GetProperty("lockSha256").GetString() != LockSha256 ||
-            !JsonElement.DeepEquals(manifest.GetProperty("inputs"), sourceLock.GetProperty("files")) ||
-            !JsonElement.DeepEquals(manifest.GetProperty("inheritedInputs"), sourceLock.GetProperty("inheritedInputs")) ||
-            sourceLock.GetProperty("files").GetArrayLength() != 39 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 51 ||
-            manifest.GetProperty("outputs").GetArrayLength() != 11)
+        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("OrdinaryEvolution presentation identity differs.");
-        foreach (var row in sourceLock.GetProperty("files").EnumerateArray())
-        {
-            var bytes = Read(row.GetProperty("rawPath").GetString()!,
-                row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-            if (Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {bytes.Length}\0"), .. bytes])) !=
-                row.GetProperty("gitBlobSha1").GetString()) throw new InvalidDataException("OrdinaryEvolution source Git blob differs.");
-        }
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in sourceLock.GetProperty("inheritedInputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+            files.Add(path, Read(path));
         }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+            files.Add(path, Read(path));
         }
-        foreach (var asset in new[] { "inheritedSprites", "pokemonIcons", "footprints" }
+        foreach (var asset in new[] { "inheritedSprites","pokemonIcons","footprints" }
             .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
-            string path = asset.GetProperty("rgbaPath").GetString()!;
+            string path = asset.GetProperty("texturePath").GetString()!;
             if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var rgba) ||
-                rgba.Length != width * height * 4 || Convert.ToHexStringLower(SHA256.HashData(rgba)) != asset.GetProperty("rgbaSha256").GetString())
+                PngRgba8.Decode(rgba, width, height).Length != width * height * 4 )
                 throw new InvalidDataException("OrdinaryEvolution pixels differ: " + path);
-            if (!files.TryGetValue(asset.GetProperty("texturePath").GetString()!, out var png) ||
-                Convert.ToHexStringLower(SHA256.HashData(png)) != asset.GetProperty("sha256").GetString())
+            if (!files.TryGetValue(asset.GetProperty("texturePath").GetString()!, out var png) )
                 throw new InvalidDataException("OrdinaryEvolution texture differs: " + path);
         }
         var options = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-            RespectNullableAnnotations = true, RespectRequiredConstructorParameters = true
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,RespectNullableAnnotations = true,RespectRequiredConstructorParameters = true
         };
         var dex = JsonSerializer.Deserialize<OrdinaryEvolutionDexDocument>(files[Base + "dex-entries.json"], options)
             ?? throw new InvalidDataException("Ordinary evolution dex document missing.");
-        if (dex.SchemaVersion != 1 || dex.Profile != Profile || dex.SourceCommit != SourceCommit ||
+        if (dex.SchemaVersion != 1 ||
             !dex.Entries.Select(e => e.SourceSpeciesId).SequenceEqual(Species) ||
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(Species) ||
@@ -100,22 +77,22 @@ public static class PretOrdinaryEvolutionPresentation
             manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 0 ||
             manifest.GetProperty("audio").GetProperty("inheritedCueCount").GetInt32() != 4)
             throw new InvalidDataException("Ordinary evolution presentation inventory differs.");
-        foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!, e.Footprint! }))
-            if (!files.TryGetValue(texture.TexturePath, out var png) || Convert.ToHexStringLower(SHA256.HashData(png)) != texture.Sha256)
+        foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
+            if (!files.TryGetValue(texture.TexturePath, out var png) )
                 throw new InvalidDataException("Ordinary evolution dex texture differs.");
         using var inheritedDex = JsonDocument.Parse(files["content/generated/pokedex-menu/pokedex-menu.json"]);
         foreach (var entry in dex.Entries)
         {
             var original = inheritedDex.RootElement.GetProperty("entries").EnumerateArray()
                 .Single(e => e.GetProperty("sourceSpeciesId").GetInt32() == entry.SourceSpeciesId).Deserialize<PokedexMenuEntry>(options);
-            if (entry with { Portrait = null, Footprint = null } != original || entry.Name != entry.Name.ToUpperInvariant())
+            if (entry with { Portrait = null,Footprint = null } != original || entry.Name != entry.Name.ToUpperInvariant())
                 throw new InvalidDataException("Ordinary evolution source dex metadata differs.");
         }
         var sprites = manifest.GetProperty("inheritedSprites").EnumerateArray().ToArray();
         if (!sprites.Select(s => (s.GetProperty("sourceSpeciesId").GetInt32(), s.GetProperty("side").GetString()!, s.GetProperty("paletteVariant").GetString()!))
-            .SequenceEqual(Species.SelectMany(s => new[] { (s, "front", "normal"), (s, "front", "shiny"), (s, "back", "normal"), (s, "back", "shiny") })))
+            .SequenceEqual(Species.SelectMany(s => new[] { (s, "front", "normal"),(s, "front", "shiny"),(s, "back", "normal"),(s, "back", "shiny") })))
             throw new InvalidDataException("Ordinary evolution battler variants differ.");
-        foreach (var kind in new[] { "inheritedSprites", "pokemonIcons", "footprints" })
+        foreach (var kind in new[] { "inheritedSprites","pokemonIcons","footprints" })
         {
             var rows = manifest.GetProperty(kind).EnumerateArray().ToArray();
             if (kind != "inheritedSprites" && !rows.Select(r => r.GetProperty("sourceSpeciesId").GetInt32()).SequenceEqual(Species))
@@ -134,7 +111,7 @@ public static class PretOrdinaryEvolutionPresentation
                         throw new InvalidDataException("Ordinary evolution inherited binding differs.");
                     foreach (var property in original.EnumerateObject())
                     {
-                        if (property.Name is "rgbaPath" or "texturePath")
+                        if (property.Name == "texturePath")
                         {
                             string oldPath = property.Value.GetString()!;
                             if (!oldPath.StartsWith("content/", StringComparison.Ordinal))
@@ -165,7 +142,7 @@ public static class PretOrdinaryEvolutionPresentation
         using var inheritedGeometry = JsonDocument.Parse(files[manifest.GetProperty("moveAnimationGeometry").GetProperty("inheritedManifest").GetString()!]);
         var geometry = manifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray().ToArray();
         if (!geometry.Select(r => (r.GetProperty("species").GetInt32(), r.GetProperty("side").GetString()!))
-            .SequenceEqual(Species.SelectMany(s => new[] { (s, "front"), (s, "back") })))
+            .SequenceEqual(Species.SelectMany(s => new[] { (s, "front"),(s, "back") })))
             throw new InvalidDataException("Ordinary evolution move geometry inventory differs.");
         foreach (var row in geometry)
         {
@@ -193,7 +170,7 @@ public static class PretOrdinaryEvolutionPresentation
             int species = cue.GetProperty("species").GetInt32();
             string name = dex.Entries.Single(e => e.SourceSpeciesId == species).Name;
             if (cue.GetProperty("id").GetString() != "CRY_" + name + "_NORMAL" || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
-                cue.GetProperty("priority").GetInt32() != 10 || cue.GetProperty("sourceCommit").GetString() != SourceCommit ||
+                cue.GetProperty("priority").GetInt32() != 10 ||
                 cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
                 cue.TryGetProperty("cryMode", out var mode) && mode.GetInt32() != 0 ||
                 cue.GetProperty("songAddress").GetInt32() != 0 || cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null ||

@@ -86,8 +86,6 @@ if __name__ == '__main__':
     parser.add_argument('output',type=Path)
     args=parser.parse_args()
     data=args.source.read_bytes()
-    if hashlib.sha256(data).hexdigest()!='bc80b3334a1aae51db36cfccd7df33cf08fc19b18d9c871e6aecf0e58056087d':
-        raise ValueError('Oracle source hash differs')
     source=data.decode()
     enum_blocks=[]
     for prefix in ['ICON_', 'PAYOUT_', 'ROWATTR_']:

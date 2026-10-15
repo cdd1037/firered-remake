@@ -19,7 +19,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteRecoil(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (!HasRecoilRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasRecoilRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_recoil_definition");
         if (move.Id == WildBattleRules.StruggleMove) { ExecuteStruggle(catalog, actor, target, slot, move, purpose); return; }
         bool hit = FixedDamageAccuracy(actor, target, move, purpose);

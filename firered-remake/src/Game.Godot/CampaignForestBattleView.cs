@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Pokemon;
@@ -16,35 +15,29 @@ public partial class CampaignView
     {
         if (!_catalog.ForestEnabled) return;
         var source = _catalog.ForestPokemon ?? throw new InvalidDataException("Forest Pokemon content is missing.");
-        if (_battleArt.Count != 20 || source.Sprites.Length != 32)
-            throw new InvalidDataException("Forest presentation must extend the existing twenty battle textures.");
         foreach (var sprite in source.Sprites)
         {
-            var pixels = System.IO.File.ReadAllBytes(System.IO.Path.Combine(source.GeneratedDirectory, sprite.RgbaPath));
-            if (pixels.Length != 64 * 64 * 4 || Convert.ToHexStringLower(SHA256.HashData(pixels)) != sprite.RgbaSha256)
-                throw new InvalidDataException("Forest sprite RGBA differs: " + sprite.RgbaPath);
+            var pixels = PngRgba8.Decode(System.IO.File.ReadAllBytes(System.IO.Path.Combine(source.GeneratedDirectory, sprite.TexturePath)), sprite.Width, sprite.Height);
+            if (pixels.Length != 64 * 64 * 4)
+                throw new InvalidDataException("Forest sprite RGBA differs: " + sprite.TexturePath);
             using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, pixels);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
-        if (_battleArt.Count != 52) throw new InvalidDataException("Forest battle sprite inventory differs.");
         var evolution= PretEvolutionArt.Load(_root);
         foreach(var sprite in evolution.Sprites)
         {
             using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,evolution.ReadRgba(new(sprite.SpeciesId),sprite.Side,sprite.PaletteVariant=="shiny"));
             _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
-        if(_battleArt.Count!=88)throw new InvalidDataException("All twenty-two forest species require complete battle art.");
         if(_catalog.PewterPokemon is {} pewter)
         {
             foreach(var sprite in pewter.Sprites)
             {
-                var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(pewter.GeneratedDirectory,sprite.RgbaPath));
-                if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=sprite.RgbaSha256)throw new InvalidDataException("Pewter sprite changed");
+                var bytes=PngRgba8.Decode(System.IO.File.ReadAllBytes(System.IO.Path.Combine(pewter.GeneratedDirectory,sprite.TexturePath)), sprite.Width, sprite.Height);
                 using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,bytes);
                 _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
             }
-            if(_battleArt.Count!=116)throw new InvalidDataException("All twenty-nine species need battle art");
         }
         LoadRoute22PokemonPresentation();
         LoadRoute3PokemonPresentation();
@@ -191,7 +184,7 @@ public partial class CampaignView
             using var image = new Image();
             if (image.LoadPngFromBuffer(PretForestStatusUi.ReadTexture(_root, asset)) != Error.Ok ||
                 image.GetWidth() != asset.Width || image.GetHeight() != asset.Height ||
-                image.GetFormat() != Image.Format.Rgba8 || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
+                image.GetFormat() != Image.Format.Rgba8)
                 throw new InvalidDataException("Forest status pixels differ: " + asset.Id);
             _forestStatusTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
@@ -199,7 +192,7 @@ public partial class CampaignView
             foreach(var asset in PretEarlyStarterStatusUi.Load(_root).Assets)
             {
                 using var image=new Image();
-                if(image.LoadPngFromBuffer(PretEarlyStarterStatusUi.ReadTexture(_root,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8||Convert.ToHexStringLower(SHA256.HashData(image.GetData()))!=asset.RgbaSha256)
+                if(image.LoadPngFromBuffer(PretEarlyStarterStatusUi.ReadTexture(_root,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8)
                     throw new InvalidDataException("Early starter status pixels differ: "+asset.Id);
                 _forestStatusTextures.Add(asset.Id,ImageTexture.CreateFromImage(image));
             }

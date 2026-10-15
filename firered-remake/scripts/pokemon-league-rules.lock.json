@@ -1,177 +1,108 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-pokemon-league-rules-v1",
   "files": [
     {
-      "path": "content/generated/pokemon-league-rules/pokemon.json",
-      "byteLength": 56942,
-      "sha256": "f3df67bfef5e83b8656437018f95f646b8d5041b7ae997170a73852afa935405"
+      "path": "content/generated/pokemon-league-rules/pokemon.json"
     },
     {
-      "path": "content/generated/pokemon-league-rules/rules.json",
-      "byteLength": 33389,
-      "sha256": "6a09b00a20b3fb7bc120ff2027d365164e8112f1059d79615e5bb697adf56664"
+      "path": "content/generated/pokemon-league-rules/rules.json"
     },
     {
-      "path": "content/generated/pokemon-league-rules/source-input-hashes.json",
-      "byteLength": 7599,
-      "sha256": "e1326d9de999b4e1be9280984be5ae33b88a8c272b679c03fe8b6d3112fe0414"
+      "path": "content/generated/pokemon-league-rules/source-input-hashes.json"
     },
     {
-      "path": "content/generated/pokemon-league-rules/trainers.json",
-      "byteLength": 98557,
-      "sha256": "2266f364fda5898c0f8c817a5164a2019392f6505b358dd1911357e81af335e0"
+      "path": "content/generated/pokemon-league-rules/trainers.json"
     },
     {
-      "path": "content/raw/pokemon-league-rules/asm/macros/event.inc",
-      "byteLength": 56947,
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "content/raw/pokefirered/037335f4/asm/macros/event.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/charmap.txt",
-      "byteLength": 21853,
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      "path": "content/raw/pokefirered/037335f4/charmap.txt"
     },
     {
-      "path": "content/raw/pokemon-league-rules/data/maps/PokemonLeague_AgathasRoom/scripts.inc",
-      "byteLength": 3028,
-      "sha256": "3d3af744133659ca0644bbdb1aefcb04d2c0e1255f65a18904fd6e59b7452e4f"
+      "path": "content/raw/pokefirered/037335f4/data/maps/PokemonLeague_AgathasRoom/scripts.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/data/maps/PokemonLeague_BrunosRoom/scripts.inc",
-      "byteLength": 4147,
-      "sha256": "d1de5447c4968e608082afedb1512319f11287555f92ce92cd3cc2229c76009a"
+      "path": "content/raw/pokefirered/037335f4/data/maps/PokemonLeague_BrunosRoom/scripts.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/data/maps/PokemonLeague_ChampionsRoom/scripts.inc",
-      "byteLength": 7284,
-      "sha256": "41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3"
+      "path": "content/raw/pokefirered/037335f4/data/maps/PokemonLeague_ChampionsRoom/scripts.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/data/maps/PokemonLeague_LancesRoom/scripts.inc",
-      "byteLength": 4835,
-      "sha256": "796a87867040647f4f0cf22eb516455b296f5a1b967378797528421421f55830"
+      "path": "content/raw/pokefirered/037335f4/data/maps/PokemonLeague_LancesRoom/scripts.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/data/maps/PokemonLeague_LoreleisRoom/scripts.inc",
-      "byteLength": 3242,
-      "sha256": "62206bd5b51860c75293bf53021a845ee1495cae5ea28703c78ca142b7c32e15"
+      "path": "content/raw/pokefirered/037335f4/data/maps/PokemonLeague_LoreleisRoom/scripts.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/data/scripts/trainer_battle.inc",
-      "byteLength": 3768,
-      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c"
+      "path": "content/raw/pokefirered/037335f4/data/scripts/trainer_battle.inc"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/battle.h",
-      "byteLength": 16440,
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      "path": "content/raw/pokefirered/037335f4/include/constants/battle.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/battle_ai.h",
-      "byteLength": 1436,
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+      "path": "content/raw/pokefirered/037335f4/include/constants/battle_ai.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/battle_setup.h",
-      "byteLength": 701,
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+      "path": "content/raw/pokefirered/037335f4/include/constants/battle_setup.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/moves.h",
-      "byteLength": 10249,
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      "path": "content/raw/pokefirered/037335f4/include/constants/moves.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/opponents.h",
-      "byteLength": 39946,
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      "path": "content/raw/pokefirered/037335f4/include/constants/opponents.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "content/raw/pokefirered/037335f4/include/constants/species.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/include/constants/trainers.h",
-      "byteLength": 20887,
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+      "path": "content/raw/pokefirered/037335f4/include/constants/trainers.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/battle_ai_switch_items.c",
-      "byteLength": 26962,
-      "sha256": "dad37604fd92c7540f82a360b14db083f5eb1a91878763e6992666ab2f6e947d"
+      "path": "content/raw/pokefirered/037335f4/src/battle_ai_switch_items.c"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/battle_main.c",
-      "byteLength": 171904,
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "content/raw/pokefirered/037335f4/src/battle_main.c"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/battle_script_commands.c",
-      "byteLength": 355862,
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3"
+      "path": "content/raw/pokefirered/037335f4/src/battle_script_commands.c"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/battle_setup.c",
-      "byteLength": 33351,
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "content/raw/pokefirered/037335f4/src/battle_setup.c"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/battle_moves.h",
-      "byteLength": 121457,
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+      "path": "content/raw/pokefirered/037335f4/src/data/battle_moves.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/items.json",
-      "byteLength": 194280,
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      "path": "content/raw/pokefirered/037335f4/src/data/items.json"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/pokemon/item_effects.h",
-      "byteLength": 12207,
-      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/item_effects.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/pokemon/level_up_learnset_pointers.h",
-      "byteLength": 20597,
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/pokemon/level_up_learnsets.h",
-      "byteLength": 182027,
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/pokemon/species_info.h",
-      "byteLength": 342600,
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/text/species_names.h",
-      "byteLength": 15851,
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      "path": "content/raw/pokefirered/037335f4/src/data/text/species_names.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/trainer_parties.h",
-      "byteLength": 242256,
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+      "path": "content/raw/pokefirered/037335f4/src/data/trainer_parties.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/data/trainers.h",
-      "byteLength": 302118,
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+      "path": "content/raw/pokefirered/037335f4/src/data/trainers.h"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/field_specials.c",
-      "byteLength": 77314,
-      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+      "path": "content/raw/pokefirered/037335f4/src/field_specials.c"
     },
     {
-      "path": "content/raw/pokemon-league-rules/src/pokemon.c",
-      "byteLength": 221865,
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "content/raw/pokefirered/037335f4/src/pokemon.c"
     }
   ]
 }

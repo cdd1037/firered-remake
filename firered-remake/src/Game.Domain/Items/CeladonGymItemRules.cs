@@ -7,10 +7,10 @@ public static class CeladonGymItemRules
 {
     public const string Profile = "firered-celadon-gym-items-v1";
     public static ItemId Tm19Id { get; } = new("pret:ITEM_TM19");
-    private static readonly QuestItemDefinition ExpectedItem = new(new("pret:ITEM_TM19"),"ITEM_TM19",307,"TM19",3000,0,0,"POCKET_TM_CASE","ITEM_TYPE_PARTY_MENU","HOLD_EFFECT_NONE",0,"NULL",0,"NULL",0,true,true,true,new("src/data/items.json","ITEM_TM19",4933,4949,"d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"));
+    private static readonly QuestItemDefinition ExpectedItem = new(new("pret:ITEM_TM19"),"ITEM_TM19",307,"TM19",3000,0,0,"POCKET_TM_CASE","ITEM_TYPE_PARTY_MENU","HOLD_EFFECT_NONE",0,"NULL",0,"NULL",0,true,true,true,new("src/data/items.json","ITEM_TM19",4933,4949));
     private const string Description = "A harsh attack that\nabsorbs half the\ndamage it inflicted\nto restore HP.";
     private const string DeclarationDescription = "The user strikes the foe with\ntentacles or roots, stealing the\ntarget's HP and healing itself.";
-    private static readonly OpeningItemSourceRef DescriptionSource = new("src/move_descriptions.c","gMoveDescription_GigaDrain",205,205,"1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b");
+    private static readonly OpeningItemSourceRef DescriptionSource = new("src/move_descriptions.c","gMoveDescription_GigaDrain",205,205);
     public static void ValidateMachine(PewterMachineItem machine)
     {
         if (machine is null || machine.Item != ExpectedItem || machine.Description != Description ||

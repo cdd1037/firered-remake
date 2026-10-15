@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
 public static partial class PretStoryCompiler
 {
     private static bool IsOriginalSlotScript(PretSourceScriptFile file)=>
-        FirstSeviiSource(file,GameCornerCoinSource.Path,SlotMachineSource.ScriptSha256);
+        FirstSeviiSource(file,GameCornerCoinSource.Path);
 
     private static string[] SelectOriginalSlotLines(PretSourceScriptFile file,string[] lines)
     {

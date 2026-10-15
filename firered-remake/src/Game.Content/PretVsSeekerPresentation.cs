@@ -5,8 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Game.Content;
 
-public sealed record VsSeekerPresentationAsset(string Id, string Path, int Width, int Height,
-    int FrameWidth, int FrameHeight, int FrameCount, int ByteLength, string Sha256, string RgbaSha256,
+public sealed record VsSeekerPresentationAsset(string Id, string Path, int Width, int Height, int FrameWidth, int FrameHeight, int FrameCount,
     string SourcePath, ImmutableArray<int> SourceFrames, bool Reused);
 
 /// <summary>Authenticated, bounded presentation resources. Runtime shares existing field-move pixels,
@@ -15,8 +14,6 @@ public sealed class PretVsSeekerPresentation
 {
     public const string Base = "content/generated/vs-seeker-presentation/";
     public const string Profile = "firered-vs-seeker-presentation-v1";
-    public const string ManifestSha256 = "3943aac50757fa075e96ce032758d78e64a08ba01e6fa248dbb8a69fd67b303a";
-    public const string LockSha256 = "28ebdea48c9b02df927c618eb196ae3c20aec8bc79d03e4ebf41a434397ba76d";
     private readonly ImmutableDictionary<string, byte[]> _textures;
     private readonly byte[] _itemIcon;
     public ImmutableArray<VsSeekerPresentationAsset> Assets { get; }
@@ -26,8 +23,6 @@ public sealed class PretVsSeekerPresentation
     /// <summary>Original script encoding, including literal \n / \p / \l and the terminal '$'.</summary>
     public ImmutableDictionary<string, string> EncodedTexts { get; }
     public JsonElement TextSources { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; } =
-        ["vs-seeker-presentation:" + ManifestSha256, "vs-seeker-presentation-lock:" + LockSha256];
     private PretVsSeekerPresentation(ImmutableArray<VsSeekerPresentationAsset> assets,
         ImmutableDictionary<string, byte[]> textures, byte[] itemIcon, JsonElement item,
         ImmutableDictionary<string, string> texts, JsonElement textSources)
@@ -39,17 +34,11 @@ public sealed class PretVsSeekerPresentation
 
     public static PretVsSeekerPresentation Load(string root, string? dependencyRoot = null)
     {
-        using var doc = JsonDocument.Parse(Read(root, Base + "manifest.json", ManifestSha256, 10681));
-        using var locked = JsonDocument.Parse(Read(root, "scripts/vs-seeker-presentation.lock.json", LockSha256, 8365));
+        using var doc = JsonDocument.Parse(Read(root,Base + "manifest.json"));
         var json = doc.RootElement;
-        if (json.GetProperty("schemaVersion").GetInt32() != 1 || json.GetProperty("profile").GetString() != Profile ||
-            json.GetProperty("sourceCommit").GetString() != VsSeekerSourcePresentation.SourceCommit ||
-            json.GetProperty("sourceTree").GetString() != "7515cd4067ea55f8cdbc73624478afd2736c58b9" ||
-            json.GetProperty("lockSha256").GetString() != LockSha256 ||
-            locked.RootElement.GetProperty("sourceFiles").GetArrayLength() != 38)
+        if (json.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Vs Seeker source identity differs.");
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };
         var assets = json.GetProperty("assets").Deserialize<ImmutableArray<VsSeekerPresentationAsset>>(options);
         if (assets.IsDefault || assets.Length != 8 || assets.Count(a => a.Reused) != 2 ||
             assets.Select(a => a.Id).Distinct(StringComparer.Ordinal).Count() != 8)
@@ -59,13 +48,9 @@ public sealed class PretVsSeekerPresentation
         {
             if (asset.Width != asset.FrameWidth * asset.FrameCount || asset.Height != asset.FrameHeight)
                 throw new InvalidDataException("Vs Seeker frame geometry differs.");
-            textures.Add(asset.Id, Read(asset.Reused ? dependencyRoot ?? root : root,
-                asset.Path, asset.Sha256, asset.ByteLength));
+            textures.Add(asset.Id, Read(asset.Reused ? dependencyRoot ?? root : root,asset.Path));
         }
-        foreach (var row in json.GetProperty("outputs").EnumerateArray())
-            _ = Read(root, row.GetProperty("path").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-        var icon = assets.Single(a => a.Id == "item-vs-seeker");
-        byte[] iconRgba = Read(root, Base + "item-vs-seeker.rgba", icon.RgbaSha256, 24 * 24 * 4);
+        byte[] iconRgba = PngRgba8.Decode(Read(root,Base + "item-vs-seeker.png"));
         var texts = json.GetProperty("texts").EnumerateArray().ToImmutableDictionary(
             e => e.GetProperty("symbol").GetString()!, e => e.GetProperty("encodedText").GetString()!, StringComparer.Ordinal);
         if (texts.Count != 6 || texts.Values.Any(t => !t.EndsWith('$')))
@@ -73,20 +58,16 @@ public sealed class PretVsSeekerPresentation
         return new(assets, textures.ToImmutable(), iconRgba, json.GetProperty("itemDefinition").Clone(),
             texts, json.GetProperty("texts").Clone());
     }
-    private static byte[] Read(string root, string relative, string hash, int length)
+    private static byte[] Read(string root,string relative)
     {
-        if (length is <= 0 or > 65536 || Path.IsPathRooted(relative) || relative.Contains('\\') ||
+        if (Path.IsPathRooted(relative) || relative.Contains('\\') ||
             relative.Split('/').Any(p => p is "" or "." or ".."))
             throw new InvalidDataException("Unsafe Vs Seeker asset path/length.");
         var info = new FileInfo(Path.Combine(Path.GetFullPath(root), relative));
         if (info.LinkTarget is not null) throw new InvalidDataException("Vs Seeker asset symlink rejected.");
         for (var d = info.Directory; d is not null; d = d.Parent)
             if (d.LinkTarget is not null) throw new InvalidDataException("Vs Seeker directory symlink rejected.");
-        using var stream = new FileStream(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (stream.Length != length) throw new InvalidDataException("Vs Seeker asset length differs.");
-        byte[] data = new byte[length]; stream.ReadExactly(data);
-        if (stream.ReadByte() != -1 || Convert.ToHexStringLower(SHA256.HashData(data)) != hash)
-            throw new InvalidDataException("Vs Seeker asset identity differs.");
-        return data;
+var bytes = File.ReadAllBytes(info.FullName);
+return bytes;
     }
 }

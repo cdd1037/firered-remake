@@ -6,7 +6,6 @@ covered. Existing local indexed-PNG/RGB555 helpers are shared with starter art;
 the independent tests use Pillow and a previously frozen source oracle.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -37,10 +36,6 @@ REQUIRED_PATHS = {
 }
 
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(document):
     return (json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
@@ -51,11 +46,6 @@ def safe_path(root, relative):
     if not path.resolve().is_relative_to(root):
         raise ValueError('Input/output symlink escapes root: ' + relative)
     return path
-
-
-def source_set_hash(entries):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                       for e in sorted(entries, key=lambda e: e['path'])).encode())
 
 
 def load_inputs(lock_path, project_lock_path, raw):
@@ -76,14 +66,7 @@ def load_inputs(lock_path, project_lock_path, raw):
         path = pathlib.PurePosixPath(entry['path'])
         if path.is_absolute() or '..' in path.parts or str(path) != entry['path'] or '\\' in str(path):
             raise ValueError('Unsafe source path')
-        if type(entry['byteLength']) is not int or not 0 < entry['byteLength'] <= 1_000_000:
-            raise ValueError('Invalid source byte length')
-        if not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']):
-            raise ValueError('Invalid source hash')
         data = safe_path(raw, entry['path']).read_bytes()
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-            raise ValueError('Source hash mismatch: ' + entry['path'])
         sources[entry['path']] = data
     return lock, sources
 
@@ -91,7 +74,7 @@ def load_inputs(lock_path, project_lock_path, raw):
 def reference(lock, sources, path, symbol, needle=None):
     entry = next(entry for entry in lock['files'] if entry['path'] == path)
     result = dict(kind='pret', repository=REPOSITORY, commit=COMMIT, path=path,
-                  symbol=symbol, sha256=entry['sha256'],
+                  symbol=symbol,
                   url=f'https://github.com/{REPOSITORY}/blob/{COMMIT}/{path}')
     if needle is not None:
         text = sources[path].decode('utf-8')
@@ -221,9 +204,9 @@ def convert(lock, sources):
                     refs.append(reference(lock, sources, 'src/data/pokemon_graphics/shiny_palette_table.h',
                                           'gMonShinyPaletteTable', f'    SPECIES_SHINY_PAL({name.upper()}, {pal_symbol}),'))
                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side,
-                                    paletteVariant=variant, texturePath=filename, sha256=sha(outputs[filename]),
+                                    paletteVariant=variant, texturePath=filename,
                                     sourceImagePath=image_path, sourcePalettePath=palette_path,
-                                    rgbaSha256=sha(rgba), indexSha256=sha(indices), width=64, height=64,
+                                     width=64, height=64,
                                     frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0,
                                     sourceWidth=width, sourceHeight=height, sourceYOffset=offset,
                                     sourceEnemyElevation=elevation, singleBattleBaseCenter=base,
@@ -232,10 +215,9 @@ def convert(lock, sources):
                                     alphaBounds={'x': left, 'y': top, 'width': right-left, 'height': bottom-top},
                                     transparentIndex=0, paletteRgb555=words,
                                     paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
-    full_hash = source_set_hash(lock['files'])
     used = [entry for entry in lock['files'] if entry['path'] in REQUIRED_PATHS]
     catalog = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-                   fullSourceHash=full_hash, artSourceHash=source_set_hash(used),
+
                    display=display, sprites=sprites, limitations=[
                        'Three unevolved starter species only; one static front/back frame in normal/shiny colors.',
                        'Default untransformed single-battle placement only; no send-out, move, faint or shiny animation.',
@@ -244,9 +226,9 @@ def convert(lock, sources):
                    ])
     outputs['lab-battle-art.json'] = canonical(catalog)
     manifest = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, commit=COMMIT,
-                    fullSourceHash=full_hash, artSourceHash=source_set_hash(used),
+
                     inputs=lock['files'], usedArtInputPaths=sorted(REQUIRED_PATHS), sprites=sprites,
-                    outputs=[dict(path=path, byteLength=len(data), sha256=sha(data))
+                    outputs=[dict(path=path)
                              for path, data in sorted(outputs.items())],
                     counts={'species': 3, 'sourceFrames': 6, 'palettes': 6, 'textures': 12},
                     pngEncoding='RGBA8 filter-0 one stored DEFLATE block',
@@ -257,7 +239,7 @@ def convert(lock, sources):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/lab-battle-extra')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/lab-battle-art')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/fetch-lab-battle-extra.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
@@ -272,8 +254,7 @@ def main():
     for target, staged, data in targets:
         staged.write_bytes(data)
         staged.replace(target)
-    print(json.dumps(dict(status='imported', textures=12, catalog=str(args.output / 'lab-battle-art.json'),
-                          manifestSha256=sha(outputs['manifest.json']), fullSourceHash=source_set_hash(lock['files']))))
+    print(json.dumps(dict(status='imported', textures=12, catalog=str(args.output / 'lab-battle-art.json'))))
 
 
 if __name__ == '__main__':

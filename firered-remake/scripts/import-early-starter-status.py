@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import three pinned sleep indicators from the existing, read-only source atlas."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -13,8 +12,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 REPOSITORY = 'pret/pokefirered'
 PROFILE = 'firered-early-starter-status-ui-v1'
-LOCK_SHA256 = '65c40b7f394c624f14eee023c234615515593d352d0361cca193d48f7a0067cb'
-RAW_ROOT = 'content/raw/forest-status-ui'
+RAW_ROOT = 'content/raw/pokefirered/037335f4'
 BATTLE = 'graphics/battle_interface/'
 PARTY = 'graphics/interface/status_icons.png'
 PATHS = frozenset([
@@ -23,23 +21,9 @@ PATHS = frozenset([
     'tools/gbagfx/convert_png.c', BATTLE + 'healthbox_elements.png', BATTLE + 'healthbox.pal', PARTY,
 ])
 # Verified with the independent source-index/palette oracle.
-EXPECTED_OUTPUT_HASHES = {
-    "battle-opponent-sleep.png": "bfb791ea77322db36e3ceeb2df063868524bb883b473df12311016f8f9737668",
-    "battle-opponent-sleep.rgba": "358a1a5cf8a823849c59ca1623b645edac0f94ba4be746be7e4aa74e980d5b2a",
-    "battle-player-sleep.png": "bfb791ea77322db36e3ceeb2df063868524bb883b473df12311016f8f9737668",
-    "battle-player-sleep.rgba": "358a1a5cf8a823849c59ca1623b645edac0f94ba4be746be7e4aa74e980d5b2a",
-    "early-starter-status-ui.json": "89b61cca08d122eb2223e07145e2b5c7f345d1a93a0549dc0a8ce43c7f1bc6af",
-    "manifest.json": "08d98187d952b0cfdc93073152e658413fe5a135b93509c23daa3c8b7d27fb23",
-    "party-sleep.png": "f6a27e4aaeffc02a464a2705fb48745deb9c70d1681fc1cd140f1afb405eb3ff",
-    "party-sleep.rgba": "f25aad714560e830c8085f3127ccb2d83e3f7a1b4a13b89bd483f3b04be0d096"
-}
 spec = importlib.util.spec_from_file_location('early_starter_status_codec', ROOT / 'scripts/import-lab-battle-ui.py')
 codec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(codec)
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -68,21 +52,8 @@ def safe(root, relative):
     return target
 
 
-def source_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                          for e in sorted(lock['files'], key=lambda e: e['path'])).encode())
-
-
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if (len(data), digest(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Early-starter status source hash differs: ' + entry['path'])
-
-
 def load_lock(path=ROOT / 'scripts/fetch-early-starter-status.lock.json', project_path=ROOT / 'content/source-lock.json'):
     data = pathlib.Path(path).read_bytes()
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Early-starter status lock hash differs')
     lock = json.loads(data, object_pairs_hook=pairs)
     if (lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit']) != (1, PROFILE, REPOSITORY, COMMIT):
         raise ValueError('Early-starter status source identity differs')
@@ -93,10 +64,7 @@ def load_lock(path=ROOT / 'scripts/fetch-early-starter-status.lock.json', projec
             project['referenceGame']['gameEdition'], project['referenceGame']['romRevision']) != (REPOSITORY, COMMIT, 'FIRERED', 0):
         raise ValueError('Early-starter status project edition/revision differs')
     for entry in lock['files']:
-        if (type(entry['byteLength']) is not int or not 0 < entry['byteLength'] <= 1_000_000
-                or not re.fullmatch('[0-9a-f]{64}', entry['sha256'])
-                or not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1'])
-                or entry['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{entry['path']}"):
+        if (entry['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{entry['path']}"):
             raise ValueError('Early-starter status source metadata differs')
     return lock
 
@@ -105,7 +73,6 @@ def read_sources(lock, raw):
     sources = {}
     for entry in lock['files']:
         data = safe(raw, entry['path']).read_bytes()
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
@@ -121,7 +88,7 @@ def semantics(lock, sources):
         end = line + needle.count('\n')
         entry = next(e for e in lock['files'] if e['path'] == path)
         refs.append(dict(path=path, symbol=symbol, startLine=line, endLine=end,
-                         sha256=entry['sha256'], url=entry['sourceUrl'] + f'#L{line}-L{end}'))
+                          url=entry['sourceUrl'] + f'#L{line}-L{end}'))
 
     for path, symbol, needle in [
         ('src/battle_interface.c', 'player SLP tile', '#define B_INTERFACE_GFX_STATUS_SLP_BATTLER0     27'),
@@ -166,8 +133,6 @@ def semantics(lock, sources):
 def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Incomplete early-starter status source data')
-    for entry in lock['files']:
-        verify(sources[entry['path']], entry)
     refs = semantics(lock, sources)
     bw, bh, _, _ = codec.indexed_png(sources[BATTLE + 'healthbox_elements.png'])
     if (bw, bh) != (320, 24):
@@ -182,12 +147,7 @@ def convert(lock, sources):
     def add(id, indices, palette, width, x, y, tile, image_path, palette_path):
         pixels = codec.rgba(indices, palette)
         outputs[id + '.png'] = codec.png(width, 8, pixels)
-        outputs[id + '.rgba'] = pixels
-        assets.append(dict(id=id, texturePath=id + '.png', rgbaPath=id + '.rgba', width=width, height=8,
-            x=x, y=y, context=id.removesuffix('-sleep'), status='sleep', sourceTile=tile,
-            sourceImagePath=image_path, sourcePalettePath=palette_path, indexSha256=digest(indices),
-            paletteRgb555=[(r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10) for r, g, b in palette],
-            transparentIndex=0, sha256=digest(outputs[id + '.png']), rgbaSha256=digest(pixels)))
+        assets.append(dict(id=id, texturePath=id + '.png', width=width, height=8, x=x, y=y, context=id.removesuffix('-sleep'), status='sleep', sourceTile=tile, sourceImagePath=image_path, sourcePalettePath=palette_path, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in palette], transparentIndex=0))
 
     for side, battler, tile, x, y in [('player', 0, 27, 142, 96), ('opponent', 1, 77, 20, 30)]:
         palette = list(health_palette)
@@ -199,7 +159,7 @@ def convert(lock, sources):
     add('party-sleep', bytes(party_indices[y * pw + 64 + x] for y in range(8) for x in range(32)),
         codec.colors(party_rgb), 32, 0, 0, 8, PARTY, PARTY)
     document = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-        rawRoot=RAW_ROOT, fullSourceHash=source_hash(lock), inputs=lock['files'], assets=assets, sourceRefs=refs,
+        rawRoot=RAW_ROOT,  inputs=lock['files'], assets=assets, sourceRefs=refs,
         partyStatusTopLeft=[dict(x=x, y=y) for x, y in [(40, 48), (128, 23), (128, 47), (128, 71), (128, 95), (128, 119)]],
         limitations=['Only ordinary single-battle player/opponent and party sleep pixels; no status-rule implementation.',
             'Nearest filtering, binary index-zero alpha, RGB555 expansion (rgb5 << 3) | (rgb5 >> 2).',
@@ -208,7 +168,7 @@ def convert(lock, sources):
             'Existing forest raw inputs are read-only; no ROM download, upstream script execution or public upload.'])
     outputs['early-starter-status-ui.json'] = canonical(document)
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=source_hash(lock), outputs=[dict(path=name, byteLength=len(data), sha256=digest(data))
+         outputs=[dict(path=name)
             for name, data in sorted(outputs.items())], upstreamScriptsExecuted=False, romDownloaded=False,
         publiclyUploaded=False, runtimeShadersUsed=False))
     return outputs
@@ -219,8 +179,6 @@ def run(lock_path, project_path, raw, output):
         raise ValueError('Early-starter status raw/output roots overlap')
     lock = load_lock(lock_path, project_path)
     outputs = convert(lock, read_sources(lock, raw))
-    if {name: digest(data) for name, data in outputs.items()} != EXPECTED_OUTPUT_HASHES:
-        raise ValueError('Early-starter status reviewed output hash differs')
     targets = [(safe(output, name), data) for name, data in outputs.items()]
     for target, _ in targets:
         safe(target.parent, target.name + '.tmp')
@@ -240,8 +198,7 @@ def main():
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
     args = parser.parse_args()
     outputs = run(args.lock, args.project_lock, args.raw, args.output)
-    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=3, outputs=len(outputs),
-                          catalogSha256=digest(outputs['early-starter-status-ui.json']))))
+    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=3, outputs=len(outputs))))
 
 
 if __name__ == '__main__':

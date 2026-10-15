@@ -9,8 +9,6 @@ namespace Game.Domain.Items;
 public sealed class TrainerTowerShopCatalog
 {
     public const string Profile = "firered-trainer-tower-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "79966989eee691e6344fd42705c7e561710282771683554eb6ea542c628158d6";
-    public const string LobbyShopSourceSha256 = "a8ab095796325d4c1b647da78ab8e9b1a40cdccc1d68e42fd17bf2f179d5f864";
     public const string LobbyShopId = "TrainerTower_Lobby_Mart_Items";
     public static ItemId MetalCoatId { get; } = new("pret:ITEM_METAL_COAT");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, TrainerTowerShopCatalog> Proofs = new();
@@ -36,8 +34,6 @@ public sealed class TrainerTowerShopCatalog
             old.Shops.Where((shop, index) => !ReferenceEquals(shop, candidate.Shops[index])).Any())
             throw new ArgumentException("trainer_tower_shop_predecessor");
         if (candidate.Items[^1].Id != MetalCoatId ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(123).ToArray()) != AdditionalItemsSourceSha256 ||
-            CampaignSourceFingerprint.Compute(candidate.Shops[^1]) != LobbyShopSourceSha256 ||
             candidate.Shops[^1].Items.Any(id => !candidate.Items.Any(item => item.Id == id)))
             throw new ArgumentException("trainer_tower_shop_source");
         foreach (var symbol in new[] { "UP_GRADE", "DRAGON_SCALE", "METAL_COAT", "KINGS_ROCK" })

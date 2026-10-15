@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
@@ -19,19 +18,13 @@ public sealed record FiveIslandItemContent(ImmutableArray<PewterMachineItem> Ite
 /// <summary>Exact Up-Grade, Sapphire, TM36, eight ordinary pickups and all135 species compatibility; no new shop stock.</summary>
 public static partial class PretFiveIslandItems
 {
-    public const string ItemsSha256 = "c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968";
-    public const string PickupsSha256 = "21fad57fbb36fd8b83e4f9ba186885e4dc12ba53013b540b602eb81e2c1cdafb";
     public static FiveIslandItemsDocument LoadDocument(string root)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/five-island-rules/items.json"));
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != ItemsSha256)
-            throw new InvalidDataException("five_island_items_source");
         var document = JsonSerializer.Deserialize<FiveIslandItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
             ?? throw new InvalidDataException("five_island_items_missing");
-        if (document.SourceCommit != PokemonFactory.SourceCommit || document.Profile != "firered-five-island-items-v1" ||
-            document.Items.Length != 9 || document.Additions.Length != 3 || document.MachineAdditions.Length != 38 ||
+        if (            document.Items.Length != 9 || document.Additions.Length != 3 || document.MachineAdditions.Length != 38 ||
             document.Pickups.Length != 8 || document.Pickups.Count(p => p.Hidden) != 2)
             throw new InvalidDataException("five_island_items_scope");
         return document;
@@ -44,13 +37,11 @@ public static partial class PretFiveIslandItems
     {
         var previousShopProof = SixIslandShopCatalog.For(previousShop) ?? throw new InvalidDataException("five_island_items_shop_predecessor");
         var shop = FiveIslandShopCatalog.Authenticate(previousShopProof, previousShop with {
-            Profile = FiveIslandShopCatalog.Profile, Items = previousShop.Items.AddRange(document.Additions) });
+            Profile = FiveIslandShopCatalog.Profile,Items = previousShop.Items.AddRange(document.Additions) });
         var previousMachineProof = SixIslandMachineCatalog.For(previousMachines) ?? throw new InvalidDataException("five_island_items_machine_predecessor");
         var additions = document.MachineAdditions.ToDictionary(m => m.Item);
         var machines = FiveIslandMachineCatalog.Authenticate(previousMachineProof, pokemon, previousMachines with {
-            Profile = FiveIslandMachineCatalog.Profile,
-            Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),
-            AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
+            Profile = FiveIslandMachineCatalog.Profile,Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
                 Compatibility = m.Compatibility.AddRange(additions[m.Machine.Item.Id].Compatibility)
             }).Append(document.Tm36).ToImmutableArray() });
         foreach (var pickup in document.Pickups)

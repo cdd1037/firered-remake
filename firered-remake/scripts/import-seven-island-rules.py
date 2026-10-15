@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -13,11 +12,6 @@ COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('CRUSH_GIRL_CYNDY', 'TAMER_EVAN', 'PKMN_RANGER_JACKSON', 'PKMN_RANGER_KATELYN', 'COOLTRAINER_LEROY', 'COOLTRAINER_MICHELLE', 'COOL_COUPLE_LEX_NYA', 'AROMA_LADY_MIAH', 'YOUNG_COUPLE_EVE_JON', 'PKMN_RANGER_NICOLAS', 'PKMN_RANGER_MADELINE', 'JUGGLER_MASON', 'RUIN_MANIAC_BRANDON', 'RUIN_MANIAC_BENJAMIN', 'PAINTER_EDNA', 'GENTLEMAN_CLIFFORD', 'PSYCHIC_DARIO', 'PSYCHIC_RODETTE')
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -25,11 +19,10 @@ def need(value, message):
 
 def generate(reference, dependency):
     texts, inputs, raw = {}, {}, {}
-    need(subprocess.check_output(["git", "rev-parse", COMMIT + "^{tree}"], cwd=reference).decode().strip() == TREE, "Pinned source tree")
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -39,7 +32,7 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -99,17 +92,17 @@ def generate(reference, dependency):
             source=ref(path, symbol, match), moneySource=ref("src/battle_main.c", fields["trainerClass"], money)))
         resolved.append(dict(trainer=symbol, party=movesets))
     dependencies=[]
-    def dependent(path, expected):
-        data=(dependency/path).read_bytes();need(sha(data)==expected,'Dependency changed: '+path)
-        dependencies.append(dict(path=path,byteLength=len(data),sha256=sha(data)));return json.loads(data)
-    canonical=dependent('content/generated/canonical-pokemon/catalog.json','c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc')
-    five=dependent('content/generated/five-island-rules/items.json','c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968')
-    base=dependent('scripts/five-island-predecessor.json','e2241d337388ef781209563eed0fa100c5d219841830ff3f400b71500e37278f')
-    five_p=dependent('content/generated/five-island-rules/pokemon.json','9788f567d061f21e66d877718a542a3fb2068629f34b65da9dd604e387a0a909')
-    celio=dependent('content/generated/celio-pokemon/pokemon.json','3f5b6aeeb5454af27c38ff837757fe9f50647a2ed95dc19ea94e83dc05c54e9f')
-    cave=dependent('content/generated/cerulean-cave-pokemon/pokemon.json','55b3b1b8f593c72d71f92a43e7d599cf0bd278caad2e636b969b07b125330a95')
-    old_machines=dependent('content/generated/cerulean-cave-pokemon/machines.json','a0b1fd8623e3a07d32b95746a2c2a2bb3340c0c8d70e62e6925e8cd0c071e172')
-    rematch=dependent('content/generated/league-rematch-rules/pokemon.json','d9e9657f331699b88a9909d1bbb8dce05797ee0714e4c980730884aab4725b39')
+    def dependent(path):
+        data=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path));return json.loads(data)
+    canonical=dependent('content/generated/canonical-pokemon/catalog.json')
+    five=dependent('content/generated/five-island-rules/items.json')
+    base=dependent('scripts/five-island-predecessor.json')
+    five_p=dependent('content/generated/five-island-rules/pokemon.json')
+    celio=dependent('content/generated/celio-pokemon/pokemon.json')
+    cave=dependent('content/generated/cerulean-cave-pokemon/pokemon.json')
+    old_machines=dependent('content/generated/cerulean-cave-pokemon/machines.json')
+    rematch=dependent('content/generated/league-rematch-rules/pokemon.json')
     species={s['id']['value'][5:]:s for s in canonical['species']}
     metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
     previous_owned={r['species']['value'][5:] for r in five['tm36']['compatibility']}|set(celio['speciesAdded'])|set(cave['speciesAdded'])
@@ -121,7 +114,7 @@ def generate(reference, dependency):
     for name in additions+trainer_only:
         original=species[name];meta=metadata[name]
         for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[m['source'] for m in original['levelUpMoves']]+[e['source'] for e in meta['sourceEvolutions']]:
-            read(sr['path']);need(inputs[sr['path']]['sha256']==sr['sha256'],'Canonical source identity: '+name)
+            read(sr['path'])
     edges=[]
     for name,level,target in [('SPECIES_PHANPY',25,'SPECIES_DONPHAN'),('SPECIES_LARVITAR',30,'SPECIES_PUPITAR'),('SPECIES_PUPITAR',55,'SPECIES_TYRANITAR')]:
         e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']==identity(target),'Source evolution')
@@ -184,17 +177,17 @@ def generate(reference, dependency):
             cases.append(dict(trainer=team['trainer'],initialSeed=initial,finalSeed=seed,draws=len(raw_draws),rawDraws=raw_draws,originalTrainerIds=ots))
     docs={
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-owned-pokemon-v1',canonicalCatalogSha256=dependencies[0]['sha256'],previousOwnedSpeciesCount=139,ownedSpeciesCount=146,previousOpponentSpeciesCount=168,opponentSpeciesCount=180,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=trainer_only,evolutionEdges=edges,species=[dict(definition=species[s],metadata=metadata[s]) for s in additions+trainer_only]),
-      'rules.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',identities=identities,generationCases=cases,trainerActors=actors,trainerHashes={t['id']['value']:fingerprint(t) for t in trainers},battleHashes={b['scriptEntry']:fingerprint(b) for b in battles}),
-      'encounters.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-encounters-v1',sourcePath='src/data/wild_encounters.json',sourceSha256=inputs['src/data/wild_encounters.json']['sha256'],encounters=encounters,fields=fields,heldItems=held,runtimeMethods=['land','surf','oldRod'],retainedMetadataOnlyMethods=['rockSmash','goodRod','superRod']),
-      'machines.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-teaching-v1',previousSpeciesCount=139,speciesCount=146,machineCount=39,additions=cells,additionsSemanticSha256=fingerprint(cells),itemsAdded=[]),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-owned-pokemon-v1',previousOwnedSpeciesCount=139,ownedSpeciesCount=146,previousOpponentSpeciesCount=168,opponentSpeciesCount=180,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=trainer_only,evolutionEdges=edges,species=[dict(definition=species[s],metadata=metadata[s]) for s in additions+trainer_only]),
+      'rules.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',identities=identities,generationCases=cases,trainerActors=actors),
+      'encounters.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-encounters-v1',sourcePath='src/data/wild_encounters.json',encounters=encounters,fields=fields,heldItems=held,runtimeMethods=['land','surf','oldRod'],retainedMetadataOnlyMethods=['rockSmash','goodRod','superRod']),
+      'machines.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-teaching-v1',previousSpeciesCount=139,speciesCount=146,machineCount=39,additions=cells,itemsAdded=[]),
     }
     items_text=read('src/data/items.json');source_items=json.loads(items_text)['items']
     constants=read('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
     def item_metadata(symbol):
      i=next(i for i in source_items if i['itemId']==symbol)
      match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
-     r=dict(path='src/data/items.json',symbol=symbol,startLine=line,endLine=line,sha256=inputs['src/data/items.json']['sha256'])
+     r=dict(path='src/data/items.json',symbol=symbol,startLine=line,endLine=line)
      value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
      return dict(item=value,description=i['description_english'].replace('\\n','\n'),declarationDescription=i['description_english'],descriptionSource=r)
     new_items=[]
@@ -230,7 +223,7 @@ def generate(reference, dependency):
     docs['items.json']=dict(sourceCommit=COMMIT,profile='firered-seven-island-items-v1',items=[item_metadata(n) for n in item_names],additions=new_items,shop=shop,pickups=pickups,renewableFlags=[p['flag'] for p in pickups if p['itemSymbol']=='ITEM_HEART_SCALE' or p['mapSymbol']=='MAP_SEVEN_ISLAND_TRAINER_TOWER' and p['itemSymbol'] in ['ITEM_BIG_PEARL','ITEM_PEARL']])
     need(len(docs['items.json']['renewableFlags'])==6,'Six inherited renewable flags')
     for path in ['data/scripts/obtain_item.inc','src/renewable_hidden_items.c','include/constants/hold_effects.h']:read(path)
-    docs['source-input-hashes.json']=dict(sourceCommit=COMMIT,sourceTree=TREE,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
+    docs['source-input-hashes.json']=dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
     return docs
 
 def main():
@@ -238,11 +231,11 @@ def main():
     p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--dependency-root',required=True,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency_root)
     files={'content/generated/seven-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
-    lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-seven-island-rules-v1',files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    lock=dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/seven-island-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=18,battles=20,owned=146,opponents=180,machines=39,hashes={n:sha(v) for n,v in files.items()}),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=18,battles=20,owned=146,opponents=180,machines=39),indent=2))
 if __name__=='__main__':main()

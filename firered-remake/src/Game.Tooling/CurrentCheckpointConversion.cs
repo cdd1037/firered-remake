@@ -22,7 +22,7 @@ internal static class CurrentCheckpointConversion
         string sourceContent = sourceDocument.RootElement.GetProperty("ContentVersion").GetString()!;
         if (sourceRules != CampaignSession.CelioRulesVersion && sourceRules != CurrentGameProfile.RulesVersion)
             throw new InvalidDataException("checkpoint_source_rules_unsupported");
-        if (sourceContent.Length != 64 || sourceContent.Any(c => !char.IsAsciiHexDigit(c)))
+        if (string.IsNullOrWhiteSpace(sourceContent))
             throw new InvalidDataException("checkpoint_source_content_invalid");
         byte[] admitted = original;
         if (!sourceDocument.RootElement.GetProperty("Payload").TryGetProperty("Coins", out _))

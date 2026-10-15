@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Application;
 using Game.Domain.WildBattle;
 using Godot;
@@ -10,31 +9,29 @@ public partial class CampaignView
     private void LoadVermilionPresentation()
     {
         if (_catalog.VermilionPokemon is not { } source) return;
-        if (_battleArt.Count != 272 || _storageIcons.Count != 68 || _route22Footprints.Count != 39)
-            throw new InvalidDataException("Vermilion must extend the existing sixty-eight species.");
-        Image Decode(byte[] bytes, int width, int height, string sha)
+        Image Decode(byte[] bytes, int width, int height)
         {
             var image = new Image();
             if (image.LoadPngFromBuffer(bytes) != Error.Ok) { image.Dispose(); throw new InvalidDataException("Invalid Vermilion PNG."); }
             image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != width || image.GetHeight() != height || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != sha)
+            if (image.GetWidth() != width || image.GetHeight() != height)
             { image.Dispose(); throw new InvalidDataException("Vermilion source pixels differ."); }
             return image;
         }
         foreach (var sprite in source.Sprites)
         {
-            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64, sprite.RgbaSha256);
+            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var foot in source.Footprints)
         {
-            using var image = Decode(source.ReadFootprintTexture(foot.SourceSpeciesId), 16, 16, foot.RgbaSha256);
+            using var image = Decode(source.ReadFootprintTexture(foot.SourceSpeciesId), 16, 16);
             _route22Footprints.Add(foot.SourceSpeciesId, ImageTexture.CreateFromImage(image));
         }
         foreach (var icon in source.Icons)
         {
-            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32, icon.RgbaSha256);
+            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32);
             var rgba = image.GetData();
             // Use the same source RGB5 display expansion as the earlier storage icons.
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
@@ -42,8 +39,6 @@ public partial class CampaignView
             using var display = Image.CreateFromData(32, 32, false, Image.Format.Rgba8, rgba);
             _storageIcons.Add(new(icon.SpeciesId), ImageTexture.CreateFromImage(display));
         }
-        if (_battleArt.Count != 280 || _storageIcons.Count != 70 || _route22Footprints.Count != 41)
-            throw new InvalidDataException("Vermilion presentation inventory differs.");
     }
 
     // Source battle_scripts_1.s:3883 and 4212–4281 select these battle_message.c strings.

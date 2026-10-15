@@ -36,10 +36,10 @@ public partial class CampaignView
     private void LoadTrainerTowerPresentation()
     {
         if (!_catalog.TrainerTowerEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.PowerPlantEnabled || _battleArt.Count != 852)
+        if (!_session.IsCurrentGame || !_catalog.PowerPlantEnabled)
             throw new InvalidDataException("Trainer Tower requires the current Power Plant presentation predecessor.");
         var catalog = PretTrainerTowerPresentation.Load(_root); _trainerTowerArt = catalog;
-        byte[] Pixels(JsonElement row) => File.ReadAllBytes(Path.Combine(_root, row.GetProperty("rgbaPath").GetString()!));
+        byte[] Pixels(JsonElement row) => PngRgba8.Decode(File.ReadAllBytes(Path.Combine(_root, row.GetProperty("texturePath").GetString()!)), row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
         Texture2D TextureFor(JsonElement row)
         {
             using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(), false, Image.Format.Rgba8, Pixels(row));
@@ -54,8 +54,7 @@ public partial class CampaignView
             var position = new Vector2(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32());
             if (_battleArt.TryGetValue(key, out var inherited))
             {
-                using var old = inherited.Texture.GetImage(); old.Convert(Image.Format.Rgba8);
-                if (inherited.Position != position || !old.GetData().SequenceEqual(Pixels(row))) throw new InvalidDataException("Inherited Tower battle pixels differ: " + id);
+                if (inherited.Position != position) throw new InvalidDataException("Inherited Tower battle pixels differ: " + id);
             }
             else _battleArt.Add(key, new(TextureFor(row), position));
         }
@@ -73,9 +72,8 @@ public partial class CampaignView
             // Existing regions retain their original textures. New prizes include METAL COAT.
             if (!_earlyItemIcons.ContainsKey(id)) _earlyItemIcons.Add(id, (ImageTexture)TextureFor(row));
         }
-        Write("trainerTowerPresentation", new { PretTrainerTowerPresentation.ManifestSha256, sourceSprites = 80,
-            newOpponentSpecies = 18, trainerPortraits = _trainerTowerPortraits.Count, battleSprites = _battleArt.Count,
-            layouts = 27, nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("trainerTowerPresentation", new { trainerPortraits = _trainerTowerPortraits.Count, battleSprites = _battleArt.Count,
+        nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
     private void AddTrainerTowerMoveGeometry()

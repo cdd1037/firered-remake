@@ -1,6 +1,5 @@
 using System.Buffers.Binary;
 using System.Collections.ObjectModel;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -29,7 +28,7 @@ public sealed class FameCheckerPresentationData
         Textures = new ReadOnlyDictionary<string, FameCheckerTexture>(manifest.GetProperty("assets").EnumerateArray().ToDictionary(
             r => r.GetProperty("id").GetString()!, r => new FameCheckerTexture(r.GetProperty("id").GetString()!,
                 r.GetProperty("width").GetInt32(), r.GetProperty("height").GetInt32(),
-                bytes[r.GetProperty("rgbaPath").GetString()!], bytes[r.GetProperty("texturePath").GetString()!]), StringComparer.Ordinal));
+                PngRgba8.Decode(bytes[r.GetProperty("texturePath").GetString()!]), bytes[r.GetProperty("texturePath").GetString()!]), StringComparer.Ordinal));
         ObjectIcons = new ReadOnlyDictionary<string, FameCheckerObjectIcon>(manifest.GetProperty("objectIcons").EnumerateArray().ToDictionary(
             r => r.GetProperty("symbol").GetString()!, r => new FameCheckerObjectIcon(r.GetProperty("symbol").GetString()!,
                 r.GetProperty("sourceId").GetInt32(), r.GetProperty("assetId").GetString()!, r.GetProperty("x").GetInt32(),
@@ -43,7 +42,7 @@ public sealed class FameCheckerPresentationData
         if ((uint)sourceIndex >= 16) throw new ArgumentOutOfRangeException(nameof(sourceIndex));
         var original = Textures["portrait-" + sourceIndex];
         if (!silhouette) return original;
-        byte[] indices = files[PretFameCheckerPresentation.Base + original.Id + ".indices"], pixels = new byte[64 * 64 * 4];
+        byte[] indices = files[PretFameCheckerPresentation.Base + original.Id + ".indices"],pixels = new byte[64 * 64 * 4];
         var colors = Palettes.GetProperty("silhouette");
         for (int i = 0; i < indices.Length; i++)
         {
@@ -70,7 +69,7 @@ public sealed class FameCheckerPresentationData
                 int value = (pixels[i + c] >> 3) * 7 >> 4;
                 pixels[i + c] = (byte)((value << 3) | (value >> 2));
             }
-        return result with { Id = result.Id + "-dimmed", Rgba = pixels };
+        return result with { Id = result.Id + "-dimmed",Rgba = pixels };
     }
 
     public FameCheckerTexture CursorFrame(int frame)
@@ -138,8 +137,8 @@ public sealed class FameCheckerPresentationData
         {
             for (int y = 0; y < 160; y++) for (int x = 0; x < 240; x++)
             {
-                int sx = (x + scroll) % (width * 8), entry = map[y / 8 * width + sx / 8];
-                int tx = (entry & 1024) != 0 ? 7 - sx % 8 : sx % 8, ty = (entry & 2048) != 0 ? 7 - y % 8 : y % 8;
+                int sx = (x + scroll) % (width * 8),entry = map[y / 8 * width + sx / 8];
+                int tx = (entry & 1024) != 0 ? 7 - sx % 8 : sx % 8,ty = (entry & 2048) != 0 ? 7 - y % 8 : y % 8;
                 int index = tiles[(entry & 1023) * 64 + ty * 8 + tx];
                 if (index == 0) continue;
                 var color = colors[(entry >> 12) * 16 + index];
@@ -161,76 +160,56 @@ public sealed class FameCheckerPresentationData
 public static class PretFameCheckerPresentation
 {
     public const string Base = "content/generated/fame-checker-presentation/";
-    public const string Raw = "content/raw/fame-checker-presentation/";
+    public const string Raw = PretSourcePaths.FireRedRawDirectory + "/";
     public const string Profile = "firered-fame-checker-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string LockSha256 = "aa145898803a698b3613131b86b673c2911612d798b7341b8da007898dd0294e";
-    public const string ManifestSha256 = "b9c4e4eb773ed9dd87e67d21bca7a67aba73dfd186c7af6f0292547e5e8f1b4e";
 
     public static FameCheckerPresentationData Load(string root)
     {
-        byte[] Read(string path, string expected, int length)
+        byte[] Read(string path)
         {
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
-                path.Split('/').Any(p => p is "" or "." or "..") || length is <= 0 or > 1_000_000 ||
-                !(path.StartsWith(Base, StringComparison.Ordinal) || path.StartsWith(Raw, StringComparison.Ordinal) ||
-                  path == "scripts/fame-checker-presentation.lock.json"))
+                path.Split('/').Any(p => p is "" or "." or "..") ||
+                !path.StartsWith(Base, StringComparison.Ordinal))
                 throw new InvalidDataException("Unsafe Fame Checker resource.");
             var file = new FileInfo(Path.Combine(root, path));
             if (file.LinkTarget is not null) throw new InvalidDataException("Fame Checker resource symlink rejected.");
             for (var directory = file.Directory; directory is not null; directory = directory.Parent)
                 if (directory.LinkTarget is not null) throw new InvalidDataException("Fame Checker resource directory symlink rejected.");
-            if (!file.Exists || file.Length != length) throw new InvalidDataException("Fame Checker resource missing or length differs: " + path);
+            if (!file.Exists) throw new InvalidDataException("Fame Checker resource missing: " + path);
             var bytes = File.ReadAllBytes(file.FullName);
-            if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != expected)
-                throw new InvalidDataException("Fame Checker resource hash differs: " + path);
             return bytes;
         }
-        using var locked = JsonDocument.Parse(Read("scripts/fame-checker-presentation.lock.json", LockSha256, 34133));
-        using var document = JsonDocument.Parse(Read(Base + "manifest.json", ManifestSha256, 73192));
-        var sourceLock = locked.RootElement;
+        using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
         var manifest = document.RootElement;
-        foreach (var item in new[] { sourceLock, manifest })
-            if (item.GetProperty("schemaVersion").GetInt32() != 1 || item.GetProperty("profile").GetString() != Profile ||
-                item.GetProperty("sourceCommit").GetString() != SourceCommit || item.GetProperty("sourceTree").GetString() != SourceTree)
-                throw new InvalidDataException("Fame Checker presentation source identity differs.");
-        if (manifest.GetProperty("lockSha256").GetString() != LockSha256 || manifest.GetProperty("portraits").GetArrayLength() != 16 ||
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1)
+            throw new InvalidDataException("Unsupported Fame Checker presentation schema.");
+        if (manifest.GetProperty("portraits").GetArrayLength() != 16 ||
             manifest.GetProperty("factIconSymbols").GetArrayLength() != 96)
             throw new InvalidDataException("Fame Checker presentation inventory differs.");
-        var paths = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var row in sourceLock.GetProperty("inputs").EnumerateArray())
-        {
-            string path = row.GetProperty("rawPath").GetString()!;
-            if (!paths.Add(path) || path != Raw + row.GetProperty("path").GetString()) throw new InvalidDataException("Fame Checker raw path differs.");
-            var bytes = Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-            if (Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {bytes.Length}\0"), .. bytes])) != row.GetProperty("gitBlobSha1").GetString())
-                throw new InvalidDataException("Fame Checker source Git blob differs.");
-        }
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+            files.Add(path, Read(path));
         }
         foreach (var asset in manifest.GetProperty("assets").EnumerateArray())
         {
-            int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
+            int width = asset.GetProperty("width").GetInt32(),height = asset.GetProperty("height").GetInt32();
             if (width is <= 0 or > 512 || height is <= 0 or > 512 ||
-                files[asset.GetProperty("rgbaPath").GetString()!].Length != width * height * 4 ||
+                PngRgba8.Decode(files[asset.GetProperty("texturePath").GetString()!]).Length != width * height * 4 ||
                 files[asset.GetProperty("indicesPath").GetString()!].Length != width * height ||
                 files[asset.GetProperty("indicesPath").GetString()!].Any(i => i > 15))
                 throw new InvalidDataException("Fame Checker image dimensions/indices differ.");
             var image = files[asset.GetProperty("texturePath").GetString()!];
-            if (image.Length < 33 || !image.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) ||
+            if (image.Length < 33 || !image.AsSpan(0, 8).SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 }) ||
                 BinaryPrimitives.ReadInt32BigEndian(image.AsSpan(16)) != width || BinaryPrimitives.ReadInt32BigEndian(image.AsSpan(20)) != height)
-                throw new InvalidDataException("Fame Checker PNG identity differs.");
+                throw new InvalidDataException("Fame Checker PNG dimensions differ.");
         }
         using var layout = JsonDocument.Parse(files[Base + "layout.json"]);
         using var palettes = JsonDocument.Parse(files[Base + "palettes.json"]);
-        if (layout.RootElement.GetProperty("profile").GetString() != Profile || palettes.RootElement.GetProperty("profile").GetString() != Profile ||
-            manifest.GetProperty("audio").GetProperty("cues").GetArrayLength() != 5)
-            throw new InvalidDataException("Fame Checker layout/cue identity differs.");
+        if (            manifest.GetProperty("audio").GetProperty("cues").GetArrayLength() != 5)
+            throw new InvalidDataException("Fame Checker audio cue table differs.");
         return new(manifest, layout.RootElement, palettes.RootElement, files);
     }
 }

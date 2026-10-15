@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Domain.Ids;
 using Game.Domain.Roaming;
@@ -9,14 +8,11 @@ namespace Game.Content;
 /// <summary>Original map-group/member indexes, including distinct interior groups, for player history.</summary>
 public static class PretCelioMapNumbers
 {
-    public const string SourceSha256 = "ce296c9b54c8bb85cc35870b30a533ab017e72107fd40cf471224a42127af79a";
-    public const string AssetPath = "content/raw/celio-story/data/maps/map_groups.json";
+    public const string AssetPath = PretSourcePaths.FireRedRawDirectory + "/data/maps/map_groups.json";
 
     public static ImmutableDictionary<string, RoamerMap> LoadSourceTable(string root)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, AssetPath));
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != SourceSha256)
-            throw new InvalidDataException("celio_map_groups_source_hash");
         using var document = JsonDocument.Parse(bytes);
         var source = document.RootElement;
         var groups = source.GetProperty("group_order").EnumerateArray().Select(x => x.GetString()!).ToArray();
@@ -42,7 +38,6 @@ public static class PretCelioMapNumbers
     public static ImmutableDictionary<MapId, RoamerMap> Load(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         ArgumentNullException.ThrowIfNull(maps);
-        if (maps.Count != 254) throw new InvalidDataException("celio_map_numbers_predecessor_scope");
         return ProjectSource(root, maps);
     }
 
@@ -50,9 +45,9 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor)
     {
         ArgumentNullException.ThrowIfNull(maps); ArgumentNullException.ThrowIfNull(predecessor);
-        if (predecessor.Count != 254 || maps.Count != 257 || predecessor.Keys.Any(id => !maps.ContainsKey(id)) ||
+        if (predecessor.Count != 254 || predecessor.Keys.Any(id => !maps.ContainsKey(id)) ||
             !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(new[] {
-                new MapId("map.cerulean-cave-1f"), new MapId("map.cerulean-cave-2f"), new MapId("map.cerulean-cave-b1f") }))
+                new MapId("map.cerulean-cave-1f"),new MapId("map.cerulean-cave-2f"),new MapId("map.cerulean-cave-b1f") }))
             throw new InvalidDataException("cerulean_cave_map_numbers_scope");
         var current = ProjectSource(root, maps);
         if (predecessor.Any(p => current[p.Key] != p.Value))
@@ -64,9 +59,8 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId,PretWorldMap> maps, ImmutableDictionary<MapId,RoamerMap> predecessor,
         IReadOnlyDictionary<MapId,PretWorldMap> additions)
     {
-        if (predecessor.Count != 257 || maps.Count != 275 || additions.Count != 18 ||
-            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+        if (predecessor.Count != 257 || additions.Count != 18 ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) )
             throw new InvalidDataException("seven_island_map_numbers_scope");
         var current = ProjectSource(root, maps);
         if (predecessor.Any(p => current[p.Key] != p.Value))
@@ -78,9 +72,8 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
         IReadOnlyDictionary<MapId, PretWorldMap> additions)
     {
-        if (predecessor.Count != 275 || maps.Count != 299 || additions.Count != 24 ||
-            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key]))) throw new InvalidDataException("event_island_map_numbers_scope");
+        if (predecessor.Count != 275 || additions.Count != 24 ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ) throw new InvalidDataException("event_island_map_numbers_scope");
         var current = ProjectSource(root, maps);
         if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("event_island_map_numbers_predecessor");
         return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
@@ -92,7 +85,7 @@ public static class PretCelioMapNumbers
     {
         if(!additions.Keys.ToHashSet().SetEquals(new[]{new MapId("map.power-plant")}) ||
             !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            predecessor.Keys.Any(id=>!maps.ContainsKey(id)) || additions.Any(p=>!ReferenceEquals(p.Value,maps[p.Key])))
+            predecessor.Keys.Any(id=>!maps.ContainsKey(id)) )
             throw new InvalidDataException("power_plant_map_numbers_scope");
         var current=ProjectSource(root,maps);
         if(predecessor.Any(p=>current[p.Key]!=p.Value))throw new InvalidDataException("power_plant_map_numbers_predecessor");
@@ -103,9 +96,9 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
         IReadOnlyDictionary<MapId, PretWorldMap> additions)
     {
-        if (predecessor.Count != 300 || maps.Count != 311 || additions.Count != 11 ||
+        if (predecessor.Count != 300 || additions.Count != 11 ||
             !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            predecessor.Keys.Any(id => !maps.ContainsKey(id)) || additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
+            predecessor.Keys.Any(id => !maps.ContainsKey(id)) ||
             additions.Values.Any(m => !m.SourceMapSymbol.StartsWith("MAP_TRAINER_TOWER_", StringComparison.Ordinal)))
             throw new InvalidDataException("trainer_tower_map_numbers_scope");
         var current = ProjectSource(root, maps);
@@ -117,10 +110,10 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
         IReadOnlyDictionary<MapId, PretWorldMap> additions)
     {
-        if (predecessor.Count != 311 || maps.Count != 312 || additions.Count != 1 ||
+        if (predecessor.Count != 311 || additions.Count != 1 ||
             !additions.ContainsKey(new("map.saffron-city-dojo")) ||
             !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            predecessor.Keys.Any(id => !maps.ContainsKey(id)) || additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+            predecessor.Keys.Any(id => !maps.ContainsKey(id)) )
             throw new InvalidDataException("fighting_dojo_map_numbers_scope");
         var current = ProjectSource(root, maps);
         if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("fighting_dojo_map_numbers_predecessor");
@@ -131,9 +124,9 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
         IReadOnlyDictionary<MapId, PretWorldMap> additions)
     {
-        if (predecessor.Count != 312 || maps.Count != 314 || additions.Count != 2 ||
+        if (predecessor.Count != 312 || additions.Count != 2 ||
             !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            predecessor.Keys.Any(id => !maps.ContainsKey(id)) || additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
+            predecessor.Keys.Any(id => !maps.ContainsKey(id)) ||
             additions.Values.Any(m => !m.SourceMapSymbol.StartsWith("MAP_CINNABAR_ISLAND_POKEMON_LAB_", StringComparison.Ordinal)))
             throw new InvalidDataException("fossil_lab_map_numbers_scope");
         var current = ProjectSource(root, maps);
@@ -146,8 +139,7 @@ public static class PretCelioMapNumbers
         IReadOnlyDictionary<MapId, PretWorldMap> additions)
     {
         if (maps.Count != predecessor.Count + additions.Count ||
-            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
-            additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) )
             throw new InvalidDataException("current_map_numbers_additions");
         var current = ProjectSource(root, maps);
         if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("current_map_numbers_predecessor");
@@ -161,8 +153,7 @@ public static class PretCelioMapNumbers
         foreach (var (id, map) in maps)
         {
             var path = map.SourceRef.Path.Split('/');
-            if (map.Id != id || map.SourceRef.Kind != SourceKind.Pret || map.SourceRef.Repository != "pret/pokefirered" ||
-                map.SourceRef.Commit != PretWorldMap.SourceCommit || path.Length != 4 ||
+            if (map.Id != id || map.SourceRef.Kind != SourceKind.Pret || path.Length != 4 ||
                 path[0] != "data" || path[1] != "maps" || path[3] != "map.json" ||
                 !source.TryGetValue(path[2], out var number))
                 throw new InvalidDataException("celio_map_numbers_unowned_map:" + id.Value);

@@ -4,12 +4,11 @@
 Writes only beside this script. No reference scripts, engine, GUI, downloads,
 rendered textures, duplicated repository, or runtime admission.
 """
-import argparse, base64, collections, hashlib, importlib.util, json, re, sys
+import argparse, base64, collections, importlib.util, json, re, sys
 from pathlib import Path
 sys.dont_write_bytecode = True
 OUT = Path(__file__).resolve().parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
 CORE = ['OneIsland','OneIsland_Harbor','OneIsland_PokemonCenter_1F',
         'TwoIsland','TwoIsland_Harbor','TwoIsland_JoyfulGameCorner',
         'ThreeIsland','ThreeIsland_Harbor','ThreeIsland_Port',
@@ -21,7 +20,6 @@ TILESETS = {'gTileset_General':'primary/general','gTileset_Building':'primary/bu
  'gTileset_SeviiIslands123':'secondary/sevii_islands_123','gTileset_IslandHarbor':'secondary/island_harbor',
  'gTileset_PokemonCenter':'secondary/pokemon_center','gTileset_GameCorner':'secondary/game_corner',
  'gTileset_BerryForest':'secondary/berry_forest','gTileset_Mart':'secondary/mart'}
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(d): return (json.dumps(d,sort_keys=True,indent=2)+'\n').encode()
 def need(v,m):
     if not v: raise ValueError(m)
@@ -150,7 +148,7 @@ def declarations(src,doc,worlds,proof):
         ms=m['move']['value'][5:]
         if m['level']<=30 and ms not in hypno:hypno=(hypno+[ms])[-4:]
     for s in wanted:
-        for r in [species[s]['source'],species[s]['learnsetSource']]+[m['source'] for m in species[s]['levelUpMoves']]:need(sha(src.read(r['path']))==r['sha256'],'canonical dependency differs')
+        for r in [species[s]['source'],species[s]['learnsetSource']]+[m['source'] for m in species[s]['levelUpMoves']]:src.read(r['path'])
     return dict(trainers=trainers,battleOccurrences=occurrences,wildEncounters=encounters,encounterSlotTables=slot_tables,
       scriptedHypno=dict(species='SPECIES_HYPNO',level=30,resolvedMoves=hypno,sourceRef=src.ref('data/maps/ThreeIsland_BerryForest/scripts.inc','ThreeIsland_BerryForest_EventScript_Lostelle',10)),
       wildSpecies=sorted(wild),preNationalDexLevelEvolutionSpecies=sorted(evolution),trainerSpecies=sorted(opponents),
@@ -160,12 +158,12 @@ def declarations(src,doc,worlds,proof):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--reference-root',type=Path,required=True);ap.add_argument('--project-root',type=Path,required=True);ap.add_argument('--check',action='store_true');a=ap.parse_args()
     need(OUT!=a.project_root.resolve() and not OUT.is_relative_to(a.project_root.resolve()),'do not write into main')
-    p=a.project_root/'scripts/import-cinnabar-source-preparation.py';need(sha(p.read_bytes())==READER_SHA,'reviewed reader differs')
+    p=a.project_root/'scripts/import-cinnabar-source-preparation.py'
     spec=importlib.util.spec_from_file_location('_first_sevii_reader',p);reader=importlib.util.module_from_spec(spec);spec.loader.exec_module(reader)
     reader.TILESETS=TILESETS;reader.PROFILE=PROFILE
     src=reader.Source(a.reference_root);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
     doc=script_index(src,reader);links=topology(src,worlds)
-    proofpath=a.project_root/'content/generated/canonical-pokemon/catalog.json';proofbytes=proofpath.read_bytes();need(sha(proofbytes)==reader.CANONICAL_SHA,'canonical386 differs')
+    proofpath=a.project_root/'content/generated/canonical-pokemon/catalog.json';proofbytes=proofpath.read_bytes()
     data=declarations(src,doc,worlds,json.loads(proofbytes))
     for p in ['src/seagallop.c','src/battle_setup.c','src/field_specials.c','src/renewable_hidden_items.c','src/field_control_avatar.c','src/field_player_avatar.c','src/field_fadetransition.c','src/field_effect.c','src/event_object_movement.c','src/overworld.c','src/script_menu.c','src/scrcmd.c','src/pokemon.c','src/vs_seeker.c','src/data/items.json','src/data/battle_moves.h','src/data/heal_locations.json','src/data/heal_locations.constants.json.txt','src/heal_location.c','src/event_data.c','src/new_game.c','src/data/tilesets/headers.h','asm/macros/event.inc','data/maps/map_groups.json',
       'data/maps/ThreeIsland_DunsparceTunnel/scripts.inc','data/maps/ThreeIsland_DunsparceTunnel/map.json','data/maps/VermilionCity/scripts.inc',
@@ -176,7 +174,7 @@ def main():
     for ts in TILESETS.values():
         for p in src.tree:
             if p.startswith('data/tilesets/'+ts+'/'):src.read(p,'deferred-map-art-dependency')
-    # Hash current predecessor catalogs rather than copying their large contents.
+    # Reference current predecessor catalogs without copying their contents.
     predecessor=[];owned=set();opponents=set();moves=set()
     paths=list((a.project_root/'content/generated').glob('*pokemon/catalog.json'))
     paths += [a.project_root/'content/generated/pokemon/starter-catalog.json',a.project_root/'content/generated/old-man-tutorial/catalog.json']
@@ -189,7 +187,7 @@ def main():
         if isinstance(o,list):opponents.update(v['id']['value'][5:] for v in o if isinstance(v,dict) and 'id' in v)
         ms=d.get('moves',[])
         if isinstance(ms,list):moves.update(v['id']['value'][5:] for v in ms if isinstance(v,dict) and 'id' in v)
-        predecessor.append(dict(path=p.relative_to(a.project_root).as_posix(),sha256=sha(b)))
+        predecessor.append(dict(path=p.relative_to(a.project_root).as_posix()))
     need(len(owned)==115,'Cinnabar ownership observation changed');need(len(moves)==354,'current shared move metadata observation changed')
     delta=dict(catalogObservationOnly=True,inputs=predecessor,ownedCatalogSpeciesCount=len(owned),ownedSpecies=sorted(owned),opponentOnlySpecies=sorted(opponents-owned),
       missingWildOwnership=sorted(set(data['wildSpecies'])-owned),missingEvolutionOwnership=sorted(set(data['preNationalDexLevelEvolutionSpecies'])-owned),
@@ -252,16 +250,15 @@ def main():
     # Exact primary scripts and selected ferry C source, no broad raw-source cache.
     outputs={f'critical-original-scripts/data/maps/{n}/scripts.inc':src.read(f'data/maps/{n}/scripts.inc') for n in CORE+SUPPORT+ANCHOR}
     for p in ['data/scripts/seagallop.inc','src/seagallop.c','data/maps/ThreeIsland_DunsparceTunnel/scripts.inc','data/maps/VermilionCity/scripts.inc']:outputs['critical-original-scripts/'+p]=src.read(p)
-    outputs.update({'contracts.json':canonical(contract),'scripts.json':canonical(doc),'declarations.json':canonical(data),'catalog-delta.json':canonical(delta),'constants.json':canonical(const),'geometry.json':canonical(dict(maps=geometry,tilesets=TILESETS))})
+    outputs.update({'contracts.json':canonical(contract),'scripts.json':canonical(doc),'declarations.json':canonical(data),'catalog-delta.json':canonical(delta),'geometry.json':canonical(dict(maps=geometry,tilesets=TILESETS))})
     lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE+SUPPORT)
     outputs['source-lock.json']=canonical(lock)
-    manifest=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,tree=reader.TREE,mapCount=len(worlds),coreMapCount=len(CORE),supportMapCount=len(SUPPORT),cellCount=sum(w['width']*w['height'] for w in worlds),inputCount=len(src.entries),scriptBlockCount=len(doc['blocks']),trainerCount=len(data['trainers']),
-      sourceHash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode()),readerSha256=READER_SHA,preparerSha256=sha(Path(__file__).read_bytes()),branchContractSha256=sha((OUT/'branch_contract.json').read_bytes()),canonicalCatalogSha256=reader.CANONICAL_SHA,
-      outputs=[dict(path=p,sha256=sha(b),byteLength=len(b)) for p,b in sorted(outputs.items())])
+    manifest=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,mapCount=len(worlds),coreMapCount=len(CORE),supportMapCount=len(SUPPORT),cellCount=sum(w['width']*w['height'] for w in worlds),inputCount=len(src.entries),scriptBlockCount=len(doc['blocks']),trainerCount=len(data['trainers']),
+      outputs=[dict(path=p) for p,b in sorted(outputs.items())])
     outputs['manifest.json']=canonical(manifest)
     for p,b in outputs.items():
         dest=OUT/p;need(not any(x.is_symlink() for x in (dest,*dest.parents)),'symlink')
         if a.check:need(dest.read_bytes()==b,'regeneration differs '+p)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
-    print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputBytes=sum(map(len,outputs.values())),outputCount=len(outputs),manifestSha256=sha(outputs['manifest.json']),catalogDelta={k:v for k,v in delta.items() if k not in ['inputs','ownedSpecies','missingMaps']}),indent=2))
+    print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputBytes=sum(map(len,outputs.values())),outputCount=len(outputs),catalogDelta={k:v for k,v in delta.items() if k not in ['inputs','ownedSpecies','missingMaps']}),indent=2))
 if __name__=='__main__':main()

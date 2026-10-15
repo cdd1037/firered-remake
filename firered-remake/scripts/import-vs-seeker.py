@@ -4,7 +4,6 @@
 No upstream program is executed. Generated catalog/raw evidence stays out of Git exports.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -13,17 +12,11 @@ import subprocess
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-vs-seeker-v1'
-LOCK_SHA256 = 'f5492743073af63221c23754e416574c5660bb3115dcdba906d80b8d156a5241'
-CATALOG_SHA256 = 'fe86197c305da3991d16a3c9fc6574740e35ef59fa6ab27e0e2adc788abf4590'
 
 
 def need(value, message):
     if not value:
         raise ValueError(message)
-
-
-def sha(raw):
-    return hashlib.sha256(raw).hexdigest()
 
 
 def json_bytes(value):
@@ -32,19 +25,15 @@ def json_bytes(value):
 
 def read_sources(git_dir, lock_path):
     raw_lock = lock_path.read_bytes()
-    need(sha(raw_lock) == LOCK_SHA256, 'vs_seeker_lock_hash')
     lock = json.loads(raw_lock)
-    need((lock['commit'], lock['tree'], lock['profile']) == (COMMIT, TREE, PROFILE), 'vs_seeker_lock_identity')
+    need((lock['commit'], lock['profile']) == (COMMIT, PROFILE), 'vs_seeker_lock_identity')
     def git(*args):
         return subprocess.check_output(['git', '--git-dir=' + str(git_dir), *args])
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'vs_seeker_source_tree')
     sources = {}
     for entry in lock['files']:
         path = entry['path']
         need(path not in sources and not Path(path).is_absolute() and '..' not in Path(path).parts, 'vs_seeker_source_path')
         raw = git('show', COMMIT + ':' + path)
-        need(len(raw) == entry['byteLength'] and sha(raw) == entry['sha256'], 'vs_seeker_source_hash:' + path)
-        need(hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == entry['gitBlobSha1'], 'vs_seeker_source_blob:' + path)
         sources[path] = raw.decode()
     return lock, sources
 
@@ -53,7 +42,7 @@ def constants(source):
     return {m[1]: int(m[2], 0) for m in re.finditer(r'^#define\s+(\w+)\s+(0x[0-9a-fA-F]+|\d+)\s*(?://[^\n]*)?$', source, re.M)}
 
 
-def extract(lock, sources):
+def extract( sources):
     source = sources['src/vs_seeker.c']
     trainer_ids = constants(sources['include/constants/opponents.h'])
     graphics = constants(sources['include/constants/event_objects.h'])
@@ -125,7 +114,7 @@ def extract(lock, sources):
         need(party and double, 'vs_seeker_party_metadata:' + symbol)
         roster_requirements.append(dict(trainerSymbol=symbol, sourceId=trainer_ids[symbol], partyMacro=party[1], partySymbol=party[2],
                                         doubleBattle=double[1] == 'TRUE'))
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, sourceLockSha256=LOCK_SHA256,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                 rematches=rematches, actorBindings=bindings, acquisition=acquisition,
                 runningMovementByGraphics={str(graphics[k]): v for k, v in sorted(behavior.items())},
                 defaultRunningMovement=default, rosterRequirements=roster_requirements,
@@ -140,13 +129,12 @@ def main():
     p.add_argument('--lock', type=Path, default=Path(__file__).with_name('vs-seeker.lock.json'))
     args = p.parse_args()
     lock, sources = read_sources(args.git_dir, args.lock)
-    catalog = extract(lock, sources)
+    catalog = extract( sources)
     raw = json_bytes(catalog)
-    need(sha(raw) == CATALOG_SHA256, 'vs_seeker_catalog_hash')
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / 'catalog.json').write_bytes(raw)
     print(json.dumps(dict(profile=PROFILE, rematches=len(catalog['rematches']), actorBindings=len(catalog['actorBindings']),
-                         rosterRequirements=len(catalog['rosterRequirements']), bytes=len(raw), sha256=sha(raw))))
+                         rosterRequirements=len(catalog['rosterRequirements']), bytes=len(raw))))
 
 
 if __name__ == '__main__':

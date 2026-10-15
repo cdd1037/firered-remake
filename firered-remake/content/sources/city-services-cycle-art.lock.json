@@ -2,160 +2,84 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 189,
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
-      "path": "graphics/object_events/palettes/player.pal",
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c"
+      "path": "graphics/object_events/palettes/player.pal"
     },
     {
-      "byteLength": 901,
-      "gitBlobSha1": "25958e1e5d7aa10dc2d81a00d2ebffe066b457cd",
-      "path": "graphics/object_events/pics/people/green_bike.png",
-      "sha256": "84e4ea94fd1d584595cc6f38dd0b7fd84b0736429fd404874c588337f6aa1b9b"
+      "path": "graphics/object_events/pics/people/green_bike.png"
     },
     {
-      "byteLength": 1402,
-      "gitBlobSha1": "29c142b18fe043804e08b9a8bf4afbbd0e540429",
-      "path": "graphics/object_events/pics/people/green_fish.png",
-      "sha256": "661f1b7573f1e4860ce63085bb6bae0275c64bbc5429233aebfe492c24f74d65"
+      "path": "graphics/object_events/pics/people/green_fish.png"
     },
     {
-      "byteLength": 965,
-      "gitBlobSha1": "fca60266aded0dbf5974c75b763a857adc8a0e35",
-      "path": "graphics/object_events/pics/people/red_bike.png",
-      "sha256": "a5aef798abd0ef0a5c9734067bb9e01224485a60b1427c4b85a3c7c22cdbd31f"
+      "path": "graphics/object_events/pics/people/red_bike.png"
     },
     {
-      "byteLength": 1402,
-      "gitBlobSha1": "57a64d0e526d6354642b8005210c8ccbf75178a1",
-      "path": "graphics/object_events/pics/people/red_fish.png",
-      "sha256": "b74f893aa13c6e442d6821815508b2e1949283bf1155c9031e8a010ad1d584dd"
+      "path": "graphics/object_events/pics/people/red_fish.png"
     },
     {
-      "byteLength": 19206,
-      "gitBlobSha1": "936ef4dfdd84bc2ad533dc466072cd4a9632da85",
-      "path": "include/constants/event_object_movement.h",
-      "sha256": "3d12e9868383a42afef346e968031a12504dc8fc4dda12a17623af3f9df6ecba"
+      "path": "include/constants/event_object_movement.h"
     },
     {
-      "byteLength": 7965,
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
-      "path": "include/constants/event_objects.h",
-      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947"
+      "path": "include/constants/event_objects.h"
     },
     {
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "path": "include/constants/global.h",
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      "path": "include/constants/global.h"
     },
     {
-      "byteLength": 3471,
-      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
-      "path": "include/constants/metatile_behaviors.h",
-      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75"
+      "path": "include/constants/metatile_behaviors.h"
     },
     {
-      "byteLength": 12127,
-      "gitBlobSha1": "e2828ec0cb1439718e830fbef4366770b3b77b1c",
-      "path": "include/global.fieldmap.h",
-      "sha256": "34a8c91e10803ba48b97a2df8a721ca37fad7572b2ff951a4ab7ec15a5f050eb"
+      "path": "include/global.fieldmap.h"
     },
     {
-      "byteLength": 14482,
-      "gitBlobSha1": "be9cd8e50e69ab5896cb8f387fc89889facb78c8",
-      "path": "src/bike.c",
-      "sha256": "39b63a7a80e7d861b4051245e9201506e7e023d39f68bdb66d39ec3681345253"
+      "path": "src/bike.c"
     },
     {
-      "byteLength": 98466,
-      "gitBlobSha1": "2a1c496f77d7ae9b9687bd9567c6e9e780e8c6d3",
-      "path": "src/data/object_events/movement_action_func_tables.h",
-      "sha256": "e7b83d35e64a2b53d7b8bd123b9b76dc6b4f0e524378b453283677a256d1faf3"
+      "path": "src/data/object_events/movement_action_func_tables.h"
     },
     {
-      "byteLength": 37750,
-      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d",
-      "path": "src/data/object_events/object_event_anims.h",
-      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e"
+      "path": "src/data/object_events/object_event_anims.h"
     },
     {
-      "byteLength": 23522,
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
-      "path": "src/data/object_events/object_event_graphics.h",
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec"
+      "path": "src/data/object_events/object_event_graphics.h"
     },
     {
-      "byteLength": 97115,
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
-      "path": "src/data/object_events/object_event_graphics_info.h",
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512"
+      "path": "src/data/object_events/object_event_graphics_info.h"
     },
     {
-      "byteLength": 23651,
-      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
-      "path": "src/data/object_events/object_event_graphics_info_pointers.h",
-      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c"
+      "path": "src/data/object_events/object_event_graphics_info_pointers.h"
     },
     {
-      "byteLength": 82763,
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
-      "path": "src/data/object_events/object_event_pic_tables.h",
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995"
+      "path": "src/data/object_events/object_event_pic_tables.h"
     },
     {
-      "byteLength": 326145,
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
-      "path": "src/event_object_movement.c",
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254"
+      "path": "src/event_object_movement.c"
     },
     {
-      "byteLength": 67969,
-      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
-      "path": "src/field_player_avatar.c",
-      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e"
+      "path": "src/field_player_avatar.c"
     },
     {
-      "byteLength": 28138,
-      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f",
-      "path": "src/item_use.c",
-      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98"
+      "path": "src/item_use.c"
     },
     {
-      "byteLength": 24340,
-      "gitBlobSha1": "ce273664764b6ec93cd4f3014f0e5aad1a3025de",
-      "path": "src/metatile_behavior.c",
-      "sha256": "a1491016f9b6ee56c38fd66bf890dfcb5d37c7dc0dfda9fe7c0a5282376b9042"
+      "path": "src/metatile_behavior.c"
     },
     {
-      "byteLength": 103643,
-      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
-      "path": "src/overworld.c",
-      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2"
+      "path": "src/overworld.c"
     },
     {
-      "byteLength": 6909,
-      "gitBlobSha1": "a35be10092c47a98d7a9debc434b4c29063c5b5d",
-      "path": "src/quest_log_player.c",
-      "sha256": "58d6a8161c14e3ee6a53e15773426b7934677ca603ad3efea2cdab49a8c0784f"
+      "path": "src/quest_log_player.c"
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
-      "path": "src/strings.c",
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      "path": "src/strings.c"
     },
     {
-      "byteLength": 18570,
-      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
-      "path": "tools/gbagfx/gfx.c",
-      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+      "path": "tools/gbagfx/gfx.c"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-city-cycle-art-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

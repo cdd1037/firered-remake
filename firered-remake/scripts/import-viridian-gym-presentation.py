@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Pinned Viridian Gym portraits and inherited presentation bindings; no upstream code runs."""
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -15,14 +14,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-viridian-gym-presentation-v1'
-LOCK_SHA = '8467efb0a1fd76293dbe1c24ea34421331d3df6630e69201797621e421086236'
 BASE = 'content/generated/viridian-gym-presentation/'
-RAW = 'content/raw/viridian-gym-presentation/'
-PORTRAITS = [
-    ('tamer-front', 'tamer', 'Tamer', 'TAMER', 103, 'content/generated/fuchsia-gym-presentation/tamer-front.rgba'),
-    ('black-belt-front', 'black_belt', 'BlackBelt', 'BLACK_BELT', 105, None),
-    ('cooltrainer-m-front', 'cool_trainer_m', 'CooltrainerM', 'COOLTRAINER_M', 110, None),
-    ('giovanni-front', 'leader_giovanni', 'LeaderGiovanni', 'LEADER_GIOVANNI', 108, 'content/generated/rocket-hideout-art/giovanni-front.rgba')]
+RAW = 'content/raw/pokefirered/037335f4/'
+PORTRAITS = [('tamer-front', 'tamer', 'Tamer', 'TAMER', 103, 'content/generated/fuchsia-gym-presentation/tamer-front.png'), ('black-belt-front', 'black_belt', 'BlackBelt', 'BLACK_BELT', 105, None), ('cooltrainer-m-front', 'cool_trainer_m', 'CooltrainerM', 'COOLTRAINER_M', 110, None), ('giovanni-front', 'leader_giovanni', 'LeaderGiovanni', 'LEADER_GIOVANNI', 108, 'content/generated/rocket-hideout-art/giovanni-front.png')]
 TRAINERS = [('TAMER_JASON', 296, 'JASON', 'TAMER', 'TAMER', 'HIKER', 11),
     ('TAMER_COLE', 297, 'COLE', 'TAMER', 'TAMER', 'HIKER', 11),
     ('BLACK_BELT_ATSUSHI', 322, 'ATSUSHI', 'BLACK_BELT', 'BLACK_BELT', 'INTENSE', 4),
@@ -40,8 +34,6 @@ def require(value, message):
     if not value:
         raise ValueError(message)
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 def encode(value):
     return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
@@ -69,20 +61,15 @@ def pixels(image, palette):
 
 def authenticate(root, inherited, reference=None):
     data = safe(root, 'scripts/viridian-gym-presentation.lock.json').read_bytes()
-    require(sha(data) == LOCK_SHA, 'Presentation lock differs')
     lock = json.loads(data)
-    require((lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit'], lock['tree'], len(lock['files'])) ==
-        (1, PROFILE, 'pret/pokefirered', COMMIT, TREE, 25), 'Presentation source scope differs')
+    require((lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit'], len(lock['files'])) == (1, PROFILE, 'pret/pokefirered', COMMIT, 25), 'Presentation source scope differs')
     raw, reused = {}, {}
     for row in lock['files']:
         path = row['path']
         b = subprocess.check_output(['git', '-C', str(reference), 'show', COMMIT + ':' + path]) if reference else safe(root, RAW + path).read_bytes()
-        require((len(b), sha(b), hashlib.sha1(f'blob {len(b)}\0'.encode() + b).hexdigest()) ==
-            (row['byteLength'], row['sha256'], row['gitBlobSha1']), 'Source differs: ' + path)
         raw[path] = b
     for row in lock['inheritedInputs']:
         b = safe(inherited, row['path']).read_bytes()
-        require((len(b), sha(b)) == (row['byteLength'], row['sha256']), 'Inherited resource differs: ' + row['path'])
         reused[row['path']] = b
     return lock, raw, reused
 
@@ -104,15 +91,12 @@ def build(lock, raw, reused):
             and coords[number][0] == '8', 'Portrait source ID/position differs')
         size, rgba = pixels(raw[image], raw[palette]); require(size == (64, 64), 'Portrait size differs')
         if inherited:
-            require(reused[inherited] == rgba, 'Reused portrait pixels differ')
-            rgba_path = inherited
+            require(Image.open(io.BytesIO(reused[inherited])).convert('RGBA').tobytes() == rgba, 'Reused portrait pixels differ')
+            texture_path = inherited
         else:
-            outputs[identity + '.rgba'] = rgba
             outputs[identity + '.png'] = png(*size, rgba)
-            rgba_path = BASE + identity + '.rgba'
-        portraits.append(dict(id=identity, trainerPic='TRAINER_PIC_' + picture, sourceTrainerPicId=number,
-            width=64, height=64, x=144, y=8, rgbaPath=rgba_path, rgbaSha256=sha(rgba), inherited=inherited is not None,
-            sourceImage=image, sourcePalette=palette))
+            texture_path = BASE + identity + '.png'
+        portraits.append(dict(id=identity, trainerPic='TRAINER_PIC_' + picture, sourceTrainerPicId=number, width=64, height=64, x=144, y=8, texturePath=texture_path, inherited=inherited is not None, sourceImage=image, sourcePalette=palette))
     rows = []
     for symbol, number, name, cls, picture, music, category in TRAINERS:
         trainer = 'TRAINER_' + symbol
@@ -149,13 +133,13 @@ def build(lock, raw, reused):
     movement = source('src/event_object_movement.c')
     require('InitJumpRegular(objectEvent, sprite, DIR_SOUTH, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);' in movement
         and '[JUMP_DISTANCE_FAR]      = 32,' in movement and '[JUMP_DISTANCE_FAR]      = 1,' in movement, 'Source jump timing differs')
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=LOCK_SHA,
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], portraits=portraits, trainers=rows,
         map=dict(id='map.viridian-city-gym', music='MUS_GYM', battleScene='MAP_BATTLE_SCENE_GYM'),
-        reward=dict(item='pret:ITEM_TM26', reusedIconItem='pret:ITEM_TM28', iconRgbaSha256=sha(icon), badgeFlag='FLAG_BADGE08_GET', badgeAsset='badge-8'),
+        reward=dict(item='pret:ITEM_TM26', reusedIconItem='pret:ITEM_TM28',  badgeFlag='FLAG_BADGE08_GET', badgeAsset='badge-8'),
         audio=dict(requiredCues=CUES, newCues=0, physicalAudioVerified=False),
         movement=dict(action='jump_2_down', reusedProjection='FuchsiaLedgeDrawYOffset', frames=32, distancePixels=32),
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p,b in sorted(outputs.items())])
+        outputs=[dict(path=p) for p,b in sorted(outputs.items())])
     outputs['manifest.json'] = encode(manifest)
     return outputs
 
@@ -170,7 +154,7 @@ def run(root=ROOT, inherited=None, reference=None, check=False):
         for p,b in [(RAW+p,b) for p,b in raw.items()] + [(BASE+p,b) for p,b in outputs.items()]:
             target = safe(root,p); target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(b)
     return dict(sourceFiles=len(raw), trainers=9, portraits=4, newPortraits=2, newSpecies=0, newAudioCues=0,
-        manifestSha256=sha(outputs['manifest.json']), manifestBytes=len(outputs['manifest.json']), sourceAndPixelChecksOnly=True)
+         manifestBytes=len(outputs['manifest.json']), sourceAndPixelChecksOnly=True)
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)

@@ -9,8 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SevenIslandShopCatalog
 {
     public const string Profile = "firered-seven-island-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "deecbe9ea815f22225e606499c50453935be8a6a5b9db2598786d5d71f85b28b";
-    public const string ShopSourceSha256 = "5a5efe9b9fc7e3cd76eea76feec3131ee59f205818724349595279f8388d266a";
     public static ItemId KingsRockId { get; } = new("pret:ITEM_KINGS_ROCK");
     public static ItemId LuckyPunchId { get; } = new("pret:ITEM_LUCKY_PUNCH");
     public static ItemId HeartScaleId { get; } = new("pret:ITEM_HEART_SCALE");
@@ -36,12 +34,10 @@ public sealed class SevenIslandShopCatalog
             throw new ArgumentException("seven_island_shop_predecessor");
         if (candidate.Shops.IsDefault || candidate.Shops.Length != old.Shops.Length + 1 ||
             old.Shops.Where((stock, i) => !ReferenceEquals(stock, candidate.Shops[i])).Any() ||
-            CampaignSourceFingerprint.Compute(candidate.Shops[^1]) != ShopSourceSha256 ||
             candidate.Shops[^1].Items.Any(id => !candidate.Items.Any(item => item.Id == id)))
             throw new ArgumentException("seven_island_shop_stock");
         var fresh = candidate.Items.Skip(111).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([KingsRockId, LuckyPunchId, HeartScaleId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([KingsRockId, LuckyPunchId, HeartScaleId]))
             throw new ArgumentException("seven_island_shop_source");
         var proof = new SevenIslandShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

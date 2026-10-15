@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Compile bounded original callbacks in a disclosed C host; emit one compact callback oracle."""
-import argparse,pathlib,re,json,subprocess,hashlib
+import argparse,pathlib,re,json,subprocess
 p=argparse.ArgumentParser();p.add_argument('--project-root',type=pathlib.Path,default=pathlib.Path(__file__).resolve().parents[1]);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
 r=a.project_root;out=a.output;out.mkdir(parents=True,exist_ok=False)
-lock=json.loads((r/'scripts/six-island-presentation.lock.json').read_text());inputs={}
+lock=json.loads((r/'scripts/six-island-presentation.lock.json').read_text());inputs=[]
 def source(path):
- data=(r/'content/raw/six-island-presentation'/path).read_bytes();row=next(v for v in lock['files'] if v['path']==path)
- assert len(data)==row['byteLength'] and hashlib.sha256(data).hexdigest()==row['sha256'];inputs[path]=row['sha256'];return data.decode()
+ data=(r/'content/raw/pokefirered/037335f4'/path).read_bytes();row=next(v for v in lock['files'] if v['path']==path)
+ inputs.append(path);return data.decode()
 def func(text,name):
  m=re.search(r'^(?:static )?(?:bool8|u8|void) '+name+r'\([^;]*?\)\n\{',text,re.M);assert m,name
  i=m.end();depth=1
@@ -127,5 +127,5 @@ cmd=['cc','-std=c11','-O0','-Wall','-Wextra',str(out/'source-motion.c'),'-o',str
 build=subprocess.run(cmd,text=True,capture_output=True);(out/'build.log').write_text(build.stdout+build.stderr);assert build.returncode==0,build.stderr
 run=subprocess.run([str(out/'source-motion')],text=True,capture_output=True,check=True);data=json.loads(run.stdout);(out/'oracle.json').write_text(json.dumps(data,separators=(',',':'))+'\n')
 assert len(data['landings'])==5 and all(x['frames'][-1][-1]==1 for x in data['landings'])
-report={'passed':True,'sourceFiles':inputs,'oracleSha256':hashlib.sha256((out/'oracle.json').read_bytes()).hexdigest(),'sourceHostSha256':hashlib.sha256(code.encode()).hexdigest(),'commands':[cmd],'scope':'Extracted original palette, teleport departure task, seven fall callbacks and ShakeScreen. Weather initialization is the disclosed first-callback harness boundary; no native or audio acceptance.'}
+report={'passed':True,'sourceFiles':inputs,'commands':[cmd],'scope':'Extracted original palette, teleport departure task, seven fall callbacks and ShakeScreen. Weather initialization is the disclosed first-callback harness boundary; no native or audio acceptance.'}
 (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'passed':True,'departureFrameCounts':[len(x['frames']) for x in data['departures']],'frameCounts':[len(x['frames']) for x in data['landings']],'firstVisible':[next(f[0] for f in x['frames'] if f[4]) for x in data['landings']]}))

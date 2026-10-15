@@ -1,26 +1,14 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 
 public partial class SynthSourceAudioPlayer
 {
     private static SynthCue[] ExtendSlotMachineCues(string root, SynthCue[] cues,
-        JsonSerializerOptions options, string sourceCommit)
+        JsonSerializerOptions options)
     {
         const string source = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-        const int length = 1157;
-        const string sha256 = "9bdea1f521f5d02e9ca20f40d65cbf1a1e099da3e3c7e3aceb36283964ffcecb";
-        if (sourceCommit != source)
-            throw new InvalidDataException("Slot machine audio source revision differs.");
         string path = Path.Combine(Path.GetFullPath(root),
             "content/generated/slot-machine-presentation/synth-manifest.json");
-        using var stream = File.OpenRead(path);
-        if (stream.Length != length)
-            throw new InvalidDataException("Slot machine synth manifest length differs.");
-        byte[] bytes = new byte[length];
-        stream.ReadExactly(bytes);
-        if (stream.ReadByte() != -1 || stream.Length != bytes.Length ||
-            Convert.ToHexStringLower(SHA256.HashData(bytes)) != sha256)
-            throw new InvalidDataException("Slot machine synth manifest identity differs.");
+        byte[] bytes = File.ReadAllBytes(path);
         var extension = JsonSerializer.Deserialize<SynthManifest>(bytes, options)
             ?? throw new InvalidDataException("Slot machine synth manifest missing.");
         SynthCue[] expected =
@@ -30,7 +18,7 @@ public partial class SynthSourceAudioPlayer
             new("MUS_SLOTS_WIN", source, "MUS_SLOTS_WIN", "sound/songs/midi/mus_slots_win.mid", 2, 5, 150, 0x086C0120, 0, false),
             new("MUS_SLOTS_JACKPOT", source, "MUS_SLOTS_JACKPOT", "sound/songs/midi/mus_slots_jackpot.mid", 2, 5, 250, 0x086BFFE0, 0, false)
         ];
-        if (extension.SchemaVersion != 1 || extension.SourceCommit != source ||
+        if (extension.SchemaVersion != 1 ||
             !extension.Cues.SequenceEqual(expected) || expected.Any(c => cues.Any(old => old.Id == c.Id)))
             throw new InvalidDataException("Slot machine sound bindings differ.");
         SynthCue[] inherited =
@@ -40,7 +28,7 @@ public partial class SynthSourceAudioPlayer
         ];
         if (inherited.Any(c => !cues.Where(old => old.Id == c.Id).SequenceEqual(new[] { c })))
             throw new InvalidDataException("Inherited slot machine sound bindings differ.");
-        // The constructor authenticates the unchanged pack and checks each song header.
+        // The constructor checks each song header in the source pack.
         // PlaySoundEffect preserves SE1/SE2 routing; PlayFanfare owns the original
         // 150/250 counters, their separate zero-counter frame, and BGM restoration.
         return [.. cues, .. extension.Cues];

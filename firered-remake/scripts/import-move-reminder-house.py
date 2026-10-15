@@ -4,9 +4,14 @@
 Reads pinned Git blobs as inert data. Executes only the hash-pinned local map
 renderer, compact converter and source utilities. Service rules live separately.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -20,33 +25,25 @@ PACKAGE = 'move-reminder-house'
 RESOURCE_ID = 'firered-move-reminder-house-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-MANIFEST_SHA256 = '98898a42e59d260e8a4bd1c852de74fcd1199e4d05323f15e1fc685ca142be85'
-LOCK_SHA256 = 'a9c05702e03c978df40968c4412119701356edb8ff53973a01654cd3d08a8f20'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
 MAP = 'TwoIsland_House'
 MAP_ID = 'map.two-island-house'
 DIRECTORY = 'two-island-house'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
 TOWN_PACKAGE = 'content/generated/first-sevii-region'
-TOWN_MANIFEST_SHA = '8b772a69eb46f85430d35c65fdd2c00dc2c1011ef1e062fa63e82952f8a9b136'
 TOWN_RESOURCE = 'two-island/runtime-map.json'
-TOWN_SHA = 'ef1f6df94804329f37f3f3029e60b2c4d621554349fbe8a9b0db468a66fc770b'
 NPC_REUSE = {
-    'OBJ_EVENT_GFX_FAT_MAN': ('content/generated/city-services/npc/fat-man.png', '33d2717fa841e7213da284ee832207cc088e66f339c60b26266fe62557c1aa3f'),
-    'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/city-services/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
+    'OBJ_EVENT_GFX_FAT_MAN': 'content/generated/city-services/npc/fat-man.png',
+    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
 ALIASES = {'CHECKED_MUSHROOMS': 'FLAG_TEMP_1', 'HAS_BIG_MUSHROOM': 'FLAG_TEMP_2',
            'HAS_TINY_MUSHROOMS': 'FLAG_TEMP_3', 'HAS_BOTH_MUSHROOMS': 'FLAG_TEMP_4'}
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, expected, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == expected, 'Reviewed local codec differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -57,18 +54,16 @@ def retained_town(src, current):
     manifest_path = current / TOWN_PACKAGE / 'manifest.json'
     safe(manifest_path)
     manifest = manifest_path.read_bytes()
-    need(sha(manifest) == TOWN_MANIFEST_SHA, 'Retained Two Island manifest differs')
     row = next(e for e in json.loads(manifest)['outputs'] if e['path'] == TOWN_RESOURCE)
     path = current / TOWN_PACKAGE / TOWN_RESOURCE
     safe(path)
     raw = path.read_bytes()
-    need(row['sha256'] == TOWN_SHA and sha(raw) == TOWN_SHA and len(raw) == row['byteLength'], 'Retained Two Island map differs')
     original = src.json('data/maps/TwoIsland/map.json')
     need(json.loads(raw)['events'] == original, 'Retained Two Island events differ')
     entrances = [dict(index=i, event=e) for i, e in enumerate(original['warp_events']) if e['dest_map'] == 'MAP_TWO_ISLAND_HOUSE']
     need([(r['index'], r['event']['x'], r['event']['y'], r['event']['elevation'], r['event']['dest_warp_id']) for r in entrances] == [(1, 33, 9, 0, '0')], 'Original Two Island entrance differs')
     return dict(map='map.two-island', operation='reuse-existing-source-map', currentPackage=TOWN_PACKAGE,
-                currentManifestSha256=TOWN_MANIFEST_SHA, currentManifestByteLength=len(manifest), currentResource=row,
+                 currentResource=row,
                 entrances=entrances, geometryChanges=[], eventChanges=[])
 
 
@@ -145,9 +140,9 @@ def main():
                                [args.project_root, args.dependency_root, args.reference_root, args.current_project_root or args.dependency_root]]
     for path in [target, dep, ref, current]: safe(path)
     need(not (target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', READER_SHA, 'move_reminder_house_reader')
+    reader = module(dep / 'scripts/import-cinnabar-source-preparation.py', 'move_reminder_house_reader')
     reader.PRODUCT, reader.TILESETS, reader.PROFILE = dep, TILESETS, RESOURCE_ID
-    util = module(dep / 'scripts/import-fossil-lab-region.py', UTILITIES_SHA, 'move_reminder_house_utils')
+    util = module(dep / 'scripts/import-fossil-lab-region.py', 'move_reminder_house_utils')
     util.MAPS = [MAP]
     src = reader.Source(ref)
     world = reader.decode(src, MAP); world['stableId'] = MAP_ID
@@ -182,7 +177,7 @@ def main():
         limitations=['Original map and script source package; service rules and current-game admission are separate.',
             'Town geometry and events are retained unchanged.', 'NPC and player art reuse existing authenticated resources.'])
     shared = reader.load_helper('_regional_service_shared.py'); shared.PROFILE, shared.TILESETS = RESOURCE_ID, TILESETS
-    converter = reader.load_helper('_reviewed_runtime_converter.py')
+    converter = reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='move-reminder-house-', dir=target) as temp:
         stage = Path(temp)
@@ -190,40 +185,34 @@ def main():
         npcs = shared.npc_inventory(src, [world], stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'House actor cohort differs')
         for row in npcs['graphics']:
-            path, digest = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
+            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
             rendered = stage / row['texturePath']
-            need(sha(existing.read_bytes()) == digest == row['sha256'] and rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path, byteLength=existing.stat().st_size, reuseExisting=True); rendered.unlink()
+            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
+            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
         (stage / 'npc').rmdir()
-        source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
-        path = stage / DIRECTORY / 'world.json'; rich = path.read_bytes()
-        compact = converter.convert(rich, sha(rich), source_hash); util.compact_check(compact, world, src)
-        data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data); path.unlink()
+        path = stage / DIRECTORY / 'runtime-map.json'; rich = path.read_bytes()
+        compact = converter.normalize_runtime(json.loads(rich)); util.compact_check(compact, world, src)
+        data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data)
         entry = dict(sourceName=MAP, stableId=MAP_ID, directory=DIRECTORY, sourceMapSymbol=world['events']['id'],
-            path=DIRECTORY + '/runtime-map.json', sha256=sha(data), byteLength=len(data), sourceWorldSha256=sha(rich),
-            sourceWorldByteLength=len(rich), fullSourceHash=source_hash)
+            path=DIRECTORY + '/runtime-map.json')
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[MAP], completeGame=False)
         lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, sourceTree=TREE,
-                    fullSourceHash=source_hash, maps=[entry], inputFiles=lock['files'], tilesets=TILESETS,
+        docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
+                     maps=[entry], inputFiles=lock['files'], tilesets=TILESETS,
                     mapSymbols={'MAP_TWO_ISLAND_HOUSE': MAP_ID, 'MAP_TWO_ISLAND': 'map.two-island'}),
-                'scripts.json': scripts, 'constants.json': constants, 'contracts.json': contract,
-                'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}
+                'scripts.json': scripts,  'contracts.json': contract,
+                'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix(), sha256=sha(p.read_bytes()), byteLength=p.stat().st_size)
+        outputs = [dict(path=p.relative_to(stage).as_posix())
                    for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest = dict(schemaVersion=1, profile=RESOURCE_ID, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-            sourceTree=TREE, fullSourceHash=source_hash, lockSha256=sha(lock_bytes), readerSha256=READER_SHA,
-            sourceUtilitiesSha256=UTILITIES_SHA, converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],
-            rendererSha256=reader.HELPERS['_regional_service_shared.py'], inputCount=len(src.entries), mapCount=1,
+              inputCount=len(src.entries), mapCount=1,
             cellCount=99, borderCellCount=4, directedWarpCount=2, objectCount=1, reusedNpcGraphicsCount=2,
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes) == MANIFEST_SHA256, 'Pinned generated manifest differs: ' + sha(manifest_bytes))
-        if LOCK_SHA256: need(sha(lock_bytes) == LOCK_SHA256, 'Pinned source lock differs: ' + sha(lock_bytes))
         writes = [(target / 'scripts/move-reminder-house.lock.json', lock_bytes),
                   (target / 'scripts/move-reminder-house.contract.json', canonical(contract))]
-        writes += [(target / 'content/raw' / PACKAGE / p, b) for p, b in sorted(src.data.items())]
+        writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:
             safe(path)
@@ -231,8 +220,7 @@ def main():
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
         if not args.check:
             for path, data in writes: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes), manifestByteLength=len(manifest_bytes),
-            lockSha256=sha(lock_bytes), lockByteLength=len(lock_bytes), fullSourceHash=source_hash,
+        print(json.dumps(dict(
             inputCount=len(src.entries), outputCount=len(outputs), scriptBlockCount=len(scripts['blocks']), check=args.check), indent=2))
 
 

@@ -60,7 +60,7 @@ public static class FuchsiaGymMachineRules
             var row = toxic.Compatibility[index];
             var span = SourceSpans[index];
             var source = new OpeningItemSourceRef(FuchsiaMachineRules.SourcePath, basis.Species.Value[5..],
-                span.Start, span.End, FuchsiaMachineRules.SourceSha256);
+                span.Start, span.End);
             if (row is null || row.Species != basis.Species || row.SourceSpeciesId != basis.SourceSpeciesId ||
                 row.Source != basis.Source || row.Source != source || row.CanLearn != !IncompatibleSpecies.Contains(basis.Species))
                 throw new NotSupportedException("fuchsia_gym_tm06_compatibility_source");

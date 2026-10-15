@@ -2,8 +2,13 @@
 
 Only difference in rendering semantics: authenticated map-entry VRAM clear plus
 compressed/callback-free source tilesets defines absent tile pixels as zero.
-Original regional helper and compact converter remain byte-for-byte unchanged.
 """
+import sys as _map_sys
+from pathlib import Path as _MapPath
+_map_scripts = str(_MapPath(__file__).resolve().parents[1] / 'scripts')
+if _map_scripts not in _map_sys.path:
+    _map_sys.path.insert(0, _map_scripts)
+from map_runtime import compact_world as _compact_world, encode as _encode_runtime
 import base64
 import collections
 import io
@@ -14,7 +19,7 @@ def import_map(src, name, stable_id, out, codec):
     # Source-authenticated map-entry loading clears all VRAM before copying only
     # the emitted compressed tile bytes. No animation callback writes it later.
     TILESETS, PROFILE = codec.TILESETS, codec.PROFILE
-    digest, canonical, movement = codec.digest, codec.canonical, codec.movement
+    canonical, movement = codec.canonical, codec.movement
     reset = src.text('src/overworld.c')
     loader = src.text('src/fieldmap.c')
     decompress = src.text('src/new_menu_helpers.c')
@@ -148,7 +153,7 @@ def import_map(src, name, stable_id, out, codec):
     artifacts = []
     for filename, img in zip(('bottom.png', 'middle.png', 'top.png', 'map.png'), layers + [composite]):
         img.save(out / filename, optimize=False, compress_level=9)
-        artifacts.append(dict(path=filename, sha256=digest((out / filename).read_bytes()), width=img.width, height=img.height))
+        artifacts.append(dict(path=filename, width=img.width, height=img.height))
     # Render the exact periodic source border cells separately;
     # do not infer the common 2x2 pattern or stretch a map-edge screenshot.
     border_cells = [cell(b, i % bw, i // bw) for i, b in enumerate(border)]
@@ -168,7 +173,7 @@ def import_map(src, name, stable_id, out, codec):
         border_composite = Image.alpha_composite(border_composite, layer)
     for filename, img in zip(('border-bottom.png','border-middle.png','border-top.png','border.png'), border_layers + [border_composite]):
         img.save(out / filename, optimize=False, compress_level=9)
-        artifacts.append(dict(path=filename, sha256=digest((out / filename).read_bytes()), width=img.width, height=img.height))
+        artifacts.append(dict(path=filename, width=img.width, height=img.height))
     embedded_paths = [path, f'data/maps/{name}/scripts.inc', f'data/maps/{name}/text.inc',
                       'data/layouts/layouts.json', 'include/constants/metatile_behaviors.h',
                       layout['blockdata_filepath'], layout['border_filepath']] + [p + '/metatile_attributes.bin' for p in bases]
@@ -176,8 +181,7 @@ def import_map(src, name, stable_id, out, codec):
                  isPlayable=False, runtimeIntegrated=False, width=width, height=height, tileSize=16,
                  borderWidth=bw, borderHeight=bh, texturePath='map.png', artifacts=artifacts,
                  layout=layout, cells=cells, borderCells=border_cells,
-                 events=events, embeddedSource=[dict(path=p, sha256=src.entries[p]['sha256'],
-                                                  base64=base64.b64encode(src.data[p]).decode()) for p in embedded_paths if p in src.data])
+                 events=events, embeddedSource=[dict(path=p, base64=base64.b64encode(src.data[p]).decode()) for p in embedded_paths if p in src.data])
     world['clearedVramTiles'] = [dict(tileset=bases[i], localTile=local, tile=tid, palette=pal) for i, local, tid, pal in sorted(cleared_references)]
-    (out / 'world.json').write_bytes(canonical(world).encode('utf-8'))
+    (out / 'runtime-map.json').write_bytes(_encode_runtime(_compact_world(world)))
     return world

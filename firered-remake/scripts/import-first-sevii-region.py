@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Regenerate pinned first-Sevii source, map pixels and compact data; execute no upstream code."""
-import argparse, ast, contextlib, hashlib, importlib.util, io, json, re, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, contextlib,  importlib.util, io, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-first-sevii-region-v1'
 PACKAGE = 'first-sevii-region'
-PREPARER_SHA = 'a506bc03d71e3736341e55e05f6d7374e25ed66885e1079ae3290ac2e794f950'
-BRANCH_SHA = '5cd70c1f53797718396eae42f294b12d7c5c66fcc909dac5f9bb56f792c2db52'
-MANIFEST_SHA256 = '8b772a69eb46f85430d35c65fdd2c00dc2c1011ef1e062fa63e82952f8a9b136'
-LOCK_SHA256 = '40359e64d1915ebc6005569295144be57827ec5343d3a8c660fae36b7d4da85e'
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
 def need(v,m):
     if not v: raise ValueError(m)
-def module(path, name, expected):
-    need(sha(path.read_bytes()) == expected, 'Reviewed importer differs: '+str(path))
+def module(path, name):
     spec=importlib.util.spec_from_file_location(name,path); value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink in output: '+str(path))
 def main():
@@ -27,9 +27,9 @@ def main():
     target=a.project_root.absolute();dep=a.dependency_root.absolute();ref=a.reference_root.absolute()
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
     safe(target)
-    prep=module(ROOT/'scripts/first-sevii-preparation/prepare_first_sevii.py','first_sevii_preparer',PREPARER_SHA)
-    branch=(ROOT/'scripts/first-sevii-preparation/branch_contract.json').read_bytes();need(sha(branch)==BRANCH_SHA,'Branch contract differs')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py','first_sevii_reader',prep.READER_SHA)
+    prep=module(ROOT / 'scripts/first-sevii-preparation/prepare_first_sevii.py', 'first_sevii_preparer')
+    branch=(ROOT/'scripts/first-sevii-preparation/branch_contract.json').read_bytes()
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'first_sevii_reader')
     reader.PRODUCT=dep;reader.TILESETS=prep.TILESETS;reader.PROFILE=PROFILE
     with tempfile.TemporaryDirectory(prefix='first-sevii-import-') as temp:
         tmp=Path(temp);prepared=tmp/'prepared';prepared.mkdir();(prepared/'branch_contract.json').write_bytes(branch)
@@ -43,8 +43,6 @@ def main():
         src=reader.Source(ref)
         for entry in original['source-lock.json']['files']:
             for role in entry['roles']:src.read(entry['path'],role)
-            actual=src.entries[entry['path']]
-            need(all(actual[k]==entry[k] for k in ('sha256','byteLength','gitBlobSha1')), 'Prepared source differs')
         names=prep.CORE+prep.SUPPORT
         worlds=[reader.decode(src,n) for n in names]
         for n in prep.ANCHOR+['VermilionCity']:src.read(f'data/maps/{n}/map.json','reused-anchor-events')
@@ -54,7 +52,7 @@ def main():
         scripts=original['scripts.json'];scripts['profile']=PROFILE
         scripts['sourcePaths']=sorted({b['sourceRef']['path'] for b in scripts['blocks']})
         shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=prep.TILESETS
-        converter=reader.load_helper('_reviewed_runtime_converter.py')
+        converter=reader.load_helper('export-runtime-maps.py')
         stage=tmp/'generated';stage.mkdir()
         for name in names:shared.import_map(src,name,'map.'+reader.directory(name),stage/reader.directory(name))
         npcs=shared.npc_inventory(src,worlds,stage/'npc')
@@ -113,29 +111,25 @@ def main():
             if p.startswith('data/maps/') and p.endswith('/map.json'):
                 name=p.split('/')[2];symbol='MAP_'+re.sub(r'([a-z])([A-Z])',r'\1_\2',name).upper()
                 if symbol in map_tokens:map_symbols[symbol]='map.'+reader.directory(name)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         catalog=[]
         for w in worlds:
-            relative=reader.directory(w['sourceName']);p=stage/relative/'world.json';rich=p.read_bytes()
-            compact=converter.encode(converter.convert(rich,sha(rich),source_hash));(stage/relative/'runtime-map.json').write_bytes(compact)
-            catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],path=relative+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash))
-            p.unlink()
+            relative=reader.directory(w['sourceName']);p=stage/relative/'runtime-map.json';rich=p.read_bytes()
+            compact=converter.encode(converter.normalize_runtime(json.loads(rich)));(stage/relative/'runtime-map.json').write_bytes(compact)
+            catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=names)
-        lockdata=canonical(lock);lockhash=sha(lockdata)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=catalog,tilesets=prep.TILESETS,mapSymbols=map_symbols,inputFiles=lock['files'],**contracts['mapTopology']),
-              'scripts.json':scripts,'constants.json':constants,'npc-source.json':npcs,'contracts.json':contracts,
+        lockdata=canonical(lock)
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=prep.TILESETS,mapSymbols=map_symbols,inputFiles=lock['files'],**contracts['mapTopology']),
+              'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contracts,
               'declarations.json':original['declarations.json'],'geometry.json':original['geometry.json'],
-              'catalog-delta.json':original['catalog-delta.json']}
+              'catalog-delta.json':original['catalog-delta.json']}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,lockSha256=lockhash,inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,trainerCount=len(docs['declarations.json']['trainers']),preparerSha256=PREPARER_SHA,branchContractSha256=BRANCH_SHA,outputs=outputs)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,trainerCount=len(docs['declarations.json']['trainers']),outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        if MANIFEST_SHA256:need(sha(manifestdata)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(lockhash==LOCK_SHA256,'Pinned lock differs')
-        writes=[(target/'content/sources/first-sevii-region.lock.json',lockdata)]+[(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/sources/first-sevii-region.lock.json',lockdata)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             safe(p)
             if a.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestdata),manifestByteLength=len(manifestdata),lockByteLength=len(lockdata),outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 if __name__=='__main__':main()

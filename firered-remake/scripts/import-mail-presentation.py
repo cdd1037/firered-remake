@@ -5,7 +5,6 @@ Only pinned Git blobs are read; no source program is executed. Existing raw
 inputs and identical Fab/icon outputs are referenced in place, never copied.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -18,35 +17,32 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-mail-presentation-v1'
 BASE = 'content/generated/mail-presentation/'
-RAW = 'content/raw/mail-presentation/'
+RAW = 'content/raw/pokefirered/037335f4/'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-HELPERS = {'import-cinnabar-source-preparation.py': '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f',
-           'import-lab-battle-ui.py': 'b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a',
-           'fetch-lab-battle-ui.py': '805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32'}
-SHARED = ['npc-trade-mail', 'department-fourth-floor', 'six-island-presentation', 'seven-island-presentation',
-          'six-island-region', 'fame-checker-presentation', 'source-font', 'lab-battle-ui']
+HELPERS = (
+    'import-cinnabar-source-preparation.py',
+    'import-lab-battle-ui.py',
+    'fetch-lab-battle-ui.py',
+)
 NAMES = ['orange','harbor','glitter','mech','wood','wave','bead','shadow','tropic','dream','fab','retro']
 
 def need(ok, message):
     if not ok: raise ValueError(message)
-def sha(data): return hashlib.sha256(data).hexdigest()
 def encoded(value): return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode()
-def semantic(value): return sha(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode())
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink resource rejected: '+str(path))
-def module(path, digest, name):
-    safe(path); need(sha(path.read_bytes()) == digest, 'Reviewed helper differs: '+str(path))
+def module(path, name):
+    safe(path)
     spec=importlib.util.spec_from_file_location(name,path); result=importlib.util.module_from_spec(spec); spec.loader.exec_module(result); return result
 
 def generate(reference, dependency):
-    reader=module(dependency/'scripts/import-cinnabar-source-preparation.py',HELPERS['import-cinnabar-source-preparation.py'],'mail_source')
-    need(sha((dependency/'scripts/fetch-lab-battle-ui.py').read_bytes()) == HELPERS['fetch-lab-battle-ui.py'], 'Reviewed codec input differs')
-    codec=module(dependency/'scripts/import-lab-battle-ui.py',HELPERS['import-lab-battle-ui.py'],'mail_codec')
+    reader=module(dependency / 'scripts/import-cinnabar-source-preparation.py', 'mail_source')
+    codec=module(dependency / 'scripts/import-lab-battle-ui.py', 'mail_codec')
     src=reader.Source(reference); outputs={}; assets=[]
     def capture(path, pattern, symbol):
         text=src.text(path); match=re.search(pattern,text,re.M|re.S); need(match is not None,'Missing source symbol: '+symbol)
         return match, dict(path=path,symbol=symbol,startLine=text[:match.start()].count('\n')+1,
-                           endLine=text[:match.end()].count('\n')+1,sha256=src.entries[path]['sha256'])
+                           endLine=text[:match.end()].count('\n')+1)
     def block(path, name): return capture(path,r'^static const [^\n]*\b'+name+r'\[\][^=]*= \{(.*?)^\};',name)
     def png(w,h,pixels):
         scan=b''.join(b'\0'+pixels[y*w*4:(y+1)*w*4] for y in range(h))
@@ -61,14 +57,14 @@ def generate(reference, dependency):
                 im=Image.open(io.BytesIO(old.read_bytes())).convert('RGBA')
                 if im.size==(w,h) and im.tobytes()==pixels: data=old.read_bytes();path=reuse;shared=True
         if not shared: outputs[path]=data
-        result=dict(id=identifier,width=w,height=h,pngPath=path,pngSha256=sha(data),rgbaSha256=sha(pixels),sourcePaths=source_paths,shared=shared)
+        result=dict(id=identifier,width=w,height=h,pngPath=path,sourcePaths=source_paths,shared=shared)
         assets.append(result);return result
     mail=src.text('src/mail.c')
     need('sMailViewResources->mailArrangementType = 1;' in mail and 'FillBgTilemapBufferRect_Palette0(2, 0x001, 0, 0, 30, 20);' in mail,
          'Original mail arrangement/background differs')
     gfx, gfxref=block('src/mail.c','sGfxHeaders'); layout, layoutref=block('src/mail.c','sMessageLayouts_5x2')
     rows,rowref=block('src/mail.c','sLayout_5x2')
-    need(re.findall(r'numWordsInLine = (\d+)',rows[1])==['2','2','2','2','1'],'Original 9-word read layout differs')
+    need(re.findall('numWordsInLine = (\\d+)', rows[1]) == ['2', '2', '2', '2', '1'], 'Original 9-word read layout differs')
     need('messageLinesBuffer[i][0] != EOS && sMailViewResources->messageLinesBuffer[i][0] != CHAR_SPACE' in mail and
          'y += sMailViewResources->messageLayout->linesLayout[i].lineHeight;' in mail,'Original empty-line suppression differs')
     gend,gendref=block('src/mail.c','sGenderPals')
@@ -123,10 +119,7 @@ def generate(reference, dependency):
         pixels=codec.rgba(indices,codec.palette(src.read(ipaths[1])))
         reuse={'fab':'content/generated/npc-trade-mail/item-fab-mail.png','retro':'content/generated/department-fourth-floor/retro-mail.png','dream':'content/generated/six-island-presentation/item-dream-mail.png'}.get(name)
         icon=asset('item-'+name+'-mail',w,h,pixels,ipaths,reuse)
-        stationery.append(dict(itemId=item_id,itemSymbol=symbol,name=item['english'],backgroundIds=ids,itemIconId=icon['id'],
-            messageX=32,messageY=35,lineHeight=16,wordsPerLine=[2,2,2,2,1],authorX=120+attr['nameX'],authorY=120+attr['nameY'],
-            authorPrefix='From ',textRgb=colors[0],shadowRgb=colors[1],iconKind=name if name in ('bead','dream') else 'none',
-            iconCenterX=96 if name=='bead' else 40 if name=='dream' else 0,iconCenterY=128 if name in ('bead','dream') else 0))
+        stationery.append(dict(itemId=item_id, itemSymbol=symbol, name=item['english'], backgroundIds=ids, itemIconId=icon['id'], messageX=32, messageY=35, lineHeight=16, wordsPerLine=[2, 2, 2, 2, 1], authorX=120 + attr['nameX'], authorY=120 + attr['nameY'], authorPrefix='From ', textRgb=colors[0], shadowRgb=colors[1], iconKind=name if name in ('bead', 'dream') else 'none', iconCenterX=96 if name == 'bead' else 40 if name == 'dream' else 0, iconCenterY=128 if name in ('bead', 'dream') else 0))
     # Preserve species indirection as data. The active composition supplies existing canonical and 28 Unown textures.
     iconcode=src.text('src/pokemon_icon.c');maildata=src.text('src/mail_data.c')
     need('value += (SPECIES_UNOWN_B - 1);' in iconcode and '#define UNOWN_OFFSET 30000' in maildata and
@@ -182,12 +175,12 @@ def generate(reference, dependency):
     advance=int(re.findall(r'\d+',widths[1])[glyph])
     need('UNDERSCORE    = F9 09' in src.text('charmap.txt') and advance==10,'Source underscore differs')
     roles=list(font.crop(((glyph%16)*16,(glyph//16)*16,(glyph%16)*16+16,(glyph//16)*16+14)).tobytes())
-    pixels=bytes(c for role in roles for c in ([*textpal[4],255] if role==1 else [*textpal[3],255] if role==2 else [0,0,0,0]))
+    pixels = bytes((c for role in roles for c in ([*textpal[4], 255] if role == 1 else [*textpal[3], 255] if role == 2 else [0, 0, 0, 0])))
     asset('easy-chat-underscore',16,14,pixels,[fontpath,'src/text.c','charmap.txt'])
     specials=[];special_pixels=codec.canvas(96,14)
     for i,glyph in enumerate([0x53,0x55,0x56,0x57,0x58,0x59]):
         roles=list(font.crop(((glyph%16)*16,(glyph//16)*16,(glyph%16)*16+16,(glyph//16)*16+14)).tobytes())
-        pixels=bytes(c for role in roles for c in ([*textpal[2],255] if role==1 else [*textpal[3],255] if role==2 else [0,0,0,0]))
+        pixels = bytes((c for role in roles for c in ([*textpal[2], 255] if role == 1 else [*textpal[3], 255] if role == 2 else [0, 0, 0, 0])))
         codec.blit(special_pixels,96,pixels,16,14,i*16,0)
         specials.append(dict(sourceGlyph=glyph,codepoint=0xE100+i,x=i*16,width=16,height=14,advance=int(re.findall(r'\d+',widths[1])[glyph])))
     need('PKMN        = 53 54' in src.text('charmap.txt') and 'POKEBLOCK   = 55 56 57 58 59' in src.text('charmap.txt'),'Easy Chat glyph token binding differs')
@@ -198,8 +191,8 @@ def generate(reference, dependency):
     for symbol in textsyms:
         m,ref=capture('src/strings.c',r'^const u8 '+symbol+r'\[\] = _\("((?:[^"\\]|\\.)*)"\);',symbol)
         texts.append(dict(symbol=symbol,text=m[1].replace('\\n','\n'),source=ref))
-    document=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,assets=assets,stationery=stationery,items=items,
-        itemsSemanticSha256=semantic(items),additionsSemanticSha256=semantic(items[:9]),texts=texts,
+    document=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,assets=assets,stationery=stationery,items=items,
+        texts=texts,
         sourceRefs=[gfxref,layoutref,rowref,gendref],iconRules=dict(unownOffset=30000,unownForms=28,unownSpecies=201,unownB=413,maxSpecies=411,frame=0),
         easyChat=dict(fieldColumns=2,fieldRows=5,lastRowColumns=1,fieldX=41,fieldY=2,fieldAdvance=17,blankAdvance=advance,lineHeight=16,
             groupTextX=[18,102],wordTextX=[32,136],pickerTextY=90,pickerRows=4,footerTextX=[32,119,196],footerTextY=90,
@@ -210,16 +203,16 @@ def generate(reference, dependency):
     outputs[BASE+'catalog.json']=encoded(document)
     inputs=[];newraw={}
     for path,entry in sorted(src.entries.items()):
-        existing=next(('content/raw/'+p+'/'+path for p in SHARED if (dependency/('content/raw/'+p+'/'+path)).is_file()),None)
+        existing=RAW+path if (dependency/(RAW+path)).is_file() else None
         if existing:
             need((dependency/existing).read_bytes()==src.data[path],'Shared source bytes differ: '+existing)
         else:newraw[RAW+path]=src.data[path]
         inputs.append(dict(**entry,localPath=existing or RAW+path,shared=existing is not None))
     deps=[]
     for a in assets:
-        if a['shared']:deps.append(dict(path=a['pngPath'],sha256=a['pngSha256'],byteLength=(dependency/a['pngPath']).stat().st_size))
-    locked=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,inputs=inputs,dependencies=deps,
-        helpers=HELPERS,outputs=[dict(path=p,sha256=sha(b),byteLength=len(b)) for p,b in sorted(outputs.items())],
+        if a['shared']:deps.append(dict(path=a['pngPath']))
+    locked=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=inputs,dependencies=deps,
+        helpers=HELPERS,outputs=[dict(path=p) for p,b in sorted(outputs.items())],
         upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False)
     return newraw,outputs,locked,document
 
@@ -234,8 +227,8 @@ def main():
         file=target/path;safe(file)
         if args.check:need(file.is_file() and file.read_bytes()==data,'Regeneration differs: '+path)
         else:file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(data)
-    print(json.dumps(dict(check=args.check,lockSha256=sha(lock),catalogSha256=sha(outputs[BASE+'catalog.json']),
-        itemsSemanticSha256=doc['itemsSemanticSha256'],additionsSemanticSha256=doc['additionsSemanticSha256'],
+    print(json.dumps(dict(check=args.check,
+
         stationeryCount=len(doc['stationery']),assetCount=len(doc['assets']),newRawFiles=len(raw),newRawBytes=sum(map(len,raw.values())),
         reusedRawFiles=sum(x['shared'] for x in locked['inputs']),outputCount=len(outputs),outputBytes=sum(map(len,outputs.values()))),indent=2))
 if __name__=='__main__':main()

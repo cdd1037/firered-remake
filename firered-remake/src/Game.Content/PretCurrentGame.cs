@@ -16,10 +16,10 @@ using Game.Domain.Slots;
 namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
-    /// <summary>Builds the sole current game from its authenticated source predecessors, in source fingerprint order.</summary>
+    /// <summary>Builds the current game from generated resources and original scripts.</summary>
     public static PretCampaignCatalog LoadCurrent(string projectRoot)
     {
-        // Load the fixed resource set through its source-authenticating factories.
+        // Resource readers validate their formats; no original-file identity pass is required.
         var eventIsland = PretEventIslandRegion.Load(projectRoot);
         var powerPlant = PretPowerPlantRegion.Load(projectRoot);
         var trainerTower = PretTrainerTowerRegion.Load(projectRoot);
@@ -35,13 +35,13 @@ public sealed partial class PretCampaignCatalog
         var slotRules = SlotMachineRules.FromAuthenticatedJson(File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/slot-machine/rules.json")));
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
-        var fiveIsland = PretFiveIslandRegion.Load(projectRoot, compact: true);
+        var fiveIsland = PretFiveIslandRegion.Load(projectRoot);
         var fiveIslandTrainers = PretFiveIslandRules.LoadTrainers(projectRoot);
-        var sixIsland = PretSixIslandRegion.Load(projectRoot, compact: true);
+        var sixIsland = PretSixIslandRegion.Load(projectRoot);
         var sixIslandTrainers = PretSixIslandRules.LoadTrainers(projectRoot);
-        var fourIsland = PretFourIslandRegion.Load(projectRoot, compact: true);
+        var fourIsland = PretFourIslandRegion.Load(projectRoot);
         var fourIslandTrainers = PretFourIslandRules.LoadTrainers(projectRoot);
-        var seviiRuby = PretSeviiRubyRegion.Load(projectRoot, compact: true);
+        var seviiRuby = PretSeviiRubyRegion.Load(projectRoot);
         var seviiRubyTrainers = PretSeviiRubyRules.LoadTrainers(projectRoot);
         var nationalDexSource = PretNationalDexSource.Load(projectRoot);
         var twins = PretRoute8Twins.Load(projectRoot);
@@ -70,13 +70,12 @@ public sealed partial class PretCampaignCatalog
         var trainerFanClub = PretTrainerFanClub.Load(projectRoot);
         var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers);
         var sourceGridMenus = PretSourceGridMenus.Load(projectRoot);
-        PretFieldFly.ValidateSourceEvidence(projectRoot);
         var fieldFly = PretFieldFly.Load(projectRoot);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
-        var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
+        var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName));
         var route22 = PretRoute22Region.Load(projectRoot, runtimeMaps);
         var route3 = PretRoute3Region.Load(projectRoot, runtimeMaps);
         var oakPokedex = PretPokedexMenu.Load(projectRoot);
@@ -88,20 +87,20 @@ public sealed partial class PretCampaignCatalog
         var snorlax = PretSnorlaxRegion.Load(projectRoot);
         PretSnorlaxPokemon snorlaxPokemon;
         var snorlaxArt = PretSnorlaxArt.Load(projectRoot, pokedexMenu: oakPokedex);
-        var regionalServices = PretRegionalServiceMaps.Load(projectRoot, compact: true);
+        var regionalServices = PretRegionalServiceMaps.Load(projectRoot);
         var regionalGift = PretRegionalGiftContract.Load(projectRoot);
         var eeveeArt = PretEeveeArt.Load(projectRoot, pokedexMenu: oakPokedex);
         var departmentStore = PretDepartmentStoreContract.Load(projectRoot);
         var nameRater = PretNameRaterContract.Load(projectRoot);
         PretEeveePokemon eeveePokemon;
-        var fuchsiaRoute = PretFuchsiaRouteRegion.Load(projectRoot, compact: true);
+        var fuchsiaRoute = PretFuchsiaRouteRegion.Load(projectRoot);
         PretFuchsiaRoutePokemon fuchsiaPokemon;
         var fuchsiaGym = PretFuchsiaGymRegion.Load(projectRoot, runtimeMaps.FuchsiaGymPackage(projectRoot));
         var fuchsiaGymTrainers = PretFuchsiaGymTrainers.LoadDocument(projectRoot);
         var fuchsiaGymItems = PretFuchsiaGymItems.LoadProject(projectRoot);
         var fuchsiaGymMachines = PretFuchsiaGymMachines.LoadProject(projectRoot);
         var fuchsiaGymMoveSource = PretMetronomeMoveCatalog.Load(projectRoot);
-        var safari = PretSafariRegion.Load(projectRoot, compact: true);
+        var safari = PretSafariRegion.Load(projectRoot);
         var safariEncounters = PretSafariEncounters.Load(safari);
         var safariItems = PretSafariItems.LoadProject(projectRoot);
         var safariArt = PretSafariArt.Load(projectRoot);
@@ -112,26 +111,26 @@ public sealed partial class PretCampaignCatalog
         PretSurfEncounters surfEncounters;
         SurfOwnedPokemonCatalog surfOwned;
         var surfScripts = PretSurfScripts.Load(projectRoot);
-        var viridianGym = PretViridianGymRegion.Load(projectRoot, compact: true);
+        var viridianGym = PretViridianGymRegion.Load(projectRoot);
         var viridianGymTrainers = PretViridianGymRules.LoadTrainers(projectRoot);
         var leagueRivalTrainers = PretLeagueRivalRules.LoadTrainers(projectRoot);
-        var victoryRoad = PretVictoryRoadRegion.Load(projectRoot, compact: true);
+        var victoryRoad = PretVictoryRoadRegion.Load(projectRoot);
         var victoryRoadTrainers = PretVictoryRoadRules.LoadTrainers(projectRoot);
         var victoryRoadItems = PretVictoryRoadItems.LoadProject(projectRoot);
         _ = PretVictoryRoadRules.LoadWild(projectRoot);
-        var pokemonLeague = PretPokemonLeagueRegion.Load(projectRoot, compact: true);
+        var pokemonLeague = PretPokemonLeagueRegion.Load(projectRoot);
         var pokemonLeagueTrainers = PretPokemonLeagueRules.LoadTrainers(projectRoot);
-        var firstSevii = PretFirstSeviiRegion.Load(projectRoot, compact: true);
+        var firstSevii = PretFirstSeviiRegion.Load(projectRoot);
         var firstSeviiTrainers = PretFirstSeviiRules.LoadTrainers(projectRoot);
         var firstSeviiItems = PretFirstSeviiRules.LoadItems(projectRoot);
         var firstSeviiPresentation = PretFirstSeviiPresentation.LoadProject(projectRoot, projectRoot);
-        var cinnabar = PretCinnabarRegion.Load(projectRoot, compact: true);
+        var cinnabar = PretCinnabarRegion.Load(projectRoot);
         var cinnabarPokemon = PretCinnabarPokemon.LoadDocument(projectRoot, projectRoot);
         var cinnabarTrainers = PretCinnabarTrainers.Load(projectRoot);
         var cinnabarItems = PretCinnabarItems.LoadProject(projectRoot);
         CinnabarOwnedPokemonCatalog cinnabarOwned;
         CinnabarOpponentPokemonCatalog cinnabarOpponents;
-        var saffronGym = PretSaffronGymRegion.Load(projectRoot, compact: true);
+        var saffronGym = PretSaffronGymRegion.Load(projectRoot);
         var saffronGymTrainers = PretSaffronGymTrainers.Load(projectRoot);
         var saffronGymArt = PretSaffronGymArt.Load(projectRoot, projectRoot, pokedexMenu: oakPokedex);
         var cinnabarArt = PretCinnabarArt.Load(projectRoot, projectRoot, pokedexMenu: oakPokedex);
@@ -139,7 +138,7 @@ public sealed partial class PretCampaignCatalog
         var saffronGymItems = PretSaffronGymItems.LoadProject(projectRoot);
         var saffronGymPokemon = PretSaffronGymPokemon.LoadDocument(projectRoot, projectRoot);
         SaffronGymOpponentPokemonCatalog saffronGymOpponents;
-        var silph = PretSilphRegion.Load(projectRoot, true);
+        var silph = PretSilphRegion.Load(projectRoot);
         var silphItems = PretSilphItems.LoadProject(projectRoot);
         var silphTrainers = PretSilphTrainers.Load(projectRoot);
         PretSilphPokemon silphPokemon;
@@ -176,7 +175,6 @@ public sealed partial class PretCampaignCatalog
         var route11Trainers = PretRoute11Trainers.Load(projectRoot);
         var cityServices = PretCityServices.Load(projectRoot, runtimeMaps);
         var gameCornerCoins = PretGameCornerCoins.Load(projectRoot);
-        PretGameCornerHiddenCoins.ValidateSourceEvidence(projectRoot);
         var oldRod = PretOldRod.Load(projectRoot);
         var vermilionGym = PretVermilionGymRegion.Load(projectRoot, runtimeMaps);
         var vermilionGymTrainers = PretVermilionGymTrainers.Load(projectRoot);
@@ -309,40 +307,22 @@ public sealed partial class PretCampaignCatalog
         {
             string path = map.SourceRef.Path.Replace("map.json", "scripts.inc", StringComparison.Ordinal);
             var f = map.Metadata.Files.Single(x => x.Path == path);
-            sources.Add(new(path, map.ScriptSource, new(SourceKind.Pret, path, map.SourceMapSymbol, map.Metadata.Repository, map.Metadata.Commit, f.Sha256)));
+            sources.Add(new(path, map.ScriptSource, new(SourceKind.Pret,path,map.SourceMapSymbol,map.Metadata.Repository,map.Metadata.Commit)));
             if (map.Metadata.Files.Any(x => x.Path == map.SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal)))
                 textFiles.Add(map.TextSource);
-        }
-
-        {
-            // The existing map interpreter executes the same authenticated original script;
-            // never replace Daisy's program with a hand-written reward shortcut.
-            const string daisyPath = "data/maps/PalletTown_RivalsHouse/scripts.inc";
-            var source = sources.Single(s => s.Path == daisyPath);
-            if (source.SourceRef.Sha256 != townMap.SourceFiles.Single(s => s.Path == daisyPath).Sha256)
-                throw new InvalidDataException("town_map_daisy_source_conflict");
         }
 
         // Vs Seeker item ID is authenticated by the same immutable original item record used by the Bag.
         constants["ITEM_VS_SEEKER"] = vsSeekerPresentation.ItemDefinition.GetProperty("sourceItemId").GetInt32();
         using var l = JsonDocument.Parse(File.ReadAllText(Path.Combine(projectRoot, "scripts/fetch-story.lock.json")));
-        var hashes = new List<string>
-        {
-            PretWorldMap.FullSourceHash
-        };
         foreach (var e in l.RootElement.GetProperty("files").EnumerateArray())
         {
             var path = e.GetProperty("path").GetString()!;
-            var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/raw/story", path));
-            var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
-            var header = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-            if (hash != e.GetProperty("sha256").GetString() || Convert.ToHexStringLower(SHA1.HashData([..header, ..bytes])) != e.GetProperty("gitBlobSha1").GetString())
-                throw new InvalidDataException("Story source differs from pinned lock: " + path);
-            hashes.Add(path + ":" + hash);
+            var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
             var text = Encoding.UTF8.GetString(bytes);
             if (path is "data/event_scripts.s" or "data/scripts/movement.inc" or "data/scripts/fame_checker.inc" or "data/scripts/std_msgbox.inc" or "data/scripts/obtain_item.inc")
             {
-                sources.Add(new(path, text, new(SourceKind.Pret, path, "common-script-library", "pret/pokefirered", PretWorldMap.SourceCommit, hash)));
+                sources.Add(new(path, text, new(SourceKind.Pret,path,"common-script-library","pret/pokefirered",PretWorldMap.SourceCommit)));
                 textFiles.Add(text);
             }
 
@@ -352,8 +332,6 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.Add("viridian-region:" + PretViridianRegion.ManifestSha256);
-            hashes.AddRange(region.AdditionalSourceHashes);
             var paths = sources.Select(x => x.Path).ToHashSet(StringComparer.Ordinal);
             var textPaths = maps.Values.Select(x => x.SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal)).Concat(paths).ToHashSet(StringComparer.Ordinal);
             foreach (var source in region.Scripts)
@@ -372,14 +350,13 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(center.AdditionalSourceHashes);
             var byPath = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             var textPaths = maps.Values.Select(x => x.SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal)).Concat(byPath.Keys).Concat(region.TextSources.Keys).ToHashSet(StringComparer.Ordinal);
             foreach (var source in center.Scripts)
             {
                 if (byPath.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting authenticated center source: " + source.Path);
                     continue;
                 }
@@ -398,13 +375,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(forest.AdditionalSourceHashes);
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in forest.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting forest source: " + source.Path);
                     continue;
                 }
@@ -422,13 +398,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(pewter.AdditionalSourceHashes);
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in pewter.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Pewter source: " + source.Path);
                     continue;
                 }
@@ -447,13 +422,12 @@ public sealed partial class PretCampaignCatalog
 
         var pokemonStorage = PretPokemonStorageSource.Load(projectRoot);
         {
-            hashes.AddRange(pokemonStorage.AdditionalSourceHashes);
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in pokemonStorage.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting storage source: " + source.Path);
                     continue;
                 }
@@ -476,13 +450,12 @@ public sealed partial class PretCampaignCatalog
 
         var fieldPickups = PretEarlyPickups.Load(projectRoot);
         {
-            hashes.AddRange(fieldPickups.AdditionalSourceHashes);
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in fieldPickups.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting pickup source: " + source.Path);
                     continue;
                 }
@@ -504,15 +477,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(oakRating.AdditionalSourceHashes);
-            hashes.AddRange(oakPokedex.AdditionalSourceHashes);
-            hashes.Add("oak-rating-application:fr-oak-rating-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in oakRating.Scripts.Concat(oakRating.CallerScripts))
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Oak rating source: " + source.Path);
                     continue;
                 }
@@ -534,15 +504,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(route22.AdditionalSourceHashes);
-            hashes.AddRange(route22Pokemon.AdditionalSourceHashes);
-            hashes.Add("route22-application:fr-route22-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in route22.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Route22 source: " + source.Path);
                     continue;
                 }
@@ -564,15 +531,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(route3.AdditionalSourceHashes);
-            hashes.AddRange(route3Pokemon.AdditionalSourceHashes);
-            hashes.Add("route3-application:fr-route3-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in route3.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Route3 source: " + source.Path);
                     continue;
                 }
@@ -594,15 +558,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(mtMoon.AdditionalSourceHashes);
-            hashes.AddRange(mtMoonPokemon.AdditionalSourceHashes);
-            hashes.Add("mtmoon-application:fr-mtmoon-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in mtMoon.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting MtMoon source: " + source.Path);
                     continue;
                 }
@@ -624,14 +585,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(cerulean.AdditionalSourceHashes);
-            hashes.Add("cerulean-application:fr-cerulean-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in cerulean.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Cerulean source: " + source.Path);
                     continue;
                 }
@@ -653,14 +612,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(bill.AdditionalSourceHashes);
-            hashes.Add("bill-application:fr-bill-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in bill.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Bill source: " + source.Path);
                     continue;
                 }
@@ -682,14 +639,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(vermilion.AdditionalSourceHashes);
-            hashes.Add("vermilion-application:fr-vermilion-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in vermilion.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Vermilion source: " + source.Path);
                     continue;
                 }
@@ -711,14 +666,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(ssAnne.AdditionalSourceHashes);
-            hashes.Add("ssanne-application:fr-ssanne-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in ssAnne.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting S.S. Anne source: " + source.Path);
                     continue;
                 }
@@ -740,15 +693,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(vermilionGym.AdditionalSourceHashes);
-            hashes.AddRange(vermilionGymAssets.AdditionalSourceHashes);
-            hashes.Add("vermilion-gym-application:fr-vermilion-gym-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in vermilionGym.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Vermilion Gym source: " + source.Path);
                     continue;
                 }
@@ -770,15 +720,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(cityServices.AdditionalSourceHashes);
-            hashes.AddRange(oldRod.AdditionalSourceHashes);
-            hashes.Add("city-services-application:fr-city-services-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in cityServices.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting City services source: " + source.Path);
                     continue;
                 }
@@ -800,15 +747,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(route11.AdditionalSourceHashes);
-            hashes.AddRange(route11Encounters.AdditionalSourceHashes);
-            hashes.Add("route11-application:fr-route11-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in route11.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Route11 source: " + source.Path);
                     continue;
                 }
@@ -830,15 +774,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(rockTunnel.AdditionalSourceHashes);
-            hashes.AddRange(rockTunnelEncounters.AdditionalSourceHashes);
-            hashes.Add("rocktunnel-application:fr-rocktunnel-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in rockTunnel.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting RockTunnel source: " + source.Path);
                     continue;
                 }
@@ -860,15 +801,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(celadonApproach.AdditionalSourceHashes);
-            hashes.AddRange(celadonApproachEncounters.AdditionalSourceHashes);
-            hashes.Add("celadon-approach-application:fr-celadon-approach-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in celadonApproach.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting CeladonApproach source: " + source.Path);
                     continue;
                 }
@@ -890,14 +828,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(celadonGym.AdditionalSourceHashes);
-            hashes.Add("celadon-gym-application:fr-celadon-gym-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in celadonGym.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting CeladonGym source: " + source.Path);
                     continue;
                 }
@@ -919,14 +855,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(rocketHideout.AdditionalSourceHashes);
-            hashes.Add("rocket-hideout-application:fr-rocket-hideout-campaign-v1");
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in rocketHideout.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Rocket Hideout source: " + source.Path);
                     continue;
                 }
@@ -959,14 +893,12 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            hashes.AddRange(pokemonTower.AdditionalSourceHashes);
-            hashes.Add("pokemon-tower-trainers:" + PretPokemonTowerTrainers.LockSha256 + ":" + PretPokemonTowerTrainers.GeneratedSha256);
             var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
             foreach (var source in pokemonTower.Scripts)
             {
                 if (paths.TryGetValue(source.Path, out var prior))
                 {
-                    if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                    if (prior.Text != source.Text)
                         throw new InvalidDataException("Conflicting Tower source: " + source.Path);
                     continue;
                 }
@@ -987,138 +919,110 @@ public sealed partial class PretCampaignCatalog
             }
         }
 
-        AppendSnorlaxSources(snorlax, sources, textFiles, constants, hashes);
-        AppendRegionalFlavorSources(projectRoot, sources, textFiles, hashes);
-        AppendRegionalServiceSources(projectRoot, regionalServices, regionalGift, maps, sources, textFiles, constants, hashes);
-        AppendFuchsiaRouteSources(fuchsiaRoute, sources, textFiles, constants, hashes);
-        AppendFuchsiaGymSources(fuchsiaGym, fuchsiaGymItems, fuchsiaGymMoveSource, maps, sources, textFiles, constants, hashes);
-        AppendSafariSources(safari, safariItems, sources, textFiles, constants, hashes);
-        AppendSurfSources(surfScripts, sources, textFiles, constants, hashes);
-        AppendSilphSources(silph, silphItems, sources, textFiles, constants, hashes);
+        AppendSnorlaxSources(snorlax, sources, textFiles, constants);
+        AppendRegionalFlavorSources(projectRoot, sources, textFiles);
+        AppendRegionalServiceSources(projectRoot, regionalServices, regionalGift, sources, textFiles, constants);
+        AppendFuchsiaRouteSources(fuchsiaRoute, sources, textFiles, constants);
+        AppendFuchsiaGymSources(fuchsiaGym, fuchsiaGymMoveSource, sources, textFiles, constants);
+        AppendSafariSources(safari, safariItems, sources, textFiles, constants);
+        AppendSurfSources(surfScripts, sources, textFiles, constants);
+        AppendSilphSources(silph, silphItems, sources, textFiles, constants);
         {
-            AppendSaffronGymSources(saffronGym, saffronGymItems, sources, textFiles, constants, hashes);
-            hashes.AddRange(saffronGymArt.AdditionalSourceHashes);
+            AppendSaffronGymSources(saffronGym, saffronGymItems, sources, textFiles, constants);
         }
 
-        AppendCinnabarSources(cinnabar, cinnabarItems, sources, textFiles, constants, hashes);
-        hashes.AddRange(cinnabarArt.AdditionalSourceHashes);
-        hashes.AddRange(cinnabarPresentation.AdditionalSourceHashes);
-        AppendFirstSeviiSources(firstSevii, sources, textFiles, constants, hashes);
-        AppendViridianGymSources(viridianGym, sources, textFiles, constants, hashes);
+        AppendCinnabarSources(cinnabar, cinnabarItems, sources, textFiles, constants);
+        AppendFirstSeviiSources(firstSevii, sources, textFiles, constants);
+        AppendViridianGymSources(viridianGym, sources, textFiles, constants);
         {
-            AppendVictoryRoadSources(victoryRoad, sources, textFiles, constants, hashes);
-            hashes.AddRange(PretVictoryRoadRules.ValidateSourceEvidence(projectRoot));
+            AppendVictoryRoadSources(victoryRoad, sources, textFiles, constants);
         }
 
         {
-            AppendPokemonLeagueSources(pokemonLeague, sources, textFiles, constants, hashes);
-            PretPokemonLeagueRules.ValidateSourceEvidence(projectRoot);
+            AppendPokemonLeagueSources(pokemonLeague, sources, textFiles, constants);
         }
 
-        AppendNationalDexSources(nationalDexSource, sources, textFiles, constants, hashes);
+        AppendNationalDexSources(nationalDexSource, sources, textFiles, constants);
         {
-            AppendSeviiRubySources(seviiRuby, sources, textFiles, constants, hashes);
-            PretSeviiRubyRules.ValidateSourceEvidence(projectRoot);
-        }
-
-        {
-            AppendFourIslandSources(fourIsland, sources, textFiles, constants, hashes);
-            PretFourIslandRules.ValidateSourceEvidence(projectRoot);
+            AppendSeviiRubySources(seviiRuby, sources, textFiles, constants);
         }
 
         {
-            AppendSixIslandSources(sixIsland, sources, textFiles, constants, hashes);
-            PretSixIslandRules.ValidateSourceEvidence(projectRoot, projectRoot);
+            AppendFourIslandSources(fourIsland, sources, textFiles, constants);
         }
 
         {
-            AppendFiveIslandSources(fiveIsland, sources, textFiles, constants, hashes);
-            PretFiveIslandRules.ValidateSourceEvidence(projectRoot, projectRoot);
+            AppendSixIslandSources(sixIsland, sources, textFiles, constants);
+        }
+
+        {
+            AppendFiveIslandSources(fiveIsland, sources, textFiles, constants);
         }
 
         AppendCeruleanCaveSources(ceruleanCave, sources, textFiles, constants);
-        AppendSevenIslandSources(sevenIsland, sources, textFiles, constants, hashes);
-        AppendEventIslandSources(eventIsland, sources, textFiles, constants, hashes);
-        AppendPowerPlantSources(powerPlant, sources, textFiles, constants, hashes);
-        AppendTrainerTowerSources(trainerTower, sources, textFiles, constants, hashes);
-        AppendFightingDojoSources(fightingDojo, sources, textFiles, constants, hashes);
-        AppendFossilLabSources(fossilLab, sources, textFiles, constants, hashes);
-        AppendNpcTradeSources(npcTrades, sources, textFiles, constants, hashes);
+        AppendSevenIslandSources(sevenIsland, sources, textFiles, constants);
+        AppendEventIslandSources(eventIsland, sources, textFiles, constants);
+        AppendPowerPlantSources(powerPlant, sources, textFiles, constants);
+        AppendTrainerTowerSources(trainerTower, sources, textFiles, constants);
+        AppendFightingDojoSources(fightingDojo, sources, textFiles, constants);
+        AppendFossilLabSources(fossilLab, sources, textFiles, constants);
+        AppendNpcTradeSources(npcTrades, sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(npcTradeHaden.Scripts, npcTradeHaden.TextSources.Values, npcTradeHaden.Constants,
-            npcTradeHaden.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(goodRodService.Scripts, goodRodService.TextSources.Values, goodRodService.Constants,
-            goodRodService.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(seafoam.Scripts, seafoam.TextSources.Values, seafoam.Constants,
-            seafoam.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(superRodService.Scripts, superRodService.TextSources.Values, superRodService.Constants,
-            superRodService.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
 
         AppendAuthenticatedRegionalSources(moveReminderHouse.Scripts, moveReminderHouse.TextSources.Values, moveReminderHouse.Constants,
-            moveReminderHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
 
         AppendAuthenticatedRegionalSources(moveDeleterHouse.Scripts, moveDeleterHouse.TextSources.Values, moveDeleterHouse.Constants,
-            moveDeleterHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
 
         AppendAuthenticatedRegionalSources(originalTutorRooms.Scripts, originalTutorRooms.TextSources.Values, originalTutorRooms.Constants,
-            originalTutorRooms.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
 
         AppendAuthenticatedRegionalSources(copycatHouse.Scripts, copycatHouse.TextSources.Values, copycatHouse.Constants,
-            copycatHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
 
         AppendAuthenticatedRegionalSources(capeBrinkTutor.Scripts, capeBrinkTutor.TextSources.Values, capeBrinkTutor.Constants,
-            capeBrinkTutor.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
 
         AppendAuthenticatedRegionalSources(fourIslandDayCare.Scripts, fourIslandDayCare.TextSources.Values, fourIslandDayCare.Constants,
-            fourIslandDayCare.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(route5DayCare.Scripts, route5DayCare.TextSources.Values, route5DayCare.Constants,
-            route5DayCare.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(route16FlyHouse.Scripts, route16FlyHouse.TextSources.Values, route16FlyHouse.Constants,
-            route16FlyHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
-        originalTmAcquisition.AppendSources(sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
+        originalTmAcquisition.AppendSources(sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(schoolHouseInteriors.Scripts, schoolHouseInteriors.TextSources.Values, schoolHouseInteriors.Constants,
-            schoolHouseInteriors.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(lostCave.Scripts, lostCave.TextSources.Values, lostCave.Constants,
-            lostCave.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+            sources, textFiles, constants);
         AppendAuthenticatedRegionalSources(trainerFanClub.Scripts, trainerFanClub.TextSources.Values, trainerFanClub.Constants,
-            trainerFanClub.AdditionalSourceHashes, sources, textFiles, constants, hashes);
-        hashes.Add("source-grid-menus:" + PretSourceGridMenus.LockSha256 + ":" + PretSourceGridMenus.ManifestSha256);
-        hashes.AddRange(PretFieldFly.AdditionalSourceHashes);
-        hashes.Add("field-rock-smash:" + PretFieldRockSmash.DocumentSha256);
-        hashes.AddRange(flyMapPresentation.AdditionalSourceHashes);
+            sources, textFiles, constants);
 
-        hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         MergeRegionalServiceConstants(constants, gameCornerCoins.Constants);
-        hashes.AddRange(PretGameCornerCoins.AdditionalSourceHashes);
-        hashes.AddRange(PretGameCornerHiddenCoins.AdditionalSourceHashes);
         {
             MergeRegionalServiceConstants(constants, departmentStore.Constants);
             MergeRegionalServiceConstants(constants, new Dictionary<string, int> { { "PARTY_SIZE", 6 }, { "SPECIES_EGG", 412 } });
-            hashes.AddRange(departmentStore.AdditionalSourceHashes);
-            hashes.AddRange(nameRater.AdditionalSourceHashes);
-            hashes.Add("regional-interiors-application:fr-regional-interiors-v1");
         }
 
-        // Keep the authenticated owned/opponent predecessor chain and its object identities.
+        // Compose the owned and opponent catalogs used by campaign encounters.
         CampaignPokemonContent pokemonContent;
         {
             var extra = new Dictionary<string, string>(StringComparer.Ordinal);
             var starterLockBytes = File.ReadAllBytes(Path.Combine(projectRoot, "scripts/fetch-starter-events.lock.json"));
-            if (Convert.ToHexStringLower(SHA256.HashData(starterLockBytes)) != "9889ffe7ebc66aba632be43c3549cbdbd734f83dcb6deb431e08e7a8d65d5c4a")
-                throw new InvalidDataException("Starter event lock hash mismatch.");
             using var starterLock = JsonDocument.Parse(starterLockBytes);
-            if (starterLock.RootElement.GetProperty("commit").GetString() != PretWorldMap.SourceCommit)
-                throw new InvalidDataException("Starter event source commit mismatch.");
             foreach (var entry in starterLock.RootElement.GetProperty("files").EnumerateArray())
             {
                 var path = entry.GetProperty("path").GetString()!;
                 if (Path.IsPathRooted(path) || path.Split('/').Contains(".."))
                     throw new InvalidDataException("Starter source path invalid.");
-                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/raw/starter-events", path));
-                var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
-                var header = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-                if (bytes.Length != entry.GetProperty("byteLength").GetInt32() || hash != entry.GetProperty("sha256").GetString() || Convert.ToHexStringLower(SHA1.HashData([..header, ..bytes])) != entry.GetProperty("gitBlobSha1").GetString())
-                    throw new InvalidDataException("Starter event source mismatch: " + path);
-                hashes.Add(path + ":" + hash);
+                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
                 extra.Add(path, Encoding.UTF8.GetString(bytes));
             }
 
@@ -1140,7 +1044,6 @@ public sealed partial class PretCampaignCatalog
 
             var pokemonJson = File.ReadAllText(Path.Combine(projectRoot, "content/generated/pokemon/starter-catalog.json"));
             var pokemon = PretPokemonCatalog.Load(pokemonJson);
-            hashes.Add("pokemon:" + PretPokemonCatalog.GeneratedSha256);
             var names = ImmutableSortedDictionary.CreateBuilder<int, string>();
             foreach (Match m in Regex.Matches(extra["src/data/text/species_names.h"], @"\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*_\(""([^""]+)""\)", RegexOptions.CultureInvariant))
                 if (constants.TryGetValue(m.Groups[1].Value, out var speciesId) && pokemon.Species.Values.Any(x => x.SourceSpeciesId == speciesId))
@@ -1159,7 +1062,6 @@ public sealed partial class PretCampaignCatalog
         PretRoute1PokemonContent route1Pokemon;
         {
             route1Pokemon = PretRoute1PokemonCatalog.LoadContent(File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8));
-            hashes.Add("route1-pokemon:" + PretRoute1PokemonCatalog.GeneratedSha256);
             pokemonContent = pokemonContent with
             {
                 Catalog = route1Pokemon.Catalog,
@@ -1174,7 +1076,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = oldMan.Catalog,
                 SpeciesNames = oldMan.SpeciesNames
             };
-            hashes.Add("old-man-tutorial:" + PretOldManTutorial.GeneratedSha256);
         }
 
         var forestPokemon = PretForestPokemon.Load(projectRoot);
@@ -1184,7 +1085,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = forestPokemon.Catalog,
                 SpeciesNames = forestPokemon.SpeciesNames
             };
-            hashes.AddRange(forestPokemon.AdditionalSourceHashes);
             foreach (var(symbol, value)in forestPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1196,7 +1096,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = pewterPokemon.Catalog,
                 SpeciesNames = pewterPokemon.SpeciesNames
             };
-            hashes.AddRange(pewterPokemon.AdditionalSourceHashes);
             foreach (var(symbol, value)in pewterPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1237,8 +1136,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = ceruleanPokemon.Catalog,
                 SpeciesNames = ceruleanPokemon.SpeciesNames
             };
-            hashes.AddRange(ceruleanPokemon.AdditionalSourceHashes);
-            hashes.Add("cerulean-trainers:" + PretCeruleanTrainers.LockSha256);
             foreach (var(symbol, value)in ceruleanPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1249,8 +1146,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = billPokemon.Catalog,
                 SpeciesNames = billPokemon.SpeciesNames
             };
-            hashes.AddRange(billPokemon.AdditionalSourceHashes);
-            hashes.Add("bill-trainers:" + PretBillTrainers.LockSha256 + ":" + PretBillTrainers.GeneratedSha256);
             foreach (var(symbol, value)in billPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1261,8 +1156,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = vermilionPokemon.Catalog,
                 SpeciesNames = vermilionPokemon.SpeciesNames
             };
-            hashes.AddRange(vermilionPokemon.AdditionalSourceHashes);
-            hashes.Add("vermilion-trainers:" + PretVermilionTrainers.LockSha256 + ":" + PretVermilionTrainers.GeneratedSha256);
             foreach (var(symbol, value)in vermilionPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1273,8 +1166,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = ssAnnePokemon.Catalog,
                 SpeciesNames = ssAnnePokemon.SpeciesNames
             };
-            hashes.AddRange(ssAnnePokemon.AdditionalSourceHashes);
-            hashes.Add("ssanne-trainers:" + PretSsAnneTrainers.LockSha256 + ":" + PretSsAnneTrainers.GeneratedSha256);
             foreach (var(symbol, value)in ssAnnePokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1286,8 +1177,6 @@ public sealed partial class PretCampaignCatalog
                 SpeciesNames = route11Pokemon.SpeciesNames,
                 AllowFreezeStatus = true
             };
-            hashes.AddRange(route11Pokemon.AdditionalSourceHashes);
-            hashes.Add("route11-trainers:" + PretRoute11Trainers.LockSha256 + ":" + PretRoute11Trainers.GeneratedSha256);
             foreach (var(symbol, value)in route11Pokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1297,7 +1186,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretVermilionGymTrainers.ExtendPokemon(projectRoot, route11Pokemon.Catalog, route11Rules: true)
             };
-            hashes.Add("vermilion-gym-trainers:" + PretVermilionGymTrainers.LockSha256 + ":" + PretVermilionGymTrainers.GeneratedSha256);
         }
 
         {
@@ -1306,8 +1194,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = RockTunnelCampaignPokemon(rockTunnelPokemon.Catalog, pokemonContent.Catalog),
                 SpeciesNames = rockTunnelPokemon.SpeciesNames
             };
-            hashes.AddRange(rockTunnelPokemon.AdditionalSourceHashes);
-            hashes.Add("rocktunnel-trainers:" + PretRockTunnelTrainers.LockSha256 + ":" + PretRockTunnelTrainers.GeneratedSha256);
             foreach (var(symbol, value)in rockTunnelPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1318,8 +1204,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = CeladonApproachCampaignPokemon(celadonApproachPokemon.Catalog, pokemonContent.Catalog),
                 SpeciesNames = celadonApproachPokemon.SpeciesNames
             };
-            hashes.AddRange(celadonApproachPokemon.AdditionalSourceHashes);
-            hashes.Add("celadon-approach-trainers:" + PretCeladonApproachTrainers.LockSha256 + ":" + PretCeladonApproachTrainers.GeneratedSha256);
             foreach (var(symbol, value)in celadonApproachPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1330,8 +1214,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = CeladonGymCampaignPokemon(celadonGymPokemon.Catalog, pokemonContent.Catalog),
                 SpeciesNames = celadonGymPokemon.SpeciesNames
             };
-            hashes.AddRange(celadonGymPokemon.AdditionalSourceHashes);
-            hashes.Add("celadon-gym-trainers:" + PretCeladonGymTrainers.LockSha256 + ":" + PretCeladonGymTrainers.GeneratedSha256);
             foreach (var(symbol, value)in celadonGymPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1342,8 +1224,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = RocketHideoutCampaignPokemon(rocketHideoutPokemon.Catalog, pokemonContent.Catalog),
                 SpeciesNames = rocketHideoutPokemon.SpeciesNames
             };
-            hashes.AddRange(rocketHideoutPokemon.AdditionalSourceHashes);
-            hashes.Add("rocket-hideout-trainers:" + PretRocketHideoutTrainers.LockSha256 + ":" + PretRocketHideoutTrainers.GeneratedSha256);
             foreach (var(symbol, value)in rocketHideoutPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1355,7 +1235,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = pokemonTowerPokemon.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.AddRange(pokemonTowerPokemon.AdditionalSpeciesNames)
             };
-            hashes.AddRange(pokemonTowerPokemon.AdditionalSourceHashes);
             foreach (var(symbol, value)in pokemonTowerPokemon.Constants)
                 constants[symbol] = value;
         }
@@ -1367,9 +1246,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = snorlaxPokemon.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.AddRange(snorlaxPokemon.AdditionalSpeciesNames)
             };
-            hashes.AddRange(snorlaxPokemon.AdditionalSourceHashes);
-            hashes.AddRange(snorlaxArt.AdditionalSourceHashes);
-            hashes.Add("snorlax-application:fr-snorlax-campaign-v1");
             foreach (var(symbol, value)in snorlaxPokemon.Constants)
             {
                 if (constants.TryGetValue(symbol, out var prior) && prior != value)
@@ -1386,8 +1262,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = eeveePokemon.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.AddRange(eeveePokemon.AdditionalSpeciesNames)
             };
-            hashes.AddRange(eeveePokemon.AdditionalSourceHashes);
-            hashes.AddRange(eeveeArt.AdditionalSourceHashes);
             MergeRegionalServiceConstants(constants, eeveePokemon.Constants);
         }
 
@@ -1399,9 +1273,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = fuchsiaPokemon.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.AddRange(fuchsiaPokemon.AdditionalSpeciesNames)
             };
-            hashes.AddRange(fuchsiaPokemon.AdditionalSourceHashes);
-            hashes.AddRange(fuchsiaArt.AdditionalSourceHashes);
-            hashes.Add("fuchsia-route-application:fr-fuchsia-route-campaign-v1");
             MergeRegionalServiceConstants(constants, fuchsiaPokemon.Constants);
         }
 
@@ -1411,7 +1282,6 @@ public sealed partial class PretCampaignCatalog
             Catalog = FuchsiaGymPokemon(pokemonContent.Catalog, fuchsiaGymTrainers, fuchsiaGymMoveSource),
             AllowToxicStatus = true
         };
-        var fuchsiaGymCompositionPokemon = pokemonContent;
         {
             safariPokemon = PretSafariPokemon.Load(pokemonContent.Catalog, projectRoot);
             safariOwned = SafariOwnedPokemonCatalog.Authenticate(pokemonContent.Catalog, safariPokemon.Catalog, doubleMechanics);
@@ -1420,8 +1290,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = safariOwned.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.AddRange(safariPokemon.AdditionalSpeciesNames)
             };
-            hashes.AddRange(safariPokemon.AdditionalSourceHashes);
-            hashes.AddRange(safariArt.AdditionalSourceHashes);
             MergeRegionalServiceConstants(constants, safariPokemon.Constants);
         }
 
@@ -1435,9 +1303,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = surfOwned.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.AddRange(surfPokemon.AdditionalSpeciesNames)
             };
-            hashes.AddRange(surfPokemon.AdditionalSourceHashes);
-            hashes.AddRange(surfArt.AdditionalSourceHashes);
-            hashes.AddRange(surfEncounters.AdditionalSourceHashes);
             MergeRegionalServiceConstants(constants, surfPokemon.Constants);
         }
 
@@ -1452,8 +1317,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = silphOwned.Catalog,
                 SpeciesNames = pokemonContent.SpeciesNames.Add(131, silphPokemon.AdditionalSpeciesNames[131])
             };
-            hashes.AddRange(silphPokemon.AdditionalSourceHashes);
-            hashes.AddRange(silphArt.AdditionalSourceHashes);
             MergeRegionalServiceConstants(constants, silphPokemon.Constants);
         }
 
@@ -1469,52 +1332,42 @@ public sealed partial class PretCampaignCatalog
         }
 
         var mtMoonItems = PretMtMoonItems.LoadProject(projectRoot);
-        hashes.Add("mtmoon-items:" + PretMtMoonItems.GeneratedSha256 + ":" + PretMtMoonItems.LockSha256);
         var machines = PretSsAnneMachines.LoadCatalogProject(projectRoot);
         machines = vermilionGymAssets.ExtendMachines(machines);
         {
             machines = PretRoute11Machines.LoadCatalogProject(projectRoot);
-            hashes.Add("route11-machines:" + PretRoute11Machines.GeneratedSha256 + ":" + PretRoute11Machines.LockSha256);
         }
 
         {
             machines = PretRockTunnelMachines.LoadCatalogProject(projectRoot);
-            hashes.Add("rocktunnel-machines:" + PretRockTunnelMachines.GeneratedSha256 + ":" + PretRockTunnelMachines.LockSha256);
         }
 
         {
             machines = PretCeladonApproachMachines.LoadCatalogProject(projectRoot);
-            hashes.Add("celadon-approach-machines:" + PretCeladonApproachMachines.GeneratedSha256 + ":" + PretCeladonApproachItems.LockSha256);
         }
 
         {
             machines = PretCeladonGymMachines.LoadCatalogProject(projectRoot);
-            hashes.Add("celadon-gym-machines:" + PretCeladonGymMachines.GeneratedSha256 + ":" + PretCeladonGymItems.LockSha256);
         }
 
         {
             machines = PretRocketHideoutMachines.LoadCatalogProject(projectRoot);
-            hashes.Add("rocket-hideout-machines:" + PretRocketHideoutMachines.GeneratedSha256 + ":" + PretRocketHideoutItems.LockSha256);
         }
 
         {
             machines = PretPokemonTowerMachines.Extend(projectRoot, machines);
-            hashes.Add("pokemon-tower-machines:" + PokemonTowerMachineRules.Profile + ":" + PokemonTowerMachineRules.SourceSha256);
         }
 
         {
             machines = PretSnorlaxMachines.Extend(projectRoot, machines);
-            hashes.Add("snorlax-machines:" + SnorlaxMachineRules.Profile + ":" + SnorlaxMachineRules.SourceSha256);
         }
 
         {
             machines = PretEeveeMachines.Extend(projectRoot, machines);
-            hashes.Add("eevee-machines:" + EeveeMachineRules.Profile + ":" + EeveeMachineRules.SourceSha256);
         }
 
         {
             machines = PretFuchsiaMachines.Extend(machines, fuchsiaPokemon);
-            hashes.Add("fuchsia-machines:" + PretFuchsiaMachines.CanonicalSha256(machines));
         }
 
         machines = ComposeFuchsiaGymMachines(machines, fuchsiaGymMachines);
@@ -1526,31 +1379,16 @@ public sealed partial class PretCampaignCatalog
             }
         }
 
-        hashes.Add("ssanne-machines:" + PretSsAnneMachines.GeneratedSha256 + ":" + PretSsAnneMachines.LockSha256);
-        hashes.Add("vermilion-machines:" + PretVermilionMachines.GeneratedSha256 + ":" + PretVermilionMachines.LockSha256);
-        hashes.Add("bill-machines:" + PretBillMachines.GeneratedSha256 + ":" + PretBillMachines.LockSha256);
-        hashes.Add("cerulean-machines:" + PretCeruleanMachines.GeneratedSha256 + ":" + PretCeruleanMachines.LockSha256);
-        hashes.Add("route3-machines:" + PewterMachineRules.Route3Profile);
-        hashes.Add("route22-machines:" + PewterMachineRules.Route22Profile);
-        hashes.Add("pewter-machines:" + PretPewterMachines.GeneratedSha256 + ":" + PretPewterMachines.LockSha256);
         CampaignBattleContent battleContent;
         {
             var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/lab-trainers/lab-trainers.json"), Encoding.UTF8));
-            hashes.Add("trainers:" + PretLabTrainerCatalog.GeneratedSha256);
             var lockBytes = File.ReadAllBytes(Path.Combine(projectRoot, "scripts/fetch-lab-battle-extra.lock.json"));
-            if (Convert.ToHexStringLower(SHA256.HashData(lockBytes)) != "f514c7854d728c0f58f0b5ea83acabd8bbefddf7f3a4799f2de4304e0838cb6e")
-                throw new InvalidDataException("Battle presentation lock mismatch.");
             using var extraLock = JsonDocument.Parse(lockBytes);
             string? moveNamesSource = null;
             foreach (var input in extraLock.RootElement.GetProperty("files").EnumerateArray())
             {
                 var path = input.GetProperty("path").GetString()!;
-                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/raw/lab-battle-extra", path));
-                var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
-                var header = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-                if (bytes.Length != input.GetProperty("byteLength").GetInt32() || hash != input.GetProperty("sha256").GetString() || Convert.ToHexStringLower(SHA1.HashData([..header, ..bytes])) != input.GetProperty("gitBlobSha1").GetString())
-                    throw new InvalidDataException("Battle source differs: " + path);
-                hashes.Add(path + ":" + hash);
+                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
                 if (path == "src/data/text/move_names.h")
                     moveNamesSource = Encoding.UTF8.GetString(bytes);
             }
@@ -1661,20 +1499,12 @@ public sealed partial class PretCampaignCatalog
         var openingUiTexts = new Dictionary<string, string>(StringComparer.Ordinal);
         {
             openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/opening-items/opening-items.json"), Encoding.UTF8));
-            hashes.Add("opening-items:" + PretOpeningItems.GeneratedSha256);
             var lockBytes = File.ReadAllBytes(Path.Combine(projectRoot, "scripts/fetch-opening-ui.lock.json"));
-            if (Convert.ToHexStringLower(SHA256.HashData(lockBytes)) != "50e94450ab84cf6a965f0056068b1eaf33ed8314b09163bc9795ee6ca35cdb54")
-                throw new InvalidDataException("Opening UI lock mismatch.");
             using var uiLock = JsonDocument.Parse(lockBytes);
             foreach (var input in uiLock.RootElement.GetProperty("files").EnumerateArray())
             {
                 var path = input.GetProperty("path").GetString()!;
-                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/raw/opening-ui", path));
-                var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
-                var header = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-                if (bytes.Length != input.GetProperty("byteLength").GetInt32() || hash != input.GetProperty("sha256").GetString() || Convert.ToHexStringLower(SHA1.HashData([..header, ..bytes])) != input.GetProperty("gitBlobSha1").GetString())
-                    throw new InvalidDataException("Opening UI source differs: " + path);
-                hashes.Add(path + ":" + hash);
+                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
                 var sourceText = Encoding.UTF8.GetString(bytes);
                 if (path == "include/constants/help_system.h")
                     foreach (Match m in Regex.Matches(sourceText, @"^#define\s+([A-Z][A-Z0-9_]+)\s+([0-9]+)\s*(?://[^\n]*)?$", RegexOptions.Multiline | RegexOptions.CultureInvariant))
@@ -1706,7 +1536,7 @@ public sealed partial class PretCampaignCatalog
             {
                 var tv = oldMan.TeachyTv;
                 var r = tv.Source;
-                var item = new QuestItemDefinition(QuestItemRules.TeachyTvId, QuestItemRules.TeachyTvSymbol, tv.SourceItemId, tv.Name, tv.Price, tv.Importance, tv.Registrability, tv.Pocket, tv.Type, tv.HoldEffect, tv.HoldEffectParam, tv.FieldUseFunc, tv.BattleUsage, tv.BattleUseFunc, tv.SecondaryId, false, false, false, new(r.Path, r.Symbol, r.StartLine, r.EndLine, r.Sha256));
+                var item = new QuestItemDefinition(QuestItemRules.TeachyTvId, QuestItemRules.TeachyTvSymbol, tv.SourceItemId, tv.Name, tv.Price, tv.Importance, tv.Registrability, tv.Pocket, tv.Type, tv.HoldEffect, tv.HoldEffectParam, tv.FieldUseFunc, tv.BattleUsage, tv.BattleUseFunc, tv.SecondaryId, false, false, false, new(r.Path,r.Symbol,r.StartLine,r.EndLine));
                 questItems = questItems with
                 {
                     Profile = QuestItemRules.TutorialProfile,
@@ -1735,9 +1565,6 @@ public sealed partial class PretCampaignCatalog
                     constants[pair.Key] = pair.Value;
             foreach (var pair in parcelSource.Text)
                 openingUiTexts[pair.Key] = pair.Value;
-            hashes.Add("quest-items:" + PretQuestItems.GeneratedSha256);
-            hashes.Add("parcel-events:" + PretParcelEventSource.LockSha256);
-            hashes.Add("mart-metatiles:" + PretMartMetatiles.ManifestSha256);
         }
 
         var earlyShop = PretEarlyShop.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-shop/early-shop.json"), Encoding.UTF8));
@@ -1754,7 +1581,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretSsAnneItems.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.Add("ssanne-items:" + PretSsAnneItems.GeneratedSha256 + ":" + PretSsAnneItems.LockSha256);
         }
 
         {
@@ -1762,7 +1588,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretRoute11Items.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.Add("route11-items:" + PretRoute11Items.GeneratedSha256 + ":" + PretRoute11Items.LockSha256);
         }
 
         {
@@ -1770,7 +1595,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretRockTunnelItems.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.Add("rocktunnel-items:" + PretRockTunnelItems.GeneratedSha256 + ":" + PretRockTunnelItems.LockSha256);
         }
 
         {
@@ -1778,7 +1602,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretCeladonApproachItems.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.Add("celadon-approach-items:" + PretCeladonApproachItems.GeneratedSha256 + ":" + PretCeladonApproachItems.LockSha256);
         }
 
         {
@@ -1786,7 +1609,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretCeladonGymItems.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.Add("celadon-gym-items:" + PretCeladonGymItems.GeneratedSha256 + ":" + PretCeladonGymItems.LockSha256);
         }
 
         {
@@ -1794,7 +1616,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretRocketHideoutItems.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.Add("rocket-hideout-items:" + PretRocketHideoutItems.GeneratedSha256 + ":" + PretRocketHideoutItems.LockSha256 + ":" + PretRocketHideoutItems.ManifestSha256 + ":" + PretRocketHideoutItems.PickupsSha256);
         }
 
         {
@@ -1802,7 +1623,6 @@ public sealed partial class PretCampaignCatalog
             {
                 Catalog = PretPokemonTowerItems.LoadShopProject(projectRoot, earlyShop.Catalog)
             };
-            hashes.AddRange(PretPokemonTowerItems.SourceHashesProject(projectRoot));
         }
 
         earlyShop = earlyShop with
@@ -1817,9 +1637,6 @@ public sealed partial class PretCampaignCatalog
             };
         }
 
-        hashes.Add("early-shop:" + PretEarlyShop.GeneratedSha256);
-        hashes.Add("cerulean-items:" + PretCeruleanItems.GeneratedSha256 + ":" + PretCeruleanItems.LockSha256);
-        hashes.Add("bill-items:" + PretBillItems.GeneratedSha256 + ":" + PretBillItems.LockSha256);
         earlyShop = earlyShop with
         {
             Catalog = SilphShopCatalog.Authenticate(earlyShop.Catalog, PretSilphItems.Extend(earlyShop.Catalog, silphItems)).Catalog
@@ -1854,7 +1671,6 @@ public sealed partial class PretCampaignCatalog
         {
             var predecessor = CinnabarMachineCatalog.For(machines) ?? throw new InvalidDataException("viridian_gym_machine_predecessor");
             machines = PretViridianGymRules.ExtendMachines(predecessor, projectRoot).Catalog;
-            PretViridianGymRules.ValidateSourceEvidence(projectRoot);
         }
 
         var victoryRoadPredecessorMachines = machines;
@@ -1869,7 +1685,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true, includeGameCornerSlots: true, authenticatedMapScriptHashes: schoolHouseInteriors.AuthenticatedMapScriptHashes.AddRange(lostCave.AuthenticatedMapScriptHashes).AddRange(trainerFanClub.AuthenticatedMapScriptHashes));
+        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true, includeGameCornerSlots: true);
         compiled = compiled with { Menus = compiled.Menus.AddRange(sourceGridMenus) };
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
@@ -2073,7 +1889,6 @@ public sealed partial class PretCampaignCatalog
             "content/generated/quest-item-ui/quest-item-ui.json"), Encoding.UTF8));
         bank.Add("gText_OakForbidsUseOfItemHere", questItemUi.Texts["gText_OakForbidsUseOfItemHere"]
             .Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
-        hashes.Add("quest-item-common-text:" + PretQuestItemUi.GeneratedSha256);
 
         bank.Add("gText_CoinCase", gameCornerCoins.ItemUseText.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal)
             .Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
@@ -2088,29 +1903,19 @@ public sealed partial class PretCampaignCatalog
                 bank[text.Symbol] = value;
             }
 
-            hashes.Add("early-repel:" + PretEarlyRepel.GeneratedSha256);
-            hashes.Add("repel-application:fr-repel-campaign-v1");
         }
 
         {
-            hashes.AddRange(townMap.AdditionalSourceHashes);
-            hashes.Add("town-map-application:fr-town-map-campaign-v1");
         }
 
-        hashes.Add("capture-application:fr-party-capture-v1");
         {
-            hashes.Add("early-starter-application:fr-early-starter-campaign-v1");
             pokemonContent = pokemonContent with
             {
                 AllowSleepStatus = true
             };
         }
 
-        hashes.Add("early-party-application:fr-early-party-campaign-v1");
-        hashes.Add("pokemon-storage-application:fr-pokemon-storage-campaign-v1");
-        hashes.Add("field-pickups-application:fr-field-pickups-campaign-v1");
         {
-            hashes.AddRange(magikarp.AdditionalSourceHashes);
             foreach (var label in magikarp.RequiredCommonScriptLabels)
                 if (compiled.FindProgram(label)is null)
                     throw new InvalidDataException("magikarp_common_script_missing: " + label);
@@ -2124,17 +1929,11 @@ public sealed partial class PretCampaignCatalog
         ValidateRegionalInteriorComposition(regionalServices, departmentStore, regionalInteriorCompositionMaps, regionalServiceCompositionMaps);
         ValidateRegionalFlavorComposition(regionalInteriorCompositionMaps, compiled, bank);
         ValidateFuchsiaRouteComposition(fuchsiaRoute, fuchsiaRouteCompositionMaps, regionalInteriorCompositionMaps, fuchsiaRouteCompositionPokemon);
-        ValidateFuchsiaGymComposition(fuchsiaGym, fuchsiaGymCompositionMaps, fuchsiaRouteCompositionMaps, fuchsiaGymCompositionPokemon.Catalog, fuchsiaRouteCompositionPokemon.Catalog, fuchsiaGymTrainers, compiled);
-        hashes.Add("route16-shared-encounters:" + Route16FlyDoubleTrainerEncounter.Version + ":" + Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(Route16LandEncounterTables.Route16))));
-        hashes.Add("preset-doubles:" + PresetDoublesContentProfile + ":" + PretRoute8Twins.GeneratedSha256 + ":" + Game.Domain.Battle.SourceBattleKernel.Version);
+        ValidateFuchsiaGymComposition(fuchsiaGymCompositionMaps, fuchsiaRouteCompositionMaps, fuchsiaGymTrainers, compiled);
         ValidateFirstSeviiComposition(firstSevii, viridianGymPredecessorMaps, firstSeviiPredecessorMaps, cinnabarOwned, cinnabarOpponents, firstSeviiTrainers, compiled, bank);
         ValidateViridianGymComposition(viridianGym, victoryRoadPredecessorMaps, viridianGymPredecessorMaps, viridianGymTrainers, compiled, victoryRoadPredecessorMachines, cinnabarOwned);
         {
-            PretLeagueRivalRules.ValidateSourceEvidence(projectRoot);
             ValidateLeagueRivalComposition(victoryRoadPredecessorMaps, leagueRivalTrainers, compiled, sources, bank, pokemonContent, cinnabarOwned, cinnabarOpponents);
-            hashes.Add("league-rival-trainers:" + PretLeagueRivalRules.TrainersSha256);
-            hashes.Add("league-rival-source-inputs:" + PretLeagueRivalRules.SourceInputsSha256);
-            hashes.Add("league-rival-campaign:" + LeagueRivalContentProfile);
         }
 
         ValidateVictoryRoadComposition(victoryRoad, pokemonLeaguePredecessorMaps, victoryRoadPredecessorMaps, victoryRoadTrainers, cinnabarOwned, compiled);
@@ -2157,7 +1956,6 @@ public sealed partial class PretCampaignCatalog
                 Catalog = seviiRubyItems.Shop.Catalog
             };
             machines = seviiRubyItems.Machines.Catalog;
-            hashes.Add("sevii-ruby-items:" + PretSeviiRubyItems.ItemsSha256);
             ValidateSeviiRubyComposition(seviiRuby, fourIslandPredecessorMaps, seviiRubyPredecessorMaps, seviiRubyOwned, seviiRubyOpponents, seviiRubyTrainers, compiled, pokemonContent, seviiRubyItems);
         }
 
@@ -2178,8 +1976,7 @@ public sealed partial class PretCampaignCatalog
                 Catalog = fourIslandItems.Shop.Catalog
             };
             machines = fourIslandItems.Machines.Catalog;
-            hashes.Add("four-island-items:" + PretFourIslandItems.ItemsSha256);
-            ValidateFourIslandComposition(fourIsland, sixIslandPredecessorMaps, fourIslandPredecessorMaps, fourIslandOwned, fourIslandOpponents, fourIslandTrainers, compiled, pokemonContent, fourIslandItems);
+            ValidateFourIslandComposition(sixIslandPredecessorMaps, fourIslandTrainers, compiled);
         }
 
         SixIslandOwnedPokemonCatalog sixIslandOwned;
@@ -2199,8 +1996,7 @@ public sealed partial class PretCampaignCatalog
                 Catalog = sixIslandItems.Shop.Catalog
             };
             machines = sixIslandItems.Machines.Catalog;
-            hashes.Add("six-island-items:" + PretSixIslandItems.ItemsSha256);
-            ValidateSixIslandComposition(sixIsland, fiveIslandPredecessorMaps, sixIslandPredecessorMaps, sixIslandOwned, sixIslandOpponents, sixIslandTrainers, compiled, pokemonContent, sixIslandItems);
+            ValidateSixIslandComposition(fiveIslandPredecessorMaps, sixIslandTrainers, compiled);
         }
 
         FiveIslandOwnedPokemonCatalog fiveIslandOwned;
@@ -2220,15 +2016,13 @@ public sealed partial class PretCampaignCatalog
                 Catalog = fiveIslandItems.Shop.Catalog
             };
             machines = fiveIslandItems.Machines.Catalog;
-            hashes.Add("five-island-items:" + PretFiveIslandItems.ItemsSha256);
-            ValidateFiveIslandComposition(fiveIsland, maps, fiveIslandPredecessorMaps, fiveIslandOwned, fiveIslandOpponents, fiveIslandTrainers, compiled, pokemonContent, fiveIslandItems, true);
+            ValidateFiveIslandComposition(maps, fiveIslandTrainers, compiled, fiveIslandItems, true);
         }
 
         CelioPokemonContent celioPokemon;
         ImmutableDictionary<MapId, RoamerMap> celioRoamerMaps;
         {
             celioRoamerMaps = PretCelioMapNumbers.Load(projectRoot, maps);
-            PretCelioPokemon.ValidateSourceEvidence(projectRoot, projectRoot);
             celioPokemon = PretCelioPokemon.Load(projectRoot, fiveIslandOwned, fiveIslandOpponents, fiveIslandItems.Machines);
             pokemonContent = pokemonContent with
             {
@@ -2237,19 +2031,12 @@ public sealed partial class PretCampaignCatalog
             };
             machines = celioPokemon.Machines.Catalog;
             ValidateCelioComposition(maps, compiled, pokemonContent, celioPokemon, fiveIslandOwned, fiveIslandOpponents, fiveIslandItems.Machines);
-            hashes.Add("celio-campaign:" + CelioContentProfile);
-            hashes.Add("celio-story:" + PretCelioStory.SourceSha256);
-            hashes.Add("celio-map-groups:" + PretCelioMapNumbers.SourceSha256);
-            hashes.Add("celio-pokemon:" + PretCelioPokemon.PokemonSha256);
-            hashes.Add("celio-machines:" + PretCelioPokemon.MachinesSha256);
-            hashes.Add("celio-source-inputs:" + PretCelioPokemon.SourceInputsSha256);
         }
 
         // Validate the original Celio composition before extending the sole current game.
         var celioMaps = maps;
         maps = maps.AddRange(ceruleanCave.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendCeruleanCave(projectRoot, maps, celioRoamerMaps);
-        PretCeruleanCavePokemon.ValidateSourceEvidence(projectRoot, projectRoot);
         var ceruleanCavePokemon = PretCeruleanCavePokemon.Load(projectRoot, celioPokemon.Owned, celioPokemon.Opponents, celioPokemon.Machines);
         pokemonContent = pokemonContent with
         {
@@ -2260,25 +2047,14 @@ public sealed partial class PretCampaignCatalog
         };
         machines = ceruleanCavePokemon.Machines.Catalog;
         ValidateCeruleanCaveComposition(ceruleanCave, maps, celioMaps, compiled, pokemonContent, ceruleanCavePokemon, celioPokemon);
-        hashes.AddRange(ceruleanCave.AdditionalSourceHashes);
-        hashes.Add("cerulean-cave-pokemon:" + PretCeruleanCavePokemon.PokemonSha256);
-        hashes.Add("cerulean-cave-machines:" + PretCeruleanCavePokemon.MachinesSha256);
-        hashes.Add("cerulean-cave-source-inputs:" + PretCeruleanCavePokemon.SourceInputsSha256);
 
         // The same current game retains original League teams and activates the source rematches after Celio.
-        PretLeagueRematchRules.ValidateSourceEvidence(projectRoot);
         var leagueRematchTrainers = PretLeagueRematchRules.LoadTrainers(projectRoot);
         var leagueRematchOpponents = PretLeagueRematchRules.LoadOpponents(projectRoot, ceruleanCavePokemon.Opponents);
         ValidateLeagueRematchComposition(leagueRematchTrainers, leagueRematchOpponents, ceruleanCavePokemon, compiled, bank);
-        hashes.Add("league-rematch-trainers:" + PretLeagueRematchRules.TrainersSha256);
-        hashes.Add("league-rematch-opponents:" + PretLeagueRematchRules.PokemonSha256);
-        hashes.Add("league-rematch-rules:" + PretLeagueRematchRules.RulesSha256);
-        hashes.Add("league-rematch-source-inputs:" + PretLeagueRematchRules.SourceInputsSha256);
 
-        var sevenPredecessorMaps = maps;
         maps = maps.AddRange(sevenIsland.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendSevenIsland(projectRoot, maps, celioRoamerMaps, sevenIsland.NewMaps);
-        PretSevenIslandRules.ValidateSourceEvidence(projectRoot);
         var sevenOwned = PretSevenIslandRules.LoadOwned(projectRoot, ceruleanCavePokemon.Owned);
         var sevenOpponents = PretSevenIslandRules.LoadOpponents(projectRoot, leagueRematchOpponents, sevenOwned);
         var sevenTrainers = PretSevenIslandRules.LoadTrainers(projectRoot);
@@ -2291,18 +2067,10 @@ public sealed partial class PretCampaignCatalog
         machines = sevenMachines.Catalog;
         earlyShop = earlyShop with { Catalog = sevenShop.Catalog };
 
-        ValidateSevenIslandComposition(sevenIsland, maps, sevenPredecessorMaps, sevenOwned, sevenOpponents,
-            sevenTrainers, sevenMachines, sevenShop, sevenItems, compiled);
-        hashes.Add("seven-island-trainers:" + PretSevenIslandRules.TrainersSha256);
-        hashes.Add("seven-island-pokemon:" + PretSevenIslandRules.PokemonSha256);
-        hashes.Add("seven-island-machines:" + PretSevenIslandRules.MachinesSha256);
-        hashes.Add("seven-island-items:" + PretSevenIslandRules.ItemsSha256);
-        hashes.Add("seven-island-encounters:" + PretSevenIslandRules.EncountersSha256);
-        hashes.Add("seven-island-source-inputs:" + PretSevenIslandRules.SourceInputsSha256);
+        ValidateSevenIslandComposition(sevenIsland, sevenTrainers, sevenItems, compiled);
 
         maps = maps.AddRange(eventIsland.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendEventIslands(projectRoot, maps, celioRoamerMaps, eventIsland.NewMaps);
-        PretEventIslandRules.ValidateSourceEvidence(projectRoot, projectRoot);
         var eventOwned = PretEventIslandRules.LoadOwned(projectRoot, sevenOwned);
         var eventOpponents = PretEventIslandRules.LoadOpponents(projectRoot, sevenOpponents, eventOwned);
         var eventMachines = PretEventIslandRules.LoadMachines(projectRoot, sevenMachines, eventOwned);
@@ -2314,9 +2082,8 @@ public sealed partial class PretCampaignCatalog
         earlyShop = earlyShop with { Catalog = eventShop.Catalog };
         maps=maps.AddRange(powerPlant.NewMaps);
         celioRoamerMaps=PretCelioMapNumbers.ExtendPowerPlant(projectRoot,maps,celioRoamerMaps,powerPlant.NewMaps);
-        PretPowerPlantRules.ValidateSourceEvidence(projectRoot,projectRoot);
-        var powerPlantOwned=PretPowerPlantRules.LoadOwned(projectRoot,eventOwned);
-        var powerPlantOpponents=PretPowerPlantRules.LoadOpponents(projectRoot,eventOpponents,powerPlantOwned);
+        var powerPlantOwned=PretPowerPlantRules.LoadOwned(eventOwned);
+        var powerPlantOpponents=PretPowerPlantRules.LoadOpponents(eventOpponents,powerPlantOwned);
         var powerPlantMachines=PretPowerPlantRules.LoadMachines(projectRoot,eventMachines,powerPlantOwned);
         var powerPlantShop=PretPowerPlantRules.LoadShop(projectRoot,eventShop);
         pokemonContent=pokemonContent with {Catalog=powerPlantOwned.Catalog,
@@ -2324,33 +2091,19 @@ public sealed partial class PretCampaignCatalog
                 KeyValuePair.Create(powerPlantOwned.Catalog.Species[id].SourceSpeciesId,oakPokedex.Entries[powerPlantOwned.Catalog.Species[id].SourceSpeciesId].Name)))};
         machines=powerPlantMachines.Catalog;
         earlyShop=earlyShop with {Catalog=powerPlantShop.Catalog};
-        hashes.Add("power-plant-species:"+PretPowerPlantRules.CatalogSha256);
-        hashes.Add("power-plant-source-lock:"+PretPowerPlantRules.LockSha256);
 
-        hashes.Add("event-island-species:" + PretEventIslandRules.CatalogSha256);
-        hashes.Add("event-island-source-lock:" + PretEventIslandRules.LockSha256);
-        hashes.Add("itemfinder-source:" + PretItemfinderSource.DocumentSha256);
 
         maps = maps.AddRange(trainerTower.Maps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendTrainerTower(projectRoot, maps, celioRoamerMaps, trainerTower.Maps);
-        PretTrainerTowerRules.ValidateSourceEvidence(projectRoot);
         var trainerTowerCatalog = PretTrainerTowerRules.Load(projectRoot);
         var trainerTowerOpponents = PretTrainerTowerRules.LoadOpponents(projectRoot, powerPlantOpponents);
         var trainerTowerShop = PretTrainerTowerRules.LoadShop(projectRoot, powerPlantShop);
         earlyShop = earlyShop with { Catalog = trainerTowerShop.Catalog };
-        ValidateTrainerTowerComposition(trainerTower, maps, compiled, trainerTowerCatalog, trainerTowerOpponents, trainerTowerShop);
-        PretTrainerTowerPresentation.ValidateEvidence(projectRoot);
-        hashes.Add("trainer-tower-rules:" + PretTrainerTowerRules.CatalogSha256);
-        hashes.Add("trainer-tower-opponents:" + PretTrainerTowerRules.PokemonSha256);
-        hashes.Add("trainer-tower-items:" + PretTrainerTowerRules.ItemsSha256);
-        hashes.Add("trainer-tower-source-lock:" + PretTrainerTowerRules.LockSha256);
-        hashes.Add("trainer-tower-presentation:" + PretTrainerTowerPresentation.ManifestSha256);
-        hashes.Add("trainer-tower-presentation-source-lock:" + PretTrainerTowerPresentation.LockSha256);
+        ValidateTrainerTowerComposition(trainerTower, compiled, trainerTowerCatalog, trainerTowerShop);
 
         var dojoPreviousMaps = maps;
         maps = maps.AddRange(fightingDojo.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendFightingDojo(projectRoot, maps, celioRoamerMaps, fightingDojo.NewMaps);
-        PretFightingDojoRules.ValidateSourceEvidence(projectRoot);
         var dojoOwned = PretFightingDojoRules.LoadOwned(projectRoot, powerPlantOwned);
         var dojoOpponents = PretFightingDojoRules.LoadOpponents(projectRoot, powerPlantOpponents, dojoOwned);
         var dojoMachines = PretFightingDojoRules.LoadMachines(projectRoot, powerPlantMachines, dojoOwned);
@@ -2360,18 +2113,11 @@ public sealed partial class PretCampaignCatalog
                 KeyValuePair.Create(dojoOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[dojoOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
         machines = dojoMachines.Catalog;
 
-        hashes.Add("fighting-dojo-rules:" + PretFightingDojoRules.CatalogSha256);
-        hashes.Add("fighting-dojo-source-lock:" + PretFightingDojoRules.LockSha256);
-        hashes.Add("fighting-dojo-trainers:" + PretFightingDojoRules.TrainersSha256);
-        hashes.Add("fighting-dojo-machines:" + PretFightingDojoRules.MachinesSha256);
-        hashes.Add("fighting-dojo-rule-contract:" + PretFightingDojoRules.RulesSha256);
-        hashes.Add("fighting-dojo-inputs:" + PretFightingDojoRules.SourceInputsSha256);
         ValidateFightingDojoComposition(fightingDojo, maps, dojoPreviousMaps, compiled);
 
         var fossilLabPreviousMaps = maps;
         maps = maps.AddRange(fossilLab.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendFossilLab(projectRoot, maps, celioRoamerMaps, fossilLab.NewMaps);
-        PretFossilLabRules.ValidateSourceEvidence(projectRoot);
         var fossilOwned = PretFossilLabRules.LoadOwned(projectRoot, dojoOwned);
         var fossilOpponents = PretFossilLabRules.LoadOpponents(projectRoot, dojoOpponents, fossilOwned);
         var fossilMachines = PretFossilLabRules.LoadMachines(projectRoot, dojoMachines, fossilOwned);
@@ -2381,20 +2127,10 @@ public sealed partial class PretCampaignCatalog
             SpeciesNames = pokemonContent.SpeciesNames.AddRange(FossilLabOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
                 KeyValuePair.Create(fossilOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[fossilOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
         machines = fossilMachines.Catalog;
-        hashes.Add("fossil-lab-rules:" + PretFossilLabRules.CatalogSha256);
-        hashes.Add("fossil-lab-source-lock:" + PretFossilLabRules.LockSha256);
-        hashes.Add("fossil-lab-machines:" + PretFossilLabRules.MachinesSha256);
-        hashes.Add("fossil-lab-shop:" + PretFossilLabRules.ShopSha256);
-        hashes.Add("fossil-lab-rule-contract:" + PretFossilLabRules.RulesSha256);
-        hashes.Add("fossil-lab-inputs:" + PretFossilLabRules.SourceInputsSha256);
         ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
-        hashes.Add("fossil-lab-presentation:" + PretFossilLabPresentation.ManifestSha256);
-        hashes.Add("fossil-lab-presentation-source-lock:" + PretFossilLabPresentation.LockSha256);
         maps = maps.AddRange(npcTradeElyssa.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTradeElyssa.NewMaps);
         earlyShop = earlyShop with { Catalog = npcTradeElyssa.ExtendShop(fossilShop, npcTradeMail).Catalog };
-        hashes.AddRange(npcTradeElyssa.AdditionalSourceHashes);
-        hashes.AddRange(npcTradeMail.AdditionalSourceHashes);
         maps = maps.AddRange(npcTradeHaden.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTradeHaden.NewMaps);
         var npcTradePreviousMaps = maps;
@@ -2405,34 +2141,22 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(goodRodService.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, goodRodService.NewMaps);
         ValidateGoodRodComposition(goodRodService, maps, goodRodPreviousMaps, compiled);
-        PretNpcTradeOwnedRules.ValidateSourceEvidence(projectRoot);
         var tradeOwned = PretNpcTradeOwnedRules.LoadOwned(projectRoot, fossilOwned);
         var tradeOpponents = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
         var tradeMachines = PretNpcTradeOwnedRules.LoadMachines(projectRoot, fossilMachines, tradeOwned);
         pokemonContent = pokemonContent with { Catalog = tradeOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.SetItem(122, oakPokedex.Entries[122].Name).SetItem(124, oakPokedex.Entries[124].Name) };
         machines = tradeMachines.Catalog;
-        PretSeafoamItems.ValidateSourceEvidence(projectRoot);
         earlyShop=earlyShop with { Catalog=PretSeafoamItems.LoadShop(projectRoot,NpcTradeShopCatalog.For(earlyShop.Catalog)!).Catalog };
-        hashes.AddRange(PretSeafoamItems.AdditionalSourceHashes);
         var seafoamPreviousMaps = maps;
         maps = maps.AddRange(seafoam.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, seafoam.NewMaps);
-        PretSeafoamRules.ValidateSourceEvidence(projectRoot);
-        PretPokeDollItems.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretPokeDollItems.LoadShop(projectRoot,
             SeafoamShopCatalog.For(earlyShop.Catalog) ?? throw new InvalidDataException("poke_doll_predecessor")).Catalog };
         _ = PretPokeDollItems.LoadSourceContract(projectRoot);
-        hashes.AddRange(PretPokeDollItems.AdditionalSourceHashes);
-        PretOrdinaryItemSupplement.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretOrdinaryItemSupplement.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
-        hashes.AddRange(PretOrdinaryItemSupplement.AdditionalSourceHashes);
-        PretDepartmentFourthFloor.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretDepartmentFourthFloor.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
-        hashes.AddRange(PretDepartmentFourthFloor.AdditionalSourceHashes);
-        PretDepartmentRooftopItems.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretDepartmentRooftopItems.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
-        hashes.AddRange(PretDepartmentRooftopItems.AdditionalSourceHashes);
         var seafoamOwned = PretSeafoamRules.LoadOwned(projectRoot, tradeOwned);
         var seafoamOpponents = PretSeafoamRules.LoadOpponents(projectRoot, tradeOpponents, seafoamOwned);
         var seafoamMachines = PretSeafoamRules.LoadMachines(projectRoot, tradeMachines, seafoamOwned);
@@ -2440,7 +2164,6 @@ public sealed partial class PretCampaignCatalog
             SpeciesNames = pokemonContent.SpeciesNames.SetItem(144, oakPokedex.Entries[144].Name) };
         machines = seafoamMachines.Catalog;
         ValidateSeafoamComposition(seafoam, maps, seafoamPreviousMaps, compiled);
-        AppendSeafoamRuleHashes(hashes);
         var reminderPreviousMaps = maps;
         maps = maps.AddRange(moveReminderHouse.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, moveReminderHouse.NewMaps);
@@ -2468,7 +2191,6 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(superRodService.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, superRodService.NewMaps);
         ValidateSuperRodComposition(superRodService, maps, superRodPreviousMaps, compiled);
-        PretSuperRodSpecies.ValidateSourceEvidence(projectRoot);
         var superRodOwned = PretSuperRodSpecies.LoadOwned(projectRoot, seafoamOwned);
         var superRodOpponents = PretSuperRodSpecies.LoadOpponents(projectRoot, seafoamOpponents, superRodOwned);
         var superRodMachines = PretSuperRodSpecies.LoadMachines(projectRoot, seafoamMachines, superRodOwned);
@@ -2484,8 +2206,6 @@ public sealed partial class PretCampaignCatalog
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
         machines = PretDepartmentRooftopItems.LoadMachines(projectRoot, stoneMachines.Catalog).Machines;
-        PretGameCornerSpecies.ValidateSourceEvidence(projectRoot);
-        PretGameCornerPrizes.ValidateSourceEvidence(projectRoot);
         var prizeOwned = PretGameCornerSpecies.LoadOwned(projectRoot, stoneOwned);
         _ = PretGameCornerSpecies.LoadOpponents(projectRoot, stoneOpponents, prizeOwned);
         earlyShop = earlyShop with { Catalog = PretGameCornerPrizes.LoadItems(projectRoot, earlyShop.Catalog).Catalog };
@@ -2500,7 +2220,6 @@ public sealed partial class PretCampaignCatalog
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
         machines = PretFieldFly.LoadMachines(projectRoot, machines).Catalog;
-        PretBreedingSpecies.ValidateSourceEvidence(projectRoot);
         var breedingOwned = PretBreedingSpecies.LoadOwned(projectRoot, prizeOwned);
         _ = PretBreedingSpecies.LoadOpponents(projectRoot, GameCornerOpponentPokemonCatalog.For(prizeOwned)!, breedingOwned);
         machines = PretBreedingSpecies.LoadMachines(projectRoot, machines, breedingOwned).Catalog;
@@ -2510,19 +2229,11 @@ public sealed partial class PretCampaignCatalog
                 int number = breedingOwned.Catalog.Species[id].SourceSpeciesId;
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
-        hashes.AddRange(PretBreedingSpecies.AdditionalSourceHashes);
-        hashes.Add(PretBreedingPresentation.LockSha256);
-        hashes.Add(PretBreedingPresentation.ManifestSha256);
-        PretOrdinaryEvolutionSpecies.ValidateSourceEvidence(projectRoot);
         var ordinaryOwned = PretOrdinaryEvolutionSpecies.LoadOwned(projectRoot, breedingOwned);
         var ordinaryOpponents = PretOrdinaryEvolutionSpecies.LoadOpponents(projectRoot, BreedingOpponentPokemonCatalog.For(breedingOwned)!, ordinaryOwned);
         var memorialOpponents = MemorialPillarOpponentPokemonCatalog.Authenticate(ordinaryOpponents);
         var vsSeekerOpponents = VsSeekerOpponentPokemonCatalog.Authenticate(memorialOpponents.Owned.SharedBattle, memorialOpponents.Catalog);
         var memorialTrainers = PretMemorialPillarTrainers.Load(originalTmAcquisition.MemorialTrainers);
-        hashes.Add(PretMemorialPillarTrainers.TrainersSha256);
-        hashes.Add(MemorialPillarOpponentPokemonCatalog.Profile);
-        hashes.Add(PretMemorialPillarPresentation.ManifestSha256);
-        hashes.Add(PretMemorialPillarPresentation.LockSha256);
         machines = PretOrdinaryEvolutionSpecies.LoadMachines(projectRoot, machines, ordinaryOwned).Catalog;
         _ = PretOrdinaryEvolutionSpecies.LoadMetadata(projectRoot, ordinaryOwned);
         pokemonContent = pokemonContent with { Catalog = ordinaryOwned.Catalog,
@@ -2530,17 +2241,11 @@ public sealed partial class PretCampaignCatalog
                 int number = ordinaryOwned.Catalog.Species[id].SourceSpeciesId;
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
-        hashes.AddRange(PretOrdinaryEvolutionSpecies.AdditionalSourceHashes);
-        hashes.Add(PretOrdinaryEvolutionPresentation.LockSha256);
-        hashes.Add(PretOrdinaryEvolutionPresentation.ManifestSha256);
-        PretOriginalMachineCatalog.ValidateSourceEvidence(projectRoot);
         machines = PretOriginalMachineCatalog.Load(projectRoot, OrdinaryEvolutionMachineCatalog.For(machines)
             ?? throw new InvalidDataException("original_machine_predecessor")).Catalog;
-        hashes.AddRange(PretOriginalMachineCatalog.AdditionalSourceHashes);
         var lostCaveOwned = LostCaveOwnedPokemonCatalog.Authenticate(vsSeekerOpponents);
         _ = LostCaveSpeciesMetadataCatalog.Authenticate(lostCaveOwned);
         var lostCaveMachines = LostCaveMachineCatalog.Authenticate(machines, lostCaveOwned);
-        PretGiftEggSpecies.ValidateSourceEvidence(projectRoot);
         var giftOwned = PretGiftEggSpecies.LoadOwned(projectRoot, lostCaveOwned);
         _ = PretGiftEggSpecies.LoadMetadata(projectRoot, giftOwned);
         machines = PretGiftEggSpecies.LoadMachines(projectRoot, lostCaveMachines.Catalog, giftOwned).Catalog;
@@ -2550,20 +2255,8 @@ public sealed partial class PretCampaignCatalog
                     int number = giftOwned.Catalog.Species[id].SourceSpeciesId;
                     return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
                 })) };
-        hashes.AddRange([LostCaveOwnedPokemonCatalog.Profile, LostCaveOwnedPokemonCatalog.OpponentProfile,
-            LostCaveTrainerPartyFactory.Profile, LostCaveEncounterTables.SourceSha256, LostCaveMachineCatalog.Profile]);
-        hashes.AddRange(PretGiftEggSpecies.AdditionalSourceHashes);
-        hashes.Add(PretGiftEggPresentation.LockSha256);
-        hashes.Add(PretGiftEggPresentation.ManifestSha256);
-        PretLostCaveItems.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretLostCaveItems.LoadItems(projectRoot, earlyShop.Catalog).Catalog };
-        hashes.AddRange(PretLostCaveItems.AdditionalSourceHashes);
         var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, pokemonContent.Catalog, earlyShop.Catalog, machines);
-        hashes.AddRange(PretGameCornerSpecies.AdditionalSourceHashes);
-        hashes.AddRange(PretGameCornerPrizes.AdditionalSourceHashes);
-        hashes.AddRange(PretStoneEvolutionSpecies.AdditionalSourceHashes);
-        hashes.AddRange(PretSuperRodSpecies.AdditionalSourceHashes);
-        hashes.AddRange(PretDepartmentStoreMachines.AdditionalSourceHashes);
         var capeBrinkPreviousMaps = maps;
         maps = maps.AddRange(capeBrinkTutor.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, capeBrinkTutor.NewMaps);
@@ -2571,7 +2264,6 @@ public sealed partial class PretCampaignCatalog
         var prizeRoom = PretGameCornerPrizeRoom.Load(regionalServices, maps);
         maps = maps.AddRange(prizeRoom.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, prizeRoom.NewMaps);
-        hashes.AddRange(prizeRoom.AdditionalSourceHashes);
         route16FlyHouse.ValidateReusedMaps(maps);
         maps = maps.AddRange(route16FlyHouse.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, route16FlyHouse.NewMaps);
@@ -2592,9 +2284,8 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("school_house_map_composition");
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, schoolHouseInteriors.NewMaps);
         lostCave.ValidateReusedMaps(maps);
-        var lostCavePreviousMaps = maps;
         maps = maps.AddRange(lostCave.NewMaps);
-        ValidateLostCaveComposition(lostCave, maps, lostCavePreviousMaps, compiled);
+        ValidateLostCaveScripts(lostCave, compiled);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, lostCave.NewMaps);
         var trainerFanClubPreviousMaps = maps;
         maps = maps.AddRange(trainerFanClub.NewMaps);
@@ -2602,27 +2293,12 @@ public sealed partial class PretCampaignCatalog
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, trainerFanClub.NewMaps);
         ValidateCapeBrinkEncounterSources(capeBrinkTutor, pokemonContent.Catalog, superRodService);
         var moveReminder = PretMoveReminderService.Load(projectRoot, pokemonContent.Catalog);
-        hashes.AddRange(moveReminder.AdditionalSourceHashes);
         var moveTutors = PretMoveTutors.Load(projectRoot, pokemonContent.Catalog);
-        hashes.AddRange(moveTutors.AdditionalSourceHashes);
-        hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
-        hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);
-        hashes.Add("npc-trade-owned-source-lock:" + PretNpcTradeOwnedRules.LockSha256);
-        hashes.Add("npc-trade-owned-inputs:" + PretNpcTradeOwnedRules.SourceInputsSha256);
 
-        hashes.Add("slot-machine-rules:" + SlotMachineRules.RulesSha256);
-        hashes.Add("slot-machine-policy:" + SlotMachineSessionContract.ApprovedProductionPolicyId);
 
-        hashes.AddRange(mailComposer.AdditionalSourceHashes);
-        hashes.AddRange(mailPresentation.AdditionalSourceHashes);
-        hashes.Add("teachy-tv:" + PretTeachyTv.GeneratedSha256);
-        hashes.AddRange(fameChecker.AdditionalSourceHashes);
-        hashes.AddRange(vsSeeker.AdditionalSourceHashes);
-        hashes.AddRange(vsSeekerPresentation.AdditionalSourceHashes);
-        hashes.AddRange(new[] { "vs-seeker-parties:" + PretVsSeekerParties.CatalogSha256, "vs-seeker-occurrences:" + PretVsSeekerParties.OccurrencesSha256, "vs-seeker-party-lock:" + PretVsSeekerParties.LockSha256 });
 
-        // Source additions deliberately change the current content/save fingerprint.
-        var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
+        // Change this explicit version only when the saved content model changes.
+        const string version = "firered-current-content-v3";
         return new(
             maps: maps,
             scripts: compiled,
@@ -2807,7 +2483,7 @@ public sealed partial class PretCampaignCatalog
         {
             if (existing.TryGetValue(file.Path, out var prior))
             {
-                if (prior.SourceRef.Sha256 != file.SourceRef.Sha256 || prior.Text != file.Text)
+                if (prior.Text != file.Text)
                     throw new InvalidDataException("cerulean_cave_source_conflict:" + file.Path);
             }
             else { existing.Add(file.Path, file); sources.Add(file); }

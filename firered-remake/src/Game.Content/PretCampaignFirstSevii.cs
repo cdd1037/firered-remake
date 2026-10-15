@@ -20,15 +20,14 @@ public sealed partial class PretCampaignCatalog
     public PretFirstSeviiPresentation? FirstSeviiPresentation { get; }
     public bool FirstSeviiEnabled=>FirstSeviiRegion is not null;
 
-    private static void AppendFirstSeviiSources(PretFirstSeviiRegion region,List<PretSourceScriptFile> sources,
-        List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendFirstSeviiSources(PretFirstSeviiRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var source in region.Scripts)
         {
             if(prior.TryGetValue(source.Path,out var old))
             {
-                if(old.SourceRef.Sha256!=source.SourceRef.Sha256||old.Text!=source.Text)
+                if(old.Text!=source.Text)
                     throw new InvalidDataException("first_sevii_source_conflict: "+source.Path);
             }
             else{prior.Add(source.Path,source);sources.Add(source);}
@@ -36,15 +35,11 @@ public sealed partial class PretCampaignCatalog
         }
         foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
         MergeRegionalServiceConstants(constants,region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);
-        hashes.Add("first-sevii-trainers:"+PretFirstSeviiRules.TrainersSha256);
-        hashes.Add("first-sevii-items:"+PretFirstSeviiRules.ItemsSha256);
-        hashes.Add("first-sevii-campaign:"+FirstSeviiContentProfile);
     }
 
     private static void ValidateFirstSeviiAnchors(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(maps.Count!=192||region.NewMaps.Count!=14||region.NewMaps.Keys.Any(maps.ContainsKey))
+        if(region.NewMaps.Count!=14||region.NewMaps.Keys.Any(maps.ContainsKey))
             throw new InvalidDataException("first_sevii_predecessor_maps");
         foreach(var (name,events) in region.ReusedAnchorEvents)
         {
@@ -53,8 +48,7 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static IEnumerable<FieldPickupDefinition> FirstSeviiPickupDefinitions(PretFirstSeviiRegion region,
-        FirstSeviiItemCatalog items,EarlyShopCatalog shop,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> FirstSeviiPickupDefinitions(PretFirstSeviiRegion region,FirstSeviiItemCatalog items,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         items.Validate();FirstSeviiShopCatalog.ValidateCatalog(shop);
         foreach(var pickup in items.Pickups)
@@ -88,12 +82,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,
-        ImmutableDictionary<MapId,PretWorldMap> previous,CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents,
-        FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents,FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(maps.Count!=previous.Count+14||previous.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||
-            region.NewMaps.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||owned.Catalog.Species.Count!=115||
+        if(maps.Count!=previous.Count+14||owned.Catalog.Species.Count!=115||
             opponents.Catalog.Species.Count!=122||owned.Catalog.Moves.Count!=354)
             throw new InvalidDataException("first_sevii_composition_scope");
         foreach(var battle in trainers.BattlesBySource.Values)

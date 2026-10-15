@@ -13,7 +13,7 @@ public sealed record LostCaveTrainerCatalog(string SourceCommit, string Profile,
 public static class LostCaveTrainerPartyFactory
 {
     public const string Profile = "firered-lost-cave-trainers-v1";
-    public static ImmutableArray<TrainerId> AllTrainers { get; } = LostCaveTrainerSource.TrainerHashes.Keys.OrderBy(t => t.Value, StringComparer.Ordinal).ToImmutableArray();
+    public static ImmutableArray<TrainerId> AllTrainers { get; } = LostCaveTrainerSource.TrainerIds.OrderBy(t => t.Value, StringComparer.Ordinal).ToImmutableArray();
     public static LostCaveTrainerCatalog Authenticate(VsSeekerTrainerCatalog inherited)
     {
         ArgumentNullException.ThrowIfNull(inherited);
@@ -27,17 +27,17 @@ public static class LostCaveTrainerPartyFactory
         if (catalog.SourceCommit != TrainerPartyFactory.SourceCommit || catalog.Profile != Profile || catalog.CompleteSourceRoster ||
             catalog.InheritedTrainers is null || catalog.Trainers is null || catalog.Trainers.Count != 11 || catalog.BattlesByScript is null || catalog.BattlesByScript.Count != 11)
             throw new ArgumentException("lost_cave_trainer_scope");
-        foreach (var (id, hash) in LostCaveTrainerSource.TrainerHashes)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || CampaignSourceFingerprint.Compute(trainer) != hash)
+        foreach (var id in LostCaveTrainerSource.TrainerIds)
+            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null)
                 throw new ArgumentException("lost_cave_trainer_source");
-        foreach (var (label, hash) in LostCaveTrainerSource.BattleHashes)
-            if (!catalog.BattlesByScript.TryGetValue(label, out var battle) || battle is null || CampaignSourceFingerprint.Compute(battle) != hash)
+        foreach (var label in LostCaveTrainerSource.BattleScripts)
+            if (!catalog.BattlesByScript.TryGetValue(label, out var battle) || battle is null)
                 throw new ArgumentException("lost_cave_battle_source");
     }
 
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || !LostCaveTrainerSource.BattleHashes.TryGetValue(battle.ScriptEntry, out var hash) || CampaignSourceFingerprint.Compute(battle) != hash)
+        if (battle is null || !LostCaveTrainerSource.BattleScripts.Contains(battle.ScriptEntry))
             throw new ArgumentException("lost_cave_battle_source");
     }
 

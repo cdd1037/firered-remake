@@ -1,97 +1,60 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-event-island-species-v1",
   "files": [
     {
-      "path": "content/generated/event-island-species/catalog.json",
-      "byteLength": 98623,
-      "sha256": "ec077629917befe12235c92727590edefe2d752104793e54b923d21f46ddfa2a"
+      "path": "content/generated/event-island-species/catalog.json"
     },
     {
-      "path": "content/raw/event-island-species/asm/macros/event.inc",
-      "byteLength": 56947,
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "content/raw/pokefirered/037335f4/asm/macros/event.inc"
     },
     {
-      "path": "content/raw/event-island-species/data/maps/BirthIsland_Exterior/scripts.inc",
-      "byteLength": 3557,
-      "sha256": "04f37aed5bbf5fa74a85151f9887397dbdc46b19d3e8679ac10bb8c774258b08"
+      "path": "content/raw/pokefirered/037335f4/data/maps/BirthIsland_Exterior/scripts.inc"
     },
     {
-      "path": "content/raw/event-island-species/data/maps/NavelRock_Base/scripts.inc",
-      "byteLength": 2247,
-      "sha256": "c51810c7c0f63c8700fb7d49815166287cefa9c43d46b5ec1882a03b795b2b40"
+      "path": "content/raw/pokefirered/037335f4/data/maps/NavelRock_Base/scripts.inc"
     },
     {
-      "path": "content/raw/event-island-species/data/maps/NavelRock_Summit/scripts.inc",
-      "byteLength": 2908,
-      "sha256": "3dffe6191b7c9cd9cb60083cc370b326afcc8057ec5d874cc7e372e5cbc528d8"
+      "path": "content/raw/pokefirered/037335f4/data/maps/NavelRock_Summit/scripts.inc"
     },
     {
-      "path": "content/raw/event-island-species/include/constants/items.h",
-      "byteLength": 12436,
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      "path": "content/raw/pokefirered/037335f4/include/constants/items.h"
     },
     {
-      "path": "content/raw/event-island-species/include/constants/pokemon.h",
-      "byteLength": 10894,
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+      "path": "content/raw/pokefirered/037335f4/include/constants/pokemon.h"
     },
     {
-      "path": "content/raw/event-island-species/include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "content/raw/pokefirered/037335f4/include/constants/species.h"
     },
     {
-      "path": "content/raw/event-island-species/include/random.h",
-      "byteLength": 669,
-      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9"
+      "path": "content/raw/pokefirered/037335f4/include/random.h"
     },
     {
-      "path": "content/raw/event-island-species/src/battle_main.c",
-      "byteLength": 171904,
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "content/raw/pokefirered/037335f4/src/battle_main.c"
     },
     {
-      "path": "content/raw/event-island-species/src/battle_setup.c",
-      "byteLength": 33351,
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "content/raw/pokefirered/037335f4/src/battle_setup.c"
     },
     {
-      "path": "content/raw/event-island-species/src/data/items.json",
-      "byteLength": 194280,
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+      "path": "content/raw/pokefirered/037335f4/src/data/items.json"
     },
     {
-      "path": "content/raw/event-island-species/src/data/pokemon/level_up_learnset_pointers.h",
-      "byteLength": 20597,
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h"
     },
     {
-      "path": "content/raw/event-island-species/src/data/pokemon/level_up_learnsets.h",
-      "byteLength": 182027,
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h"
     },
     {
-      "path": "content/raw/event-island-species/src/data/pokemon/pokedex_entries.h",
-      "byteLength": 132235,
-      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/pokedex_entries.h"
     },
     {
-      "path": "content/raw/event-island-species/src/data/pokemon/species_info.h",
-      "byteLength": 342600,
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h"
     },
     {
-      "path": "content/raw/event-island-species/src/data/pokemon/tmhm_learnsets.h",
-      "byteLength": 559340,
-      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+      "path": "content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h"
     },
     {
-      "path": "content/raw/event-island-species/src/pokemon.c",
-      "byteLength": 221865,
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "content/raw/pokefirered/037335f4/src/pokemon.c"
     }
   ]
 }

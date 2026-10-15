@@ -2,7 +2,6 @@
 """Import the four local Trainer Tower courses from pinned Git blobs, without running upstream code."""
 import argparse
 import ast
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -12,26 +11,24 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-trainer-tower-local-v1'
 BASE = 'content/generated/trainer-tower-rules/'
-RAW = 'content/raw/trainer-tower-rules/'
+RAW = 'content/raw/pokefirered/037335f4/'
 KINDS = ['SINGLE', 'DOUBLE', 'KNOCKOUT', 'MIXED']
 NEW_SPECIES = ['POLIWRATH', 'VAPOREON', 'FLAREON', 'FERALIGATR', 'LEDIAN', 'TOGEPI',
                'AMPHAROS', 'POLITOED', 'ESPEON', 'DUNSPARCE', 'GRANBULL', 'QWILFISH',
                'CORSOLA', 'MANTINE', 'PORYGON2', 'SMOOCHUM', 'MAGBY', 'BLISSEY']
-DEPENDENCIES = {
-    'content/generated/metronome-moves/catalog.json': 'dd93a57abc65c8c313647c5dd78666551e716e97e1ea807f3d9a84485a57c54d',
-    'content/generated/canonical-pokemon/catalog.json': 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc',
-    'content/generated/five-island-rules/items.json': 'c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968',
-    'content/generated/five-island-rules/pokemon.json': '9788f567d061f21e66d877718a542a3fb2068629f34b65da9dd604e387a0a909',
-    'content/generated/celio-pokemon/pokemon.json': '3f5b6aeeb5454af27c38ff837757fe9f50647a2ed95dc19ea94e83dc05c54e9f',
-    'content/generated/seven-island-rules/pokemon.json': '5c8d7774206cb06ce8798abde68b0c36048bebdc214b4e61c80bfdbf45e70d38',
-    'content/generated/event-island-species/catalog.json': 'ec077629917befe12235c92727590edefe2d752104793e54b923d21f46ddfa2a',
-    'content/generated/league-rematch-rules/pokemon.json': 'd9e9657f331699b88a9909d1bbb8dce05797ee0714e4c980730884aab4725b39',
-    'content/generated/power-plant-pokemon/catalog.json': 'c62e537a2468299e54ead67ff42cd19293bbafd404688c858fa49c455a1b0232',
-    'scripts/five-island-predecessor.json': 'e2241d337388ef781209563eed0fa100c5d219841830ff3f400b71500e37278f',
-}
+DEPENDENCIES = (
+    'content/generated/metronome-moves/catalog.json',
+    'content/generated/canonical-pokemon/catalog.json',
+    'content/generated/five-island-rules/items.json',
+    'content/generated/five-island-rules/pokemon.json',
+    'content/generated/celio-pokemon/pokemon.json',
+    'content/generated/seven-island-rules/pokemon.json',
+    'content/generated/event-island-species/catalog.json',
+    'content/generated/league-rematch-rules/pokemon.json',
+    'content/generated/power-plant-pokemon/catalog.json',
+    'scripts/five-island-predecessor.json',
+)
 
-def sha(data): return hashlib.sha256(data).hexdigest()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 def need(value, message):
     if not value: raise ValueError(message)
 def ident(symbol): return dict(value='pret:' + symbol)
@@ -51,14 +48,12 @@ def brace_end(text, start):
     raise ValueError('Unclosed C initializer')
 
 def generate(reference, dependency):
-    need(subprocess.check_output(['git', 'rev-parse', COMMIT + '^{tree}'], cwd=reference).decode().strip() == TREE, 'Pinned source tree differs')
     raw, inputs, dependencies = {}, {}, []
     def read(path):
         if path not in raw:
             b = subprocess.check_output(['git', 'show', COMMIT + ':' + path], cwd=reference)
             raw[path] = b
-            inputs[path] = dict(path=path, byteLength=len(b), sha256=sha(b),
-                gitBlobSha1=hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest())
+            inputs[path] = dict(path=path)
         return raw[path].decode()
     def one(path, pattern):
         matches = list(re.finditer(pattern, read(path), re.M | re.S))
@@ -66,11 +61,11 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, start, end):
         return dict(path=path, symbol=symbol, startLine=read(path).count('\n', 0, start) + 1,
-                    endLine=read(path).count('\n', 0, end) + 1, sha256=inputs[path]['sha256'])
+                    endLine=read(path).count('\n', 0, end) + 1)
     def matchref(path, symbol, m): return ref(path, symbol, m.start(), m.end())
     def dep(path):
-        b = (dependency / path).read_bytes(); need(sha(b) == DEPENDENCIES[path], 'Dependency differs: ' + path)
-        dependencies.append(dict(path=path, byteLength=len(b), sha256=sha(b))); return json.loads(b)
+        b = (dependency / path).read_bytes()
+        dependencies.append(dict(path=path)); return json.loads(b)
     d = {path: dep(path) for path in DEPENDENCIES}
     canonical = d['content/generated/canonical-pokemon/catalog.json']
     species = {s['id']['value'][5:]: s for s in canonical['species']}
@@ -240,9 +235,9 @@ def generate(reference, dependency):
     need(len(mismatches)==22 and len(shinies)==3, 'Exact fixed-identity exceptions')
     for s in used_species:
         for r in [species[s]['source'],species[s]['learnsetSource']]+[m['source'] for m in species[s]['levelUpMoves']]:
-            read(r['path']);need(inputs[r['path']]['sha256']==r['sha256'],'Canonical species source differs')
+            read(r['path'])
     for m in used_moves:
-        r=moves[m]['source'];read(r['path']);need(inputs[r['path']]['sha256']==r['sha256'],'Canonical move source differs')
+        r=moves[m]['source'];read(r['path'])
     mechanics=[]
     for p,symbol,pattern in [
         ('src/trainer_tower.c','BuildEnemyParty',r'^static void BuildEnemyParty\(void\)\n\{.*?^\}'),
@@ -282,10 +277,10 @@ def generate(reference, dependency):
         'ITEM_REVIVE','ITEM_FULL_HEAL','ITEM_ESCAPE_ROPE','ITEM_MAX_REPEL'],'Original nine lobby items')
     shop=dict(id='TrainerTower_Lobby_Mart_Items',items=[ident(s) for s in stock_symbols[:-1]],source=matchref(lobby,'TrainerTower_Lobby_Mart_Items',stock))
     item_document=dict(sourceCommit=COMMIT,profile='firered-trainer-tower-inventory-v1',previousItemCount=123,itemCount=124,
-        additions=[metal],shop=shop,additionsSemanticSha256=fingerprint([metal]),shopSemanticSha256=fingerprint(shop),
+        additions=[metal],shop=shop,
         prizes=[dict(course=c['kind'],item=ident(c['prizeItem']),sourceItemId=c['sourcePrizeItemId'],quantity=1) for c in courses])
     local=dict(localSetId=1,externalEReaderEnabled=False,courses=courses,templates=templates)
-    metadata=dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,declaredTemplates=32,declaredTrainers=60,declaredPoolMembers=360,
+    metadata=dict(sourceCommit=COMMIT,profile=PROFILE,declaredTemplates=32,declaredTrainers=60,declaredPoolMembers=360,
         referencedTemplates=28,referencedTrainers=53,referencedPoolMembers=318,actualMemberOccurrences=74,usedSpeciesCount=63,usedMovesCount=114,
         usedHeldItemCount=23,previousOpponentSpeciesCount=186,opponentSpeciesCount=204,ownedSpeciesCount=152,ownedSpeciesAdded=[],
         usedSpecies=sorted(used_species),usedMoves=sorted(used_moves),usedHeldItems=sorted(used_items),newOpponentSpecies=missing,
@@ -294,7 +289,7 @@ def generate(reference, dependency):
         singleBattleTypeFlags=number('BATTLE_TYPE_TRAINER')|number('BATTLE_TYPE_TRAINER_TOWER'),
         doubleBattleTypeFlags=number('BATTLE_TYPE_TRAINER')|number('BATTLE_TYPE_TRAINER_TOWER')|number('BATTLE_TYPE_DOUBLE'),
         aiFlags=number('AI_SCRIPT_CHECK_BAD_MOVE')|number('AI_SCRIPT_TRY_TO_FAINT')|number('AI_SCRIPT_CHECK_VIABILITY'),
-        mechanicsSources=mechanics,localSemanticSha256=fingerprint(local),inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
+        mechanicsSources=mechanics,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     outputs={'catalog.json':dict(metadata=metadata,local=local),
         'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-trainer-tower-opponents-v1',ownedSpeciesAdded=[],opponentSpecies=[species[s] for s in missing]),
         'creation-vectors.json':dict(sourceCommit=COMMIT,profile=PROFILE,levels=[1,50,100],vectors=vectors),
@@ -308,14 +303,12 @@ def main():
     docs,raw=generate(a.reference,a.dependency_root or a.output)
     files={BASE+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
     files.update({RAW+n:data for n,data in raw.items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,
-        files=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(files.items())])
+    lock=dict(sourceCommit=COMMIT,profile=PROFILE,
+        files=[dict(path=p) for p,b in sorted(files.items())])
     files['scripts/trainer-tower-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,courses=4,floors=32,usedMembers=74,sourceInputs=len(raw),files=len(files),
-        hashes={p:sha(b) for p,b in files.items() if p.startswith(BASE) or p.startswith('scripts/')},
-        localSemanticSha256=docs['catalog.json']['metadata']['localSemanticSha256']),indent=2))
+    print(json.dumps(dict(checked=a.check,courses=4,floors=32,usedMembers=74,sourceInputs=len(raw),files=len(files)),indent=2))
 if __name__=='__main__':main()

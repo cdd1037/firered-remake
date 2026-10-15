@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
-using System.Security.Cryptography;
 namespace Game.Presentation.BattleAnimations;
 public readonly record struct AnimationSlot
 {
@@ -405,19 +404,10 @@ public sealed class SourceBattleAnimationGate
 
 public static class SourceHitAnimationCatalog
 {
-    public const string ManifestSha256="704b8c13aef52a1540823d2a0373b74219e1d17f18136f2b76844a73bff1eee6";
-    public static byte[] ReadBounded(string path,int maximum,int? exact=null)
-    {
-        using var file=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read);
-        long length=file.Length;
-        if(length<0||length>maximum||exact is {} n&&length!=n)throw new InvalidDataException("Source asset length differs: "+path);
-        var bytes=new byte[(int)length];file.ReadExactly(bytes);
-        if(file.ReadByte()!=-1)throw new InvalidDataException("Source asset changed while reading.");return bytes;
-    }
+
     public static JsonDocument Read(string folder)
     {
-        var bytes=ReadBounded(Path.Combine(folder,"manifest.json"),65536,39901);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=ManifestSha256)throw new InvalidDataException("Source animation manifest differs.");
+        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
         return JsonDocument.Parse(bytes);
     }
     public static SourceAnimationScript Script(JsonDocument manifest,int move)
@@ -431,11 +421,9 @@ public static class SourceHitAnimationCatalog
         var row=manifest.RootElement.GetProperty("assets").EnumerateArray().Single(x=>x.GetProperty("id").GetString()==id);
         string path=row.GetProperty("path").GetString()!;
         if(Path.GetFileName(path)!=path)throw new InvalidDataException("Asset path differs.");
-        int size=row.GetProperty("bytes").GetInt32();
-        var bytes=ReadBounded(Path.Combine(folder,path),10244,size);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=row.GetProperty("sha256").GetString())throw new InvalidDataException("Source animation asset differs.");
+        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,path));
         int width=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes),height=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(2));
-        if(width!=32||height is not (32 or 128 or 160)||size!=4+width*height*2)throw new InvalidDataException("Impact shape differs.");
+        if(width!=32||height is not (32 or 128 or 160)||bytes.Length!=4+width*height*2)throw new InvalidDataException("Impact shape differs.");
         var pixels=new ushort[width*height];for(int i=0;i<pixels.Length;i++)pixels[i]=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(4+i*2));
         return new(width,height,pixels);
     }

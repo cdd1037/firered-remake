@@ -2,506 +2,243 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-vermilion-synth-v1",
   "files": [
     {
-      "path": "data/battle_anim_scripts.s",
-      "byteLength": 406484,
-      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
-      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068"
+      "path": "data/battle_anim_scripts.s"
     },
     {
-      "path": "data/event_scripts.s",
-      "byteLength": 55643,
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0"
+      "path": "data/event_scripts.s"
     },
     {
-      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc",
-      "byteLength": 13179,
-      "sha256": "f89afcf65a3fd4d6e7f71acc628d42b02dd34a5b6eeb37443206bdb7a85b2ced",
-      "gitBlobSha1": "8e8a4ee1a2d2a7956ebac41f6718abd536431336"
+      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc"
     },
     {
-      "path": "data/maps/Route5/map.json",
-      "byteLength": 1467,
-      "sha256": "741445d5c51691b6bce421326f5fe21d01b1cf88e3a92340ca3a865dac94b70a",
-      "gitBlobSha1": "34199b1bd5e859f60d03498ddcaf0ea8b049fbf8"
+      "path": "data/maps/Route5/map.json"
     },
     {
-      "path": "data/maps/Route5/scripts.inc",
-      "byteLength": 129,
-      "sha256": "0342511fa88ffa97399f1ea11825bf42e93902002718c7cfce8787d0bf7c8009",
-      "gitBlobSha1": "b755e2ac9d74a532c0bf6b95362d2092c84852db"
+      "path": "data/maps/Route5/scripts.inc"
     },
     {
-      "path": "data/maps/Route5/text.inc",
-      "byteLength": 114,
-      "sha256": "f8e19a11b9174b4d5d8ffd91b96ad6c0a12f52679a868bf61c792386741a8a4b",
-      "gitBlobSha1": "b28423d29859a59741601c3239698e354776314e"
+      "path": "data/maps/Route5/text.inc"
     },
     {
-      "path": "data/maps/Route5_SouthEntrance/map.json",
-      "byteLength": 2205,
-      "sha256": "94b0384b5a76614515134afd56af1c81f2b33d190267b3c631009af812858e96",
-      "gitBlobSha1": "650568ac174fae027ee4ab4714b7001ce215b1ed"
+      "path": "data/maps/Route5_SouthEntrance/map.json"
     },
     {
-      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
-      "byteLength": 2347,
-      "sha256": "bb6c697875fe58bb53e0d604093a34511721437e4111396097bbe9be00c435e9",
-      "gitBlobSha1": "588a273438371a1de1725adeff151736b4db735f"
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc"
     },
     {
-      "path": "data/maps/Route5_SouthEntrance/text.inc",
-      "byteLength": 811,
-      "sha256": "3b30b0a999eff2ae18387b4b5b75e1a99f42edd52887dd6e0e650b5766a76dcc",
-      "gitBlobSha1": "941b17129ea8c8f329ac2de1d386f596d007fe5a"
+      "path": "data/maps/Route5_SouthEntrance/text.inc"
     },
     {
-      "path": "data/maps/Route6/map.json",
-      "byteLength": 4165,
-      "sha256": "7c16394fc3ed6474aa7d11340f4b5bff96b6c596937401949ee08932887d42cc",
-      "gitBlobSha1": "4a146846afdbac6f5992e2d34325faee466a04c1"
+      "path": "data/maps/Route6/map.json"
     },
     {
-      "path": "data/maps/Route6/scripts.inc",
-      "byteLength": 129,
-      "sha256": "88ee4b4d3f3ce52172f9eeee77d04ede3622e77d0ff57636e66d8e1d1fe75307",
-      "gitBlobSha1": "2ff51ddf42b517b2c33db1f5959df8a06a694968"
+      "path": "data/maps/Route6/scripts.inc"
     },
     {
-      "path": "data/maps/Route6/text.inc",
-      "byteLength": 1764,
-      "sha256": "5d5cad2e2614bfc4cf4f50396cd7208edc6ffeaefdda5da9d5fe81796a18463d",
-      "gitBlobSha1": "5566cbaae2e716a3d72175d0dd935ec45b46dc23"
+      "path": "data/maps/Route6/text.inc"
     },
     {
-      "path": "data/maps/Route6_NorthEntrance/map.json",
-      "byteLength": 2206,
-      "sha256": "918f996bbe0c77cab076aa4fd7d3d94defeec40008cfe96cc149d4c97d7cb0f7",
-      "gitBlobSha1": "fb2edae089be9936b9ae7c2863faf11f592e8762"
+      "path": "data/maps/Route6_NorthEntrance/map.json"
     },
     {
-      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
-      "byteLength": 2354,
-      "sha256": "0225f7ad64ca88726d25592d39620bff93670910b4ae48ae9467aeced98ce6c7",
-      "gitBlobSha1": "fb203c9c544fd4e9c02965312e959f2a29556e48"
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc"
     },
     {
-      "path": "data/maps/Route6_NorthEntrance/text.inc",
-      "byteLength": 811,
-      "sha256": "7d0b06985ebe37e79e76c96364007871e8249930c40b3c3d88421ac74931a777",
-      "gitBlobSha1": "bc727ad9713787e6d1306bc3c1d9b99eab342c20"
+      "path": "data/maps/Route6_NorthEntrance/text.inc"
     },
     {
-      "path": "data/maps/UndergroundPath_NorthEntrance/map.json",
-      "byteLength": 1518,
-      "sha256": "731e37960c93513faf06382d8764e5f5dd080d9f5529aa7c68bc14949959116d",
-      "gitBlobSha1": "f3602bf1f5e57b2daec58b37be678abe0cf31992"
+      "path": "data/maps/UndergroundPath_NorthEntrance/map.json"
     },
     {
-      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
-      "byteLength": 1181,
-      "sha256": "522d5363dcf84c5c0187b2ebe58ec3df6c1613ffd6ae1ad55e286d8d738fcd4b",
-      "gitBlobSha1": "6719484491bbf7e6f745dfe0ea42cd439339261c"
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc"
     },
     {
-      "path": "data/maps/UndergroundPath_NorthSouthTunnel/map.json",
-      "byteLength": 2642,
-      "sha256": "113f18e16ecca84b244ed0dd108e17b5be1ea3dde88d66cb6be41ad4549e2962",
-      "gitBlobSha1": "95b3decabd25c6a25bfac445f5bae709ed002470"
+      "path": "data/maps/UndergroundPath_NorthSouthTunnel/map.json"
     },
     {
-      "path": "data/maps/UndergroundPath_NorthSouthTunnel/scripts.inc",
-      "byteLength": 261,
-      "sha256": "0d994d5f580a058056c657efa2a7bc7dccecbba93d6edf11775993d1f373a64a",
-      "gitBlobSha1": "fb676d76e2f47914150558d943410f9483297708"
+      "path": "data/maps/UndergroundPath_NorthSouthTunnel/scripts.inc"
     },
     {
-      "path": "data/maps/UndergroundPath_SouthEntrance/map.json",
-      "byteLength": 1516,
-      "sha256": "a2e4c30c2713596f4725378d98251b09fa26deef6442c2ea834b1a24115ff225",
-      "gitBlobSha1": "3b1d0c9b965192fa19a572c4c513532677243e0a"
+      "path": "data/maps/UndergroundPath_SouthEntrance/map.json"
     },
     {
-      "path": "data/maps/UndergroundPath_SouthEntrance/scripts.inc",
-      "byteLength": 193,
-      "sha256": "17df7e69f786ffc073d4850c8b3f487c08acd8e9b51d2b83b01323de411ad3f3",
-      "gitBlobSha1": "31e952407f183dad39e62641da8de87cbf46eca6"
+      "path": "data/maps/UndergroundPath_SouthEntrance/scripts.inc"
     },
     {
-      "path": "data/maps/UndergroundPath_SouthEntrance/text.inc",
-      "byteLength": 165,
-      "sha256": "b8eba1309557d42ee0fdc4a1132fb36c9d61b01884bb1d4f5418a54f477d22d4",
-      "gitBlobSha1": "23769dbec5a5385d4cc046c6218ffaa1981cedc8"
+      "path": "data/maps/UndergroundPath_SouthEntrance/text.inc"
     },
     {
-      "path": "data/maps/VermilionCity/map.json",
-      "byteLength": 7532,
-      "sha256": "b109631c9791cd330d4073ab183a283380ec25e9145c5e6e591b8111a38f1f4c",
-      "gitBlobSha1": "d0b7a9a4217292b6bfd355c019ebd74aa4491270"
+      "path": "data/maps/VermilionCity/map.json"
     },
     {
-      "path": "data/maps/VermilionCity/scripts.inc",
-      "byteLength": 8180,
-      "sha256": "f6b97403b5ba7b183e00c60052155b4515fac4037945c08a734e65c25fde3465",
-      "gitBlobSha1": "580560a5deca74cca9feacf052c589cd8b0afcde"
+      "path": "data/maps/VermilionCity/scripts.inc"
     },
     {
-      "path": "data/maps/VermilionCity/text.inc",
-      "byteLength": 4368,
-      "sha256": "748a83870add7a7d2ff50c1afad1fe1c410842acf84ded75f7c6b3174b63371f",
-      "gitBlobSha1": "befc4a35664c61ee992c38ecf0e7445e972a3c08"
+      "path": "data/maps/VermilionCity/text.inc"
     },
     {
-      "path": "data/maps/VermilionCity_Mart/map.json",
-      "byteLength": 2169,
-      "sha256": "f438b8fd4e8d2cd177b9a831fef50e0bece05260214dcf26a408d663b4f14ab9",
-      "gitBlobSha1": "b62113ed5457753f52ea0a189da764e256563d86"
+      "path": "data/maps/VermilionCity_Mart/map.json"
     },
     {
-      "path": "data/maps/VermilionCity_Mart/scripts.inc",
-      "byteLength": 737,
-      "sha256": "627828d09474aaeb10d1369e461a6ca67fa3d4d37ac8f3aefbae018512278a0f",
-      "gitBlobSha1": "dc3b1bf12267120e1c311c8b30d9e5a7303918cf"
+      "path": "data/maps/VermilionCity_Mart/scripts.inc"
     },
     {
-      "path": "data/maps/VermilionCity_Mart/text.inc",
-      "byteLength": 575,
-      "sha256": "5a88110292745747e297ce9a3dc10ed133db80e09f6e7a4d15aba7ade918654a",
-      "gitBlobSha1": "da5f20d9f9fd95cec353e5de034e161d5982e9ae"
+      "path": "data/maps/VermilionCity_Mart/text.inc"
     },
     {
-      "path": "data/maps/VermilionCity_PokemonCenter_1F/map.json",
-      "byteLength": 4171,
-      "sha256": "823e55929ad3550894dec47cc49958c103d475e963e20d0cdda0f4eb0fb0ba52",
-      "gitBlobSha1": "e937f548e44524507a3d3f77c99e24af7f5a9b8b"
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/map.json"
     },
     {
-      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
-      "byteLength": 825,
-      "sha256": "4847783b3239ea8e6c4aa74a509b4ada7b22f351b2b82a829a67e139a9a2db18",
-      "gitBlobSha1": "904b0a65d360b5104366bc31b8f7a712aaba07ec"
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc"
     },
     {
-      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
-      "byteLength": 1873,
-      "sha256": "3ac48fe9e489afc76d9a5dcb4623a089e472baea76ae194e339964b6da37ebdb",
-      "gitBlobSha1": "00ec59594ac71effd40e69b5373cabc444a4d846"
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc"
     },
     {
-      "path": "data/scripts/bag_full.inc",
-      "byteLength": 358,
-      "sha256": "81db2478b9acaeb2011eea4294b5f24f3c4669e724d75e5aa513ba105c2db267",
-      "gitBlobSha1": "eaf65c7759f5a760c0524a6ae7a3b5b1724930e3"
+      "path": "data/scripts/bag_full.inc"
     },
     {
-      "path": "data/scripts/cable_club.inc",
-      "byteLength": 53968,
-      "sha256": "f197f6f19dc7477bd28ec798008a02d6b5542b4b22119e7562ce060789c793df",
-      "gitBlobSha1": "423ac7ad3d43196faebfd870d0230a82b85b01af"
+      "path": "data/scripts/cable_club.inc"
     },
     {
-      "path": "data/scripts/fame_checker.inc",
-      "byteLength": 6374,
-      "sha256": "1a1513814888c5e24f3dadba2481141c146e2b411f496ecd26096fa7711154f7",
-      "gitBlobSha1": "a84b2309103b14b72de633357efae8b692df3802"
+      "path": "data/scripts/fame_checker.inc"
     },
     {
-      "path": "data/scripts/field_moves.inc",
-      "byteLength": 7082,
-      "sha256": "8f1c7850d777b97ceb8779e3b2cb4a30562cd647e3c03192261fb917a42a9bb6",
-      "gitBlobSha1": "fc2998f1aed8b11482d87e51cfe9e51fa9dd630c"
+      "path": "data/scripts/field_moves.inc"
     },
     {
-      "path": "data/scripts/movement.inc",
-      "byteLength": 1147,
-      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64",
-      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5"
+      "path": "data/scripts/movement.inc"
     },
     {
-      "path": "data/scripts/obtain_item.inc",
-      "byteLength": 5866,
-      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d",
-      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9"
+      "path": "data/scripts/obtain_item.inc"
     },
     {
-      "path": "data/scripts/pc.inc",
-      "byteLength": 2483,
-      "sha256": "9e2d8abcd0e8e96ca1ac8b63c7021b552a6f441ea181e24471340a9d2f0b9e99",
-      "gitBlobSha1": "77cf55e6faf1108048781d2e574e85302201287d"
+      "path": "data/scripts/pc.inc"
     },
     {
-      "path": "data/scripts/pkmn_center_nurse.inc",
-      "byteLength": 2127,
-      "sha256": "169773893bdcab47f6bfe083b72f24246ef1613723f876ff96a3ff9cd7a6e8be",
-      "gitBlobSha1": "507c8a4980bc7431117721d46b0118a6a71c1f80"
+      "path": "data/scripts/pkmn_center_nurse.inc"
     },
     {
-      "path": "data/scripts/pokedex_rating.inc",
-      "byteLength": 2621,
-      "sha256": "1296caff62f2ee448b5b5f5b2e08ab9e710307c463673a997282326666ec92e5",
-      "gitBlobSha1": "6a4ed07511f68b0af8e9e60ce4515b85dac5bc73"
+      "path": "data/scripts/pokedex_rating.inc"
     },
     {
-      "path": "data/scripts/seagallop.inc",
-      "byteLength": 6010,
-      "sha256": "112de39a1e7fabc0ef46a884271c58f4ae0025cd7dc1b9a956158fb1b3cf17a3",
-      "gitBlobSha1": "242b42023f713e386d2885a9e106d2b8eb7fd758"
+      "path": "data/scripts/seagallop.inc"
     },
     {
-      "path": "data/scripts/std_msgbox.inc",
-      "byteLength": 1040,
-      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431",
-      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde"
+      "path": "data/scripts/std_msgbox.inc"
     },
     {
-      "path": "data/scripts/trainer_battle.inc",
-      "byteLength": 3768,
-      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c",
-      "gitBlobSha1": "c3e4371962dae55fedfd0b5c2f02068a1f8cf0e7"
+      "path": "data/scripts/trainer_battle.inc"
     },
     {
-      "path": "data/scripts/trainers.inc",
-      "byteLength": 129141,
-      "sha256": "d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945",
-      "gitBlobSha1": "5ec6ef8f48493d5fac53600557bc8105fcb2fe67"
+      "path": "data/scripts/trainers.inc"
     },
     {
-      "path": "data/scripts/white_out.inc",
-      "byteLength": 1627,
-      "sha256": "b69a9eaf6cb7ca27fffae11bb005a881d1d140d34e2a03b89cab7b8046ff9d1e",
-      "gitBlobSha1": "ff4feb66f0822b61a8815b69196800855d31e14e"
+      "path": "data/scripts/white_out.inc"
     },
     {
-      "path": "data/text/fame_checker.inc",
-      "byteLength": 53079,
-      "sha256": "dfd97ba42a7d3ddcc0dd403bf2c805a220c74bfea2af173965944256e6f8361d",
-      "gitBlobSha1": "b4d52b2082bc270bef37733d0ae53a259908b307"
+      "path": "data/text/fame_checker.inc"
     },
     {
-      "path": "data/text/ingame_trade.inc",
-      "byteLength": 1510,
-      "sha256": "7847d6883933de15219a999db201f12929fba0b6f0a92b269fb00cb712fc0e20",
-      "gitBlobSha1": "0b800bad8cc1c7105f5aec233858ec528bdd76db"
+      "path": "data/text/ingame_trade.inc"
     },
     {
-      "path": "data/text/obtain_item.inc",
-      "byteLength": 1065,
-      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813",
-      "gitBlobSha1": "8d2708166d4d21da3a6c20282e0ebf244ca0d57e"
+      "path": "data/text/obtain_item.inc"
     },
     {
-      "path": "data/text/pc.inc",
-      "byteLength": 370,
-      "sha256": "bc20a171a70aaf9a4173c042f1e2206037d871a0191a41fecdd18d3845aad189",
-      "gitBlobSha1": "2bf09b34338dba5a94da30b214ba83781ca5220d"
+      "path": "data/text/pc.inc"
     },
     {
-      "path": "data/text/poke_mart.inc",
-      "byteLength": 839,
-      "sha256": "a1b8588b2078d15aa82893be92a408a682106ecff3a9db6c36008618497d169e",
-      "gitBlobSha1": "1e1d4ac35e4618f3b3ddacd023e0b8c0be52f0e3"
+      "path": "data/text/poke_mart.inc"
     },
     {
-      "path": "data/text/pokedex_rating.inc",
-      "byteLength": 3759,
-      "sha256": "02375e8e33a2940c2d5ee64c1196497d29e4475f5bc2ef40a338d59a161d1cc0",
-      "gitBlobSha1": "3aa1080aa2174a8f6479e235bcdf73bddab78521"
+      "path": "data/text/pokedex_rating.inc"
     },
     {
-      "path": "data/text/seagallop.inc",
-      "byteLength": 216,
-      "sha256": "acbbdb670f32ee992fb379110375deb41eeb9fece31fab992dc95562e4390a50",
-      "gitBlobSha1": "a4cc2f604d4ad2cc23bb6215d64e5bab134944ee"
+      "path": "data/text/seagallop.inc"
     },
     {
-      "path": "data/text/trainers.inc",
-      "byteLength": 29591,
-      "sha256": "19ab9b20224496a17229ffecd140414f66809537200e7c26504fd539d866734c",
-      "gitBlobSha1": "08d0762f357bd2ed37fdd3e30b3f505a5d603719"
+      "path": "data/text/trainers.inc"
     },
     {
-      "path": "data/text/white_out.inc",
-      "byteLength": 1688,
-      "sha256": "3a93c033309a4c987fc707fd8549f4d1c248df83773abde472596992ee1da42f",
-      "gitBlobSha1": "1d00c1e10a37ced4b6fc2810a51e83a702311c72"
+      "path": "data/text/white_out.inc"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "sound/cry_tables.inc",
-      "byteLength": 16533,
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "path": "sound/direct_sound_samples/cries/meowth.wav",
-      "byteLength": 4826,
-      "sha256": "17afad77cd1b0311500d5e6620fbc775feedcf1cfca402f6ac26ed3406f2ff8b",
-      "gitBlobSha1": "a3b97ff953ab113b35f7b109badc882f32a26c81"
+      "path": "sound/direct_sound_samples/cries/meowth.wav"
     },
     {
-      "path": "sound/direct_sound_samples/cries/persian.wav",
-      "byteLength": 9442,
-      "sha256": "d326e80fd6d7606a86a9302c3209d06b64c6bde1863fbf9f17a9944c13c79f6f",
-      "gitBlobSha1": "890089a51192ed6cd5c3c7454e6b6749bef5c6a6"
+      "path": "sound/direct_sound_samples/cries/persian.wav"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/mus_vermillion.mid",
-      "byteLength": 9915,
-      "sha256": "9eeee1ce0f374ee7738c8292edabed1630ded0380494161b9455a5e214fedc0c",
-      "gitBlobSha1": "11cb67d1af5ba17c4443072f9cfaa90d11954fa7"
+      "path": "sound/songs/midi/mus_vermillion.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_double_team.mid",
-      "byteLength": 147,
-      "sha256": "5970b25f2a3deb6edf749b86a40acb94b30b662256cc5309b29de1d92b6631d4",
-      "gitBlobSha1": "0a3c73dc5e957bbd5e0a56872f84d89f7e3969b8"
+      "path": "sound/songs/midi/se_m_double_team.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_faint_attack.mid",
-      "byteLength": 204,
-      "sha256": "7d34b87bb27ede05abdf6a3f6474e81d673cc61ca38e5bd8cfaecb427e812877",
-      "gitBlobSha1": "01c8a09b893da569f11172cd5776a87f2fb5ab0e"
+      "path": "sound/songs/midi/se_m_faint_attack.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_flatter.mid",
-      "byteLength": 152,
-      "sha256": "11f7350b39e80aa7a8db5c6a66bc55277b928e3197922541c28677ce935c2d6f",
-      "gitBlobSha1": "9c794051157dbf4635a3722ba798bbfa5fb38181"
+      "path": "sound/songs/midi/se_m_flatter.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_pay_day.mid",
-      "byteLength": 226,
-      "sha256": "2a153d62fa9ce9deb6293cada02f62227fb3d3e4b5c0c2c97c9738ffd7f717a1",
-      "gitBlobSha1": "5f59591bed3dfe42c78bcf5c747599b21a0dcf4e"
+      "path": "sound/songs/midi/se_m_pay_day.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_screech.mid",
-      "byteLength": 209,
-      "sha256": "06dd97c21961c6b48efdf9719265e16af16f9d12cfe462fec2166d76f919afb7",
-      "gitBlobSha1": "cc469c15450e576ebe490441071bf94fbe6b00aa"
+      "path": "sound/songs/midi/se_m_screech.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_sketch.mid",
-      "byteLength": 159,
-      "sha256": "0278c97d39c867a70a39d9e50b2dd8de12c12bd24ceb554b7a9fb98c3e80fcc8",
-      "gitBlobSha1": "9c2654080d443297d1d013671e2084d586bbb322"
+      "path": "sound/songs/midi/se_m_sketch.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_swagger.mid",
-      "byteLength": 168,
-      "sha256": "49fa790f2b79b7cfcbd82bfee5609ec3d5a024d39ffe00a595811be7d4cccffb",
-      "gitBlobSha1": "bd5a220f2c8bf97460560e4bbfc687717315696c"
+      "path": "sound/songs/midi/se_m_swagger.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_swagger2.mid",
-      "byteLength": 132,
-      "sha256": "112b96fe5193277923f66bbf6008cbb33f808d7b3d564560b9ab3ed961868c2b",
-      "gitBlobSha1": "cd7119905981373484ff4696c97e34bd4b0239df"
+      "path": "sound/songs/midi/se_m_swagger2.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_thunder_wave.mid",
-      "byteLength": 259,
-      "sha256": "d6909611d248397eddb23d792b0a2ea73b6bae3ea07554753a9eb37e44d7cd2d",
-      "gitBlobSha1": "06f829b0270e9d9c40ec89f75f35c31798fec49e"
+      "path": "sound/songs/midi/se_m_thunder_wave.mid"
     },
     {
-      "path": "sound/songs/midi/se_m_thunderbolt2.mid",
-      "byteLength": 228,
-      "sha256": "fc1a021bc4db49858eb1a38c1ab05a391d5c942e31c0165fbcffccd5ecb02f51",
-      "gitBlobSha1": "f7adf43bcb0afba0ab295fe2274f1e75433a1661"
+      "path": "sound/songs/midi/se_m_thunderbolt2.mid"
     }
   ],
   "inputs": [
     {
-      "path": "scripts/synth-bill-cues.json",
-      "byteLength": 75139,
-      "sha256": "c3b432c80c33e6e32ef6e1c9faed7cbd435b2e00af74033167945963a6d7bf74"
+      "path": "scripts/synth-bill-cues.json"
     },
     {
-      "path": "content/generated/synth-audio/firered.pack",
-      "byteLength": 2565436,
-      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+      "path": "content/generated/synth-audio/firered.pack"
     },
     {
-      "path": "content/generated/synth-audio/normal-cries.bin",
-      "byteLength": 6188,
-      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+      "path": "content/generated/synth-audio/normal-cries.bin"
     },
     {
-      "path": "content/generated/vermilion-region/vermilion-catalog.json",
-      "byteLength": 88125,
-      "sha256": "fa45e447dd04a75c7082091b8971d6b94a4fd767eb0cd9178ec0579806a279db"
+      "path": "content/generated/vermilion-region/vermilion-catalog.json"
     },
     {
-      "path": "content/generated/vermilion-region/scripts.json",
-      "byteLength": 371427,
-      "sha256": "0025001971c8fc7cff44730b0165360cc4b00c8f8bc923488b8daa5ddaedef31"
+      "path": "content/generated/vermilion-region/scripts.json"
     },
     {
-      "path": "content/generated/vermilion-pokemon/catalog.json",
-      "byteLength": 86311,
-      "sha256": "2d60aa60296d468738cc4fa2f20541d9ad77ed7d78915e8bef8fa2679c0b3008"
+      "path": "content/generated/vermilion-pokemon/catalog.json"
     },
     {
-      "path": "content/generated/vermilion-pokemon/supplement.json",
-      "byteLength": 34108,
-      "sha256": "7c2de322c3ca52ecc3b93ac009af989ad6f7b721d93dffe1d238bf14102fc368"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
-      "byteLength": 4642,
-      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
-      "byteLength": 2705,
-      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
-      "byteLength": 2372,
-      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
-      "byteLength": 4767,
-      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
-      "byteLength": 2676,
-      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
-      "byteLength": 9512,
-      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
-    },
-    {
-      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
-      "byteLength": 37803,
-      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+      "path": "content/generated/vermilion-pokemon/supplement.json"
     }
   ]
 }

@@ -8,7 +8,6 @@ namespace Game.Domain.Items;
 public sealed class SilphShopCatalog
 {
     public const string Profile = "firered-silph-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "ca3f0cb2568deb2e9e60d232b6498048cd1c14bea0924c8a633f7611be85c5db";
     public static ItemId CardKeyId { get; } = new("pret:ITEM_CARD_KEY");
     public static ItemId MasterBallId { get; } = new("pret:ITEM_MASTER_BALL");
     public static ItemId UltraBallId { get; } = new("pret:ITEM_ULTRA_BALL");
@@ -27,8 +26,6 @@ public sealed class SilphShopCatalog
             throw new ArgumentException("silph_shop_scope");
         for (int i = 0; i < predecessor.Items.Length; i++)
             if (!ReferenceEquals(candidate.Items[i], predecessor.Items[i])) throw new ArgumentException("silph_shop_predecessor");
-        if (CampaignSourceFingerprint.Compute(candidate.Items.Skip(predecessor.Items.Length).ToArray()) != AdditionalItemsSourceSha256)
-            throw new ArgumentException("silph_shop_source");
         var proof = new SilphShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;
     }

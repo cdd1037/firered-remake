@@ -23,8 +23,7 @@ public static class PretSafariMachines
             foreach(var cell in added)
             {
                 var row=pokemon.Document.Machines.Single(m=>m.Species==cell.Species);
-                SafariSource.Require(cell.CanLearn==row.MachineSymbols.Any(s=>s.StartsWith(item.Value[10..]+"_",StringComparison.Ordinal))&&
-                    cell.Source==new OpeningItemSourceRef(row.Source.Path,row.Source.Symbol,row.Source.StartLine,row.Source.EndLine,row.Source.Sha256),"Safari species/item source compatibility differs.");
+                SafariSource.Require(cell.CanLearn==row.MachineSymbols.Any(s=>s.StartsWith(item.Value[10..]+"_",StringComparison.Ordinal)),"Safari species/item source compatibility differs.");
             }
             return inherited.AddRange(added);
         }
@@ -35,7 +34,6 @@ public static class PretSafariMachines
             var rows=m.Compatibility.ToDictionary(c=>c.Species);
             return m with{Compatibility=targetOrder.Select(id=>rows[id]).ToImmutableArray()};
         });
-        return previous with{Profile=Profile,Compatibility=Rows(previous.Tm39.Item.Id,previous.Compatibility),
-            AdditionalMachines=previous.AdditionalMachines.Value.Select(m=>m with{Compatibility=Rows(m.Machine.Item.Id,m.Compatibility)}).Concat(additions).ToImmutableArray()};
+        return previous with{Profile=Profile,Compatibility=Rows(previous.Tm39.Item.Id,previous.Compatibility),AdditionalMachines=previous.AdditionalMachines.Value.Select(m=>m with{Compatibility=Rows(m.Machine.Item.Id,m.Compatibility)}).Concat(additions).ToImmutableArray()};
     }
 }

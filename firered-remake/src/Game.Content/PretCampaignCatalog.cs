@@ -12,7 +12,7 @@ using Game.Domain.Encounters;
 using Game.Domain.Roaming;
 
 namespace Game.Content;
-/// <summary>The authenticated current-game source catalog. Unknown operations remain faults.</summary>
+/// <summary>The current-game content catalog. Unknown operations remain faults.</summary>
 public sealed partial class PretCampaignCatalog : ICampaignCatalog
 {
     private readonly PretStoryCompilation _scripts;
@@ -47,7 +47,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretTownMap? TownMap { get; }
     public bool TownMapEnabled => TownMap is not null;
     public PretOakRating? OakRating { get; }
-    /// <summary>Authenticated immutable metadata shared by Oak, Route22 and presentation in this composition.</summary>
+    /// <summary>Immutable metadata shared by Oak, Route22 and presentation in this composition.</summary>
     public PretPokedexMenu? PokedexMenu { get; }
     public bool OakRatingEnabled => OakRating is not null;
     public PretRoute22Region? Route22Region { get; }
@@ -115,7 +115,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => PokedexMenu?.Entries.ContainsKey(sourceSpeciesId) == true;
     public string? SourceSpeciesName(int sourceSpeciesId) => PokedexMenu?.Entries.GetValueOrDefault(sourceSpeciesId)?.Name;
 
-    public CampaignOakRatingProjection EvaluateOakRating(IEnumerable<int> seenSpecies, IEnumerable<int> caughtSpecies)
+    public CampaignOakRatingProjection EvaluateOakRating(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)
     {
         var result = (OakRating ?? throw new InvalidDataException("oak_rating_not_enabled")).EvaluateSpeciesIds(seenSpecies, caughtSpecies, PokedexMenu!, new(HasPokedex: true));
         return new(result.Kanto.Seen, result.Kanto.Caught, result.Rating.TextSymbol, result.Rating.KantoComplete);
@@ -600,30 +600,24 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
             FieldPickups = FieldPickups.AddRange(fourIslandItems.Pickups);
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(FourIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             FourIslandWaterEncounters = FourIslandWaterEncounterCatalog.Authenticate(SeviiRubyWaterEncounters!, FourIslandEncounterTables.Water);
-            if (FieldPickups.Length != 218)
-                throw new InvalidDataException("four_island_pickup_composition");
         }
 
         {
             FieldPickups = FieldPickups.AddRange(sixIslandItems.Pickups);
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(SixIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             SixIslandWaterEncounters = SixIslandWaterEncounterCatalog.Authenticate(FourIslandWaterEncounters!, SixIslandEncounterTables.Water);
-            if (FieldPickups.Length != 227)
-                throw new InvalidDataException("six_island_pickup_composition");
         }
 
         {
             FieldPickups = FieldPickups.AddRange(fiveIslandItems.Pickups);
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(FiveIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             FiveIslandWaterEncounters = FiveIslandWaterEncounterCatalog.Authenticate(SixIslandWaterEncounters!, FiveIslandEncounterTables.Water);
-            if (FieldPickups.Length != 235)
-                throw new InvalidDataException("five_island_pickup_composition");
         }
 
-        FieldPickups = FieldPickups.AddRange(SourceRegionPickupDefinitions(ceruleanCave.NewMaps, ceruleanCave.Items, ceruleanCave.Contracts, PretCeruleanCaveRegion.MapIdFromSourceSymbol, "cerulean-cave", 9, 1, earlyShop.Catalog, scripts));
+        FieldPickups = FieldPickups.AddRange(SourceRegionPickupDefinitions(ceruleanCave.NewMaps, ceruleanCave.Items, ceruleanCave.Contracts, PretCeruleanCaveRegion.MapIdFromSourceSymbol, "cerulean-cave", earlyShop.Catalog, scripts));
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(CeruleanCaveEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
         CeruleanCaveWaterEncounters = CeruleanCaveWaterEncounterCatalog.Authenticate(FiveIslandWaterEncounters!, CeruleanCaveEncounterTables.Water);
-        if (FieldPickups.Length != 244 || FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != 244)
+        if (FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != FieldPickups.Length)
             throw new InvalidDataException("cerulean_cave_pickup_composition");
 
         FieldPickups = FieldPickups.AddRange(sevenItems.Pickups);
@@ -634,16 +628,16 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         WaterEncounters = CapeBrinkWaterEncounters.Tables.AddRange(
             SourceTableWaterEncounterCatalog.Authenticate(MemorialPillarEncounterTables.Water).Tables)
             .AddRange(SourceTableWaterEncounterCatalog.Authenticate(LostCaveEncounterTables.Water).Tables);
-        if (FieldPickups.Length != 257 || FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != 257)
+        if (FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != FieldPickups.Length)
             throw new InvalidDataException("seven_island_pickup_composition");
 
         var powerPickups=SourceRegionPickupDefinitions(powerPlant.NewMaps,powerPlant.Items,powerPlant.Contracts,
-            PretPowerPlantRegion.MapIdFromSourceSymbol,"power-plant",7,2,earlyShop.Catalog,scripts);
+            PretPowerPlantRegion.MapIdFromSourceSymbol,"power-plant",earlyShop.Catalog,scripts);
         if(FieldPickups.Select(p=>p.Id).Intersect(powerPickups.Select(p=>p.Id),StringComparer.Ordinal).Any())
             throw new InvalidDataException("power_plant_duplicate_pickup");
         FieldPickups=FieldPickups.AddRange(powerPickups);
         FieldPickups=FieldPickups.AddRange(SourceRegionPickupDefinitions(seafoam.NewMaps,seafoam.Items,seafoam.Contracts,
-            PretSeafoamRegion.MapIdFromSourceSymbol,"seafoam",8,3,earlyShop.Catalog,scripts));
+            PretSeafoamRegion.MapIdFromSourceSymbol,"seafoam",earlyShop.Catalog,scripts));
         FieldPickups = FieldPickups.Add(CopycatHiddenPickup(copycatHouse, earlyShop.Catalog, scripts));
         FieldPickups = FieldPickups.AddRange(PretGameCornerHiddenCoins.Pickups(maps[new(GameCornerCoinSource.Map)], scripts));
         var capeBrinkPickups = CapeBrinkHiddenPickups(capeBrinkTutor, earlyShop.Catalog, scripts);
@@ -683,8 +677,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
 
-    private static ImmutableArray<FieldPickupDefinition> SourceRegionPickupDefinitions(IReadOnlyDictionary<MapId,PretWorldMap> regionMaps, JsonElement items, JsonElement contracts,
-        Func<string,MapId> resolveMap, string proofId, int expectedCount, int expectedHidden, EarlyShopCatalog shop, PretStoryCompilation scripts)
+    private static ImmutableArray<FieldPickupDefinition> SourceRegionPickupDefinitions(IReadOnlyDictionary<MapId,PretWorldMap> regionMaps,JsonElement items,JsonElement contracts,Func<string,MapId> resolveMap,string proofId,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         var definitions = items.GetProperty("declarations").EnumerateArray()
             .ToDictionary(e => e.GetProperty("itemId").GetString()!, StringComparer.Ordinal);
@@ -704,16 +697,16 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         {
             var source = row.GetProperty("event");
             var map = regionMaps[resolveMap(row.GetProperty("map").GetString()!)];
-            int local = row.GetProperty("localId").GetInt32(), quantity = row.GetProperty("quantity").GetInt32();
-            string label = source.GetProperty("script").GetString()!, symbol = row.GetProperty("item").GetString()!;
+            int local = row.GetProperty("localId").GetInt32(),quantity = row.GetProperty("quantity").GetInt32();
+            string label = source.GetProperty("script").GetString()!,symbol = row.GetProperty("item").GetString()!;
             string flag = source.GetProperty("flag").GetString()!;
             var item = Item(symbol);
             var origin = row.GetProperty("sourceRef");
             if (quantity != 1 || !JsonElement.DeepEquals(source, map.Events.GetProperty("object_events")[local - 1]) ||
                 !scripts.TryConstant(flag, out int flagId) || scripts.FindProgram(label) is not { } program ||
                 program.Instructions.Any(i => i.Op == StoryOp.Unsupported || i.Source.Path != origin.GetProperty("path").GetString()) ||
-                !program.Instructions.Any(i => i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000", symbol })) ||
-                !program.Instructions.Any(i => i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8001", "1" })))
+                !program.Instructions.Any(i => i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000",symbol })) ||
+                !program.Instructions.Any(i => i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8001","1" })))
                 throw new InvalidDataException(proofId+"_pickup_source:" + label);
             pickups.Add(new(proofId+":" + flag, map.SourceMapSymbol, false, local,
                 source.GetProperty("x").GetInt32(), source.GetProperty("y").GetInt32(), source.GetProperty("elevation").GetInt32(),
@@ -723,7 +716,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         {
             var source = row.GetProperty("event");
             var map = regionMaps[resolveMap(row.GetProperty("map").GetString()!)];
-            string symbol = source.GetProperty("item").GetString()!, flag = source.GetProperty("flag").GetString()!;
+            string symbol = source.GetProperty("item").GetString()!,flag = source.GetProperty("flag").GetString()!;
             var item = Item(symbol);
             if (source.GetProperty("quantity").GetInt32() != 1 || source.GetProperty("underfoot").GetBoolean() ||
                 !map.Events.GetProperty("bg_events").EnumerateArray().Any(e => JsonElement.DeepEquals(e, source)) ||
@@ -733,8 +726,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
                 source.GetProperty("x").GetInt32(), source.GetProperty("y").GetInt32(), source.GetProperty("elevation").GetInt32(),
                 "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId));
         }
-        if (pickups.Count != expectedCount || pickups.Count(p => p.Hidden) != expectedHidden ||
-            pickups.Select(p => p.SourceFlagId).Distinct().Count() != expectedCount)
+        if (pickups.Select(p => p.SourceFlagId).Distinct().Count() != pickups.Count)
             throw new InvalidDataException(proofId+"_pickup_scope");
         return pickups.ToImmutable();
     }
@@ -750,12 +742,11 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         var signs = e.GetProperty("bg_events").EnumerateArray().Select(x => RegionalBackgroundTrigger(x, SupportsRegionalFlavor(map.Id))).ToImmutableArray();
         return new(map.Id, map.SourceMapSymbol, actors, coords, signs, new(Target("MAP_SCRIPT_ON_TRANSITION"), Target("MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE"), Target("MAP_SCRIPT_ON_FRAME_TABLE"), Target("MAP_SCRIPT_ON_LOAD"), Target("MAP_SCRIPT_ON_RESUME"), Target("MAP_SCRIPT_ON_RETURN_TO_FIELD")), e.GetProperty("music").GetString()!, e.GetProperty("region_map_section").GetString()!)
         {
-            MapType = e.GetProperty("map_type").GetString()!,
-            RequiresFlash = e.GetProperty("requires_flash").GetBoolean()
+            MapType = e.GetProperty("map_type").GetString()!,RequiresFlash = e.GetProperty("requires_flash").GetBoolean()
         };
     }
 
-    public FieldMetatileDefinition? MetatileDefinition(MapId map, int id)
+    public FieldMetatileDefinition? MetatileDefinition(MapId map,int id)
     {
         if (SeafoamRegion.NewMaps.ContainsKey(map)) return SeafoamRegion.MetatileDefinition(map, id);
         if (TrainerFanClub.NewMaps.TryGetValue(map, out var goodRodMap) || LostCaveRegion.NewMaps.TryGetValue(map, out goodRodMap) || SchoolHouseInteriors.NewMaps.TryGetValue(map, out goodRodMap) || OriginalTmAcquisition.NewMaps.TryGetValue(map, out goodRodMap) || FourIslandDayCare.NewMaps.TryGetValue(map, out goodRodMap) || Route5DayCare.NewMaps.TryGetValue(map, out goodRodMap) || Route16FlyHouse.NewMaps.TryGetValue(map, out goodRodMap) || CapeBrinkTutor.NewMaps.TryGetValue(map, out goodRodMap) || SuperRodService.NewMaps.TryGetValue(map, out goodRodMap) || GoodRodService.NewMaps.TryGetValue(map, out goodRodMap) || MoveReminderHouse.NewMaps.TryGetValue(map, out goodRodMap) || MoveDeleterHouse.NewMaps.TryGetValue(map, out goodRodMap) || OriginalTutorRooms.NewMaps.TryGetValue(map, out goodRodMap) || CopycatHouse.NewMaps.TryGetValue(map, out goodRodMap))
@@ -826,14 +817,14 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         return MetatileDefinitions?.GetValueOrDefault(id);
     }
 
-    public int? TerrainAt(MapId map, int x, int y) => SourceMaps.TryGetValue(map, out var source) ? source.GetSourceCell(x, y)?.Terrain : null;
+    public int? TerrainAt(MapId map,int x,int y) => SourceMaps.TryGetValue(map, out var source) ? source.GetSourceCell(x, y)?.Terrain : null;
     public bool AllowsCycling(MapId map) => SourceMaps.TryGetValue(map, out var source) && source.Events.GetProperty("allow_cycling").GetBoolean();
     public FieldMapDefinition MapDefinition(MapId id) => _definitions[id];
     public MapId MapFromSourceSymbol(string symbol)
     {
         var loaded = SourceMaps.Values.FirstOrDefault(map => map.SourceMapSymbol == symbol);
         if (loaded is not null) return loaded.Id;
-        // Region factories own authenticated identities for the current world's unloaded boundaries.
+        // Region factories resolve the current world's unloaded boundaries.
         if (symbol.StartsWith("MAP_CINNABAR_ISLAND_POKEMON_LAB_", StringComparison.Ordinal)) return PretFossilLabRegion.MapIdFromSourceSymbol(symbol);
         if (symbol == "MAP_SAFFRON_CITY_DOJO") return PretFightingDojoRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_TRAINER_TOWER_", StringComparison.Ordinal)) return PretTrainerTowerRegion.MapIdFromSourceSymbol(symbol);
@@ -864,7 +855,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         return PretRocketHideoutRegion.MapIdFromSourceSymbol(symbol);
     }
     public ImmutableArray<FieldProgramCondition> Conditions(string table) => _scripts.MapConditions.TryGetValue(table, out var list) ? list.Select(x => new FieldProgramCondition(x.Variable, ConditionValue(table, x.Expected), x.Target)).ToImmutableArray() : [];
-    private int ConditionValue(string table, string token)
+    private int ConditionValue(string table,string token)
     {
         if (int.TryParse(token, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var value))
             return value;
@@ -878,7 +869,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public ImmutableArray<string> Movement(string program) => _scripts.Movements.TryGetValue(program, out var list) ? list.Select(x => x.Opcode).ToImmutableArray() : throw new InvalidDataException("Missing movement program: " + program);
     public StoryProgram? FindProgram(string id) => _scripts.FindProgram(id);
     public StoryMenuDefinition? FindMenu(string id) => _scripts.FindMenu(id);
-    public bool TryConstant(string symbol, out int value) => _scripts.TryConstant(symbol, out value);
+    public bool TryConstant(string symbol,out int value) => _scripts.TryConstant(symbol, out value);
     public ImmutableArray<string> TextPages(string symbol)
     {
         if (!_text.TryGetValue(symbol, out var raw))

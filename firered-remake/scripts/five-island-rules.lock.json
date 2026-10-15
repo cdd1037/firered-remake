@@ -1,57 +1,36 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-five-island-rules-v1",
   "files": [
     {
-      "path": "content/generated/five-island-rules/encounters.json",
-      "byteLength": 7062,
-      "sha256": "72f44716404385d8705a7183cffaeebaaf3246f5344992dcdcbe1c9429f40702"
+      "path": "content/generated/five-island-rules/encounters.json"
     },
     {
-      "path": "content/generated/five-island-rules/item-source-input-hashes.json",
-      "byteLength": 4240,
-      "sha256": "ede1ef73d368019fde21ef9c86f430623dca6ce4152ff0763b6e24224f7a6076"
+      "path": "content/generated/five-island-rules/item-source-input-hashes.json"
     },
     {
-      "path": "content/generated/five-island-rules/items.json",
-      "byteLength": 135316,
-      "sha256": "c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968"
+      "path": "content/generated/five-island-rules/items.json"
     },
     {
-      "path": "content/generated/five-island-rules/pokemon.json",
-      "byteLength": 1576,
-      "sha256": "9788f567d061f21e66d877718a542a3fb2068629f34b65da9dd604e387a0a909"
+      "path": "content/generated/five-island-rules/pokemon.json"
     },
     {
-      "path": "content/generated/five-island-rules/rules.json",
-      "byteLength": 35081,
-      "sha256": "60ebc4bb8e5f40cfd94b4f6c6b3cf3e43d8d1a9d24748e6ce7009c8cbfb31e62"
+      "path": "content/generated/five-island-rules/rules.json"
     },
     {
-      "path": "content/generated/five-island-rules/source-input-hashes.json",
-      "byteLength": 6573,
-      "sha256": "96db60a4af26ea9ae3f16d9cd57d2d87ba222c8f58409830b0139b94d9c7febc"
+      "path": "content/generated/five-island-rules/source-input-hashes.json"
     },
     {
-      "path": "content/generated/five-island-rules/trainers.json",
-      "byteLength": 57984,
-      "sha256": "34ba81e7cdfbbe48a8d03087739cb85a443f7aaaba70a0ff8bb788ed434eb948"
+      "path": "content/generated/five-island-rules/trainers.json"
     },
     {
-      "path": "content/generated/five-island-rules/wild-source-witness.json",
-      "byteLength": 35990,
-      "sha256": "5dad838b1d721ccd2eb7ddf59995a5a8066d8ebd25ad707bbe1b6ad3bcb83a48"
+      "path": "content/generated/five-island-rules/wild-source-witness.json"
     },
     {
-      "path": "src/Game.Domain/Encounters/FiveIslandEncounterTables.cs",
-      "byteLength": 3613,
-      "sha256": "1baf116eb8903ad698660d7cc5ccedcfce4f5a05f12509e89f3068c62f2b1894"
+      "path": "src/Game.Domain/Encounters/FiveIslandEncounterTables.cs"
     },
     {
-      "path": "src/Game.Domain/Encounters/FiveIslandWildSource.cs",
-      "byteLength": 21830,
-      "sha256": "f7594503f401aaf88f0e9c7cbad285aaac25b2cff2622fb95ad5783abf6cf8d5"
+      "path": "src/Game.Domain/Encounters/FiveIslandWildSource.cs"
     }
   ]
 }

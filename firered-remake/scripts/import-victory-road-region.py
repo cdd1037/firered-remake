@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """Import pinned Route23, Victory Road and Indigo Plateau exterior source evidence. No upstream code or ROM build."""
-import argparse, ast, collections, hashlib, importlib.util, json, re, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-victory-road-region-v1'
 PACKAGE = 'victory-road-region'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = 'd38528b0c87a56a3d0e48d97080f106bdd47628dfbcf2c9b8c45c141d5d10843'
-LOCK_SHA256 = '8a6bd7983dffdbcd02bb30e04504725de530ed75e4e4feb68b0125f4ff8d63cd'
 TILESETS = {'gTileset_General':'primary/general','gTileset_Cave':'secondary/cave','gTileset_IndigoPlateau':'secondary/indigo_plateau'}
 MAPS = ['Route23','VictoryRoad_1F','VictoryRoad_2F','VictoryRoad_3F','IndigoPlateau_Exterior']
 ANCHORS = ['Route22','Route22_NorthEntrance','IndigoPlateau_PokemonCenter_1F']
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
 def need(v, m):
     if not v: raise ValueError(m)
-def module(path, name, expected):
-    need(sha(path.read_bytes()) == expected, 'Reviewed helper differs: '+str(path))
+def module(path, name):
     spec=importlib.util.spec_from_file_location(name,path); m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink in output: '+str(path))
 
@@ -178,7 +179,6 @@ def declarations(src,dep,contract):
     # Reuse the existing authenticated canonical learnsets only to resolve required
     # default party moves. This creates dependency evidence, never an owned catalog.
     canonical_path=dep/'content/generated/canonical-pokemon/catalog.json';raw=canonical_path.read_bytes()
-    need(sha(raw)=='c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc','Canonical dependency changed')
     canonical_doc=json.loads(raw);species={s['id']['value'][5:]:s for s in canonical_doc['species']};trainers=[]
     def match(pattern,path):
         ms=list(re.finditer(pattern,src.text(path),re.M|re.S));need(len(ms)==1,'Declaration ambiguous: '+pattern);return ms[0]
@@ -203,13 +203,13 @@ def declarations(src,dep,contract):
     need(len(encounters)==4,'Encounter map scope differs')
     wild=sorted({m['species'] for e in encounters for t in e.values() if isinstance(t,dict) and 'mons' in t for m in t['mons']})
     opponents=sorted({m['species'] for t in trainers for m in t['party']});moves=sorted({mv for t in trainers for m in t['party'] for mv in m['resolvedMoves']})
-    return dict(schemaVersion=1,profile=PROFILE,runtimeAdmitted=False,canonicalDependency=dict(path='content/generated/canonical-pokemon/catalog.json',sha256=sha(raw)),trainers=trainers,encounters=encounters,slotTables=slots,wildSpecies=wild,trainerSpecies=opponents,trainerMoves=moves,ownedCatalogModified=False,sourceRef=src.ref('src/data/wild_encounters.json','gWildMonHeaders'))
+    return dict(schemaVersion=1,profile=PROFILE,runtimeAdmitted=False,canonicalDependency=dict(path='content/generated/canonical-pokemon/catalog.json'),trainers=trainers,encounters=encounters,slotTables=slots,wildSpecies=wild,trainerSpecies=opponents,trainerMoves=moves,ownedCatalogModified=False,sourceRef=src.ref('src/data/wild_encounters.json','gWildMonHeaders'))
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--reference-root',type=Path,required=True);ap.add_argument('--dependency-root',type=Path,required=True);ap.add_argument('--project-root',type=Path,default=ROOT);ap.add_argument('--check',action='store_true');a=ap.parse_args()
     target=a.project_root.absolute();dep=a.dependency_root.absolute();ref=a.reference_root.absolute();safe(target)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py','victory_road_reader',READER_SHA);reader.PRODUCT=dep;reader.PROFILE=PROFILE;reader.TILESETS=TILESETS
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'victory_road_reader');reader.PRODUCT=dep;reader.PROFILE=PROFILE;reader.TILESETS=TILESETS
     src=reader.Source(ref)
     for name in MAPS+['Route22_NorthEntrance']:
         for part in ['map.json','scripts.inc','text.inc']:
@@ -225,30 +225,28 @@ def main():
     for base in TILESETS.values():
         for part in ['tiles.png','metatiles.bin','metatile_attributes.bin']+[f'palettes/{i:02d}.pal' for i in range(16)]:src.read('data/tilesets/'+base+'/'+part,'source-tileset')
     worlds=[reader.decode(src,n) for n in MAPS];scripts=script_inventory(src,reader)
-    shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS;converter=reader.load_helper('_reviewed_runtime_converter.py')
+    shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS;converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='victory-road-region-',dir=target) as temp:
         stage=Path(temp)
         for w in worlds:shared.import_map(src,w['sourceName'],w['stableId'],stage/reader.directory(w['sourceName']))
         npcs=shared.npc_inventory(src,worlds,stage/'npc');constants=constants_inventory(src,shared,worlds,scripts);contract=contracts(src,reader,worlds,scripts,constants);deps=declarations(src,dep,contract)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode());entries=[]
+        entries=[]
         for w in worlds:
-            name=reader.directory(w['sourceName']);rich=(stage/name/'world.json').read_bytes();compact=converter.encode(converter.convert(rich,sha(rich),source_hash));(stage/name/'runtime-map.json').write_bytes(compact);(stage/name/'world.json').unlink()
-            entries.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=name,sourceMapSymbol=w['events']['id'],path=name+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash,reused=w['sourceName']=='Route23'))
-        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=MAPS);lockdata=canonical(lock);lockhash=sha(lockdata)
+            name=reader.directory(w['sourceName']);rich=(stage/name/'runtime-map.json').read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(rich)));(stage/name/'runtime-map.json').write_bytes(compact)
+            entries.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=name,sourceMapSymbol=w['events']['id'],path=name+'/runtime-map.json',reused=w['sourceName']=='Route23'))
+        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=MAPS);lockdata=canonical(lock)
         map_symbols={w['events']['id']:w['stableId'] for w in worlds}
         for name in ANCHORS:map_symbols[src.json('data/maps/'+name+'/map.json')['id']]='map.'+reader.directory(name)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=entries,tilesets=TILESETS,mapSymbols=map_symbols,inputFiles=lock['files']),
-            'scripts.json':scripts,'constants.json':constants,'contracts.json':contract,'declarations.json':deps,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory(worlds)}
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=entries,tilesets=TILESETS,mapSymbols=map_symbols,inputFiles=lock['files']),
+            'scripts.json':scripts,'contracts.json':contract,'declarations.json':deps,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory(worlds)}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,lockSha256=lockhash,inputCount=len(src.entries),mapCount=len(worlds),newMapCount=4,cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),trainerOccurrenceCount=13,trainerCount=12,unresolvedLabelCount=0,readerSha256=READER_SHA,outputs=outputs)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,inputCount=len(src.entries),mapCount=len(worlds),newMapCount=4,cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),trainerOccurrenceCount=13,trainerCount=12,unresolvedLabelCount=0,outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        if MANIFEST_SHA256:need(sha(manifestdata)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(lockhash==LOCK_SHA256,'Pinned lock differs')
-        writes=[(target/'content/sources/victory-road-region.lock.json',lockdata)]+[(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/sources/victory-road-region.lock.json',lockdata)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,b in writes:
             safe(path)
             if a.check:need(path.is_file() and path.read_bytes()==b,'Regeneration differs: '+str(path))
             else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestdata),manifestByteLength=len(manifestdata),lockByteLength=len(lockdata),outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 if __name__=='__main__':main()

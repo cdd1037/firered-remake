@@ -1,18 +1,12 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-game-corner-species-v1",
-  "importerSha256": "c4b1792c486d5cbc75cabd95aafd0cabdf729e053ae9cd5cbc7d38a98c3deeb5",
   "files": [
     {
-      "path": "content/generated/game-corner-species/pokemon.json",
-      "byteLength": 2241,
-      "sha256": "6eaabfb58b19e2513f78fbb1f326cbc09f85011db33b26a650c90566901fa9c8"
+      "path": "content/generated/game-corner-species/pokemon.json"
     },
     {
-      "path": "content/generated/game-corner-species/source-input-hashes.json",
-      "byteLength": 2308,
-      "sha256": "4b39e11cef9a7fede55b50aa9cd64eba820b614510e91c34468d5a3d76403535"
+      "path": "content/generated/game-corner-species/source-input-hashes.json"
     }
   ]
 }

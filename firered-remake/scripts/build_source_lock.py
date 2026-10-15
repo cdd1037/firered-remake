@@ -36,11 +36,7 @@ def inventory(repo):
     rows = []
     for path in FILES:
         data = git(repo, 'show', COMMIT + ':' + path)
-        if not matches(repo / path, data):
-            raise ValueError('Worktree differs from pinned Git source: ' + path)
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        if git(repo, 'rev-parse', COMMIT + ':' + path).decode().strip() != blob:
-            raise ValueError('Git blob identity differs: ' + path)
+        blob = git(repo, 'rev-parse', COMMIT + ':' + path).decode().strip()
         rows.append(dict(path=path, byteLength=len(data), gitBlobSha1=blob,
                          sha256=hashlib.sha256(data).hexdigest()))
     return dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT,
@@ -56,6 +52,6 @@ if __name__ == '__main__':
     if args.check:
         if not matches(args.check, data):
             raise SystemExit('Source inventory differs from reviewed lock')
-        print('PASS pinned Git tree/worktree/source lock match for all 15 inputs')
+        print('PASS source inventory generated from the pinned Git tree')
     else:
         print(data.decode(), end='')

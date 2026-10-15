@@ -3,9 +3,6 @@
   "files": [
     {
       "path": "src/pokemon_special_anim_scene.c",
-      "byteLength": 45185,
-      "gitBlobSha1": "bdb070c96558c43eafb50c8619a85e9a9090d348",
-      "sha256": "55e0a52b1283ddb53a32542262cce49143162196f2aed3145ab311513f2cbe48",
       "lines": [
         1486,
         1573

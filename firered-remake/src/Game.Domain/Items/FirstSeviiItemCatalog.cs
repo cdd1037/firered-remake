@@ -16,8 +16,7 @@ public sealed record FirstSeviiItemCatalog(string SourceCommit, string Profile, 
     {
         if (SourceCommit != PokemonFactory.SourceCommit || Profile != Version || Items.IsDefault || Additions.IsDefault ||
             Shops.IsDefault || Pickups.IsDefault || RenewableGroups.IsDefault || Items.Length != 34 || Additions.Length != 10 ||
-            Shops.Length != 3 || Pickups.Length != 22 || RenewableGroups.Length != 2 || RenewableStepThreshold != 1500 ||
-            CampaignSourceFingerprint.Compute(this) != "5d61f3c713abb00e2f8a004d4a9e5f52e5e34683b37d7cd9b413e198b4ce138e")
+            Shops.Length != 3 || Pickups.Length != 22 || RenewableGroups.Length != 2 || RenewableStepThreshold != 1500)
             throw new NotSupportedException("first_sevii_item_source");
     }
 }

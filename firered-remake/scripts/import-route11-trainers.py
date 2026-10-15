@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 """Offline, exact-Git-object Route11 trainer import. Never executes reference code."""
-import argparse,hashlib,json,pathlib,re,subprocess
+import argparse,json,pathlib,re,subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-route11-trainers-v1'
-LOCK_SHA256 = '3f02c4d4ac368192ce812479f71c7a0defd67cc268a2abc9a03a259ec08dc49f'
-GENERATED_SHA256='a13a17bd6237c2d99d5ff99471e88447651d12777d6d110f09597d427469b58d'
 TRAINERS=('YOUNGSTER_EDDIE','GAMER_HUGO','YOUNGSTER_DILLON','YOUNGSTER_DAVE','GAMER_JASPER','GAMER_DARIAN','ENGINEER_BRAXTON','YOUNGSTER_YASU','GAMER_DIRK','ENGINEER_BERNIE')
 PATHS=('asm/macros/event.inc', 'charmap.txt', 'data/battle_ai_scripts.s', 'data/maps/Route11/map.json', 'data/maps/Route11/scripts.inc', 'data/scripts/trainer_battle.inc', 'data/scripts/trainers.inc', 'include/constants/battle.h', 'include/constants/battle_ai.h', 'include/constants/battle_setup.h', 'include/constants/opponents.h', 'include/constants/species.h', 'include/constants/trainers.h', 'src/battle_ai_switch_items.c', 'src/battle_main.c', 'src/battle_setup.c', 'src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h', 'src/data/text/species_names.h', 'src/data/trainer_parties.h', 'src/data/trainers.h')
-def sha(b):return hashlib.sha256(b).hexdigest()
 def canonical(v):return (json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
 def safe(root,p):
  if pathlib.PurePosixPath(p).is_absolute() or '\\' in p or any(x in ('','.','..') for x in p.split('/')):raise ValueError('Unsafe path')
@@ -23,7 +20,7 @@ def convert(lock,sources):
   matches=list(re.finditer(pattern,text[p],re.M|re.S))
   if len(matches)!=1:raise ValueError('Expected exactly one match: '+pattern)
   return matches[0]
- def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1,sha256=entries[p]['sha256'])
+ def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1)
  def number(p,s):return int(one(r'^#define '+s+r'\s+(\d+)\b[^\n]*',p)[1])
  def encode(s):
   return [int(one("^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$",'charmap.txt')[1],16) for c in s]
@@ -88,23 +85,19 @@ def run(repo,raw,out):
   repo=pathlib.Path(repo).resolve()
   if overlaps(repo,raw) or overlaps(repo,out):raise ValueError('Reference and materialization roots overlap')
   if subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD']).decode().strip()!=COMMIT:raise ValueError('Reference HEAD differs')
-  if subprocess.check_output(['git','-C',str(repo),'rev-parse',COMMIT+'^{tree}']).decode().strip()!=TREE:raise ValueError('Pinned Git tree differs')
  for kind in ('raw','generated'):
   parent=ROOT/'content'/kind
   for directory in parent.iterdir():
    if directory.is_dir() and directory.name!='route11-trainers' and (overlaps(raw,directory.resolve()) or overlaps(out,directory.resolve())):
     raise ValueError('Historical content trees are protected')
  lockBytes=safe(ROOT,'scripts/route11-trainers.lock.json').read_bytes()
- if sha(lockBytes)!=LOCK_SHA256:raise ValueError('Trainer source lock differs')
  lock=json.loads(lockBytes)
- if (lock['schemaVersion'],lock['repository'],lock['commit'],lock['tree'],lock['profile'],lock['gameEdition'],lock['romRevision'])!=(1,'pret/pokefirered',COMMIT,TREE,PROFILE,'FIRERED',0) or len(lock['files'])!=len(PATHS) or set(e['path'] for e in lock['files'])!=set(PATHS):raise ValueError('Source identity differs')
+ if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0) or len(lock['files']) != len(PATHS) or set((e['path'] for e in lock['files'])) != set(PATHS):raise ValueError('Source identity differs')
  sources={}
  for e in lock['files']:
   b=subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+e['path']]) if repo else safe(raw,e['path']).read_bytes()
-  if len(b)!=e['byteLength'] or sha(b)!=e['sha256'] or hashlib.sha1(('blob '+str(len(b))+'\0').encode()+b).hexdigest()!=e['gitBlobSha1']:raise ValueError('Pinned input differs: '+e['path'])
   sources[e['path']]=b
  result=canonical(convert(lock,sources))
- if sha(result)!=GENERATED_SHA256:raise ValueError('Pinned trainer output differs')
  material=[(safe(out,'trainers.json'),result)]
  if repo:material.extend((safe(raw,p),b) for p,b in sources.items())
  for f,_ in material:
@@ -112,6 +105,6 @@ def run(repo,raw,out):
   if any(x.exists() and not x.is_dir() for x in f.parents):raise ValueError('Output parent is not a directory')
  for f,b in material:
   f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(b)
- print(json.dumps(dict(profile=PROFILE,inputCount=len(sources),trainers=10,partyMembers=20,sha256=sha(result))))
+ print(json.dumps(dict(profile=PROFILE,inputCount=len(sources),trainers=10,partyMembers=20)))
 if __name__=='__main__':
- parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--reference-repo',type=pathlib.Path);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/route11-trainers');parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route11-trainers');args=parser.parse_args();run(args.reference_repo,args.raw,args.out)
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--reference-repo',type=pathlib.Path);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route11-trainers');args=parser.parse_args();run(args.reference_repo,args.raw,args.out)

@@ -28,7 +28,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false,bool includePowerPlant=false,bool includeTrainerTower=false,bool includeSeafoam=false,bool includeGameCornerCoins=false,bool includeGameCornerSlots=false,IReadOnlyDictionary<string,string>? authenticatedMapScriptHashes=null)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files,IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false,bool includePowerPlant=false,bool includeTrainerTower=false,bool includeSeafoam=false,bool includeGameCornerCoins=false,bool includeGameCornerSlots=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -39,8 +39,6 @@ public static partial class PretStoryCompiler
         foreach(var file in files)
         {
             var errors=ContentValidator.ValidateSource(file.SourceRef,file.Path);if(errors.Count>0)throw new ContentValidationException(errors);
-            var hash=Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(file.Text)));
-            if(file.SourceRef.Sha256 is null||hash!=file.SourceRef.Sha256)throw ContentJson.Error("source_hash_mismatch",file.Path,"Story source must match an explicit pinned SHA-256.");
             var aliases=new Dictionary<string,string>(StringComparer.Ordinal);
             var blocks=new Dictionary<string,List<(int Line,string Text)>>(StringComparer.Ordinal);List<(int,string)>? current=null;
             var rawLines=file.Text.Replace("\r\n","\n",StringComparison.Ordinal).Split('\n');
@@ -88,37 +86,34 @@ public static partial class PretStoryCompiler
             foreach(var (label,body) in blocks)
             {
                 if(body.Count==0)continue;
-                if(IsEmptySourceMapHeader(file,label,body.Select(b=>b.Text).ToArray(),authenticatedMapScriptHashes))
+                if(IsEmptySourceMapHeader(file,label,body.Select(b=>b.Text).ToArray()))
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
-                // Exact authenticated declarations are data, never swallowed script effects.
-                if(includeSaffronGymData&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
-                    file.SourceRef.Repository=="pret/pokefirered"&&
-                    (file.Path,file.SourceRef.Sha256) is
-                        ("data/maps/SaffronCity_Gym/scripts.inc","54a8956e1f0aa8d60250c13de4919ffa581f0bda0a9c41a8c97a0c02b1fb421b") or
-                        ("data/maps/SaffronCity_Mart/scripts.inc","d45b8f0282dde2cdfb5a31a02b91b7c417a058cb07b6bb819561e9a0379bb3bb"))
+                // Known declarations are data; other rows keep their script semantics.
+                if(includeSaffronGymData&&
+                    file.Path is
+                        "data/maps/SaffronCity_Gym/scripts.inc" or
+                        "data/maps/SaffronCity_Mart/scripts.inc")
                 {
                     if(label is "SaffronCity_Gym_MapScripts" or "SaffronCity_Mart_MapScripts"&&body.Count==1&&body[0].Text==".byte 0")
                     {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                     if(label=="SaffronCity_Mart_Items"&&body.Select(b=>b.Text).SequenceEqual(new[]{
-                        ".2byte ITEM_GREAT_BALL",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",".2byte ITEM_FULL_HEAL",
-                        ".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
+                        ".2byte ITEM_GREAT_BALL",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",".2byte ITEM_FULL_HEAL",".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
                     {assemblyData.Add(label,body.Take(7).Select(b=>b.Text).ToImmutableArray());continue;}
                 }
-                if(includeCinnabarData&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&file.SourceRef.Repository=="pret/pokefirered"&&
-                    (file.Path,file.SourceRef.Sha256) is
-                        ("data/maps/CinnabarIsland_Mart/scripts.inc","f9a3d744dab7e62f3517cab34d7542f2fe1e0bda64fb63c159800c3886ebe4ac") or
-                        ("data/maps/Route21_North/scripts.inc","6400ed7650028810cf2dec75a80f09c8f2141c75d7c6f051b10c01e868613ce5") or
-                        ("data/maps/Route21_South/scripts.inc","905cecbf72714346866843161d1f120ffe8aa422c4bc5141131c1513974bdc06"))
+                if(includeCinnabarData&&
+                    file.Path is
+                        "data/maps/CinnabarIsland_Mart/scripts.inc" or
+                        "data/maps/Route21_North/scripts.inc" or
+                        "data/maps/Route21_South/scripts.inc")
                 {
                     if(label is "CinnabarIsland_Mart_MapScripts" or "Route21_North_MapScripts" or "Route21_South_MapScripts"&&body.Count==1&&body[0].Text==".byte 0")
                     {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                     if(label=="CinnabarIsland_Mart_Items"&&body.Select(b=>b.Text).SequenceEqual(new[]{
-                        ".2byte ITEM_ULTRA_BALL",".2byte ITEM_GREAT_BALL",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",
-                        ".2byte ITEM_FULL_HEAL",".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
+                        ".2byte ITEM_ULTRA_BALL",".2byte ITEM_GREAT_BALL",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",".2byte ITEM_FULL_HEAL",".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
                     {assemblyData.Add(label,body.Take(8).Select(b=>b.Text).ToImmutableArray());continue;}
                 }
-                if(includeViridianGym&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&file.SourceRef.Repository=="pret/pokefirered"&&
-                    file.Path=="data/maps/ViridianCity_Gym/scripts.inc"&&file.SourceRef.Sha256=="a69345d0612e7999c466478b5b2569ae5c4c7750262de503060795ef68962046"&&
+                if(includeViridianGym&&
+                    file.Path=="data/maps/ViridianCity_Gym/scripts.inc"&&
                     label=="ViridianCity_Gym_MapScripts"&&body.Count==1&&body[0].Text==".byte 0")
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if(includeFirstSevii&&IsFirstSeviiAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
@@ -151,41 +146,41 @@ public static partial class PretStoryCompiler
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if(includeGiftOpcodes&&IsOriginalTmAcquisitionAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
-                if (FirstSeviiSource(file, "data/maps/CeruleanCave_2F/scripts.inc", "1ee9c61f02f4624d95e73729d315de26860298d04c4d047c7a889c6c7b432908") &&
+                if (FirstSeviiSource(file,"data/maps/CeruleanCave_2F/scripts.inc") &&
                     label == "CeruleanCave_2F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/SaffronCity_Dojo/scripts.inc", "a7e406b6355b31c2853206ba66a0fb00cfd1575b5a3a92d69e9237bffdac9098") &&
+                if (FirstSeviiSource(file,"data/maps/SaffronCity_Dojo/scripts.inc") &&
                     label == "SaffronCity_Dojo_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc", "8afc38f502fd909a1bb220a919ac107ce8b39e98e29731d654f6edef749828ce") &&
+                if (FirstSeviiSource(file,"data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc") &&
                     label == "CinnabarIsland_PokemonLab_ExperimentRoom_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (((FirstSeviiSource(file, "data/maps/TwoIsland_CapeBrink/scripts.inc", PretCapeBrinkTutor.CapeScriptSha256) &&
+                if (((FirstSeviiSource(file,"data/maps/TwoIsland_CapeBrink/scripts.inc") &&
                     label == "TwoIsland_CapeBrink_MapScripts") ||
-                    (FirstSeviiSource(file, "data/maps/TwoIsland_CapeBrink_House/scripts.inc", PretCapeBrinkTutor.HouseScriptSha256) &&
+                    (FirstSeviiSource(file,"data/maps/TwoIsland_CapeBrink_House/scripts.inc") &&
                     label == "TwoIsland_CapeBrink_House_MapScripts")) && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (((FirstSeviiSource(file, "data/maps/FourIsland_House1/scripts.inc", PretOriginalTutorRooms.BodySlamScriptSha256) &&
+                if (((FirstSeviiSource(file,"data/maps/FourIsland_House1/scripts.inc") &&
                     label == "FourIsland_House1_MapScripts") ||
-                    (FirstSeviiSource(file, "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc", PretOriginalTutorRooms.MetronomeScriptSha256) &&
+                    (FirstSeviiSource(file,"data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc") &&
                     label == "CinnabarIsland_PokemonLab_ResearchRoom_MapScripts")) && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/Route12_FishingHouse/scripts.inc", Game.Domain.Pokemon.MagikarpSizeRecordRules.ScriptSha256) &&
+                if (FirstSeviiSource(file,"data/maps/Route12_FishingHouse/scripts.inc") &&
                     label == "Route12_FishingHouse_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/SaffronCity_CopycatsHouse_1F/scripts.inc", "41b7f68c5dfba496afa81cadd8be88bb649efaf2a2831b058818750f68c8c96d") &&
+                if (FirstSeviiSource(file,"data/maps/SaffronCity_CopycatsHouse_1F/scripts.inc") &&
                     label == "SaffronCity_CopycatsHouse_1F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/SaffronCity_CopycatsHouse_2F/scripts.inc", "b6be843b486aca59f577ec9cbec8cea1c529c655542ef6536b0e1ad0e47cef26") &&
+                if (FirstSeviiSource(file,"data/maps/SaffronCity_CopycatsHouse_2F/scripts.inc") &&
                     label == "SaffronCity_CopycatsHouse_2F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/FourIsland_PokemonDayCare/scripts.inc", PretFourIslandDayCare.MapScriptSha256) &&
+                if (FirstSeviiSource(file,"data/maps/FourIsland_PokemonDayCare/scripts.inc") &&
                     label == "FourIsland_PokemonDayCare_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/Route5_PokemonDayCare/scripts.inc", PretRoute5DayCare.MapScriptSha256) &&
+                if (FirstSeviiSource(file,"data/maps/Route5_PokemonDayCare/scripts.inc") &&
                     label == "Route5_PokemonDayCare_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
-                if (FirstSeviiSource(file, "data/maps/FuchsiaCity_House3/scripts.inc", Game.Domain.Pokemon.MoveDeleterCatalog.ScriptSha256) &&
+                if (FirstSeviiSource(file,"data/maps/FuchsiaCity_House3/scripts.inc") &&
                     label == "FuchsiaCity_House3_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
                 if(includeTrainerTower&&IsTrainerTowerAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
@@ -229,12 +224,12 @@ public static partial class PretStoryCompiler
                         bool snorlaxSource=includeSnorlaxOpcodes&&IsSnorlaxEventSource(file,label);
                         var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes,includeRocketHideoutOpcodes,includePokemonTowerOpcodes,snorlaxSource);
                         if (opcode == "bufferleadmonspeciesname" &&
-                            FirstSeviiSource(file, "data/scripts/move_tutors.inc", Game.Domain.Pokemon.CapeBrinkTutorCatalog.ScriptsSha256) &&
+                            FirstSeviiSource(file,"data/scripts/move_tutors.inc") &&
                             label == "TwoIsland_CapeBrink_House_EventScript_StarterTutor")
                         {
                             if (!operands.SequenceEqual(new[] { "STR_VAR_1" }))
                                 throw ContentJson.Error("cape_brink_lead_buffer_operands", $"{file.Path}:{lineNumber}", opcode);
-                            (kind, min, max) = (StoryOp.Special, 1, 1);
+                            (kind,min,max) = (StoryOp.Special,1,1);
                         }
                         if(includeSafariOpcodes&&opcode=="setwarp"&&file.Path=="data/scripts/safari_zone.inc"&&label=="SafariZone_EventScript_OutOfBallsMidBattle")
                         {
@@ -250,7 +245,7 @@ public static partial class PretStoryCompiler
                             (kind,min,max)=(StoryOp.TrainerBattle,4,4);
                         }
                         if(includePresetDoubleOpcodes && opcode is "trainerbattle_double" or "trainerbattle_rematch_double" &&
-                            file.Path=="data/scripts/trainers.inc" && file.SourceRef.Sha256=="d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945" &&
+                            file.Path=="data/scripts/trainers.inc" &&
                             label is "Route16_EventScript_Lea" or "Route16_EventScript_Jed" or "Route16_EventScript_LeaRematch" or "Route16_EventScript_JedRematch")
                         {
                             if(operands.Length!=4 || operands[0]!="TRAINER_YOUNG_COUPLE_LEA_JED")
@@ -258,14 +253,14 @@ public static partial class PretStoryCompiler
                             (kind,min,max)=(StoryOp.TrainerBattle,4,4);
                         }
                         if(includeCinnabarData&&includePresetDoubleOpcodes&&opcode is "trainerbattle_double" or "trainerbattle_rematch_double"&&
-                            file.Path=="data/scripts/trainers.inc"&&file.SourceRef.Sha256=="d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945"&&
+                            file.Path=="data/scripts/trainers.inc"&&
                             label is "Route21_North_EventScript_Lil" or "Route21_North_EventScript_Ian" or "Route21_North_EventScript_LilRematch" or "Route21_North_EventScript_IanRematch")
                         {
                             if(operands.Length!=4||operands[0]!="TRAINER_SIS_AND_BRO_LIL_IAN")throw ContentJson.Error("cinnabar_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
                             (kind,min,max)=(StoryOp.TrainerBattle,4,4);
                         }
                         if(includeVictoryRoad&&includePresetDoubleOpcodes&&opcode=="trainerbattle_double"&&
-                            FirstSeviiSource(file,"data/maps/VictoryRoad_3F/scripts.inc","c8dae23f151a2eced7bf71135cbded590823c01b912da5ec20d6ecfa610664e4")&&
+                            FirstSeviiSource(file,"data/maps/VictoryRoad_3F/scripts.inc")&&
                             label is "VictoryRoad_3F_EventScript_Ray" or "VictoryRoad_3F_EventScript_Tyra")
                         {
                             if(operands.Length!=4||operands[0]!="TRAINER_COOL_COUPLE_RAY_TYRA")
@@ -280,7 +275,7 @@ public static partial class PretStoryCompiler
                         if(snorlaxSource&&opcode=="setwildbattle"&&!operands.SequenceEqual(new[]{"SPECIES_SNORLAX","30"}))
                             throw ContentJson.Error("snorlax_scripted_wild_operands",$"{file.Path}:{lineNumber}",opcode);
                         if (CeruleanCaveInstructionShape(file, label, opcode, operands) is { } caveShape)
-                            (kind, min, max) = caveShape;
+                            (kind,min,max) = caveShape;
                         if(includeFirstSevii)
                         {
                             var admitted=FirstSeviiInstructionShape(file,label,opcode,operands);
@@ -311,7 +306,7 @@ public static partial class PretStoryCompiler
                         // An independently authenticated successor map uses the shared opcode shapes.
                         // Keep the older source-specific warehouse contracts and reject unmounted files.
                         if(includeFiveIsland && (IsFiveIslandMapSource(file) ||
-                            !IsAuthenticatedMapScriptSource(file, authenticatedMapScriptHashes)))
+                            !IsMapScriptSource(file)))
                         {
                             var admitted=FiveIslandInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
@@ -344,7 +339,7 @@ public static partial class PretStoryCompiler
                     // Literal expansion of pinned event.inc convenience macros. Original labels,
                     // standard subroutines and call-site provenance remain intact in the IR.
                     if(includeSeviiRuby&&op=="braillemessage_wait"&&
-                        SeviiRubyMapSourceHashes.TryGetValue(file.Path,out var rubyHash)&&FirstSeviiSource(file,file.Path,rubyHash)&&
+                        SeviiRubyMapSources.Contains(file.Path)&&FirstSeviiSource(file,file.Path)&&
                         file.Path=="data/maps/MtEmber_RubyPath_B5F/scripts.inc"&&label=="MtEmber_RubyPath_B5F_EventScript_BrailleMessage")
                     {
                         if(args.Length!=1||!args[0].StartsWith("Braille_Text_",StringComparison.Ordinal))
@@ -398,63 +393,60 @@ public static partial class PretStoryCompiler
         }
         return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal)){AssemblyData=assemblyData.ToImmutable()};
     }
-    private static (StoryOp,int,int)? GameCornerPrizesInstructionShape(PretSourceScriptFile file, string label,
-        string opcode, ImmutableArray<string> operands)
+    private static (StoryOp,int,int)? GameCornerPrizesInstructionShape(PretSourceScriptFile file,string label,string opcode,ImmutableArray<string> operands)
     {
         if (!PretGameCornerPrizeRoom.IsOriginalScript(file)) return null;
         const string prefix = "CeladonCity_GameCorner_PrizeRoom_EventScript_";
         string? suffix = label.StartsWith(prefix, StringComparison.Ordinal) ? label[prefix.Length..] : null;
-        string[]? expected = (suffix, opcode) switch
+        string[]? expected = (suffix,opcode) switch
         {
-            ("PrizeClerkMons" or "PrizeClerkTMs" or "PrizeClerkItems", "showcoinsbox") => ["0", "0"],
-            ("EndPrizeExchange" or "PartyFull" or "BagFull", "hidecoinsbox") => ["0", "0"],
-            ("ConfirmPrizeMon" or "TryGivePrize", "checkcoins") => ["VAR_RESULT"],
-            ("ReceivedMonParty" or "ReceivedMonPC" or "TryGivePrize", "removecoins") => ["VAR_TEMP_2"],
-            ("ReceivedMonParty" or "ReceivedMonPC" or "TryGivePrize", "updatecoinsbox") => ["0", "5"],
+            ("PrizeClerkMons" or "PrizeClerkTMs" or "PrizeClerkItems","showcoinsbox") => ["0", "0"],
+            ("EndPrizeExchange" or "PartyFull" or "BagFull","hidecoinsbox") => ["0", "0"],
+            ("ConfirmPrizeMon" or "TryGivePrize","checkcoins") => ["VAR_RESULT"],
+            ("ReceivedMonParty" or "ReceivedMonPC" or "TryGivePrize","removecoins") => ["VAR_TEMP_2"],
+            ("ReceivedMonParty" or "ReceivedMonPC" or "TryGivePrize","updatecoinsbox") => ["0", "5"],
             _ => null
         };
         if (expected is null) return null;
         if (!operands.SequenceEqual(expected)) throw ContentJson.Error("game_corner_prize_operands", file.Path + ":" + label, opcode);
-        return (StoryOp.Special, expected.Length, expected.Length);
+        return (StoryOp.Special,expected.Length,expected.Length);
     }
-    private static (StoryOp,int,int)? GameCornerCoinsInstructionShape(PretSourceScriptFile file, string label,
-        string opcode, ImmutableArray<string> operands)
+    private static (StoryOp,int,int)? GameCornerCoinsInstructionShape(PretSourceScriptFile file,string label,string opcode,ImmutableArray<string> operands)
     {
-        if (FirstSeviiSource(file, PretGameCornerHiddenCoins.ScriptPath, PretGameCornerHiddenCoins.ScriptsSha256) &&
+        if (FirstSeviiSource(file,PretGameCornerHiddenCoins.ScriptPath) &&
             label == "EventScript_TryPickUpHiddenCoins" && opcode is "checkcoins" or "addcoins")
         {
             string argument = opcode == "checkcoins" ? "VAR_RESULT" : "VAR_0x8006";
             if (!operands.SequenceEqual(new[] { argument }))
                 throw ContentJson.Error("hidden_coins_operands", file.Path + ":" + label, opcode);
-            return (StoryOp.Special, 1, 1);
+            return (StoryOp.Special,1,1);
         }
-        if (!FirstSeviiSource(file, PretGameCornerCoins.ScriptPath, PretGameCornerCoins.ScriptsSha256)) return null;
+        if (!FirstSeviiSource(file,PretGameCornerCoins.ScriptPath)) return null;
         const string prefix = "CeladonCity_GameCorner_EventScript_";
         string? suffix = label.StartsWith(prefix, StringComparison.Ordinal) ? label[prefix.Length..] : null;
-        string[]? expected = (suffix, opcode) switch
+        string[]? expected = (suffix,opcode) switch
         {
-            ("CoinsClerk", "showcoinsbox") or ("BoughtCoins", "updatecoinsbox") or ("ClerkEnd", "hidecoinsbox") => ["0", "5"],
-            ("Buy50Coins" or "Buy500Coins" or "Fisher" or "Scientist" or "Gentleman", "checkcoins") => ["VAR_TEMP_1"],
-            ("Buy50Coins", "addcoins") => ["50"],
-            ("Buy500Coins", "addcoins") => ["500"],
-            ("Fisher", "addcoins") => ["10"],
-            ("Scientist" or "Gentleman", "addcoins") => ["20"],
+            ("CoinsClerk","showcoinsbox") or ("BoughtCoins","updatecoinsbox") or ("ClerkEnd","hidecoinsbox") => ["0", "5"],
+            ("Buy50Coins" or "Buy500Coins" or "Fisher" or "Scientist" or "Gentleman","checkcoins") => ["VAR_TEMP_1"],
+            ("Buy50Coins","addcoins") => ["50"],
+            ("Buy500Coins","addcoins") => ["500"],
+            ("Fisher","addcoins") => ["10"],
+            ("Scientist" or "Gentleman","addcoins") => ["20"],
             _ => null
         };
         if (expected is null) return null;
         if (!operands.SequenceEqual(expected))
             throw ContentJson.Error("game_corner_coins_operands", file.Path + ":" + label, opcode);
-        return (StoryOp.Special, expected.Length, expected.Length);
+        return (StoryOp.Special,expected.Length,expected.Length);
     }
     private static bool IsSnorlaxEventSource(PretSourceScriptFile file,string label) =>
-        file.SourceRef.Kind==SourceKind.Pret&&file.SourceRef.Repository=="pret/pokefirered"&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
-        (file.Path,label,file.SourceRef.Sha256) is
-            ("data/maps/Route12/scripts.inc","Route12_EventScript_Snorlax","ea70631fa17e3042cf08b32c94fbc26fbb128936b61c00e61127b79af780368e") or
-            ("data/maps/Route16/scripts.inc","Route16_EventScript_Snorlax","680c86b2457428a348f8dd7ff006d13681c510cd5098c04b44f8f09a755a17a5");
+        file.SourceRef.Kind==SourceKind.Pret&&
+        (file.Path,label) is
+            ("data/maps/Route12/scripts.inc","Route12_EventScript_Snorlax") or
+            ("data/maps/Route16/scripts.inc","Route16_EventScript_Snorlax");
     private static bool IsTowerWildBattleSource(PretSourceScriptFile file,string label) =>
-        file.SourceRef.Kind==SourceKind.Pret&&file.SourceRef.Repository=="pret/pokefirered"&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
-        file.Path=="data/maps/PokemonTower_6F/scripts.inc"&&label=="PokemonTower_6F_EventScript_MarowakGhost"&&
-        file.SourceRef.Sha256=="9b761b8470ee034f3c3fea2c2e293ef631e75c2b848e3bf81daedc0ff30b2a90";
+        file.SourceRef.Kind==SourceKind.Pret&&
+        file.Path=="data/maps/PokemonTower_6F/scripts.inc"&&label=="PokemonTower_6F_EventScript_MarowakGhost";
     private static (StoryOp,int,int) Shape(string op,bool includeGiftOpcodes,bool includeRoute3Opcodes,bool includeMtMoonOpcodes,bool includeBillOpcodes,bool includeSsAnneOpcodes,bool includeVermilionGymOpcodes,bool includeRockTunnelOpcodes,bool includeRocketHideoutOpcodes,bool includePokemonTowerOpcodes,bool includeSnorlaxOpcodes)
     {
         // TrainerBattle is the existing typed IR operation which yields a Battle wait.

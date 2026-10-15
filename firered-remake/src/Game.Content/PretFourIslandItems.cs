@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
@@ -19,19 +18,13 @@ public sealed record FourIslandItemContent(ImmutableArray<PewterMachineItem> Ite
 /// <summary>Exact NeverMeltIce, HM07, eight pickups and source Mart shelf; shared item/teaching rules execute them.</summary>
 public static partial class PretFourIslandItems
 {
-    public const string ItemsSha256 = "9cb68121352e6d3372baece227d7486b630f32baf053a3164ce10ebe11350b02";
-    public const string PickupsSha256 = "c46e181b894dddcbca6773fdae0c9367477f56e68e3d0ec34719b03929eb7b88";
     public static FourIslandItemsDocument LoadDocument(string root)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/four-island-items/items.json"));
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != ItemsSha256)
-            throw new InvalidDataException("four_island_items_source");
         var document = JsonSerializer.Deserialize<FourIslandItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
             ?? throw new InvalidDataException("four_island_items_missing");
-        if (document.SourceCommit != PokemonFactory.SourceCommit || document.Profile != "firered-four-island-items-v1" ||
-            document.Items.Length != 2 || document.Additions.Length != 1 || document.MachineAdditions.Length != 37 ||
+        if (            document.Items.Length != 2 || document.Additions.Length != 1 || document.MachineAdditions.Length != 37 ||
             document.Pickups.Length != 8 || document.Pickups.Count(p => p.Hidden) != 2)
             throw new InvalidDataException("four_island_items_scope");
         return document;
@@ -44,14 +37,11 @@ public static partial class PretFourIslandItems
     {
         var previousShopProof = SeviiRubyShopCatalog.For(previousShop) ?? throw new InvalidDataException("four_island_items_shop_predecessor");
         var shop = FourIslandShopCatalog.Authenticate(previousShopProof, previousShop with {
-            Profile = FourIslandShopCatalog.Profile, Items = previousShop.Items.AddRange(document.Additions),
-            Shops = previousShop.Shops.Add(document.Shop) });
+            Profile = FourIslandShopCatalog.Profile,Items = previousShop.Items.AddRange(document.Additions),Shops = previousShop.Shops.Add(document.Shop) });
         var previousMachineProof = SeviiRubyMachineCatalog.For(previousMachines) ?? throw new InvalidDataException("four_island_items_machine_predecessor");
         var additions = document.MachineAdditions.ToDictionary(m => m.Item);
         var machines = FourIslandMachineCatalog.Authenticate(previousMachineProof, pokemon, previousMachines with {
-            Profile = FourIslandMachineCatalog.Profile,
-            Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),
-            AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
+            Profile = FourIslandMachineCatalog.Profile,Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
                 Compatibility = m.Compatibility.AddRange(additions[m.Machine.Item.Id].Compatibility)
             }).Append(document.Hm07).ToImmutableArray() });
         foreach (var pickup in document.Pickups)

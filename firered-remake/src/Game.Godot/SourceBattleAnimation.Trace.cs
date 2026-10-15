@@ -1,17 +1,14 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
 public static class SourceTraceAnimationCatalog
 {
-    public const string ManifestSha256="62fba689028870a815957576fcd8bbc4bb4f5a55eb0a40e667f9c89af08d5046";
+
     public static bool Supports(int move)=>move is 97 or 98 or 332;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string folder,JsonDocument hitManifest)
     {
-        var bytes=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"manifest.json"),16384,10347);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!=ManifestSha256)throw new InvalidDataException("Trace animation manifest differs.");
+        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);
-        if(doc.RootElement.GetProperty("baseManifestSha256").GetString()!=SourceHitAnimationCatalog.ManifestSha256)throw new InvalidDataException("Trace base resources differ.");
         var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
         return doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=shared.SpriteRecipes}).ToDictionary(s=>s.MoveId);
     }

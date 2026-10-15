@@ -15,7 +15,6 @@ public static class SourcePlayTimeRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourcePath = "src/play_time.c";
-    public const string SourceSha256 = "6444dec627a94218a9ee72d4e8c0ebb1fe66262d8f93fd1cc5de66cb5c9e4baf";
     public const int FramesPerSecond = 60;
     public const int MaximumHours = 999;
     public static SourcePlayTime Maximum { get; } = new(999, 59, 59, 59);

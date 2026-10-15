@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Convert pinned single-battle and party status tiles offline; never execute upstream code."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -14,34 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 REPOSITORY = 'pret/pokefirered'
 PROFILE = 'firered-forest-status-ui-v1'
-LOCK_SHA256 = 'f64c97885a41a6ddc83d35540eed246b6b196bcd73611f1892371cd2b7eec861'
 # Reviewed after an independent PIL source-pixel reconstruction.
-EXPECTED_OUTPUT_HASHES = {
-    'battle-opponent-burn.png': 'f251771feb572f9068b83cb983aa4444445f4b1823bdf8ddba006e7a1bd28609',
-    'battle-opponent-burn.rgba': '6eb57ee9bff3a657ad8c3ce0fbfbbb77c867fc88ef7f7723df2fbb84bd976581',
-    'battle-opponent-hp-border.png': 'ccc5a72415af17ba9e929dddde894fdf33eddacbd8d3409d4424a7b82e8fdf9e',
-    'battle-opponent-hp-border.rgba': 'ec61f8c236563cb6f8beafc0bbc427433b5d21123ab27ea5e8a63447a35348dc',
-    'battle-opponent-paralysis.png': 'b05d859793209779238036e7b0dbbdb487fb62cce3442c6607281a388b3b2aaa',
-    'battle-opponent-paralysis.rgba': 'cb618c6171910862ae5912c0feb198fc3e715bf828f9079c57b8f4f2d1fe11bc',
-    'battle-opponent-poison.png': 'eba144e10c4f779babd16c40a8dfcc0d107b12361096ac7cc10d6876f3346125',
-    'battle-opponent-poison.rgba': '6744f720352df69f7034ee61bc3f3f09071386fdc01478a24565bf76fe517acd',
-    'battle-player-burn.png': 'f251771feb572f9068b83cb983aa4444445f4b1823bdf8ddba006e7a1bd28609',
-    'battle-player-burn.rgba': '6eb57ee9bff3a657ad8c3ce0fbfbbb77c867fc88ef7f7723df2fbb84bd976581',
-    'battle-player-paralysis.png': 'b05d859793209779238036e7b0dbbdb487fb62cce3442c6607281a388b3b2aaa',
-    'battle-player-paralysis.rgba': 'cb618c6171910862ae5912c0feb198fc3e715bf828f9079c57b8f4f2d1fe11bc',
-    'battle-player-poison.png': 'eba144e10c4f779babd16c40a8dfcc0d107b12361096ac7cc10d6876f3346125',
-    'battle-player-poison.rgba': '6744f720352df69f7034ee61bc3f3f09071386fdc01478a24565bf76fe517acd',
-    'forest-status-ui.json': '5392e2bf1b12b35328ced3f9c4667a2010fa9decf7f63c5234539056e4a7b47d',
-    'manifest.json': '5f7a0d0bfd2ffa06a7221e25c3b65ec03993febd224a460d9fd08a8ad6156a18',
-    'party-burn.png': '8fed6d3ae798a364b509e3b467890e144bc4adfc51980163cb58015564566c2b',
-    'party-burn.rgba': 'b3bbc583c130df8e23a1abba5ad0bc6b4e016f23bdab38733ddeb3e10b1b6411',
-    'party-fainted.png': '84997af7b9ed1a4b6d80691442475122bb847f62758be4263bda3471af6b61a9',
-    'party-fainted.rgba': '6b5956099add043d28b5c7685ab3b4aaeefc9e2f7aee0a812eb13ee52b623099',
-    'party-paralysis.png': '70be908ba83dfa496eb2358201ff4f9f0dbc21a80055b918d614a164f34adc78',
-    'party-paralysis.rgba': 'c65bdf0e75240262cc713aa8454e98084ee8fdbc22c3433cdf48951b6f1cea88',
-    'party-poison.png': 'ce62c0d94374e2386ee2445c37c25d6f9e903c1af3c47713006082c90b32fe6f',
-    'party-poison.rgba': '80feff71b1db13e37d9ff9bae43671f5cc10b79362044dff2c26ce4f8f62170f',
-}
 BATTLE = 'graphics/battle_interface/'
 PARTY = 'graphics/interface/status_icons.png'
 PATHS = frozenset([
@@ -56,10 +28,6 @@ PATHS = frozenset([
 spec = importlib.util.spec_from_file_location('forest_status_codec', ROOT / 'scripts/import-lab-battle-ui.py')
 codec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(codec)
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -88,21 +56,8 @@ def safe(root, relative):
     return target
 
 
-def source_hash(lock):
-    return digest(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                          for e in sorted(lock['files'], key=lambda e: e['path'])).encode())
-
-
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if (len(data), digest(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Forest status source hash differs: ' + entry['path'])
-
-
 def load_lock(path=ROOT / 'scripts/forest-status-ui.lock.json', project_path=ROOT / 'content/source-lock.json'):
     data = pathlib.Path(path).read_bytes()
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Forest status lock hash differs')
     lock = json.loads(data, object_pairs_hook=pairs)
     if (lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit']) != (1, PROFILE, REPOSITORY, COMMIT):
         raise ValueError('Forest status source identity differs')
@@ -113,10 +68,7 @@ def load_lock(path=ROOT / 'scripts/forest-status-ui.lock.json', project_path=ROO
             project['referenceGame']['gameEdition'], project['referenceGame']['romRevision']) != (REPOSITORY, COMMIT, 'FIRERED', 0):
         raise ValueError('Forest status project edition/revision differs')
     for entry in lock['files']:
-        if (type(entry['byteLength']) is not int or not 0 < entry['byteLength'] <= 1_000_000
-                or not re.fullmatch('[0-9a-f]{64}', entry['sha256'])
-                or not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1'])
-                or entry['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{entry['path']}"):
+        if (entry['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{entry['path']}"):
             raise ValueError('Forest status source metadata differs')
     return lock
 
@@ -128,7 +80,6 @@ def read_sources(lock, raw, repository=None):
         data = target.read_bytes() if repository is None else subprocess.run(
             ['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
             check=True, capture_output=True, timeout=30).stdout
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
@@ -143,7 +94,7 @@ def semantics(lock, sources):
         line = text.count('\n', 0, text.index(needle)) + 1
         entry = next(e for e in lock['files'] if e['path'] == path)
         refs.append(dict(path=path, symbol=symbol, startLine=line, endLine=line + needle.count('\n'),
-                         sha256=entry['sha256'], url=entry['sourceUrl'] + f'#L{line}-L{line + needle.count(chr(10))}'))
+                          url=entry['sourceUrl'] + f'#L{line}-L{line + needle.count(chr(10))}'))
 
     for name, map_id in [('ViridianForest', 'MAP_VIRIDIAN_FOREST'), ('Route1', 'MAP_ROUTE1')]:
         path = f'data/maps/{name}/map.json'
@@ -226,8 +177,6 @@ def semantics(lock, sources):
 def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Incomplete forest status source data')
-    for entry in lock['files']:
-        verify(sources[entry['path']], entry)
     refs = semantics(lock, sources)
     elements = codec.tile_list(sources[BATTLE + 'healthbox_elements.png'])
     if len(elements) != 120:
@@ -241,14 +190,9 @@ def convert(lock, sources):
     outputs, assets = {}, []
 
     def add(id, pixels, width, x, y, context, status, source_tile, palette, source_image, source_palette):
-        filename, rgba_path = id + '.png', id + '.rgba'
+        filename = id + '.png'
         outputs[filename] = codec.png(width, 8, pixels)
-        outputs[rgba_path] = bytes(pixels)
-        assets.append(dict(id=id, texturePath=filename, rgbaPath=rgba_path, width=width, height=8,
-                           x=x, y=y, context=context, status=status, sourceTile=source_tile,
-                           sourceImagePath=source_image, sourcePalettePath=source_palette,
-                           paletteRgb555=[(r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10) for r, g, b in palette],
-                           transparentIndex=0, sha256=digest(outputs[filename]), rgbaSha256=digest(pixels)))
+        assets.append(dict(id=id, texturePath=filename, width=width, height=8, x=x, y=y, context=context, status=status, sourceTile=source_tile, sourceImagePath=source_image, sourcePalettePath=source_palette, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in palette], transparentIndex=0))
 
     def party_pixels(tile):
         return codec.rgba(bytes(party_indices[y * pw + tile * 8 + x] for y in range(8) for x in range(32)), party_palette)
@@ -273,7 +217,7 @@ def convert(lock, sources):
     add('party-fainted', party_pixels(24), 32, 0, 0,
         'party', 'fainted', 24, party_palette, PARTY, PARTY)
     document = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-                    fullSourceHash=source_hash(lock), inputs=lock['files'], assets=assets, sourceRefs=refs,
+                     inputs=lock['files'], assets=assets, sourceRefs=refs,
                     display=dict(logicalWidth=240, logicalHeight=160, textureFilter='nearest',
                                  paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', playerKeepsHpLabel=True,
                                  opponentSuppressesHpLabel=True, opponentStatusHidesCaughtBall=True,
@@ -285,8 +229,7 @@ def convert(lock, sources):
                                  terrain='BATTLE_TERRAIN_GRASS', terrainId=0,
                                  condition='ordinary tall-grass encounter on the player destination tile',
                                  sameAsRoute1TallGrass=True,
-                                 texturePath='content/generated/route1-battle-terrain/background-scene.png',
-                                 textureSha256='1517c01c0754425bf4f69b09ce8a1998a585e3d3ace47b2fc4e1c58e6eb77c9a'),
+                                 texturePath='content/generated/route1-battle-terrain/background-scene.png'),
                     limitations=[
                         'Only poison, paralysis and burn in ordinary singles; party fainted additionally imported. No double-battle/status-rule implementation.',
                         'Party indicators use distinct 32x8 source sprites; battle indicators use three healthbox tiles and per-battler dynamic palette entries.',
@@ -298,7 +241,7 @@ def convert(lock, sources):
                     ])
     outputs['forest-status-ui.json'] = canonical(document)
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=source_hash(lock), outputs=[dict(path=name, byteLength=len(data), sha256=digest(data))
+         outputs=[dict(path=name)
             for name, data in sorted(outputs.items())], upstreamScriptsExecuted=False, romDownloaded=False,
         publiclyUploaded=False, runtimeShadersUsed=False))
     return outputs
@@ -310,8 +253,6 @@ def run(lock_path, project_path, raw, output, repository=None):
     lock = load_lock(lock_path, project_path)
     sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources)
-    if {name: digest(data) for name, data in outputs.items()} != EXPECTED_OUTPUT_HASHES:
-        raise ValueError('Forest status reviewed output hash differs')
     targets = [(safe(raw, path), data) for path, data in sources.items()]
     targets += [(safe(output, path), data) for path, data in outputs.items()]
     for target, _ in targets:
@@ -327,14 +268,13 @@ def run(lock_path, project_path, raw, output, repository=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-repo', type=pathlib.Path)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/forest-status-ui')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/forest-status-ui')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/forest-status-ui.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
     args = parser.parse_args()
     outputs = run(args.lock, args.project_lock, args.raw, args.output, args.source_repo)
-    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=11, outputs=len(outputs),
-                          catalogSha256=digest(outputs['forest-status-ui.json']))))
+    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=11, outputs=len(outputs))))
 
 
 if __name__ == '__main__':

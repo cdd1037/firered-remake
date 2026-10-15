@@ -126,7 +126,7 @@ def corrupted_sources():
     with tempfile.TemporaryDirectory(prefix='source-tamper-', dir=ROOT / 'evidence') as temporary:
         root = Path(temporary)
         shutil.copytree(ROOT / 'content', root / 'content')
-        target = root / 'content/raw/canonical-pokemon/src/data/pokemon/species_info.h'
+        target = root / 'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h'
         original = target.read_bytes()
         target.write_bytes(b'X' + original[1:])
         rejects(lambda: authenticate(root, None, args.move_root))

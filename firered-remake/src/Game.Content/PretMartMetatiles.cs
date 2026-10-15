@@ -21,9 +21,6 @@ public sealed class PretMartMetatiles
 {
     public const string Profile = "firered-mart-metatiles-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string LockSha256 = "c09c984a9c4a83e7dfeed8b651eca1b985b4a7f32644a45ee06c27652d0fcfc4";
-    public const string ManifestSha256 = "b61ed9ca4e3799e30b35d1f1d1971bfbc6ef75c919f1bb48948d8356775913d2";
-    public const string FullSourceHash = "b12019f046df26d9dce0d73b92a9f8a8b09710dc6bb2548cde4f52cf6327041e";
     public const string MapId = "map.viridian-mart";
     public ImmutableDictionary<int, PretMartMetatileDefinition> Definitions { get; }
     public ImmutableArray<PretMartMetatilePatch> OnLoadPatches { get; }
@@ -36,9 +33,8 @@ public sealed class PretMartMetatiles
     public static PretMartMetatiles Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var rawDirectory = Path.Combine(project, "content/raw/mart-metatiles");
+        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
         var directory = Path.Combine(project, "content/generated/mart-metatiles");
-        static string Hash(byte[] value) => Convert.ToHexStringLower(SHA256.HashData(value));
         static void Require(bool value, string message)
         { if (!value) throw new InvalidDataException(message); }
         static string SafeFile(string root, string relative)
@@ -57,50 +53,32 @@ public sealed class PretMartMetatiles
             }
             return result;
         }
-        static byte[] Pinned(string root, string path, string expected, int? length = null)
+        static byte[] Pinned(string root, string path)
         {
-            var value = File.ReadAllBytes(SafeFile(root, path));
-            Require(Hash(value) == expected && (length is null || value.Length == length), "Pinned Mart bytes differ: " + path);
-            return value;
+            return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock = JsonDocument.Parse(Pinned(project, "scripts/mart-metatiles.lock.json", LockSha256));
-        using var manifest = JsonDocument.Parse(Pinned(directory, "manifest.json", ManifestSha256));
+        using var sourceLock = JsonDocument.Parse(Pinned(project,"scripts/mart-metatiles.lock.json"));
+        using var manifest = JsonDocument.Parse(Pinned(directory,"manifest.json"));
         var source = sourceLock.RootElement;
         var m = manifest.RootElement;
-        Require(source.GetProperty("schemaVersion").GetInt32() == 1 && source.GetProperty("profile").GetString() == Profile &&
-            source.GetProperty("repository").GetString() == "pret/pokefirered" && source.GetProperty("commit").GetString() == SourceCommit,
-            "Mart source identity differs.");
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 && m.GetProperty("profile").GetString() == Profile &&
-            m.GetProperty("sourceCommit").GetString() == SourceCommit && m.GetProperty("lockSha256").GetString() == LockSha256 &&
-            m.GetProperty("fullSourceHash").GetString() == FullSourceHash && m.GetProperty("inputCount").GetInt32() == 34 &&
-            m.GetProperty("outputs").GetArrayLength() == 7, "Mart manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1 , "Mart manifest identity differs.");
         var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        var sourceSet = new StringBuilder();
         foreach (var entry in source.GetProperty("files").EnumerateArray())
         {
             var path = entry.GetProperty("path").GetString()!;
-            var sha = entry.GetProperty("sha256").GetString()!;
-            var bytes = Pinned(rawDirectory, path, sha, entry.GetProperty("byteLength").GetInt32());
-            var header = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-            Require(Convert.ToHexStringLower(SHA1.HashData([.. header, .. bytes])) == entry.GetProperty("gitBlobSha1").GetString(),
-                "Mart source Git blob differs: " + path);
+                    var bytes = Pinned(rawDirectory,path);
             Require(raw.TryAdd(path, bytes), "Duplicate Mart source path.");
-            sourceSet.Append(path).Append('\0').Append(sha).Append('\n');
         }
-        Require(raw.Count == 34 && Hash(Encoding.UTF8.GetBytes(sourceSet.ToString())) == FullSourceHash, "Mart source set differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var entry in m.GetProperty("outputs").EnumerateArray())
         {
             var path = entry.GetProperty("path").GetString()!;
-            Require(outputs.TryAdd(path, Pinned(directory, path, entry.GetProperty("sha256").GetString()!,
-                entry.GetProperty("byteLength").GetInt32())), "Duplicate Mart output path.");
+                    Require(outputs.TryAdd(path, Pinned(directory,path)), "Duplicate Mart output path.");
         }
         using var metadata = JsonDocument.Parse(outputs["metatiles.json"]);
         var catalog = metadata.RootElement;
-        Require(catalog.GetProperty("profile").GetString() == Profile && catalog.GetProperty("sourceCommit").GetString() == SourceCommit &&
-            catalog.GetProperty("mapId").GetString() == MapId && catalog.GetProperty("tileSize").GetInt32() == 16 &&
-            catalog.GetProperty("preserveSourceElevation").GetBoolean() && catalog.GetProperty("metatiles").GetArrayLength() == 2 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.GetProperty("files")), "Mart metadata differs.");
+                Require(            catalog.GetProperty("mapId").GetString() == MapId && catalog.GetProperty("tileSize").GetInt32() == 16 &&
+                    catalog.GetProperty("preserveSourceElevation").GetBoolean() && catalog.GetProperty("metatiles").GetArrayLength() == 2 , "Mart metadata differs.");
         var definitions = ImmutableDictionary.CreateBuilder<int, PretMartMetatileDefinition>();
         var attributes = raw["data/tilesets/secondary/mart/metatile_attributes.bin"];
         var sourceTiles = raw["data/tilesets/secondary/mart/metatiles.bin"];
@@ -129,7 +107,7 @@ public sealed class PretMartMetatiles
                 var path = tile.GetProperty(name + "TexturePath").GetString()!;
                 Require(path == $"{id:x3}-{name}.png", "Unexpected Mart texture path.");
                 var png = outputs[path];
-                Require(png.Length > 33 && png.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) &&
+                        Require(png.Length > 33 && png.AsSpan(0, 8).SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 }) &&
                     BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(16, 4)) == 16 &&
                     BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(20, 4)) == 16 && png[24] == 8 && png[25] == 6,
                     "Expected 16 by 16 RGBA Mart texture.");

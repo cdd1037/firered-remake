@@ -1,48 +1,30 @@
 {
-  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
-  "profile": "firered-department-rooftop-items-v1",
-  "importerSha256": "26067f20ac547b8ee77ee2c28c87b1b1c6715933aaf529be15a75e7ab6000054",
   "files": [
     {
-      "path": "content/generated/department-rooftop-items/items.json",
-      "byteLength": 3253,
-      "sha256": "6217d5edc9d495ff2c931e27d9e9594565f19e2e8f262ca1007b78dfacfc21d4"
+      "path": "content/generated/department-rooftop-items/items.json"
     },
     {
-      "path": "content/generated/department-rooftop-items/lemonade.png",
-      "byteLength": 456,
-      "sha256": "e47d27ef295dc3deff0711f81f0d8bc3c0289b2538e0ab2c311365adf6bea518"
+      "path": "content/generated/department-rooftop-items/lemonade.png"
     },
     {
-      "path": "content/generated/department-rooftop-items/lemonade.rgba",
-      "byteLength": 2304,
-      "sha256": "a5886023f3620c6cbb938e7c88876850795bb3f1c3c46c7bd1028edec59b0bf4"
+      "path": "content/generated/department-rooftop-items/lemonade.png"
     },
     {
-      "path": "content/generated/department-rooftop-items/machines.json",
-      "byteLength": 233492,
-      "sha256": "9bbf60e6f2d74f19f7fd9492310e17619c353854f7cbbdb2f411aae8b5542b8a"
+      "path": "content/generated/department-rooftop-items/machines.json"
     },
     {
-      "path": "content/generated/department-rooftop-items/source-contract.json",
-      "byteLength": 19412,
-      "sha256": "4cf11a2972144e5a992ae2ca0c617d041ff2d46168c024adb39672d27f940263"
+      "path": "content/generated/department-rooftop-items/source-contract.json"
     },
     {
-      "path": "content/generated/department-rooftop-items/source-input-hashes.json",
-      "byteLength": 8754,
-      "sha256": "e8f94e8d6201debcc03855f8b7ffc8df6bb1ab5df842d1a05ac4a9b37f63da67"
+      "path": "content/generated/department-rooftop-items/source-input-hashes.json"
     },
     {
-      "path": "content/raw/department-rooftop-items/graphics/items/icon_palettes/lemonade.pal",
-      "byteLength": 202,
-      "sha256": "b055587c20af2351300e4a79288a1e45d11030c75eebea3d19669ddc0163f69a"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/lemonade.pal"
     },
     {
-      "path": "content/raw/department-rooftop-items/graphics/items/icons/lemonade.png",
-      "byteLength": 285,
-      "sha256": "f99f02dde04534edc9c8192e0841997beb05dbe1b408d08731f7b321c41bce18"
+      "path": "content/raw/pokefirered/037335f4/graphics/items/icons/lemonade.png"
     }
-  ]
+  ],
+  "profile": "firered-department-rooftop-items-v1",
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 }

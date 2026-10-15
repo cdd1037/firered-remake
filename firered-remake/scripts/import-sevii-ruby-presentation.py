@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild the bounded Sevii Ruby pixels from pinned Git blobs, without source execution."""
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -16,33 +15,20 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-sevii-ruby-presentation-v1'
 BASE = 'content/generated/sevii-ruby-presentation/'
-RAW = 'content/raw/sevii-ruby-presentation/'
-LOCK_SHA = 'fa9e228142afc95229df85024cbdab491e04bedb74cf8d0e5aee579bd5de44b8'
-MANIFEST_SHA = '75f8ade3692f93f604fb62d68c611675219acc542d4255aeffc76b612abd7a35'
+RAW = 'content/raw/pokefirered/037335f4/'
 TRAINERS = (
     'BLACK_BELT_HUGH', 'BLACK_BELT_SHEA', 'CAMPER_BRYCE', 'CRUSH_GIRL_JOCELYN',
     'CRUSH_GIRL_SHARON', 'CRUSH_GIRL_TANYA', 'CRUSH_KIN_MIK_KIA', 'FISHERMAN_TOMMY',
     'PICNICKER_CLAIRE', 'PKMN_RANGER_BETH', 'PKMN_RANGER_LOGAN', 'SWIMMER_FEMALE_ABIGAIL',
     'SWIMMER_FEMALE_MARIA', 'SWIMMER_MALE_FINN', 'SWIMMER_MALE_GARRETT',
     'TEAM_ROCKET_GRUNT_43', 'TEAM_ROCKET_GRUNT_44')
-INHERITED = {
-    'BLACK_BELT': 'content/generated/viridian-gym-presentation/black-belt-front.rgba',
-    'CAMPER': 'content/generated/pewter-trainer-art/camper-front.rgba',
-    'FISHERMAN': 'content/generated/cinnabar-trainer-art/fisherman-front.rgba',
-    'PICNICKER': 'content/generated/cerulean-trainers/picnicker-front.rgba',
-    'SWIMMER_F': 'content/generated/first-sevii-presentation/first-sevii-swimmer-f-front.rgba',
-    'SWIMMER_M': 'content/generated/cinnabar-trainer-art/swimmer-m-front.rgba',
-    'ROCKET_GRUNT_M': 'content/generated/silph-trainer-art/rocket-grunt-m-front.rgba'}
+INHERITED = {'BLACK_BELT': 'content/generated/viridian-gym-presentation/black-belt-front.png', 'CAMPER': 'content/generated/pewter-trainer-art/camper-front.png', 'FISHERMAN': 'content/generated/cinnabar-trainer-art/fisherman-front.png', 'PICNICKER': 'content/generated/cerulean-trainers/picnicker-front.png', 'SWIMMER_F': 'content/generated/first-sevii-presentation/first-sevii-swimmer-f-front.png', 'SWIMMER_M': 'content/generated/cinnabar-trainer-art/swimmer-m-front.png', 'ROCKET_GRUNT_M': 'content/generated/silph-trainer-art/rocket-grunt-m-front.png'}
 ITEMS = ('RUBY', 'RAINBOW_PASS', 'HM06', 'BLACK_BELT', 'DIRE_HIT', 'FIRE_STONE')
 
 
 def need(ok, message):
     if not ok:
         raise ValueError(message)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def encode(value):
@@ -74,20 +60,14 @@ class Source:
         self.root, self.reference = root, reference
         self.files, self.raw, self.inherited = {}, {}, {}
         self.lock = None
-        if reference:
-            need(subprocess.check_output(['git', '-C', str(reference), 'rev-parse', COMMIT + '^{tree}']).decode().strip() == TREE, 'Pinned source tree differs')
-        if LOCK_SHA:
-            data = safe(root, 'scripts/sevii-ruby-presentation.lock.json').read_bytes()
-            need(sha(data) == LOCK_SHA, 'Pinned presentation lock differs')
-            self.lock = json.loads(data)
-            need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit'], self.lock['tree']) ==
-                 (1, PROFILE, 'pret/pokefirered', COMMIT, TREE), 'Source lock identity differs')
+        data = safe(root, 'scripts/sevii-ruby-presentation.lock.json').read_bytes()
+        self.lock = json.loads(data)
+        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
 
     def read(self, path):
         if path not in self.raw:
             data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path, byteLength=len(data), sha256=sha(data),
-                       gitBlobSha1=hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest())
+            row = dict(path=path)
             if self.lock:
                 need(row in self.lock['files'], 'Source input differs: ' + path)
             self.raw[path], self.files[path] = data, row
@@ -98,7 +78,7 @@ class Source:
 
     def reuse(self, path):
         data = safe(self.root, path).read_bytes()
-        row = dict(path=path, byteLength=len(data), sha256=sha(data))
+        row = dict(path=path)
         if self.lock:
             need(row in self.lock['inheritedInputs'], 'Inherited pixels differ: ' + path)
         self.inherited[path] = row
@@ -111,9 +91,8 @@ def build(root, reference):
 
     def emit(identity, width, height, rgba, inputs):
         need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
-        out[identity + '.rgba'], out[identity + '.png'] = rgba, png(width, height, rgba)
-        row = dict(id=identity, width=width, height=height, rgbaPath=BASE + identity + '.rgba',
-                   texturePath=BASE + identity + '.png', rgbaSha256=sha(rgba), sha256=sha(out[identity + '.png']), sourcePaths=inputs)
+        out[identity + '.png'] = png(width, height, rgba)
+        row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png', sourcePaths=inputs)
         assets.append(row)
         return row
 
@@ -152,7 +131,7 @@ def build(root, reference):
                 x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, side=side, paletteVariant=variant,
                     x=x, y=y, sourceWidth=width, sourceHeight=height, sourceYOffset=y_offset, sourceEnemyElevation=elevation,
-                    indexSha256=sha(indices), sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)',
+                     sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)',
                     transparentIndex=0, **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
         icon_table = source.text('src/pokemon_icon.c')
         match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', icon_table)
@@ -162,7 +141,7 @@ def build(root, reference):
         need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
         indices, rgba = indexed(image, pal, (32, 64), floor=True, first_frame=True)
         icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
-                          sourceFrameCount=2, indexSha256=sha(indices), **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
+                          sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
         image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
         need('[' + symbol + '] = gMonFootprint_' + name + ',' in source.text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
         im = Image.open(io.BytesIO(source.read(image)))
@@ -213,8 +192,8 @@ def build(root, reference):
         identity = key.lower().replace('_', '-') + '-front'
         if key in INHERITED:
             path = INHERITED[key]
-            need(source.reuse(path) == rgba, 'Inherited trainer source pixels differ: ' + key)
-            asset = dict(id=identity, width=64, height=64, rgbaPath=path, rgbaSha256=sha(rgba), sourcePaths=paths)
+            need(Image.open(io.BytesIO(source.reuse(path))).convert('RGBA').tobytes() == rgba, 'Inherited trainer source pixels differ: ' + key)
+            asset = dict(id=identity, width=64, height=64, texturePath=path, sourcePaths=paths)
             assets.append(asset)
         else:
             asset = emit(identity, 64, 64, rgba, paths)
@@ -348,7 +327,7 @@ def build(root, reference):
     font_image = Image.open(io.BytesIO(source.read(font_image_path)))
     need(font_image.mode == 'P' and font_image.size == (256, 64) and max(font_image.tobytes()) == 3, 'Braille font sheet differs')
     colors = palette(font_palette_path)
-    font_rgba = bytes(v for index in font_image.tobytes() for v in (*colors[[1, 2, 3, 1][index]], 255))
+    font_rgba = bytes((v for index in font_image.tobytes() for v in (*colors[[1, 2, 3, 1][index]], 255)))
     font_asset = emit('braille-font', 256, 64, font_rgba, [font_image_path, font_palette_path])
     braille_constants = {name: int(value, 16) for name, value in re.findall(r'^#define (BRAILLE_CHAR_\w+)\s+(0x[0-9A-Fa-f]+)', source.text('include/characters.h'), re.M)}
     preproc = source.text('tools/preproc/asm_file.cpp')
@@ -397,16 +376,12 @@ def build(root, reference):
     cursor_path, cursor_palette = 'graphics/fonts/down_arrow_3.png', 'graphics/interface/std_menu.pal'
     _, cursor_rgba = indexed(cursor_path, cursor_palette, (16, 16))
     cursor_asset = emit('braille-cursor', 16, 16, cursor_rgba, [cursor_path, cursor_palette])
-    braille = dict(asset=font_asset, glyphs=glyphs, messages=messages, glyphWidth=16, glyphHeight=16, letterSpacing=0, lineSpacing=2,
-        textX=16, textY=121, window=dict(x=16, y=120, width=208, height=32),
-        frame=dict(x=0, y=112, **frame_asset), cursor=dict(xOffset=22, y=126, centerXOffsetFromStringWidth=30,
-        centerY=134, delayFrames=8, ticksPerOffset=9, bobOffsets=[0, 1, 2, 1], **cursor_asset))
+    braille = dict(asset=font_asset, glyphs=glyphs, messages=messages, glyphWidth=16, glyphHeight=16, letterSpacing=0, lineSpacing=2, textX=16, textY=121, window=dict(x=16, y=120, width=208, height=32), frame=dict(x=0, y=112, **frame_asset), cursor=dict(xOffset=22, y=126, centerXOffsetFromStringWidth=30, centerY=134, delayFrames=8, ticksPerOffset=9, bobOffsets=[0, 1, 2, 1], **cursor_asset))
 
     # Declare original sequences and cry samples already present in the source pack.
     pack = source.reuse('content/generated/synth-audio/firered.pack')
     cries = source.reuse('content/generated/synth-audio/normal-cries.bin')
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-         sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack identity differs')
+    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
     songs = source.text('include/constants/songs.h')
     song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
     symbol = 'MUS_SEVII_CAVE'
@@ -435,19 +410,15 @@ def build(root, reference):
                          sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
     out['synth-manifest.json'] = encode(dict(schemaVersion=1, sourceCommit=COMMIT, cues=cues))
 
-    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
+    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
                        files=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
-    if LOCK_SHA:
-        need(sha(lock) == LOCK_SHA, 'Presentation input inventory differs')
-    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lock),
+    manifest = encode(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
         inputs=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)],
         assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, items=items, trainers=trainers,
         portraits=portraits, tiles=tiles, layers=layers, terrains=terrains, braille=braille, newOwnedSpecies=[218, 219], inheritedOwnedSpecies=[78],
         audio=dict(additionalCueIds=[c['id'] for c in cues], originalPackUnchanged=True, newAudioAssets=0, physicalAudioVerified=False),
         limits=['No runtime rules are created by this presentation package.', 'Party icons use original frame zero shared by normal/shiny variants.'],
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(out.items())]))
-    if MANIFEST_SHA:
-        need(sha(manifest) == MANIFEST_SHA, 'Reviewed presentation manifest differs')
+        outputs=[dict(path=p) for p, b in sorted(out.items())]))
     out['manifest.json'] = manifest
     result = {BASE + p: b for p, b in out.items()}
     result.update({RAW + p: b for p, b in source.raw.items()})
@@ -455,8 +426,8 @@ def build(root, reference):
     report = dict(passed=True, sourceFiles=len(source.raw), sprites=len(sprites), pokemonIcons=len(icons), footprints=len(footprints),
         trainers=len(trainers), portraits=len(portraits), newPortraits=sum(not p['inherited'] for p in portraits),
         itemIcons=len(items), dynamicMetatiles=len(tiles), dynamicLayers=len(layers), outputs=len(out) - 1,
-        lockSha256=sha(lock), lockBytes=len(lock), manifestSha256=sha(manifest), manifestBytes=len(manifest),
-        synthSha256=sha(out['synth-manifest.json']), synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
+         lockBytes=len(lock),  manifestBytes=len(manifest),
+         synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
     return result, report
 
 

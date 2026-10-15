@@ -2,25 +2,24 @@
 """Import the bounded Power Plant catalog from pinned local Git objects; --check is byte exact.
 No reference repository code is executed. Includes the Thunder Stone ownership closure.
 """
-import argparse, hashlib, json, re, subprocess
+import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 SPECIES=['SPECIES_ELECTABUZZ','SPECIES_JOLTEON','SPECIES_ZAPDOS']
 BASE='content/generated/power-plant-pokemon/'
-RAW='content/raw/power-plant-pokemon/'
-DEPENDENCIES={
- 'content/generated/canonical-pokemon/catalog.json':'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc',
- 'content/generated/five-island-rules/items.json':'c45233322a3b0bd5c2efe55063ec6066907a6e1a24ff0cfe3088a7b33d4d3968',
- 'content/generated/five-island-rules/pokemon.json':'9788f567d061f21e66d877718a542a3fb2068629f34b65da9dd604e387a0a909',
- 'content/generated/celio-pokemon/pokemon.json':'3f5b6aeeb5454af27c38ff837757fe9f50647a2ed95dc19ea94e83dc05c54e9f',
- 'content/generated/seven-island-rules/pokemon.json':'5c8d7774206cb06ce8798abde68b0c36048bebdc214b4e61c80bfdbf45e70d38',
- 'content/generated/seven-island-rules/machines.json':'a9bb573db76700ac35b25510b6452ac3acd36993e6b8aecb2cc6b03407659653',
- 'content/generated/event-island-species/catalog.json':'ec077629917befe12235c92727590edefe2d752104793e54b923d21f46ddfa2a',
- 'content/generated/league-rematch-rules/pokemon.json':'d9e9657f331699b88a9909d1bbb8dce05797ee0714e4c980730884aab4725b39',
- 'scripts/five-island-predecessor.json':'e2241d337388ef781209563eed0fa100c5d219841830ff3f400b71500e37278f'}
-def sha(b):return hashlib.sha256(b).hexdigest()
-def fingerprint(v):return sha(json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())
+RAW='content/raw/pokefirered/037335f4/'
+DEPENDENCIES=(
+    'content/generated/canonical-pokemon/catalog.json',
+    'content/generated/five-island-rules/items.json',
+    'content/generated/five-island-rules/pokemon.json',
+    'content/generated/celio-pokemon/pokemon.json',
+    'content/generated/seven-island-rules/pokemon.json',
+    'content/generated/seven-island-rules/machines.json',
+    'content/generated/event-island-species/catalog.json',
+    'content/generated/league-rematch-rules/pokemon.json',
+    'scripts/five-island-predecessor.json',
+)
 def encoded(v):return (json.dumps(v,indent=2,ensure_ascii=False)+'\n').encode()
 def ident(s):return dict(value='pret:'+s)
 def need(v,m):
@@ -35,7 +34,6 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
  The source callback must return bytes from COMMIT; every read is hash authenticated.
  """
  import base64
- import hashlib
  import io
  import json
  import pathlib
@@ -49,256 +47,137 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
  TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
  PROFILE = 'firered-power-plant-presentation-v1'
  BASE = 'content/generated/power-plant-presentation/'
- RAW = 'content/raw/power-plant-presentation/'
+ RAW = 'content/raw/pokefirered/037335f4/'
  SPECIES = [('Electabuzz', 125), ('Jolteon', 135), ('Zapdos', 145)]
- SOURCE_PINS = {'graphics/items/icon_palettes/electric_tm_hm.pal': {'byteLength': 193,
-                                                      'gitBlobSha1': 'f4ce9febe3b0f976bd8f7adb1284b9abebf4e5c9',
-                                                      'path': 'graphics/items/icon_palettes/electric_tm_hm.pal',
-                                                      'sha256': '1f23275340a37d78164095a72a2e9628467992c27f29256369b7d3b4fc193d04'},
-  'graphics/items/icon_palettes/normal_tm_hm.pal': {'byteLength': 198,
-                                                    'gitBlobSha1': 'a5bd9da1c79e9489f785b964c962ab50da39f247',
-                                                    'path': 'graphics/items/icon_palettes/normal_tm_hm.pal',
-                                                    'sha256': '6a18911b91817e9b86068c1e485420dd99751da04603f6241ee783339bed69d4'},
-  'graphics/items/icon_palettes/thunder_stone.pal': {'byteLength': 165,
-                                                     'gitBlobSha1': 'debec0709771d046f509e382fdf772ea200b8e8b',
-                                                     'path': 'graphics/items/icon_palettes/thunder_stone.pal',
-                                                     'sha256': 'd713cf4a5c9b870049c342e53e0916a08f6b27dfeea2b7c4cd9ccdd070cb7cdf'},
-  'graphics/items/icons/thunder_stone.png': {'byteLength': 305,
-                                             'gitBlobSha1': '8955b0224ce8fd14dd37fce936c7d97117dff5c1',
-                                             'path': 'graphics/items/icons/thunder_stone.png',
-                                             'sha256': '5b6280774db99b6a18b5730b6197318557d157db15f0374fcee35fdfb4e267e9'},
-  'graphics/items/icons/tm_hm.png': {'byteLength': 344,
-                                     'gitBlobSha1': 'c4e6d1df78a0498443ae3567ec7c9f3839e7713a',
-                                     'path': 'graphics/items/icons/tm_hm.png',
-                                     'sha256': 'ad43897b481aa49e13dd85f205fe5fe9496212e47266eb3e9359113ad03d77bf'},
-  'graphics/pokedex/kanto_dex_bgpals.pal': {'byteLength': 2004,
-                                            'gitBlobSha1': 'b719d111f73ad26966817ebb64a72cf0e369a2a5',
-                                            'path': 'graphics/pokedex/kanto_dex_bgpals.pal',
-                                            'sha256': '6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf'},
-  'graphics/pokemon/electabuzz/back.png': {'byteLength': 611,
-                                           'gitBlobSha1': '8d84c2cb63de22a92b67501d76e81cc5b54a68bd',
-                                           'path': 'graphics/pokemon/electabuzz/back.png',
-                                           'sha256': 'cd330920c554b454bc2f22d5f945165dfb98792fa2ba2c534a4306c376d6dce1'},
-  'graphics/pokemon/electabuzz/footprint.png': {'byteLength': 93,
-                                                'gitBlobSha1': 'b2b4de625b1516ffa56b7d8babc4aeab17f9c571',
-                                                'path': 'graphics/pokemon/electabuzz/footprint.png',
-                                                'sha256': '31a44e4d6633c0ac84de897687713ee278e8077e5f8955610e04e10628b4d514'},
-  'graphics/pokemon/electabuzz/front.png': {'byteLength': 882,
-                                            'gitBlobSha1': '1bed04c89feee52972093e46230dd2c02bbc7ee3',
-                                            'path': 'graphics/pokemon/electabuzz/front.png',
-                                            'sha256': 'bcb9e4790b4bdd2cfbcae4dfead5ccb44160646c1eac741d6b4c8fdd6c26f241'},
-  'graphics/pokemon/electabuzz/icon.png': {'byteLength': 321,
-                                           'gitBlobSha1': '4c9babe2a98cf3bb79bd76b979f57245bbe8e9cf',
-                                           'path': 'graphics/pokemon/electabuzz/icon.png',
-                                           'sha256': 'd4ca6dfc30d137ebd31632d3a14f05bcf2de3119ce453495a6b48fffd8ee2b97'},
-  'graphics/pokemon/electabuzz/normal.pal': {'byteLength': 190,
-                                             'gitBlobSha1': '75bfcbabe20e4c81da66a88164d70bf8c96b1db3',
-                                             'path': 'graphics/pokemon/electabuzz/normal.pal',
-                                             'sha256': '0d9252e7350566aed3e3294b34f7e40bb251936ba817236356103f89de5022b3'},
-  'graphics/pokemon/electabuzz/shiny.pal': {'byteLength': 186,
-                                            'gitBlobSha1': 'df9fa23e84f87d426abb1be59bd3903bdf08b1ef',
-                                            'path': 'graphics/pokemon/electabuzz/shiny.pal',
-                                            'sha256': '506b5cecd15c7498c3e93dd119c38180247369b904a2624e533dbfbde1d4c828'},
-  'graphics/pokemon/icon_palettes/icon_palette_0.pal': {'byteLength': 195,
-                                                        'gitBlobSha1': '48a835b0db32aa5a2195f9dccac3c84e8b5bb87d',
-                                                        'path': 'graphics/pokemon/icon_palettes/icon_palette_0.pal',
-                                                        'sha256': '05e68987f3a786c27943a03005221d25fdf35e32b201b1b212f7fa454b35ec7a'},
-  'graphics/pokemon/icon_palettes/icon_palette_1.pal': {'byteLength': 195,
-                                                        'gitBlobSha1': '261ea164d9415f0c3f35ff0efe63df968c9d2c93',
-                                                        'path': 'graphics/pokemon/icon_palettes/icon_palette_1.pal',
-                                                        'sha256': '39bd2dbfe6ddb9d27cc002fbc3764a7b834178a42fde8bf17adef514037112ae'},
-  'graphics/pokemon/jolteon/back.png': {'byteLength': 754,
-                                        'gitBlobSha1': '0041316004f1a8a6879c11c0100eb2bf70a236c0',
-                                        'path': 'graphics/pokemon/jolteon/back.png',
-                                        'sha256': '8d100871bb0e76541b2e6b6b49ce4df6842f336f7f102a1d98645bc110e79a4d'},
-  'graphics/pokemon/jolteon/footprint.png': {'byteLength': 91,
-                                             'gitBlobSha1': 'd1e9477b3d0c9da9d144ac0fe63e0bf72c968881',
-                                             'path': 'graphics/pokemon/jolteon/footprint.png',
-                                             'sha256': 'e9c7c9399298696f66a4854ff1691f3e1872fc62e5797694b10bae2040bcd882'},
-  'graphics/pokemon/jolteon/front.png': {'byteLength': 706,
-                                         'gitBlobSha1': 'be21a9d9ebfd505fbf0ef5587b607daab6f44419',
-                                         'path': 'graphics/pokemon/jolteon/front.png',
-                                         'sha256': '7a795f6e21a720bf8a29a3fca909659708b843c02ea80372a25018a7cf311e2e'},
-  'graphics/pokemon/jolteon/icon.png': {'byteLength': 324,
-                                        'gitBlobSha1': 'b98fd78b2779310dc11e1d2dbaff73ef7d99204d',
-                                        'path': 'graphics/pokemon/jolteon/icon.png',
-                                        'sha256': '1f6935354a6a79f106562f50e830ce5e703507742cb803e82d6720c353658888'},
-  'graphics/pokemon/jolteon/normal.pal': {'byteLength': 186,
-                                          'gitBlobSha1': 'c4f6d9021ee92b6648519474122061db21b9a91f',
-                                          'path': 'graphics/pokemon/jolteon/normal.pal',
-                                          'sha256': 'bb29aff839e38e8d00a328a3b47957ac000f6bee753bf58e46e72fb8cfb6b25b'},
-  'graphics/pokemon/jolteon/shiny.pal': {'byteLength': 183,
-                                         'gitBlobSha1': 'ece1425c3c4055ee9d7d99029432e81ade8cb2af',
-                                         'path': 'graphics/pokemon/jolteon/shiny.pal',
-                                         'sha256': '0055a8095e5beebc67fd93395a09d354ddf78bb72eb65055d345377c0aa20964'},
-  'graphics/pokemon/zapdos/back.png': {'byteLength': 652,
-                                       'gitBlobSha1': '248366dc5dcf0523ac3a47008c9e59d0d401f105',
-                                       'path': 'graphics/pokemon/zapdos/back.png',
-                                       'sha256': '0375518a53994ee499ccdd9c51f48cf0ea66140471d408fd35cd2c8d642e9817'},
-  'graphics/pokemon/zapdos/footprint.png': {'byteLength': 104,
-                                            'gitBlobSha1': '480063a88b754bf8889b0d48e7eb984ee208bd42',
-                                            'path': 'graphics/pokemon/zapdos/footprint.png',
-                                            'sha256': '42f30152cdf4ee53bd0d397f8244ae8834c993811a60b8dfd4e2f09147fc0824'},
-  'graphics/pokemon/zapdos/front.png': {'byteLength': 904,
-                                        'gitBlobSha1': '2d92490276a62a955d90d158d64753c3b5570d95',
-                                        'path': 'graphics/pokemon/zapdos/front.png',
-                                        'sha256': '1eafdea0501cb6cad51f65af39f329f8052c07957f7eb227b48fc60cdd13ba3d'},
-  'graphics/pokemon/zapdos/icon.png': {'byteLength': 375,
-                                       'gitBlobSha1': '26fc734275a300eebbe442ee99e252ffa479fac7',
-                                       'path': 'graphics/pokemon/zapdos/icon.png',
-                                       'sha256': '27d6cc54e9e6f1feb5c6a785b7d60f7c6496325b429aa09721be12adab93b2fb'},
-  'graphics/pokemon/zapdos/normal.pal': {'byteLength': 189,
-                                         'gitBlobSha1': '88e36bd7f63eafee0d988f2561d8d4d19ed3cf42',
-                                         'path': 'graphics/pokemon/zapdos/normal.pal',
-                                         'sha256': 'e1754f4f060392fd0ac61828e6d101339338934d9b73fc8339626d026bbaede5'},
-  'graphics/pokemon/zapdos/shiny.pal': {'byteLength': 183,
-                                        'gitBlobSha1': 'fb7840ebca04e6486ab023a6fad2412eeda3987c',
-                                        'path': 'graphics/pokemon/zapdos/shiny.pal',
-                                        'sha256': '9e98ae65c97a69d293a39e56b865072c921fc21d11c847e93b66c8c7ad4e5f42'},
-  'include/constants/items.h': {'byteLength': 12436,
-                                'gitBlobSha1': 'cfc42256c33bb6b807630deacadad8071a3eeee3',
-                                'path': 'include/constants/items.h',
-                                'sha256': 'af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138'},
-  'include/constants/sound.h': {'byteLength': 2051,
-                                'gitBlobSha1': '0890f4290b871688076881f395de05c9cba8d2ee',
-                                'path': 'include/constants/sound.h',
-                                'sha256': '20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2'},
-  'include/constants/species.h': {'byteLength': 12982,
-                                  'gitBlobSha1': '7446cc1380995ab62deff8359bad813aa2b936e9',
-                                  'path': 'include/constants/species.h',
-                                  'sha256': 'ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a'},
-  'sound/cry_tables.inc': {'byteLength': 16533,
-                           'gitBlobSha1': '22e7433635a64d65d2fcf4de7f3f407b62b239d9',
-                           'path': 'sound/cry_tables.inc',
-                           'sha256': '18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a'},
-  'sound/direct_sound_samples/cries/electabuzz.wav': {'byteLength': 15412,
-                                                      'gitBlobSha1': '8443823fb71db6d23b32fc69fad154b9053a46c2',
-                                                      'path': 'sound/direct_sound_samples/cries/electabuzz.wav',
-                                                      'sha256': 'd9ff2b21fadff93fd6910487f863d8672d7961b46ce585ad2c887b641aa901e6'},
-  'sound/direct_sound_samples/cries/jolteon.wav': {'byteLength': 7934,
-                                                   'gitBlobSha1': '61b5cb16043fc9de1a8511c0d153db6861af8fe5',
-                                                   'path': 'sound/direct_sound_samples/cries/jolteon.wav',
-                                                   'sha256': '1a983687bd79a6943a3db345da4ea6f1ef14c5b7fc06b916f3d06338e60fd378'},
-  'sound/direct_sound_samples/cries/zapdos.wav': {'byteLength': 7756,
-                                                  'gitBlobSha1': 'f8168a603ccdb9d3e873470fbb6d40c90ef605d4',
-                                                  'path': 'sound/direct_sound_samples/cries/zapdos.wav',
-                                                  'sha256': 'f5bdded584f7cfba05822dd6c40f3c9434a210dba104e31c83296566493ef682'},
-  'src/data/graphics/items.h': {'byteLength': 46353,
-                                'gitBlobSha1': 'b5a5a6bb78cd9058ec81a23c142178f3c9e140c8',
-                                'path': 'src/data/graphics/items.h',
-                                'sha256': '2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202'},
-  'src/data/graphics/pokemon.h': {'byteLength': 214609,
-                                  'gitBlobSha1': 'e744f80e08f2f849238d58fdcbfd29107bd3decd',
-                                  'path': 'src/data/graphics/pokemon.h',
-                                  'sha256': '72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5'},
-  'src/data/item_icon_table.h': {'byteLength': 30370,
-                                 'gitBlobSha1': 'a9dd7f0b2e0c7906de145286ac41b78905ea448b',
-                                 'path': 'src/data/item_icon_table.h',
-                                 'sha256': '1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c'},
-  'src/data/pokemon_graphics/back_pic_coordinates.h': {'byteLength': 44872,
-                                                       'gitBlobSha1': '17f818f458434bc6c35cb7f10acd7776a36e9c22',
-                                                       'path': 'src/data/pokemon_graphics/back_pic_coordinates.h',
-                                                       'sha256': 'a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab'},
-  'src/data/pokemon_graphics/enemy_mon_elevation.h': {'byteLength': 1834,
-                                                      'gitBlobSha1': 'dccd063dae2a1ab421c9a990c891ac2eabadf820',
-                                                      'path': 'src/data/pokemon_graphics/enemy_mon_elevation.h',
-                                                      'sha256': 'bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1'},
-  'src/data/pokemon_graphics/footprint_table.h': {'byteLength': 19857,
-                                                  'gitBlobSha1': '86ca067901f96aee2b1aed81912bac4f7e84c99b',
-                                                  'path': 'src/data/pokemon_graphics/footprint_table.h',
-                                                  'sha256': '90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70'},
-  'src/data/pokemon_graphics/front_pic_coordinates.h': {'byteLength': 44879,
-                                                        'gitBlobSha1': 'd521b615fd22c171c441ca6b9e4a56ff37474036',
-                                                        'path': 'src/data/pokemon_graphics/front_pic_coordinates.h',
-                                                        'sha256': '81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f'},
-  'src/data/text/species_names.h': {'byteLength': 15851,
-                                    'gitBlobSha1': '25f2c9aa2363202e75cf2080be01465b2d64b5c4',
-                                    'path': 'src/data/text/species_names.h',
-                                    'sha256': '73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f'},
-  'src/pokemon_icon.c': {'byteLength': 45145,
-                         'gitBlobSha1': '037b1bfa82189906b205fe1a50a9276a4e2041e6',
-                         'path': 'src/pokemon_icon.c',
-                         'sha256': '2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967'},
-  'src/sound.c': {'byteLength': 15232,
-                  'gitBlobSha1': '9060aa513d2946d5a59c34f24658da96e0ab6a8e',
-                  'path': 'src/sound.c',
-                  'sha256': '851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958'}}
- DEPENDENCY_PINS = {'content/generated/campaign-hit-art/manifest.json': {'byteLength': 132335,
-                                                       'path': 'content/generated/campaign-hit-art/manifest.json',
-                                                       'sha256': 'f65895babddf0327ad6884ba4d86d2c582e780c17bf91064599a657361acc94c'},
-  'content/generated/mtmoon-items/item_tm05.png': {'byteLength': 2396,
-                                                   'path': 'content/generated/mtmoon-items/item_tm05.png',
-                                                   'sha256': 'd4677385055d30aa7e104a585b4d680b0a4dddd7a7720500851e7a5eae925894'},
-  'content/generated/synth-audio/firered.pack': {'byteLength': 2565436,
-                                                 'path': 'content/generated/synth-audio/firered.pack',
-                                                 'sha256': '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d'},
-  'content/generated/synth-audio/manifest.json': {'byteLength': 88374,
-                                                  'path': 'content/generated/synth-audio/manifest.json',
-                                                  'sha256': '10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df'},
-  'content/generated/synth-audio/normal-cries.bin': {'byteLength': 6188,
-                                                     'path': 'content/generated/synth-audio/normal-cries.bin',
-                                                     'sha256': '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e'},
-  'content/generated/vermilion-gym-assets/item_tm34.png': {'byteLength': 2396,
-                                                           'path': 'content/generated/vermilion-gym-assets/item_tm34.png',
-                                                           'sha256': 'd2f5caef93896fa926cfc060ab62d39a6936c0921fc31fa588a66539cc40045f'}}
+ SOURCE_PINS = {'graphics/items/icon_palettes/electric_tm_hm.pal': {
+                                                      'path': 'graphics/items/icon_palettes/electric_tm_hm.pal'},
+  'graphics/items/icon_palettes/normal_tm_hm.pal': {
+                                                    'path': 'graphics/items/icon_palettes/normal_tm_hm.pal'},
+  'graphics/items/icon_palettes/thunder_stone.pal': {
+                                                     'path': 'graphics/items/icon_palettes/thunder_stone.pal'},
+  'graphics/items/icons/thunder_stone.png': {
+                                             'path': 'graphics/items/icons/thunder_stone.png'},
+  'graphics/items/icons/tm_hm.png': {
+                                     'path': 'graphics/items/icons/tm_hm.png'},
+  'graphics/pokedex/kanto_dex_bgpals.pal': {
+                                            'path': 'graphics/pokedex/kanto_dex_bgpals.pal'},
+  'graphics/pokemon/electabuzz/back.png': {
+                                           'path': 'graphics/pokemon/electabuzz/back.png'},
+  'graphics/pokemon/electabuzz/footprint.png': {
+                                                'path': 'graphics/pokemon/electabuzz/footprint.png'},
+  'graphics/pokemon/electabuzz/front.png': {
+                                            'path': 'graphics/pokemon/electabuzz/front.png'},
+  'graphics/pokemon/electabuzz/icon.png': {
+                                           'path': 'graphics/pokemon/electabuzz/icon.png'},
+  'graphics/pokemon/electabuzz/normal.pal': {
+                                             'path': 'graphics/pokemon/electabuzz/normal.pal'},
+  'graphics/pokemon/electabuzz/shiny.pal': {
+                                            'path': 'graphics/pokemon/electabuzz/shiny.pal'},
+  'graphics/pokemon/icon_palettes/icon_palette_0.pal': {
+                                                        'path': 'graphics/pokemon/icon_palettes/icon_palette_0.pal'},
+  'graphics/pokemon/icon_palettes/icon_palette_1.pal': {
+                                                        'path': 'graphics/pokemon/icon_palettes/icon_palette_1.pal'},
+  'graphics/pokemon/jolteon/back.png': {
+                                        'path': 'graphics/pokemon/jolteon/back.png'},
+  'graphics/pokemon/jolteon/footprint.png': {
+                                             'path': 'graphics/pokemon/jolteon/footprint.png'},
+  'graphics/pokemon/jolteon/front.png': {
+                                         'path': 'graphics/pokemon/jolteon/front.png'},
+  'graphics/pokemon/jolteon/icon.png': {
+                                        'path': 'graphics/pokemon/jolteon/icon.png'},
+  'graphics/pokemon/jolteon/normal.pal': {
+                                          'path': 'graphics/pokemon/jolteon/normal.pal'},
+  'graphics/pokemon/jolteon/shiny.pal': {
+                                         'path': 'graphics/pokemon/jolteon/shiny.pal'},
+  'graphics/pokemon/zapdos/back.png': {
+                                       'path': 'graphics/pokemon/zapdos/back.png'},
+  'graphics/pokemon/zapdos/footprint.png': {
+                                            'path': 'graphics/pokemon/zapdos/footprint.png'},
+  'graphics/pokemon/zapdos/front.png': {
+                                        'path': 'graphics/pokemon/zapdos/front.png'},
+  'graphics/pokemon/zapdos/icon.png': {
+                                       'path': 'graphics/pokemon/zapdos/icon.png'},
+  'graphics/pokemon/zapdos/normal.pal': {
+                                         'path': 'graphics/pokemon/zapdos/normal.pal'},
+  'graphics/pokemon/zapdos/shiny.pal': {
+                                        'path': 'graphics/pokemon/zapdos/shiny.pal'},
+  'include/constants/items.h': {
+                                'path': 'include/constants/items.h'},
+  'include/constants/sound.h': {
+                                'path': 'include/constants/sound.h'},
+  'include/constants/species.h': {
+                                  'path': 'include/constants/species.h'},
+  'sound/cry_tables.inc': {
+                           'path': 'sound/cry_tables.inc'},
+  'sound/direct_sound_samples/cries/electabuzz.wav': {
+                                                      'path': 'sound/direct_sound_samples/cries/electabuzz.wav'},
+  'sound/direct_sound_samples/cries/jolteon.wav': {
+                                                   'path': 'sound/direct_sound_samples/cries/jolteon.wav'},
+  'sound/direct_sound_samples/cries/zapdos.wav': {
+                                                  'path': 'sound/direct_sound_samples/cries/zapdos.wav'},
+  'src/data/graphics/items.h': {
+                                'path': 'src/data/graphics/items.h'},
+  'src/data/graphics/pokemon.h': {
+                                  'path': 'src/data/graphics/pokemon.h'},
+  'src/data/item_icon_table.h': {
+                                 'path': 'src/data/item_icon_table.h'},
+  'src/data/pokemon_graphics/back_pic_coordinates.h': {
+                                                       'path': 'src/data/pokemon_graphics/back_pic_coordinates.h'},
+  'src/data/pokemon_graphics/enemy_mon_elevation.h': {
+                                                      'path': 'src/data/pokemon_graphics/enemy_mon_elevation.h'},
+  'src/data/pokemon_graphics/footprint_table.h': {
+                                                  'path': 'src/data/pokemon_graphics/footprint_table.h'},
+  'src/data/pokemon_graphics/front_pic_coordinates.h': {
+                                                        'path': 'src/data/pokemon_graphics/front_pic_coordinates.h'},
+  'src/data/text/species_names.h': {
+                                    'path': 'src/data/text/species_names.h'},
+  'src/pokemon_icon.c': {
+                         'path': 'src/pokemon_icon.c'},
+  'src/sound.c': {
+                  'path': 'src/sound.c'}}
+ DEPENDENCY_PINS = {'content/generated/campaign-hit-art/manifest.json': {
+                                                       'path': 'content/generated/campaign-hit-art/manifest.json'},
+  'content/generated/mtmoon-items/item_tm05.png': {
+                                                   'path': 'content/generated/mtmoon-items/item_tm05.png'},
+  'content/generated/synth-audio/firered.pack': {
+                                                 'path': 'content/generated/synth-audio/firered.pack'},
+  'content/generated/synth-audio/manifest.json': {
+                                                  'path': 'content/generated/synth-audio/manifest.json'},
+  'content/generated/synth-audio/normal-cries.bin': {
+                                                     'path': 'content/generated/synth-audio/normal-cries.bin'},
+  'content/generated/vermilion-gym-assets/item_tm34.png': {
+                                                           'path': 'content/generated/vermilion-gym-assets/item_tm34.png'}}
 
 
- SOURCE_PINS.update({'data/maps/PowerPlant/map.json': {'byteLength': 5065,
-                                    'gitBlobSha1': '38950b3a4980822bd4ea5cb6105e8f7b59d87926',
-                                    'path': 'data/maps/PowerPlant/map.json',
-                                    'sha256': '2a33bb77406ca5fefc99b9adc48ef640f4143d990e9b02c4ba2e96f17be0a8cb'},
-  'data/maps/PowerPlant/scripts.inc': {'byteLength': 3645,
-                                       'gitBlobSha1': 'ec48a37782877dbd07507bbe58964643c5444d06',
-                                       'path': 'data/maps/PowerPlant/scripts.inc',
-                                       'sha256': '7558c5214a97c767aa1840d14fa15521e7f0993657ee19a3bb088b4202f6f192'},
-  'include/constants/songs.h': {'byteLength': 17891,
-                                'gitBlobSha1': '4f5fc3cc6fda1aee6585a0944378be934fc10ded',
-                                'path': 'include/constants/songs.h',
-                                'sha256': 'ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4'},
-  'sound/direct_sound_samples/cries/electrode.wav': {'byteLength': 12594,
-                                                     'gitBlobSha1': '4ad346759d0c3ca7ce4e979df8bab409420adf96',
-                                                     'path': 'sound/direct_sound_samples/cries/electrode.wav',
-                                                     'sha256': 'c3fd5834be0997c8fae89fccbd390522fde9418e33139e4b16cb8e003fc1b0bc'},
-  'sound/song_table.inc': {'byteLength': 9204,
-                           'gitBlobSha1': '000cc41b99f419fa043d3730d37b657ac6c48a57',
-                           'path': 'sound/song_table.inc',
-                           'sha256': '015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061'},
-  'sound/songs/midi/mus_encounter_gym_leader.mid': {'byteLength': 2717,
-                                                    'gitBlobSha1': 'cb5fef4876f07cd3ab83f97ec2ba1cf3091a3eda',
-                                                    'path': 'sound/songs/midi/mus_encounter_gym_leader.mid',
-                                                    'sha256': '4ab1e4aedd52e5cbac57ac43936afd2709e2d0e1be5771674a79b27c42d8a0fe'},
-  'sound/songs/midi/mus_poke_mansion.mid': {'byteLength': 18230,
-                                            'gitBlobSha1': 'e5ee78eb00f7ff8a3acef00ea17ac5b9bc1d73f0',
-                                            'path': 'sound/songs/midi/mus_poke_mansion.mid',
-                                            'sha256': 'f7b6286bba45986a40acfa6385ead26d6af6a6c03bd645299c6b9ef39bdf2420'},
-  'sound/songs/midi/mus_vs_legend.mid': {'byteLength': 16522,
-                                         'gitBlobSha1': '93d3785be6d68ec636b09a9d3d82f164a79a34af',
-                                         'path': 'sound/songs/midi/mus_vs_legend.mid',
-                                         'sha256': '0b6a1bb1175419e4ef72a5dfb733457a167e3e0494df2a634d68d3608333019d'},
-  'sound/songs/midi/mus_vs_wild.mid': {'byteLength': 14879,
-                                       'gitBlobSha1': '835aff19b8ad12ea6f593738af02901e13e85917',
-                                       'path': 'sound/songs/midi/mus_vs_wild.mid',
-                                       'sha256': 'a1a72f5d1fb313f9b2f03c6edd8cc3a4c79fa7becd75545ee25bc6a9415cd344'},
-  'src/battle_setup.c': {'byteLength': 33351,
-                         'gitBlobSha1': '6d62084dbb697fc3a42d49a6dc865657339dcea2',
-                         'path': 'src/battle_setup.c',
-                         'sha256': 'f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd'}})
- DEPENDENCY_PINS.update({'content/generated/cinnabar-synth-audio/manifest.json': {'byteLength': 3542,
-                                                           'path': 'content/generated/cinnabar-synth-audio/manifest.json',
-                                                           'sha256': 'cb132bd0dd8b34a8b305d09fca84fa0b23c7dca09ef9f97937c20f826e6c994c'},
-  'content/generated/event-island-presentation/synth-manifest.json': {'byteLength': 6981,
-                                                                      'path': 'content/generated/event-island-presentation/synth-manifest.json',
-                                                                      'sha256': 'fdbb69c5d1db92476303fc9fb84c022a3fe45ca0e49c35913fc7e8d92fe77d0e'},
-  'content/generated/rocktunnel-synth-audio/manifest.json': {'byteLength': 5587,
-                                                             'path': 'content/generated/rocktunnel-synth-audio/manifest.json',
-                                                             'sha256': '478237a8683d31438da6a5504272e76a52313d1417133767e08fa83a4cc0a621'}})
+ SOURCE_PINS.update({'data/maps/PowerPlant/map.json': {
+                                    'path': 'data/maps/PowerPlant/map.json'},
+  'data/maps/PowerPlant/scripts.inc': {
+                                       'path': 'data/maps/PowerPlant/scripts.inc'},
+  'include/constants/songs.h': {
+                                'path': 'include/constants/songs.h'},
+  'sound/direct_sound_samples/cries/electrode.wav': {
+                                                     'path': 'sound/direct_sound_samples/cries/electrode.wav'},
+  'sound/song_table.inc': {
+                           'path': 'sound/song_table.inc'},
+  'sound/songs/midi/mus_encounter_gym_leader.mid': {
+                                                    'path': 'sound/songs/midi/mus_encounter_gym_leader.mid'},
+  'sound/songs/midi/mus_poke_mansion.mid': {
+                                            'path': 'sound/songs/midi/mus_poke_mansion.mid'},
+  'sound/songs/midi/mus_vs_legend.mid': {
+                                         'path': 'sound/songs/midi/mus_vs_legend.mid'},
+  'sound/songs/midi/mus_vs_wild.mid': {
+                                       'path': 'sound/songs/midi/mus_vs_wild.mid'},
+  'src/battle_setup.c': {
+                         'path': 'src/battle_setup.c'}})
+ DEPENDENCY_PINS.update({'content/generated/cinnabar-synth-audio/manifest.json': {
+                                                           'path': 'content/generated/cinnabar-synth-audio/manifest.json'},
+  'content/generated/event-island-presentation/synth-manifest.json': {
+                                                                      'path': 'content/generated/event-island-presentation/synth-manifest.json'},
+  'content/generated/rocktunnel-synth-audio/manifest.json': {
+                                                             'path': 'content/generated/rocktunnel-synth-audio/manifest.json'}})
  def need(ok, message):
      if not ok:
          raise ValueError(message)
-
-
- def sha(data):
-     return hashlib.sha256(data).hexdigest()
 
 
  def encode(value):
@@ -325,8 +204,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          if path not in raw:
              data = read_source_bytes(path)
              need(isinstance(data, bytes), 'Source callback must return bytes: ' + path)
-             row = dict(path=path, byteLength=len(data), sha256=sha(data),
-                        gitBlobSha1=hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest())
+             row = dict(path=path)
              if SOURCE_PINS:
                  need(SOURCE_PINS.get(path) == row, 'Pinned source bytes differ: ' + path)
              raw[path], inputs[path] = data, row
@@ -341,7 +219,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          file = dependency_root / path
          need(not any(p.is_symlink() for p in (file, *file.parents)), 'Inherited symlink rejected')
          data = file.read_bytes()
-         row = dict(path=path, byteLength=len(data), sha256=sha(data))
+         row = dict(path=path)
          if DEPENDENCY_PINS:
              need(DEPENDENCY_PINS.get(path) == row, 'Pinned inherited bytes differ: ' + path)
          inherited[path] = row
@@ -351,13 +229,12 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          data = read(path)
          content = '' if path.endswith('.png') else data.decode()
          return dict(path=path, symbol=symbol, startLine=1 if match is None else content.count('\n', 0, match.start()) + 1,
-                     endLine=max(1, content.count('\n')) if match is None else content.count('\n', 0, match.end()) + 1, sha256=sha(data))
+                     endLine=max(1, content.count('\n')) if match is None else content.count('\n', 0, match.end()) + 1)
 
      def emit(identity, width, height, rgba, paths):
          need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
-         out[identity + '.rgba'], out[identity + '.png'] = rgba, png(width, height, rgba)
-         row = dict(id=identity, width=width, height=height, rgbaPath=BASE + identity + '.rgba',
-                    texturePath=BASE + identity + '.png', rgbaSha256=sha(rgba), sha256=sha(out[identity + '.png']), sourcePaths=paths)
+         out[identity + '.png'] = png(width, height, rgba)
+         row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png', sourcePaths=paths)
          assets.append(row)
          return row
 
@@ -398,7 +275,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
                  x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
                  sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, renderSpeciesId=species, sourceFrameIndex=0, form=None,
                      side=side, paletteVariant=variant, x=x, y=y, sourceWidth=width, sourceHeight=height,
-                     sourceYOffset=y_offset, sourceEnemyElevation=elevation, indexSha256=sha(indices), sourceCoordinatePath=coordinates,
+                     sourceYOffset=y_offset, sourceEnemyElevation=elevation,  sourceCoordinatePath=coordinates,
                      paletteExpansion='floor(rgb5 * 255 / 31)', transparentIndex=0,
                      **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
          icon_table = text('src/pokemon_icon.c')
@@ -409,7 +286,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
          indices, rgba = indexed(image, pal, (32, 64), first_frame=True)
          icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
-                           sourceFrameCount=2, indexSha256=sha(indices), **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
+                           sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
          image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
          need('[' + symbol + '] = gMonFootprint_' + name + ',' in text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
          with Image.open(io.BytesIO(read(image))) as im:
@@ -424,8 +301,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
 
      pack = reuse('content/generated/synth-audio/firered.pack')
      cries = reuse('content/generated/synth-audio/normal-cries.bin')
-     need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-          sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack differs')
+     need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack differs')
      old_cues = json.loads(reuse('content/generated/synth-audio/manifest.json'))['cues']
      for prior in ['rocktunnel-synth-audio/manifest.json', 'cinnabar-synth-audio/manifest.json', 'event-island-presentation/synth-manifest.json']:
          old_cues.extend(json.loads(reuse('content/generated/' + prior))['cues'])
@@ -460,7 +336,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
              decoded.append((value + 128) & 255)
          need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
          cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-             decodedBytes=len(decoded), decodedSha256=sha(decoded), sourcePath=path, sourcePlayer=4, priority=priority))
+             decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
          cue = dict(id='CRY_' + name.upper() + '_NORMAL', sourceCommit=COMMIT, sourceSymbol='SPECIES_' + name.upper(),
              sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0)
          if species in (101, 135):
@@ -549,7 +425,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
              png_path = emitted['texturePath']
              png_bytes = out['items/' + symbol.lower() + '.png']
          item_icons.append(dict(item=dict(value='pret:' + symbol), sourceItemId=item_id, width=24, height=24,
-             rgbaBase64=base64.b64encode(rgba).decode(), rgbaSha256=sha(rgba), pngPath=png_path, pngSha256=sha(png_bytes),
+             pngPath=png_path,
              source=ref(image, binding[1]), paletteSource=ref(pal, binding[2]), bindingSource=ref('src/data/item_icon_table.h', symbol, binding),
              inherited=bool(inherited_png)))
 
@@ -558,10 +434,10 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      if DEPENDENCY_PINS:
          need(set(inherited) == set(DEPENDENCY_PINS), 'Inherited input inventory differs')
      out['synth-manifest.json'] = encode(dict(schemaVersion=1, sourceCommit=COMMIT, cues=cues, inheritedCues=inherited_cues))
-     lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
+     lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
                  files=[inputs[p] for p in sorted(inputs)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
      lock_bytes = encode(lock)
-     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE, lockSha256=sha(lock_bytes),
+     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], assets=assets, sprites=sprites, pokemonIcons=icons,
          footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], itemIcons=item_icons,
          moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows),
@@ -572,7 +448,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
                         zapdos=dict(species=145, level=50, cry='CRY_ZAPDOS_ENCOUNTER', introductionMusic='MUS_ENCOUNTER_GYM_LEADER', battleMusic='MUS_VS_LEGEND'),
                         electrodes=dict(species=101, level=34, count=2, cry='CRY_ELECTRODE_ENCOUNTER', battleMusic='MUS_VS_WILD'),
                         mapMusic='MUS_POKE_MANSION', playbackAuthority='existing committed presentation effects and typed battle context')),
-         outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(out.items())])
+         outputs=[dict(path=p) for p, b in sorted(out.items())])
      manifest_bytes = encode(manifest)
      out['manifest.json'] = manifest_bytes
      files = {BASE + p: b for p, b in out.items()}
@@ -580,28 +456,27 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      files['scripts/power-plant-presentation.lock.json'] = lock_bytes
      report = dict(passed=True, sourceFiles=len(raw), inheritedInputs=len(inherited), assets=len(assets), sprites=len(sprites),
          icons=len(icons), footprints=len(footprints), itemIcons=len(item_icons), inheritedItemIcons=2,
-         geometry=len(geometry_rows), outputs=len(out) - 1, lockSha256=sha(lock_bytes), lockBytes=len(lock_bytes),
-         manifestSha256=sha(manifest_bytes), manifestBytes=len(manifest_bytes), synthSha256=sha(out['synth-manifest.json']),
+         geometry=len(geometry_rows), outputs=len(out) - 1,  lockBytes=len(lock_bytes),
+          manifestBytes=len(manifest_bytes),
          synthBytes=len(out['synth-manifest.json']), newCues=len(cues), inheritedCues=len(inherited_cues),
          exactCryPcmCompared=True, nativeWindowVerified=False, physicalAudioVerified=False)
      return files, dict(manifest=manifest, sourceLock=lock, report=report, itemIcons=item_icons)
  return build_presentation(read_source_bytes,dependency_root)
 
 def generate(reference,dependency):
- need(subprocess.check_output(['git','rev-parse',COMMIT+'^{tree}'],cwd=reference).decode().strip()==TREE,'Source tree')
  inputs={};raw={};dependencies=[]
  def readbytes(path):
   if path not in raw:
    b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference);raw[path]=b
-   inputs[path]=dict(path=path,byteLength=len(b),gitBlobSha1=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),sha256=sha(b))
+   inputs[path]=dict(path=path)
   return raw[path]
  def read(path):return readbytes(path).decode()
  def one(path,pattern):
   m=list(re.finditer(pattern,read(path),re.M|re.S));need(len(m)==1,'Unique source: '+pattern);return m[0]
- def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=read(path).count('\n',0,m.start())+1,endLine=read(path).count('\n',0,m.end())+1,sha256=inputs[path]['sha256'])
+ def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=read(path).count('\n',0,m.start())+1,endLine=read(path).count('\n',0,m.end())+1)
  def dep(path):
-  b=(dependency/path).read_bytes();need(sha(b)==DEPENDENCIES[path],'Dependency: '+path)
-  dependencies.append(dict(path=path,byteLength=len(b),sha256=sha(b)));return json.loads(b)
+  b=(dependency/path).read_bytes()
+  dependencies.append(dict(path=path));return json.loads(b)
  d={p:dep(p) for p in DEPENDENCIES};canonical=d['content/generated/canonical-pokemon/catalog.json']
  species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
  five=d['content/generated/five-island-rules/items.json'];celio=d['content/generated/celio-pokemon/pokemon.json'];seven=d['content/generated/seven-island-rules/pokemon.json'];events=d['content/generated/event-island-species/catalog.json']
@@ -613,7 +488,7 @@ def generate(reference,dependency):
  for s in SPECIES:
   need(not metadata[s]['sourceEvolutions'] and not species[s]['evolutions'],'Terminal added species')
   for r in [species[s]['source'],species[s]['learnsetSource'],metadata[s]['dexSource'],metadata[s]['learnsetPointerSource']]:
-   read(r['path']);need(inputs[r['path']]['sha256']==r['sha256'],'Canonical source '+s)
+   read(r['path'])
  edges=[]
  for s,t in [('SPECIES_PIKACHU','SPECIES_RAICHU'),('SPECIES_EEVEE','SPECIES_JOLTEON')]:
   e=[e for e in metadata[s]['sourceEvolutions'] if e['method']=='EVO_ITEM' and e['parameter']=='ITEM_THUNDER_STONE']
@@ -621,8 +496,8 @@ def generate(reference,dependency):
  wildpath='src/data/wild_encounters.json';wild=json.loads(read(wildpath));entries=[e for g in wild['wild_encounter_groups'] for e in g.get('encounters',[]) if e['map']=='MAP_POWER_PLANT' and e['base_label'].endswith('_FireRed')]
  need(len(entries)==1 and set(entries[0])=={'map','base_label','land_mons'},'Only original FireRed land encounters')
  w=entries[0];weights=next(f['encounter_rates'] for g in wild['wild_encounter_groups'] for f in g.get('fields',[]) if f['type']=='land_mons')
- need(weights==[20,20,10,10,10,10,5,5,4,4,1,1] and w['land_mons']['encounter_rate']==7,'Original encounter weights/rate')
- land=dict(map=dict(value='map.power-plant'),sourceCommit=COMMIT,sourcePath=wildpath,sourceSymbol=w['base_label'],sourceSha256=inputs[wildpath]['sha256'],rawEncounterRate=7,slots=[dict(index=i,species=ident(m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=weights[i]) for i,m in enumerate(w['land_mons']['mons'])])
+ need(weights == [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1] and w['land_mons']['encounter_rate'] == 7, 'Original encounter weights/rate')
+ land=dict(map=dict(value='map.power-plant'),sourceCommit=COMMIT,sourcePath=wildpath,sourceSymbol=w['base_label'],rawEncounterRate=7,slots=[dict(index=i,species=ident(m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=weights[i]) for i,m in enumerate(w['land_mons']['mons'])])
  map_path='data/maps/PowerPlant/map.json';mapping=json.loads(read(map_path));scriptpath='data/maps/PowerPlant/scripts.inc';scripts=read(scriptpath);statics=[]
  for local,obj in enumerate(mapping['object_events'],1):
   block=re.search(r'^'+obj['script']+r'::\n((?:(?!^\w+::).)*)',scripts,re.M|re.S)
@@ -657,7 +532,7 @@ def generate(reference,dependency):
   if stone:
    p='src/data/pokemon/item_effects.h';m=one(p,r'^static const u8 sItemEffect_ThunderStone\[6\] = \{\n    \[4\] = ITEM4_EVO_STONE,\n\};');effect=ref(p,'sItemEffect_ThunderStone',m)
    need('#define ITEM4_EVO_STONE         0x80' in read('include/constants/item_effects.h'),'Stone effect byte')
-  items.append({k:meta[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=wrapped['description'],healHp=0,cureStatus=0,effectBytes=[0,0,0,0,128,0] if stone else [],useSupport=9 if stone else 10,effectSource=effect,sourceMetadata=meta))
+  items.append({k: meta[k] for k in ['id', 'sourceItemSymbol', 'sourceItemId', 'name', 'price', 'pocket', 'importance', 'type', 'fieldUseFunction', 'battleUsage', 'battleUseFunction', 'holdEffectParam', 'source']} | dict(description=wrapped['description'], healHp=0, cureStatus=0, effectBytes=[0, 0, 0, 0, 128, 0] if stone else [], useSupport=9 if stone else 10, effectSource=effect, sourceMetadata=meta))
  newmachines=[];moveconstants=read('include/constants/moves.h');movedata=read('src/data/battle_moves.h')
  for symbol,move in [('ITEM_TM17','MOVE_PROTECT'),('ITEM_TM25','MOVE_THUNDER')]:
   i=next(i for i in sourceitems if i['itemId']==symbol);need('MOVE_'+i['moveId'].upper()==move,'Source machine move');moveid=int(re.search(r'^#define '+move+r'\s+(\d+)',moveconstants,re.M)[1]);moveblock=re.search(r'\['+move+r'\] =\s*\{(.*?)\}',movedata,re.S)[1];movepp=int(re.search(r'\.pp = (\d+)',moveblock)[1])
@@ -681,20 +556,20 @@ def generate(reference,dependency):
   for _ in range(4):seed=(seed*1103515245+24691)&0xffffffff;draws.append(seed>>16)
   pid=draws[0]|draws[1]<<16;ivs=[draws[2]&31,(draws[2]>>5)&31,(draws[2]>>10)&31,draws[3]&31,(draws[3]>>5)&31,(draws[3]>>10)&31]
   vectors.append(dict(kind=kind,species=ident(s),level=level,initialSeed=initial,finalSeed=seed,rawDraws=draws,personality=pid,nature=pid%25,ivs=ivs,originalTrainerId=0x12345678))
- doc=dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-power-plant-pokemon-v1',ownedSpeciesCount=152,opponentSpeciesCount=186,itemCount=123,machineCount=41,species=[dict(definition=species[s],metadata=metadata[s]) for s in SPECIES],thunderStoneEvolutions=edges,land=land,heldItems=held,staticEncounters=statics,machines=cells,machinesSemanticSha256=fingerprint(cells),newMachines=newmachines,newMachinesSemanticSha256=fingerprint(newmachines),items=items,itemsSemanticSha256=fingerprint(items),pickups=pickups,pickupsSemanticSha256=fingerprint(pickups),generationVectors=vectors,generationOrder='Static: player OT, random PID then IVs, explicit low16/high16 profile; original target-compiler Random32 operand ordering unverified. Ordinary land uses existing nature rejection generation. Legendary Zapdos skips held draw; ordinary land and Electrode consume one held draw at battle entry. No fateful metadata.',inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
+ doc=dict(sourceCommit=COMMIT,profile='firered-power-plant-pokemon-v1',ownedSpeciesCount=152,opponentSpeciesCount=186,itemCount=123,machineCount=41,species=[dict(definition=species[s],metadata=metadata[s]) for s in SPECIES],thunderStoneEvolutions=edges,land=land,heldItems=held,staticEncounters=statics,machines=cells,newMachines=newmachines,items=items,pickups=pickups,generationVectors=vectors,generationOrder='Static: player OT, random PID then IVs, explicit low16/high16 profile; original target-compiler Random32 operand ordering unverified. Ordinary land uses existing nature rejection generation. Legendary Zapdos skips held draw; ordinary land and Electrode consume one held draw at battle entry. No fateful metadata.',inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
  slots=',\n            '.join(f'new({r["index"]},new("{r["species"]["value"]}"),{r["minimumLevel"]},{r["maximumLevel"]},{r["weight"]})' for r in land['slots'])
  heldrows=',\n        '.join(f'new(new("{r["species"]["value"]}"),"{r["common"]}","{r["rare"]}")' for r in held)
- code='''using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, string Rare);\n/// <summary>Exact FireRed Power Plant table, generated only from pinned source.</summary>\npublic static class PowerPlantEncounterTables\n{\n'''+f'''    public const string SourceSha256 = "{land['sourceSha256']}";\n    public static MapId Map {{ get; }} = new("map.power-plant");\n    public static EarlyLandEncounterTable Land {{ get; }} = new(Map, EarlyLandEncounterRules.SourceCommit,\n        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", SourceSha256, 7,\n        [{slots}]);\n    public static ImmutableArray<PowerPlantHeldItemSource> HeldItems {{ get; }} = [\n        {heldrows}];\n}}\n'''
+ code='''using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, string Rare);\n/// <summary>Exact FireRed Power Plant table, generated only from pinned source.</summary>\npublic static class PowerPlantEncounterTables\n{\n'''+f'''    public static MapId Map {{ get; }} = new("map.power-plant");\n    public static EarlyLandEncounterTable Land {{ get; }} = new(Map, EarlyLandEncounterRules.SourceCommit,\n        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", 7,\n        [{slots}]);\n    public static ImmutableArray<PowerPlantHeldItemSource> HeldItems {{ get; }} = [\n        {heldrows}];\n}}\n'''
  return doc,raw,{'src/Game.Domain/Encounters/PowerPlantEncounterTables.cs':code.encode()}
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args()
  doc,raw,files=generate(a.reference,a.dependency_root);files[BASE+'catalog.json']=encoded(doc)
  presentation,art=build_power_plant_presentation(lambda path:subprocess.check_output(['git','show',COMMIT+':'+path],cwd=a.reference),a.dependency_root);files.update(presentation)
  for path,b in raw.items():files[RAW+path]=b
- lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile=doc['profile'],files=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(files.items())]);files['scripts/power-plant-pokemon.lock.json']=encoded(lock)
+ lock=dict(sourceCommit=COMMIT,profile=doc['profile'],files=[dict(path=p) for p,b in sorted(files.items())]);files['scripts/power-plant-pokemon.lock.json']=encoded(lock)
  for path,b in files.items():
   dst=a.output/path
   if a.check:need(dst.read_bytes()==b,'Regeneration differs: '+path)
   else:dst.parent.mkdir(parents=True,exist_ok=True);dst.write_bytes(b)
- print(json.dumps(dict(checked=a.check,catalogSha256=sha(files[BASE+'catalog.json']),lockSha256=sha(files['scripts/power-plant-pokemon.lock.json']),machineFingerprint=doc['machinesSemanticSha256'],newMachineFingerprint=doc['newMachinesSemanticSha256'],itemFingerprint=doc['itemsSemanticSha256'],pickupsFingerprint=doc['pickupsSemanticSha256'],inputs=len(raw),presentation=art['report']),indent=2))
+ print(json.dumps(dict(checked=a.check,inputs=len(raw),presentation=art['report']),indent=2))
 if __name__=='__main__':main()

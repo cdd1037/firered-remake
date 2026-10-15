@@ -2,304 +2,156 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 154,
-      "gitBlobSha1": "ab57da621fbcf5f059a201b1e5a97a3337f3e6f9",
-      "path": "graphics/interface/dex_caught_pokeball.pal",
-      "sha256": "2770df48707f85fa68505752a5bcf05ce7b474b9849cd192f4a388decebd4203"
+      "path": "graphics/interface/dex_caught_pokeball.pal"
     },
     {
-      "byteLength": 20869,
-      "gitBlobSha1": "a6a7efed395aa536cb328037e099b3d756bcc459",
-      "path": "graphics/interface/menu_info.png",
-      "sha256": "55d81293d96d799b7a83abcf4c46ce3ef721e30da0481f8055682ea048373eed"
+      "path": "graphics/interface/menu_info.png"
     },
     {
-      "byteLength": 2004,
-      "gitBlobSha1": "b719d111f73ad26966817ebb64a72cf0e369a2a5",
-      "path": "graphics/pokedex/kanto_dex_bgpals.pal",
-      "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf"
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal"
     },
     {
-      "byteLength": 84,
-      "gitBlobSha1": "5c3f21090f08b937a65491e712a8ba637195f7d0",
-      "path": "graphics/pokemon/beedrill/footprint.png",
-      "sha256": "c26ea85d0f9bc3fbef1ceef0ecd72bea94ccd2da58ec8d1d0f30e74fad5b12dc"
+      "path": "graphics/pokemon/beedrill/footprint.png"
     },
     {
-      "byteLength": 98,
-      "gitBlobSha1": "b881f92706b0e8f4a6036aa973c65ef6ae0c17eb",
-      "path": "graphics/pokemon/blastoise/footprint.png",
-      "sha256": "0c19ecd3eb186a6773e3b0fb3694ffd0512b74a5c72795106f7e35463c0d00d7"
+      "path": "graphics/pokemon/blastoise/footprint.png"
     },
     {
-      "byteLength": 88,
-      "gitBlobSha1": "8e9ab9c6bd25f1d07d0eb421947deda30eee968f",
-      "path": "graphics/pokemon/bulbasaur/footprint.png",
-      "sha256": "82a457f43c911fb0389ef4352dd6bfcb33250d9ca7d22de034c24a4725e7e6d0"
+      "path": "graphics/pokemon/bulbasaur/footprint.png"
     },
     {
-      "byteLength": 87,
-      "gitBlobSha1": "b2740e9ccc7a3f58bfabb6b9ed66b973d9391201",
-      "path": "graphics/pokemon/butterfree/footprint.png",
-      "sha256": "3410313e16a66d6fd5052a6aa4960d8b0aa4568b59f34a5206a1a1c70746edfc"
+      "path": "graphics/pokemon/butterfree/footprint.png"
     },
     {
-      "byteLength": 95,
-      "gitBlobSha1": "e69f383927475ff6ba14ae45014dfbc9c03d9721",
-      "path": "graphics/pokemon/charizard/footprint.png",
-      "sha256": "bcf8a20b74d6a9bd128520316f2af347936210f932bc8174105566aa40bc5c7d"
+      "path": "graphics/pokemon/charizard/footprint.png"
     },
     {
-      "byteLength": 90,
-      "gitBlobSha1": "2f7723621e4196de12eaa3ddf4ceb7b2bb2e2559",
-      "path": "graphics/pokemon/charmander/footprint.png",
-      "sha256": "4585b3399171f364a0ddeeed49087dc71f6f7502fcf65ac521f9032a77428701"
+      "path": "graphics/pokemon/charmander/footprint.png"
     },
     {
-      "byteLength": 95,
-      "gitBlobSha1": "6ec15ee2042e2a1b3dff94fbe87151e9ae69ba34",
-      "path": "graphics/pokemon/charmeleon/footprint.png",
-      "sha256": "6637186fa179047145ca326ff3706a8e602146e48cd79423ade74e4f5ab17a0b"
+      "path": "graphics/pokemon/charmeleon/footprint.png"
     },
     {
-      "byteLength": 71,
-      "gitBlobSha1": "c7ccf57f373ce23b1fe41fe7de4a616bbf5c2cc2",
-      "path": "graphics/pokemon/geodude/footprint.png",
-      "sha256": "f1af7d14815a83e5a6923a3eed19138584301c927c10058a5dd29318177931d1"
+      "path": "graphics/pokemon/geodude/footprint.png"
     },
     {
-      "byteLength": 97,
-      "gitBlobSha1": "8ddc6345cc597c7221e869abf81b99dce36b3103",
-      "path": "graphics/pokemon/golem/footprint.png",
-      "sha256": "58bd4876a9be6c23a066d4042d253415561e2cc54329907595af8ebe84248149"
+      "path": "graphics/pokemon/golem/footprint.png"
     },
     {
-      "byteLength": 91,
-      "gitBlobSha1": "c836ad3f4d0984c6139d1b128e8362c1fd80db60",
-      "path": "graphics/pokemon/graveler/footprint.png",
-      "sha256": "410fdd0de3421c3ca43ee288a5de44e4b43a681f372b375bd88d7f8100c9a7be"
+      "path": "graphics/pokemon/graveler/footprint.png"
     },
     {
-      "byteLength": 96,
-      "gitBlobSha1": "29206b935ee19c1ab050067906f6fa1016567e31",
-      "path": "graphics/pokemon/ivysaur/footprint.png",
-      "sha256": "8920eca3c266a4b673afb68fef520fab874060d0be348ebce729a1358c34c1a0"
+      "path": "graphics/pokemon/ivysaur/footprint.png"
     },
     {
-      "byteLength": 71,
-      "gitBlobSha1": "c7ccf57f373ce23b1fe41fe7de4a616bbf5c2cc2",
-      "path": "graphics/pokemon/onix/footprint.png",
-      "sha256": "f1af7d14815a83e5a6923a3eed19138584301c927c10058a5dd29318177931d1"
+      "path": "graphics/pokemon/onix/footprint.png"
     },
     {
-      "byteLength": 100,
-      "gitBlobSha1": "025341554c1c0aa4a02ef23db433bfb2012aa120",
-      "path": "graphics/pokemon/pidgeot/footprint.png",
-      "sha256": "fc6194505e0dedf8075f409bb87edc4b4bf608cd06b587d34c3e1630b1d7332b"
+      "path": "graphics/pokemon/pidgeot/footprint.png"
     },
     {
-      "byteLength": 93,
-      "gitBlobSha1": "c507f72b8308b7b3cebc55ee37efa2fd298ddfc0",
-      "path": "graphics/pokemon/pidgeotto/footprint.png",
-      "sha256": "a13a9f7d79f4d24efaa8d11ac20aa9c18359ac0ea2f1d6a40716473d0903751a"
+      "path": "graphics/pokemon/pidgeotto/footprint.png"
     },
     {
-      "byteLength": 87,
-      "gitBlobSha1": "9f2ac3993eae55abcc3e4ee0af1ab942c166bc19",
-      "path": "graphics/pokemon/raichu/footprint.png",
-      "sha256": "f6ef31efee6d3b0ae5dbd46e7af6759eb08381a05e4a6f34c03d02dec9a59946"
+      "path": "graphics/pokemon/raichu/footprint.png"
     },
     {
-      "byteLength": 95,
-      "gitBlobSha1": "6628cfdd7563bd2c276372cd55dbb9c98933d1ac",
-      "path": "graphics/pokemon/raticate/footprint.png",
-      "sha256": "faf293e7eb8bdec19fdad55e606fb90acc23ffb50c26a7bd7abb65a1d37ed24f"
+      "path": "graphics/pokemon/raticate/footprint.png"
     },
     {
-      "byteLength": 91,
-      "gitBlobSha1": "481de0993e992dae38bf0d34400249a41eb18bb2",
-      "path": "graphics/pokemon/sandshrew/footprint.png",
-      "sha256": "ce6c10ed2f5ae2e76f93144b184d6af152bf8428f3543b55784bc78f8b6dc825"
+      "path": "graphics/pokemon/sandshrew/footprint.png"
     },
     {
-      "byteLength": 90,
-      "gitBlobSha1": "431ca99be621fe27671a3453355e435ba50f2135",
-      "path": "graphics/pokemon/sandslash/footprint.png",
-      "sha256": "21492a10f08651b99e30e9078cdc2f3fe94b9e5968a7c3e9ca2d53d3622e1d59"
+      "path": "graphics/pokemon/sandslash/footprint.png"
     },
     {
-      "byteLength": 89,
-      "gitBlobSha1": "696cd6d4218340cabd7bddce09509e23514e9302",
-      "path": "graphics/pokemon/squirtle/footprint.png",
-      "sha256": "240f350c004e0a9356f6858a23dd8aac6224661bc3717f4fa8deb8e8cd626d00"
+      "path": "graphics/pokemon/squirtle/footprint.png"
     },
     {
-      "byteLength": 71,
-      "gitBlobSha1": "c7ccf57f373ce23b1fe41fe7de4a616bbf5c2cc2",
-      "path": "graphics/pokemon/steelix/footprint.png",
-      "sha256": "f1af7d14815a83e5a6923a3eed19138584301c927c10058a5dd29318177931d1"
+      "path": "graphics/pokemon/steelix/footprint.png"
     },
     {
-      "byteLength": 96,
-      "gitBlobSha1": "bdef2c818ebc7cbff4ccb99329e3fa895ed23e22",
-      "path": "graphics/pokemon/venusaur/footprint.png",
-      "sha256": "b6968b9f03893570cec7aa201833671ad9e82da3b85d1b2dbe24471e0cd7945a"
+      "path": "graphics/pokemon/venusaur/footprint.png"
     },
     {
-      "byteLength": 93,
-      "gitBlobSha1": "4dd1264966e58f9258f2170cd6a91573f1a9d3fd",
-      "path": "graphics/pokemon/wartortle/footprint.png",
-      "sha256": "077c113e75c1fbcb8d54193700508da3cd16b695fd219e4eaadbc8caefe6e20b"
+      "path": "graphics/pokemon/wartortle/footprint.png"
     },
     {
-      "byteLength": 95397,
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
-      "path": "include/constants/flags.h",
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+      "path": "include/constants/flags.h"
     },
     {
-      "byteLength": 21092,
-      "gitBlobSha1": "7ee1b3760e58411f2c765da05825d544baaac119",
-      "path": "include/constants/pokedex.h",
-      "sha256": "aac527819623140d7f44ad99b72654bab59ca5679a80cca33361828cc7e7d0c6"
+      "path": "include/constants/pokedex.h"
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "path": "include/constants/species.h",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "byteLength": 17306,
-      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
-      "path": "include/constants/vars.h",
-      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+      "path": "include/constants/vars.h"
     },
     {
-      "byteLength": 4179,
-      "gitBlobSha1": "e176b624431abed3d86e2625e41a26a4ff3998ef",
-      "path": "include/menu.h",
-      "sha256": "2a52fde974ed20eb571f15b5661a068b368fa9e97bc5fec17b5df37add8e0edd"
+      "path": "include/menu.h"
     },
     {
-      "byteLength": 214609,
-      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
-      "path": "src/data/graphics/pokemon.h",
-      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+      "path": "src/data/graphics/pokemon.h"
     },
     {
-      "byteLength": 23049,
-      "gitBlobSha1": "0553fc0f7f9318ef09cc7fcd0ecc9c8d7458d466",
-      "path": "src/data/pokemon/pokedex_categories.h",
-      "sha256": "2f04641e486d13cefb35ce897ac522f46a7e496eedc33b87297157f8113a5f7c"
+      "path": "src/data/pokemon/pokedex_categories.h"
     },
     {
-      "byteLength": 132235,
-      "gitBlobSha1": "1f388e05ea5a4d1c9dcf5f255b6877e4460aeaad",
-      "path": "src/data/pokemon/pokedex_entries.h",
-      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+      "path": "src/data/pokemon/pokedex_entries.h"
     },
     {
-      "byteLength": 111,
-      "gitBlobSha1": "fdcb94757995d223ca166358325fce817e90cc38",
-      "path": "src/data/pokemon/pokedex_text.h",
-      "sha256": "4b5554e5b3247927b0d1f5a5025df49fd46ba37d575cbaac7a1925979016ff6c"
+      "path": "src/data/pokemon/pokedex_text.h"
     },
     {
-      "byteLength": 81824,
-      "gitBlobSha1": "e2ed936e1d1ff424c851f1781a01b68400a1b29c",
-      "path": "src/data/pokemon/pokedex_text_fr.h",
-      "sha256": "acf5ef5ad9e1f17a0f61151b39b8539c8f51780ee54a2836948ec1fe3f6905ed"
+      "path": "src/data/pokemon/pokedex_text_fr.h"
     },
     {
-      "byteLength": 342600,
-      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2",
-      "path": "src/data/pokemon/species_info.h",
-      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+      "path": "src/data/pokemon/species_info.h"
     },
     {
-      "byteLength": 19857,
-      "gitBlobSha1": "86ca067901f96aee2b1aed81912bac4f7e84c99b",
-      "path": "src/data/pokemon_graphics/footprint_table.h",
-      "sha256": "90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70"
+      "path": "src/data/pokemon_graphics/footprint_table.h"
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
-      "path": "src/data/text/species_names.h",
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      "path": "src/data/text/species_names.h"
     },
     {
-      "byteLength": 8913,
-      "gitBlobSha1": "da9391cf0ef74c1addf550def8616c81f16e89e3",
-      "path": "src/event_data.c",
-      "sha256": "163fcef03561426fc185b499eef1088dc7a4334b612968a82df3a0fa6131d06f"
+      "path": "src/event_data.c"
     },
     {
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
-      "path": "src/graphics.c",
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3"
+      "path": "src/graphics.c"
     },
     {
-      "byteLength": 25630,
-      "gitBlobSha1": "36b81faec0de5f45d38c539954e3e22fe35aa51a",
-      "path": "src/list_menu.c",
-      "sha256": "065fd44e600802f3e988b559f5fb834070d4132897a24917b3f375213a8f4a31"
+      "path": "src/list_menu.c"
     },
     {
-      "byteLength": 3065,
-      "gitBlobSha1": "9146267187521792ddf5d9ba9508d3e37efca32f",
-      "path": "src/pokedex.c",
-      "sha256": "b6283039a19fe1a5b781f6dd7ef3f61b1a022c460ce2588b8b6f99932a4682b7"
+      "path": "src/pokedex.c"
     },
     {
-      "byteLength": 125049,
-      "gitBlobSha1": "01960d240f4956d9f0d854b1bba29785d946a878",
-      "path": "src/pokedex_screen.c",
-      "sha256": "ca98e4ecc16bcf5b5e679a567d8d0c3dc5acfdc1bd377c0d6b56de696e1400f8"
+      "path": "src/pokedex_screen.c"
     },
     {
-      "byteLength": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "path": "src/pokemon.c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "byteLength": 29272,
-      "gitBlobSha1": "88cc377cea556d3663aa5ea5f5bd4537cb29ea72",
-      "path": "src/start_menu.c",
-      "sha256": "68dd2fc725c7e2685f539fe40b00d5350eecfbfd33bbbda7d6d6ff9b6e400f56"
+      "path": "src/start_menu.c"
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
-      "path": "src/strings.c",
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      "path": "src/strings.c"
     },
     {
-      "byteLength": 7511,
-      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
-      "path": "tools/gbagfx/convert_png.c",
-      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965"
+      "path": "tools/gbagfx/convert_png.c"
     },
     {
-      "byteLength": 18570,
-      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
-      "path": "tools/gbagfx/gfx.c",
-      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+      "path": "tools/gbagfx/gfx.c"
     },
     {
-      "byteLength": 21495,
-      "gitBlobSha1": "0dba4c8aea0bec7a3f407ae3aee570e8e88a6834",
-      "path": "tools/gbagfx/main.c",
-      "sha256": "3d263018fd669800dfe3dc5b5e62a013b8433769e4d5dc7c9aad2280980b9c0b"
+      "path": "tools/gbagfx/main.c"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-pokedex-menu-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

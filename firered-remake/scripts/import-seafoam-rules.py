@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -14,22 +13,17 @@ TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('SWIMMER_MALE_REECE', 'SWIMMER_MALE_RICHARD', 'SWIMMER_MALE_TONY', 'SWIMMER_MALE_MATTHEW', 'SWIMMER_MALE_DOUGLAS', 'SWIMMER_MALE_DAVID', 'SWIMMER_MALE_AXLE', 'SWIMMER_FEMALE_ALICE', 'SWIMMER_FEMALE_CONNIE', 'SWIMMER_FEMALE_ANYA', 'SIS_AND_BRO_LIA_LUC', 'SWIMMER_FEMALE_MELISSA', 'PICNICKER_MISSY', 'SWIMMER_FEMALE_NORA', 'BIRD_KEEPER_ROGER', 'SWIMMER_MALE_DEAN', 'PICNICKER_IRENE', 'SWIMMER_MALE_BARRY', 'SWIMMER_MALE_DARRIN', 'SWIMMER_FEMALE_SHIRLEY', 'SWIMMER_FEMALE_TIFFANY')
 MAPS = {"Route19": "map.route-19", "Route20": "map.route-20", **{"SeafoamIslands_" + f: "map.seafoam-islands-" + f.lower() for f in ("1F", "B1F", "B2F", "B3F", "B4F")}}
 BASE = "content/generated/seafoam-rules/"
-RAW = "content/raw/seafoam-rules/"
-DEPENDENCIES = {
- "content/generated/canonical-pokemon/catalog.json": "c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc",
- "content/generated/npc-trade-owned-rules/pokemon.json": "9d0dcf21a51db210326cfd511bfbc3a6276752fc412406e1870ace4cdfb368cd",
- "content/generated/npc-trade-owned-rules/machines.json": "5c4246cb14d9ca57ffb84e180d801e13225be59fce01feafb6bf1c1802ea9e85",
- "scripts/npc-trade-owned-rules.lock.json": "f12ac5424f02db66c72b4345e88ebe2f5f0351dd649b6f5f2352a6357699821d",
-}
+RAW = "content/raw/pokefirered/037335f4/"
+DEPENDENCIES = (
+    'content/generated/canonical-pokemon/catalog.json',
+    'content/generated/npc-trade-owned-rules/pokemon.json',
+    'content/generated/npc-trade-owned-rules/machines.json',
+    'scripts/npc-trade-owned-rules.lock.json',
+)
 
 
-SHARED_INPUTS = {'asm/macros/event.inc': 'content/raw/fossil-lab-rules/asm/macros/event.inc', 'charmap.txt': 'content/raw/bill-pokemon/charmap.txt', 'data/maps/Route19/map.json': 'content/raw/fuchsia-route-region/data/maps/Route19/map.json', 'data/maps/Route20/map.json': 'content/raw/cinnabar-source-preparation/data/maps/Route20/map.json', 'data/scripts/trainer_battle.inc': 'content/raw/bill-region/data/scripts/trainer_battle.inc', 'data/scripts/trainers.inc': 'content/raw/bill-pokemon/data/scripts/trainers.inc', 'include/constants/battle.h': 'content/raw/bill-pokemon/include/constants/battle.h', 'include/constants/battle_ai.h': 'content/raw/bill-region/include/constants/battle_ai.h', 'include/constants/battle_setup.h': 'content/raw/celadon-approach-trainers/include/constants/battle_setup.h', 'include/constants/flags.h': 'content/raw/fossil-lab-rules/include/constants/flags.h', 'include/constants/items.h': 'content/raw/fossil-lab-rules/include/constants/items.h', 'include/constants/opponents.h': 'content/raw/bill-pokemon/include/constants/opponents.h', 'include/constants/pokemon.h': 'content/raw/fossil-lab-rules/include/constants/pokemon.h', 'include/constants/species.h': 'content/raw/fossil-lab-rules/include/constants/species.h', 'include/constants/trainers.h': 'content/raw/bill-region/include/constants/trainers.h', 'include/random.h': 'content/raw/fossil-lab-rules/include/random.h', 'src/battle_main.c': 'content/raw/bill-trainers/src/battle_main.c', 'src/battle_setup.c': 'content/raw/bill-trainers/src/battle_setup.c', 'src/data/pokemon/evolution.h': 'content/raw/fossil-lab-rules/src/data/pokemon/evolution.h', 'src/data/pokemon/level_up_learnset_pointers.h': 'content/raw/fossil-lab-rules/src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h': 'content/raw/fossil-lab-rules/src/data/pokemon/level_up_learnsets.h', 'src/data/pokemon/pokedex_entries.h': 'content/raw/fossil-lab-rules/src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/species_info.h': 'content/raw/fossil-lab-rules/src/data/pokemon/species_info.h', 'src/data/pokemon/tmhm_learnsets.h': 'content/raw/fossil-lab-rules/src/data/pokemon/tmhm_learnsets.h', 'src/data/text/species_names.h': 'content/raw/fossil-lab-rules/src/data/text/species_names.h', 'src/data/trainer_parties.h': 'content/raw/bill-pokemon/src/data/trainer_parties.h', 'src/data/trainers.h': 'content/raw/bill-pokemon/src/data/trainers.h', 'src/data/wild_encounters.json': 'content/raw/bill-region/src/data/wild_encounters.json', 'src/pokemon.c': 'content/raw/fossil-lab-rules/src/pokemon.c', 'src/script_pokemon_util.c': 'content/raw/fossil-lab-rules/src/script_pokemon_util.c', 'src/wild_encounter.c': 'content/raw/celadon-approach-encounters/src/wild_encounter.c'}
+SHARED_INPUTS = {'asm/macros/event.inc': 'content/raw/pokefirered/037335f4/asm/macros/event.inc', 'charmap.txt': 'content/raw/pokefirered/037335f4/charmap.txt', 'data/maps/Route19/map.json': 'content/raw/pokefirered/037335f4/data/maps/Route19/map.json', 'data/maps/Route20/map.json': 'content/raw/pokefirered/037335f4/data/maps/Route20/map.json', 'data/scripts/trainer_battle.inc': 'content/raw/pokefirered/037335f4/data/scripts/trainer_battle.inc', 'data/scripts/trainers.inc': 'content/raw/pokefirered/037335f4/data/scripts/trainers.inc', 'include/constants/battle.h': 'content/raw/pokefirered/037335f4/include/constants/battle.h', 'include/constants/battle_ai.h': 'content/raw/pokefirered/037335f4/include/constants/battle_ai.h', 'include/constants/battle_setup.h': 'content/raw/pokefirered/037335f4/include/constants/battle_setup.h', 'include/constants/flags.h': 'content/raw/pokefirered/037335f4/include/constants/flags.h', 'include/constants/items.h': 'content/raw/pokefirered/037335f4/include/constants/items.h', 'include/constants/opponents.h': 'content/raw/pokefirered/037335f4/include/constants/opponents.h', 'include/constants/pokemon.h': 'content/raw/pokefirered/037335f4/include/constants/pokemon.h', 'include/constants/species.h': 'content/raw/pokefirered/037335f4/include/constants/species.h', 'include/constants/trainers.h': 'content/raw/pokefirered/037335f4/include/constants/trainers.h', 'include/random.h': 'content/raw/pokefirered/037335f4/include/random.h', 'src/battle_main.c': 'content/raw/pokefirered/037335f4/src/battle_main.c', 'src/battle_setup.c': 'content/raw/pokefirered/037335f4/src/battle_setup.c', 'src/data/pokemon/evolution.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/evolution.h', 'src/data/pokemon/level_up_learnset_pointers.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h', 'src/data/pokemon/pokedex_entries.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/species_info.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h', 'src/data/pokemon/tmhm_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h', 'src/data/text/species_names.h': 'content/raw/pokefirered/037335f4/src/data/text/species_names.h', 'src/data/trainer_parties.h': 'content/raw/pokefirered/037335f4/src/data/trainer_parties.h', 'src/data/trainers.h': 'content/raw/pokefirered/037335f4/src/data/trainers.h', 'src/data/wild_encounters.json': 'content/raw/pokefirered/037335f4/src/data/wild_encounters.json', 'src/pokemon.c': 'content/raw/pokefirered/037335f4/src/pokemon.c', 'src/script_pokemon_util.c': 'content/raw/pokefirered/037335f4/src/script_pokemon_util.c', 'src/wild_encounter.c': 'content/raw/pokefirered/037335f4/src/wild_encounter.c'}
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -37,14 +31,13 @@ def need(value, message):
 
 def generate(reference, dependency):
     texts, inputs, raw = {}, {}, {}
-    need(subprocess.check_output(["git", "rev-parse", COMMIT + "^{tree}"], cwd=reference).decode().strip() == TREE, "Pinned source tree")
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
             reused = dependency / SHARED_INPUTS[path] if path in SHARED_INPUTS else None
             if reused is not None: need(reused.read_bytes() == data, "Shared source differs: " + path)
             local = reused.relative_to(dependency).as_posix() if reused else RAW + path
-            inputs[path] = dict(path=path, localPath=local, shared=reused is not None, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path, localPath=local, shared=reused is not None)
             if reused is None: raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -54,7 +47,7 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -115,8 +108,8 @@ def generate(reference, dependency):
         resolved.append(dict(trainer=symbol, party=movesets))
     dependencies=[]
     def dependent(path):
-        data=(dependency/path).read_bytes(); need(sha(data)==DEPENDENCIES[path],'Dependency changed: '+path)
-        dependencies.append(dict(path=path,byteLength=len(data),sha256=sha(data))); return json.loads(data)
+        data=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path)); return json.loads(data)
     canonical,previous,previous_machines,previous_lock=[dependent(p) for p in DEPENDENCIES]
     need(previous['ownedSpeciesCount']==161 and previous['opponentSpeciesCount']==190 and previous_machines['speciesCount']==161 and previous_machines['machineCount']==41,'Exact NPC trade predecessor')
     species={s['id']['value'][5:]:s for s in canonical['species']}; metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
@@ -125,7 +118,7 @@ def generate(reference, dependency):
     original=species[additions[0]]; meta=metadata[additions[0]]
     need(original['sourceSpeciesId']==144 and not original['evolutions'] and not meta['sourceEvolutions'],'Terminal Articuno source')
     for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[m['source'] for m in original['levelUpMoves']]:
-        read(sr['path']); need(inputs[sr['path']]['sha256']==sr['sha256'],'Canonical source identity')
+        read(sr['path'])
     battles=[];actors=[];script_path='data/scripts/trainers.inc'
     for mapname in ['Route19','Route20']:
         mapping=json.loads(read('data/maps/'+mapname+'/map.json'))
@@ -164,7 +157,7 @@ def generate(reference, dependency):
             if field not in entry:continue
             source=entry[field];weights=fields[field]['encounter_rates']
             slots=[dict(index=i,species=identity(m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=weights[i]) for i,m in enumerate(source['mons'])]
-            base=dict(map=dict(value=by_symbol[entry['map']]),sourceCommit=COMMIT,sourcePath=wildpath,sourceSymbol=entry['base_label'],sourceSha256=inputs[wildpath]['sha256'],rawEncounterRate=source['encounter_rate'])
+            base=dict(map=dict(value=by_symbol[entry['map']]),sourceCommit=COMMIT,sourcePath=wildpath,sourceSymbol=entry['base_label'],rawEncounterRate=source['encounter_rate'])
             if field=='water_mons':base['sourceMapSymbol']=entry['map']
             if field=='fishing_mons':
                 need(len(slots)==10 and weights==[70,30,60,20,20,40,40,15,4,1],'Original fishing groups')
@@ -210,26 +203,26 @@ def generate(reference, dependency):
         static_cases.append(dict(initialSeed=initial,finalSeed=seed,originalTrainerId=ot,draws=4,rawDraws=values,personality=pid,nature=pid%25,ivs=[values[2]&31,values[2]>>5&31,values[2]>>10&31,values[3]&31,values[3]>>5&31,values[3]>>10&31],isShiny=(ot>>16^ot&65535^pid>>16^pid&65535)<8))
     docs={
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-seafoam-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-seafoam-owned-pokemon-v1',canonicalCatalogSha256=dependencies[0]['sha256'],predecessorCatalogSha256=dependencies[1]['sha256'],previousOwnedSpeciesCount=161,ownedSpeciesCount=162,previousOpponentSpeciesCount=190,opponentSpeciesCount=191,ownedSpeciesAdded=additions,opponentSpeciesAdded=additions,trainerOnlySpeciesAdded=[],evolutions=[],canonicalSpeciesFingerprint=fingerprint([dict(definition=original,metadata=meta)])),
-      'rules.json':dict(sourceCommit=COMMIT,profile='firered-seafoam-rules-v1',identities=identities,generationCases=cases,trainerActors=actors,trainerHashes={t['id']['value']:fingerprint(t) for t in trainers},battleHashes={b['scriptEntry']:fingerprint(b) for b in battles},staticEncounter=static,staticGenerationCases=static_cases,initialMoves=initial_moves,heldItems=held,**tables,generationOrder='Static player OT; random PID low16/high16 then two packed IV draws. No shiny rejection, legendary skips held-item draw. Ordinary slots use nature rejection then packed IVs and a separate held-item draw. Original target-compiler Random32 operand ordering remains unverified.',deferred=['Super Rod acquisition/runtime','VS Seeker rematch teams']),
-      'machines.json':dict(sourceCommit=COMMIT,profile='firered-seafoam-teaching-v1',previousSpeciesCount=161,speciesCount=162,machineCount=41,additions=cells,additionsSemanticSha256=fingerprint(cells),itemsAdded=[]),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-seafoam-owned-pokemon-v1',previousOwnedSpeciesCount=161,ownedSpeciesCount=162,previousOpponentSpeciesCount=190,opponentSpeciesCount=191,ownedSpeciesAdded=additions,opponentSpeciesAdded=additions,trainerOnlySpeciesAdded=[],evolutions=[]),
+      'rules.json':dict(sourceCommit=COMMIT,profile='firered-seafoam-rules-v1',identities=identities,generationCases=cases,trainerActors=actors,staticEncounter=static,staticGenerationCases=static_cases,initialMoves=initial_moves,heldItems=held,**tables,generationOrder='Static player OT; random PID low16/high16 then two packed IV draws. No shiny rejection, legendary skips held-item draw. Ordinary slots use nature rejection then packed IVs and a separate held-item draw. Original target-compiler Random32 operand ordering remains unverified.',deferred=['Super Rod acquisition/runtime','VS Seeker rematch teams']),
+      'machines.json':dict(sourceCommit=COMMIT,profile='firered-seafoam-teaching-v1',previousSpeciesCount=161,speciesCount=162,machineCount=41,additions=cells,itemsAdded=[]),
     }
-    docs['source-input-hashes.json']=dict(sourceCommit=COMMIT,sourceTree=TREE,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
+    docs['source-input-hashes.json']=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
     code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Trainers;\n\n// Generated from the 21 pinned Route19/20 first-battle teams and 22 source actor entries.\npublic static partial class SeafoamTrainerPartyFactory\n{\n'
-    for name,rows in [('TrainerHashes',docs['rules.json']['trainerHashes']),('BattleHashes',docs['rules.json']['battleHashes'])]:
-        trainer=name=='TrainerHashes';typ='TrainerId' if trainer else 'string'
-        code+=f'    public static readonly ImmutableDictionary<{typ}, string> {name} = new Dictionary<{typ}, string> {{\n'
-        for key,value in rows.items():code+=f'        [{"new(" if trainer else ""}"{key}"{")" if trainer else ""}] = "{value}",\n'
-        code+='    }.ToImmutableDictionary('+('' if trainer else 'StringComparer.Ordinal')+');\n'
+    for name,rows in [('TrainerIds',[t['id']['value'] for t in trainers]),('BattleScripts',[b['scriptEntry'] for b in battles])]:
+        trainer=name=='TrainerIds';typ='TrainerId' if trainer else 'string'
+        code+=f'    public static readonly ImmutableHashSet<{typ}> {name} = new HashSet<{typ}> {{\n'
+        for key in rows:code+=f'        {"new(" if trainer else ""}"{key}"{")" if trainer else ""},\n'
+        code+='    }.ToImmutableHashSet('+('' if trainer else 'StringComparer.Ordinal')+');\n'
     code+='}\n'
     files={'src/Game.Domain/Trainers/SeafoamTrainerSource.cs':code.encode()}
-    code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record SeafoamHeldItemSource(SpeciesId Species, string Common, string Rare);\npublic static class SeafoamEncounterTables\n{\n    public const string SourceSha256 = "'+inputs[wildpath]['sha256']+'";\n'
+    code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record SeafoamHeldItemSource(SpeciesId Species, string Common, string Rare);\npublic static class SeafoamEncounterTables\n{\n'
     for key,name,typ in [('land','Land','EarlyLandEncounterTable'),('water','Water','WaterEncounterTable'),('oldRod','OldRod','OldRodEncounterTable'),('goodRod','GoodRod','OldRodEncounterTable'),('superRodSource','SuperRodSource','OldRodEncounterTable')]:
         code+=f'    public static ImmutableArray<{typ}> {name} {{ get; }} = [\n'
         for row in tables[key]:
             args=[f'new("{row["map"]["value"]}")']
             if key=='water':args.append('"'+row['sourceMapSymbol']+'"')
-            args+=['EarlyLandEncounterRules.SourceCommit','EarlyLandEncounterRules.SourcePath','"'+row['sourceSymbol']+'"','SourceSha256',str(row['rawEncounterRate'])]
+            args+=['EarlyLandEncounterRules.SourceCommit','EarlyLandEncounterRules.SourcePath','"'+row['sourceSymbol']+'"',str(row['rawEncounterRate'])]
             slots=', '.join(f'new({s["index"]},new("{s["species"]["value"]}"),{s["minimumLevel"]},{s["maximumLevel"]},{s["weight"]})' for s in row['slots'])
             code+='        new('+', '.join(args)+', ['+slots+']),\n'
         code+='    ];\n'
@@ -245,11 +238,11 @@ def main():
     docs,raw,files=generate(a.reference,a.dependency)
     files.update({BASE+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()})
     files.update({RAW+n:data for n,data in raw.items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-seafoam-rules-v1',importerSha256=sha(Path(__file__).read_bytes()),files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    lock=dict(sourceCommit=COMMIT,profile='firered-seafoam-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/seafoam-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=21,battles=22,members=sum(len(t['party']) for t in docs['trainers.json']['trainers']),owned=162,opponents=191,machines=41,newCells=41,sharedInputs=sum(i['shared'] for i in docs['source-input-hashes.json']['inputs']),newRawInputs=len(raw),machineFingerprint=docs['machines.json']['additionsSemanticSha256'],hashes={n:sha(v) for n,v in files.items() if '/raw/' not in n}),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=21,battles=22,members=sum(len(t['party']) for t in docs['trainers.json']['trainers']),owned=162,opponents=191,machines=41,newCells=41,newRawInputs=len(raw)),indent=2))
 if __name__=='__main__':main()

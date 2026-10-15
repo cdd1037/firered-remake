@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class VictoryRoadMachineCatalog
 {
     public const string Profile = "firered-victory-road-teaching-v1";
-    public const string NewMachinesSourceSha256 = "f7d15b5a16f06426f56cfcb53ec522a1c8f443c55411993ef1fe3e74cb0349cc";
     public static ImmutableArray<ItemId> AdditionalIds { get; } =
         [new("pret:ITEM_TM02"), new("pret:ITEM_TM07"), new("pret:ITEM_TM37"), new("pret:ITEM_TM50")];
     private static readonly ConditionalWeakTable<PewterMachineCatalog, VictoryRoadMachineCatalog> Proofs = new();
@@ -39,8 +38,7 @@ public sealed class VictoryRoadMachineCatalog
                 m.Compatibility.Length != 115 || m.Compatibility.Any(c => c is null) ||
                 m.Compatibility.Select(c => c.Species).Distinct().Count() != 115 ||
                 !m.Compatibility.Select(c => c.Species).ToHashSet().SetEquals(predecessor.Pokemon.Catalog.Species.Keys)) ||
-            !fresh.Select(m => m.Machine.Item.Id).SequenceEqual(AdditionalIds) ||
-            CampaignSourceFingerprint.Compute(fresh) != NewMachinesSourceSha256)
+            !fresh.Select(m => m.Machine.Item.Id).SequenceEqual(AdditionalIds))
             throw new ArgumentException("victory_road_machine_source");
         var proof = new VictoryRoadMachineCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

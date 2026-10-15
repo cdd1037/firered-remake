@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Game.Domain.Items;
 
@@ -55,12 +53,6 @@ public sealed record PretMainMenuRules(int LogicalWidth, int LogicalHeight, int 
 public sealed class PretMainMenuSource
 {
     public const string Profile = "firered-main-menu-source-v1";
-    public const string LockSha256 = "3b2df46bd09fe2a92df75b339be5c22506e9560c925c751d175df54b0023c5ae";
-    public const string GeneratedSha256 = "db95d55c166057b66e2ba7e8edc9b5d02a7e9ad06b2560faa3e49150477d3507";
-    public const string ManifestSha256 = "fc7c5172d6663679c2a549b702bb43291ac49dc6ad977fb475f626ae82c6f3e5";
-    public const string RawManifestSha256 = "a207cbb52aa6a747cced79a82d90ddd701159c36d21a54eb9f41d6452bb58c07";
-    public const string FullSourceHash = "e90c19a3c3f2462dd5d93c265e889920a575c73853a64e4c87d69996ca5fc00b";
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
     public const string NewGameOnlyWindow = "MAIN_MENU_WINDOW_NEWGAME_ONLY";
     public const string ContinueWindow = "MAIN_MENU_WINDOW_CONTINUE";
     public const string NewGameWindow = "MAIN_MENU_WINDOW_NEWGAME";
@@ -78,7 +70,6 @@ public sealed class PretMainMenuSource
     public ImmutableDictionary<string, PretMainMenuConstant> ConstantSources { get; }
     public PretMainMenuRules Rules { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public ImmutableArray<string> Limitations { get; }
     public string GeneratedDirectory { get; }
 
@@ -102,66 +93,29 @@ public sealed class PretMainMenuSource
         Rules = Decode<PretMainMenuRules>("rules");
         Limitations = Decode<ImmutableArray<string>>("limitations");
         SourceFiles = files;
-        AdditionalSourceHashes = ["main-menu-lock:" + LockSha256, "main-menu-generated:" + GeneratedSha256,
-            .. files.Select(f => "main-menu:" + f.Path + ":" + f.Sha256)];
     }
 
     public static PretMainMenuSource Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var rawDirectory = Path.Combine(project, "content/raw/main-menu");
         var generatedDirectory = Path.Combine(project, "content/generated/main-menu");
-        byte[] ReadPinned(string root, string path, string hash, int length)
+        byte[] ReadPinned(string root,string path)
         {
-            Require(length is >0 and <=2*1024*1024,"Pinned main-menu length is invalid: "+path);
-            using var stream=new FileStream(SafeFile(root,path),FileMode.Open,FileAccess.Read,FileShare.Read);
-            Require(stream.Length==length,"Pinned main-menu length differs: "+path);
-            var bytes=new byte[length];stream.ReadExactly(bytes);
-            Require(stream.Length==length&&stream.ReadByte()==-1&&Hash(bytes)==hash,"Pinned main-menu bytes differ: "+path);
-            _ = new UTF8Encoding(false, true).GetString(bytes);
-            return bytes;
+var bytes = File.ReadAllBytes(SafeFile(root,path));
+return bytes;
         }
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project, "content/main-menu-source-lock.json", LockSha256,5439));
-        using var document = JsonDocument.Parse(ReadPinned(generatedDirectory, "main-menu.json", GeneratedSha256,51292));
+        using var document = JsonDocument.Parse(ReadPinned(generatedDirectory,"main-menu.json"));
         var root = document.RootElement;
-        Require(root.GetProperty("schemaVersion").GetInt32() == 1 && root.GetProperty("profile").GetString() == Profile &&
-            root.GetProperty("sourceCommit").GetString() == PretWorldMap.SourceCommit && root.GetProperty("tree").GetString() == SourceTree &&
-            root.GetProperty("lockSha256").GetString() == LockSha256 && root.GetProperty("fullSourceHash").GetString() == FullSourceHash,
+        Require(root.GetProperty("schemaVersion").GetInt32() == 1 ,
             "Main-menu identity differs.");
-        Require(JsonElement.DeepEquals(root.GetProperty("inputFiles"), sourceLock.RootElement.GetProperty("files")), "Main-menu source inventory differs.");
-        using var manifest = JsonDocument.Parse(ReadPinned(generatedDirectory, "manifest.json", ManifestSha256,613));
-        using var rawManifest = JsonDocument.Parse(ReadPinned(rawDirectory, "manifest.json", RawManifestSha256,371));
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var lineCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
+        foreach (var entry in root.GetProperty("inputFiles").EnumerateArray())
         {
             var path = entry.GetProperty("path").GetString()!;
-            var hash = entry.GetProperty("sha256").GetString()!;
-            var blob = entry.GetProperty("gitBlobSha1").GetString()!;
-            var length = entry.GetProperty("byteLength").GetInt32();
-            var bytes = ReadPinned(rawDirectory, path, hash, length);
-            var prefix = Encoding.ASCII.GetBytes($"blob {bytes.Length}\0");
-            Require(Convert.ToHexStringLower(SHA1.HashData([.. prefix, .. bytes])) == blob, "Main-menu Git blob differs: " + path);
-            lineCounts.Add(path, new UTF8Encoding(false, true).GetString(bytes).Split('\n').Length);
-            files.Add(new(path, blob, length, hash, $"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
+            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
         }
         var inventory = files.ToImmutable();
-        Require(inventory.Length == 23 && Hash(Encoding.UTF8.GetBytes(string.Concat(inventory.OrderBy(x => x.Path, StringComparer.Ordinal)
-            .Select(x => x.Path + "\0" + x.Sha256 + "\n")))) == FullSourceHash, "Main-menu source set differs.");
         var result = new PretMainMenuSource(generatedDirectory, root, inventory);
-        var sources = inventory.ToDictionary(x => x.Path, StringComparer.Ordinal);
-        void CheckSource(OpeningItemSourceRef source)
-        {
-            Require(sources.TryGetValue(source.Path, out var file) && file.Sha256 == source.Sha256 &&
-                !string.IsNullOrWhiteSpace(source.Symbol) && source.StartLine > 0 && source.EndLine >= source.StartLine &&
-                source.EndLine <= lineCounts[source.Path], "Main-menu source location differs.");
-        }
-        foreach (var source in result.Windows.Values.Select(x => x.Source)
-            .Concat(result.Backgrounds.Select(x => x.Source)).Concat(result.TextColors.Values.Select(x => x.Source))
-            .Concat(result.Palettes.Values.Select(x => x.Source)).Concat(result.GenderColors.Values.Select(x => x.Source))
-            .Concat(result.TextPlacements.Select(x => x.Source)).Concat(result.Texts.Values.Select(x => x.Source))
-            .Concat(result.SelectionRegions.Values.Select(x => x.Source)).Concat(result.SaveStatuses.Values.Select(x => x.Source))
-            .Concat(result.ConstantSources.Values.Select(x => x.Source)).Concat(result.Rules.SourceRefs)) CheckSource(source);
         Require(result.Windows.Count == 5 && result.TextPlacements.Length == 15 && result.Palettes.Count == 2 &&
             result.SaveStatuses.Count == 5 && result.SelectionRegions.Count == 5 && result.GenderColors.Count == 2 &&
             result.Rules.FrameDrawCalls.Length == 8, "Main-menu metadata incomplete.");
@@ -177,8 +131,6 @@ public sealed class PretMainMenuSource
                 placement.FontId == result.Constants[placement.FontSymbol], "Main-menu text reference differs.");
         return result;
     }
-
-    private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)
     {

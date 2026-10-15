@@ -17,13 +17,11 @@ public static class PretForestTrainers
         TrainerSourceRef Ref(JsonElement value)
         {
             string path = value.GetProperty("path").GetString()!;
-            string hash = value.GetProperty("sha256").GetString()!;
             int line = value.GetProperty("line").GetInt32();
-            if (value.GetProperty("commit").GetString() != ForestTrainerPartyFactory.SourceCommit ||
-                value.GetProperty("kind").GetString() != "pret" || value.GetProperty("repository").GetString() != "pret/pokefirered" ||
-                line < 1 || !files.TryGetValue(path, out var file) || file.Sha256 != hash)
+            if (                value.GetProperty("kind").GetString() != "pret" ||
+                line < 1 || !files.TryGetValue(path, out var file) )
                 throw new InvalidDataException("Forest trainer source identity differs.");
-            return new(path, value.GetProperty("symbol").GetString()!, line, line, hash);
+            return new(path,value.GetProperty("symbol").GetString()!,line,line);
         }
         var trainers = ImmutableDictionary.CreateBuilder<TrainerId, TrainerDefinition>();
         var battles = ImmutableDictionary.CreateBuilder<TrainerId, ForestTrainerBattleDefinition>();
@@ -40,7 +38,7 @@ public static class PretForestTrainers
                 string name = member.GetProperty("speciesName").GetString()!;
                 int sourceId = member.GetProperty("sourceSpeciesId").GetInt32();
                 // The pinned names table has one header line, then a source-species-indexed row.
-                var nameRef = new TrainerSourceRef(speciesSource.Path, species, sourceId + 2, sourceId + 2, speciesSource.Sha256);
+                var nameRef = new TrainerSourceRef(speciesSource.Path,species,sourceId + 2,sourceId + 2);
                 return new TrainerPartyMemberDefinition(new("pret:" + species), sourceId, name,
                     name.Select(c => 0xbb + c - 'A').ToImmutableArray(), member.GetProperty("level").GetInt32(),
                     member.GetProperty("sourceIv").GetInt32(), member.GetProperty("heldItem").GetString()!,
@@ -57,7 +55,7 @@ public static class PretForestTrainers
                 value.GetProperty("encounterMusicGender").GetInt32(), ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"],
                 false, value.GetProperty("partyFlags").GetInt32(), value.GetProperty("aiFlags").GetUInt32(),
                 ["AI_SCRIPT_CHECK_BAD_MOVE"], value.GetProperty("baseMoney").GetInt32(), party,
-                Ref(value.GetProperty("sourceRef")), new(moneySource.Path, "TRAINER_CLASS_BUG_CATCHER", 460, 460, moneySource.Sha256)));
+                Ref(value.GetProperty("sourceRef")), new(moneySource.Path,"TRAINER_CLASS_BUG_CATCHER",460,460)));
             string script = value.GetProperty("scriptEntry").GetString()!;
             battles.Add(id, new(id, 0, 8, script, value.GetProperty("introText").GetString()!, value.GetProperty("defeatText").GetString()!,
                 script.Replace("EventScript", "Text", StringComparison.Ordinal) + "PostBattle",

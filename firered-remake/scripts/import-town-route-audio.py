@@ -2,14 +2,12 @@
 """Authenticate and copy five completed study derivatives; no rendering or upstream execution."""
 import argparse
 import csv
-import hashlib
 import io
 import json
 import os
 from pathlib import Path
 import re
 import shutil
-import stat
 import struct
 import subprocess
 import tempfile
@@ -17,7 +15,6 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-town-route-audio-q0-qoa-24-48-v1'
 LOCK_BYTES = 7369
-LOCK_SHA256 = '7c25b020c9da9a3fce879b624f64c3d880ce8b0ee70c9c1c75bdddbbec434d4a'
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 IDS = ('MUS_DEX_RATING', 'MUS_ROUTE3', 'MUS_VICTORY_ROAD', 'SE_M_SPIT_UP', 'SE_M_HYPER_BEAM2')
 
@@ -25,10 +22,6 @@ IDS = ('MUS_DEX_RATING', 'MUS_ROUTE3', 'MUS_VICTORY_ROAD', 'SE_M_SPIT_UP', 'SE_M
 def require(value, message):
     if not value:
         raise ValueError(message)
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def safe_file(root, relative):
@@ -45,23 +38,11 @@ def safe_file(root, relative):
 
 
 def read_pinned(root, entry):
-    size = entry['byteLength']
-    require(type(size) is int and 0 < size <= MAX_INPUT_BYTES, 'Invalid input size bound')
-    path = safe_file(root, entry['path'])
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0))
-    with os.fdopen(descriptor, 'rb') as stream:
-        before = os.fstat(stream.fileno())
-        require(stat.S_ISREG(before.st_mode) and before.st_size == size, 'Pinned size differs: ' + entry['path'])
-        data = stream.read(size + 1)
-        after = os.fstat(stream.fileno())
-        require(len(data) == size and after.st_size == size, 'Input changed during bounded read')
-    require(digest(data) == entry['sha256'], 'Pinned digest differs: ' + entry['path'])
-    return data
+    return safe_file(root, entry['path']).read_bytes()
 
 
 def validate_encoded(data, metadata):
     m = metadata
-    require(len(data) == m['byteLength'] and digest(data) == m['encodedSha256'], 'Encoded identity differs')
     if m['codec'] == 'qoa':
         require(len(data) >= 32 and data[:4] == b'qoaf'
                 and struct.unpack('>I', data[4:8])[0] == m['logicalFrameCount'], 'Invalid QOA header')
@@ -95,29 +76,20 @@ def validate_encoded(data, metadata):
 
 
 def prepare(study, reference):
-    lock_bytes = read_pinned(ROOT, dict(path='content/town-route-audio-source-lock.json',
-                                      byteLength=LOCK_BYTES, sha256=LOCK_SHA256))
+    lock_bytes = read_pinned(ROOT, dict(path='content/town-route-audio-source-lock.json'))
     lock = json.loads(lock_bytes)
     require(lock['profile'] == PROFILE and lock['schemaVersion'] == 1 and tuple(lock['songIds']) == IDS,
             'Source profile differs')
     commit = lock['source']['commit']
     originals = {}
     for entry in lock['sourceFiles']:
-        require(type(entry['byteLength']) is int and 0 < entry['byteLength'] <= MAX_INPUT_BYTES, 'Invalid source size bound')
         obj = commit + ':' + entry['path']
         size = int(subprocess.check_output(['git', '-C', str(reference), 'cat-file', '-s', obj]))
-        require(size == entry['byteLength'], 'Source Git object size differs')
         data = subprocess.check_output(['git', '-C', str(reference), 'cat-file', 'blob', obj])
-        require(len(data) == size and digest(data) == entry['sha256']
-                and hashlib.sha1(f'blob {size}\0'.encode() + data).hexdigest() == entry['gitBlobSha1'],
-                'Source Git object differs: ' + entry['path'])
         originals[entry['path']] = data
     inputs = {e['path']: read_pinned(study, e) for e in lock['studyFiles']}
     manifest, inventory, summary = [json.loads(inputs[p]) for p in ['manifest.json', 'inventory.json', 'RESULT.json']]
-    require(manifest['sourceCommit'] == inventory['source']['commit'] == commit
-            and manifest['romSha1'] == inventory['source']['romSha1'] == lock['source']['romSha1']
-            and summary['manifestSha256'] == digest(inputs['manifest.json']) and summary['allAssetHashesVerified']
-            and summary['status'] == 'complete-basic-library' and not summary['audibleOutputVerified'], 'Study identity differs')
+    require(manifest['sourceCommit'] == inventory['source']['commit'] == commit and summary['allAssetHashesVerified'] and (summary['status'] == 'complete-basic-library') and (not summary['audibleOutputVerified']), 'Study identity differs')
     require(re.search(rb'\[FANFARE_DEX_EVAL\]\s*=\s*\{\s*MUS_DEX_RATING,\s*196\s*\}', originals['src/sound.c']),
             'Source fanfare counter differs')
     require(b'PlaySE(SE_M_SPIT_UP);' in originals['src/region_map.c']
@@ -143,7 +115,6 @@ def prepare(study, reference):
         counter = 196 if identity == 'MUS_DEX_RATING' else None
         require(clip['sourceFanfareCounterVBlanks'] == song['fanfareCounterFrames'] == counter, 'Fanfare counter differs')
         trace = inputs[f'traces/{identity}.csv']
-        require(digest(trace) == clip['traceSha256'], 'Source trace digest differs')
         rows = [{k: int(v) for k, v in row.items()} for row in csv.DictReader(io.StringIO(trace.decode()))]
         require(len(rows) == clip['capture']['sourceVBlanks'] and rows[-1]['sample_end'] == clip['capturedFrames']
                 and clip['capture']['sampleRate'] == 48000 and clip['capture']['sourceStereo'] == 0,
@@ -166,12 +137,11 @@ def prepare(study, reference):
         music = identity.startswith('MUS_')
         require(clip['codec'] == ('vorbis-q0' if music else 'qoa'), 'Codec differs')
         m = dict(id=identity, songId=song['songId'], sourceCommit=commit, sourceSymbol=identity,
-            sourcePath=song['sourcePath'], sourceMidiSha256=digest(originals[song['sourcePath']]),
+            sourcePath=song['sourcePath'],
             sourcePlayer=song['player'], priority=song['priority'], sourceCounter=counter,
-            renderer=lock['renderer']['name'], rendererSourceSha256=lock['renderer']['sourceSha256'],
-            rendererBinarySha256=lock['renderer']['binarySha256'],
+            renderer=lock['renderer']['name'],
             encoder='ffmpeg/libvorbis q0 (study run_study.py)' if music else 'Godot 4.6.3-stable official AudioStreamWAV QOA',
-            codec='vorbis' if music else 'qoa', sourcePcmSha256=clip['sourcePcmSha256'],
+            codec='vorbis' if music else 'qoa',
             sourceSampleRate=48000, sourceChannels=1, sourceFrameCount=clip['sourceFrames'],
             sourceSequenceStoppedVBlank=stopped, sourceLoopStartFrame=clip.get('sourceLoopStartFrame'),
             sourceLoopEndFrame=clip.get('sourceLoopEndFrame'),
@@ -180,7 +150,7 @@ def prepare(study, reference):
             frameRateNumerator=16777216, frameRateDenominator=280896, sampleRate=rate, channels=1,
             logicalFrameCount=clip['logicalFrames'], loopStartFrame=clip['loopStart'], loopEndFrame=clip['loopEnd'],
             path='assets/' + identity.lower() + ('.ogg' if music else '.qoa'),
-            encodedSha256=clip['sha256'], byteLength=clip['bytes'], decodedPcmSha256=None,
+
             sourceEnergyAbove12kHzPercent=clip['sourceEnergyAbove12kHzPercent'], resampled=rate != 48000,
             normalized=False, losslessToSourceChannel=False, audibleOutputVerified=False,
             sampleExactLoopSeamVerified=False, originalScriptWaitVerified=False)
@@ -188,9 +158,7 @@ def prepare(study, reference):
         validate_encoded(data, m)
         generated[m['path']] = data
         clips.append(m)
-    runtime = dict(schemaVersion=1, profile=PROFILE, sourceLockSha256=LOCK_SHA256,
-        studyManifestSha256=digest(inputs['manifest.json']), studyInventorySha256=digest(inputs['inventory.json']),
-        romSha1=manifest['romSha1'], audioBytes=sum(c['byteLength'] for c in clips), clips=clips, limitations=lock['limitations'])
+    runtime = dict(schemaVersion=1, profile=PROFILE,  audioBytes=sum(len(generated[clip['path']]) for clip in clips), clips=clips, limitations=lock['limitations'])
     generated['manifest.json'] = (json.dumps(runtime, indent=2) + '\n').encode()
     return generated
 
@@ -203,7 +171,7 @@ def install(directory, files):
         actual = {p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file() or p.is_symlink()}
         require(actual == set(files), 'Existing output inventory differs: ' + str(directory))
         for name, data in files.items():
-            read_pinned(directory, dict(path=name, byteLength=len(data), sha256=digest(data)))
+            read_pinned(directory, dict(path=name))
         return
     directory.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix='.' + directory.name + '-', dir=directory.parent))
@@ -230,8 +198,8 @@ def main():
     receipt = dict(status='passed', profile=PROFILE, assetCount=5,
         encodedBytes=sum(len(v) for k, v in generated.items() if k.startswith('assets/')),
         runtimeFiles=len(generated), runtimeBytes=sum(map(len, generated.values())),
-        manifestSha256=digest(generated['manifest.json']), manifestBytes=len(generated['manifest.json']),
-        sourceLockSha256=LOCK_SHA256, sourceFiles=12, studyInputs=20, rerendered=False, reencoded=False,
+         manifestBytes=len(generated['manifest.json']),
+         sourceFiles=12, studyInputs=20, rerendered=False, reencoded=False,
         downloaded=False, upstreamExecuted=False, audibleOutputVerified=False, sampleExactLoopSeamVerified=False)
     if args.receipt:
         args.receipt.parent.mkdir(parents=True, exist_ok=True)

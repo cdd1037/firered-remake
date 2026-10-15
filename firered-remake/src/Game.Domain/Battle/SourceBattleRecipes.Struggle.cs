@@ -11,7 +11,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteStruggle(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (move.Id != WildBattleRules.StruggleMove || !MetronomeSourceMoveDefinition.Matches(move))
+        if (move.Id != WildBattleRules.StruggleMove || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_struggle_definition");
         bool hit = StruggleAccuracy(actor, target, move, purpose);
         SpendEarlyPartyPp(actor, target, slot, move);

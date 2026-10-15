@@ -28,7 +28,7 @@ internal sealed partial class FrameRecipeContext
     {
         if (id is null || id.Value.Value == "pret:MOVE_NONE") return 0;
         if (id.Value.Value == "pret:MOVE_UNAVAILABLE") return 65535;
-        if (!catalog.Moves.TryGetValue(id.Value, out var definition) || !MetronomeSourceMoveDefinition.Matches(definition) ||
+        if (!catalog.Moves.TryGetValue(id.Value, out var definition) || !SourceMoveDefinitionRules.IsValid(definition) ||
             !definition.Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED"))
             throw new SourceRecipeUnsupported("source_kernel_mirror_history");
         return definition.SourceMoveId;
@@ -36,7 +36,7 @@ internal sealed partial class FrameRecipeContext
 
     private PokemonMoveDefinition CalledDefinition(int id)
     {
-        var definitions = catalog.Moves.Values.Where(m => m.SourceMoveId == id && MetronomeSourceMoveDefinition.Matches(m)).ToArray();
+        var definitions = catalog.Moves.Values.Where(m => m.SourceMoveId == id && SourceMoveDefinitionRules.IsValid(m)).ToArray();
         if (definitions.Length != 1) throw new SourceRecipeUnsupported("source_kernel_called_definition_" + id);
         // The source-selected result is final. Reject the immutable action if its recipe has
         // not migrated; never filter the source pool or draw another result.

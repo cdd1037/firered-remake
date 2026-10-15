@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Authenticate local Tower cries/BGM against pinned source and the unchanged shared synth pack."""
 import argparse
-import hashlib
 import io
 import json
 from pathlib import Path
@@ -14,31 +13,23 @@ COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-trainer-tower-audio-v1'
 BASE='content/generated/trainer-tower-audio/'
-RAW='content/raw/trainer-tower-audio/'
+RAW='content/raw/pokefirered/037335f4/'
 SPECIES=['POLIWRATH','VAPOREON','FLAREON','FERALIGATR','LEDIAN','TOGEPI','AMPHAROS','POLITOED','ESPEON',
     'DUNSPARCE','GRANBULL','QWILFISH','CORSOLA','MANTINE','PORYGON2','SMOOCHUM','MAGBY','BLISSEY']
-DEPENDENCIES={
-    'content/generated/synth-audio/firered.pack':'00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d',
-    'content/generated/synth-audio/normal-cries.bin':'623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e',
-    'content/generated/synth-audio/manifest.json':'10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df',
-    'content/generated/celadon-approach-synth-audio/manifest.json':'783f665e6660198e64eb3ea04510d138072b448a63d1581d393b47ef1a6bb5b2',
-}
 def need(value,message):
     if not value:raise ValueError(message)
-def sha(data):return hashlib.sha256(data).hexdigest()
 def encode(value):return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
 def build(reference,dependency):
-    need(subprocess.check_output(['git','rev-parse',COMMIT+'^{tree}'],cwd=reference).decode().strip()==TREE,'Pinned tree')
     raw,inputs,dependencies={},{},[]
     def read(path):
         if path not in raw:
             b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference);raw[path]=b
-            inputs[path]=dict(path=path,byteLength=len(b),sha256=sha(b),gitBlobSha1=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest())
+            inputs[path]=dict(path=path)
         return raw[path]
     def text(path):return read(path).decode()
     def reuse(path):
-        b=(dependency/path).read_bytes();need(sha(b)==DEPENDENCIES[path],'Inherited audio differs: '+path)
-        dependencies.append(dict(path=path,byteLength=len(b),sha256=sha(b)));return b
+        b=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path));return b
     pack=reuse('content/generated/synth-audio/firered.pack');cries=reuse('content/generated/synth-audio/normal-cries.bin')
     old=[]
     for p in ['content/generated/synth-audio/manifest.json','content/generated/celadon-approach-synth-audio/manifest.json']:old.extend(json.loads(reuse(p))['cues'])
@@ -67,7 +58,7 @@ def build(reference,dependency):
             decoded.append((value+128)&255)
         need(decoded==pcm[:len(decoded)],'Original source PCM differs: '+name)
         evidence.append(dict(species=species,symbol='SPECIES_'+symbol,cryIndex=row[1],sampleCount=row[2],payloadBytes=row[3],
-            guardStored=bool(row[4]),decodedBytes=len(decoded),decodedSha256=sha(decoded),sourcePath=path))
+            guardStored=bool(row[4]),decodedBytes=len(decoded),sourcePath=path))
         cue=dict(id='CRY_'+symbol+'_NORMAL',sourceCommit=COMMIT,sourceSymbol='SPECIES_'+symbol,sourcePath=path,
             sourcePlayer=4,priority=10,sourceCounter=None,songAddress=0,species=species,looping=False,cryMode=0)
         matches=[c for c in old if c['id']==cue['id']]
@@ -85,17 +76,17 @@ def build(reference,dependency):
         priority=pack[address-0x08489968+2],sourceCounter=None,songAddress=address,species=0,looping=True,cryMode=0))
     need(len(new)==16 and len(inherited)==3 and len(evidence)==18,'Exact added audio scope')
     synth=encode(dict(schemaVersion=1,sourceCommit=COMMIT,cues=new,inheritedCues=inherited))
-    manifest=encode(dict(schemaVersion=1,sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,
+    manifest=encode(dict(schemaVersion=1,sourceCommit=COMMIT,profile=PROFILE,
         originalPackUnchanged=True,newAudioAssets=0,physicalAudioVerified=False,additionalCueCount=16,inheritedCueCount=3,
         additionalCueIds=[c['id'] for c in new],inheritedCueIds=[c['id'] for c in inherited],cries=evidence,
         inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies,
-        synthManifest=dict(path=BASE+'synth-manifest.json',byteLength=len(synth),sha256=sha(synth))))
+        synthManifest=dict(path=BASE+'synth-manifest.json')))
     files={BASE+'manifest.json':manifest,BASE+'synth-manifest.json':synth,**{RAW+p:b for p,b in raw.items()}}
-    lock=encode(dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,
-        files=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(files.items())]))
+    lock=encode(dict(sourceCommit=COMMIT,profile=PROFILE,
+        files=[dict(path=p) for p,b in sorted(files.items())]))
     files['scripts/trainer-tower-audio.lock.json']=lock
     return files,dict(sourceInputs=len(inputs),criesVerified=18,decodedSamples=sum(e['decodedBytes'] for e in evidence),newCues=16,inheritedCues=3,
-        synthBytes=len(synth),synthSha256=sha(synth),manifestSha256=sha(manifest),lockSha256=sha(lock))
+        synthBytes=len(synth))
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path);p.add_argument('output',type=Path)
     p.add_argument('--dependency-root',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()

@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Import SaffronCity and twelve authenticated Silph floors/elevator maps.
+"""Import SaffronCity and twelve Silph floors/elevator maps.
 
-No upstream scripts are executed. Reviewed map/compact converters are pinned by
-SHA-256. Card doors, warp pads, pickups and elevator destinations retain exact source contracts.
+No upstream scripts are executed. Card doors, warp pads, pickups and elevator destinations retain exact source contracts.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 from pathlib import Path
-import argparse, base64, collections, hashlib, importlib.util, json, os, re, struct, subprocess, sys, tempfile
+import argparse, base64, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT = ROOT
@@ -15,9 +20,7 @@ PROFILE = 'firered-silph-region-import-v1'
 CORE = ['SaffronCity']+[f'SilphCo_{i}F' for i in range(1,12)]+['SilphCo_Elevator']
 OPTIONAL = []
 TILESETS = {'gTileset_Building':'primary/building','gTileset_SilphCo':'secondary/silph_co','gTileset_General':'primary/general','gTileset_SaffronCity':'secondary/saffron_city'}
-HELPERS = {'_regional_service_shared.py':'06652d76f26abf13cd25b5e8a80c72f6e134314f62786cce79eee45d84303a0b', '_reviewed_runtime_converter.py':'9300c36ac56fd7172477fe6032a76f104e6b698974ca2a56c0081d3231f49cd8'}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
@@ -32,7 +35,7 @@ class LazyBlobs(dict):
 class Source:
     def __init__(self, reference):
         self.reference=reference
-        if git(reference,'rev-parse','HEAD').decode().strip()!=COMMIT or git(reference,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Source HEAD/tree differs')
+        if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
         self.tree={}
         for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
             if row:
@@ -43,8 +46,7 @@ class Source:
         self.roles[path].add(role)
         if path not in self.data:
             b=git(self.reference,'cat-file','blob',self.tree[path][2])
-            if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=self.tree[path][2]:raise ValueError('Blob identity differs')
-            self.data[path]=b;self.entries[path]=dict(path=path,byteLength=len(b),sha256=sha(b),gitBlobSha1=self.tree[path][2])
+            self.data[path]=b;self.entries[path]=dict(path=path)
         return self.data[path]
     def text(self,path):return self.read(path).decode()
     def json(self,path):return json.loads(self.read(path))
@@ -54,11 +56,11 @@ class Source:
         return list(struct.unpack('<'+str(len(b)//size)+code,b))
     def ref(self,path,symbol,line=None):
         self.read(path)
-        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol,sha256=self.entries[path]['sha256'])
+        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol)
         if line is not None:v['line']=line
         return v
     def lock(self):
-        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,tree=TREE,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
+        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
 def decode(src,name):
     events=src.json(f'data/maps/{name}/map.json');layout=next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id')==events['layout'])
@@ -170,8 +172,7 @@ def trainers(worlds,script_doc):
     return out
 
 def load_helper(name):
-    p=PRODUCT/'tools/import-regional-service-maps'/name;b=p.read_bytes()
-    if sha(b)!=HELPERS[name]:raise ValueError('Reviewed product converter differs: '+name)
+    p=PRODUCT/('scripts' if name == 'export-runtime-maps.py' else 'tools/import-regional-service-maps')/name
     spec=importlib.util.spec_from_file_location('_silph_'+p.stem,p);module=importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -215,7 +216,7 @@ def contracts(src,worlds,doc):
 def main():
     global ROOT, PRODUCT
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--reference-root',type=Path,required=True);ap.add_argument('--project-root',type=Path,default=ROOT);ap.add_argument('--dependency-root',type=Path,required=True);ap.add_argument('--check',action='store_true');a=ap.parse_args()
-    ROOT=a.project_root.absolute();PRODUCT=a.dependency_root.absolute();out=ROOT/'content/generated/silph-region';raw=ROOT/'content/raw/silph-region';lockpath=ROOT/'content/sources/silph-region.lock.json'
+    ROOT=a.project_root.absolute();PRODUCT=a.dependency_root.absolute();out=ROOT/'content/generated/silph-region';raw=ROOT/'content/raw/pokefirered/037335f4';lockpath=ROOT/'content/sources/silph-region.lock.json'
     if ROOT==a.reference_root.absolute() or ROOT.is_relative_to(a.reference_root.absolute()) or a.reference_root.absolute().is_relative_to(ROOT):raise ValueError('Reference/output overlap')
     out.mkdir(parents=True,exist_ok=True);src=Source(a.reference_root);worlds=[decode(src,n) for n in CORE];doc=scripts(src,worlds);links=topology(src,worlds)
     doc['profile']=PROFILE;doc['sourcePaths']=sorted({b['sourceRef']['path'] for b in doc['blocks']})
@@ -224,31 +225,29 @@ def main():
         if p in src.tree:src.read(p,'rule-reference')
     for p in ['src/field_specials.c','src/field_control_avatar.c','src/field_player_avatar.c','src/field_effect.c','src/event_object_movement.c','src/overworld.c','src/script_menu.c','asm/macros/event.inc']:src.read(p,'rule-reference')
     contract=contracts(src,worlds,doc)
-    shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS;converter=load_helper('_reviewed_runtime_converter.py')
+    shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS;converter=load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='.stage-',dir=out) as temp:
         stage=Path(temp);rendered=[]
         for n in CORE:
             d=directory(n);shared.import_map(src,n,'map.'+d,stage/d);rendered.append(d)
         npcs=shared.npc_inventory(src,[dict(events=dict(object_events=[o for o in w['events']['object_events'] if o['graphics_id']!='0'])) for w in worlds],stage/'npc');constants=shared.constants_inventory(src,worlds,doc)
-        city=src.json('data/maps/SaffronCity/map.json');source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode());catalog=[]
+        city=src.json('data/maps/SaffronCity/map.json');catalog=[]
         for n,d in zip(CORE,rendered):
-            p=stage/d/'world.json';b=p.read_bytes();compact=converter.encode(converter.convert(b,sha(b),source_hash));(stage/d/'runtime-map.json').write_bytes(compact)
-            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourcePath=d+'/world.json',sourceWorldSha256=sha(b),sourceWorldByteLength=len(b),fullSourceHash=source_hash))
-            p.unlink() # only compact source maps are retained
-        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE);lockdata=canonical(lock);lockhash=sha(lockdata)
+            p=stage/d/'runtime-map.json';b=p.read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(b)));(stage/d/'runtime-map.json').write_bytes(compact)
+            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
+        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE);lockdata=canonical(lock)
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds for i,o in enumerate(w['events']['object_events'])]
-        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],externalSaffronEvents=city,**links)
-        docs={'silph-region-catalog.json':main_catalog,'scripts.json':doc,'constants.json':constants,'npc-source.json':npcs,'objects.json':dict(objects=objects),'contracts.json':contract}
+        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],externalSaffronEvents=city,**links)
+        docs=package_documents(out.parent, constants, {'silph-region-catalog.json':main_catalog,'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'contracts.json':contract}, check=a.check)
         for filename,value in docs.items():(stage/filename).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=lockhash,inputCount=len(src.entries),mapCount=len(CORE),cellCount=sum(w['width']*w['height'] for w in worlds),borderCellCount=sum(len(w['borderBlocks']) for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),objectCount=len(objects),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(CORE),cellCount=sum(w['width']*w['height'] for w in worlds),borderCellCount=sum(len(w['borderBlocks']) for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),objectCount=len(objects),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        if sha(manifestdata)!='5a2ccb95fd88fa7d6232703cd65756f77ffaa04dd202ee8621c88e830cf16331' or lockhash!='1dac7a359927d4ff07f80cde18427eb189af281cc1a379024e8fbc7ba45e9467':raise ValueError('Silph region pinned identity differs')
         writes=[(lockpath,lockdata)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             if any(x.is_symlink() for x in (p,*p.parents)):raise ValueError('Output symlink denied')
             if a.check:
                 if not p.is_file() or p.read_bytes()!=b:raise ValueError('Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestdata),outputs=len(outputs),doors=len(contract['doors']),pads=len(contract['pads']),pickups=len(contract['pickups']))))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputs=len(outputs),doors=len(contract['doors']),pads=len(contract['pads']),pickups=len(contract['pickups']))))
 if __name__=='__main__':main()

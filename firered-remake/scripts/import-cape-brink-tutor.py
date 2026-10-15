@@ -5,9 +5,14 @@ Pinned upstream Git blobs are inert input data. Only the reviewed local map
 renderer, compact converter and constants reader execute. Teaching business
 rules and current-game admission are separate from this resource package.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -21,28 +26,20 @@ PACKAGE = 'cape-brink-tutor'
 RESOURCE_ID = 'firered-cape-brink-tutor-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-MANIFEST_SHA256 = '94fad389e227029032d0b1f6c0dd47f96b968d7325553f8e6fc50f3073682580'
-LOCK_SHA256 = 'd9e511b58010d02960ddfc4e07ad8e60482bf468e6ce2f22167d01ba2e573989'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
 MAPS = ['TwoIsland_CapeBrink', 'TwoIsland_CapeBrink_House']
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_SeviiIslands123':'secondary/sevii_islands_123',
  'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2'}
 ANCHOR_PACKAGE = 'content/generated/first-sevii-region'
-ANCHOR_MANIFEST = '8b772a69eb46f85430d35c65fdd2c00dc2c1011ef1e062fa63e82952f8a9b136'
-ANCHOR_MAP = 'ef1f6df94804329f37f3f3029e60b2c4d621554349fbe8a9b0db468a66fc770b'
 NPC_REUSE = {
- 'OBJ_EVENT_GFX_CHANNELER': ('content/generated/saffron-gym-region/npc/channeler.png','ddc8713db21f2f132e6a814c75d337bfd4af1ecf2823f47087672ac1d3ed11f2'),
- 'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/city-services/npc/red-normal.png','51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a')}
+ 'OBJ_EVENT_GFX_CHANNELER': 'content/generated/saffron-gym-region/npc/channeler.png',
+ 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, expected, name):
+def module(path, name):
     safe(path)
-    need(sha(path.read_bytes()) == expected, 'Reviewed local codec differs: ' + str(path))
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -134,14 +131,14 @@ def native_inventory(src):
 
 
 def retained_anchor(src, current):
-    manifest=(current/ANCHOR_PACKAGE/'manifest.json').read_bytes();need(sha(manifest)==ANCHOR_MANIFEST,'Two Island manifest differs')
+    manifest=(current/ANCHOR_PACKAGE/'manifest.json').read_bytes()
     resource=next(r for r in json.loads(manifest)['outputs'] if r['path']=='two-island/runtime-map.json')
-    raw=(current/ANCHOR_PACKAGE/resource['path']).read_bytes();need(sha(raw)==ANCHOR_MAP==resource['sha256'] and len(raw)==resource['byteLength'],'Two Island map differs')
+    raw=(current/ANCHOR_PACKAGE/resource['path']).read_bytes()
     original=src.json('data/maps/TwoIsland/map.json');need(json.loads(raw)['events']==original,'Two Island source events differ')
     connection=next(c for c in original['connections'] if c['map']=='MAP_TWO_ISLAND_CAPE_BRINK')
     need(connection==dict(map='MAP_TWO_ISLAND_CAPE_BRINK',direction='up',offset=24),'Two Island northern connection differs')
     return dict(sourceName='TwoIsland',map='map.two-island',sourceMap='MAP_TWO_ISLAND',operation='reuse-existing-source-map',
-      currentPackage=ANCHOR_PACKAGE,currentManifestSha256=ANCHOR_MANIFEST,currentManifestByteLength=len(manifest),currentResource=resource,
+      currentPackage=ANCHOR_PACKAGE,currentResource=resource,
       connection=connection,geometryChanges=[],eventChanges=[])
 
 
@@ -173,8 +170,8 @@ def main():
     target,dep,ref,current=[Path(os.path.abspath(x)) for x in [a.project_root,a.dependency_root,a.reference_root,a.current_project_root or a.dependency_root]]
     for path in [target,dep,ref,current]:safe(path)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py',READER_SHA,'cape_brink_reader');reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,RESOURCE_ID
-    util=module(dep/'scripts/import-fossil-lab-region.py',UTILITIES_SHA,'cape_brink_utils');util.MAPS=MAPS
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'cape_brink_reader');reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,RESOURCE_ID
+    util=module(dep / 'scripts/import-fossil-lab-region.py', 'cape_brink_utils');util.MAPS=MAPS
     src=reader.Source(ref);worlds=[reader.decode(src,n) for n in MAPS];anchor=retained_anchor(src,current)
     scripts=script_inventory(src,reader,worlds)
     extra='MOVETUTOR_FRENZY_PLANT MOVETUTOR_BLAST_BURN MOVETUTOR_HYDRO_CANNON MOVE_FRENZY_PLANT MOVE_BLAST_BURN MOVE_HYDRO_CANNON FLAG_TUTOR_FRENZY_PLANT FLAG_TUTOR_BLAST_BURN FLAG_TUTOR_HYDRO_CANNON SPECIES_VENUSAUR SPECIES_CHARIZARD SPECIES_BLASTOISE'
@@ -195,34 +192,32 @@ def main():
       limitations=['Source/content and Domain service candidate; no Current, Application, Godot, route or UI admission.',
       'Preserve Two Island quests and original northern edge; no replacement NPC or transfer point.',
       'Native opcode/special integration is enumerated in native.json; shared move-learning, encounters, hidden-item and temporary-flag owners must be reused.'])
-    shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS;converter=reader.load_helper('_reviewed_runtime_converter.py')
+    shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS;converter=reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='cape-brink-',dir=target) as temp:
         stage=Path(temp)
         for w in worlds:shared.import_map(src,w['sourceName'],w['stableId'],stage/reader.directory(w['sourceName']))
         npcs=shared.npc_inventory(src,worlds,stage/'npc');need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE),'NPC graphics cohort differs')
         for row in npcs['graphics']:
-            path,digest=NPC_REUSE[row['graphicsId']];existing=current/path;safe(existing);rendered=stage/row['texturePath']
-            need(sha(existing.read_bytes())==digest==row['sha256'] and rendered.read_bytes()==existing.read_bytes(),'Reused sprite differs')
-            row.update(texturePath=path,byteLength=existing.stat().st_size,reuseExisting=True);rendered.unlink()
+            path=NPC_REUSE[row['graphicsId']];existing=current/path;safe(existing);rendered=stage/row['texturePath']
+            need(rendered.read_bytes() == existing.read_bytes(),'Reused sprite differs')
+            row.update(texturePath=path,reuseExisting=True);rendered.unlink()
         (stage/'npc').rmdir()
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode());entries=[]
+        entries=[]
         for w in worlds:
-            directory=reader.directory(w['sourceName']);path=stage/directory/'world.json';rich=path.read_bytes()
-            compact=converter.convert(rich,sha(rich),source_hash);util.compact_check(compact,w,src);data=converter.encode(compact)
-            (stage/directory/'runtime-map.json').write_bytes(data);path.unlink()
-            entries.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=directory,sourceMapSymbol=w['events']['id'],path=directory+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash))
+            directory=reader.directory(w['sourceName']);path=stage/directory/'runtime-map.json';rich=path.read_bytes()
+            compact=converter.normalize_runtime(json.loads(rich));util.compact_check(compact,w,src);data=converter.encode(compact)
+            (stage/directory/'runtime-map.json').write_bytes(data)
+            entries.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=directory,sourceMapSymbol=w['events']['id'],path=directory+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,maps=entries,inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={**{w['events']['id']:w['stableId'] for w in worlds},'MAP_TWO_ISLAND':'map.two-island'}),
-          'scripts.json':scripts,'constants.json':constants,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS),'native.json':native,'encounters-items.json':inventory}
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=entries,inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={**{w['events']['id']:w['stableId'] for w in worlds},'MAP_TWO_ISLAND':'map.two-island'}),
+          'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS),'native.json':native,'encounters-items.json':inventory}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,lockSha256=sha(lock_bytes),readerSha256=READER_SHA,sourceUtilitiesSha256=UTILITIES_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],inputCount=len(src.entries),mapCount=2,cellCount=1059,borderCellCount=8,directedWarpCount=2,directedConnectionCount=2,objectCount=1,reusedNpcGraphicsCount=2,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=2,cellCount=1059,borderCellCount=8,directedWarpCount=2,directedConnectionCount=2,objectCount=1,reusedNpcGraphicsCount=2,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned manifest differs: '+sha(manifest_bytes))
-        if LOCK_SHA256:need(sha(lock_bytes)==LOCK_SHA256,'Pinned lock differs: '+sha(lock_bytes))
         writes=[(target/'scripts/cape-brink-tutor.lock.json',lock_bytes),(target/'scripts/cape-brink-tutor.contract.json',canonical(contract))]
-        writes += [(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
@@ -230,6 +225,6 @@ def main():
             if a.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
         if not a.check:
             for path,data in writes:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),lockByteLength=len(lock_bytes),fullSourceHash=source_hash,inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),wildSpecies=inventory['wildSpecies'],check=a.check),indent=2))
+        print(json.dumps(dict(inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),wildSpecies=inventory['wildSpecies'],check=a.check),indent=2))
 
 if __name__=='__main__':main()

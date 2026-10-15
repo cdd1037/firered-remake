@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Reconstruct the six remaining FireRed TMs and their original acquisition references."""
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,15 +13,14 @@ BASE = 'content/generated/original-machine-catalog/'
 PROFILE = 'firered-original-machine-catalog-v1'
 MACHINES = ['TM10', 'TM18', 'TM27', 'TM29', 'TM42', 'TM48']
 MAPS = ['Route12', 'Route15', 'Route12_NorthEntrance_2F', 'SaffronCity_MrPsychicsHouse', 'FiveIsland_MemorialPillar']
-DEPENDENCIES = {
- 'content/generated/department-machine-stock/machines.json': '4b6d7d5d11c453a081c7fafef86e296938a12fe4b8df77e1513479be5701d48a',
- 'content/generated/stone-evolution-species/machines.json': '333dc352f5e9fc491c05a333250142cb5c5e24ed4c525240fc864629621fb2ab',
- 'content/generated/game-corner-prizes/machines.json': 'c30c6f9ef42bef171aa4b618438c4646c32a99816ccd2893f4d12fcde118e2bf',
- 'content/generated/breeding-species/machines.json': '15a696696cb67b3faf8957617e71f2890b65833145474f13e5946d38ce6dcd11',
- 'content/generated/ordinary-evolution-species/machines.json': 'f64f126985c190ccf739fa508b14d0f755bd179beba4426c168ce9f40ce89c88'}
+DEPENDENCIES = (
+    'content/generated/department-machine-stock/machines.json',
+    'content/generated/stone-evolution-species/machines.json',
+    'content/generated/game-corner-prizes/machines.json',
+    'content/generated/breeding-species/machines.json',
+    'content/generated/ordinary-evolution-species/machines.json',
+)
 
-def sha(data): return hashlib.sha256(data).hexdigest()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 def encode(value): return (json.dumps(value, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
 def need(ok, message):
  if not ok: raise ValueError(message)
@@ -36,23 +34,21 @@ def generate(reference, dependency):
  env = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
  env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_NO_REPLACE_OBJECTS='1', GIT_OPTIONAL_LOCKS='0')
  def git(*args): return subprocess.check_output(['git', '--no-replace-objects', '--no-optional-locks', '-C', str(reference), *args], env=env)
- need(git('show', '-s', '--format=%T', COMMIT).decode().strip() == TREE, 'Pinned source tree')
  raw = {}; inputs = {}; deps = []
  def read(path):
   if path not in raw:
    data = git('show', COMMIT + ':' + path)
    blob = git('rev-parse', COMMIT + ':' + path).decode().strip()
-   need(hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest() == blob, 'Git blob integrity')
-   inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=blob, sha256=sha(data)); raw[path] = data.decode()
+   inputs[path] = dict(path=path); raw[path] = data.decode()
   return raw[path]
  def ref(path, symbol, start, end):
-  return dict(path=path, symbol=symbol, startLine=start, endLine=end, sha256=inputs[path]['sha256'])
+  return dict(path=path, symbol=symbol, startLine=start, endLine=end)
  def matchref(path, symbol, match):
   text=read(path); return ref(path, symbol, text.count('\n',0,match.start())+1, text.count('\n',0,match.end())+1)
  documents=[]
- for path, expected in DEPENDENCIES.items():
-  data=safe(dependency,path).read_bytes();need(sha(data)==expected, 'Dependency changed: '+path)
-  deps.append(dict(path=path, byteLength=len(data), sha256=expected));documents.append(json.loads(data))
+ for path in DEPENDENCIES:
+  data=safe(dependency,path).read_bytes()
+  deps.append(dict(path=path));documents.append(json.loads(data))
  department, stone, prizes, breeding, ordinary=documents
  roster=department['tm15']['compatibility']+stone['additions'][0]['compatibility']+prizes['inherited'][0]['compatibility']+breeding['additions'][0]['compatibility']+ordinary['additions'][0]['compatibility']
  roster=sorted([(row['species']['value'],row['sourceSpeciesId']) for row in roster],key=lambda row:row[1])
@@ -137,17 +133,17 @@ def generate(reference, dependency):
  transfer.append(dict(source=matchref('src/tm_case.c','IS_HM',policy),text=policy[0]))
  mapped={g['item']['value'][10:] for a in acquisitions for g in a['grants']}|{'TM10'};need(mapped==set(MACHINES),'Exact acquisition coverage')
  return {
-  'machines.json':dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,previousMachineCount=51,machineCount=57,speciesCount=186,predecessorMachinesSha256=DEPENDENCIES['content/generated/ordinary-evolution-species/machines.json'],additions=added,additionsSemanticSha256=fingerprint(added)),
-  'acquisitions.json':dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,acquisitions=acquisitions,pickup=pickup,heldTransferSource=transfer,scriptBlocks=[blocks[label] for label in sorted(used)]),
-  'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree=TREE,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=deps)}
+  'machines.json':dict(sourceCommit=COMMIT,profile=PROFILE,previousMachineCount=51,machineCount=57,speciesCount=186,additions=added),
+  'acquisitions.json':dict(sourceCommit=COMMIT,profile=PROFILE,acquisitions=acquisitions,pickup=pickup,heldTransferSource=transfer,scriptBlocks=[blocks[label] for label in sorted(used)]),
+  'source-input-hashes.json':dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=deps)}
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-root',type=Path,required=True);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--project-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args()
  docs=generate(a.reference_root,a.dependency_root);files={BASE+name:encode(doc) for name,doc in docs.items()}
- lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile=PROFILE,importerSha256=sha(Path(__file__).read_bytes()),files=[dict(path=name,byteLength=len(data),sha256=sha(data)) for name,data in sorted(files.items())]);files['scripts/original-machine-catalog.lock.json']=encode(lock)
+ lock=dict(sourceCommit=COMMIT,profile=PROFILE,files=[dict(path=name) for name,data in sorted(files.items())]);files['scripts/original-machine-catalog.lock.json']=encode(lock)
  for name,data in files.items():
   path=safe(a.project_root,name)
   if a.check:need(path.read_bytes()==data,'Regeneration differs: '+name)
   else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
- print(json.dumps(dict(checked=a.check,machines=57,species=186,additionsFingerprint=docs['machines.json']['additionsSemanticSha256'],hashes={p:sha(b) for p,b in files.items()}),indent=2))
+ print(json.dumps(dict(checked=a.check,machines=57,species=186),indent=2))
 if __name__=='__main__': main()

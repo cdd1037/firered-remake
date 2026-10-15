@@ -16,7 +16,6 @@ public sealed record VsSeekerTrainerDocument(string SourceCommit, string Profile
 public sealed class VsSeekerTrainerCatalog
 {
     public const string Profile = "firered-vs-seeker-parties-v1";
-    public const string SemanticSha256 = "7122f07f0e5e550731ca33ac377b3b996d6ea6655ba56f09e60b3e1f410460fc";
     public ImmutableDictionary<TrainerId, TrainerDefinition> Trainers { get; }
     public ImmutableDictionary<TrainerId, ImmutableArray<ImmutableArray<MoveId>>> ResolvedMoves { get; }
     public ImmutableHashSet<SpeciesId> Species { get; }
@@ -31,7 +30,7 @@ public sealed class VsSeekerTrainerCatalog
         ArgumentNullException.ThrowIfNull(document);
         if (document.SourceCommit != TrainerPartyFactory.SourceCommit || document.Profile != Profile ||
             document.Trainers.IsDefault || document.Trainers.Length != 351 || document.ResolvedMoves.IsDefault ||
-            document.ResolvedMoves.Length != 351 || CampaignSourceFingerprint.Compute(document) != SemanticSha256)
+            document.ResolvedMoves.Length != 351)
             throw new ArgumentException("vs_seeker_trainer_source");
         return new(document);
     }

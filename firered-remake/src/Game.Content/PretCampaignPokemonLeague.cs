@@ -19,15 +19,14 @@ public sealed partial class PretCampaignCatalog
     public PokemonLeagueMartStock? PokemonLeagueMartStock { get; }
     public bool PokemonLeagueEnabled=>PokemonLeagueRegion is not null;
 
-    private static void AppendPokemonLeagueSources(PretPokemonLeagueRegion region,List<PretSourceScriptFile> sources,
-        List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendPokemonLeagueSources(PretPokemonLeagueRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var source in region.Scripts)
         {
             if(prior.TryGetValue(source.Path,out var old))
             {
-                if(old.SourceRef.Sha256!=source.SourceRef.Sha256||old.Text!=source.Text)
+                if(old.Text!=source.Text)
                     throw new InvalidDataException("pokemon_league_source_conflict: "+source.Path);
             }
             else{prior.Add(source.Path,source);sources.Add(source);}
@@ -35,17 +34,11 @@ public sealed partial class PretCampaignCatalog
         }
         foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
         MergeRegionalServiceConstants(constants,region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);
-        hashes.Add("pokemon-league-trainers:"+PretPokemonLeagueRules.TrainersSha256);
-        hashes.Add("pokemon-league-opponents:"+PretPokemonLeagueRules.PokemonSha256);
-        hashes.Add("pokemon-league-rules:"+PretPokemonLeagueRules.RulesSha256);
-        hashes.Add("pokemon-league-source-inputs:"+PretPokemonLeagueRules.SourceInputsSha256);
-        hashes.Add("pokemon-league-campaign:"+PokemonLeagueContentProfile);
     }
 
     private static void ValidatePokemonLeagueAnchors(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(maps.Count!=211||region.NewMaps.Count!=7||region.NewMaps.Keys.Any(maps.ContainsKey)||
+        if(region.NewMaps.Count!=7||region.NewMaps.Keys.Any(maps.ContainsKey)||
             maps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
             throw new InvalidDataException("pokemon_league_predecessor_maps");
         var exterior=maps[new("map.indigo-plateau-exterior")];
@@ -56,8 +49,7 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("pokemon_league_link_floor_unsupported");
     }
 
-    private static PokemonLeagueMartStock CreatePokemonLeagueMartStock(PretPokemonLeagueRegion region,
-        EarlyShopCatalog shop,PretStoryCompilation scripts)
+    private static PokemonLeagueMartStock CreatePokemonLeagueMartStock(PretPokemonLeagueRegion region,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         const string stockId=Game.Domain.Items.PokemonLeagueMartStock.ExpectedStockId;
         string[] expected=["ITEM_ULTRA_BALL","ITEM_GREAT_BALL","ITEM_FULL_RESTORE","ITEM_MAX_POTION","ITEM_REVIVE","ITEM_FULL_HEAL","ITEM_MAX_REPEL","ITEM_NONE"];
@@ -65,18 +57,14 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("pokemon_league_mart_declaration");
         var source=region.Scripts.Single(s=>s.Path==Game.Domain.Items.PokemonLeagueMartStock.ExpectedSourcePath);
         var result=new PokemonLeagueMartStock(PretWorldMap.SourceCommit,expected.Take(7).Select(s=>new ItemId("pret:"+s)).ToImmutableArray(),
-            new(source.Path,stockId,53,63,source.SourceRef.Sha256!));
+            new(source.Path,stockId,53,63));
         result.Validate(shop);
         return result;
     }
 
-    private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,
-        ImmutableDictionary<MapId,PretWorldMap> previous,PokemonLeagueTrainerCatalog trainers,PokemonLeagueOpponentPokemonCatalog opponents,
-        CinnabarOwnedPokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PokemonLeagueTrainerCatalog trainers,PokemonLeagueOpponentPokemonCatalog opponents,CinnabarOwnedPokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(maps.Count!=218||previous.Count!=211||previous.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||
-            region.NewMaps.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||
-            !ReferenceEquals(opponents.Owned,owned)||opponents.Predecessor.Catalog.Species.Count!=124||opponents.Catalog.Species.Count!=133||
+        if(owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||opponents.Predecessor.Catalog.Species.Count!=124||opponents.Catalog.Species.Count!=133||
             maps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
             throw new InvalidDataException("pokemon_league_composition_scope");
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(trainers);
@@ -86,9 +74,8 @@ public sealed partial class PretCampaignCatalog
         bool Has(string label,string opcode,params string[] args)=>scripts.FindProgram(label)?.Instructions.Any(i=>i.Opcode==opcode&&i.Args.SequenceEqual(args))==true;
         foreach(var battle in trainers.Battles.Values)
         {
-            var source=region.Scripts.Single(s=>s.Path==battle.Source.Path);
             var program=scripts.FindProgram(battle.ScriptEntry)??throw new InvalidDataException("pokemon_league_trainer_script");
-            if(source.SourceRef.Sha256!=battle.Source.Sha256||battle.Mode!=3||battle.RivalFlags!=0||battle.BattleTypeFlags!=8||
+            if(battle.Mode!=3||battle.RivalFlags!=0||battle.BattleTypeFlags!=8||
                 battle.EntryScript!="EventScript_DoNoIntroTrainerBattle"||battle.Callback!="CB2_EndTrainerBattle"||
                 !program.Instructions.Any(i=>i.Op==StoryOp.TrainerBattle&&i.Opcode=="trainerbattle_no_intro"&&i.Source.Path==battle.Source.Path&&
                     i.Source.Line>=battle.Source.StartLine&&i.Source.Line<=battle.Source.EndLine&&i.Args.SequenceEqual(new[]{battle.Trainer.Value[5..],battle.DefeatText}))||

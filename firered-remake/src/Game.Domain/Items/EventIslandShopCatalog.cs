@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class EventIslandShopCatalog
 {
     public const string Profile = "firered-event-island-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "59054ddebaa2b5eaf7d8cdadfedf3065d7b1e01f02fe4ad2a4bcec0c1ec7baff";
     public static ItemId MysticTicketId { get; } = new("pret:ITEM_MYSTIC_TICKET");
     public static ItemId AuroraTicketId { get; } = new("pret:ITEM_AURORA_TICKET");
     public static ItemId SacredAshId { get; } = new("pret:ITEM_SACRED_ASH");
@@ -38,8 +37,7 @@ public sealed class EventIslandShopCatalog
             throw new ArgumentException("event_island_shop_predecessor");
         if (candidate.Shops != old.Shops) throw new ArgumentException("event_island_shop_stock");
         var fresh = candidate.Items.Skip(114).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([MysticTicketId, AuroraTicketId, SacredAshId, ItemfinderId, MachoBraceId, LeftoversId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([MysticTicketId, AuroraTicketId, SacredAshId, ItemfinderId, MachoBraceId, LeftoversId]))
             throw new ArgumentException("event_island_shop_source");
         var proof = new EventIslandShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

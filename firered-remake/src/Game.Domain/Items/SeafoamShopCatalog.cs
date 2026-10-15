@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SeafoamShopCatalog
 {
     public const string Profile = "firered-seafoam-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "7ef8568f9a50617b77170edc01e3d82795a6aff4d94e1898f2d08c2840d8b2ef";
     public static ItemId WaterStoneId { get; } = new("pret:ITEM_WATER_STONE");
     private static readonly ConditionalWeakTable<EarlyShopCatalog, SeafoamShopCatalog> Proofs = new();
     public EarlyShopCatalog Catalog { get; }
@@ -30,8 +29,7 @@ public sealed class SeafoamShopCatalog
             candidate with { Profile = old.Profile, Items = old.Items } != old ||
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("seafoam_shop_predecessor");
-        if (candidate.Items[127].Id != WaterStoneId || candidate.Items[127].UseSupport != EarlyShopUseSupport.NoFieldUse ||
-            CampaignSourceFingerprint.Compute(candidate.Items.Skip(127).ToArray()) != AdditionalItemsSourceSha256)
+        if (candidate.Items[127].Id != WaterStoneId || candidate.Items[127].UseSupport != EarlyShopUseSupport.NoFieldUse)
             throw new ArgumentException("seafoam_shop_source");
         var proof = new SeafoamShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

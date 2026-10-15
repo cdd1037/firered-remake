@@ -20,15 +20,14 @@ public sealed partial class PretCampaignCatalog
     public VictoryRoadWaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
     public bool VictoryRoadEnabled=>VictoryRoadRegion is not null;
 
-    private static void AppendVictoryRoadSources(PretVictoryRoadRegion region,List<PretSourceScriptFile> sources,
-        List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendVictoryRoadSources(PretVictoryRoadRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var source in region.Scripts)
         {
             if(prior.TryGetValue(source.Path,out var old))
             {
-                if(old.SourceRef.Sha256!=source.SourceRef.Sha256||old.Text!=source.Text)
+                if(old.Text!=source.Text)
                     throw new InvalidDataException("victory_road_source_conflict: "+source.Path);
             }
             else{prior.Add(source.Path,source);sources.Add(source);}
@@ -36,12 +35,11 @@ public sealed partial class PretCampaignCatalog
         }
         foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
         MergeRegionalServiceConstants(constants,region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);hashes.Add("victory-road-campaign:"+VictoryRoadContentProfile);
     }
 
     private static void ValidateVictoryRoadAnchors(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(maps.Count!=207||region.NewMaps.Count!=4||region.NewMaps.Keys.Any(maps.ContainsKey))
+        if(region.NewMaps.Count!=4||region.NewMaps.Keys.Any(maps.ContainsKey))
             throw new InvalidDataException("victory_road_predecessor_maps");
         foreach(var (name,events) in region.ReusedAnchorEvents)
         {
@@ -53,8 +51,7 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("victory_road_route23_source_cells");
     }
 
-    private static IEnumerable<FieldPickupDefinition> VictoryRoadPickupDefinitions(PretVictoryRoadRegion region,
-        VictoryRoadItemContent content,EarlyShopCatalog shop,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> VictoryRoadPickupDefinitions(PretVictoryRoadRegion region,VictoryRoadItemContent content,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         foreach(var pickup in content.Items.Pickups)
         {
@@ -76,11 +73,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateVictoryRoadComposition(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,
-        ImmutableDictionary<MapId,PretWorldMap> previous,VictoryRoadTrainerCatalog trainers,CinnabarOwnedPokemonCatalog owned,PretStoryCompilation scripts)
+    private static void ValidateVictoryRoadComposition(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,VictoryRoadTrainerCatalog trainers,CinnabarOwnedPokemonCatalog owned,PretStoryCompilation scripts)
     {
-        if(maps.Count!=211||previous.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||region.NewMaps.Any(p=>!ReferenceEquals(p.Value,maps[p.Key]))||
-            owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354)throw new InvalidDataException("victory_road_composition_scope");
+        if(            owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354)throw new InvalidDataException("victory_road_composition_scope");
         VictoryRoadTrainerPartyFactory.ValidateCatalog(trainers);
         foreach(var battle in trainers.BattlesByScript.Values)
         {

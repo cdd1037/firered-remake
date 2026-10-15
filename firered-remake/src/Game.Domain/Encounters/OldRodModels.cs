@@ -39,7 +39,7 @@ public sealed record OldRodFishingResult(OldRodFishingState State, RngState Glob
 public sealed record OldRodEncounterSlot(int Index, SpeciesId Species, byte MinimumLevel,
     byte MaximumLevel, int Weight);
 public sealed record OldRodEncounterTable(MapId Map, string SourceCommit, string SourcePath,
-    string SourceSymbol, string SourceSha256, int RawEncounterRate, ImmutableArray<OldRodEncounterSlot> Slots);
+    string SourceSymbol, int RawEncounterRate, ImmutableArray<OldRodEncounterSlot> Slots);
 public sealed record OldRodEncounterCandidate(MapId Map, int SlotIndex, SpeciesId Species, byte Level);
 public sealed record OldRodEncounterResult(OldRodEncounterCandidate Candidate, RngState GlobalRng,
     ImmutableArray<RandomTrace> RandomTrace);

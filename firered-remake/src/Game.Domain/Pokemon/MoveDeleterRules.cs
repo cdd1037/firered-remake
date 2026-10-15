@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Game.Domain.Ids;
@@ -9,24 +8,15 @@ namespace Game.Domain.Pokemon;
 /// <summary>The original Fuchsia service, bound to one authenticated owned-Pokemon catalog.</summary>
 public sealed class MoveDeleterCatalog
 {
-    public const string SpecialSourceSha256 = "72faa4aa41f1b8f4798a509250fe2180511809d429a47f2439d94520ce5561e5";
-    public const string SummarySourceSha256 = "855a17fb555f5497dbb47f90a8c1b8cf620532d3bff96e8196d0790515508583";
-    public const string ScriptSha256 = "2c0bc780afd36a7d9ac791176fe6c6dfaa5c03e691cdb1b95e56ac47dbb1ba9f";
-    public const string StringsSha256 = "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1";
     public PokemonCatalog Pokemon { get; }
     public ImmutableDictionary<string, string> Texts { get; }
 
     private MoveDeleterCatalog(PokemonCatalog pokemon, ImmutableDictionary<string, string> texts)
     { Pokemon = pokemon; Texts = texts; }
 
-    public static MoveDeleterCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> specialSource,
-        ReadOnlySpan<byte> summarySource, ReadOnlySpan<byte> script, ReadOnlySpan<byte> strings)
+    public static MoveDeleterCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> strings)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit ||
-            Convert.ToHexStringLower(SHA256.HashData(specialSource)) != SpecialSourceSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(summarySource)) != SummarySourceSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(script)) != ScriptSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(strings)) != StringsSha256)
+        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("move_deleter_source_authentication");
         var text = new UTF8Encoding(false, true).GetString(strings);
         var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);

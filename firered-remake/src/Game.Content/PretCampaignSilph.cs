@@ -31,14 +31,13 @@ public sealed partial class PretCampaignCatalog
         ??CinnabarSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
 
-    private static void AppendSilphSources(PretSilphRegion region,PretSilphItemsDocument items,
-        List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendSilphSources(PretSilphRegion region,PretSilphItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var file in region.Scripts)
         {
             if(prior.TryGetValue(file.Path,out var old))
-            {if(old.SourceRef.Sha256!=file.SourceRef.Sha256||old.Text!=file.Text)throw new InvalidDataException("silph_script_source_conflict: "+file.Path);}
+            {if(old.Text!=file.Text)throw new InvalidDataException("silph_script_source_conflict: "+file.Path);}
             else{prior.Add(file.Path,file);sources.Add(file);}
             if(!texts.Contains(file.Text,StringComparer.Ordinal))texts.Add(file.Text);
         }
@@ -50,12 +49,9 @@ public sealed partial class PretCampaignCatalog
             if(constants.TryGetValue(d.SourceItemSymbol,out int n)&&n!=d.SourceItemId)throw new InvalidDataException("silph_item_constant_conflict");
             constants[d.SourceItemSymbol]=d.SourceItemId;
         }
-        hashes.AddRange(region.AdditionalSourceHashes);hashes.AddRange(items.AdditionalSourceHashes);
-        hashes.Add("silph-trainers:"+PretSilphTrainers.GeneratedSha256);hashes.Add("silph-application:"+SilphContentProfile);
     }
 
-    private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,
-        EarlyShopCatalog shop,PewterMachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)
     {
         foreach(var row in region.Contracts.GetProperty("pickups").EnumerateArray())
         {

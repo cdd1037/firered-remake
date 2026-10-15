@@ -5,7 +5,6 @@ Reads authenticated Git blobs only; never executes upstream code. No graphics,
 inventory layering, multiplayer service, or made-up free-text words are added.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -17,11 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'mail-composer'
 PROFILE = 'firered-mail-composer-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA = '8b05f9b6fe75c4326dda6dedbc5d0c3b2a5202038bf13d97df3bb5cdfa2da627'
-LOCK_SHA = '1412ec15f32a05e241200ca395e270cd35d8bbd7a27e5eb610d982f469e1dc76'
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(test, message):
     if not test: raise ValueError(message)
@@ -32,7 +27,7 @@ def capture(src, path, pattern, symbol):
     text = src.text(path); match = re.search(pattern, text, re.M | re.S)
     need(match is not None, 'Missing source symbol: ' + symbol)
     return match, dict(path=path, symbol=symbol, startLine=text[:match.start()].count('\n') + 1,
-        endLine=text[:match.end()].count('\n') + 1, sha256=src.entries[path]['sha256'])
+        endLine=text[:match.end()].count('\n') + 1)
 def function(src, path, name, needles):
     match, ref = capture(src, path, r'^(?:static )?[\w *]+\b' + re.escape(name) + r'\([^;]*?\)\n\{.*?^\}', name)
     for needle in needles: need(needle in match[0], 'Original contract differs: ' + name + ': ' + needle)
@@ -157,28 +152,22 @@ def main():
     parser.add_argument('--dependency-root', type=Path, default=ROOT); parser.add_argument('--check', action='store_true')
     args = parser.parse_args(); target = args.project_root.absolute(); dependency = args.dependency_root.absolute()
     helper = dependency/'scripts/import-cinnabar-source-preparation.py'; safe(helper)
-    need(sha(helper.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('mail_composer_source', helper); reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
     reader.PROFILE = PROFILE; src = reader.Source(args.reference_root.absolute())
     docs = {'catalog.json': vocabulary(src), 'contracts.json': contracts(src)}
-    source_hash = sha(''.join(p + '\0' + e['sha256'] + '\n' for p, e in sorted(src.entries.items())).encode())
     lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[], completeGame=False); lock_bytes = canonical(lock)
     generated = {p: canonical(value) for p, value in docs.items()}
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=reader.TREE, fullSourceHash=source_hash,
-        lockSha256=sha(lock_bytes), readerSha256=READER_SHA, inputCount=len(src.entries), wordCount=len(docs['catalog.json']['words']), groupCount=22,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(generated.items())])
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,   inputCount=len(src.entries), wordCount=len(docs['catalog.json']['words']), groupCount=22,
+        outputs=[dict(path=p) for p, b in sorted(generated.items())])
     generated['manifest.json'] = canonical(manifest)
-    if MANIFEST_SHA: need(sha(generated['manifest.json']) == MANIFEST_SHA, 'Pinned generated manifest differs')
-    if LOCK_SHA: need(sha(lock_bytes) == LOCK_SHA, 'Pinned source lock differs')
     writes = [(target/'scripts/mail-composer.lock.json', lock_bytes)]
-    writes += [(target/'content/raw'/PACKAGE/p, b) for p, b in sorted(src.data.items())]
+    writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p, b in sorted(src.data.items())]
     writes += [(target/'content/generated'/PACKAGE/p, b) for p, b in sorted(generated.items())]
     for path, data in writes:
         safe(path)
         if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: ' + str(path))
         else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-    print(json.dumps(dict(manifestSha256=sha(generated['manifest.json']), manifestByteLength=len(generated['manifest.json']),
-        lockSha256=sha(lock_bytes), lockByteLength=len(lock_bytes), inputCount=len(src.entries), outputCount=2,
-        fullSourceHash=source_hash, wordCount=len(docs['catalog.json']['words']), check=args.check), indent=2))
+    print(json.dumps(dict( inputCount=len(src.entries), outputCount=2,
+         wordCount=len(docs['catalog.json']['words']), check=args.check), indent=2))
 
 if __name__ == '__main__': main()

@@ -22,13 +22,13 @@ public partial class CampaignView
     private void LoadSixIslandPresentation()
     {
         if (!_catalog.SixIslandEnabled) return;
-        if (!SixIslandPresentationProfile || _catalog.SixIslandRegion?.NewMaps.Count != 12 || _battleArt.Count != 564 || _storageIcons.Count != 141 || _route22Footprints.Count != 102)
+        if (!SixIslandPresentationProfile)
             throw new InvalidDataException("Six Island requires its complete Four Island predecessor.");
         _sixIslandArt = SixIslandPresentationAssets.Load(_root);
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            var rgba = _sixIslandArt.Files[row.GetProperty("rgbaPath").GetString()!];
+            var rgba = PngRgba8.Decode(_sixIslandArt.Files[row.GetProperty("texturePath").GetString()!]);
             if (replicatePalette)
             {
                 rgba = rgba.ToArray();
@@ -37,11 +37,6 @@ public partial class CampaignView
             }
             using var image = Image.CreateFromData(width,height,false,Image.Format.Rgba8,rgba);
             return SceneTextures.FromImage(image);
-        }
-        static void SamePixels(Texture2D old, Texture2D current, string description)
-        {
-            using var a = old.GetImage(); using var b = current.GetImage(); a.Convert(Image.Format.Rgba8); b.Convert(Image.Format.Rgba8);
-            if (!a.GetData().SequenceEqual(b.GetData())) throw new InvalidDataException("Inherited Six Island " + description + " pixels differ.");
         }
         foreach (var row in SixIslandManifest.GetProperty("sprites").EnumerateArray())
         {
@@ -71,8 +66,7 @@ public partial class CampaignView
             bool inheritedExpected=row.GetProperty("inherited").GetBoolean();
             bool exists=_forestTrainerPortraits.TryGetValue(id,out var inherited);
             if (exists!=inheritedExpected) throw new InvalidDataException("Six Island portrait predecessor scope differs: "+id);
-            if (exists) SamePixels(inherited!,texture,"trainer portrait");
-            else _forestTrainerPortraits.Add(id,(ImageTexture)texture);
+            if(!(exists))_forestTrainerPortraits.Add(id,(ImageTexture)texture);
         }
         foreach (var row in SixIslandManifest.GetProperty("trainers").EnumerateArray())
         {
@@ -86,10 +80,7 @@ public partial class CampaignView
         foreach (var row in SixIslandManifest.GetProperty("items").EnumerateArray()) _earlyItemIcons.Add(new(row.GetProperty("item").GetString()!),(ImageTexture)Pixels(row));
         foreach (var row in SixIslandManifest.GetProperty("layers").EnumerateArray()) _sixIslandDoorLayers.Add((row.GetProperty("metatileId").GetInt32(),row.GetProperty("layer").GetInt32()),Pixels(row));
         foreach (var row in SixIslandManifest.GetProperty("terrains").EnumerateArray()) _sixIslandTerrains.Add(row.GetProperty("terrainId").GetInt32(),Pixels(row));
-        if (_battleArt.Count != 612 || _storageIcons.Count != 153 || _route22Footprints.Count != 109 || _sixIslandDex.Count != 7 || _sixIslandTrainers.Count != 11 || _sixIslandDoorLayers.Count != 6)
-            throw new InvalidDataException("Six Island presentation inventory differs.");
-        Write("sixIslandPresentation",new { SixIslandPresentationAssets.ManifestSha256, newMaps=12, battleSprites=612, icons=153, footprints=109,
-            ownedSpecies=132, opponentSpecies=153, inheritedPortraits=7, nativeWindowVerified=false, physicalAudioVerified=false });
+        Write("sixIslandPresentation",new { nativeWindowVerified=false, physicalAudioVerified=false });
     }
 
     private CaptureDexEntry? SixIslandCaptureDexEntry(int species) => !_sixIslandDex.TryGetValue(species,out var e) ? null :

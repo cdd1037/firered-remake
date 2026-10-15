@@ -5,7 +5,7 @@ using Game.Domain.Randomness;
 
 namespace Game.Domain.Trainers;
 
-public sealed record TrainerSourceRef(string Path, string Symbol, int StartLine, int EndLine, string Sha256);
+public sealed record TrainerSourceRef(string Path, string Symbol, int StartLine, int EndLine);
 
 /// <summary>Source iv is the trainer-table 0..255 difficulty field, not a per-stat IV.</summary>
 public sealed record TrainerPartyMemberDefinition(SpeciesId Species, int SourceSpeciesId, string SpeciesName,

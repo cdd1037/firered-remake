@@ -16,15 +16,14 @@ public sealed partial class PretCampaignCatalog
     public PretSafariEncounters? SafariEncounters { get; }
     public bool SafariEnabled => SafariRegion is not null;
 
-    private static void AppendSafariSources(PretSafariRegion region, PretSafariItems items,
-        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
+    private static void AppendSafariSources(PretSafariRegion region,PretSafariItems items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
     {
         var paths = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
         foreach (var source in region.Scripts)
         {
             if (paths.TryGetValue(source.Path, out var prior))
             {
-                if (prior.SourceRef.Sha256 != source.SourceRef.Sha256 || prior.Text != source.Text)
+                if (prior.Text != source.Text)
                     throw new InvalidDataException("safari_source_conflict: " + source.Path);
                 continue;
             }
@@ -41,12 +40,9 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("safari_item_constant_conflict");
             constants[definition.SourceItemSymbol] = definition.SourceItemId;
         }
-        hashes.AddRange(region.AdditionalSourceHashes); hashes.AddRange(items.AdditionalSourceHashes);
-        hashes.Add("safari-campaign:" + SafariContentProfile);
     }
 
-    private static IEnumerable<FieldPickupDefinition> SafariPickupDefinitions(PretSafariRegion region,
-        EarlyShopCatalog shop, PewterMachineCatalog machines, PretSafariItems items, PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> SafariPickupDefinitions(PretSafariRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretSafariItems items,PretStoryCompilation scripts)
     {
         foreach (var row in region.Contracts.GetProperty("pickups").EnumerateArray())
         {
@@ -56,11 +52,11 @@ public sealed partial class PretCampaignCatalog
             var source = PewterMachineRules.Definition(machines, id)?.Machine.Item ??
                 items.Items.SingleOrDefault(i => i.Metadata.Item.Id == id)?.Metadata.Item;
             int number = ordinary?.SourceItemId ?? source?.SourceItemId ?? throw new InvalidDataException("safari_pickup_item_missing: " + symbol);
-            string name = ordinary?.Name ?? source!.Name, pocket = ordinary?.Pocket ?? source!.Pocket;
+            string name = ordinary?.Name ?? source!.Name,pocket = ordinary?.Pocket ?? source!.Pocket;
             var map = region.SourceMaps[new(row.GetProperty("map").GetString()!)];
-            int local = row.GetProperty("localId").GetInt32(), x = row.GetProperty("x").GetInt32(), y = row.GetProperty("y").GetInt32();
+            int local = row.GetProperty("localId").GetInt32(),x = row.GetProperty("x").GetInt32(),y = row.GetProperty("y").GetInt32();
             var actor = map.Events.GetProperty("object_events").EnumerateArray().ElementAt(local - 1);
-            string flag = row.GetProperty("flag").GetString()!, label = row.GetProperty("label").GetString()!;
+            string flag = row.GetProperty("flag").GetString()!,label = row.GetProperty("label").GetString()!;
             if (actor.GetProperty("script").GetString() != label || actor.GetProperty("flag").GetString() != flag ||
                 actor.GetProperty("x").GetInt32() != x || actor.GetProperty("y").GetInt32() != y ||
                 !scripts.TryConstant(flag, out int sourceFlag)) throw new InvalidDataException("safari_pickup_source_mismatch");

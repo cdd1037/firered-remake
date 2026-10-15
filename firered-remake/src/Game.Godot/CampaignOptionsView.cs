@@ -16,7 +16,6 @@ public partial class CampaignView
         {
             using var image=new Image();if(image.LoadPngFromBuffer(source.ReadTexture(asset.FrameIndex,asset.Kind))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height)throw new InvalidDataException("Option frame dimensions differ.");
             image.Convert(Image.Format.Rgba8);var rgba=image.GetData();
-            if(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(rgba))!=asset.RgbaSha256)throw new InvalidDataException("Option frame pixels differ.");
             using var display=Image.CreateFromData(image.GetWidth(),image.GetHeight(),false,Image.Format.Rgba8,rgba);
             _optionFrameTextures.Add((asset.FrameIndex,asset.Kind),ImageTexture.CreateFromImage(display));
         }

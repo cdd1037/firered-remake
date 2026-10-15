@@ -2,7 +2,7 @@
 """Rebuild bounded Six Island encounter declarations and source move/held-item witnesses.
 Only reads immutable pret Git blobs; never executes upstream programs.
 """
-import argparse, hashlib, json, re, subprocess
+import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 MAPS = ["MAP_SIX_ISLAND_WATER_PATH", "MAP_SIX_ISLAND_RUIN_VALLEY"]
@@ -10,13 +10,12 @@ def generate(reference):
     inputs = {}
     def read(path):
         data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-        inputs[path] = dict(path=path, byteLength=len(data), sha256=hashlib.sha256(data).hexdigest())
+        inputs[path] = dict(path=path)
         return data.decode()
     raw = read("src/data/wild_encounters.json")
     encounters = [e for group in json.loads(raw)["wild_encounter_groups"] for e in group["encounters"] if e["map"] in MAPS and e["base_label"].endswith("_FireRed")]
     assert len(encounters) == 2
     encounters.sort(key=lambda e: MAPS.index(e["map"]))
-    wild_hash = inputs["src/data/wild_encounters.json"]["sha256"]
     def map_id(symbol): return "map." + symbol[4:].lower().replace("_", "-")
     tables = "using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\n/// <summary>Exact pinned FireRed Six Island tables. Rod subdivisions retain their source indexes.</summary>\npublic static class SixIslandEncounterTables\n{\n"
     for field, prop, typ, weights in [("land_mons","Land","EarlyLandEncounterTable",[20,20,10,10,10,10,5,5,4,4,1,1]),("water_mons","Water","WaterEncounterTable",[60,30,5,4,1]),("fishing_mons","FishingSource","OldRodEncounterTable",[70,30,60,20,20,40,40,15,4,1])]:
@@ -26,7 +25,7 @@ def generate(reference):
             table = e[field]
             slots = ",".join(f'new({i},new("pret:{m["species"]}"),{m["min_level"]},{m["max_level"]},{weights[i]})' for i,m in enumerate(table["mons"]))
             symbol = f',"{e["map"]}"' if field == "water_mons" else ""
-            tables += f'        new(new("{map_id(e["map"])}"){symbol},EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"{e["base_label"]}","{wild_hash}",{table["encounter_rate"]},[{slots}]),\n'
+            tables += f'        new(new("{map_id(e["map"])}"){symbol},EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"{e["base_label"]}",{table["encounter_rate"]},[{slots}]),\n'
         tables += "    ];\n"
     tables += "}\n"
     combinations = sorted({(m["species"],lv) for e in encounters for field in ["land_mons","water_mons","fishing_mons"] for m in e.get(field,{}).get("mons",[]) for lv in range(m["min_level"],m["max_level"]+1)})
@@ -66,5 +65,5 @@ def main():
         path=a.output/name
         if a.check: assert path.read_text()==text,name
         else: path.parent.mkdir(parents=True,exist_ok=True);path.write_text(text)
-    print(json.dumps(dict(checked=a.check,files={name:hashlib.sha256(value.encode()).hexdigest() for name,value in files.items()})))
+    print(json.dumps(dict(checked=a.check)))
 if __name__=="__main__": main()

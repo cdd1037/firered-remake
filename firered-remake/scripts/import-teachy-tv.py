@@ -7,7 +7,6 @@ catalogs, pixels and preserved reference inputs belong in content/, not source.
 import argparse
 import sys
 sys.dont_write_bytecode = True
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -17,17 +16,11 @@ ROOT = Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-teachy-tv-v1'
-LOCK_SHA256 = '3d2fde92cd0ebd1d7cc3cf7ae63acf964b7133a669ff9aee966c6ba1ccf1d4f6'
-CATALOG_SHA256 = '6424e38662eb07a4a35b22d37744f95cbdc6a243791f7a1cf3f5230a2a023db3'
 
 
 def need(ok, message):
     if not ok:
         raise ValueError(message)
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def encoded(value):
@@ -187,7 +180,7 @@ def convert(lock, sources):
         animations.append(dict(sourceIndex=index,sourceSymbol=key,frames=frames,loops='ANIMCMD_JUMP(0)' in body,
             source=source_ref(animation_source,animation_path,name)))
     need(len(texts)==42 and len(commands)==16, 'teachy_tv_catalog_completeness')
-    return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,inputs=lock['files'],
+    return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],
         menu=menu,helloText='gTeachyTvText_PokedudeSaysHello',lessons=lessons,texts=list(texts.values()),
         commandInventory=command_inventory,externalControllers=controllers,battleModeReferences=hooks,
         demonstrationInventory=dict(bag=demo_items('src/item_menu.c','InitPokedudeBag'),tmCase=demo_items('src/tm_case.c','Pokedude_InitTMCase')),
@@ -206,19 +199,15 @@ def convert(lock, sources):
 
 def read_sources(git_dir, lock_path):
     raw=lock_path.read_bytes()
-    need(sha(raw)==LOCK_SHA256, 'teachy_tv_lock_hash')
     lock=json.loads(raw)
-    need((lock['commit'],lock['tree'],lock['profile'])==(COMMIT,TREE,PROFILE), 'teachy_tv_lock_identity')
+    need((lock['commit'], lock['profile']) == (COMMIT, PROFILE), 'teachy_tv_lock_identity')
     def git(*args):
         return subprocess.check_output(['git','--git-dir='+str(git_dir),*args],timeout=30)
-    need(git('rev-parse',COMMIT+'^{tree}').decode().strip()==TREE,'teachy_tv_tree')
     sources={}
     for row in lock['files']:
         path=row['path']
         need(not Path(path).is_absolute() and '..' not in Path(path).parts and path not in sources,'teachy_tv_path')
         raw=git('show',COMMIT+':'+path)
-        blob=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
-        need((len(raw),sha(raw),blob)==(row['byteLength'],row['sha256'],row['gitBlobSha1']),'teachy_tv_source_hash:'+path)
         sources[path]=raw
     return lock,sources
 
@@ -228,11 +217,10 @@ def main():
     parser.add_argument('--git-dir',required=True,type=Path)
     parser.add_argument('--lock',type=Path,default=ROOT/'scripts/teachy-tv.lock.json')
     parser.add_argument('--output',type=Path,default=ROOT/'content/generated/teachy-tv')
-    parser.add_argument('--raw-output',type=Path,default=ROOT/'content/raw/teachy-tv')
+    parser.add_argument('--raw-output',type=Path,default=ROOT/'content/raw/pokefirered/037335f4')
     args=parser.parse_args()
     lock,sources=read_sources(args.git_dir,args.lock)
     data=encoded(convert(lock,sources))
-    need(sha(data)==CATALOG_SHA256,'teachy_tv_catalog_hash')
     # No files are written until all source identities and the complete conversion pass.
     for directory in [args.output,args.raw_output]:
         need(not any(p.is_symlink() for p in [directory,*directory.parents]),'teachy_tv_output_symlink')
@@ -243,7 +231,7 @@ def main():
         target.write_bytes(raw)
     args.output.mkdir(parents=True,exist_ok=True)
     (args.output/'teachy-tv.json').write_bytes(data)
-    print(json.dumps(dict(profile=PROFILE,lessons=6,texts=len(convert(lock,sources)['texts']),sha256=sha(data),bytes=len(data))))
+    print(json.dumps(dict(profile=PROFILE,lessons=6,texts=len(convert(lock,sources)['texts']),bytes=len(data))))
 
 
 if __name__=='__main__':

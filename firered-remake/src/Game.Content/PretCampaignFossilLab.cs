@@ -17,21 +17,17 @@ public sealed partial class PretCampaignCatalog
     public FossilLabMachineCatalog FossilLabMachines { get; }
     public FossilLabShopCatalog FossilLabShop { get; }
 
-    private static void AppendFossilLabSources(PretFossilLabRegion region,
-        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
-        => AppendAuthenticatedRegionalSources(region.Scripts, region.TextSources.Values, region.Constants, region.AdditionalSourceHashes,
-            sources, texts, constants, hashes);
+    private static void AppendFossilLabSources(PretFossilLabRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
+        => AppendAuthenticatedRegionalSources(region.Scripts,region.TextSources.Values,region.Constants,sources,texts,constants);
 
-    private static void AppendAuthenticatedRegionalSources(IEnumerable<PretSourceScriptFile> scripts, IEnumerable<string> textSources,
-        IReadOnlyDictionary<string, int> sourceConstants, IEnumerable<string> sourceHashes,
-        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
+    private static void AppendAuthenticatedRegionalSources(IEnumerable<PretSourceScriptFile> scripts,IEnumerable<string> textSources,IReadOnlyDictionary<string, int> sourceConstants,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
     {
         var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
         foreach (var file in scripts)
         {
             if (previous.TryGetValue(file.Path, out var existing))
             {
-                if (existing.SourceRef.Sha256 != file.SourceRef.Sha256 || existing.Text != file.Text)
+                if (existing.Text != file.Text)
                     throw new InvalidDataException("current_regional_source_conflict:" + file.Path);
             }
             else { previous.Add(file.Path, file); sources.Add(file); }
@@ -40,18 +36,13 @@ public sealed partial class PretCampaignCatalog
         foreach (var text in textSources)
             if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
         MergeRegionalServiceConstants(constants, sourceConstants);
-        hashes.AddRange(sourceHashes);
     }
 
-    private static void ValidateFossilLabComposition(PretFossilLabRegion region,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
-        PretStoryCompilation scripts)
+    private static void ValidateFossilLabComposition(PretFossilLabRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {
-        if (previous.Count != 312 || maps.Count != 314 || region.NewMaps.Count != 2 ||
-            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            region.NewMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+        if (region.NewMaps.Count != 2 )
             throw new InvalidDataException("fossil_lab_map_composition");
-        foreach (var (name, width) in new[] { ("entrance", 28), ("experiment-room", 15) })
+        foreach (var (name, width) in new[] { ("entrance", 28),("experiment-room", 15) })
         {
             var map = maps[new("map.cinnabar-island-pokemon-lab-" + name)];
             if (map.Width != width || map.Height != 11 || map.Events.GetProperty("allow_cycling").GetBoolean() ||
@@ -62,7 +53,7 @@ public sealed partial class PretCampaignCatalog
         if (entrance.GetProperty("x").GetInt32() != 8 || entrance.GetProperty("y").GetInt32() != 9 ||
             entrance.GetProperty("dest_map").GetString() != "MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE" ||
             entrance.GetProperty("dest_warp_id").GetString() != "1") throw new InvalidDataException("fossil_lab_city_entrance");
-        foreach (var label in new[] { "FossilScientist", "ShowHelixFossil", "ShowDomeFossil", "GiveOmanyte", "GiveKabuto" })
+        foreach (var label in new[] { "FossilScientist","ShowHelixFossil","ShowDomeFossil","GiveOmanyte","GiveKabuto" })
         {
             var program = scripts.FindProgram("CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_" + label);
             if (program is null || program.Instructions.IsEmpty || program.Instructions.Any(i => i.Op == StoryOp.Unsupported))

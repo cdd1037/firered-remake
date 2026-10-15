@@ -18,7 +18,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteItemTransfer(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (!HasItemTransferRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasItemTransferRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_item_transfer_definition");
         if (move.Effect == "EFFECT_RECYCLE")
         {

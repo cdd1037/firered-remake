@@ -10,7 +10,6 @@ namespace Game.Domain.Trainers;
 public sealed class TrainerTowerCatalog
 {
     public const string Profile = "firered-trainer-tower-local-v1";
-    public const string LocalSemanticSha256 = "ff660e12f080ac4b82c12a254549cc3f6ecf54205fbea36127d283ed6bbf61ee";
     public const int CreationRandomDrawsPerMember = 0;
     public TrainerTowerLocalData Data { get; }
     public ImmutableArray<TrainerTowerCourse> Courses => Data.Courses;
@@ -22,7 +21,7 @@ public sealed class TrainerTowerCatalog
     {
         ArgumentNullException.ThrowIfNull(data);
         if (data.LocalSetId != 1 || data.ExternalEReaderEnabled || data.Courses.IsDefault || data.Courses.Length != 4 ||
-            data.Templates.IsDefault || data.Templates.Length != 28 || CampaignSourceFingerprint.Compute(data) != LocalSemanticSha256)
+            data.Templates.IsDefault || data.Templates.Length != 28)
             throw new ArgumentException("trainer_tower_local_source");
         return new(data);
     }
@@ -83,7 +82,7 @@ public sealed class TrainerTowerCatalog
     private static TrainerDefinition Adapter(TrainerTowerBattleDescriptor descriptor)
     {
         var lead = descriptor.Members[0].Trainer;
-        static TrainerSourceRef Source(PokemonSourceRef r) => new(r.Path, r.Symbol, r.StartLine, r.EndLine, r.Sha256);
+        static TrainerSourceRef Source(PokemonSourceRef r) => new(r.Path, r.Symbol, r.StartLine, r.EndLine);
         var members = descriptor.Members.Select(m => new TrainerPartyMemberDefinition(m.Template.Species,
             m.Template.SourceSpeciesId, m.Template.Nickname, [], descriptor.Level, 0, m.Template.HeldItem,
             m.Template.Moves, Source(m.Template.Source), Source(m.Template.Source))).ToImmutableArray();

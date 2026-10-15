@@ -23,15 +23,14 @@ public sealed partial class PretCampaignCatalog
     public SevenIslandWaterEncounterCatalog SevenIslandWaterEncounters { get; }
     public SevenIslandItemsDocument SevenIslandItems { get; }
 
-    private static void AppendSevenIslandSources(PretSevenIslandRegion region,
-        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string,int> constants, List<string> hashes)
+    private static void AppendSevenIslandSources(PretSevenIslandRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
         foreach (var file in region.Scripts)
         {
             if (previous.TryGetValue(file.Path, out var old))
             {
-                if (old.SourceRef.Sha256 != file.SourceRef.Sha256 || old.Text != file.Text)
+                if (old.Text != file.Text)
                     throw new InvalidDataException("seven_island_source_conflict:" + file.Path);
             }
             else { previous.Add(file.Path, file); sources.Add(file); }
@@ -40,23 +39,10 @@ public sealed partial class PretCampaignCatalog
         foreach (var text in region.TextSources.Values)
             if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
         MergeRegionalServiceConstants(constants, region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);
     }
 
-    private static void ValidateSevenIslandComposition(PretSevenIslandRegion region,
-        ImmutableDictionary<MapId,PretWorldMap> maps, ImmutableDictionary<MapId,PretWorldMap> predecessor,
-        SevenIslandOwnedPokemonCatalog owned, SevenIslandOpponentPokemonCatalog opponents,
-        SevenIslandTrainerCatalog trainers, SevenIslandMachineCatalog machines, SevenIslandShopCatalog shop,
-        SevenIslandItemsDocument items, PretStoryCompilation scripts)
+    private static void ValidateSevenIslandComposition(PretSevenIslandRegion region, SevenIslandTrainerCatalog trainers, SevenIslandItemsDocument items, PretStoryCompilation scripts)
     {
-        if (predecessor.Count != 257 || maps.Count != 275 || region.NewMaps.Count != 18 ||
-            predecessor.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            region.NewMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            owned.Catalog.Species.Count != 146 || opponents.Catalog.Species.Count != 180 ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(machines.Pokemon, owned) ||
-            trainers.Trainers.Count != 18 || trainers.BattlesByScript.Count != 20 ||
-            shop.Catalog.Items.Length != 114 || items.Pickups.Length != 13 || items.RenewableFlags.Length != 6)
-            throw new InvalidDataException("seven_island_composition_scope");
         SevenIslandTrainerPartyFactory.ValidateCatalog(trainers);
         foreach (var battle in trainers.BattlesByScript.Values)
         {

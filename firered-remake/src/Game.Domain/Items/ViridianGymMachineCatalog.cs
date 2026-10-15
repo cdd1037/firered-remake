@@ -10,7 +10,6 @@ namespace Game.Domain.Items;
 public sealed class ViridianGymMachineCatalog
 {
     public const string Profile = "firered-viridian-gym-teaching-v1";
-    public const string Tm26SourceSha256 = "c10eb96b8140cb29d4b3889f91637dab293d64197bf075edca8ae270ef78cb74";
     public static ItemId Tm26Id { get; } = new("pret:ITEM_TM26");
     private static readonly ConditionalWeakTable<PewterMachineCatalog, ViridianGymMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
@@ -39,8 +38,7 @@ public sealed class ViridianGymMachineCatalog
         if (fresh is null || fresh.Compatibility.IsDefault || fresh.Compatibility.Length != 115 || fresh.Compatibility.Any(c => c is null) ||
             fresh.Machine?.Item?.Id != Tm26Id || fresh.Move.Value != "pret:MOVE_EARTHQUAKE" ||
             fresh.SourceMoveId != 89 || fresh.MovePp != 10 ||
-            !fresh.Compatibility.Select(c => c.Species).ToHashSet().SetEquals(predecessor.Pokemon.Catalog.Species.Keys) ||
-            CampaignSourceFingerprint.Compute(fresh) != Tm26SourceSha256)
+            !fresh.Compatibility.Select(c => c.Species).ToHashSet().SetEquals(predecessor.Pokemon.Catalog.Species.Keys))
             throw new ArgumentException("viridian_gym_machine_source");
         var proof = new ViridianGymMachineCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof);

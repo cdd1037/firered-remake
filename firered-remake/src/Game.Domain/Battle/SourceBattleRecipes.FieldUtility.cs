@@ -17,7 +17,7 @@ internal abstract partial class SourceRecipeContext
     }
     internal void ExecuteFieldUtility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move, string purpose)
     {
-        if (!HasFieldUtilityRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasFieldUtilityRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_field_utility_definition");
         if (move.Effect == "EFFECT_UPROAR")
         {

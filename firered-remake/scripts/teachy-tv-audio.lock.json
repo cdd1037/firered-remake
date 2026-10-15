@@ -2,80 +2,45 @@
   "schemaVersion": 1,
   "repository": "pret/pokefirered",
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-teachy-tv-audio-v1",
   "inputs": [
     {
-      "path": "src/teachy_tv.c",
-      "byteLength": 41130,
-      "sha256": "1118a976220b53c6ce3415262f7b0e19c84724d8e3c6e0ca1bb8f5bd40c5a2cf",
-      "gitBlobSha1": "0366330644dd0572b07b56a1e983596d8825bf24"
+      "path": "src/teachy_tv.c"
     },
     {
-      "path": "src/data/text/teachy_tv.h",
-      "byteLength": 7487,
-      "sha256": "1a13ffc13846e0465cbb68f9e90722df90c017e438d0832d66fe9d0dc41f7d0b",
-      "gitBlobSha1": "3cfa41ff788c5b5f3e99b5cec7c68ebbd27e205d"
+      "path": "src/data/text/teachy_tv.h"
     },
     {
-      "path": "src/text.c",
-      "byteLength": 63210,
-      "sha256": "5696f49443eeaaac74b530421ac7f0cbfc71996c557399583788111c322dd80c",
-      "gitBlobSha1": "f3eef07ce6dea8269980a5ecfdd6902c1c9c13d2"
+      "path": "src/text.c"
     },
     {
-      "path": "src/sound.c",
-      "byteLength": 15232,
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+      "path": "src/sound.c"
     },
     {
-      "path": "include/constants/songs.h",
-      "byteLength": 17891,
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+      "path": "include/constants/songs.h"
     },
     {
-      "path": "sound/song_table.inc",
-      "byteLength": 9204,
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+      "path": "sound/song_table.inc"
     },
     {
-      "path": "sound/songs/midi/midi.cfg",
-      "byteLength": 20338,
-      "sha256": "49b3a0b5a2809ccd8b504da3bedfb0f5168afd073b94ef6c10a3904e1ea62560",
-      "gitBlobSha1": "71a968f7b52eb1ed005695c7c97aec856cfeb980"
+      "path": "sound/songs/midi/midi.cfg"
     },
     {
-      "path": "sound/songs/midi/mus_teachy_tv_menu.mid",
-      "byteLength": 582,
-      "sha256": "2cbed3884d0ac2c8baae6cecbef4316ea87318817961f5703351f724cd6f8964",
-      "gitBlobSha1": "b5d446098a7c8bd2dad5eb59f7abd570afb5e571"
+      "path": "sound/songs/midi/mus_teachy_tv_menu.mid"
     },
     {
-      "path": "sound/songs/midi/mus_follow_me.mid",
-      "byteLength": 4005,
-      "sha256": "2e256a449e13fdd5e4ea023ca22dc1e49ecc37ac3b0aba474ea507e0e177eaf3",
-      "gitBlobSha1": "efea75d49f6aa4168b9e7678ae77d5755017b626"
+      "path": "sound/songs/midi/mus_follow_me.mid"
     },
     {
-      "path": "sound/songs/midi/se_select.mid",
-      "byteLength": 107,
-      "sha256": "f5393c12d1e28a551db9dae8278dc6f499151fb730c01a0ad08d413ff5adc10b",
-      "gitBlobSha1": "5f38c82d7287de397323767ab003daa922635cbe"
+      "path": "sound/songs/midi/se_select.mid"
     }
   ],
   "inheritedInputs": [
     {
-      "path": "content/generated/synth-audio/firered.pack",
-      "byteLength": 2565436,
-      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+      "path": "content/generated/synth-audio/firered.pack"
     },
     {
-      "path": "content/generated/synth-audio/manifest.json",
-      "byteLength": 88374,
-      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+      "path": "content/generated/synth-audio/manifest.json"
     }
   ]
 }

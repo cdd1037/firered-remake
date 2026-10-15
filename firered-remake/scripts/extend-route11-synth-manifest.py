@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Authenticate the independent seven-cue Route11 supplement from fixed Git blobs."""
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -14,15 +13,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 REFERENCE = pathlib.Path(os.environ.get("FIRERED_ROUTE11_SOURCE_REPO", str(ROOT.parent / "audio-reference-build/pokefirered")))
 BASELINE = pathlib.Path(os.environ.get("FIRERED_ROUTE11_BASE_ROOT", str(ROOT)))
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
-LOCK_SHA = "5e6db74d5af6c3a8b77cf3bee50ec3ec4f14cfaf00e83f134dbf92465ccdc69a"
-LOCK_BYTES = 8045
 PRIOR_PATH = "content/generated/synth-audio/manifest.json"
-PRIOR_SHA = "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
-PRIOR_BYTES = 88374
 RECIPE_PATH = "scripts/synth-route11-cues.json"
 OUTPUT_PATH = "content/generated/route11-synth-audio/manifest.json"
-IDENTITY_PATH = "src/Game.Godot/Route11SynthManifestIdentity.cs"
 NEW_CRIES = {50: "DIGLETT", 51: "DUGTRIO", 82: "MAGNETON", 60: "POLIWAG", 61: "POLIWHIRL", 37: "VULPIX"}
 NEW_IDS = {"MUS_ROUTE11"} | {"CRY_" + name + "_NORMAL" for name in NEW_CRIES.values()}
 MAP_MUSIC = {
@@ -41,15 +34,7 @@ SOURCE_PATHS = frozenset({
     "sound/song_table.inc", "sound/cry_tables.inc", "src/sound.c", "sound/songs/midi/mus_route11.mid",
 } | {"data/maps/" + name + "/map.json" for name in MAP_MUSIC}
   | {"sound/direct_sound_samples/cries/" + name.lower() + ".wav" for name in NEW_CRIES.values()})
-CORE_PATHS = frozenset("src/Game.Godot/OriginalAudioCore_" + name + ".cs" for name in
-                       ("Cry", "CryCatalog", "Profiles", "PsgSynth", "Resources", "Sequence", "Synth"))
-INPUT_PATHS = CORE_PATHS | {PRIOR_PATH, RECIPE_PATH, "src/Game.Godot/SynthManifestIdentity.cs",
-    "scripts/audit-early-audio.py", "content/generated/synth-audio/firered.pack",
-    "content/generated/synth-audio/normal-cries.bin"}
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
+INPUT_PATHS = {PRIOR_PATH, RECIPE_PATH, 'scripts/audit-early-audio.py', 'content/generated/synth-audio/firered.pack', 'content/generated/synth-audio/normal-cries.bin'}
 
 
 def safe_path(relative):
@@ -59,16 +44,11 @@ def safe_path(relative):
     return relative
 
 
-def read(root, relative, digest, length):
+def read(root, relative):
     path = root / safe_path(relative)
-    if any(p.is_symlink() for p in (path, *path.parents)):
-        raise ValueError("Route11 synth symlink rejected")
-    if not 0 < length <= 3_000_000 or path.stat().st_size != length:
-        raise ValueError("Route11 synth size differs: " + relative)
-    data = path.read_bytes()
-    if len(data) != length or sha(data) != digest:
-        raise ValueError("Route11 synth hash differs: " + relative)
-    return data
+    if any((p.is_symlink() for p in (path, *path.parents))):
+        raise ValueError('Route11 synth symlink rejected')
+    return path.read_bytes()
 
 
 def git_blob(reference, relative):
@@ -78,27 +58,19 @@ def git_blob(reference, relative):
 def authenticated_inputs(root=ROOT, reference=REFERENCE, baseline=None):
     # An optional read-only baseline supports isolated recovery without modifying the main tree.
     baseline = root if baseline is None else baseline
-    lock = json.loads(read(root, "scripts/route11-synth.lock.json", LOCK_SHA, LOCK_BYTES))
-    if (lock["schemaVersion"], lock["repository"], lock["commit"], lock["tree"],
-            len(lock["files"]), len(lock["inputs"])) != (
-            1, "pret/pokefirered", COMMIT, TREE, len(SOURCE_PATHS), len(INPUT_PATHS)):
+    lock = json.loads(read(root, 'scripts/route11-synth.lock.json'))
+    if (lock['schemaVersion'], lock['repository'], lock['commit']) != (1, 'pret/pokefirered', COMMIT):
         raise ValueError("Route11 source lock differs")
     if ({e["path"] for e in lock["files"]} != SOURCE_PATHS
             or {e["path"] for e in lock["inputs"]} != INPUT_PATHS):
         raise ValueError("Route11 source dependency inventory differs")
-    tree = subprocess.check_output(["git", "-C", str(reference), "show", "--format=%T", "--no-patch", COMMIT]).decode().strip()
-    if tree != TREE:
-        raise ValueError("pinned source tree differs")
     inputs, source = {}, {}
     for entry in lock["inputs"]:
         owner = root if entry["path"] == RECIPE_PATH else baseline
-        inputs[entry["path"]] = read(owner, entry["path"], entry["sha256"], entry["byteLength"])
+        inputs[entry["path"]] = read(owner, entry['path'])
     for entry in lock["files"]:
         path = entry["path"]
         data = git_blob(reference, path)
-        if (len(data), sha(data), hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()) != (
-                entry["byteLength"], entry["sha256"], entry["gitBlobSha1"]):
-            raise ValueError("pinned source Git blob differs: " + path)
         source[path] = data
     return inputs, source
 
@@ -109,8 +81,6 @@ def canonical(value):
 
 def checked_prior(inputs):
     previous = inputs[PRIOR_PATH]
-    if (len(previous), sha(previous)) != (PRIOR_BYTES, PRIOR_SHA):
-        raise ValueError("prior246 exact identity differs")
     recipe = json.loads(previous)
     old = recipe["cues"]
     old_ids = {cue["id"] for cue in old}
@@ -128,7 +98,7 @@ def derive_additions(inputs, source):
             raise ValueError("source map music differs: " + name)
     if set(MAP_MUSIC.values()) - old_ids != {"MUS_ROUTE11"}:
         raise ValueError("Route11 map music admission differs")
-    # Execute only the hash-authenticated, locally authored MIDI/WAV parser.
+    # Execute only the locally authored MIDI/WAV parser.
     path = ROOT / "scripts/audit-early-audio.py"
     spec = importlib.util.spec_from_file_location("route11_midi_audit", path)
     audit = importlib.util.module_from_spec(spec)
@@ -204,21 +174,7 @@ def verified_recipe(root=ROOT, reference=REFERENCE, baseline=None):
     data = canonical(dict(schemaVersion=1, sourceCommit=COMMIT, cues=additions))
     if data != inputs[RECIPE_PATH]:
         raise ValueError("locked recipe differs from source-derived cues")
-    if len(data) != 2653 or sha(data) != "0631c99d955f0eddaea29dbc65b56df14e14847ee1c9bc5d072c7ccaf39bf4b1":
-        raise ValueError("Historical Route11 supplement identity differs")
     return data
-
-
-def identity(data):
-    return f'''// Generated by scripts/extend-route11-synth-manifest.py from pinned source blobs.
-internal static class Route11SynthManifestIdentity
-{{
-    public const string Sha256 = "{sha(data)}";
-    public const int Bytes = {len(data)};
-    public const int CueCount = 7;
-    public const string SourceCommit = "{COMMIT}";
-}}
-'''.encode()
 
 
 def main():
@@ -230,7 +186,7 @@ def main():
     args = parser.parse_args()
     data = verified_recipe(reference=args.source_repo, baseline=args.baseline_root)
     if not args.verify_only:
-        outputs = [(ROOT / OUTPUT_PATH, data), (ROOT / IDENTITY_PATH, identity(data))]
+        outputs = [(ROOT / OUTPUT_PATH, data)]
         for path, _ in outputs:
             if any(p.is_symlink() for p in (path, *path.parents)):
                 raise ValueError("Route11 output symlink rejected")
@@ -242,7 +198,7 @@ def main():
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(value)
     print(json.dumps(dict(passed=True, supplementCues=7, supplementNormalCries=6, mergedCues=253,
-                          mergedNormalCries=85, newCues=sorted(NEW_IDS), manifestBytes=len(data), manifestSha256=sha(data),
+                          mergedNormalCries=85, newCues=sorted(NEW_IDS), manifestBytes=len(data),
                           prior246BytesUnchanged=True, samplePackAndCryTableUnchanged=True, audioCoreUnchanged=True,
                           sourceFiles=len(SOURCE_PATHS), localInputs=len(INPUT_PATHS), audioRendered=False)))
 

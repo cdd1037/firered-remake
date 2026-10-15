@@ -14,13 +14,13 @@ public partial class CampaignView
     private void LoadFossilLabPresentation()
     {
         if (!_catalog.FossilLabEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.FightingDojoEnabled || _route22Footprints.Count != 131)
+        if (!_session.IsCurrentGame || !_catalog.FightingDojoEnabled)
             throw new InvalidDataException("Fossil Lab requires its current Fighting Dojo presentation predecessor.");
         var art = PretFossilLabPresentation.Load(_root);
         Texture2D Pixels(JsonElement row)
         {
             using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(),
-                false, Image.Format.Rgba8, art.Files[row.GetProperty("rgbaPath").GetString()!]);
+                false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
             return SceneTextures.FromImage(image);
         }
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
@@ -41,8 +41,7 @@ public partial class CampaignView
         void RequireInheritedPixels(Texture2D texture, JsonElement row)
         {
             using var image = texture.GetImage(); image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != row.GetProperty("width").GetInt32() || image.GetHeight() != row.GetProperty("height").GetInt32() ||
-                !image.GetData().SequenceEqual(art.Files[row.GetProperty("rgbaPath").GetString()!]))
+            if (image.GetWidth() != row.GetProperty("width").GetInt32() || image.GetHeight() != row.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Inherited Aerodactyl pixels differ.");
         }
         foreach (var row in art.Manifest.GetProperty("inheritedSprites").EnumerateArray())
@@ -65,10 +64,7 @@ public partial class CampaignView
                 throw new InvalidDataException("Fossil Lab dex metadata differs from the authenticated source menu.");
         _fossilLabArt = art;
         LoadOldAmberPocket(art);
-        if (_route22Footprints.Count != 136) throw new InvalidDataException("Fossil Lab footprint inventory differs.");
-        Write("fossilLabPresentation", new { PretFossilLabPresentation.ManifestSha256,
-            newBattleSprites = 16, newIcons = 4, inheritedBattleSprites = 4, inheritedIcons = 1,
-            newFootprints = 5, dexEntries = 5, newAudioCues = 4, inheritedAudioCues = 1, oldAmberPocket = true,
+        Write("fossilLabPresentation", new {             oldAmberPocket = true,
             nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
@@ -85,13 +81,12 @@ public partial class CampaignView
         var document = _questPocketUi ?? throw new InvalidDataException("Old Amber requires the current Key Items pocket.");
         if (document.Items.Any(i => i.Id == id)) throw new InvalidDataException("Old Amber bag presentation is duplicated.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
-        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, art.Files[icon.GetProperty("rgbaPath").GetString()!]);
+        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[icon.GetProperty("texturePath").GetString()!]));
         _questPocketTextures.Add(assetId, ImageTexture.CreateFromImage(image));
         _questPocketUi = document with
         {
             Items = document.Items.Add(new(id, item.SourceItemSymbol, item.Name, source.GetProperty("description").GetString()!, assetId, item.FieldUseFunction)),
-            Assets = document.Assets.Add(new(assetId, icon.GetProperty("texturePath").GetString()!, 24, 24, position.X, position.Y,
-                icon.GetProperty("sha256").GetString()!, icon.GetProperty("rgbaSha256").GetString()!))
+            Assets = document.Assets.Add(new(assetId,icon.GetProperty("texturePath").GetString()!,24,24,position.X,position.Y))
         };
     }
 

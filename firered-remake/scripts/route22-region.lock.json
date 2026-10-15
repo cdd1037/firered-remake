@@ -3,1687 +3,1126 @@
   "completeGame": false,
   "files": [
     {
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
       "path": "asm/macros/event.inc",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      ]
     },
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      ]
     },
     {
-      "byteLength": 8,
-      "gitBlobSha1": "4531975c765efca1944de210b6b914c25285ffb9",
       "path": "data/layouts/Route22/border.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "b17588a0759ba33914dd907b908b7070de1672ebf7efb8b36156c9b4d93d47dc"
+      ]
     },
     {
-      "byteLength": 2304,
-      "gitBlobSha1": "1caf49cc729f3e82132687586e6077f7271e20d9",
       "path": "data/layouts/Route22/map.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "db6339fee271e6163e465f35098246c2aadd8f742851e9283103dde14aca9c0a"
+      ]
     },
     {
-      "byteLength": 8,
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
       "path": "data/layouts/Route22_NorthEntrance/border.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e0d28e51c7e052913771ad123ea4ae85d601f22af3040d698e9b1f6a6ecb5196"
+      ]
     },
     {
-      "byteLength": 360,
-      "gitBlobSha1": "1452ebb1313824a65ae47cb9d1cfc0bae6a5a2b8",
       "path": "data/layouts/Route22_NorthEntrance/map.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "067a1b3d18f28ce99e405158a57fef143e1d433a6fb7e3d0a12edf4fb73f8443"
+      ]
     },
     {
-      "byteLength": 8,
-      "gitBlobSha1": "a701312cfff9ef56ae960aed042d8b9e68eefb84",
       "path": "data/layouts/Route23/border.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "bd05db219b1304364f4d1c265db9cece1af50fb2332d9f39357fdc8d721dc449"
+      ]
     },
     {
-      "byteLength": 7680,
-      "gitBlobSha1": "f6f5f5662dd5cafef0cb9fe969d43280bb54bb58",
       "path": "data/layouts/Route23/map.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "935a3ce74624a9ea52f2d34edbe314955b97d52d1d134486c5851af61a1fd31a"
+      ]
     },
     {
-      "byteLength": 158096,
-      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
       "path": "data/layouts/layouts.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394"
+      ]
     },
     {
-      "byteLength": 9369,
-      "gitBlobSha1": "0621f6e96ba3ea9c88abd0af4b4d2f2874d2b180",
       "path": "data/maps/CeruleanCity/scripts.inc",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "d4e99c027ed400707ad2ce259ac0f8efc77ecbb8f5adff118be84b05ed29e49b"
+      ]
     },
     {
-      "byteLength": 1677,
-      "gitBlobSha1": "1d3903bf15aa25adcfbdb483c7cc076ccae892d4",
       "path": "data/maps/IndigoPlateau_Exterior/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f619c99de846ca45fce180d7d27d16637b33ef2349bb06429e39878622a82147"
+      ]
     },
     {
-      "byteLength": 47604,
-      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
       "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d"
+      ]
     },
     {
-      "byteLength": 13281,
-      "gitBlobSha1": "849a643c3a8c7d38efc6853f850698d9cf50a4ee",
       "path": "data/maps/PalletTown_ProfessorOaksLab/text.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "fb03a0a75876da386c54137e2eeed0dfb0da0d6fdaf3bc8c66cd83d36c2d724f"
+      ]
     },
     {
-      "byteLength": 2865,
-      "gitBlobSha1": "6da244d40828807eb434d2ee06da15ac71ffdb78",
       "path": "data/maps/Route22/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "3d77705fd405402183c292d15d47d698f96cd9cdf2e4e7534c2833032b6e7951"
+      ]
     },
     {
-      "byteLength": 5853,
-      "gitBlobSha1": "365f88d430accff86fcf18826be75c7f8782d252",
       "path": "data/maps/Route22/scripts.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "09015b4472fdd75b7ac1f01501ad76341b177f9b2b5ff94411c0fa6ea2139be2"
+      ]
     },
     {
-      "byteLength": 2326,
-      "gitBlobSha1": "911b732a6d66d11248decd14c1f794d0ef47bf81",
       "path": "data/maps/Route22/text.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "09e3400d8362665767d273f7e19bd1e5185ce170ab294687db184da87c310f19"
+      ]
     },
     {
-      "byteLength": 1710,
-      "gitBlobSha1": "40191e5c283e019bbc68b31a298b611ff568975b",
       "path": "data/maps/Route22_NorthEntrance/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f40d76ae1ab199e7a3ea7105a782b1cdde05de50cb89243bb967e3201db6560a"
+      ]
     },
     {
-      "byteLength": 463,
-      "gitBlobSha1": "b98823c78de74d586afd51232ead8d5e862a01e6",
       "path": "data/maps/Route22_NorthEntrance/scripts.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "ca911061c506bc3de87798c4223e9c5e09a32609a95baae4b695234e3ff6b7b3"
+      ]
     },
     {
-      "byteLength": 15426,
-      "gitBlobSha1": "9371d9ffa6f252637d65f9af788f885241e2aa2d",
       "path": "data/maps/Route23/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "cdcca456f3bbf7c5b591815b21611fddde631e55829ae588883f55627ed9cfe4"
+      ]
     },
     {
-      "byteLength": 3276,
-      "gitBlobSha1": "d3912a16f1c601356820e6914a1cb234f67a515a",
       "path": "data/maps/Route23/scripts.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "c8f109eb87df8be7bd99337ec562d478e0f365f7106a2773f1dbcdb5a431fec2"
+      ]
     },
     {
-      "byteLength": 103,
-      "gitBlobSha1": "c636fc531a4e07be64ba43a1ce02fa9594dc89cd",
       "path": "data/maps/Route23/text.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "e24373dc692907352f1f67f1fcdd9e4479303e59109f2bdc30dbc30abed3eecc"
+      ]
     },
     {
-      "byteLength": 4460,
-      "gitBlobSha1": "24d4550f90b3920bd782b8b437ff837eb4f77385",
       "path": "data/maps/VictoryRoad_1F/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "3885d2cac79afe4ce663b776dca2b4b758a680a49c8c23dbb69bfcf9d9951d2e"
+      ]
     },
     {
-      "byteLength": 7743,
-      "gitBlobSha1": "753eb93bb6646774965387844a1737c9ce3de735",
       "path": "data/maps/VictoryRoad_2F/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "4fc48795f3cf7a945e46bb0358dba23c50a6ede35c2875210f75b2195cc450d2"
+      ]
     },
     {
-      "byteLength": 7211,
-      "gitBlobSha1": "465d593cef4ceafc486be8b6ed5fe1b5b63cb140",
       "path": "data/maps/ViridianCity/map.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "5ce922b65f76335556ace9a047feeb1968854b604c8469c39cbbd60985f61bc1"
+      ]
     },
     {
-      "byteLength": 3816,
-      "gitBlobSha1": "3e07a41b7282d5ec9446be57b89ecdb19c570ff3",
       "path": "data/maps/ViridianCity_Gym/scripts.inc",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "a69345d0612e7999c466478b5b2569ae5c4c7750262de503060795ef68962046"
+      ]
     },
     {
-      "byteLength": 1147,
-      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5",
       "path": "data/scripts/movement.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64"
+      ]
     },
     {
-      "byteLength": 6267,
-      "gitBlobSha1": "9c8729ad58e27f51e2fa6a45bbb9e97156c88126",
       "path": "data/scripts/route23.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "0a26df3d93af644e902bf243128eac113cc439968107ae602d5b0b987cb190b8"
+      ]
     },
     {
-      "byteLength": 899,
-      "gitBlobSha1": "7c7586cf809ff9ab10abecaf510dccf5fa98807d",
       "path": "data/text/route23.inc",
       "roles": [
         "script-label-closure"
-      ],
-      "sha256": "c63e70094a8e4e0889cadb544e6a38359fd8f858de1b011545db2fb7cb992f7f"
+      ]
     },
     {
-      "byteLength": 2560,
-      "gitBlobSha1": "3dbc31883fdd14f31c7b86981508cc08ed3cc395",
       "path": "data/tilesets/primary/building/metatile_attributes.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "c609529ecdf1b443b75f144fd733f353a8ddaeb3584ab018a369bb2bea8da5d4"
+      ]
     },
     {
-      "byteLength": 10240,
-      "gitBlobSha1": "024797c8ee2b805df8566a62fb4e65f3244dac39",
       "path": "data/tilesets/primary/building/metatiles.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6b53b219dcacf26af58c7174279c24a44ad13194c7292c74fcf24c48a1be4b4b"
+      ]
     },
     {
-      "byteLength": 203,
-      "gitBlobSha1": "3b6416376ec903750b97307c613328b124481489",
       "path": "data/tilesets/primary/building/palettes/00.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6d8396ee26f5d12f993004066251e5b0b578adad04740aa17745a70853a1a725"
+      ]
     },
     {
-      "byteLength": 203,
-      "gitBlobSha1": "66561f6d3326d5c3c717426abed1b9b5ce771c29",
       "path": "data/tilesets/primary/building/palettes/01.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "93c52f1deab53435356361fe1c47de7d6a038ae6f393adc8650a1641ed10846c"
+      ]
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "87a022102f199020c802e20c91a39c6e3461f929",
       "path": "data/tilesets/primary/building/palettes/02.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "220932f7bc7c1a6ef2dfa2efdc47d6b0f238440361400b629c441acd89306bea"
+      ]
     },
     {
-      "byteLength": 203,
-      "gitBlobSha1": "783496dcd9bf89b72ffc26a29991f49600a8c355",
       "path": "data/tilesets/primary/building/palettes/03.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "103665f17a67f4a83acfefdfa04a4e1ce736927dd65a9b6b64867ecbb9437c6c"
+      ]
     },
     {
-      "byteLength": 206,
-      "gitBlobSha1": "89eace6050ad504ce38e5ee5615def5d5109d3bf",
       "path": "data/tilesets/primary/building/palettes/04.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7a205e7a627e475e0f110f4082c221c39fb10c7b543cf4c90f1e6817831f30a1"
+      ]
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "c7780e5c7515197b8faf0eda54968653ed5e8c04",
       "path": "data/tilesets/primary/building/palettes/05.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "63c7f7fc52611a66b6371ea09da8d30ab1e9763136aceeb93bcae1016ba42211"
+      ]
     },
     {
-      "byteLength": 119,
-      "gitBlobSha1": "1d08ce9a2024a64b883c14bc907b448733603a8a",
       "path": "data/tilesets/primary/building/palettes/06.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "a88e85688071309411a19eea8f42792b69e073af41b5be6be6743f7e36b435f0"
+      ]
     },
     {
-      "byteLength": 162,
-      "gitBlobSha1": "c1e7c3d5c579c24997b6530692a6e52e3d9c13e9",
       "path": "data/tilesets/primary/building/palettes/07.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "86e55272f3d9823763f6b4345297787f060aa3974efa53fa83ddea93ae4dc0c6"
+      ]
     },
     {
-      "byteLength": 162,
-      "gitBlobSha1": "c1e7c3d5c579c24997b6530692a6e52e3d9c13e9",
       "path": "data/tilesets/primary/building/palettes/08.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "86e55272f3d9823763f6b4345297787f060aa3974efa53fa83ddea93ae4dc0c6"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/building/palettes/09.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/building/palettes/10.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/building/palettes/11.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/building/palettes/12.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/primary/building/palettes/13.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/primary/building/palettes/14.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 158,
-      "gitBlobSha1": "92e7ed30983dd6d08308f6f1c3ec4d681b231479",
       "path": "data/tilesets/primary/building/palettes/15.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "bf04092ebe65f2846c64e84f686749bce590f62b490303c8d23f275fe4067fa2"
+      ]
     },
     {
-      "byteLength": 7011,
-      "gitBlobSha1": "8d864f27e2f1167e5879d3e8ec5b8546311208ba",
       "path": "data/tilesets/primary/building/tiles.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "0c6faa0058210ffd5794613c28969d1982737cc3b7d4feeab03a13895c8363f2"
+      ]
     },
     {
-      "byteLength": 219,
-      "gitBlobSha1": "d445b4045df3d8de2bb7716272ae949c94446a0f",
       "path": "data/tilesets/primary/general/anim/flower/0.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7196fa1936dea03f7aa0693f3ac7ee63f7caf87c7b6f55133e10cb6e75c893b4"
+      ]
     },
     {
-      "byteLength": 221,
-      "gitBlobSha1": "1aed594f656003ec005ba84d1c1a9bf9279484b7",
       "path": "data/tilesets/primary/general/anim/flower/1.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "56b7b97e3e05c4d36395e1a75430a9f0bce26f01dcd71a670df022cbb7caf99d"
+      ]
     },
     {
-      "byteLength": 219,
-      "gitBlobSha1": "5e58c29a90ded30f057fcd176ada0ce037d95723",
       "path": "data/tilesets/primary/general/anim/flower/2.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "cda8d10a44dff6e0fab7cdc660910d00dcc42ccf46d50244bcb960e3aded10ad"
+      ]
     },
     {
-      "byteLength": 218,
-      "gitBlobSha1": "bac3d26ffa1c9c7999a532462d75287900d4a7a4",
       "path": "data/tilesets/primary/general/anim/flower/3.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "512afc7073b9fba5b926002e9498795fc4178e32c9b62f884b0854fed5fd648f"
+      ]
     },
     {
-      "byteLength": 219,
-      "gitBlobSha1": "8e589150a000b42f4ce61f96dfb551b1cf48ddd0",
       "path": "data/tilesets/primary/general/anim/flower/4.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "b81ea7b895fd3ad95f60f075de88e901496c172325121116df8ee83dad1cf8b3"
+      ]
     },
     {
-      "byteLength": 461,
-      "gitBlobSha1": "0ade81d73b6bf40b4a37045195f9687b830890a2",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/0.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "de297c7c37a19210cd1558c23c1aa2f64176055954cbea02c61a0e96ada62ccb"
+      ]
     },
     {
-      "byteLength": 470,
-      "gitBlobSha1": "8dac0eba76e95f396529b19260c3683d902b881c",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/1.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "40c17d35de6aaf2ceb133bbe3b24cc12f09173a553b793c8a2c90c27d0241c55"
+      ]
     },
     {
-      "byteLength": 485,
-      "gitBlobSha1": "ba6e93bc4e76c8a8e0abd2ceed4a810e352f3708",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/2.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "cc6f80e0e2dbdde18642d421f4e3800840a5b9e188f8dcee07c06d00276fcffa"
+      ]
     },
     {
-      "byteLength": 512,
-      "gitBlobSha1": "9436601c1f16fb9383f4c55af1cb4b979b35809a",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/3.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f0ce8f52fa3832b6f8614acfdf5ec9adc6b701ba4b97757cafc6d54573318b22"
+      ]
     },
     {
-      "byteLength": 495,
-      "gitBlobSha1": "5b74a16fa4282a3765e738a98ec04290a914eb23",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/4.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7f8ce7450f6ec754d4c2a49e671935f4368422bcfcfb47cf62df3c2901e5b846"
+      ]
     },
     {
-      "byteLength": 501,
-      "gitBlobSha1": "6c72f4e0e29170771edde8625ffef60873279d57",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/5.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fb659fa98d3f7ff6cd47b5c9662416aceb616f97254b1a9ea63158ab9a5abc4"
+      ]
     },
     {
-      "byteLength": 499,
-      "gitBlobSha1": "f56c55b04b7591597c086cab555249bd4d39491c",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/6.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "8adb5d0ecb63d3722381327ed34c2c5f0263b457cc64f6cf213b702a04156b20"
+      ]
     },
     {
-      "byteLength": 465,
-      "gitBlobSha1": "549c44410ca8fe399e0e25676f666ecc75b36ca8",
       "path": "data/tilesets/primary/general/anim/sandwatersedge/7.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "69045e6423ba5d7e976f42d9a5c4d9828625f3f0fdd9f5bd24caaed907c466c1"
+      ]
     },
     {
-      "byteLength": 629,
-      "gitBlobSha1": "ce16ac050ca918038b54c6ca84a62593b84547a3",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/0.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6d6e97d10cb8a0a8e7c5635c7e641a41ec947696f6ac0d666714f7efaa712927"
+      ]
     },
     {
-      "byteLength": 634,
-      "gitBlobSha1": "7e41494c53680323ad26350b919ed21a00a67570",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/1.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7170ba98d59e8e895b2c9d475b8933965b6ddc2c7a8352fc725fbb6ad848921a"
+      ]
     },
     {
-      "byteLength": 821,
-      "gitBlobSha1": "5765ac4773d5c2a3fc354460c28ab7d2ba861e7a",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/2.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "75f1040ab3775c7757fa18fb5130cbd7eb63771bc3c849e34000a3cc386155fc"
+      ]
     },
     {
-      "byteLength": 834,
-      "gitBlobSha1": "dbc111a7f824b52cea4cafd863cede53469dc2ef",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/3.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "44e80621d9b4cd503f2cec23f23c4114855c957ed4667840ecf5f3ef0c670bed"
+      ]
     },
     {
-      "byteLength": 883,
-      "gitBlobSha1": "a8ee69c1e87afc12e695b18e21378b071d5e11e5",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/4.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "20b3b45cb97fe75c6c7ad5b3474d595decc54590b2a0b429f3feb057261f408b"
+      ]
     },
     {
-      "byteLength": 910,
-      "gitBlobSha1": "318c7b79650da6e7876b2d6264f50450a23cec25",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/5.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "18deff08c810376455ce3f9372313945f678e747071936ef4be95e417bf69631"
+      ]
     },
     {
-      "byteLength": 864,
-      "gitBlobSha1": "c31713d3492be54e27ebbc8c1ccad0aaf6af548d",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/6.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "cd0937992eed69745357b11356600ebb63abd2f317c6b39160b84158adc62f45"
+      ]
     },
     {
-      "byteLength": 806,
-      "gitBlobSha1": "e01c91449033f32f05a5ece78e047b674a9aa7aa",
       "path": "data/tilesets/primary/general/anim/water_current_landwatersedge/7.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "4c132b2f5d7201dec2269507b19a3b4fea4434523964efc1fca0a956dda20e48"
+      ]
     },
     {
-      "byteLength": 2560,
-      "gitBlobSha1": "45f6f352ef262d9c34b0f3e5ff379d9fc6b5eee6",
       "path": "data/tilesets/primary/general/metatile_attributes.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "1f62a949da41adca90ad36ca3597754bee953a8f21781f32aedf6158922c89cb"
+      ]
     },
     {
-      "byteLength": 10240,
-      "gitBlobSha1": "7a228eeaea2f928545b294505b1181618ec9c429",
       "path": "data/tilesets/primary/general/metatiles.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "8d950c1a1f151f5e1bded1ecee165b815c3a4d62b69a4a9cec4f676283f9041e"
+      ]
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c",
       "path": "data/tilesets/primary/general/palettes/00.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "757529e794c7fb9c333b1c2ef83704f6b03bb0fe756443b80025b2bc55dbe7f0"
+      ]
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "09828f4f1f27fd489057d5efb68941ca3947f9fe",
       "path": "data/tilesets/primary/general/palettes/01.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "baec95e65952c79e6ceb9cf8306995379982dc9253e67797b350556e1db83bfb"
+      ]
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "6b019b884c96679a0000222fd58ce78d8ee2c165",
       "path": "data/tilesets/primary/general/palettes/02.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "ea0310019345ea29e2196c4326182e32cbddf0e5fc2c4d010e8c40794c78852b"
+      ]
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "205c464c79d6e0b30b4d80a37558fe44fde62f60",
       "path": "data/tilesets/primary/general/palettes/03.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "117156779971950f6693bbefa2e92c373662209f2e39e4716f1e37a4f72ba022"
+      ]
     },
     {
-      "byteLength": 199,
-      "gitBlobSha1": "9b094a6aaa24bec00b20dfd68bed519959054d97",
       "path": "data/tilesets/primary/general/palettes/04.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7fed8601788c83852288c2395afd84a2c9ca6717c1eb38b762ad8ae7a9d61c5d"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "c5a653979a010ae3b699a00b247fa72cc0a65fbb",
       "path": "data/tilesets/primary/general/palettes/05.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f8497b9b541ebe7ba0a80b0ac865135410d9cf6324f13949f3285c70b1119e07"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "cdf41b2983e5466152336b36c7ac4a3da4c7b4d4",
       "path": "data/tilesets/primary/general/palettes/06.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "4d2d0cfdc068acb9bc2adc9d4d762bcee527fd0cf045c30728632e15b0590582"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/general/palettes/07.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/general/palettes/08.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/general/palettes/09.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/general/palettes/10.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/primary/general/palettes/11.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/primary/general/palettes/12.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/primary/general/palettes/13.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/primary/general/palettes/14.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/primary/general/palettes/15.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 8671,
-      "gitBlobSha1": "84ba7b2f987ce0134e5936faf083f7df15665a64",
       "path": "data/tilesets/primary/general/tiles.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9ff889d1b9da5383a0cd0c85ac7b791812867804f3a38566b46172087419e0b9"
+      ]
     },
     {
-      "byteLength": 736,
-      "gitBlobSha1": "18d7517d9aa397477114da79d3419e7a901618cb",
       "path": "data/tilesets/secondary/generic_building_2/metatile_attributes.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e684d0ea6362e72bd4fcb8db8819003dfb907ef22557ef917378f7f8f08b31f0"
+      ]
     },
     {
-      "byteLength": 2944,
-      "gitBlobSha1": "0943dc7afe8568adda716cccef0a3098588d0e77",
       "path": "data/tilesets/secondary/generic_building_2/metatiles.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "18d72ee7925267a96082f40d5e6532927a83014db9386bafe36e8d5776cf0cba"
+      ]
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "88e712348b439f14db430f36ae34321b48725d73",
       "path": "data/tilesets/secondary/generic_building_2/palettes/00.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "db75c8cdc25dd0de19b1f55dddc7e3dd2f27c95786dd95e5ee8ce32cc2637279"
+      ]
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "d99adaffffc061c1cf9c0dd50bfb78b3a4060f34",
       "path": "data/tilesets/secondary/generic_building_2/palettes/01.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "490f2d906b17823bcd5f1f80402bb397994d52670baf943f0237e98d520daccc"
+      ]
     },
     {
-      "byteLength": 199,
-      "gitBlobSha1": "cc3a9457d49462c07d03b024c731af3dc167b657",
       "path": "data/tilesets/secondary/generic_building_2/palettes/02.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e2e9e8e38bae82c1a4aaffa3ef30d410413a9f56bc4189462da53e52f44959ce"
+      ]
     },
     {
-      "byteLength": 188,
-      "gitBlobSha1": "7ec794ae5408e5ecaebcbbcd502d4b6849b8a801",
       "path": "data/tilesets/secondary/generic_building_2/palettes/03.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "10c0a6e1f360d17248a742ad7033490f8c814e7f06f75b050fd235c4fe8af889"
+      ]
     },
     {
-      "byteLength": 116,
-      "gitBlobSha1": "6f31ca776222f35dab0d16c1e2aa54b472626686",
       "path": "data/tilesets/secondary/generic_building_2/palettes/04.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "de915f823eedf2ea3b1285cf006a53103fd04dca2e41b8267977def71d2c0969"
+      ]
     },
     {
-      "byteLength": 116,
-      "gitBlobSha1": "6f31ca776222f35dab0d16c1e2aa54b472626686",
       "path": "data/tilesets/secondary/generic_building_2/palettes/05.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "de915f823eedf2ea3b1285cf006a53103fd04dca2e41b8267977def71d2c0969"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/generic_building_2/palettes/06.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 201,
-      "gitBlobSha1": "c62a40b0d0249a1b59d1167c15e7ee78f157f197",
       "path": "data/tilesets/secondary/generic_building_2/palettes/07.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "29de9c61120adf536ad289c9222f3d7558a9d1b0fdff352cbdf8807166ee9890"
+      ]
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "8c66b4998189918ff67b13da8ccef254af060218",
       "path": "data/tilesets/secondary/generic_building_2/palettes/08.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "ba181f66e9412ff5ce6a6532682a7a9af2b9c8c623fe9e9756958d6506cfd199"
+      ]
     },
     {
-      "byteLength": 197,
-      "gitBlobSha1": "25d5d7019354a14012b29eef502ea0f5fd11036e",
       "path": "data/tilesets/secondary/generic_building_2/palettes/09.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "efeb1e21010a550303eeb79bbbfef843017c70b472b68564cd3314856c392ac0"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/generic_building_2/palettes/10.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/generic_building_2/palettes/11.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 199,
-      "gitBlobSha1": "2903bb074c9e13eb17c83efde5359d7f0a7b315e",
       "path": "data/tilesets/secondary/generic_building_2/palettes/12.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "4099ab08ecb73a4f5006e00afa137f925c18d17fca6f0b7ad87281ae6096eca4"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/generic_building_2/palettes/13.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/generic_building_2/palettes/14.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/generic_building_2/palettes/15.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 1407,
-      "gitBlobSha1": "ca6e21f03c56920f5ca9b3c35ed68f9738c72b36",
       "path": "data/tilesets/secondary/generic_building_2/tiles.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e6f9d35b9699ae10649d66d686ae99f0b142cea4136dfeb4dab9d7f29b8cb453"
+      ]
     },
     {
-      "byteLength": 704,
-      "gitBlobSha1": "f840f6486fd90d69a36eb06fbb95a1a005a8741d",
       "path": "data/tilesets/secondary/indigo_plateau/metatile_attributes.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6c3e1ec7307a76a3916869fcdab90c8e552c6ac3899395763e2c5e99a80bc7cc"
+      ]
     },
     {
-      "byteLength": 2816,
-      "gitBlobSha1": "bbb7ffbee0b596fa7684776313a761ea24e9a6df",
       "path": "data/tilesets/secondary/indigo_plateau/metatiles.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6c741634793067ea34ea150c49c4f6ac7fc38b9a4460007bc3f1329ca01842a7"
+      ]
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/00.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "757529e794c7fb9c333b1c2ef83704f6b03bb0fe756443b80025b2bc55dbe7f0"
+      ]
     },
     {
-      "byteLength": 196,
-      "gitBlobSha1": "cf11238126ab9b1c35fe30935831b79c7dee345a",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/01.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f3585ea5f8f7a8019a48eb203cdcd2ae944b657cb375b0eb6ec32d858ca5916d"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "372fb5d7c3b63259126b99752b1e816ffde926e3",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/02.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "1e40e464f950ae78da7ef47383a8d6e6114642b9f196024886e0ad1f3facc470"
+      ]
     },
     {
-      "byteLength": 199,
-      "gitBlobSha1": "5a5e602118b62f27296d532502287413c0f7f1e7",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/03.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "c4116d741f323682a47864668be0a6c54181d8ed29b7ac5746800ed4ea419507"
+      ]
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "229f9132c30b5b5b1ce164c3210eeed337783392",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/04.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "92930b421fe4ba109502044c0580c22b9801eefe741b00151a1d8f625b5de1b5"
+      ]
     },
     {
-      "byteLength": 202,
-      "gitBlobSha1": "215dd127287538cb00dc8f8fed1c7b6ae641021c",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/05.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6dd5efe91171d63c4f13d3aba8a5c8bf37814586b6ccbc481016cc95d3c58a47"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "7e7862a192f8ecb05ea1bc9172f700713017f193",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/06.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "0307cf7b44f6a765a4be35a1bff29cabc85b7badd4895040224c5e0ed5e07e6a"
+      ]
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/07.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e"
+      ]
     },
     {
-      "byteLength": 115,
-      "gitBlobSha1": "995731c23cc045acf66daa3297353845cbb9db3e",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/08.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "a47bca4043b26b45e2e06f38bd87f2c611c81629a65dc46e7144273143d3d5b2"
+      ]
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "3ff6139ac9540cb7a64a4e361a099a7fb74cb0d7",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/09.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7d0e80cf5ef1d6f1e2be291a3b1128a6c94b1ec44c455113cb510b7812a3e950"
+      ]
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "70ed40322587420aecf1e95c5a381cbf774acbc4",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/10.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "5d87d75412c5a053fb8215299cd10ff5b9d75dacf746b4d4f5896232c081d0c2"
+      ]
     },
     {
-      "byteLength": 194,
-      "gitBlobSha1": "7b47acf60ad7120ff5f3699b534fcc4acd6f6352",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/11.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "257d9354f6eabf3489eeaf5e8473c47772d7b5c151d2dd4e8a3019a2af1e261e"
+      ]
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "f5ff3dddfa150269ecf41ce32d32c3662ccaa645",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/12.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f1a8449ebdcf267277d2aa80dd6cee6e76327b65e88356b6f60cb7e1f396267a"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/13.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/14.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/indigo_plateau/palettes/15.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 2544,
-      "gitBlobSha1": "4a938b4c518b51ab4730c8faa0ab695216ee5f08",
       "path": "data/tilesets/secondary/indigo_plateau/tiles.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "361fd554ee8166f10ddf25cd5303027970fc45eda9fa4a53af171579c7330f52"
+      ]
     },
     {
-      "byteLength": 380,
-      "gitBlobSha1": "ee2d7d5b3eae00eb9cfcd4aba3dc1abf365838be",
       "path": "data/tilesets/secondary/viridian_city/metatile_attributes.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6e2643efb546a161feb0d3b0346fbd345f744997ddce4fe0d0379e9c51cf3d34"
+      ]
     },
     {
-      "byteLength": 1520,
-      "gitBlobSha1": "297673a4beec8d2b7763944e48a105f8844fd2dd",
       "path": "data/tilesets/secondary/viridian_city/metatiles.bin",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "8491038f93b038fd271a50821b51eaee2d3b3cf9aa99050632ed96306232f4e5"
+      ]
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c",
       "path": "data/tilesets/secondary/viridian_city/palettes/00.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "757529e794c7fb9c333b1c2ef83704f6b03bb0fe756443b80025b2bc55dbe7f0"
+      ]
     },
     {
-      "byteLength": 196,
-      "gitBlobSha1": "cf11238126ab9b1c35fe30935831b79c7dee345a",
       "path": "data/tilesets/secondary/viridian_city/palettes/01.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f3585ea5f8f7a8019a48eb203cdcd2ae944b657cb375b0eb6ec32d858ca5916d"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "372fb5d7c3b63259126b99752b1e816ffde926e3",
       "path": "data/tilesets/secondary/viridian_city/palettes/02.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "1e40e464f950ae78da7ef47383a8d6e6114642b9f196024886e0ad1f3facc470"
+      ]
     },
     {
-      "byteLength": 199,
-      "gitBlobSha1": "5a5e602118b62f27296d532502287413c0f7f1e7",
       "path": "data/tilesets/secondary/viridian_city/palettes/03.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "c4116d741f323682a47864668be0a6c54181d8ed29b7ac5746800ed4ea419507"
+      ]
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "229f9132c30b5b5b1ce164c3210eeed337783392",
       "path": "data/tilesets/secondary/viridian_city/palettes/04.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "92930b421fe4ba109502044c0580c22b9801eefe741b00151a1d8f625b5de1b5"
+      ]
     },
     {
-      "byteLength": 202,
-      "gitBlobSha1": "215dd127287538cb00dc8f8fed1c7b6ae641021c",
       "path": "data/tilesets/secondary/viridian_city/palettes/05.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "6dd5efe91171d63c4f13d3aba8a5c8bf37814586b6ccbc481016cc95d3c58a47"
+      ]
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "7e7862a192f8ecb05ea1bc9172f700713017f193",
       "path": "data/tilesets/secondary/viridian_city/palettes/06.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "0307cf7b44f6a765a4be35a1bff29cabc85b7badd4895040224c5e0ed5e07e6a"
+      ]
     },
     {
-      "byteLength": 145,
-      "gitBlobSha1": "93518605a9efb507514197c5e6145181af83c769",
       "path": "data/tilesets/secondary/viridian_city/palettes/07.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "33f6542585a81317445150f1cfda30b77818b84e361b506b800cb65cd9e252c2"
+      ]
     },
     {
-      "byteLength": 190,
-      "gitBlobSha1": "219129ebabb2411a6a1437c7502000a5b574bd6b",
       "path": "data/tilesets/secondary/viridian_city/palettes/08.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e4ee580b87938526b3344d75729aa4d13d0f554b903a8e52a5a62f71a0b9cb28"
+      ]
     },
     {
-      "byteLength": 197,
-      "gitBlobSha1": "0aa2b58dcfed72c95fb2f4b4b316fa323e92f941",
       "path": "data/tilesets/secondary/viridian_city/palettes/09.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7d0092132a5fa4da9f391585e0bdd4e49b545f68e9858eeb3bf65ab7601dae77"
+      ]
     },
     {
-      "byteLength": 190,
-      "gitBlobSha1": "4baf904aeaa06413b3eed140921f3448d95781ec",
       "path": "data/tilesets/secondary/viridian_city/palettes/10.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "1f68455ceb0b4182e585f989572168f35249dc703da8edc65a69a3a800fb9b4c"
+      ]
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "2e92b3cc3e589dd474c146e299290ccafad225e2",
       "path": "data/tilesets/secondary/viridian_city/palettes/11.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e81af309ea981aa9bc0bd389fc9f85d5d092027b2e688991545f9f3f51fdd8e7"
+      ]
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "70ed40322587420aecf1e95c5a381cbf774acbc4",
       "path": "data/tilesets/secondary/viridian_city/palettes/12.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "5d87d75412c5a053fb8215299cd10ff5b9d75dacf746b4d4f5896232c081d0c2"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/viridian_city/palettes/13.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/viridian_city/palettes/14.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 113,
-      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
       "path": "data/tilesets/secondary/viridian_city/palettes/15.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675"
+      ]
     },
     {
-      "byteLength": 1268,
-      "gitBlobSha1": "39b80d8f9de1e7f93419caec59d2388764cf09e4",
       "path": "data/tilesets/secondary/viridian_city/tiles.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "5c5348d6cccf3bccb3c1bd8c28951ff84c2ecece8256e59273c966672ebc5451"
+      ]
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "c62e8ce063b6fffc53a5f02d4008d72e838dfda2",
       "path": "graphics/object_events/palettes/npc_blue.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "0248021441c52c9441e9521b1c75dd0aa90e0127589cd9384320daa2f1aa57da"
+      ]
     },
     {
-      "byteLength": 185,
-      "gitBlobSha1": "0c60b08a5b8b6e54123283eb221df86b06e2db59",
       "path": "graphics/object_events/palettes/npc_green.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "5197d4636852e15601d101670ae9889aaae3ad847f712f98df06df87f0906f19"
+      ]
     },
     {
-      "byteLength": 189,
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
       "path": "graphics/object_events/palettes/player.pal",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c"
+      ]
     },
     {
-      "byteLength": 727,
-      "gitBlobSha1": "80cd7518a1e5029711cad58b4e103f46fc281ee8",
       "path": "graphics/object_events/pics/people/blue.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "2b66b767e56237d811ad83585f7b6a8732f73efd8d8406069e07322d36d791fb"
+      ]
     },
     {
-      "byteLength": 678,
-      "gitBlobSha1": "6515eaad77b06e12cde32ac4c03c0cb385a3714e",
       "path": "graphics/object_events/pics/people/policeman.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "af93d001d8776aff93cf96c555a44c77335489329acd1a5c6b9786ac815842a9"
+      ]
     },
     {
-      "byteLength": 742,
-      "gitBlobSha1": "377224e2f5c6bca2ff5d762f22fc214a6982f772",
       "path": "graphics/object_events/pics/people/red_normal.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "94eb37499a8bd663f47a0767c34b93569cf0c222a9906852943016e3a771054d"
+      ]
     },
     {
-      "byteLength": 1140,
-      "gitBlobSha1": "f4473bbae05befae4f520ae907a680a87567294d",
       "path": "graphics/object_events/pics/people/red_surf_run.png",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "c33a893e4449cadb417de8e201018975f99e056e582abdafe2cb9f7450931252"
+      ]
     },
     {
-      "byteLength": 2407,
-      "gitBlobSha1": "4ad54c86fa1c7cac4abe49d89adaa0ce1cc82d98",
       "path": "include/constants/abilities.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "1c1b93de5d5ff65d8b3066e9b40229b5d30e02842e587e3851a1d708ece1292b"
+      ]
     },
     {
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
       "path": "include/constants/battle.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      ]
     },
     {
-      "byteLength": 1436,
-      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
       "path": "include/constants/battle_ai.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+      ]
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
       "path": "include/constants/battle_setup.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+      ]
     },
     {
-      "byteLength": 95397,
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
       "path": "include/constants/flags.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+      ]
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
       "path": "include/constants/items.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      ]
     },
     {
-      "byteLength": 6143,
-      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde",
       "path": "include/constants/menu.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4"
+      ]
     },
     {
-      "byteLength": 3471,
-      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
       "path": "include/constants/metatile_behaviors.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75"
+      ]
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
       "path": "include/constants/moves.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+      ]
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
       "path": "include/constants/opponents.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      ]
     },
     {
-      "byteLength": 10894,
-      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b",
       "path": "include/constants/pokemon.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+      ]
     },
     {
-      "byteLength": 17891,
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
       "path": "include/constants/songs.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+      ]
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      ]
     },
     {
-      "byteLength": 20887,
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
       "path": "include/constants/trainers.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+      ]
     },
     {
-      "byteLength": 17306,
-      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
       "path": "include/constants/vars.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+      ]
     },
     {
-      "byteLength": 13344,
-      "gitBlobSha1": "2af80a5a83ca17d67cfb369627068bbafc8ce386",
       "path": "sound/songs/midi/mus_route3.mid",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "94316b0825349a37d1b36547743322f239c60c807492fbb1b69b22a942abaa5f"
+      ]
     },
     {
-      "byteLength": 8462,
-      "gitBlobSha1": "6552b65bd3380b04871fdc147d3de037dd5eaf00",
       "path": "sound/songs/midi/mus_victory_road.mid",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "e782c3ea2cebb670bc1e9ca5957625d1a40cfec122c24e5394d60ec482ffd61a"
+      ]
     },
     {
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
       "path": "src/battle_main.c",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      ]
     },
     {
-      "byteLength": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
       "path": "src/battle_setup.c",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      ]
     },
     {
-      "byteLength": 23522,
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
       "path": "src/data/object_events/object_event_graphics.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec"
+      ]
     },
     {
-      "byteLength": 97115,
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
       "path": "src/data/object_events/object_event_graphics_info.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512"
+      ]
     },
     {
-      "byteLength": 23651,
-      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
       "path": "src/data/object_events/object_event_graphics_info_pointers.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c"
+      ]
     },
     {
-      "byteLength": 82763,
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
       "path": "src/data/object_events/object_event_pic_tables.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995"
+      ]
     },
     {
-      "byteLength": 83873,
-      "gitBlobSha1": "5e6791a66f03876f2aaabe94bde3083e68f5bf2e",
       "path": "src/data/tilesets/graphics.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "63ca2a6588d938adcc4d4bf325578f23b7b1e2b622a3e27ffeccae2ac6133f61"
+      ]
     },
     {
-      "byteLength": 21121,
-      "gitBlobSha1": "676bd21050e753822a61aa127310c338938c3c00",
       "path": "src/data/tilesets/headers.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "bd8233763e26d3dbb025010ad379c53bcc5b102dd1a1de40cec85f8262686c8c"
+      ]
     },
     {
-      "byteLength": 15339,
-      "gitBlobSha1": "a9f267159b45291c4a8f28a7577609d9f15b655f",
       "path": "src/data/tilesets/metatiles.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "4609feb19cc299e896c8d955a5031abe0d78a7dbcdbcf218257092a008b4e182"
+      ]
     },
     {
-      "byteLength": 242256,
-      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
       "path": "src/data/trainer_parties.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+      ]
     },
     {
-      "byteLength": 302118,
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
       "path": "src/data/trainers.h",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+      ]
     },
     {
-      "byteLength": 706967,
-      "gitBlobSha1": "176027bbc114fcaa42464b0f49c90de26538f555",
       "path": "src/data/wild_encounters.json",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c"
+      ]
     },
     {
-      "byteLength": 5565,
-      "gitBlobSha1": "c9eda0e2680056a681a0764148cf64a9b7ceb57a",
       "path": "src/data/wild_encounters.json.txt",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "3f0cf0545b0362bef7a81ebbebedd54fee58e37592d718ebf98ab7cfcfd74119"
+      ]
     },
     {
-      "byteLength": 326145,
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
       "path": "src/event_object_movement.c",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254"
+      ]
     },
     {
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
       "path": "src/graphics.c",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3"
+      ]
     },
     {
-      "byteLength": 44041,
-      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a",
       "path": "src/script_menu.c",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8"
+      ]
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
       "path": "src/strings.c",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+      ]
     },
     {
-      "byteLength": 7240,
-      "gitBlobSha1": "a868248cf07750504eec7d87c772e089c60aa211",
       "path": "tileset_rules.mk",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "aed8ebf86db60e11384c23e158208f3c5581b72a43ed014eabe5a5d3b60af9d4"
+      ]
     },
     {
-      "byteLength": 28254,
-      "gitBlobSha1": "8d8ec4e4e6e1c011b06f00819abe40bad10d19d5",
       "path": "tools/mapjson/mapjson.cpp",
       "roles": [
         "regional-source"
-      ],
-      "sha256": "c8a4af233a24c70ee49f2739bec7b313da8f50e15d2a25b31db1d40cc179aab9"
+      ]
     }
   ],
   "gameVersion": "FIRERED",
@@ -1695,6 +1134,5 @@
   "profile": "firered-route22-region-import-v1",
   "repository": "pret/pokefirered",
   "revision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

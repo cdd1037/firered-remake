@@ -22,15 +22,14 @@ public sealed partial class PretCampaignCatalog
     public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
     public bool CinnabarEnabled=>CinnabarRegion is not null;
 
-    private static void AppendCinnabarSources(PretCinnabarRegion region,PretCinnabarItemsDocument items,
-        List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    private static void AppendCinnabarSources(PretCinnabarRegion region,PretCinnabarItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
     {
         var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
         foreach(var source in region.Scripts)
         {
             if(prior.TryGetValue(source.Path,out var old))
             {
-                if(old.SourceRef.Sha256!=source.SourceRef.Sha256||old.Text!=source.Text)
+                if(old.Text!=source.Text)
                     throw new InvalidDataException("cinnabar_source_conflict: "+source.Path);
             }
             else{prior.Add(source.Path,source);sources.Add(source);}
@@ -38,16 +37,11 @@ public sealed partial class PretCampaignCatalog
         }
         foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
         MergeRegionalServiceConstants(constants,region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);hashes.AddRange(items.AdditionalSourceHashes);
-        hashes.Add("cinnabar-pokemon:"+PretCinnabarPokemon.GeneratedSha256);
-        hashes.Add("cinnabar-trainers:"+PretCinnabarTrainers.GeneratedSha256);
-        hashes.Add("cinnabar-campaign:"+CinnabarContentProfile);
     }
     private string? CinnabarSpeciesName(int species)=>CinnabarPokemon?.SpeciesNames.FirstOrDefault(n=>
         CinnabarPokemon.Species.Concat(CinnabarPokemon.OpponentSpecies).Any(s=>s.SourceSpeciesId==species&&s.Id==n.Id))?.Name;
 
-    private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,
-        EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
     {
         foreach(var row in region.Contracts.GetProperty("itemPickups").EnumerateArray())
         {

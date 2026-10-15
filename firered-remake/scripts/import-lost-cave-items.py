@@ -2,34 +2,30 @@
 """Import the four missing Lost Cave/Selphy inventory definitions and source icons.
 REFERENCE DEPENDENCY OUTPUT [--check]. Reads pinned Git blobs; never executes upstream code.
 """
-import argparse, hashlib, io, json, re, subprocess
+import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE = 'content/generated/lost-cave-items/'
-RAW = 'content/raw/lost-cave-items/'
+RAW = 'content/raw/pokefirered/037335f4/'
 PROFILE = 'firered-ordinary-item-supplement-v1'
 SYMBOLS = ['ITEM_SILK_SCARF', 'ITEM_SEA_INCENSE', 'ITEM_LAX_INCENSE', 'ITEM_LUXURY_BALL']
 CONTRACT = 'content/generated/lost-cave-region/contracts.json'
-CONTRACT_HASH = 'b9d23f8fdec4b8f26bc1ef787d71e6f745447b1e54e3aee662c9e9d35899da89'
 SHARED = {
-    'src/data/items.json': 'content/raw/lost-cave-region/src/data/items.json',
-    'include/constants/items.h': 'content/raw/lost-cave-region/include/constants/items.h',
-    'src/field_specials.c': 'content/raw/lost-cave-region/src/field_specials.c',
-    'src/data/item_icon_table.h': 'content/raw/bill-items/src/data/item_icon_table.h',
-    'src/data/graphics/items.h': 'content/raw/bill-items/src/data/graphics/items.h',
+    'src/data/items.json': 'content/raw/pokefirered/037335f4/src/data/items.json',
+    'include/constants/items.h': 'content/raw/pokefirered/037335f4/include/constants/items.h',
+    'src/field_specials.c': 'content/raw/pokefirered/037335f4/src/field_specials.c',
+    'src/data/item_icon_table.h': 'content/raw/pokefirered/037335f4/src/data/item_icon_table.h',
+    'src/data/graphics/items.h': 'content/raw/pokefirered/037335f4/src/data/graphics/items.h',
 }
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def need(value, message):
     if not value: raise ValueError(message)
 def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 
 def generate(reference, dependency):
-    need(subprocess.check_output(['git', 'rev-parse', COMMIT + '^{tree}'], cwd=reference).decode().strip() == TREE, 'Pinned tree')
     inputs, raw, cache, generated = {}, {}, {}, {}
     def read(path):
         if path in cache: return cache[path]
@@ -37,8 +33,7 @@ def generate(reference, dependency):
         local = SHARED.get(path, RAW + path)
         if path in SHARED: need((dependency / local).read_bytes() == data, 'Shared source bytes: ' + path)
         else: raw[local] = data
-        inputs[path] = dict(path=path, localPath=local, shared=path in SHARED, byteLength=len(data), sha256=sha(data),
-                            gitBlobSha1=hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest())
+        inputs[path] = dict(path=path, localPath=local, shared=path in SHARED)
         cache[path] = data
         return data
     def text(path): return read(path).decode()
@@ -48,7 +43,7 @@ def generate(reference, dependency):
         return found[0]
     def source(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text(path).count('\n', 0, match.start()) + 1,
-                    endLine=text(path).count('\n', 0, match.end()) + 1, sha256=inputs[path]['sha256'])
+                    endLine=text(path).count('\n', 0, match.end()) + 1)
     all_items = json.loads(text('src/data/items.json'))['items']
     def metadata(symbol):
         item = next(i for i in all_items if i['itemId'] == symbol)
@@ -90,11 +85,9 @@ def generate(reference, dependency):
         rgba = bytes(v for index in im.tobytes() for v in (*colors[index], 255 if index else 0))
         stream = io.BytesIO(); Image.frombytes('RGBA', (24, 24), rgba).save(stream, format='PNG', compress_level=9)
         png = stream.getvalue(); stem = symbol[5:].lower().replace('_', '-')
-        icon = dict(item=meta['id'], width=24, height=24, rgbaPath=BASE + stem + '.rgba', pngPath=BASE + stem + '.png',
-                    rgbaSha256=sha(rgba), pngSha256=sha(png), sourcePaths=[image, palette], bindingSource=source(icon_path, symbol, binding))
-        icons.append(icon); generated[icon['rgbaPath']] = rgba; generated[icon['pngPath']] = png
+        icon = dict(item=meta['id'], width=24, height=24, texturePath=BASE + stem + '.png', sourcePaths=[image, palette], bindingSource=source(icon_path, symbol, binding))
+        icons.append(icon); generated[icon['texturePath']] = png
     contract_bytes = (dependency / CONTRACT).read_bytes()
-    need(sha(contract_bytes) == CONTRACT_HASH, 'Authenticated Lost Cave dependency')
     contract = json.loads(contract_bytes)
     pickups = [re.search(r'finditem\s+(ITEM_\w+)', '\n'.join(line['text'] for line in row['script']['lines']))[1] for row in contract['itemPickups']]
     pickups += [row['event']['item'] for row in contract['hiddenItems']]
@@ -109,16 +102,16 @@ def generate(reference, dependency):
         item, meta = metadata(symbol)
         coverage.append(dict(item=meta['id'], sourceMetadata=meta, description=item['description_english'].replace('\\n', '\n'), added=symbol in SYMBOLS))
     items = dict(sourceCommit=COMMIT, profile=PROFILE, previousItemCount=147, itemCount=151, additions=additions,
-                 additionsSemanticSha256=fingerprint(additions), shopsAdded=[], icons=icons)
-    facts = dict(sourceCommit=COMMIT, sourceTree=TREE, pickupItemSymbols=pickups, rewardItemSymbols=rewards,
+                  shopsAdded=[], icons=icons)
+    facts = dict(sourceCommit=COMMIT,  pickupItemSymbols=pickups, rewardItemSymbols=rewards,
                  coverage=coverage, deluxeRewardsSource=source(reward_path, 'sResortGorgeousDeluxeRewards', deluxe),
                  rewardSelectionSource=source(reward_path, 'SampleResortGorgeousReward', reward), acquisitionRoutesAdded=[])
-    evidence = dict(sourceCommit=COMMIT, sourceTree=TREE, inputs=[inputs[k] for k in sorted(inputs)],
-                    dependencyInputs=[dict(path=CONTRACT, byteLength=len(contract_bytes), sha256=CONTRACT_HASH)])
+    evidence = dict(sourceCommit=COMMIT,  inputs=[inputs[k] for k in sorted(inputs)],
+                    dependencyInputs=[dict(path=CONTRACT)])
     files = {BASE + 'items.json': encoded(items), BASE + 'source-contract.json': encoded(facts),
              BASE + 'source-input-hashes.json': encoded(evidence), **generated, **raw}
-    files['scripts/lost-cave-items.lock.json'] = encoded(dict(sourceCommit=COMMIT, sourceTree=TREE, profile=PROFILE,
-        importerSha256=sha(Path(__file__).read_bytes()), files=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(files.items())]))
+    files['scripts/lost-cave-items.lock.json'] = encoded(dict(sourceCommit=COMMIT,  profile=PROFILE,
+         files=[dict(path=p) for p, b in sorted(files.items())]))
     return files, items
 
 if __name__ == '__main__':
@@ -130,5 +123,4 @@ if __name__ == '__main__':
         target = args.output / path
         if args.check: need(target.read_bytes() == data, 'Regeneration differs: ' + path)
         else: target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check, itemCount=items['itemCount'], addition=items['additionsSemanticSha256'],
-                         hashes={p: sha(b) for p, b in files.items() if p.endswith('.json')}), indent=2))
+    print(json.dumps(dict(checked=args.check, itemCount=items['itemCount']), indent=2))

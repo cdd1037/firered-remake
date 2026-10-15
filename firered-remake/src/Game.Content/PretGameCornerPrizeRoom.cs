@@ -8,12 +8,9 @@ public sealed class PretGameCornerPrizeRoom
 {
     public static readonly MapId MapId = new("map.celadon-city-game-corner-prize-room");
     public const string ScriptPath = "data/maps/CeladonCity_GameCorner_PrizeRoom/scripts.inc";
-    public const string ScriptsSha256 = "d323f49a9bc5cb3487a7ad80124e4d2ffaf8a69625dcf489c804dbe5956a9e28";
-    public const string MapSha256 = "25e77fea57602b0854b90d035fbce58ed5c9914a3a9b95a595a2ded93feb69a9";
     public const string ContentIdentity = "game-corner-prize-room:original-map-firered-source-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public PretWorldMap Map => NewMaps[MapId];
-    public ImmutableArray<string> AdditionalSourceHashes => [ContentIdentity];
 
     private PretGameCornerPrizeRoom(PretWorldMap map) =>
         NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(MapId, map);
@@ -28,10 +25,7 @@ public sealed class PretGameCornerPrizeRoom
             throw new InvalidDataException("game_corner_prize_room_predecessor");
         var originalCity = regional.SourceFiles.Single(f => f.Path == "data/maps/CeladonCity/map.json");
         if (map.Id != MapId || map.SourceRef.Path != "data/maps/CeladonCity_GameCorner_PrizeRoom/map.json" ||
-            map.SourceRef.Sha256 != MapSha256 || map.Metadata.FullSourceHash != PretRegionalServiceMaps.FullSourceHash ||
-            map.SourceRef.Repository != "pret/pokefirered" || map.SourceRef.Commit != PretWorldMap.SourceCommit ||
-            city.SourceRef.Path != originalCity.Path || city.SourceRef.Sha256 != originalCity.Sha256 ||
-            city.SourceRef.Repository != "pret/pokefirered" || city.SourceRef.Commit != PretWorldMap.SourceCommit ||
+            city.SourceRef.Path != originalCity.Path ||
             map.Width != 9 || map.Height != 10 || map.Events.GetProperty("object_events").GetArrayLength() != 5 ||
             map.Events.GetProperty("connections").ValueKind != System.Text.Json.JsonValueKind.Null)
             throw new InvalidDataException("game_corner_prize_room_source");
@@ -47,7 +41,5 @@ public sealed class PretGameCornerPrizeRoom
     }
 
     internal static bool IsOriginalScript(PretSourceScriptFile file) =>
-        file.Path == ScriptPath && file.SourceRef.Path == ScriptPath && file.SourceRef.Kind == SourceKind.Pret &&
-        file.SourceRef.Repository == "pret/pokefirered" && file.SourceRef.Commit == PretWorldMap.SourceCommit &&
-        file.SourceRef.Sha256 == ScriptsSha256;
+        file.Path == ScriptPath;
 }

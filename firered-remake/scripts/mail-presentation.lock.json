@@ -1,29 +1,19 @@
 {
   "dependencies": [
     {
-      "byteLength": 2396,
-      "path": "content/generated/six-island-presentation/item-dream-mail.png",
-      "sha256": "cc1bc709acd3f83ed46d96526b027059ee36eb77fdf561acf104ed67b0031a91"
+      "path": "content/generated/six-island-presentation/item-dream-mail.png"
     },
     {
-      "byteLength": 1663,
-      "path": "content/generated/npc-trade-mail/fab-mail-male.png",
-      "sha256": "83095a5a2536a13c01327cbebdd52fae8bd91d373f4e7dbf43cc9941b9022a5a"
+      "path": "content/generated/npc-trade-mail/fab-mail-male.png"
     },
     {
-      "byteLength": 1664,
-      "path": "content/generated/npc-trade-mail/fab-mail-female.png",
-      "sha256": "9a5d5e45ec41d5e2c7bb0ad4b2031e172ed5ed912642be47826a02b517463519"
+      "path": "content/generated/npc-trade-mail/fab-mail-female.png"
     },
     {
-      "byteLength": 2396,
-      "path": "content/generated/npc-trade-mail/item-fab-mail.png",
-      "sha256": "38f7d6fc10455a0cb10ee2b17ae46eeb21b62ef53e9d608acb62c3e817ed741c"
+      "path": "content/generated/npc-trade-mail/item-fab-mail.png"
     },
     {
-      "byteLength": 347,
-      "path": "content/generated/department-fourth-floor/retro-mail.png",
-      "sha256": "9090a76322b2d4af933eae232033f4963604a131a034f932afa9aa9db5999ec4"
+      "path": "content/generated/department-fourth-floor/retro-mail.png"
     }
   ],
   "helpers": {
@@ -33,925 +23,575 @@
   },
   "inputs": [
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
-      "localPath": "content/raw/npc-trade-mail/charmap.txt",
+      "localPath": "content/raw/pokefirered/037335f4/charmap.txt",
       "path": "charmap.txt",
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061",
       "shared": true
     },
     {
-      "byteLength": 432,
-      "gitBlobSha1": "71faa05fee6921f977266edcc615b5b41c6f2042",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/button_window.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/button_window.png",
       "path": "graphics/easy_chat/button_window.png",
-      "sha256": "4a6e15a2d180d602d57e2ab62ec4744fce1f25a58517de60ac71bb37e48d542e",
       "shared": false
     },
     {
-      "byteLength": 426,
-      "gitBlobSha1": "87a14adc2a1d3c0be20cb4591489b261e9fa10e2",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/mode.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/mode.png",
       "path": "graphics/easy_chat/mode.png",
-      "sha256": "4e8bd288c40eec25a9eeb0594bb0414c7ffe524af63fe939bdaefd280d7bd1f8",
       "shared": false
     },
     {
-      "byteLength": 212,
-      "gitBlobSha1": "7e695fd263626cf740363885b687d8e92f27783b",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/rectangle_cursor.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/rectangle_cursor.png",
       "path": "graphics/easy_chat/rectangle_cursor.png",
-      "sha256": "a728e03829440584708f8a58fb05fca49217872b5375951a70416414a47b1c96",
       "shared": false
     },
     {
-      "byteLength": 173,
-      "gitBlobSha1": "a0aa30385aef74f00b63a402635da65cbb09a371",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/scroll_indicator.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/scroll_indicator.png",
       "path": "graphics/easy_chat/scroll_indicator.png",
-      "sha256": "a61c10ecc92304aea2a01c6fd1d254275004810ba8d59d2f0332083201bb2efd",
       "shared": false
     },
     {
-      "byteLength": 226,
-      "gitBlobSha1": "7801f4ab5ef618bb3b5598518ccfa706b045fba9",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/start_select_buttons.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/start_select_buttons.png",
       "path": "graphics/easy_chat/start_select_buttons.png",
-      "sha256": "f16b809af697b4b2a99a10321502c241f7ff8cee026e45ec44e619b0cfdd588d",
       "shared": false
     },
     {
-      "byteLength": 65,
-      "gitBlobSha1": "3b4e71ab8a093544a065de51400b10df5131eb15",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/text.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/text.pal",
       "path": "graphics/easy_chat/text.pal",
-      "sha256": "113cab2f5b655db53467006a0eafb16911385edfb4534a36e3056567fa7702cb",
       "shared": false
     },
     {
-      "byteLength": 260,
-      "gitBlobSha1": "c0fbba87d39dda01c548859dc89e6d4a78c85bde",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/text_input_frame.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/text_input_frame.png",
       "path": "graphics/easy_chat/text_input_frame.png",
-      "sha256": "afa291693bcbe5265ed86d6100245127c5e9e81c80569f1345e4a4b45be826f6",
       "shared": false
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "c64a7216f621efddac49ed624fa3e3e80c44651c",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/text_input_frame_green.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/text_input_frame_green.pal",
       "path": "graphics/easy_chat/text_input_frame_green.pal",
-      "sha256": "6bc810ed18869faee75c020d2f337fa94e73262c4389aa2fe659239ea18d745c",
       "shared": false
     },
     {
-      "byteLength": 169,
-      "gitBlobSha1": "165bad8de6250b01b290abdfc1bc1e518f3d0d90",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/text_input_frame_orange.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/text_input_frame_orange.pal",
       "path": "graphics/easy_chat/text_input_frame_orange.pal",
-      "sha256": "5852a90288df80a666531dde5e19fe52e18fe251ec6651c6fc83c72e300df22c",
       "shared": false
     },
     {
-      "byteLength": 160,
-      "gitBlobSha1": "cdcf144b00e0505167bb5946751f913245ebc207",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/triangle_cursor.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/triangle_cursor.png",
       "path": "graphics/easy_chat/triangle_cursor.png",
-      "sha256": "43043000b6f25d5f6233ba84ca0e0b2c35ea7d3767d25d56933d4a6227ca4170",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "c262b89400940ecdc5a219894be62219a086942d",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/window.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/window.bin",
       "path": "graphics/easy_chat/window.bin",
-      "sha256": "28f0d9bd5ae4318812d7e0cf46ec2760ba2e9e23cda245639f07eea76b6f5ca6",
       "shared": false
     },
     {
-      "byteLength": 284,
-      "gitBlobSha1": "9049659c7d789e74acf1a433983085cb1b7306cd",
-      "localPath": "content/raw/mail-presentation/graphics/easy_chat/window.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/easy_chat/window.png",
       "path": "graphics/easy_chat/window.png",
-      "sha256": "38f0601b0677ea4225e32a3cb5f7043fc5ee1a7de01b6f603fd271ba2552ece0",
       "shared": false
     },
     {
-      "byteLength": 3470,
-      "gitBlobSha1": "42e847faf0f281db3da29ac5a33b6c224a416207",
-      "localPath": "content/raw/source-font/graphics/fonts/latin_normal.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/fonts/latin_normal.png",
       "path": "graphics/fonts/latin_normal.png",
-      "sha256": "ab9bc0e79857c1584b267c8955beb0422e40ca52cc081a5455ad8a328edde324",
       "shared": true
     },
     {
-      "byteLength": 158,
-      "gitBlobSha1": "435dfee87b78147e441af6b8f47fa6976f07a9ae",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/bead_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/bead_mail.pal",
       "path": "graphics/items/icon_palettes/bead_mail.pal",
-      "sha256": "8a6595280cc913e621550de9ccf3e03e2d5592ac382c03f8fe7fbade88caa0e7",
       "shared": false
     },
     {
-      "byteLength": 160,
-      "gitBlobSha1": "643753f188dd2c8b7404ad1472466f2a469c3792",
-      "localPath": "content/raw/six-island-presentation/graphics/items/icon_palettes/dream_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/dream_mail.pal",
       "path": "graphics/items/icon_palettes/dream_mail.pal",
-      "sha256": "05fc37b7f602e602a8ab51dcca6e2a31a65ef8adab4610fc33bf6d34d3d182b1",
       "shared": true
     },
     {
-      "byteLength": 152,
-      "gitBlobSha1": "1ccad3cc3b194270af5188a3f289806cc97c3402",
-      "localPath": "content/raw/npc-trade-mail/graphics/items/icon_palettes/fab_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/fab_mail.pal",
       "path": "graphics/items/icon_palettes/fab_mail.pal",
-      "sha256": "c1dfe3e1e3fbadf718f9359d61a1030a5b6fe5ca7a927d9e3897bd84dbc5c63f",
       "shared": true
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "59cb7ad5411a0f2c0ec0e490eedf6b15bf8768b3",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/glitter_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/glitter_mail.pal",
       "path": "graphics/items/icon_palettes/glitter_mail.pal",
-      "sha256": "1d5030e209a06f03841671b957780656639aeeaae9c66740d7f4ab9892e02f3b",
       "shared": false
     },
     {
-      "byteLength": 168,
-      "gitBlobSha1": "0edffaf19ab0d04681a4061cf1700cf54765fc52",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/harbor_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/harbor_mail.pal",
       "path": "graphics/items/icon_palettes/harbor_mail.pal",
-      "sha256": "7e8c0943b40da6769e9eb9cb7c38dc76771f81ab48d770df5fe2d1974ecc0246",
       "shared": false
     },
     {
-      "byteLength": 161,
-      "gitBlobSha1": "01e9bf7e19f1117b98d401588a297b0cf402cf61",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/mech_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/mech_mail.pal",
       "path": "graphics/items/icon_palettes/mech_mail.pal",
-      "sha256": "7531558e2be4c5dca90441393de1296d79c8b7d13a644f869995495821ad1fee",
       "shared": false
     },
     {
-      "byteLength": 167,
-      "gitBlobSha1": "db58702d9e63933aae6bf8cb07a8336285003bfc",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/orange_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/orange_mail.pal",
       "path": "graphics/items/icon_palettes/orange_mail.pal",
-      "sha256": "accd4d0a848f427bb643940dde8384eb6e3840d96dd89417b54245014f036efa",
       "shared": false
     },
     {
-      "byteLength": 156,
-      "gitBlobSha1": "20b896a7d63f43cf6fac39df589980b9dc1c8792",
-      "localPath": "content/raw/department-fourth-floor/graphics/items/icon_palettes/retro_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/retro_mail.pal",
       "path": "graphics/items/icon_palettes/retro_mail.pal",
-      "sha256": "0c140f2efff9731c91ec1fc261e76662758dbc5194d7ee655eb9540124dfb79a",
       "shared": true
     },
     {
-      "byteLength": 166,
-      "gitBlobSha1": "064d2f8fa8c1a41c98064c91c177568a300b0af3",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/shadow_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/shadow_mail.pal",
       "path": "graphics/items/icon_palettes/shadow_mail.pal",
-      "sha256": "1c5a4a844fccf5734c10aaa113159eed04fc6283da5293c3e486d9d6a096b4d9",
       "shared": false
     },
     {
-      "byteLength": 178,
-      "gitBlobSha1": "0a07e3ea415d5842d9fc7937a63b50379e234c7d",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/tropic_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/tropic_mail.pal",
       "path": "graphics/items/icon_palettes/tropic_mail.pal",
-      "sha256": "fade848edf231a2817f60e3af2a9666949ea41bb93f381d3ca6234ac16ccd685",
       "shared": false
     },
     {
-      "byteLength": 161,
-      "gitBlobSha1": "8e08d49a63ed56243e5dbb2ba9f6da2021787290",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/wave_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/wave_mail.pal",
       "path": "graphics/items/icon_palettes/wave_mail.pal",
-      "sha256": "f06d441ea37e746e380500e3a3eec63eda4ef05e479d6a30344391e55a17f5a7",
       "shared": false
     },
     {
-      "byteLength": 167,
-      "gitBlobSha1": "d0e54475b89ec822c1a07d81b56bb5c6a4976f41",
-      "localPath": "content/raw/mail-presentation/graphics/items/icon_palettes/wood_mail.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icon_palettes/wood_mail.pal",
       "path": "graphics/items/icon_palettes/wood_mail.pal",
-      "sha256": "0bbc2d9116399e2ba0073fb9fcece463737c9dce8127a684fedcee7bdf1fbac0",
       "shared": false
     },
     {
-      "byteLength": 261,
-      "gitBlobSha1": "b3e78459710b01cf75e44dfacf0b52ebfb55aab7",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/bead_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/bead_mail.png",
       "path": "graphics/items/icons/bead_mail.png",
-      "sha256": "d3503ea7da66ebb2d4f1c03c5129aecc8bd4dfba27ee1dd745aa7afaa14e5583",
       "shared": false
     },
     {
-      "byteLength": 284,
-      "gitBlobSha1": "53b296175124c315c77b7613d2c750f783cd6576",
-      "localPath": "content/raw/six-island-presentation/graphics/items/icons/dream_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/dream_mail.png",
       "path": "graphics/items/icons/dream_mail.png",
-      "sha256": "5535f2835c2d3eff7879bb0f619af41e91ff19a4f43046286432e036c048e73b",
       "shared": true
     },
     {
-      "byteLength": 257,
-      "gitBlobSha1": "969faaf3116688190b5e4836fdb924ae39562182",
-      "localPath": "content/raw/npc-trade-mail/graphics/items/icons/fab_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/fab_mail.png",
       "path": "graphics/items/icons/fab_mail.png",
-      "sha256": "9591fe53d27c8efa265a91e9cb7aac76734f6418d07d17fc8bea9f8beb408f13",
       "shared": true
     },
     {
-      "byteLength": 302,
-      "gitBlobSha1": "cd1355acfdd1b7dfae99aa4eb8dbd5027d8d4a86",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/glitter_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/glitter_mail.png",
       "path": "graphics/items/icons/glitter_mail.png",
-      "sha256": "78d9203b3c64cc3c7466ee7c11e6c904260cc286f8ea9046f6b0465de34bfab2",
       "shared": false
     },
     {
-      "byteLength": 272,
-      "gitBlobSha1": "441f5581c9b186fc2e9dc0e66de78520eebbc7f5",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/harbor_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/harbor_mail.png",
       "path": "graphics/items/icons/harbor_mail.png",
-      "sha256": "1522e90a6b24413ade8fc8e8d7131e463c091c6cd472a710d50fc6d2c0147790",
       "shared": false
     },
     {
-      "byteLength": 300,
-      "gitBlobSha1": "93c6c4f39e448312156feb204a51d59fd232d052",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/mech_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/mech_mail.png",
       "path": "graphics/items/icons/mech_mail.png",
-      "sha256": "ba38dbd7a6a9b5c7bc3cb0e960d1bf970100c2624be5e43ebb7a91708fc1989d",
       "shared": false
     },
     {
-      "byteLength": 286,
-      "gitBlobSha1": "af499954e90c98e29265adf8f8366afe299e7fab",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/orange_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/orange_mail.png",
       "path": "graphics/items/icons/orange_mail.png",
-      "sha256": "1c33229206c24340f19d0a0859135ecb339d8fd5c5f2dd5f189d52cf1631b5f0",
       "shared": false
     },
     {
-      "byteLength": 239,
-      "gitBlobSha1": "9562088d451b49527bd5dd2f81512e5152a74359",
-      "localPath": "content/raw/department-fourth-floor/graphics/items/icons/retro_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/retro_mail.png",
       "path": "graphics/items/icons/retro_mail.png",
-      "sha256": "586274afb7dd5bb735b336040abee2697fbed1c823dbdf294d5e96b897ef8178",
       "shared": true
     },
     {
-      "byteLength": 289,
-      "gitBlobSha1": "98f3f9be988e2b8c0a2f20a9a304202a2845ce79",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/shadow_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/shadow_mail.png",
       "path": "graphics/items/icons/shadow_mail.png",
-      "sha256": "58e4d4dac26f8e149659a25d9993e6492e87036b7c0924514aca845d14696f04",
       "shared": false
     },
     {
-      "byteLength": 314,
-      "gitBlobSha1": "4abc5212e5022082fad8e1a6f9e7e717b420caac",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/tropic_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/tropic_mail.png",
       "path": "graphics/items/icons/tropic_mail.png",
-      "sha256": "e30c2c0e83ea9a6164dd9c61eb5ac46254a4031aaa5baee6012b822e1534781c",
       "shared": false
     },
     {
-      "byteLength": 287,
-      "gitBlobSha1": "7c0c20ac8773f448426e224d57f667efc6f884f0",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/wave_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/wave_mail.png",
       "path": "graphics/items/icons/wave_mail.png",
-      "sha256": "a57cab976c9db50fba94de5466a1d8a9b661bf06754c5a06620792e41d32aaeb",
       "shared": false
     },
     {
-      "byteLength": 301,
-      "gitBlobSha1": "a687ec269b05b326e0072f62a4d0de71a199ed8e",
-      "localPath": "content/raw/mail-presentation/graphics/items/icons/wood_mail.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/items/icons/wood_mail.png",
       "path": "graphics/items/icons/wood_mail.png",
-      "sha256": "a736f9c8a1806c1d49a252b06aa003bee2dbb48bf5f1428fe3f066c81a41d96e",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "6ebb4932ca1ad7338257352c88fd323f34313dd0",
-      "localPath": "content/raw/mail-presentation/graphics/mail/bead/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/bead/map.bin",
       "path": "graphics/mail/bead/map.bin",
-      "sha256": "c3bc7c559530b34ed114069221ed76fe48c5e968b09cd812054f709a2397d6a2",
       "shared": false
     },
     {
-      "byteLength": 199,
-      "gitBlobSha1": "e2e6ca291deb5a369e0d7e03097eb147bee2a0d7",
-      "localPath": "content/raw/mail-presentation/graphics/mail/bead/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/bead/palette.pal",
       "path": "graphics/mail/bead/palette.pal",
-      "sha256": "94c771a09811a4b9ae205247f5ee9c00db18a623fa3556134ab475f80e12da63",
       "shared": false
     },
     {
-      "byteLength": 263,
-      "gitBlobSha1": "d006fb987a7d9b090686972cf4d354e3a92c2559",
-      "localPath": "content/raw/mail-presentation/graphics/mail/bead/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/bead/tiles.png",
       "path": "graphics/mail/bead/tiles.png",
-      "sha256": "dd815cafaacaaf0ca41aad865f4f0f82b0945d0d7de4ab784e82af77fc08ca3c",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "bc28d88640cad09f3d817f463bfdfa44fa89d11f",
-      "localPath": "content/raw/mail-presentation/graphics/mail/dream/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/dream/map.bin",
       "path": "graphics/mail/dream/map.bin",
-      "sha256": "35c7b26819659d0350bef074cde7457381e563c5429e1b52f8dea83336d0fdae",
       "shared": false
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "47172825c6f28e248061c986040fd26992f4a901",
-      "localPath": "content/raw/mail-presentation/graphics/mail/dream/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/dream/palette.pal",
       "path": "graphics/mail/dream/palette.pal",
-      "sha256": "5b8b5ae8e9f5d5e60a4f18e998e2c336db1dd08f4e0fca5d37d854305226a553",
       "shared": false
     },
     {
-      "byteLength": 351,
-      "gitBlobSha1": "cb4411757f4076ed7bb10d3a162b965b4377e1df",
-      "localPath": "content/raw/mail-presentation/graphics/mail/dream/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/dream/tiles.png",
       "path": "graphics/mail/dream/tiles.png",
-      "sha256": "e30cf08e1bfa6c92c90e67134e160d9ee64aaf4faaf42dceee0717f1d88f5e67",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "b11121bdf5346bccf0f762cef84d7b7b7b89f272",
-      "localPath": "content/raw/npc-trade-mail/graphics/mail/fab/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/fab/map.bin",
       "path": "graphics/mail/fab/map.bin",
-      "sha256": "c0ab1bd8315296872cdb4f49dc239e5f7f254ddcde5bff19d9a715577d9fc9a5",
       "shared": true
     },
     {
-      "byteLength": 174,
-      "gitBlobSha1": "17e1afcc33683f4756753e502cb7f669bf277900",
-      "localPath": "content/raw/npc-trade-mail/graphics/mail/fab/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/fab/palette.pal",
       "path": "graphics/mail/fab/palette.pal",
-      "sha256": "43978e00190b631d7eadf22b9b8839cbd614c896204a790ed7962ff5e9018408",
       "shared": true
     },
     {
-      "byteLength": 388,
-      "gitBlobSha1": "99e9cac71e841c7796e372a4990ccef269f61193",
-      "localPath": "content/raw/npc-trade-mail/graphics/mail/fab/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/fab/tiles.png",
       "path": "graphics/mail/fab/tiles.png",
-      "sha256": "e1287078cada72ef66093b018c4bf0c55e4068eda80eb25852aa6d723699f7ed",
       "shared": true
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "fad949aa93146384c6aba9e5bc8418dad13834c0",
-      "localPath": "content/raw/mail-presentation/graphics/mail/glitter/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/glitter/map.bin",
       "path": "graphics/mail/glitter/map.bin",
-      "sha256": "cdd19ebc089536240d710450e4ad46bef8b2d963ea8c00fc1e7a71ee0e033b0f",
       "shared": false
     },
     {
-      "byteLength": 185,
-      "gitBlobSha1": "544a0a11b6b51d9094069b91dca2965afe809b1b",
-      "localPath": "content/raw/mail-presentation/graphics/mail/glitter/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/glitter/palette.pal",
       "path": "graphics/mail/glitter/palette.pal",
-      "sha256": "fbb0acb472e40e9656c20a4db017e9e989dfd715847f13c43a9756dc2902c7fb",
       "shared": false
     },
     {
-      "byteLength": 548,
-      "gitBlobSha1": "12bd11801941d92452e908ff58a385181d0f38c1",
-      "localPath": "content/raw/mail-presentation/graphics/mail/glitter/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/glitter/tiles.png",
       "path": "graphics/mail/glitter/tiles.png",
-      "sha256": "8411e0c121d9d4e9d56e1ced348f5b1d978097c455fa51536b54d9433bacae6c",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "ce07a75394da934fc8eb972a013db797dc65f3c3",
-      "localPath": "content/raw/mail-presentation/graphics/mail/harbor/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/harbor/map.bin",
       "path": "graphics/mail/harbor/map.bin",
-      "sha256": "57195eda236f00e3b8f7031a8b5e93f53b5fd1d4845f944c94536bb33e7e543a",
       "shared": false
     },
     {
-      "byteLength": 176,
-      "gitBlobSha1": "1a8795c335a89d22d9e5151dcaa674a562aea05b",
-      "localPath": "content/raw/mail-presentation/graphics/mail/harbor/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/harbor/palette.pal",
       "path": "graphics/mail/harbor/palette.pal",
-      "sha256": "452b3b3b496809504c6e84865ae5b5a760e4d9348e618750857b547238ba752d",
       "shared": false
     },
     {
-      "byteLength": 366,
-      "gitBlobSha1": "b0a09ef690fdfe516f46ecfebb396ee55ab861d0",
-      "localPath": "content/raw/mail-presentation/graphics/mail/harbor/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/harbor/tiles.png",
       "path": "graphics/mail/harbor/tiles.png",
-      "sha256": "39b58bdaafeb8c29f6c61ccc29c327a4bf00f167bd90bfee0811f07ce880fbee",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "d749740085ee8176954665e35c833e9e035f764b",
-      "localPath": "content/raw/mail-presentation/graphics/mail/mech/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/mech/map.bin",
       "path": "graphics/mail/mech/map.bin",
-      "sha256": "bb19cb9bb932f094fa1efe23a8714ca91f1aec5d7942508443710f1993ef1528",
       "shared": false
     },
     {
-      "byteLength": 174,
-      "gitBlobSha1": "bb55d7c0451cf29bb090d6c81f13361fe183afa0",
-      "localPath": "content/raw/mail-presentation/graphics/mail/mech/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/mech/palette.pal",
       "path": "graphics/mail/mech/palette.pal",
-      "sha256": "c984745e38e4a94fe4a3faf445d6498fff8c4f17eab45b58ee625d9a41227f0f",
       "shared": false
     },
     {
-      "byteLength": 299,
-      "gitBlobSha1": "4d47dd73bd5b76cc64570c15f3806b2103dc1da3",
-      "localPath": "content/raw/mail-presentation/graphics/mail/mech/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/mech/tiles.png",
       "path": "graphics/mail/mech/tiles.png",
-      "sha256": "5ce933811276b3e05846bdb178c75506853f6143b8ba3a878fa8e447795de625",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "be4dbf9c56403ecac4f182fdc0ed4dd7a194dc4b",
-      "localPath": "content/raw/mail-presentation/graphics/mail/orange/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/orange/map.bin",
       "path": "graphics/mail/orange/map.bin",
-      "sha256": "fa38791d6b14b8d5ac9fa959bc1e36f4f673ce1e5cddb623ed63645ff374bcdf",
       "shared": false
     },
     {
-      "byteLength": 201,
-      "gitBlobSha1": "20efef172724458316dcb6869cd6b5c90890d675",
-      "localPath": "content/raw/mail-presentation/graphics/mail/orange/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/orange/palette.pal",
       "path": "graphics/mail/orange/palette.pal",
-      "sha256": "2068cadcb757055bb57dfdbd05ed6a5ad208633aa3556e51603892924e897561",
       "shared": false
     },
     {
-      "byteLength": 439,
-      "gitBlobSha1": "1676bd2582466d81fac0886fa0778db487dcb65e",
-      "localPath": "content/raw/mail-presentation/graphics/mail/orange/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/orange/tiles.png",
       "path": "graphics/mail/orange/tiles.png",
-      "sha256": "65f9202cee532066509d7bec64c6db3f02b78ddb834e51ec71f8a30eb227d494",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "30ee05ba21d853837df630307cd6df05064518ea",
-      "localPath": "content/raw/mail-presentation/graphics/mail/retro/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/retro/map.bin",
       "path": "graphics/mail/retro/map.bin",
-      "sha256": "d716ffd30ef89c855326436a070c0a0eb6165fd2624211e63408eb76a51a1cbc",
       "shared": false
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "707bdff931c097dcc4d3be2d6fd6696091664b8a",
-      "localPath": "content/raw/mail-presentation/graphics/mail/retro/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/retro/palette.pal",
       "path": "graphics/mail/retro/palette.pal",
-      "sha256": "5c5c20f3ce064e051e904c30ed40b2dca5e11d6f96b43dd47a1d72a4514cd5b8",
       "shared": false
     },
     {
-      "byteLength": 615,
-      "gitBlobSha1": "da96ad4867dc827c18b467de0007892898124f45",
-      "localPath": "content/raw/mail-presentation/graphics/mail/retro/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/retro/tiles.png",
       "path": "graphics/mail/retro/tiles.png",
-      "sha256": "7050815e41f3a7552bf6dc9a43242215cd787fb41a8ea739a7851b3e93478dc6",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "01fcfe4cec69d9fc82ec9d3c6a24a19ffe911b75",
-      "localPath": "content/raw/mail-presentation/graphics/mail/shadow/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/shadow/map.bin",
       "path": "graphics/mail/shadow/map.bin",
-      "sha256": "efaf51401aa520d513a9a60b578e8104a54f3c1bb13798cf6723ed12a06df335",
       "shared": false
     },
     {
-      "byteLength": 178,
-      "gitBlobSha1": "f08b838c5cf1d5f6ccbf6040f6a06b6bd5351729",
-      "localPath": "content/raw/mail-presentation/graphics/mail/shadow/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/shadow/palette.pal",
       "path": "graphics/mail/shadow/palette.pal",
-      "sha256": "e1b4db1cebfb4ab392afa4b323110056fc1f5ad74b4aabc4e741c745c6349d59",
       "shared": false
     },
     {
-      "byteLength": 400,
-      "gitBlobSha1": "cdc63cde1c9c2cf47772b6c521376b98463d795f",
-      "localPath": "content/raw/mail-presentation/graphics/mail/shadow/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/shadow/tiles.png",
       "path": "graphics/mail/shadow/tiles.png",
-      "sha256": "58491f19fb5304df8d7ba339d0eef0cb76578ec2369eb4f738fb95f75432769d",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "8ef408f37b9a3d4e20de2575851bde8e2ecd90ec",
-      "localPath": "content/raw/mail-presentation/graphics/mail/tropic/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/tropic/map.bin",
       "path": "graphics/mail/tropic/map.bin",
-      "sha256": "53ac8ed6d9ece4a4d38d8672825dd244371d8f2eb47ea51e9fea1b235f741fcc",
       "shared": false
     },
     {
-      "byteLength": 197,
-      "gitBlobSha1": "99b2bb636eaba30b60504f6bed2d32dec0f87f9d",
-      "localPath": "content/raw/mail-presentation/graphics/mail/tropic/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/tropic/palette.pal",
       "path": "graphics/mail/tropic/palette.pal",
-      "sha256": "f911023a15f0c4d8a41068176276ed1ad358215db9568a48989f5d295783368d",
       "shared": false
     },
     {
-      "byteLength": 389,
-      "gitBlobSha1": "6cee88775da288d26f6842fdb6eb095e283c5c9f",
-      "localPath": "content/raw/mail-presentation/graphics/mail/tropic/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/tropic/tiles.png",
       "path": "graphics/mail/tropic/tiles.png",
-      "sha256": "09340b63f5cfa737fa0b10e6ab78feeaf7fb3261788f17bd776d199ec326fb32",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "0af44f798610451d37d70f049167281e2b8559ad",
-      "localPath": "content/raw/mail-presentation/graphics/mail/wave/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/wave/map.bin",
       "path": "graphics/mail/wave/map.bin",
-      "sha256": "c65049551eedf7dfc8567cc12e5e9887eba53e37f8e34c206344c52559063aa2",
       "shared": false
     },
     {
-      "byteLength": 181,
-      "gitBlobSha1": "dd9bbfae4dcb927ee05ae223a9b97599181d5209",
-      "localPath": "content/raw/mail-presentation/graphics/mail/wave/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/wave/palette.pal",
       "path": "graphics/mail/wave/palette.pal",
-      "sha256": "ee7f61b3cf478b754788e0d1cb5a86676fd73f1c1ad88a744a85090d0475e7a0",
       "shared": false
     },
     {
-      "byteLength": 409,
-      "gitBlobSha1": "6b5af8a01cfaf1076114c6946495de0682d5752c",
-      "localPath": "content/raw/mail-presentation/graphics/mail/wave/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/wave/tiles.png",
       "path": "graphics/mail/wave/tiles.png",
-      "sha256": "ec45ebed3397c6f357a47e68cece18b6e721eb870ba6389cb3aec46ca1e8ad3c",
       "shared": false
     },
     {
-      "byteLength": 1280,
-      "gitBlobSha1": "4338a31c8a58ab172a0f64ba6c1095f3726b6744",
-      "localPath": "content/raw/mail-presentation/graphics/mail/wood/map.bin",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/wood/map.bin",
       "path": "graphics/mail/wood/map.bin",
-      "sha256": "c67de0dc4a9ba8b77981e0f53534b2fad8a926bad905050b6be906289cd7bbd8",
       "shared": false
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "9ed9369186c971f3073e7db982a29ba0ecd71755",
-      "localPath": "content/raw/mail-presentation/graphics/mail/wood/palette.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/wood/palette.pal",
       "path": "graphics/mail/wood/palette.pal",
-      "sha256": "f7f7efbe677a2088a4bed4788685244ce16fad3740d99d380c3f321d4f7c53ae",
       "shared": false
     },
     {
-      "byteLength": 518,
-      "gitBlobSha1": "a55029facdb033e39a3375080152473d7e86841c",
-      "localPath": "content/raw/mail-presentation/graphics/mail/wood/tiles.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/mail/wood/tiles.png",
       "path": "graphics/mail/wood/tiles.png",
-      "sha256": "3f144397ce63748c24fc5524743d2b8d7756e3b660ac7c34949711dafb3eaac8",
       "shared": false
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "localPath": "content/raw/npc-trade-mail/include/constants/items.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/items.h",
       "path": "include/constants/items.h",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
       "shared": true
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "localPath": "content/raw/npc-trade-mail/include/constants/species.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/species.h",
       "path": "include/constants/species.h",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
       "shared": true
     },
     {
-      "byteLength": 46353,
-      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
-      "localPath": "content/raw/npc-trade-mail/src/data/graphics/items.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/graphics/items.h",
       "path": "src/data/graphics/items.h",
-      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202",
       "shared": true
     },
     {
-      "byteLength": 3614,
-      "gitBlobSha1": "86d827b4984be287969f285eda44e2c7e0cd65ca",
-      "localPath": "content/raw/npc-trade-mail/src/data/graphics/mail.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/graphics/mail.h",
       "path": "src/data/graphics/mail.h",
-      "sha256": "c3c644273c1d4cf9b00a9f13ac5c75fd9a7db2c26403844922e41d3a7ffd0588",
       "shared": true
     },
     {
-      "byteLength": 30370,
-      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
-      "localPath": "content/raw/npc-trade-mail/src/data/item_icon_table.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/item_icon_table.h",
       "path": "src/data/item_icon_table.h",
-      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c",
       "shared": true
     },
     {
-      "byteLength": 194280,
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "localPath": "content/raw/npc-trade-mail/src/data/items.json",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/items.json",
       "path": "src/data/items.json",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
       "shared": true
     },
     {
-      "byteLength": 36383,
-      "gitBlobSha1": "6951da8e86b47fb397f1cfd42f9d50fb30e3c9fe",
-      "localPath": "content/raw/mail-presentation/src/easy_chat_2.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/easy_chat_2.c",
       "path": "src/easy_chat_2.c",
-      "sha256": "c595fc819c1f0903fa26e16c19ba7317ead7bcdff2fce7d9d6700b91828c3c79",
       "shared": false
     },
     {
-      "byteLength": 66301,
-      "gitBlobSha1": "81a27a65416c1d0e56b5eec0a4e13e62dfd1ff3e",
-      "localPath": "content/raw/mail-presentation/src/easy_chat_3.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/easy_chat_3.c",
       "path": "src/easy_chat_3.c",
-      "sha256": "676ba2a0f25a49f559112a7a90191f402dedcf8905f4ba5ebb8b5108d89b9812",
       "shared": false
     },
     {
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
-      "localPath": "content/raw/six-island-presentation/src/graphics.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/graphics.c",
       "path": "src/graphics.c",
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
       "shared": true
     },
     {
-      "byteLength": 22414,
-      "gitBlobSha1": "27b63c1db40b4dc860873e35c13cb14eb1fb5b38",
-      "localPath": "content/raw/npc-trade-mail/src/mail.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/mail.c",
       "path": "src/mail.c",
-      "sha256": "0721a9f8ce60d6484bc9dcfead8454e5c6d4a2ef1d8f0f860f3dc458d3b717fc",
       "shared": true
     },
     {
-      "byteLength": 4853,
-      "gitBlobSha1": "9bff74b6dcabe1e56e5cb7c592a8a08979e2899f",
-      "localPath": "content/raw/npc-trade-mail/src/mail_data.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/mail_data.c",
       "path": "src/mail_data.c",
-      "sha256": "b2ff299f10da19be3dc2ad9ea55d06f0e8f2794dd02d96116b6fa00e60ec3856",
       "shared": true
     },
     {
-      "byteLength": 45145,
-      "gitBlobSha1": "037b1bfa82189906b205fe1a50a9276a4e2041e6",
-      "localPath": "content/raw/six-island-presentation/src/pokemon_icon.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/pokemon_icon.c",
       "path": "src/pokemon_icon.c",
-      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967",
       "shared": true
     },
     {
-      "byteLength": 96631,
-      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
-      "localPath": "content/raw/npc-trade-mail/src/strings.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/strings.c",
       "path": "src/strings.c",
-      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
       "shared": true
     },
     {
-      "byteLength": 63210,
-      "gitBlobSha1": "f3eef07ce6dea8269980a5ecfdd6902c1c9c13d2",
-      "localPath": "content/raw/six-island-presentation/src/text.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/text.c",
       "path": "src/text.c",
-      "sha256": "5696f49443eeaaac74b530421ac7f0cbfc71996c557399583788111c322dd80c",
       "shared": true
     }
   ],
   "outputs": [
     {
-      "byteLength": 1358,
-      "path": "content/generated/mail-presentation/bead-mail-female.png",
-      "sha256": "329713cbab772b657c576e3e2b3bdb1d17c70cce7c1faef13891a519122e6ac6"
+      "path": "content/generated/mail-presentation/bead-mail-female.png"
     },
     {
-      "byteLength": 1356,
-      "path": "content/generated/mail-presentation/bead-mail-male.png",
-      "sha256": "50969847d5f49455bc2c055a861fad80c6763ddbf2c243697ae590379002741b"
+      "path": "content/generated/mail-presentation/bead-mail-male.png"
     },
     {
-      "byteLength": 59932,
-      "path": "content/generated/mail-presentation/catalog.json",
-      "sha256": "514a0a86a47e9cb7ad610929b6efeb6fc97ee3bc6277f8e9e20b1a5e2c418eb4"
+      "path": "content/generated/mail-presentation/catalog.json"
     },
     {
-      "byteLength": 1077,
-      "path": "content/generated/mail-presentation/dream-mail-female.png",
-      "sha256": "35b2808b04090387cba4dd647d4fd1bb749e98dceb42f1434ae416eed44799aa"
+      "path": "content/generated/mail-presentation/dream-mail-female.png"
     },
     {
-      "byteLength": 1076,
-      "path": "content/generated/mail-presentation/dream-mail-male.png",
-      "sha256": "1d47a479f65bd5cf1f9645b313e6a64cf64d2cc7b9c7623ad69cf1a9c355e331"
+      "path": "content/generated/mail-presentation/dream-mail-male.png"
     },
     {
-      "byteLength": 497,
-      "path": "content/generated/mail-presentation/easy-chat-button-window.png",
-      "sha256": "388bf2515ca3aadc074b010515b4fd462fd9c464d6e9afe3f9ab1dd4fbfeeaf0"
+      "path": "content/generated/mail-presentation/easy-chat-button-window.png"
     },
     {
-      "byteLength": 999,
-      "path": "content/generated/mail-presentation/easy-chat-fields.png",
-      "sha256": "00dfb1dfb66c5df70eb9954e1c23f47ea6119edd5c1ec8d5f1561baa7df72827"
+      "path": "content/generated/mail-presentation/easy-chat-fields.png"
     },
     {
-      "byteLength": 1147,
-      "path": "content/generated/mail-presentation/easy-chat-groups.png",
-      "sha256": "fe815797dced3b6f2ed3f00ea75872327b9c8f96a2963c86ee11a07e2519795e"
+      "path": "content/generated/mail-presentation/easy-chat-groups.png"
     },
     {
-      "byteLength": 559,
-      "path": "content/generated/mail-presentation/easy-chat-mode.png",
-      "sha256": "da09b26aef48393b4abee3b0f2fbc3136b7838bd63fa676af3ecc44984ec42ea"
+      "path": "content/generated/mail-presentation/easy-chat-mode.png"
     },
     {
-      "byteLength": 269,
-      "path": "content/generated/mail-presentation/easy-chat-rectangle-cursor.png",
-      "sha256": "cc1c1921a484be60dcd9ac9d943bfefc02d881285d4b81db2d9a27cc97ec76e2"
+      "path": "content/generated/mail-presentation/easy-chat-rectangle-cursor.png"
     },
     {
-      "byteLength": 125,
-      "path": "content/generated/mail-presentation/easy-chat-scroll-indicator.png",
-      "sha256": "a398baed73c91de88caf098422ec59dc288b990002b7ec8fc3ff53d901490a73"
+      "path": "content/generated/mail-presentation/easy-chat-scroll-indicator.png"
     },
     {
-      "byteLength": 280,
-      "path": "content/generated/mail-presentation/easy-chat-special-glyphs.png",
-      "sha256": "537ec92225c7d227dd2e8db270d2642129f82570697844a3c4b3f21a1379b34a"
+      "path": "content/generated/mail-presentation/easy-chat-special-glyphs.png"
     },
     {
-      "byteLength": 190,
-      "path": "content/generated/mail-presentation/easy-chat-start-select-buttons.png",
-      "sha256": "a49eb378b58ed37f25bb840cd0c90db0f4d0e6796dae237cb6ae352062bceac0"
+      "path": "content/generated/mail-presentation/easy-chat-start-select-buttons.png"
     },
     {
-      "byteLength": 107,
-      "path": "content/generated/mail-presentation/easy-chat-triangle-cursor.png",
-      "sha256": "e339b46ebc80965dbafcb5f5d98b135b838c1cfc18f30ce223d13eea1d7a730d"
+      "path": "content/generated/mail-presentation/easy-chat-triangle-cursor.png"
     },
     {
-      "byteLength": 92,
-      "path": "content/generated/mail-presentation/easy-chat-underscore.png",
-      "sha256": "f55cb13ff12498bd587d5058c97dd22484c2a1d76b65e52664c1c618d727d8dc"
+      "path": "content/generated/mail-presentation/easy-chat-underscore.png"
     },
     {
-      "byteLength": 868,
-      "path": "content/generated/mail-presentation/easy-chat-words.png",
-      "sha256": "5747078b67b1fa167ca548768c8e743a5ca482f2c9e0d773834ac47c855674a3"
+      "path": "content/generated/mail-presentation/easy-chat-words.png"
     },
     {
-      "byteLength": 1700,
-      "path": "content/generated/mail-presentation/glitter-mail-female.png",
-      "sha256": "389cc0cbf8f7df5192a461b7f5e8dbb40739474587c98dbaea20bb6c744aad3c"
+      "path": "content/generated/mail-presentation/glitter-mail-female.png"
     },
     {
-      "byteLength": 1701,
-      "path": "content/generated/mail-presentation/glitter-mail-male.png",
-      "sha256": "59a2903a1383bfc204b3dae9de2da0094e8a124b543daa0210528762ec9c07de"
+      "path": "content/generated/mail-presentation/glitter-mail-male.png"
     },
     {
-      "byteLength": 1041,
-      "path": "content/generated/mail-presentation/harbor-mail-female.png",
-      "sha256": "1f6b814151c21828b0eaaadc8b0e2af05cdf7ca4a8cb140ce228645ba2e914e4"
+      "path": "content/generated/mail-presentation/harbor-mail-female.png"
     },
     {
-      "byteLength": 1045,
-      "path": "content/generated/mail-presentation/harbor-mail-male.png",
-      "sha256": "eaa8acd8761662864b31ab6c87399de5aee4a79dd94d50dd4035e87fa5addaba"
+      "path": "content/generated/mail-presentation/harbor-mail-male.png"
     },
     {
-      "byteLength": 284,
-      "path": "content/generated/mail-presentation/item-bead-mail.png",
-      "sha256": "a8766b73afda3fa99510d4d79ddfe5277a98479c81b58e80c0bce654213f2db6"
+      "path": "content/generated/mail-presentation/item-bead-mail.png"
     },
     {
-      "byteLength": 333,
-      "path": "content/generated/mail-presentation/item-glitter-mail.png",
-      "sha256": "e7bfaa275c44957ab1f2505a4a1b576d04231e3bb8f1a1cb9974c26060a591ea"
+      "path": "content/generated/mail-presentation/item-glitter-mail.png"
     },
     {
-      "byteLength": 286,
-      "path": "content/generated/mail-presentation/item-harbor-mail.png",
-      "sha256": "12ed4b486d16bc4e61ef70a9917979f2fe70ac8000b4862d205f6131b6c2dff4"
+      "path": "content/generated/mail-presentation/item-harbor-mail.png"
     },
     {
-      "byteLength": 330,
-      "path": "content/generated/mail-presentation/item-mech-mail.png",
-      "sha256": "21df094739a1e6e6be184b483afaf2fb672b303eaaffb8c4c9b26c12a28bc605"
+      "path": "content/generated/mail-presentation/item-mech-mail.png"
     },
     {
-      "byteLength": 308,
-      "path": "content/generated/mail-presentation/item-orange-mail.png",
-      "sha256": "b5a0a77292b4fbab44ad28efbe946d1f76b8a266ceb63d6068f3f6d98b7b1722"
+      "path": "content/generated/mail-presentation/item-orange-mail.png"
     },
     {
-      "byteLength": 312,
-      "path": "content/generated/mail-presentation/item-shadow-mail.png",
-      "sha256": "5140e881b0c147da6a123357d7c018b9e34d0c97be88577896323af838339d3d"
+      "path": "content/generated/mail-presentation/item-shadow-mail.png"
     },
     {
-      "byteLength": 366,
-      "path": "content/generated/mail-presentation/item-tropic-mail.png",
-      "sha256": "d614e30c3b7c7c5d64025986cc6256784b4df0c157456400532781b3cefe9b8b"
+      "path": "content/generated/mail-presentation/item-tropic-mail.png"
     },
     {
-      "byteLength": 304,
-      "path": "content/generated/mail-presentation/item-wave-mail.png",
-      "sha256": "467f049ef15824b152eb105f5611ebf9a65179ebe8f5ed968ec49794e0edb653"
+      "path": "content/generated/mail-presentation/item-wave-mail.png"
     },
     {
-      "byteLength": 334,
-      "path": "content/generated/mail-presentation/item-wood-mail.png",
-      "sha256": "cb66b0f4d1b4b6132fc22cdedcd912776418fbc70f12626bd30916ccd4ba954a"
+      "path": "content/generated/mail-presentation/item-wood-mail.png"
     },
     {
-      "byteLength": 1156,
-      "path": "content/generated/mail-presentation/mech-mail-female.png",
-      "sha256": "44726c5927cbedf79e2b86e9cb72d55b77a731ac6bca685cad96d3ae9bd7a2b9"
+      "path": "content/generated/mail-presentation/mech-mail-female.png"
     },
     {
-      "byteLength": 1159,
-      "path": "content/generated/mail-presentation/mech-mail-male.png",
-      "sha256": "0362c9c2734455231b9b991beb704e77293ef19f8320429da8d1ae3e1cb3e888"
+      "path": "content/generated/mail-presentation/mech-mail-male.png"
     },
     {
-      "byteLength": 1241,
-      "path": "content/generated/mail-presentation/orange-mail-female.png",
-      "sha256": "76f9819362180f78470bb11f18faa4dac2dc938d77f770824f93d3d0ea01e4ee"
+      "path": "content/generated/mail-presentation/orange-mail-female.png"
     },
     {
-      "byteLength": 1241,
-      "path": "content/generated/mail-presentation/orange-mail-male.png",
-      "sha256": "2d33360df10a873aebe3b8cdf4138c390428d3fce66bc7f109559cf59a479c26"
+      "path": "content/generated/mail-presentation/orange-mail-male.png"
     },
     {
-      "byteLength": 1502,
-      "path": "content/generated/mail-presentation/retro-mail-female.png",
-      "sha256": "7bb2f4b2a7c7d2920dcd46fb99e39aab51040ff6ebc2a7f039e0fe6fe4bc93ea"
+      "path": "content/generated/mail-presentation/retro-mail-female.png"
     },
     {
-      "byteLength": 1501,
-      "path": "content/generated/mail-presentation/retro-mail-male.png",
-      "sha256": "0a8eb0d502f3cdc0488a1a427eacc3106512e8125215c38029be141fc1513670"
+      "path": "content/generated/mail-presentation/retro-mail-male.png"
     },
     {
-      "byteLength": 1484,
-      "path": "content/generated/mail-presentation/shadow-mail-female.png",
-      "sha256": "32c748ac19b84b6601c79835a00fa0158088d78f318854242a861acc31f1b002"
+      "path": "content/generated/mail-presentation/shadow-mail-female.png"
     },
     {
-      "byteLength": 1483,
-      "path": "content/generated/mail-presentation/shadow-mail-male.png",
-      "sha256": "eef008b6de2c24e28ae68883850d03f7aa1c53f41464665fdde6ab18418f03b9"
+      "path": "content/generated/mail-presentation/shadow-mail-male.png"
     },
     {
-      "byteLength": 1536,
-      "path": "content/generated/mail-presentation/tropic-mail-female.png",
-      "sha256": "d9da6ac12e8ef6cb6bf9b24c0cd8d5d47dacc90b714fecbe046a76a020ba0722"
+      "path": "content/generated/mail-presentation/tropic-mail-female.png"
     },
     {
-      "byteLength": 1534,
-      "path": "content/generated/mail-presentation/tropic-mail-male.png",
-      "sha256": "52edfe2f7c4ca46533901b5613b2c71ff62d4bdab4b4353c4a7370b6ebd06640"
+      "path": "content/generated/mail-presentation/tropic-mail-male.png"
     },
     {
-      "byteLength": 1372,
-      "path": "content/generated/mail-presentation/wave-mail-female.png",
-      "sha256": "5f8bb6e41b3788abdf09c235102a4b76208859eab5668f8035ddeed72785beeb"
+      "path": "content/generated/mail-presentation/wave-mail-female.png"
     },
     {
-      "byteLength": 1371,
-      "path": "content/generated/mail-presentation/wave-mail-male.png",
-      "sha256": "1f3b6be848880f490597b0632689d65b5b35dd06d672c2e95923ccb4df8f257c"
+      "path": "content/generated/mail-presentation/wave-mail-male.png"
     },
     {
-      "byteLength": 1462,
-      "path": "content/generated/mail-presentation/wood-mail-female.png",
-      "sha256": "a07c46dc2a4e12110f0b4f2708b417a6d75f5c70aa6bf3e2c64a7e4a160f3bde"
+      "path": "content/generated/mail-presentation/wood-mail-female.png"
     },
     {
-      "byteLength": 1459,
-      "path": "content/generated/mail-presentation/wood-mail-male.png",
-      "sha256": "40ea2f20d7b6e5ae4261f3bfe03db59d99361dc430e5f82e99c43456f9aa10e4"
+      "path": "content/generated/mail-presentation/wood-mail-male.png"
     }
   ],
   "profile": "firered-mail-presentation-v1",
@@ -959,6 +599,5 @@
   "romDownloaded": false,
   "schemaVersion": 1,
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "upstreamScriptsExecuted": false
 }

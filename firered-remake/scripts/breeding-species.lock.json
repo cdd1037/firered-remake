@@ -1,28 +1,18 @@
 {
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-breeding-species-v1",
-  "importerSha256": "bdf90c1de0cfa26c46c6c6a07bceb3fc66d09c75a5d6b8b5d9034cfdbb8f5c51",
   "files": [
     {
-      "path": "content/generated/breeding-species/machines.json",
-      "byteLength": 187073,
-      "sha256": "15a696696cb67b3faf8957617e71f2890b65833145474f13e5946d38ce6dcd11"
+      "path": "content/generated/breeding-species/machines.json"
     },
     {
-      "path": "content/generated/breeding-species/metadata.json",
-      "byteLength": 340838,
-      "sha256": "9b079771b481f49f7cb1d9030fe9bb450a02b19d9b5d24d7ad0e47228ed8f200"
+      "path": "content/generated/breeding-species/metadata.json"
     },
     {
-      "path": "content/generated/breeding-species/pokemon.json",
-      "byteLength": 5974,
-      "sha256": "4f7c0b85bda98cd0980205f5ab96875a57852efeca1ac8ea1fbd63e5e472dc58"
+      "path": "content/generated/breeding-species/pokemon.json"
     },
     {
-      "path": "content/generated/breeding-species/source-input-hashes.json",
-      "byteLength": 4590,
-      "sha256": "5e59f5cacc0d948cf6e1c77e5ce94ed0bfcce039774ca4c9fcbddc7b887590ab"
+      "path": "content/generated/breeding-species/source-input-hashes.json"
     }
   ]
 }

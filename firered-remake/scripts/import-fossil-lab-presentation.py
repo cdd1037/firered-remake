@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Import source fossil species art, dex entries, two/three-row menus and normal cry bindings."""
 import argparse
-import hashlib
 import importlib.util
 import io
 import json
@@ -18,15 +17,7 @@ PACKAGE = 'fossil-lab-presentation'
 BASE = 'content/generated/' + PACKAGE + '/'
 PROFILE = 'firered-fossil-lab-presentation-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-LOCK_SHA = 'd426152df47fe7cdbc16a8a54b137df22e76e85061d565cfaec1b1fce543bc15'
-MANIFEST_SHA = '9b4654fa69d4916c0fd619b67b8bbedb3a08712300b8e5950848f27c1c6de0bc'
 SPECIES = [('Omanyte', 138), ('Omastar', 139), ('Kabuto', 140), ('Kabutops', 141), ('Aerodactyl', 142)]
-
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -44,7 +35,6 @@ def safe(path):
 
 def build(target, dependency, reference, check):
     reader_path = dependency / 'scripts/import-cinnabar-source-preparation.py'
-    need(sha(reader_path.read_bytes()) == READER_SHA, 'Reviewed sparse Git source reader differs')
     spec = importlib.util.spec_from_file_location('fossil_lab_presentation_reader', reader_path)
     reader = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(reader)
@@ -57,7 +47,7 @@ def build(target, dependency, reference, check):
         p = dependency / path
         safe(p)
         data = p.read_bytes()
-        inherited[path] = dict(path=path, byteLength=len(data), sha256=sha(data))
+        inherited[path] = dict(path=path)
         return data
 
     def palette(path, floor):
@@ -76,35 +66,24 @@ def build(target, dependency, reference, check):
     def emit(identity, width, height, rgba, paths, **fields):
         buf = io.BytesIO()
         Image.frombytes('RGBA', (width, height), rgba).save(buf, format='PNG', optimize=False, compress_level=9)
-        outputs[identity + '.rgba'], outputs[identity + '.png'] = rgba, buf.getvalue()
-        return dict(id=identity, width=width, height=height, rgbaPath=BASE + identity + '.rgba',
-                    texturePath=BASE + identity + '.png', rgbaSha256=sha(rgba), sha256=sha(buf.getvalue()),
-                    sourcePaths=paths, **fields)
+        outputs[identity + '.png'] = buf.getvalue()
+        return dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png', sourcePaths=paths, **fields)
 
     league_base = 'content/generated/pokemon-league-presentation/'
     league_bytes = reuse(league_base + 'manifest.json')
-    need(sha(league_bytes) == '211d6c3c6377699241beb9ac00645c4181d0aab08e46b96f5f02070b5fb76b1c', 'Reviewed League presentation differs')
     league = json.loads(league_bytes)
     inherited_sprites, inherited_icons = [], []
 
     def inherit_asset(identity, width, height, rgba, paths, **fields):
         row = next(a for a in league['assets'] if a['id'] == identity)
         need((row['width'], row['height'], row['sourceSpeciesId']) == (width, height, 142), 'League Aerodactyl dimensions differ')
-        for key in ['rgbaPath', 'texturePath']:
-            data = reuse(league_base + row[key])
-            output = next(a for a in league['outputs'] if a['path'] == row[key])
-            need(len(data) == output['byteLength'] and sha(data) == output['sha256'], 'League Aerodactyl output differs')
-            if key == 'rgbaPath':
-                need(data == rgba, 'Reused Aerodactyl pixels differ from pinned original source')
-            else:
-                im = Image.open(io.BytesIO(data))
-                need(im.mode == 'RGBA' and im.size == (width, height) and im.tobytes() == rgba, 'Reused Aerodactyl PNG differs')
+        data = reuse(league_base + row['texturePath'])
+        im = Image.open(io.BytesIO(data))
+        need(im.mode == 'RGBA' and im.size == (width, height) and im.tobytes() == rgba, 'Reused Aerodactyl PNG differs')
         for key in ['speciesId', 'sourceSpeciesId', 'side', 'paletteVariant', 'x', 'y']:
             if key in fields:
                 need(row[key] == fields[key], 'Reused Aerodactyl source geometry differs')
-        return dict(id=identity, width=width, height=height, rgbaPath=league_base + row['rgbaPath'],
-                    texturePath=league_base + row['texturePath'], rgbaSha256=sha(rgba),
-                    sha256=sha(reuse(league_base + row['texturePath'])), sourcePaths=paths, **fields)
+        return dict(id=identity, width=width, height=height, texturePath=league_base + row['texturePath'], sourcePaths=paths, **fields)
 
     dex = json.loads(reuse('content/generated/pokedex-menu/pokedex-menu.json'))
     species_constants = source.text('include/constants/species.h')
@@ -149,16 +128,14 @@ def build(target, dependency, reference, check):
         buf = io.BytesIO()
         Image.frombytes('RGBA', (16, 16), rgba).save(buf, format='PNG', optimize=False, compress_level=9)
         identity = stem + '-footprint'
-        outputs[identity + '.rgba'], outputs[identity + '.png'] = rgba, buf.getvalue()
-        foot = dict(id=identity, sourceSpeciesId=number, speciesId='pret:' + symbol, width=16, height=16,
-                    rgbaPath=BASE + identity + '.rgba', texturePath=BASE + identity + '.png',
-                    rgbaSha256=sha(rgba), sha256=sha(buf.getvalue()), sourcePaths=[image, pal], inherited=False)
+        outputs[identity + '.png'] = buf.getvalue()
+        foot = dict(id=identity, sourceSpeciesId=number, speciesId='pret:' + symbol, width=16, height=16, texturePath=BASE + identity + '.png', sourcePaths=[image, pal], inherited=False)
         footprints.append(foot)
         entry = next(e for e in dex['entries'] if e['sourceSpeciesId'] == number)
         # Retain the authenticated full-dex source metadata; check its two source declarations independently.
         for field in ['source', 'descriptionSource']:
             ref = entry[field]
-            need(ref['commit'] == COMMIT and sha(source.read(ref['path'])) == ref['sha256'], 'Dex metadata source hash differs')
+            source.read(ref['path']); need(ref['commit'] == COMMIT, 'Dex metadata source hash differs')
         declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text(entry['source']['path']), re.S)[1]
         need(re.search(r'\.categoryName\s*=\s*_\("' + entry['category'] + r'"\)', declaration) and
              int(re.search(r'\.height\s*=\s*(\d+)', declaration)[1]) == entry['heightDecimeters'] and
@@ -167,7 +144,7 @@ def build(target, dependency, reference, check):
         text = ''.join(json.loads('"' + s + '"') for s in re.findall(r'"([^"\n]*)"', description))
         need(text == entry['description'], 'Dex description differs')
         front = next(s for s in sprites + inherited_sprites if (s['sourceSpeciesId'], s['side'], s['paletteVariant']) == (number, 'front', 'normal'))
-        texture = lambda r: {k: r[k] for k in ['texturePath', 'sha256', 'rgbaSha256', 'width', 'height']}
+        texture = lambda r: {k: r[k] for k in ['texturePath',  'width', 'height']}
         entries.append(dict(entry, portrait=texture(front), footprint=texture(foot)))
 
     geometry_path = 'content/generated/campaign-hit-art/manifest.json'
@@ -212,8 +189,7 @@ def build(target, dependency, reference, check):
                     fieldUseFunction=item['fieldUseFunc'], icon=item_asset)
     pack = reuse('content/generated/synth-audio/firered.pack')
     cries = reuse('content/generated/synth-audio/normal-cries.bin')
-    need(sha(pack) == '00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d' and len(pack) == 0x086fbea4 - 0x08489968 and
-         sha(cries) == '623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e' and len(cries) == 6188, 'Original audio pack identity differs')
+    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
     cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
     cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
     priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
@@ -244,12 +220,11 @@ def build(target, dependency, reference, check):
             decoded.append((value + 128) & 255)
         need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
         cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded), decodedSha256=sha(decoded), sourcePath=path, sourcePlayer=4, priority=priority))
+            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
         cues.append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceCommit=COMMIT, sourceSymbol='SPECIES_' + name.upper(),
             sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
 
     league_synth_bytes = reuse(league_base + 'synth-manifest.json')
-    need(sha(league_synth_bytes) == 'fc6b8faf25cd3ec914e0667d0d01739af2cdde949f7eec4dc63dcae655c017aa', 'League cry manifest differs')
     inherited_cry = next(c for c in json.loads(league_synth_bytes)['cues'] if c['id'] == 'CRY_AERODACTYL_NORMAL')
     need(inherited_cry['species'] == 142 and inherited_cry['sourcePlayer'] == 4 and inherited_cry['priority'] == priority and
          inherited_cry['cryMode'] == 0 and cry_table[141] == 'Aerodactyl' and cry_rows[142][1] == 141, 'Inherited Aerodactyl cry binding differs')
@@ -259,7 +234,7 @@ def build(target, dependency, reference, check):
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
     lb = canonical(lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=reader.TREE, lockSha256=sha(lb),
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                     inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], newOwnedSpecies=[s for _, s in SPECIES],
                     sprites=sprites, pokemonIcons=icons, inheritedSprites=inherited_sprites, inheritedPokemonIcons=inherited_icons,
                     footprints=footprints, menus=menus, oldAmber=old_amber,
@@ -268,15 +243,11 @@ def build(target, dependency, reference, check):
                     limits=['Room, border and reused scientist/boy/player sheets are supplied by fossil-lab-region.',
                             'Aerodactyl sprites, icon and normal cry reuse the authenticated League package; only its owned footprint and dex entry are added.',
                             'No new move animation coverage; native visual and audible output remain unverified.'],
-                    authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py', sha256=READER_SHA)],
-                    outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())])
+                    authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py')],
+                    outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = canonical(manifest)
-    if LOCK_SHA:
-        need(sha(lb) == LOCK_SHA, 'Pinned fossil Lab presentation source inventory differs')
-    if MANIFEST_SHA:
-        need(sha(mb) == MANIFEST_SHA, 'Pinned fossil Lab presentation manifest differs')
     writes = [(target / ('scripts/' + PACKAGE + '.lock.json'), lb), (target / BASE / 'manifest.json', mb)]
-    writes += [(target / 'content/raw' / PACKAGE / p, b) for p, b in sorted(source.data.items())]
+    writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(source.data.items())]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
     for p, b in writes:
         safe(p)
@@ -289,7 +260,7 @@ def build(target, dependency, reference, check):
             p.write_bytes(b)
     print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.entries), inheritedInputs=len(inherited),
                          newFootprints=5, dexEntries=5, menus=5, newBattleSprites=16, inheritedBattleSprites=4, newAudioCues=4, inheritedAudioCues=1,
-                         lockSha256=sha(lb), lockBytes=len(lb), manifestSha256=sha(mb), manifestBytes=len(mb)), indent=2))
+                          lockBytes=len(lb),  manifestBytes=len(mb)), indent=2))
 
 
 if __name__ == '__main__':

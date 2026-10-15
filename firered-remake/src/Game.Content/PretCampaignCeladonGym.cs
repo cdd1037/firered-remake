@@ -15,7 +15,7 @@ public sealed partial class PretCampaignCatalog
     public CeladonGymTrainerCatalog? CeladonGymTrainers { get; }
     public bool CeladonGymEnabled => CeladonGymRegion is not null;
 
-    private static PokemonCatalog CeladonGymCampaignPokemon(PokemonCatalog catalog, PokemonCatalog previous)
+    private static PokemonCatalog CeladonGymCampaignPokemon(PokemonCatalog catalog,PokemonCatalog previous)
     {
         PokemonFactory.ValidateCatalog(catalog);
         PokemonFactory.ValidateCatalog(previous);
@@ -28,7 +28,7 @@ public sealed partial class PretCampaignCatalog
         {
             if (moves.TryGetValue(id, out var current))
             {
-                if (current with { Flags = move.Flags, Source = move.Source } != move ||
+                if (current with { Flags = move.Flags,Source = move.Source } != move ||
                     !current.Flags.SequenceEqual(move.Flags))
                     throw new InvalidDataException("Conflicting CeladonGym predecessor move: " + id);
             }

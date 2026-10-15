@@ -2,178 +2,93 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
-      "path": "asm/macros/event.inc",
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "asm/macros/event.inc"
     },
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
-      "path": "charmap.txt",
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      "path": "charmap.txt"
     },
     {
-      "byteLength": 562,
-      "gitBlobSha1": "ae1cc71e48d4725d81a6e4d269d9488c12f978fc",
-      "path": "data/maps/SSAnne_1F_Room2/scripts.inc",
-      "sha256": "1c0b1f88866fffeca852aadf2f47b54cd4b1a1eea6b0d9e538422f947b7cb9fc"
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc"
     },
     {
-      "byteLength": 261,
-      "gitBlobSha1": "1ce15d72c146b89962f72927070f87073d0ddfd3",
-      "path": "data/maps/SSAnne_1F_Room5/scripts.inc",
-      "sha256": "ba9b8618fc9c72dac6acc97cf23208c669fca5b26c5b3b0a71c1565bd847ba0f"
+      "path": "data/maps/SSAnne_1F_Room5/scripts.inc"
     },
     {
-      "byteLength": 261,
-      "gitBlobSha1": "480c81e3505f603eab8cc023287763c61e7017e6",
-      "path": "data/maps/SSAnne_1F_Room7/scripts.inc",
-      "sha256": "45f24708777b2c0099c649ab5f344854e94aebaa7709cd81a5eaafbf68c1ab69"
+      "path": "data/maps/SSAnne_1F_Room7/scripts.inc"
     },
     {
-      "byteLength": 4381,
-      "gitBlobSha1": "280960b9b4adc6a682ce2e7b0d76cc847c6b746c",
-      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
-      "sha256": "91d88d8000a96abfc7b8a41fd925c11663a0a00a706e56e2bf0784a03e073a6d"
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc"
     },
     {
-      "byteLength": 474,
-      "gitBlobSha1": "76d31608cdf6f40ffb7cb8668bf5c520d055973c",
-      "path": "data/maps/SSAnne_2F_Room2/scripts.inc",
-      "sha256": "ef0212a41d9f1d6a9fef2a5cf0bf648d380bbe675259cf8b46879e3d47b63997"
+      "path": "data/maps/SSAnne_2F_Room2/scripts.inc"
     },
     {
-      "byteLength": 464,
-      "gitBlobSha1": "30a5e580297dce41d320a174b0ca0e2878e7947c",
-      "path": "data/maps/SSAnne_2F_Room4/scripts.inc",
-      "sha256": "70b8449b3978651c822c13f1348a98f8e592dc317007b754fed88ecc5e29728e"
+      "path": "data/maps/SSAnne_2F_Room4/scripts.inc"
     },
     {
-      "byteLength": 490,
-      "gitBlobSha1": "482276ed3ee7085475a27b176345d84859b876e9",
-      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc",
-      "sha256": "b0d06b2fd885fe10474d9184e68e376c25efcb128bfcadcc7461e46c08fca8a5"
+      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc"
     },
     {
-      "byteLength": 253,
-      "gitBlobSha1": "0892143861af90b06993b98db4b9c6f11a682363",
-      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc",
-      "sha256": "400ec4e21f5c00af7bb85eda4ccb0123beabc8401368d03049d0aba268652cf5"
+      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc"
     },
     {
-      "byteLength": 258,
-      "gitBlobSha1": "f29f1a403d3b25d827bf4d951c550dd5514d2cbf",
-      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc",
-      "sha256": "4e88c5f66d0fbf3ee0f038154c6aeaf24daa3353c83f3daeb11ad8ef1165b1a6"
+      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc"
     },
     {
-      "byteLength": 492,
-      "gitBlobSha1": "e1fde84a4cbcbeaab7824e6f0d40fe736e3808a6",
-      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc",
-      "sha256": "433a64c1faff18e2bc0cea86bcf46c39b84429422826a6244c1d041c05b4ff6c"
+      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc"
     },
     {
-      "byteLength": 730,
-      "gitBlobSha1": "10360fbbe1fe938d1cc1d449cafcaccc16c0128d",
-      "path": "data/maps/SSAnne_Deck/scripts.inc",
-      "sha256": "d0c43eaca14a4b9b334cfcda1ecbfb241e39dbef9fdbbf0c2c732e5a45156b2e"
+      "path": "data/maps/SSAnne_Deck/scripts.inc"
     },
     {
-      "byteLength": 3768,
-      "gitBlobSha1": "c3e4371962dae55fedfd0b5c2f02068a1f8cf0e7",
-      "path": "data/scripts/trainer_battle.inc",
-      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c"
+      "path": "data/scripts/trainer_battle.inc"
     },
     {
-      "byteLength": 21838,
-      "gitBlobSha1": "3771ef33a1fec9aacad85d29ebc96c962cf59261",
-      "path": "include/battle.h",
-      "sha256": "bf64a16fb4e660f8a326eb352a511bb9e8fd54a74ebb03e328c08d5a23e5d8fa"
+      "path": "include/battle.h"
     },
     {
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
-      "path": "include/constants/battle.h",
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      "path": "include/constants/battle.h"
     },
     {
-      "byteLength": 1436,
-      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
-      "path": "include/constants/battle_ai.h",
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+      "path": "include/constants/battle_ai.h"
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
-      "path": "include/constants/battle_setup.h",
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+      "path": "include/constants/battle_setup.h"
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
-      "path": "include/constants/opponents.h",
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      "path": "include/constants/opponents.h"
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "path": "include/constants/species.h",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "byteLength": 20887,
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
-      "path": "include/constants/trainers.h",
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+      "path": "include/constants/trainers.h"
     },
     {
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
-      "path": "src/battle_main.c",
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "src/battle_main.c"
     },
     {
-      "byteLength": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
-      "path": "src/battle_setup.c",
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "src/battle_setup.c"
     },
     {
-      "byteLength": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
-      "path": "src/data/pokemon/level_up_learnset_pointers.h",
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      "path": "src/data/pokemon/level_up_learnset_pointers.h"
     },
     {
-      "byteLength": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
-      "path": "src/data/pokemon/level_up_learnsets.h",
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      "path": "src/data/pokemon/level_up_learnsets.h"
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
-      "path": "src/data/text/species_names.h",
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      "path": "src/data/text/species_names.h"
     },
     {
-      "byteLength": 242256,
-      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
-      "path": "src/data/trainer_parties.h",
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+      "path": "src/data/trainer_parties.h"
     },
     {
-      "byteLength": 302118,
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
-      "path": "src/data/trainers.h",
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+      "path": "src/data/trainers.h"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-ssanne-trainers-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

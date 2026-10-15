@@ -26,7 +26,7 @@ internal abstract partial class SourceRecipeContext
     // Both owners supply the live Hidden Power/Weather Ball type register.
     internal void SourceColorChange(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition? move)
     {
-        if (!TypeChangeEnabled(catalog) || move is null || !MetronomeSourceMoveDefinition.Matches(move) ||
+        if (!TypeChangeEnabled(catalog) || move is null || !SourceMoveDefinitionRules.IsValid(move) ||
             move.Id == WildBattleRules.StruggleMove || move.Power == 0 || TypeChangeNoEffect(move) ||
             HitItemReceipt(target) is not { } receipt || receipt.Physical == 0 && receipt.Special == 0) return;
         var holder = Get(target);
@@ -42,7 +42,7 @@ internal abstract partial class SourceRecipeContext
         PokemonMoveDefinition move, string purpose, ref bool handled)
     {
         if (!HasTypeChangeRecipe(move.Effect)) return;
-        if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
+        if (Invocation is null || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_type_change_definition");
         handled = true;
         SpendEarlyPartyPp(actor, actor, slot, move);

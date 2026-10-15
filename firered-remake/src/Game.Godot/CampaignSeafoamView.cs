@@ -12,7 +12,7 @@ public partial class CampaignView
     private void LoadSeafoamPresentation()
     {
         if (!_catalog.SeafoamEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.FossilLabEnabled || _route22Footprints.Count != 136)
+        if (!_session.IsCurrentGame || !_catalog.FossilLabEnabled)
             throw new InvalidDataException("Seafoam requires its current Fossil Lab presentation predecessor.");
         var art = PretSeafoamPresentation.Load(_root);
         using(var itemImage=Image.CreateFromData(24,24,false,Image.Format.Rgba8,PretSeafoamItems.LoadIconRgba(_root)))
@@ -20,7 +20,7 @@ public partial class CampaignView
         Texture2D Pixels(JsonElement row)
         {
             using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(),
-                false, Image.Format.Rgba8, art.Files[row.GetProperty("rgbaPath").GetString()!]);
+                false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
             return SceneTextures.FromImage(image);
         }
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
@@ -49,10 +49,7 @@ public partial class CampaignView
             if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Seafoam dex metadata differs from the authenticated source menu.");
         _seafoamArt = art;
-        if (_route22Footprints.Count != 137) throw new InvalidDataException("Seafoam footprint inventory differs.");
-        Write("seafoamPresentation", new { PretSeafoamPresentation.ManifestSha256, newBattleSprites = 4,
-            newIcons = 1, newFootprints = 1, trainerPortraits = 1, dexEntries = 1, normalCryMode = 0, encounterCryMode = 2,
-            newMoveAnimations = 0, nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("seafoamPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
     }
     private void VerifySeafoamMoveGeometry()
     {

@@ -24,7 +24,7 @@ public static class SourceFieldStatusCureRules
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException) { return null; }
         var admitted = EarlyShopInventoryRules.Find(catalog, item);
         var source = sourceItems.Find(item);
-        if (admitted is null || source is null || !SourceBattleItemDefinitionProof.IsAuthentic(source) ||
+        if (admitted is null || source is null || !SourceBattleItemCatalog.SupportsFixedEffect(source) ||
             source.Reusable || admitted.SourceItemSymbol != source.Symbol || admitted.SourceItemId != source.SourceItemId ||
             admitted.Name != source.Name || admitted.Pocket != source.Pocket ||
             admitted.Pocket is not ("POCKET_ITEMS" or "POCKET_BERRY_POUCH") ||

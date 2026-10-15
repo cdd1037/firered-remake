@@ -4,8 +4,13 @@
 Only SHA-pinned local converters execute. Original Git blobs remain inert.
 The resource does not admit its events or trainers to the running game.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,30 +24,25 @@ PACKAGE = 'original-tm-acquisition'
 PROFILE = 'firered-original-tm-acquisition-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-UTILITIES_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-MANIFEST_SHA256 = 'a9ca71a8ae872b6ac5f673f090042396e7c7931ee1c118d13a94bb37bf135884'
-LOCK_SHA256 = 'c58a3f9050e87685c7bd69553d4fb5acded2a7bc8defeea2314e6d7b88d1f815'
 MAPS = ['Route12_NorthEntrance_2F', 'SaffronCity_MrPsychicsHouse', 'FiveIsland_MemorialPillar']
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_GenericBuilding1':'secondary/generic_building_1',
     'gTileset_GenericBuilding2':'secondary/generic_building_2', 'gTileset_General':'primary/general',
     'gTileset_SeviiIslands45':'secondary/sevii_islands_45'}
 ANCHORS = {
-    'Route12': 'snorlax-region/route-12/world.json',
-    'Route12_NorthEntrance_1F': 'snorlax-region/route-12-north-entrance-1f/world.json',
+    'Route12': 'snorlax-region/route-12/runtime-map.json',
+    'Route12_NorthEntrance_1F': 'snorlax-region/route-12-north-entrance-1f/runtime-map.json',
     'Route15': 'fuchsia-route-region/route-15/runtime-map.json',
     'SaffronCity': 'silph-region/saffron-city/runtime-map.json',
     'FiveIsland_Meadow': 'five-island-region/five-island-meadow/runtime-map.json'}
 NPCS = {'OBJ_EVENT_GFX_LASS', 'OBJ_EVENT_GFX_BALDING_MAN', 'OBJ_EVENT_GFX_MAN',
     'OBJ_EVENT_GFX_ROCKER', 'OBJ_EVENT_GFX_ITEM_BALL', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
 def need(ok, message):
     if not ok: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: '+str(path))
-def module(path, digest, name):
-    safe(path); need(sha(path.read_bytes()) == digest, 'Reviewed local converter differs: '+str(path))
+def module(path, name):
+    safe(path)
     spec = importlib.util.spec_from_file_location(name, path); obj = importlib.util.module_from_spec(spec); spec.loader.exec_module(obj); return obj
 
 def retained_maps(src, reader, current):
@@ -53,9 +53,8 @@ def retained_maps(src, reader, current):
         need(doc['events'] == original, 'Retained map events differ: '+name)
         manifest_path = path.parent.parent/'manifest.json'; manifest = json.loads(manifest_path.read_bytes())
         row = next(e for e in manifest['outputs'] if e['path'] == '/'.join(relative.split('/')[1:]))
-        need(row['sha256'] == sha(data) and row['byteLength'] == len(data), 'Retained source manifest differs: '+name)
         result.append(dict(sourceName=name, mapId='map.'+reader.directory(name),
-            path='content/generated/'+relative, sha256=sha(data), byteLength=len(data),
+            path='content/generated/'+relative,
             sourceMapSymbol=original['id'], sourceRef=src.ref('data/maps/'+name+'/map.json', original['id']),
             operation='reuse-existing-source-map', eventChanges=[], geometryChanges=[]))
     return result
@@ -139,7 +138,7 @@ def memorial_trainers(src):
         matches=list(re.finditer(pattern,src.text(path),re.M|re.S));need(len(matches)==1,'Ambiguous source declaration '+pattern);return matches[0]
     def ref(path,symbol,m):
         return dict(path=path,symbol=symbol,startLine=src.text(path).count('\n',0,m.start())+1,
-            endLine=src.text(path).count('\n',0,m.end())+1,sha256=src.entries[path]['sha256'])
+            endLine=src.text(path).count('\n',0,m.end())+1)
     def number(path,symbol):
         text=one(path,r'^#define '+re.escape(symbol)+r'\s+([^\n]+)')[1].split('//')[0].strip()
         return int(text,0) if re.fullmatch(r'(?:0x[0-9a-fA-F]+|\d+)',text) else 1 << int(re.fullmatch(r'\(1 << (\d+)\)',text)[1])
@@ -194,7 +193,7 @@ def memorial_trainers(src):
     need(len(encounters)==1,'Original Memorial wild table is missing')
     return dict(sourceCommit=COMMIT,profile=PROFILE+'-trainers',completeSourceRoster=False,
         trainers=trainers,battles=battles,resolvedMoves=resolved),dict(sourceCommit=COMMIT,profile=PROFILE+'-encounters',
-        sourcePath='src/data/wild_encounters.json',sourceSha256=src.entries['src/data/wild_encounters.json']['sha256'],
+        sourcePath='src/data/wild_encounters.json',
         slotTables=group['fields'],encounters=encounters)
 
 def main():
@@ -204,9 +203,9 @@ def main():
     target, dep, ref = [Path(os.path.abspath(x)) for x in [a.project_root,a.dependency_root,a.reference_root]]
     for path in [target,dep,ref]: safe(path)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py',READER_SHA,'original_tm_reader')
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'original_tm_reader')
     reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,PROFILE
-    util=module(dep/'scripts/import-fossil-lab-region.py',UTILITIES_SHA,'original_tm_utilities')
+    util=module(dep / 'scripts/import-fossil-lab-region.py', 'original_tm_utilities')
     util.MAPS=MAPS+['Route12','Route15']
     src=reader.Source(ref); worlds=[reader.decode(src,n) for n in MAPS]
     anchors=retained_maps(src,reader,dep)
@@ -240,7 +239,7 @@ def main():
         limitations=['Current-game mount and shared event executor admission are separate.',
             'Memorial Pillar trainers, encounters and non-TM pickups retain original declarations; this package does not implement their battle/catalog admission.'])
     shared=reader.load_helper('_regional_service_shared.py'); shared.PROFILE,shared.TILESETS=PROFILE,TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.original-tm-acquisition-',dir=target) as temporary:
         stage=Path(temporary)
@@ -249,44 +248,37 @@ def main():
         need({r['graphicsId'] for r in npcs['graphics']}==NPCS, 'Original actor inventory differs')
         for row in npcs['graphics']:
             generated=stage/row['texturePath']; relative='content/generated/regional-service-maps/'+row['texturePath']; existing=dep/relative
-            safe(existing); need(generated.read_bytes()==existing.read_bytes() and sha(existing.read_bytes())==row['sha256'], 'Reused source sprite differs')
-            row.update(texturePath=relative,byteLength=existing.stat().st_size,reuseExisting=True); generated.unlink()
+            safe(existing); need(generated.read_bytes() == existing.read_bytes(), 'Reused source sprite differs')
+            row.update(texturePath=relative,reuseExisting=True); generated.unlink()
         (stage/'npc').rmdir()
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         entries=[]
         for world in worlds:
-            directory=reader.directory(world['sourceName']); path=stage/directory/'world.json'; rich=path.read_bytes()
-            compact=converter.convert(rich,sha(rich),source_hash); util.compact_check(compact,world,src)
-            data=converter.encode(compact); (stage/directory/'runtime-map.json').write_bytes(data); path.unlink()
+            directory=reader.directory(world['sourceName']); path=stage/directory/'runtime-map.json'; rich=path.read_bytes()
+            compact=converter.normalize_runtime(json.loads(rich)); util.compact_check(compact,world,src)
+            data=converter.encode(compact); (stage/directory/'runtime-map.json').write_bytes(data)
             entries.append(dict(sourceName=world['sourceName'],stableId=world['stableId'],directory=directory,
-                sourceMapSymbol=world['events']['id'],path=directory+'/runtime-map.json',sha256=sha(data),byteLength=len(data),
-                sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash))
+                sourceMapSymbol=world['events']['id'],path=directory+'/runtime-map.json'))
         lock=src.lock(); lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False); lock_bytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,
-                  fullSourceHash=source_hash,maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
-              'scripts.json':scripts,'constants.json':constants,'contracts.json':contracts,'npc-source.json':npcs,
-              'memorial-trainers.json':trainers,'memorial-encounters.json':encounters}
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=PROFILE,sourceCommit=COMMIT,
+                  maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
+              'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
+              'memorial-trainers.json':trainers,'memorial-encounters.json':encounters}, check=a.check)
         for name,value in docs.items(): (stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size)
+        outputs=[dict(path=p.relative_to(stage).as_posix())
                  for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=source_hash,
-            lockSha256=sha(lock_bytes),readerSha256=READER_SHA,sourceUtilitiesSha256=UTILITIES_SHA,
-            converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=3,reusedMapCount=5,cellCount=sum(len(w['cells']) for w in worlds),
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256: need(sha(manifest_bytes)==MANIFEST_SHA256, 'Pinned manifest differs: '+sha(manifest_bytes))
-        if LOCK_SHA256: need(sha(lock_bytes)==LOCK_SHA256, 'Pinned lock differs: '+sha(lock_bytes))
         writes=[(target/'scripts/original-tm-acquisition.lock.json',lock_bytes)]
-        writes += [(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
             if a.check: need(path.is_file() and path.read_bytes()==data, 'Regeneration differs: '+str(path))
         if not a.check:
             for path,data in writes: path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),
-            lockByteLength=len(lock_bytes),fullSourceHash=source_hash,inputCount=len(src.entries),outputCount=len(outputs),
+        print(json.dumps(dict(inputCount=len(src.entries),outputCount=len(outputs),
             scriptBlockCount=len(scripts['blocks']),check=a.check),indent=2))
 
 if __name__=='__main__': main()

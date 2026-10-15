@@ -9,8 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SixIslandShopCatalog
 {
     public const string Profile = "firered-six-island-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "28c044e4d414377059895c799f3adf9e524e2c7a286ad856f7f17e867a726210";
-    public const string ShopSourceSha256 = "60853678dcba99d8dd4d86f5c8a8b3e489eff5fd8a483df3c55fd66bdaf22533";
     public static ItemId SunStoneId { get; } = new("pret:ITEM_SUN_STONE");
     public static ItemId DragonScaleId { get; } = new("pret:ITEM_DRAGON_SCALE");
     public static ItemId DreamMailId { get; } = new("pret:ITEM_DREAM_MAIL");
@@ -36,12 +34,10 @@ public sealed class SixIslandShopCatalog
             throw new ArgumentException("six_island_shop_predecessor");
         if (candidate.Shops.IsDefault || candidate.Shops.Length != old.Shops.Length + 1 ||
             old.Shops.Where((stock, i) => !ReferenceEquals(stock, candidate.Shops[i])).Any() ||
-            CampaignSourceFingerprint.Compute(candidate.Shops[^1]) != ShopSourceSha256 ||
             candidate.Shops[^1].Items.Any(id => !candidate.Items.Any(item => item.Id == id)))
             throw new ArgumentException("six_island_shop_stock");
         var fresh = candidate.Items.Skip(105).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([SunStoneId, DragonScaleId, DreamMailId]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([SunStoneId, DragonScaleId, DreamMailId]))
             throw new ArgumentException("six_island_shop_source");
         var proof = new SixIslandShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

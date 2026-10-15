@@ -65,7 +65,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteDynamicType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (!HasDynamicTypeRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasDynamicTypeRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_dynamic_type_definition");
         int? power = null;
         if (move.Effect == "EFFECT_HIDDEN_POWER")

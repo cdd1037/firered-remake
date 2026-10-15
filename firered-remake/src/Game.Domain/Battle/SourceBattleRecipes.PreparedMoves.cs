@@ -35,7 +35,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecutePreparedMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose, ref bool handled)
     {
         if (!HasPreparedMoveRecipe(move.Effect)) return;
-        if (Invocation is not { } invocation || !MetronomeSourceMoveDefinition.Matches(move))
+        if (Invocation is not { } invocation || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("prepared_move_source_definition");
         handled = true;
         if (move.Effect is "EFFECT_SNATCH" or "EFFECT_MAGIC_COAT")

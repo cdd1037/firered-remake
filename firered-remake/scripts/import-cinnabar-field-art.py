@@ -35,12 +35,12 @@ def build(root):
     for n,v in enumerate(group):layer.paste(tile(v),(column*16+n%2*8,n//2*8))
    tiles.append(dict(family=family,symbol=symbol,metatileId=mid,rawAttributes=attribute,x=column*16,y=0,width=16,height=16))
   for name,layer in zip(('bottom','middle','top'),layers):
-   rgba=layer.tobytes();stem=family+'-'+name;out[stem+'.rgba']=rgba;out[stem+'.png']=art.png(layer.width,layer.height,rgba);assets.append(dict(family=family,layer=name,texturePath=stem+'.png',rgbaPath=stem+'.rgba',width=layer.width,height=layer.height,sha256=meta.sha(out[stem+'.png']),rgbaSha256=meta.sha(rgba)))
- out['manifest.json']=meta.canonical(dict(schemaVersion=1,profile='firered-cinnabar-field-art-v1',sourceCommit=meta.COMMIT,lockSha256=meta.LOCK_SHA,tiles=tiles,layers=assets,limits=['Source statue/barrier and quiz doors replace exact metatiles after the source script commands.','Three source BG layers retain the map-family identity; gameplay owns collision and flags.'],outputs=[dict(path=p,byteLength=len(b),sha256=meta.sha(b)) for p,b in sorted(out.items())]));return out
+   rgba=layer.tobytes();stem=family+'-'+name;out[stem+'.png']=art.png(layer.width,layer.height,rgba);assets.append(dict(family=family, layer=name, texturePath=stem + '.png', width=layer.width, height=layer.height))
+ out['manifest.json']=meta.canonical(dict(schemaVersion=1,profile='firered-cinnabar-field-art-v1',sourceCommit=meta.COMMIT,tiles=tiles,layers=assets,limits=['Source statue/barrier and quiz doors replace exact metatiles after the source script commands.','Three source BG layers retain the map-family identity; gameplay owns collision and flags.'],outputs=[dict(path=p) for p,b in sorted(out.items())]));return out
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args();out=build(a.project_root)
  for relative,b in out.items():
   target=meta.safe(a.project_root,'content/generated/cinnabar-field-art/'+relative)
   if a.check:meta.require(target.read_bytes()==b,'Cinnabar field art differs: '+relative)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
- print(json.dumps(dict(passed=True,metatiles=37,layers=6,manifestBytes=len(out['manifest.json']),manifestSha256=meta.sha(out['manifest.json']))))
+ print(json.dumps(dict(passed=True,metatiles=37,layers=6,manifestBytes=len(out['manifest.json']))))

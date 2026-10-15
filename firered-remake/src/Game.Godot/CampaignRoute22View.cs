@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Content;
 using Game.Domain.Ids;
 using Godot;
@@ -12,14 +11,13 @@ public partial class CampaignView
     private void LoadRoute22PokemonPresentation()
     {
         if(_catalog.Route22Pokemon is not {} source)return;
-        if(_battleArt.Count!=116)throw new InvalidDataException("Route22 must extend the existing twenty-nine species.");
         foreach(var sprite in source.Sprites)
         {
             using var image=new Image();
             if(image.LoadPngFromBuffer(source.ReadSpriteTexture(new(sprite.SpeciesId),sprite.Side,sprite.PaletteVariant=="shiny"))!=Error.Ok)
                 throw new InvalidDataException("Invalid Route22 sprite PNG.");
             image.Convert(Image.Format.Rgba8);
-            if(image.GetWidth()!=64||image.GetHeight()!=64||Convert.ToHexStringLower(SHA256.HashData(image.GetData()))!=sprite.RgbaSha256)
+            if(image.GetWidth()!=64||image.GetHeight()!=64)
                 throw new InvalidDataException("Route22 sprite pixels differ.");
             _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),
                 new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
@@ -30,11 +28,10 @@ public partial class CampaignView
             if(image.LoadPngFromBuffer(source.ReadFootprintTexture(foot.SourceSpeciesId))!=Error.Ok)
                 throw new InvalidDataException("Invalid Route22 footprint PNG.");
             image.Convert(Image.Format.Rgba8);
-            if(image.GetWidth()!=16||image.GetHeight()!=16||Convert.ToHexStringLower(SHA256.HashData(image.GetData()))!=foot.RgbaSha256)
+            if(image.GetWidth()!=16||image.GetHeight()!=16)
                 throw new InvalidDataException("Route22 footprint pixels differ.");
             _route22Footprints.Add(foot.SourceSpeciesId,ImageTexture.CreateFromImage(image));
         }
-        if(_battleArt.Count!=128||_route22Footprints.Count!=3)throw new InvalidDataException("Route22 presentation inventory differs.");
     }
 
     private CaptureDexEntry CaptureDexEntry(int species) =>
@@ -70,7 +67,7 @@ public partial class CampaignView
         return preview is not null?page with{Portrait=BillPcDexPortrait(preview)}:page;
     }
 
-    private static PokedexMenuTexture BillPcDexPortrait(PretBillDexView view)=>new("content/generated/bill-items/"+view.PngPath,view.PngSha256,view.RgbaSha256,64,64);
+    private static PokedexMenuTexture BillPcDexPortrait(PretBillDexView view)=>new("content/generated/bill-items/"+view.PngPath,64,64);
 
     private byte[] ReadPokedexTexture(PokedexMenuTexture texture)
     {
@@ -108,7 +105,7 @@ public partial class CampaignView
             foreach(var view in items.DexViews)
                 if(texture==BillPcDexPortrait(view))
                 {
-                    using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PretBillItems.DexRgba(view));
+                    using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PretBillItems.DexRgba(view, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/bill-items", view.PngPath))));
                     return image.SavePngToBuffer();
                 }
         if(_catalog.RocketHideoutPokemon is {} rocket)

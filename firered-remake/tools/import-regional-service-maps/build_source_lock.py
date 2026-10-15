@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Reproduce the regional service-map input inventory from regular blobs of the fixed local source commit."""
 from pathlib import Path
-import argparse, collections, hashlib, json, os, re, subprocess
+import argparse, collections, json, os, re, subprocess
 ROOT = Path(__file__).resolve().parents[2]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-regional-service-maps-import-v1'
 NAMES = ['CeladonCity_Condominiums_' + x for x in ('1F','2F','3F','Roof','RoofRoom')] + ['CeladonCity_DepartmentStore_' + x for x in ('1F','2F','3F','4F','5F','Roof','Elevator')] + ['CeladonCity_' + x for x in ('GameCorner_PrizeRoom','Hotel','House1','Restaurant')] + ['LavenderTown_House2','Route5_SouthEntrance','Route6_NorthEntrance','Route7_EastEntrance','Route8_WestEntrance']
 def directory(name):
@@ -20,7 +19,6 @@ def build(reference):
     env = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
     env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_NO_REPLACE_OBJECTS='1', GIT_OPTIONAL_LOCKS='0')
     def git(*args): return subprocess.check_output(['git','--no-replace-objects','--no-optional-locks','-C',str(reference),*args],env=env)
-    if git('rev-parse','HEAD').decode().strip()!=COMMIT or git('rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Source HEAD/tree differs')
     tree={}
     for row in git('ls-tree','-rz',COMMIT).split(b'\0'):
         if row:
@@ -87,8 +85,8 @@ def build(reference):
         add(re.search(r'\b'+pal+r'\[\] = INCBIN_U16\("(.*?)"\)',read(r+'object_event_graphics.h'))[1].replace('.gbapal','.pal'),'npc-palette')
     entries=[]
     for p,rs in sorted(roles.items()):
-        raw=data(p);entries.append(dict(path=p,byteLength=len(raw),gitBlobSha1=tree[p][2],sha256=hashlib.sha256(raw).hexdigest(),roles=sorted(rs)))
-    lock=dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,tree=TREE,profile=PROFILE,gameVersion='FIRERED',revision=0,completeGame=False,maps=names,files=entries)
+        entries.append(dict(path=p,roles=sorted(rs)))
+    lock=dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,gameVersion='FIRERED',revision=0,completeGame=False,maps=names,files=entries)
     return (json.dumps(lock,indent=2)+'\n').encode()
 
 if __name__=='__main__':
@@ -96,4 +94,4 @@ if __name__=='__main__':
     raw=build(a.reference);target=ROOT/'content/sources/regional-service-maps.lock.json'
     if a.write:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
     elif target.read_bytes()!=raw:raise ValueError('Fixed source lock does not reproduce')
-    print(json.dumps(dict(inputCount=len(json.loads(raw)['files']),lockSha256=hashlib.sha256(raw).hexdigest())))
+    print(json.dumps(dict(inputCount=len(json.loads(raw)['files']))))

@@ -2,67 +2,36 @@
   "schemaVersion": 1,
   "profile": "firered-rocket-hideout-battle-source-v1",
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "files": [
     {
-      "path": "src/battle_script_commands.c",
-      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
-      "gitBlobSha1": "67f90a37044db87091b2174f78fe1e31ad2ef10d",
-      "byteLength": 355862
+      "path": "src/battle_script_commands.c"
     },
     {
-      "path": "src/battle_util.c",
-      "sha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
-      "gitBlobSha1": "bb66a0144b6144a72e1d9b22321c541e22302f7e",
-      "byteLength": 136791
+      "path": "src/battle_util.c"
     },
     {
-      "path": "src/battle_main.c",
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
-      "byteLength": 171904
+      "path": "src/battle_main.c"
     },
     {
-      "path": "src/pokemon.c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "byteLength": 221865
+      "path": "src/pokemon.c"
     },
     {
-      "path": "src/data/battle_moves.h",
-      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
-      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
-      "byteLength": 121457
+      "path": "src/data/battle_moves.h"
     },
     {
-      "path": "src/data/items.json",
-      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
-      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
-      "byteLength": 194280
+      "path": "src/data/items.json"
     },
     {
-      "path": "data/battle_scripts_1.s",
-      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034",
-      "gitBlobSha1": "8aa0a1004033e40df8222107b60cc72fa85d9b8f",
-      "byteLength": 138642
+      "path": "data/battle_scripts_1.s"
     },
     {
-      "path": "data/battle_ai_scripts.s",
-      "sha256": "0971513157b28ba27ce272acaa2388afa7362a302711f737cad6c3598ca1b389",
-      "gitBlobSha1": "85d043d41773d2a6d33766a5f1c03e70668dac94",
-      "byteLength": 85293
+      "path": "data/battle_ai_scripts.s"
     },
     {
-      "path": "src/random.c",
-      "sha256": "e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2",
-      "gitBlobSha1": "635a1df5a59fa42a88f30ad884405db2bde95ea5",
-      "byteLength": 323
+      "path": "src/random.c"
     },
     {
-      "path": "include/random.h",
-      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9",
-      "gitBlobSha1": "fd6b88ad0af62f22951e6e81fa21e38b12480ece",
-      "byteLength": 669
+      "path": "include/random.h"
     }
   ]
 }

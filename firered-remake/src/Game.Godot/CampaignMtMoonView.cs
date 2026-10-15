@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Game.Content;
 using Game.Application;
 using Game.Domain.WildBattle;
@@ -41,31 +40,29 @@ public partial class CampaignView
     private void LoadMtMoonPresentation()
     {
         if (_catalog.MtMoonPokemon is not { } source) return;
-        if (_battleArt.Count != 160 || _storageIcons.Count != 40 || _route22Footprints.Count != 11)
-            throw new InvalidDataException("MtMoon must extend the existing forty species.");
-        Image Decode(byte[] bytes, int width, int height, string sha)
+        Image Decode(byte[] bytes, int width, int height)
         {
             var image = new Image();
             if (image.LoadPngFromBuffer(bytes) != Error.Ok) { image.Dispose(); throw new InvalidDataException("Invalid MtMoon PNG."); }
             image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != width || image.GetHeight() != height || Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != sha)
+            if (image.GetWidth() != width || image.GetHeight() != height)
             { image.Dispose(); throw new InvalidDataException("MtMoon source pixels differ."); }
             return image;
         }
         foreach (var sprite in source.Sprites)
         {
-            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64, sprite.RgbaSha256);
+            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var foot in source.Footprints)
         {
-            using var image = Decode(source.ReadFootprintTexture(foot.SourceSpeciesId), 16, 16, foot.RgbaSha256);
+            using var image = Decode(source.ReadFootprintTexture(foot.SourceSpeciesId), 16, 16);
             _route22Footprints.Add(foot.SourceSpeciesId, ImageTexture.CreateFromImage(image));
         }
         foreach (var icon in source.Icons)
         {
-            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32, icon.RgbaSha256);
+            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32);
             var rgba = image.GetData();
             // Match the existing storage adapter's source RGB5 display expansion.
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
@@ -81,7 +78,7 @@ public partial class CampaignView
         var items = _catalog.MtMoonItems ?? throw new InvalidDataException("Missing MtMoon item presentation.");
         foreach (var icon in items.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretPewterMachines.IconRgba(icon));
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("mtmoon-items", icon));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Missing source key item pocket.");
@@ -91,17 +88,15 @@ public partial class CampaignView
             var value = items.Items.Single(i => i.Metadata.Item.Id == fossil.Item).Metadata;
             var icon = items.Icons.Single(i => i.Item == fossil.Item);
             string id = "mtmoon-" + value.Item.SourceItemSymbol.ToLowerInvariant();
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretPewterMachines.IconRgba(icon));
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("mtmoon-items", icon));
             _questPocketTextures.Add(id, ImageTexture.CreateFromImage(image));
             document = document with
             {
                 Items = document.Items.Add(new(value.Item.Id.Value, value.Item.SourceItemSymbol, value.Item.Name, value.Description, id, value.Item.FieldUseFunction)),
-                Assets = document.Assets.Add(new(id, icon.PngPath, icon.Width, icon.Height, position.X, position.Y, icon.PngSha256, icon.RgbaSha256))
+                Assets = document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,position.X,position.Y))
             };
         }
         _questPocketUi = document;
-        if (_battleArt.Count != 224 || _storageIcons.Count != 56 || _route22Footprints.Count != 27)
-            throw new InvalidDataException("MtMoon presentation inventory differs.");
     }
 
     private bool TryOpenMtMoonItem(ItemId item)

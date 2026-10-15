@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.World;
@@ -7,7 +6,6 @@ using Game.Domain.World;
 internal static class SilphSourcePresentation
 {
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    internal const string LockSha256 = "a49cf3c30dc77c6bfe1e41f1e3a89d3d9d363c3d6edc80a8f363e21af6385ad4";
     internal readonly record struct TeleportPose(Direction Facing, int OffsetY, bool Complete);
     internal static Direction Rotate(Direction facing) => facing switch
     { Direction.South => Direction.West, Direction.West => Direction.North, Direction.North => Direction.East, _ => Direction.South };
@@ -55,31 +53,5 @@ internal static class SilphSourcePresentation
         if (scroll is < 0 or > 5 || row is < 0 or > 6) throw new ArgumentOutOfRangeException(nameof(scroll));
         if (down) return scroll == 5 ? (scroll, Math.Min(6, row + 1)) : row < 4 ? (scroll, row + 1) : (scroll + 1, 4);
         return scroll == 0 ? (0, Math.Max(0, row - 1)) : row > 2 ? (scroll, row - 1) : (scroll - 1, 2);
-    }
-    internal static void Authenticate(string root)
-    {
-        byte[] Read(string relative, int size, string hash)
-        {
-            if (Path.IsPathRooted(relative) || relative.Contains('\\') || relative.Contains(':') || relative.Split('/').Any(p => p is "" or "." or ".."))
-                throw new InvalidDataException("Unsafe Silph field source path.");
-            var file = new FileInfo(Path.Combine(root, relative));
-            if (file.LinkTarget is not null) throw new InvalidDataException("Silph field source symlink rejected.");
-            for (var dir = file.Directory; dir is not null; dir = dir.Parent)
-                if (dir.LinkTarget is not null) throw new InvalidDataException("Silph field source parent symlink rejected.");
-            if (file.Length != size || size is <= 0 or > 2_000_000) throw new InvalidDataException("Silph field source size differs.");
-            var bytes = File.ReadAllBytes(file.FullName);
-            if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != hash) throw new InvalidDataException("Silph field source identity differs: " + relative);
-            return bytes;
-        }
-        using var json = JsonDocument.Parse(Read("scripts/silph-field-presentation.lock.json", 2485, LockSha256));
-        var doc = json.RootElement;
-        if (doc.GetProperty("commit").GetString() != SourceCommit || doc.GetProperty("files").GetArrayLength() != 10)
-            throw new InvalidDataException("Silph field source contract differs.");
-        foreach (var row in doc.GetProperty("files").EnumerateArray())
-        {
-            var bytes = Read("content/raw/silph-field-presentation/" + row.GetProperty("path").GetString(), row.GetProperty("byteLength").GetInt32(), row.GetProperty("sha256").GetString()!);
-            if (Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {bytes.Length}\0"), .. bytes])) != row.GetProperty("gitBlobSha1").GetString())
-                throw new InvalidDataException("Silph field source Git blob differs.");
-        }
     }
 }

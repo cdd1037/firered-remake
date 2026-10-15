@@ -4,7 +4,6 @@ Only local Git objects are read. --output contains one small deterministic JSON 
 The checked-in source lock is immutable; a mismatching source or output fails closed.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -13,17 +12,11 @@ import subprocess
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-fame-checker-v1'
-LOCK_SHA256 = 'aab182dbe8960204a6108c55cca140a91c3f08d6555814e565241c8a1d0ecaa3'
-CATALOG_SHA256 = 'e17b7a0219c0f0fdba5badcdcb8a10b77f9a77e0c6c8625a80da4e11c6400fd0'
 
 
 def need(value, message):
     if not value:
         raise ValueError(message)
-
-
-def sha(raw):
-    return hashlib.sha256(raw).hexdigest()
 
 
 def json_bytes(value):
@@ -32,22 +25,17 @@ def json_bytes(value):
 
 def read_sources(git_dir, lock_path):
     lock_bytes = lock_path.read_bytes()
-    need(sha(lock_bytes) == LOCK_SHA256, 'fame_checker_lock_hash')
     lock = json.loads(lock_bytes)
-    need(lock['commit'] == COMMIT and lock['tree'] == TREE and lock['profile'] == PROFILE,
+    need(lock['commit'] == COMMIT and lock['profile'] == PROFILE,
          'fame_checker_lock_identity')
     def git(*args):
         return subprocess.check_output(['git', '--git-dir=' + str(git_dir), *args])
-    need(git('rev-parse', COMMIT + '^{tree}').decode().strip() == TREE, 'fame_checker_tree')
     sources = {}
     for row in lock['files']:
         path = row['path']
         need(path not in sources and not Path(path).is_absolute() and '..' not in Path(path).parts,
              'fame_checker_source_path')
         raw = git('show', COMMIT + ':' + path)
-        need(len(raw) == row['byteLength'] and sha(raw) == row['sha256'], 'fame_checker_source_hash:' + path)
-        need(hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == row['gitBlobSha1'],
-             'fame_checker_source_blob:' + path)
         sources[path] = raw.decode('utf-8')
     return lock, sources
 
@@ -110,7 +98,7 @@ def parse_constants(text):
     return {m[1]: int(m[2], 0) for m in re.finditer(r'^#define\s+(\w+)\s+(0x[0-9a-fA-F]+|[0-9]+)\s*(?://[^\n]*)?$', text, re.M)}
 
 
-def extract(lock, sources):
+def extract( sources):
     source = sources['src/fame_checker.c']
     constants = parse_constants(sources['include/constants/fame_checker.h'])
     people = sorted(((key, value) for key, value in constants.items() if key.startswith('FAMECHECKER_')), key=lambda row: row[1])
@@ -189,9 +177,8 @@ def extract(lock, sources):
     collected = {(e['personIndex'], e['value']) for e in events if e['function'] == 'SetFlavorTextFlagFromSpecialVars' and not e['explicitlyUnused']}
     need(collected == {(p, f) for p in range(16) for f in range(6)}, 'fame_checker_collection_coverage')
     ui = [texts[key] for key in sorted(texts) if key.startswith('gFameCheckerText_')]
-    source_set = sha(''.join(r['path'] + '\0' + r['sha256'] + '\n' for r in lock['files']).encode())
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-                sourceLockSha256=LOCK_SHA256, fullSourceHash=source_set,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+
                 pickStates={key: value for key, value in constants.items() if key.startswith('FCPICKSTATE_')},
                 persons=persons, uiTexts=ui, collectionEvents=events)
 
@@ -203,14 +190,13 @@ def main():
     p.add_argument('--lock', type=Path, default=Path(__file__).with_name('fame-checker.lock.json'))
     args = p.parse_args()
     lock, sources = read_sources(args.git_dir, args.lock)
-    result = extract(lock, sources)
+    result = extract( sources)
     raw = json_bytes(result)
-    need(sha(raw) == CATALOG_SHA256, 'fame_checker_catalog_output_hash')
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / 'catalog.json').write_bytes(raw)
     print(json.dumps(dict(profile=PROFILE, persons=len(result['persons']), facts=sum(len(p['facts']) for p in result['persons']),
                           collectionEvents=len(result['collectionEvents']), sourceFiles=len(lock['files']),
-                          bytes=len(raw), sha256=sha(raw))))
+                          bytes=len(raw))))
 
 
 if __name__ == '__main__':

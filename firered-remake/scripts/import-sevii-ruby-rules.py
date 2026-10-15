@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY REGION OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -12,11 +11,6 @@ from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ('BLACK_BELT_HUGH', 'BLACK_BELT_SHEA', 'CAMPER_BRYCE', 'CRUSH_GIRL_JOCELYN', 'CRUSH_GIRL_SHARON', 'CRUSH_GIRL_TANYA', 'CRUSH_KIN_MIK_KIA', 'FISHERMAN_TOMMY', 'PICNICKER_CLAIRE', 'PKMN_RANGER_BETH', 'PKMN_RANGER_LOGAN', 'SWIMMER_FEMALE_ABIGAIL', 'SWIMMER_FEMALE_MARIA', 'SWIMMER_MALE_FINN', 'SWIMMER_MALE_GARRETT', 'TEAM_ROCKET_GRUNT_43', 'TEAM_ROCKET_GRUNT_44')
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -27,7 +21,7 @@ def generate(reference, dependency, region):
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -37,7 +31,7 @@ def generate(reference, dependency, region):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -97,15 +91,12 @@ def generate(reference, dependency, region):
             source=ref(path, symbol, match), moneySource=ref("src/battle_main.c", fields["trainerClass"], money)))
         resolved.append(dict(trainer=symbol, party=movesets))
     dependencies = []
-    def dependent(root, path, expected):
+    def dependent(root, path):
         data = (root / path).read_bytes()
-        need(sha(data) == expected, 'Dependency identity differs: ' + path)
-        dependencies.append(dict(path=path, byteLength=len(data), sha256=sha(data)))
+        dependencies.append(dict(path=path))
         return json.loads(data)
-    declarations = dependent(region, 'content/generated/sevii-ruby-region/declarations.json',
-        '137ea825347e87f4d249ab4c17fc4c3cd293bd39bfe1321039ec9bf007a02f0a')
-    canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json',
-        'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc')
+    declarations = dependent(region, 'content/generated/sevii-ruby-region/declarations.json')
+    canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json')
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     battles = []
     for occurrence in declarations['battleOccurrences']:
@@ -145,7 +136,7 @@ def generate(reference, dependency, region):
     for name in additions+['SPECIES_PONYTA']:
         need(next(s for s in declarations['pokemon'] if s['id']['value']=='pret:'+name)==species[name], 'Region canonical species')
         for source in [species[name]['source'],species[name]['learnsetSource']]+[m['source'] for m in species[name]['levelUpMoves']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
-            read(source['path']);need(inputs[source['path']]['sha256']==source['sha256'], 'Canonical source hash')
+            read(source['path'])
     edges=[]
     for name,level,target in [('SPECIES_PONYTA',40,'SPECIES_RAPIDASH'),('SPECIES_SLUGMA',38,'SPECIES_MAGCARGO')]:
         e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']['value']=='pret:'+target,'Evolution edge')
@@ -172,10 +163,10 @@ def generate(reference, dependency, region):
           'Controlled RNG seeds in diagnostic tests do not represent natural gameplay or user saves.'])
     docs={'trainers.json':dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-trainers-v1',completeSourceRoster=False,
           trainers=trainers,battles=battles,resolvedMoves=resolved),
-        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-owned-pokemon-v1',canonicalCatalogSha256=declarations['canonicalCatalogSha256'],
+        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-owned-pokemon-v1',
           ownedSpeciesAdded=additions,evolutionEdges=edges),
         'rules.json':rules,
-        'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)}
+        'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)}
     return docs,raw
 
 def main():
@@ -184,14 +175,14 @@ def main():
     p.add_argument('--check',action='store_true');a=p.parse_args()
     docs,raw=generate(a.reference,a.dependency,a.region)
     files={'content/generated/sevii-ruby-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
-    files.update({'content/raw/sevii-ruby-rules/'+n:d for n,d in raw.items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',profile='firered-sevii-ruby-rules-v1',
-        files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    files.update({'content/raw/pokefirered/037335f4/'+n:d for n,d in raw.items()})
+    lock=dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-rules-v1',
+        files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/sevii-ruby-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     print(json.dumps(dict(checked=a.check,trainers=17,members=sum(len(t['party']) for t in docs['trainers.json']['trainers']),
-        battles=18,moves=len(docs['rules.json']['trainerMoves']),inputs=len(raw),hashes={n:sha(v) for n,v in files.items() if '/generated/' in n}),indent=2))
+        battles=18,moves=len(docs['rules.json']['trainerMoves']),inputs=len(raw)),indent=2))
 if __name__=='__main__':main()

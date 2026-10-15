@@ -2,180 +2,96 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 1704,
-      "gitBlobSha1": "63a110bb4ebed6db57d625f7038ddf8b0275b1dc",
-      "path": "data/maps/CeruleanCave_B1F/scripts.inc",
-      "sha256": "c454a14b2ea0868fe3ba3e3e47918b3201625113e9c381b673787ce1522f144a"
+      "path": "data/maps/CeruleanCave_B1F/scripts.inc"
     },
     {
-      "byteLength": 2004,
-      "gitBlobSha1": "b719d111f73ad26966817ebb64a72cf0e369a2a5",
-      "path": "graphics/pokedex/kanto_dex_bgpals.pal",
-      "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf"
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal"
     },
     {
-      "byteLength": 196,
-      "gitBlobSha1": "30463baeb10d395e5c5e41e97373a5619c3c6d27",
-      "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal",
-      "sha256": "58079a7948d90d8bba96d0e2642e26e86bc54fc29d1dadaadb1a5f5fd63dd4f0"
+      "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal"
     },
     {
-      "byteLength": 815,
-      "gitBlobSha1": "e466856e50468578aba89b58585cbc18198eb3cb",
-      "path": "graphics/pokemon/mewtwo/back.png",
-      "sha256": "26813bc96d10be4e1a4fbbf279937982edb2433a86a100b66c0997def38d3135"
+      "path": "graphics/pokemon/mewtwo/back.png"
     },
     {
-      "byteLength": 100,
-      "gitBlobSha1": "0f7573dd3b9663a98152411aa68ba6474e86f3d8",
-      "path": "graphics/pokemon/mewtwo/footprint.png",
-      "sha256": "f8b2dda60e5a39d0f4a81c1900b6bd812da0ddbe6965fb73fda5e18e3e716f86"
+      "path": "graphics/pokemon/mewtwo/footprint.png"
     },
     {
-      "byteLength": 875,
-      "gitBlobSha1": "a35fd8dda62f50e02ef60e393b35c4923d3d0d90",
-      "path": "graphics/pokemon/mewtwo/front.png",
-      "sha256": "2aca8417e5a999beb9b0ad53b6528f9bfd78ff268fc7aa44034a8d6561ae15b7"
+      "path": "graphics/pokemon/mewtwo/front.png"
     },
     {
-      "byteLength": 368,
-      "gitBlobSha1": "65f2aeec2b64099998ac8d1eb9859d4d27168760",
-      "path": "graphics/pokemon/mewtwo/icon.png",
-      "sha256": "06dafc71a8abbcf8c7478699a5bfcd853a83d9ecc80b73f7dc28dbc1e61329aa"
+      "path": "graphics/pokemon/mewtwo/icon.png"
     },
     {
-      "byteLength": 192,
-      "gitBlobSha1": "4afd3567ec3553222b339f86297d7d34e7703f00",
-      "path": "graphics/pokemon/mewtwo/normal.pal",
-      "sha256": "539c056689fe9973aaa83104c6a4d1b53205e092460d4cf3056a954cefebe657"
+      "path": "graphics/pokemon/mewtwo/normal.pal"
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "c65c6c83e71f01d97ea63bb0cd1839dde2e3d32b",
-      "path": "graphics/pokemon/mewtwo/shiny.pal",
-      "sha256": "2c0629765d7d77dde56acb652b61d482c748fe82e38bb1b2912745651272de3d"
+      "path": "graphics/pokemon/mewtwo/shiny.pal"
     },
     {
-      "byteLength": 17891,
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
-      "path": "include/constants/songs.h",
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+      "path": "include/constants/songs.h"
     },
     {
-      "byteLength": 2051,
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee",
-      "path": "include/constants/sound.h",
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2"
+      "path": "include/constants/sound.h"
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "path": "include/constants/species.h",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "byteLength": 16533,
-      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9",
-      "path": "sound/cry_tables.inc",
-      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+      "path": "sound/cry_tables.inc"
     },
     {
-      "byteLength": 15174,
-      "gitBlobSha1": "554564c041bf5141650dec4197627855ce3cd3e5",
-      "path": "sound/direct_sound_samples/cries/mewtwo.wav",
-      "sha256": "2437e9c09c34003678e783a66ebcdf46e062309f57f509e1b55d32af7dd3fafc"
+      "path": "sound/direct_sound_samples/cries/mewtwo.wav"
     },
     {
-      "byteLength": 9204,
-      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
-      "path": "sound/song_table.inc",
-      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+      "path": "sound/song_table.inc"
     },
     {
-      "byteLength": 2717,
-      "gitBlobSha1": "cb5fef4876f07cd3ab83f97ec2ba1cf3091a3eda",
-      "path": "sound/songs/midi/mus_encounter_gym_leader.mid",
-      "sha256": "4ab1e4aedd52e5cbac57ac43936afd2709e2d0e1be5771674a79b27c42d8a0fe"
+      "path": "sound/songs/midi/mus_encounter_gym_leader.mid"
     },
     {
-      "byteLength": 14876,
-      "gitBlobSha1": "e6a578320327a72315877a1448845e1981034ccc",
-      "path": "sound/songs/midi/mus_vs_mewtwo.mid",
-      "sha256": "8360dbf26c2c34be54624d2a6ca95232e4e79443534d19abb56f6e3a3cd38444"
+      "path": "sound/songs/midi/mus_vs_mewtwo.mid"
     },
     {
-      "byteLength": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
-      "path": "src/battle_setup.c",
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "src/battle_setup.c"
     },
     {
-      "byteLength": 214609,
-      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
-      "path": "src/data/graphics/pokemon.h",
-      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+      "path": "src/data/graphics/pokemon.h"
     },
     {
-      "byteLength": 44872,
-      "gitBlobSha1": "17f818f458434bc6c35cb7f10acd7776a36e9c22",
-      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
-      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab"
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h"
     },
     {
-      "byteLength": 1834,
-      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820",
-      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
-      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h"
     },
     {
-      "byteLength": 19857,
-      "gitBlobSha1": "86ca067901f96aee2b1aed81912bac4f7e84c99b",
-      "path": "src/data/pokemon_graphics/footprint_table.h",
-      "sha256": "90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70"
+      "path": "src/data/pokemon_graphics/footprint_table.h"
     },
     {
-      "byteLength": 44879,
-      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
-      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
-      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h"
     },
     {
-      "byteLength": 45145,
-      "gitBlobSha1": "037b1bfa82189906b205fe1a50a9276a4e2041e6",
-      "path": "src/pokemon_icon.c",
-      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967"
+      "path": "src/pokemon_icon.c"
     },
     {
-      "byteLength": 15232,
-      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e",
-      "path": "src/sound.c",
-      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+      "path": "src/sound.c"
     }
   ],
   "inheritedInputs": [
     {
-      "byteLength": 132335,
-      "path": "content/generated/campaign-hit-art/manifest.json",
-      "sha256": "f65895babddf0327ad6884ba4d86d2c582e780c17bf91064599a657361acc94c"
+      "path": "content/generated/campaign-hit-art/manifest.json"
     },
     {
-      "byteLength": 2565436,
-      "path": "content/generated/synth-audio/firered.pack",
-      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+      "path": "content/generated/synth-audio/firered.pack"
     },
     {
-      "byteLength": 88374,
-      "path": "content/generated/synth-audio/manifest.json",
-      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+      "path": "content/generated/synth-audio/manifest.json"
     },
     {
-      "byteLength": 6188,
-      "path": "content/generated/synth-audio/normal-cries.bin",
-      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+      "path": "content/generated/synth-audio/normal-cries.bin"
     }
   ],
   "profile": "firered-mewtwo-presentation-v1",
   "repository": "pret/pokefirered",
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

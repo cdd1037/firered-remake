@@ -12,12 +12,11 @@ public static class FuchsiaGymItemRules
     public static ItemId Tm06Id { get; } = new("pret:ITEM_TM06");
     private static readonly QuestItemDefinition ExpectedItem = new(Tm06Id, "ITEM_TM06", 294, "TM06", 3000,
         0, 0, "POCKET_TM_CASE", "ITEM_TYPE_PARTY_MENU", "HOLD_EFFECT_NONE", 0, "NULL", 0, "NULL", 0,
-        true, true, true, new("src/data/items.json", "ITEM_TM06", 4712, 4728,
-            "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"));
+        true, true, true, new("src/data/items.json", "ITEM_TM06", 4712, 4728));
     private const string Description = "A move that badly\npoisons the foe.\nIts poison damage\nworsens every turn.";
     private const string DeclarationDescription = "A move that leaves the foe badly\npoisoned. Its poison damage worsens\nevery turn.";
     private static readonly OpeningItemSourceRef DescriptionSource = new("src/move_descriptions.c",
-        "gMoveDescription_Toxic", 95, 95, "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b");
+        "gMoveDescription_Toxic", 95, 95);
 
     public static void ValidateMachine(PewterMachineItem machine)
     {

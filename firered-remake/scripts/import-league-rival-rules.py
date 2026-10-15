@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Extract the three late Route22 teams from pinned Git objects, without running reference code."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -21,8 +20,7 @@ def extract(source):
 
     def ref(path, symbol, start, end=None):
         read(path)
-        return dict(path=path, symbol=symbol, startLine=start, endLine=end or start,
-                    sha256=hashlib.sha256(blobs[path]).hexdigest())
+        return dict(path=path, symbol=symbol, startLine=start, endLine=end or start)
 
     def block(path, pattern):
         text = read(path)
@@ -102,7 +100,7 @@ def extract(source):
             source=ref("data/maps/Route22/scripts.inc", label, script_line, script_line + script_raw.count("\n"))))
     document = dict(sourceCommit=PIN, profile=PROFILE, completeSourceRoster=False,
                     trainers=trainers, battles=battles, resolvedMoves=resolved)
-    inputs = dict(sourceCommit=PIN, profile=PROFILE, inputs=[dict(path=path, byteLength=len(data), sha256=hashlib.sha256(data).hexdigest())
+    inputs = dict(sourceCommit=PIN, profile=PROFILE, inputs=[dict(path=path)
                   for path, data in sorted(blobs.items())])
     return document, inputs
 
@@ -118,7 +116,7 @@ def main():
     for name, document in zip(("trainers.json", "source-input-hashes.json"), documents):
         data = (json.dumps(document, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
         (output / name).write_bytes(data)
-        print(name, hashlib.sha256(data).hexdigest())
+        print(name)
 
 
 if __name__ == "__main__":

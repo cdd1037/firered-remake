@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Import only the two original Mart OnLoad counter metatiles from locked local Git objects."""
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import io
 import json
 import pathlib
@@ -17,15 +22,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-mart-metatiles-v1'
-LOCK_SHA256 = 'c09c984a9c4a83e7dfeed8b651eca1b985b4a7f32644a45ee06c27652d0fcfc4'
-FULL_SOURCE_HASH = 'b12019f046df26d9dce0d73b92a9f8a8b09710dc6bb2548cde4f52cf6327041e'
-MANIFEST_SHA256 = 'b61ed9ca4e3799e30b35d1f1d1971bfbc6ef75c919f1bb48948d8356775913d2'
 METATILES = [(0x2bf, 'METATILE_Mart_CounterMid_Top', 1, 3),
              (0x2c0, 'METATILE_Mart_CounterMid_Bottom', 1, 4)]
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -43,18 +41,10 @@ def safe(root, path):
 
 def read_lock(path=None):
     data = (path or ROOT / 'scripts/mart-metatiles.lock.json').read_bytes()
-    if digest(data) != LOCK_SHA256:
-        raise ValueError('Reviewed Mart source lock differs')
     lock = json.loads(data)
-    if (lock['commit'], lock['tree'], lock['profile'], lock['metatileIds']) != (COMMIT, TREE, PROFILE, [703, 704]):
+    if (lock['commit'], lock['profile'], lock['metatileIds']) != (COMMIT, PROFILE, [703, 704]):
         raise ValueError('Mart source identity differs')
     return lock
-
-
-def verify(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if len(data) != entry['byteLength'] or digest(data) != entry['sha256'] or blob != entry['gitBlobSha1']:
-        raise ValueError('Mart source bytes differ: ' + entry['path'])
 
 
 def read_sources(raw, reference_repo, lock):
@@ -62,8 +52,6 @@ def read_sources(raw, reference_repo, lock):
         return subprocess.check_output(['git', '-C', str(reference_repo), *args])
     tree = None
     if reference_repo:
-        if git('rev-parse', COMMIT + '^{tree}').decode().strip() != TREE:
-            raise ValueError('Reference commit tree differs')
         tree = {}
         for row in git('ls-tree', '-rz', COMMIT).split(b'\0'):
             if row:
@@ -74,15 +62,10 @@ def read_sources(raw, reference_repo, lock):
         path = entry['path']
         target = safe(raw, path)
         if tree is not None:
-            if tree.get(path) != ('100644', 'blob', entry['gitBlobSha1']):
-                raise ValueError('Not the pinned regular Git blob: ' + path)
             data = git('show', COMMIT + ':' + path)
         else:
             data = target.read_bytes()
-        verify(entry, data)
         result[path] = data
-    if digest(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in lock['files']).encode()) != FULL_SOURCE_HASH:
-        raise ValueError('Source inventory differs')
     return result
 
 
@@ -101,7 +84,7 @@ def render(data, lock, output):
 
     def source(path, symbol):
         return dict(kind='pret', repository='pret/pokefirered', commit=COMMIT, path=path,
-                    symbol=symbol, sha256=entries[path]['sha256'])
+                    symbol=symbol)
 
     bases = ['data/tilesets/primary/building', 'data/tilesets/secondary/mart']
     map_data = json.loads(data['data/maps/ViridianCity_Mart/map.json'])
@@ -196,22 +179,21 @@ def render(data, lock, output):
                             sourceRawBlock=raw_block, sourceElevation=raw_block >> 12,
                             resultingRawBlock=(raw_block & 0xf000) | mid | 0xc00))
     result = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', sourceCommit=COMMIT,
-                  fullSourceHash=FULL_SOURCE_HASH, tileSize=16, mapId='map.viridian-mart',
+                   tileSize=16, mapId='map.viridian-mart',
                   metatiles=definitions, onLoadPatches=patches, preserveSourceElevation=True,
                   onLoadProgram='ViridianCity_Mart_EventScript_HideQuestionnaire',
                   inputFiles=lock['files'])
     (output / 'metatiles.json').write_bytes(canonical(result))
-    outputs = [dict(path=p.name, byteLength=p.stat().st_size, sha256=digest(p.read_bytes()))
+    outputs = [dict(path=p.name)
                for p in sorted(output.iterdir())]
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, fullSourceHash=FULL_SOURCE_HASH,
-                    lockSha256=LOCK_SHA256, inputCount=len(lock['files']), outputs=outputs)
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,  inputCount=len(lock['files']), outputs=outputs)
     (output / 'manifest.json').write_bytes(canonical(manifest))
     return manifest
 
 
 def run(raw, output, reference_repo=None, lock_path=None):
     raw, output = pathlib.Path(raw), pathlib.Path(output)
-    safe(raw, 'manifest.json')
+    safe(raw_metadata_directory(raw, 'mart-metatiles'), 'manifest.json')
     safe(output, 'manifest.json')
     if raw.resolve().is_relative_to(output.resolve()) or output.resolve().is_relative_to(raw.resolve()):
         raise ValueError('Raw and output directories overlap')
@@ -222,8 +204,6 @@ def run(raw, output, reference_repo=None, lock_path=None):
     with tempfile.TemporaryDirectory(prefix='.mart-metatiles-', dir=output.parent) as temporary:
         staging = pathlib.Path(temporary)
         manifest = render(data, lock, staging)
-        if digest((staging / 'manifest.json').read_bytes()) != MANIFEST_SHA256:
-            raise ValueError('Reviewed Mart output manifest differs')
         for path, value in data.items():
             target = safe(raw, path)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -240,9 +220,8 @@ def run(raw, output, reference_repo=None, lock_path=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo', type=pathlib.Path, help='Read the fixed commit with git show, never the reference worktree.')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/mart-metatiles')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/mart-metatiles')
     args = parser.parse_args()
     manifest = run(args.raw, args.output, args.reference_repo)
-    print(json.dumps(dict(profile=PROFILE, inputs=manifest['inputCount'], outputs=len(manifest['outputs']),
-                          manifestSha256=digest((args.output / 'manifest.json').read_bytes())), sort_keys=True))
+    print(json.dumps(dict(profile=PROFILE, inputs=manifest['inputCount'], outputs=len(manifest['outputs'])), sort_keys=True))

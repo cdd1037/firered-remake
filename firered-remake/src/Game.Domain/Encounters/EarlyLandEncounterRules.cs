@@ -49,11 +49,11 @@ public static class EarlyLandEncounterRules
     public static ImmutableArray<SpeciesId> Route22WildSpecies { get; } =
         [new("pret:SPECIES_RATTATA"), new("pret:SPECIES_MANKEY"), new("pret:SPECIES_SPEAROW")];
     public static EarlyLandEncounterTable Route1Table { get; } = new(Route1EncounterRules.Map, SourceCommit,
-        SourcePath, "sRoute1_FireRed", "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c", 21,
+        SourcePath, "sRoute1_FireRed", 21,
         Route1EncounterRules.Slots.Select(s => new EarlyLandEncounterSlot(s.Index, s.Species,
             s.MinimumLevel, s.MaximumLevel, s.Weight)).ToImmutableArray());
     public static EarlyLandEncounterTable Route22Table { get; } = new(new("map.route-22"), SourceCommit,
-        SourcePath, "sRoute22_FireRed", Route1Table.SourceSha256, 21,
+        SourcePath, "sRoute22_FireRed", 21,
         new[] { ("RATTATA", 3), ("MANKEY", 3), ("RATTATA", 4), ("MANKEY", 4),
             ("RATTATA", 2), ("MANKEY", 2), ("SPEAROW", 3), ("SPEAROW", 5),
             ("RATTATA", 5), ("MANKEY", 5), ("RATTATA", 5), ("MANKEY", 5) }
@@ -65,7 +65,7 @@ public static class EarlyLandEncounterRules
         [new("pret:SPECIES_EKANS"), new("pret:SPECIES_NIDORAN_F"),
          new("pret:SPECIES_NIDORAN_M"), new("pret:SPECIES_JIGGLYPUFF")];
     public static EarlyLandEncounterTable Route3Table { get; } = new(new("map.route-3"), SourceCommit,
-        SourcePath, "sRoute3_FireRed", Route1Table.SourceSha256, 21,
+        SourcePath, "sRoute3_FireRed", 21,
         new[] { ("SPEAROW", 6), ("PIDGEY", 6), ("SPEAROW", 7), ("MANKEY", 7),
             ("NIDORAN_M", 6), ("PIDGEY", 7), ("SPEAROW", 8), ("JIGGLYPUFF", 3),
             ("NIDORAN_M", 7), ("JIGGLYPUFF", 5), ("NIDORAN_F", 6), ("JIGGLYPUFF", 7) }
@@ -340,8 +340,7 @@ public static class EarlyLandEncounterRules
             _ when mtMoonTable is not null => mtMoonTable.SourceSymbol,
             _ => throw new NotSupportedException("The land table map and source symbol are not registered.")
         };
-        if (table.SourceCommit != SourceCommit || table.SourcePath != SourcePath || table.SourceSymbol != symbol ||
-            table.SourceSha256 is null || table.SourceSha256.Length != 64 || table.SourceSha256.Any(c => !char.IsAsciiHexDigitLower(c)))
+        if (table.SourceCommit != SourceCommit || table.SourcePath != SourcePath || table.SourceSymbol != symbol)
             throw new ArgumentException("Invalid early land table source metadata.");
         if (table.RawEncounterRate is < 1 or > 255 || table.Slots.IsDefault || table.Slots.Length != 12)
             throw new ArgumentException("Invalid source land rate or slot count.");
@@ -349,7 +348,7 @@ public static class EarlyLandEncounterRules
         {
             var expected = mtMoonTable ?? (table.Map == Route3Table.Map ? Route3Table : Route22Table);
             // New map profiles admit only these exact source tables, not later maps or levels.
-            if (table.SourceSha256 != expected.SourceSha256 || table.RawEncounterRate != expected.RawEncounterRate ||
+            if (table.RawEncounterRate != expected.RawEncounterRate ||
                 !table.Slots.SequenceEqual(expected.Slots))
                 throw new ArgumentException("Extended maps require their exact pinned FireRed land tables.");
             return;

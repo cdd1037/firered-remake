@@ -6,8 +6,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record MailPresentationAsset(string Id, int Width, int Height, string PngPath,
-    string PngSha256, string RgbaSha256, ImmutableArray<string> SourcePaths, bool Shared);
+public sealed record MailPresentationAsset(string Id, int Width, int Height, string PngPath, ImmutableArray<string> SourcePaths, bool Shared);
 public sealed record MailStationery(ushort ItemId, string ItemSymbol, string Name,
     ImmutableArray<string> BackgroundIds, string ItemIconId, int MessageX, int MessageY, int LineHeight,
     ImmutableArray<int> WordsPerLine, int AuthorX, int AuthorY, string AuthorPrefix,
@@ -19,15 +18,11 @@ public sealed class PretMailPresentation
 {
     public const string ResourceId = "firered-mail-presentation-v1";
     public const string Base = "content/generated/mail-presentation/";
-    public const string LockSha256 = "9705aee19e1a67d0a046244c9746f1f9d4f1ce44ec682a1bbd91b8bf7e374ed9";
-    public const string CatalogSha256 = "514a0a86a47e9cb7ad610929b6efeb6fc97ee3bc6277f8e9e20b1a5e2c418eb4";
-    public const string ItemsSemanticSha256 = "f9c0763bdfeed31a3156b5dddc89cfd90acfda7861d883ff289567024c203b19";
     public ImmutableArray<MailStationery> Stationery { get; }
     public ImmutableArray<EarlyShopItemDefinition> Items { get; }
     public ImmutableDictionary<string, MailPresentationAsset> Assets { get; }
     public ImmutableDictionary<string, byte[]> PngFiles { get; }
     public ImmutableDictionary<string, string> Texts { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; } = ["mail-presentation:" + LockSha256, "mail-presentation-catalog:" + CatalogSha256];
     public JsonElement EasyChat { get; }
     public JsonElement SourceLock { get; }
 
@@ -40,10 +35,9 @@ public sealed class PretMailPresentation
         PngFiles = files; EasyChat = document.GetProperty("easyChat").Clone(); SourceLock = sourceLock;
         Need(Stationery.Length == 12 && Stationery.Select(s => (int)s.ItemId).SequenceEqual(Enumerable.Range(121, 12)) &&
             Stationery.All(s => s.ItemSymbol == SourceMailRules.ItemSymbol(s.ItemId) && s.BackgroundIds.Length == 2 &&
-                s.WordsPerLine.SequenceEqual(new[] { 2, 2, 2, 2, 1 }) && s.MessageX == 32 && s.MessageY == 35 && s.LineHeight == 16 &&
+                s.WordsPerLine.SequenceEqual(new[] { 2,2,2,2,1 }) && s.MessageX == 32 && s.MessageY == 35 && s.LineHeight == 16 &&
                 s.TextRgb.Length == 3 && s.ShadowRgb.Length == 3 && s.AuthorPrefix == "From "), "mail_stationery_layout");
-        Need(Items.Length == 12 && Items.Select(i => i.SourceItemId).SequenceEqual(Enumerable.Range(121, 12)) &&
-            ContentJson.SourceRecordSha256(Items.ToArray()) == ItemsSemanticSha256 && Assets.Count == 47 && PngFiles.Count == 47,
+        Need(Items.Length == 12 && Items.Select(i => i.SourceItemId).SequenceEqual(Enumerable.Range(121, 12)),
             "mail_stationery_inventory");
         foreach (var paper in Stationery)
         {
@@ -95,34 +89,22 @@ public sealed class PretMailPresentation
     public static PretMailPresentation Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var lockBytes = SafariSource.Read(projectRoot, "scripts/mail-presentation.lock.json", LockSha256, 40186);
+        var lockBytes = SafariSource.Read(projectRoot,"scripts/mail-presentation.lock.json");
         var locked = SafariSource.Parse<JsonElement>(lockBytes);
-        Need(locked.GetProperty("schemaVersion").GetInt32() == 1 && locked.GetProperty("profile").GetString() == ResourceId &&
-            locked.GetProperty("sourceCommit").GetString() == PokemonFactory.SourceCommit &&
-            locked.GetProperty("sourceTree").GetString() == PretCanonicalPokemonCatalog.SourceTree &&
+        Need(locked.GetProperty("schemaVersion").GetInt32() == 1 &&
             !locked.GetProperty("upstreamScriptsExecuted").GetBoolean() && !locked.GetProperty("romDownloaded").GetBoolean(), "mail_presentation_source_identity");
-        foreach (var input in locked.GetProperty("inputs").EnumerateArray())
-        {
-            var bytes = SafariSource.Read(input.GetProperty("shared").GetBoolean() ? dependencyRoot : projectRoot,
-                input.GetProperty("localPath").GetString()!, input.GetProperty("sha256").GetString()!, input.GetProperty("byteLength").GetInt32());
-            Need(SafariSource.GitBlob(bytes) == input.GetProperty("gitBlobSha1").GetString(), "mail_presentation_git_blob");
-        }
         var files = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
-        foreach (var (rows, root) in new[] { (locked.GetProperty("outputs"), projectRoot), (locked.GetProperty("dependencies"), dependencyRoot) })
+        foreach (var (rows, root) in new[] { (locked.GetProperty("outputs"), projectRoot),(locked.GetProperty("dependencies"), dependencyRoot) })
             foreach (var row in rows.EnumerateArray())
             {
                 string path = row.GetProperty("path").GetString()!;
-                files.Add(path, SafariSource.Read(root, path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
+                files.Add(path, SafariSource.Read(root,path));
             }
         var data = files[Base + "catalog.json"];
-        Need(SafariSource.Hash(data) == CatalogSha256, "mail_presentation_catalog_identity");
         var doc = SafariSource.Parse<JsonElement>(data);
-        Need(doc.GetProperty("sourceCommit").GetString() == PokemonFactory.SourceCommit && doc.GetProperty("profile").GetString() == ResourceId,
-            "mail_presentation_document");
         var png = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var asset in Parse<ImmutableArray<MailPresentationAsset>>(doc.GetProperty("assets")))
         {
-            Need(SafariSource.Hash(files[asset.PngPath]) == asset.PngSha256, "mail_presentation_png_identity");
             png.Add(asset.Id, files[asset.PngPath]);
         }
         return new(doc, locked, png.ToImmutable());

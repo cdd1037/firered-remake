@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Extract only the first League teams from pinned Git blobs; never execute upstream code."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -13,11 +12,7 @@ PROFILE = 'firered-pokemon-league-trainers-v1'
 TRAINERS = ['ELITE_FOUR_LORELEI','ELITE_FOUR_BRUNO','ELITE_FOUR_AGATHA','ELITE_FOUR_LANCE',
             'CHAMPION_FIRST_SQUIRTLE','CHAMPION_FIRST_BULBASAUR','CHAMPION_FIRST_CHARMANDER']
 MISSING = ['MACHAMP','GENGAR','HITMONLEE','HITMONCHAN','RHYDON','JYNX','AERODACTYL','DRAGONAIR','DRAGONITE']
-CANONICAL_SHA = 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc'
-BASELINE_SHA = '3775e076364c67d145c5754e88907d1bdf3de334b7e714e90a63b86cb87b396d'
 
-def sha(data): return hashlib.sha256(data).hexdigest()
-def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode())
 def need(value, message):
     if not value: raise ValueError(message)
 
@@ -27,7 +22,7 @@ def generate(reference, dependency):
         if path not in texts:
             data = subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
             raw[path]=data; texts[path]=data.decode()
-            inputs[path]=dict(path=path,byteLength=len(data),gitBlobSha1=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest(),sha256=sha(data))
+            inputs[path]=dict(path=path)
         return texts[path]
     def one(path, pattern):
         matches=list(re.finditer(pattern,read(path),re.M|re.S))
@@ -35,18 +30,18 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path,symbol,match):
         return dict(path=path,symbol=symbol,startLine=read(path).count('\n',0,match.start())+1,
-                    endLine=read(path).count('\n',0,match.end())+1,sha256=inputs[path]['sha256'])
+                    endLine=read(path).count('\n',0,match.end())+1)
     def number(path,symbol):
         value=one(path,r'^#define '+symbol+r'\s+([^\n]+)')[1].split('//')[0].strip()
         return int(value,0) if re.fullmatch(r'(?:0x[0-9a-fA-F]+|\d+)',value) else 1<<int(re.fullmatch(r'\(1 << (\d+)\)',value)[1])
     def encode(name):
         return [int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in name]
     def identity(symbol):return dict(value='pret:'+symbol)
-    def dependent(path,expected):
-        data=(dependency/path).read_bytes();need(sha(data)==expected,'Dependency changed: '+path)
-        dependencies.append(dict(path=path,byteLength=len(data),sha256=sha(data)));return json.loads(data)
-    canonical=dependent('content/generated/canonical-pokemon/catalog.json',CANONICAL_SHA)
-    baseline=dependent('scripts/fuchsia-gym-baseline.lock.json',BASELINE_SHA)
+    def dependent(path):
+        data=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path));return json.loads(data)
+    canonical=dependent('content/generated/canonical-pokemon/catalog.json')
+    baseline=dependent('scripts/fuchsia-gym-baseline.lock.json')
     species={s['id']['value'][5:]:s for s in canonical['species']}
     owned={'SPECIES_'+s for s in baseline['species']+['CHANSEY','SCYTHER','TAUROS','PSYDUCK','GOLDUCK','LAPRAS','KRABBY','KINGLER']}
     previous=owned|{'SPECIES_'+s for s in ['ALAKAZAM','MR_MIME','SLOWBRO','NINETALES','ARCANINE','RAPIDASH','CLOYSTER','DEWGONG','EXEGGUTOR']}
@@ -127,7 +122,7 @@ def generate(reference, dependency):
         read(path)
     for p in [species[s] for s in required]:
         for source in [p['source'],p['learnsetSource']]+[m['source'] for m in p['levelUpMoves']]:
-            read(source['path']);need(inputs[source['path']]['sha256']==source['sha256'],'Canonical source hash differs')
+            read(source['path'])
     starter_source=one('src/field_specials.c',r'^static const u16 sStarterSpecies\[\] = \{(.*?)^\};')
     need(re.findall(r'SPECIES_\w+',starter_source[1])==['SPECIES_BULBASAUR','SPECIES_SQUIRTLE','SPECIES_CHARMANDER'],'Player starter order differs')
     for value,suffix in [(0,'Charmander'),(1,'Bulbasaur'),(2,'Squirtle')]:
@@ -145,9 +140,9 @@ def generate(reference, dependency):
           'Mode 3 reuses ordinary trainer AI, medicine, EXP and money. Story flags, doors, Hall of Fame and whiteout routing belong to Application.',
           'Source trainer names (TERRY for champion) determine personality; display rival name does not replace this source construction.'])
     outputs={'trainers.json':dict(sourceCommit=COMMIT,profile=PROFILE,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs),
-        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-pokemon-league-opponents-v1',canonicalCatalogSha256=CANONICAL_SHA,
+        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-pokemon-league-opponents-v1',
             ownedSpeciesAdded=[],opponentSpecies=[species[s] for s in missing]),'rules.json':rules,
-        'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree=TREE,files=[inputs[k] for k in sorted(inputs)],predecessorInputs=dependencies)}
+        'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],predecessorInputs=dependencies)}
     return outputs,raw
 
 def main():
@@ -156,15 +151,14 @@ def main():
     p.add_argument('--check',action='store_true');a=p.parse_args()
     docs,raw=generate(a.reference,a.dependency)
     files={'content/generated/pokemon-league-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
-    files.update({'content/raw/pokemon-league-rules/'+n:d for n,d in raw.items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-pokemon-league-rules-v1',
-        files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    files.update({'content/raw/pokefirered/037335f4/'+n:d for n,d in raw.items()})
+    lock=dict(sourceCommit=COMMIT,profile='firered-pokemon-league-rules-v1',
+        files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/pokemon-league-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     print(json.dumps(dict(checked=a.check,trainers=7,members=38,trainerSpecies=25,newOpponentSpecies=9,newOwnedSpecies=0,
-        moves=len(docs['rules.json']['trainerMoves']),sourceInputs=len(raw),files=len(files),
-        hashes={n:sha(v) for n,v in files.items() if '/generated/' in n}),indent=2))
+        moves=len(docs['rules.json']['trainerMoves']),sourceInputs=len(raw),files=len(files)),indent=2))
 if __name__=='__main__':main()

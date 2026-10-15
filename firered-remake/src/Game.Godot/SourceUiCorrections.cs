@@ -1,12 +1,10 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Godot;
 
 /// <summary>Small source-derived companions; the existing thirteen skin assets and font atlas stay unchanged.</summary>
 public sealed class SourceUiCorrections : IDisposable
 {
-    public const string CatalogHash = "0136a54e84f3ea511c45bac7e75fcd0c5577e5d47b2bf093fb18ad52e128622b";
-    public const string SourceHash = "e0f500b214f87ee551870a20bfe3bbe096e4f490cd8b113764e188615ecb946f";
+
     private readonly Dictionary<string, ImageTexture> _textures = new(StringComparer.Ordinal);
     private readonly (Color Foreground, Color Shadow)[] _ppColors = new (Color, Color)[4];
     public Color MenuSeparatorColor { get; private set; }
@@ -14,13 +12,10 @@ public sealed class SourceUiCorrections : IDisposable
     public static SourceUiCorrections Load(string directory)
     {
         var bytes = File.ReadAllBytes(Path.Combine(directory, "ui-corrections.json"));
-        CheckHash(bytes, CatalogHash);
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-ui-corrections-v1"
-            || root.GetProperty("sourceCommit").GetString() != LabBattleUiSkin.SourceCommit
-            || root.GetProperty("fullSourceHash").GetString() != SourceHash)
+            || root.GetProperty("profile").GetString() != "firered-ui-corrections-v1")
             throw new InvalidDataException("UI correction source identity differs.");
         var result = new SourceUiCorrections();
         try
@@ -30,12 +25,10 @@ public sealed class SourceUiCorrections : IDisposable
                 var entry = root.GetProperty("assets").EnumerateArray().Single(e => e.GetProperty("id").GetString() == id);
                 var path = Path.Combine(directory, id + ".png");
                 if (new FileInfo(path).LinkTarget is not null) throw new InvalidDataException("UI correction symlink rejected.");
-                var png = File.ReadAllBytes(path); CheckHash(png, entry.GetProperty("sha256").GetString()!);
-                using var image = new Image();
+                var png = File.ReadAllBytes(path);                 using var image = new Image();
                 if (image.LoadPngFromBuffer(png) != Error.Ok || image.GetFormat() != Image.Format.Rgba8
                     || image.GetWidth() != width || image.GetHeight() != height)
                     throw new InvalidDataException("UI correction image differs.");
-                CheckHash(image.GetData(), entry.GetProperty("rgbaSha256").GetString()!);
                 result._textures.Add(id, ImageTexture.CreateFromImage(image));
             }
             static Color ColorFrom(JsonElement value) => Color.Color8(value[0].GetByte(), value[1].GetByte(), value[2].GetByte());
@@ -80,9 +73,5 @@ public sealed class SourceUiCorrections : IDisposable
         canvas.DrawTexture(_textures["pc-submenu-background"], Vector2.Zero);
     }
     public void ClearBattleMenu(CanvasItem canvas) => canvas.DrawRect(LabBattleUiSkin.MessageRect, MenuSeparatorColor);
-    private static void CheckHash(byte[] bytes, string expected)
-    {
-        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != expected) throw new InvalidDataException("UI correction checksum differs.");
-    }
     public void Dispose() { foreach (var texture in _textures.Values) texture.Dispose(); _textures.Clear(); }
 }

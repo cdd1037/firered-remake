@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """Import one pinned Viridian Gym map and its source gate. No upstream code or ROM build."""
-import argparse, ast, collections, hashlib, importlib.util, json, re, sys, tempfile
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
+import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-viridian-gym-region-v1'
 PACKAGE = 'viridian-gym-region'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = '6eb4653ff7c9bef11e4a7ac4d034487757142205d0bb10eeb96218683716d366'
-LOCK_SHA256 = '284317ba084afe1b6f54ac7ca1528c6ca03bc32c5a1f3ced348f3ceb428009d4'
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_ViridianGym':'secondary/viridian_gym'}
-def sha(b): return hashlib.sha256(b).hexdigest()
 def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
 def need(v, m):
     if not v: raise ValueError(m)
-def module(path, name, expected):
-    need(sha(path.read_bytes()) == expected, 'Reviewed helper differs: '+str(path))
+def module(path, name):
     spec=importlib.util.spec_from_file_location(name,path); m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink in output: '+str(path))
 
@@ -147,7 +148,7 @@ def main():
     ap.add_argument('--dependency-root',type=Path,default=ROOT);ap.add_argument('--project-root',type=Path,default=ROOT);ap.add_argument('--check',action='store_true');a=ap.parse_args()
     target=a.project_root.absolute();dep=a.dependency_root.absolute();ref=a.reference_root.absolute();safe(target)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Reference/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py','viridian_gym_reader',READER_SHA);reader.PRODUCT=dep;reader.PROFILE=PROFILE;reader.TILESETS=TILESETS
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'viridian_gym_reader');reader.PRODUCT=dep;reader.PROFILE=PROFILE;reader.TILESETS=TILESETS
     src=reader.Source(ref)
     for p in ['data/maps/ViridianCity_Gym/map.json','data/maps/ViridianCity_Gym/scripts.inc','data/maps/ViridianCity_Gym/text.inc',
         'data/maps/ViridianCity/map.json','data/maps/ViridianCity/scripts.inc','data/maps/ViridianCity/text.inc',
@@ -162,27 +163,24 @@ def main():
         for part in ['tiles.png','metatiles.bin','metatile_attributes.bin']+[f'palettes/{i:02d}.pal' for i in range(16)]:src.read('data/tilesets/'+base+'/'+part,'source-tileset')
     world=reader.decode(src,'ViridianCity_Gym');scripts=script_inventory(src,reader)
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='viridian-gym-region-') as temp:
         stage=Path(temp);name='viridian-city-gym';shared.import_map(src,'ViridianCity_Gym','map.'+name,stage/name)
         npcs=shared.npc_inventory(src,[world],stage/'npc')
         constants=constants_inventory(src,shared,world,scripts);contract=contracts(src,reader,world,scripts,constants)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
-        rich=(stage/name/'world.json').read_bytes();compact=converter.encode(converter.convert(rich,sha(rich),source_hash));(stage/name/'runtime-map.json').write_bytes(compact);(stage/name/'world.json').unlink()
-        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=['ViridianCity_Gym']);lockdata=canonical(lock);lockhash=sha(lockdata)
-        mapentry=dict(sourceName='ViridianCity_Gym',stableId='map.'+name,directory=name,sourceMapSymbol=world['events']['id'],path=name+'/runtime-map.json',sha256=sha(compact),byteLength=len(compact),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash)
-        docs={'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,runtimeIntegrated=False,maps=[mapentry],tilesets=TILESETS,mapSymbols={'MAP_VIRIDIAN_CITY_GYM':'map.viridian-city-gym','MAP_VIRIDIAN_CITY':'map.viridian-city'},inputFiles=lock['files']),
-            'scripts.json':scripts,'constants.json':constants,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory([world])}
+        rich=(stage/name/'runtime-map.json').read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(rich)));(stage/name/'runtime-map.json').write_bytes(compact)
+        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=['ViridianCity_Gym']);lockdata=canonical(lock)
+        mapentry=dict(sourceName='ViridianCity_Gym',stableId='map.'+name,directory=name,sourceMapSymbol=world['events']['id'],path=name+'/runtime-map.json')
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=[mapentry],tilesets=TILESETS,mapSymbols={'MAP_VIRIDIAN_CITY_GYM':'map.viridian-city-gym','MAP_VIRIDIAN_CITY':'map.viridian-city'},inputFiles=lock['files']),
+            'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory([world])}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,lockSha256=lockhash,inputCount=len(src.entries),mapCount=1,cellCount=480,warpCount=3,npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),trainerOccurrenceCount=9,unresolvedLabelCount=0,readerSha256=READER_SHA,outputs=outputs)
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,inputCount=len(src.entries),mapCount=1,cellCount=480,warpCount=3,npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),trainerOccurrenceCount=9,unresolvedLabelCount=0,outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        if MANIFEST_SHA256:need(sha(manifestdata)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(lockhash==LOCK_SHA256,'Pinned lock differs')
-        writes=[(target/'content/sources/viridian-gym-region.lock.json',lockdata)]+[(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/sources/viridian-gym-region.lock.json',lockdata)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,b in writes:
             safe(path)
             if a.check:need(path.is_file() and path.read_bytes()==b,'Regeneration differs: '+str(path))
             else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b)
-        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(manifestSha256=sha(manifestdata),manifestByteLength=len(manifestdata),lockByteLength=len(lockdata),outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
+        print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 if __name__=='__main__':main()

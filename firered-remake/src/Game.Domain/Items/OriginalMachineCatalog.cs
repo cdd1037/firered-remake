@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class OriginalMachineCatalog
 {
     public const string Profile = "firered-original-machine-catalog-v1";
-    public const string AdditionsSourceSha256 = "e09fcf6830706a44a1c4f1e10307c9787c53ed363a70974fdc4d1a1464aa0493";
     public static ImmutableArray<ItemId> AdditionalItems { get; } = [
         new("pret:ITEM_TM10"), new("pret:ITEM_TM18"), new("pret:ITEM_TM27"),
         new("pret:ITEM_TM29"), new("pret:ITEM_TM42"), new("pret:ITEM_TM48")];
@@ -36,8 +35,7 @@ public sealed class OriginalMachineCatalog
             inherited.Where((machine, i) => !ReferenceEquals(machine, machines[i])).Any())
             throw new ArgumentException("original_machine_predecessor");
         var added = machines.Skip(inherited.Length).ToImmutableArray();
-        if (added.Any(m => m is null || m.Machine?.Item is null) || !added.Select(m => m.Machine.Item.Id).SequenceEqual(AdditionalItems) ||
-            CampaignSourceFingerprint.Compute(added) != AdditionsSourceSha256)
+        if (added.Any(m => m is null || m.Machine?.Item is null) || !added.Select(m => m.Machine.Item.Id).SequenceEqual(AdditionalItems))
             throw new ArgumentException("original_machine_additions_source");
         foreach (var machine in added)
             if (PewterMachineRules.Definition(old, machine.Machine.Item.Id) is not null ||

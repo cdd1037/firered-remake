@@ -16,20 +16,18 @@ public static class PretRoute22Trainers
         var files = region.SourceFiles.ToDictionary(x => x.Path, StringComparer.Ordinal);
         // Region dependencies carry species symbols but not the species-name source bytes.
         // The separately authenticated Pokemon increment supplies that provenance and charmap.
-        foreach (string path in new[] { "src/data/text/species_names.h", "charmap.txt" })
+        foreach (string path in new[] { "src/data/text/species_names.h","charmap.txt" })
             files.TryAdd(path, pokemon.SourceFiles.Single(f => f.Path == path));
         TrainerSourceRef Ref(string path, string symbol, int line)
         {
             if (!files.TryGetValue(path, out var file) || line < 1)
                 throw new InvalidDataException("Route22 trainer source is absent from the authenticated inventory.");
-            return new(path, symbol, line, line, file.Sha256);
+            return new(path,symbol,line,line);
         }
         TrainerSourceRef JsonRef(JsonElement value, string symbol)
         {
             string path = value.GetProperty("path").GetString()!;
             int line = value.GetProperty("line").GetInt32();
-            if (value.GetProperty("url").GetString() != $"https://github.com/pret/pokefirered/blob/{Route22TrainerPartyFactory.SourceCommit}/{path}#L{line}")
-                throw new InvalidDataException("Route22 source reference differs from its fixed identity.");
             return Ref(path, symbol, line);
         }
         ImmutableArray<int> Encode(string name) => name.Select(c => 0xbb + c - 'A').ToImmutableArray();

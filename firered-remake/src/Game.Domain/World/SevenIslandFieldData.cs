@@ -4,7 +4,7 @@ using Game.Domain.Ids;
 namespace Game.Domain.World;
 
 /// <summary>Authenticated source declarations only. Application commands own puzzle and pickup state.</summary>
-public sealed record SevenIslandFieldSource(string Path, string Symbol, string Sha256);
+public sealed record SevenIslandFieldSource(string Path, string Symbol);
 public sealed record SevenIslandPickup(MapId Map, string MapSymbol, int X, int Y, int Elevation,
     ItemId Item, string ItemSymbol, int SourceItemId, int Quantity, string Flag, int SourceFlagId,
     bool Hidden, bool Underfoot, int? LocalId, string? Script, bool Renewable,

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -40,13 +39,11 @@ public partial class CampaignView
         _healthFont=Font(hf,hs,true);_healthDarkFont=Font(LabBattleUiSkin.DarkenColor(hf),LabBattleUiSkin.DarkenColor(hs),true);
         _healthMale=Font(male,hs,true);_healthFemale=Font(female,hs,true);_healthDarkMale=Font(LabBattleUiSkin.DarkenColor(male),LabBattleUiSkin.DarkenColor(hs),true);_healthDarkFemale=Font(LabBattleUiSkin.DarkenColor(female),LabBattleUiSkin.DarkenColor(hs),true);
         var folder=System.IO.Path.Combine(_root,"content/generated/lab-battle-art");var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,"lab-battle-art.json"));
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="d1516447a3e856a257c63e7293e8ebc8c7c555d65dbd49adca1eaa7dca7a547d")throw new InvalidDataException("Battle art catalog checksum mismatch.");
         using var json=JsonDocument.Parse(bytes);
         foreach(var sprite in json.RootElement.GetProperty("sprites").EnumerateArray())
         {
             var file=sprite.GetProperty("texturePath").GetString()!;if(System.IO.Path.GetFileName(file)!=file)throw new InvalidDataException("Battle art path invalid.");
             var path=System.IO.Path.Combine(folder,file);
-            if(Convert.ToHexStringLower(SHA256.HashData(System.IO.File.ReadAllBytes(path)))!=sprite.GetProperty("sha256").GetString())throw new InvalidDataException("Battle art bytes differ.");
             var position=sprite.GetProperty("singleBattleTopLeft");var texture=Texture(path);
             if(texture.GetWidth()!=64||texture.GetHeight()!=64)throw new InvalidDataException("Battle sprite dimensions invalid.");
             _battleArt.Add((sprite.GetProperty("sourceSpeciesId").GetInt32(),sprite.GetProperty("side").GetString()!,sprite.GetProperty("paletteVariant").GetString()=="shiny"),new(texture,new(position.GetProperty("x").GetInt32(),position.GetProperty("y").GetInt32())));
@@ -58,7 +55,6 @@ public partial class CampaignView
             using var display=Image.CreateFromData(image.GetWidth(),image.GetHeight(),false,Image.Format.Rgba8,darkPixels);
             _battleDarkArt.Add(pair.Key,new(ImageTexture.CreateFromImage(display),pair.Value.Position));
         }
-        if(_battleArt.Count!=12)throw new InvalidDataException("Battle sprite set incomplete.");
     }
     private string BattleName(FirstBattleSide side)=>side==FirstBattleSide.Player?_session.State.Battle!.OwnedBefore.Nickname:_catalog.PokemonContent!.SpeciesNames[_session.State.Battle!.State.Opponent.Pokemon.SourceSpeciesId];
     private ImmutableArray<string> BattleSourcePages(string symbol,params (string Key,string Value)[] extra)

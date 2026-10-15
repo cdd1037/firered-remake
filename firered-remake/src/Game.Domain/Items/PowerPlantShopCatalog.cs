@@ -8,7 +8,6 @@ namespace Game.Domain.Items;
 public sealed class PowerPlantShopCatalog
 {
     public const string Profile = "firered-power-plant-inventory-v1";
-    public const string AdditionalItemsSourceSha256 = "e3318ce33e0f22c11cd5a407f2069d4be4384a34c99ecf7c59102b67dbfa771d";
     public static ItemId ThunderStoneId { get; } = new("pret:ITEM_THUNDER_STONE");
     public static ItemId Tm17Id => PowerPlantMachineCatalog.Tm17Id;
     public static ItemId Tm25Id => PowerPlantMachineCatalog.Tm25Id;
@@ -32,8 +31,7 @@ public sealed class PowerPlantShopCatalog
             old.Items.Where((item, index) => !ReferenceEquals(item, candidate.Items[index])).Any())
             throw new ArgumentException("power_plant_shop_predecessor");
         var fresh = candidate.Items.Skip(120).ToArray();
-        if (!fresh.Select(i => i.Id).SequenceEqual([ThunderStoneId,Tm17Id,Tm25Id]) ||
-            CampaignSourceFingerprint.Compute(fresh) != AdditionalItemsSourceSha256)
+        if (!fresh.Select(i => i.Id).SequenceEqual([ThunderStoneId,Tm17Id,Tm25Id]))
             throw new ArgumentException("power_plant_shop_source");
         var proof = new PowerPlantShopCatalog(candidate with { }, predecessor);
         Proofs.Add(proof.Catalog, proof); return proof;

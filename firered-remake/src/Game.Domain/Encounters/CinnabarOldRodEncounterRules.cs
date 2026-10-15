@@ -23,7 +23,7 @@ public static class CinnabarOldRodEncounterRules
 
     private static OldRodEncounterTable Table(string map, string symbol, int rate) =>
         new(new("map." + map), OldRodFishingRules.SourceCommit, OldRodEncounterRules.SourcePath,
-            "s" + symbol + "_FireRed", OldRodEncounterRules.SourceSha256, rate,
+            "s" + symbol + "_FireRed", rate,
             [new(0, OldRodEncounterRules.Magikarp, 5, 5, 70), new(1, OldRodEncounterRules.Magikarp, 5, 5, 30)]);
 
     public static OldRodFishingResult Start(CinnabarOwnedPokemonCatalog pokemon, OldRodCastContext context,

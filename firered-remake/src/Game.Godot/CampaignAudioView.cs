@@ -48,21 +48,20 @@ public partial class CampaignView
                     Write("audioPlayback",cue);
                 };
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
-                    SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
-                    sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
-                if(_catalog.PowerPlantEnabled)Write("powerPlantAudioCatalog",new{PowerPlantPresentationAssets.SynthSha256,PowerPlantPresentationAssets.SynthCueCount,inheritedCueCount=6,encounterCryMode=2,audibleOutputVerified=false,recordedFallback=false});
-                if(_catalog.SilphEnabled)Write("silphAudioCatalog",new{SilphSynthManifestIdentity.Sha256,SilphSynthManifestIdentity.CueCount,audibleOutputVerified=false});
-                if(_catalog.SurfEnabled)Write("surfAudioCatalog",new{SurfSynthManifestIdentity.Sha256,SurfSynthManifestIdentity.CueCount,audibleOutputVerified=false});
-                if(_catalog.SafariEnabled)Write("safariAudioCatalog",new{SafariSynthManifestIdentity.Sha256,SafariSynthManifestIdentity.CueCount,priorRegionalCueCount=303,audibleOutputVerified=false});
-                if(_catalog.FuchsiaRouteEnabled)Write("fuchsiaRouteAudioCatalog",new{FuchsiaRouteSynthManifestIdentity.Sha256,FuchsiaRouteSynthManifestIdentity.CueCount,priorCueCount=299,audibleOutputVerified=false});
-                if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{SnorlaxSynthManifestIdentity.Sha256,SnorlaxSynthManifestIdentity.CueCount,priorCueCount=297,encounterCryMode=2,audibleOutputVerified=false});
-                if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{PokemonTowerSynthManifestIdentity.Sha256,PokemonTowerSynthManifestIdentity.CueCount,priorCueCount=286,audibleOutputVerified=false});
-                if(_catalog.RocketHideoutEnabled)Write("rocketHideoutAudioCatalog",new{RocketHideoutSynthManifestIdentity.Sha256,RocketHideoutSynthManifestIdentity.CueCount,priorCueCount=279,audibleOutputVerified=false});
-                if(_catalog.CeladonGymEnabled)Write("celadonGymAudioCatalog",new{CeladonGymSynthManifestIdentity.Sha256,CeladonGymSynthManifestIdentity.CueCount,priorCueCount=271,audibleOutputVerified=false});
-                if(_catalog.CeladonApproachEnabled)Write("celadonApproachAudioCatalog",new{CeladonApproachSynthManifestIdentity.Sha256,CeladonApproachSynthManifestIdentity.CueCount,priorCueCount=268,audibleOutputVerified=false});
-                if(_catalog.RockTunnelEnabled)Write("rockTunnelAudioCatalog",new{RockTunnelSynthManifestIdentity.Sha256,RockTunnelSynthManifestIdentity.CueCount,priorCueCount=253,audibleOutputVerified=false});
-                if(_catalog.Route11Enabled)Write("route11AudioCatalog",new{Route11SynthManifestIdentity.Sha256,
-                    count=Route11SynthManifestIdentity.CueCount,oldManifestUnchanged=true,recordedFallback=false,audibleOutputVerified=false});
+        outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
+        queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.PowerPlantEnabled)Write("powerPlantAudioCatalog",new{audibleOutputVerified=false,recordedFallback=false});
+                if(_catalog.SilphEnabled)Write("silphAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.SurfEnabled)Write("surfAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.SafariEnabled)Write("safariAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.FuchsiaRouteEnabled)Write("fuchsiaRouteAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.RocketHideoutEnabled)Write("rocketHideoutAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.CeladonGymEnabled)Write("celadonGymAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.CeladonApproachEnabled)Write("celadonApproachAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.RockTunnelEnabled)Write("rockTunnelAudioCatalog",new{audibleOutputVerified=false});
+                if(_catalog.Route11Enabled)Write("route11AudioCatalog",new{                    recordedFallback=false,audibleOutputVerified=false});
             }
             catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException or NotSupportedException)
             {
@@ -78,8 +77,7 @@ public partial class CampaignView
         _originalAudio=PretSmallAudioDelivery.Load(_root);
         var recorded=new SourceAudioPlayer();_sourceAudio=recorded;AddChild(recorded);
         _sourceAudio.PlaybackEvent+=cue=>Write("audioPlayback",cue);
-        Write("audioCatalog",new{count=_originalAudio.Clips.Count,PretSmallAudioDelivery.ManifestSha256,sourceManifestSha256=PretEarlyAudio.ManifestSha256,
-            sourceSoundMode="mono",soundCntH=0x3302,audioBytes=PretSmallAudioDelivery.AudioBytes,sampleRates=new[]{24000,48000},
+        Write("audioCatalog",new{count=_originalAudio.Clips.Count,            sourceSoundMode="mono",audioBytes=PretSmallAudioDelivery.AudioBytes,sampleRates=new[]{24000,48000},
             outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,seamlessLoopVerified=false,musicCodec="vorbis-q0",effectCodec="qoa-mono"});
     }
 
@@ -100,9 +98,9 @@ public partial class CampaignView
                 var m=_route22CryAudio.Clips[id];
                 _sourceAudio.Register(VerifiedSourceAudioClip.FromQoa(new(m.Id,m.SourceCommit,m.SourceSymbol,m.SourcePath,
                     m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer),_route22CryAudio.ReadEncodedBytes(id),
-                    m.EncodedSha256,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame));
-                Write("route22CryAudioCatalog",new{id,PretRoute22CryAudio.ManifestSha256,PretRoute22CryAudio.AudioBytes,
-                    m.EncodedSha256,m.LogicalFrameCount,m.DirectCryStoppedVBlank,audibleOutputVerified=false});
+        m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame));
+                Write("route22CryAudioCatalog",new{id,PretRoute22CryAudio.AudioBytes,
+        m.LogicalFrameCount,m.DirectCryStoppedVBlank,audibleOutputVerified=false});
                 return true;
             }
             catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
@@ -117,11 +115,11 @@ public partial class CampaignView
                 var extraMetadata=new SourceAudioMetadata(m.Id,m.SourceCommit,m.SourceSymbol,m.SourcePath,m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer);
                 _sourceAudio.Register(m.Codec switch
                 {
-                    "vorbis"=>VerifiedSourceAudioClip.FromOgg(extraMetadata,bytes,m.EncodedSha256,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame),
-                    "qoa"=>VerifiedSourceAudioClip.FromQoa(extraMetadata,bytes,m.EncodedSha256,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame),
+                    "vorbis"=>VerifiedSourceAudioClip.FromOgg(extraMetadata,bytes,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame),
+                    "qoa"=>VerifiedSourceAudioClip.FromQoa(extraMetadata,bytes,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame),
                     _=>throw new InvalidDataException("Unsupported town/route codec: "+m.Codec)
                 });
-                Write("townRouteAudioCatalog",new{id,PretTownRouteAudio.ManifestSha256,PretTownRouteAudio.AudioBytes,m.EncodedSha256,m.SourcePcmSha256,m.SourceCounter,m.SourceSequenceStoppedVBlank,audibleOutputVerified=false});
+                Write("townRouteAudioCatalog",new{id,PretTownRouteAudio.AudioBytes,m.SourceCounter,m.SourceSequenceStoppedVBlank,audibleOutputVerified=false});
                 return true;
             }
             catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
@@ -133,10 +131,10 @@ public partial class CampaignView
             {
                 var asset=PretRepelAudio.Load(_root);var m=asset.Metadata;
                 _sourceAudio.Register(VerifiedSourceAudioClip.FromQoa(new(m.Id,m.SourceCommit,m.SourceSymbol,m.SourcePath,
-                    m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer),asset.Data,m.EncodedSha256,m.SampleRate,
+                    m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer),asset.Data,m.SampleRate,
                     m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame));
-                Write("repelAudioCatalog",new{PretRepelAudio.ManifestSha256,PretRepelAudio.EncodedBytes,
-                    m.EncodedSha256,m.SourcePcmSha256,m.SourceSequenceStoppedVBlank,audibleOutputVerified=false});
+                Write("repelAudioCatalog",new{PretRepelAudio.EncodedBytes,
+        m.SourceSequenceStoppedVBlank,audibleOutputVerified=false});
                 return true;
             }
             catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
@@ -151,9 +149,9 @@ public partial class CampaignView
             byte[] bytes=_originalAudio.ReadEncodedBytes(id);
             _sourceAudio.Register(clip.Codec switch
             {
-                "vorbis"=>VerifiedSourceAudioClip.FromOgg(metadata,bytes,clip.Sha256,clip.SampleRate,clip.Channels,clip.LogicalFrameCount,clip.LoopStartFrame,clip.LoopEndFrame),
-                "qoa"=>VerifiedSourceAudioClip.FromQoa(metadata,bytes,clip.Sha256,clip.SampleRate,clip.Channels,clip.LogicalFrameCount,clip.LoopStartFrame,clip.LoopEndFrame),
-                "pcm_s16le_wav"=>VerifiedSourceAudioClip.FromWav(metadata,bytes,clip.Sha256,clip.PcmSha256!,clip.LoopStartFrame,clip.LoopEndFrame),
+                "vorbis"=>VerifiedSourceAudioClip.FromOgg(metadata,bytes,clip.SampleRate,clip.Channels,clip.LogicalFrameCount,clip.LoopStartFrame,clip.LoopEndFrame),
+                "qoa"=>VerifiedSourceAudioClip.FromQoa(metadata,bytes,clip.SampleRate,clip.Channels,clip.LogicalFrameCount,clip.LoopStartFrame,clip.LoopEndFrame),
+                "pcm_s16le_wav"=>VerifiedSourceAudioClip.FromWav(metadata,bytes,clip.LoopStartFrame,clip.LoopEndFrame),
                 _=>throw new InvalidDataException("Unsupported audio delivery codec: "+clip.Codec)
             });
             return true;

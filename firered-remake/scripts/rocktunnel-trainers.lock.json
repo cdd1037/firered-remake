@@ -2,184 +2,96 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
-      "path": "asm/macros/event.inc",
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "asm/macros/event.inc"
     },
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
-      "path": "charmap.txt",
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      "path": "charmap.txt"
     },
     {
-      "byteLength": 85293,
-      "gitBlobSha1": "85d043d41773d2a6d33766a5f1c03e70668dac94",
-      "path": "data/battle_ai_scripts.s",
-      "sha256": "0971513157b28ba27ce272acaa2388afa7362a302711f737cad6c3598ca1b389"
+      "path": "data/battle_ai_scripts.s"
     },
     {
-      "byteLength": 5651,
-      "gitBlobSha1": "02fa844fb6799bf2fb84afc1ecdad944918e64e3",
-      "path": "data/maps/RockTunnel_1F/map.json",
-      "sha256": "bf89c9e78f7373691783428c0143b6ecaa52be67edf508859ec175c79701a468"
+      "path": "data/maps/RockTunnel_1F/map.json"
     },
     {
-      "byteLength": 1741,
-      "gitBlobSha1": "6ab2e450609e604eeac20d8f3851612ffb1b9a6e",
-      "path": "data/maps/RockTunnel_1F/scripts.inc",
-      "sha256": "280e115dda1b2bd1bdefed4844fc725209425d4f6610a270c65186eb373bfbd2"
+      "path": "data/maps/RockTunnel_1F/scripts.inc"
     },
     {
-      "byteLength": 11751,
-      "gitBlobSha1": "7aafaf7c3acf639833c485b62025de2a573295b1",
-      "path": "data/maps/RockTunnel_B1F/map.json",
-      "sha256": "668c7ede675ec83008984303faafef1d0b4d6ec5f11bcfb852e73a6280ad3cb8"
+      "path": "data/maps/RockTunnel_B1F/map.json"
     },
     {
-      "byteLength": 1760,
-      "gitBlobSha1": "028414b8aa0700917cb1afe18173d78a7b3cf5f2",
-      "path": "data/maps/RockTunnel_B1F/scripts.inc",
-      "sha256": "1f3956432dd0579b68aeb55d70399c1d88c9510aff382a7f082866728c0c8768"
+      "path": "data/maps/RockTunnel_B1F/scripts.inc"
     },
     {
-      "byteLength": 7083,
-      "gitBlobSha1": "e15914dfe43ff54e1506ae3b844844ea33e43c9c",
-      "path": "data/maps/Route10/map.json",
-      "sha256": "2a150cbfeb76e832d6b3d7f0c5f2023efb3e6df5084f445863dc7bf6e679e7ee"
+      "path": "data/maps/Route10/map.json"
     },
     {
-      "byteLength": 355,
-      "gitBlobSha1": "bafab64e86c602b33495f5a5fd6f3bf0443caf64",
-      "path": "data/maps/Route10/scripts.inc",
-      "sha256": "08161cdc4246161020d873c7fc7aab403f9b0b0e484f1030dca8614e4dafbca4"
+      "path": "data/maps/Route10/scripts.inc"
     },
     {
-      "byteLength": 6415,
-      "gitBlobSha1": "8d961b9312d82c549299006ec56ee96fb13a5593",
-      "path": "data/maps/Route9/map.json",
-      "sha256": "0a8b7cfd3028e15d59903f3f5dfc503f98712e5592d8d6a99a26cddc430d5270"
+      "path": "data/maps/Route9/map.json"
     },
     {
-      "byteLength": 109,
-      "gitBlobSha1": "79090586715c7375f2761ec6439b1d245d9522b6",
-      "path": "data/maps/Route9/scripts.inc",
-      "sha256": "ec7d8d0ebc79b6553b866f49e37581f6a074f42b53ea57609b7d1964a204508f"
+      "path": "data/maps/Route9/scripts.inc"
     },
     {
-      "byteLength": 3768,
-      "gitBlobSha1": "c3e4371962dae55fedfd0b5c2f02068a1f8cf0e7",
-      "path": "data/scripts/trainer_battle.inc",
-      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c"
+      "path": "data/scripts/trainer_battle.inc"
     },
     {
-      "byteLength": 129141,
-      "gitBlobSha1": "5ec6ef8f48493d5fac53600557bc8105fcb2fe67",
-      "path": "data/scripts/trainers.inc",
-      "sha256": "d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945"
+      "path": "data/scripts/trainers.inc"
     },
     {
-      "byteLength": 21838,
-      "gitBlobSha1": "3771ef33a1fec9aacad85d29ebc96c962cf59261",
-      "path": "include/battle.h",
-      "sha256": "bf64a16fb4e660f8a326eb352a511bb9e8fd54a74ebb03e328c08d5a23e5d8fa"
+      "path": "include/battle.h"
     },
     {
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
-      "path": "include/constants/battle.h",
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+      "path": "include/constants/battle.h"
     },
     {
-      "byteLength": 1436,
-      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
-      "path": "include/constants/battle_ai.h",
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+      "path": "include/constants/battle_ai.h"
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
-      "path": "include/constants/battle_setup.h",
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+      "path": "include/constants/battle_setup.h"
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
-      "path": "include/constants/opponents.h",
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+      "path": "include/constants/opponents.h"
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "path": "include/constants/species.h",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "byteLength": 20887,
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
-      "path": "include/constants/trainers.h",
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+      "path": "include/constants/trainers.h"
     },
     {
-      "byteLength": 26962,
-      "gitBlobSha1": "73c013cfaac8c6ea2da753ab30dbad5728ad9aa2",
-      "path": "src/battle_ai_switch_items.c",
-      "sha256": "dad37604fd92c7540f82a360b14db083f5eb1a91878763e6992666ab2f6e947d"
+      "path": "src/battle_ai_switch_items.c"
     },
     {
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
-      "path": "src/battle_main.c",
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+      "path": "src/battle_main.c"
     },
     {
-      "byteLength": 33351,
-      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
-      "path": "src/battle_setup.c",
-      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+      "path": "src/battle_setup.c"
     },
     {
-      "byteLength": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
-      "path": "src/data/pokemon/level_up_learnset_pointers.h",
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+      "path": "src/data/pokemon/level_up_learnset_pointers.h"
     },
     {
-      "byteLength": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
-      "path": "src/data/pokemon/level_up_learnsets.h",
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+      "path": "src/data/pokemon/level_up_learnsets.h"
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
-      "path": "src/data/text/species_names.h",
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      "path": "src/data/text/species_names.h"
     },
     {
-      "byteLength": 242256,
-      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
-      "path": "src/data/trainer_parties.h",
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+      "path": "src/data/trainer_parties.h"
     },
     {
-      "byteLength": 302118,
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
-      "path": "src/data/trainers.h",
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+      "path": "src/data/trainers.h"
     },
     {
-      "byteLength": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "path": "src/pokemon.c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     }
   ],
   "gameEdition": "FIRERED",
   "profile": "firered-rocktunnel-trainers-v1",
   "repository": "pret/pokefirered",
   "romRevision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

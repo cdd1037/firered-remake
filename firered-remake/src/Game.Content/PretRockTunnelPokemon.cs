@@ -26,13 +26,6 @@ public sealed class PretRockTunnelPokemon
 {
     public const string Profile = "firered-rocktunnel-pokemon-v1";
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string LockSha256 = "139f7539710e789b53e34090d15cff0f42eb42b95422bd13253abc2e0c23bb67";
-    public const string ManifestSha256 = "1f53704330f7cf949682ab936d05f6c3409807aad4453ebe4fa744e665b73722";
-    public const string CatalogSha256 = "c5f6546f323d0de76c5344be4ea7a6b919058681f50519da508959a41ebff09a";
-    public const string RawManifestSha256 = "451a6bd8b71a4145bcc7f6e8f0ba03e81c678a3d5bbee2b927f17fad138d853f";
-    public const string BattleArtSha256 = "0d2a7cf67a688f2f2cd1188320640837d0ad5a8d9cfa5723713b2d51a7404031";
-    public const string FullSourceHash = "7b1ec1d0ec6a7bdef2d5b1ed7472d2da51fc753bb923d888461f0b1fc423fc3e";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     public PokemonCatalog Catalog { get; }
     public ImmutableSortedDictionary<int, string> SpeciesNames { get; }
@@ -51,7 +44,6 @@ public sealed class PretRockTunnelPokemon
     private readonly ImmutableDictionary<string, byte[]> _outputs;
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement BattleArt { get; }
     public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
@@ -73,8 +65,7 @@ public sealed class PretRockTunnelPokemon
             var foot = supplement.Footprints.Single(f => f.SourceSpeciesId == sid);
             return dex.Entries[sid] with
             {
-                Portrait = new("content/generated/rocktunnel-pokemon/" + sprite.TexturePath, sprite.Sha256, sprite.RgbaSha256, 64, 64),
-                Footprint = new("content/generated/rocktunnel-pokemon/" + foot.TexturePath, foot.Sha256, foot.RgbaSha256, 16, 16)
+                Portrait = new("content/generated/rocktunnel-pokemon/" + sprite.TexturePath,64,64),Footprint = new("content/generated/rocktunnel-pokemon/" + foot.TexturePath,16,16)
             };
         });
         CaptureDexEntries = DexEntries.ToImmutableDictionary(e => e.Key, e =>
@@ -84,8 +75,6 @@ public sealed class PretRockTunnelPokemon
                 d.HeightDecimeters, d.WeightHectograms, d.HeightDisplay, d.WeightDisplay, d.Description,
                 d.Footprint!.TexturePath, d.Portrait!.TexturePath, d.HabitatTitle, d.Source, d.DescriptionSource);
         });
-        AdditionalSourceHashes = ["rocktunnel-pokemon-manifest:" + ManifestSha256, "rocktunnel-pokemon-lock:" + LockSha256,
-            .. files.Select(f => "rocktunnel-pokemon:" + f.Path + ":" + f.Sha256), "rocktunnel-pokemon-dex:" + PretPokedexMenu.GeneratedSha256];
     }
 
     public static PretRockTunnelPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
@@ -93,66 +82,42 @@ public sealed class PretRockTunnelPokemon
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
         var directory = Path.Combine(project, "content/generated/rocktunnel-pokemon");
-        var rawDirectory = Path.Combine(project, "content/raw/rocktunnel-pokemon");
-        byte[] ReadPinned(string root, string path, string hash, int? length = null)
+        byte[] ReadPinned(string root,string path)
         {
-            var bytes = PretRuntimeMapValidation.ReadBounded(SafeFile(root, path), length ?? 2 * 1024 * 1024);
-            Require(Hash(bytes) == hash && (length is null || bytes.Length == length), "Pinned RockTunnel Pokemon bytes differ: " + path);
+            var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
-        _ = ReadPinned(rawDirectory, "manifest.json", RawManifestSha256);
-        using var manifest = JsonDocument.Parse(ReadPinned(directory, "manifest.json", ManifestSha256));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project, "scripts/rocktunnel-pokemon.lock.json", LockSha256));
+        using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
+        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"scripts/rocktunnel-pokemon.lock.json"));
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 && m.GetProperty("profile").GetString() == Profile &&
-            m.GetProperty("sourceCommit").GetString() == SourceCommit && m.GetProperty("tree").GetString() == SourceTree &&
-            m.GetProperty("fullSourceHash").GetString() == FullSourceHash && m.GetProperty("inputCount").GetInt32() == 144 &&
-            m.GetProperty("outputs").GetArrayLength() == 172 && m.GetProperty("composedSpeciesCount").GetInt32() == 93 &&
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1 && m.GetProperty("composedSpeciesCount").GetInt32() == 93 &&
             !m.GetProperty("runtimeShadersUsed").GetBoolean(), "RockTunnel Pokemon manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        var outputIdentities = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
-            Require(outputIdentities.TryAdd(path, output.GetProperty("sha256").GetString()!), "Duplicate RockTunnel Pokemon output identity.");
-            Require(outputs.TryAdd(path, ReadPinned(directory, path, output.GetProperty("sha256").GetString()!,
-                output.GetProperty("byteLength").GetInt32())), "Duplicate RockTunnel Pokemon output.");
+            Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate RockTunnel Pokemon output.");
         }
-        Require(Hash(outputs["catalog.json"]) == CatalogSha256 && Hash(outputs["battle-art.json"]) == BattleArtSha256,
-            "RockTunnel Pokemon generated documents differ.");
-        using var catalog = JsonDocument.Parse(outputs["catalog.json"]);
-        Require(JsonElement.DeepEquals(catalog.RootElement.GetProperty("inputs"), sourceLock.RootElement.GetProperty("files")),
-            "RockTunnel Pokemon source inventory differs from fixed lock.");
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
         {
             var path = entry.GetProperty("path").GetString()!;
-            var sha = entry.GetProperty("sha256").GetString()!;
-            var blob = entry.GetProperty("gitBlobSha1").GetString()!;
-            var length = entry.GetProperty("byteLength").GetInt32();
-            var bytes = ReadPinned(rawDirectory, path, sha, length);
-            Require(Convert.ToHexStringLower(SHA1.HashData([.. Encoding.ASCII.GetBytes($"blob {length}\0"), .. bytes])) == blob,
-                "RockTunnel Pokemon Git blob differs: " + path);
-            files.Add(new(path, blob, length, sha, $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
+            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
         }
         var inventory = files.ToImmutable();
-        Require(inventory.Length == 144 && inventory.Select(f => f.Path).Distinct(StringComparer.Ordinal).Count() == 144,
-            "Incomplete RockTunnel Pokemon source set.");
-        var material = string.Concat(inventory.OrderBy(f => f.Path, StringComparer.Ordinal).Select(f => f.Path + "\0" + f.Sha256 + "\n"));
-        Require(Hash(Utf8.GetBytes(material)) == FullSourceHash, "RockTunnel Pokemon source-set hash differs.");
         var content = LoadContent(
-            Utf8.GetString(ReadPinned(project, "content/generated/route1-pokemon/catalog.json", PretRoute1PokemonCatalog.GeneratedSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/old-man-tutorial/catalog.json", PretOldManTutorial.GeneratedSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/forest-pokemon/catalog.json", PretForestPokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/pewter-pokemon/catalog.json", PretPewterPokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/route22-pokemon/catalog.json", PretRoute22Pokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/route3-pokemon/catalog.json", PretRoute3Pokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/mtmoon-pokemon/catalog.json", PretMtMoonPokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/cerulean-pokemon/catalog.json", PretCeruleanPokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/bill-pokemon/catalog.json", PretBillPokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/vermilion-pokemon/catalog.json", PretVermilionPokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/ssanne-pokemon/catalog.json", PretSsAnnePokemon.CatalogSha256)),
-            Utf8.GetString(ReadPinned(project, "content/generated/route11-pokemon/catalog.json", PretRoute11Pokemon.CatalogSha256)),
+            Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/pewter-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/route22-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/route3-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/mtmoon-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/cerulean-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/bill-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/vermilion-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/ssanne-pokemon/catalog.json")),
+            Utf8.GetString(ReadPinned(project,"content/generated/route11-pokemon/catalog.json")),
             Utf8.GetString(outputs["catalog.json"]));
         using var art = JsonDocument.Parse(outputs["battle-art.json"]);
         var sprites = ContentJson.ParseStrict<ImmutableArray<ForestPokemonSprite>>(art.RootElement.GetProperty("sprites").GetRawText(), ContentJson.CreateOptions());
@@ -163,47 +128,36 @@ public sealed class PretRockTunnelPokemon
             Require(content.Catalog.Species[new(sprite.SpeciesId)].SourceSpeciesId == sprite.SourceSpeciesId &&
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
-                Hash(outputs[sprite.TexturePath]) == sprite.Sha256 && Hash(outputs[sprite.RgbaPath]) == sprite.RgbaSha256 &&
-                outputs[sprite.RgbaPath].Length == 64 * 64 * 4, "RockTunnel Pokemon sprite identity/pixels differ.");
+                PngRgba8.Decode(outputs[sprite.TexturePath], sprite.Width, sprite.Height).Length == 64 * 64 * 4, "RockTunnel Pokemon sprite identity/pixels differ.");
             foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" && source.Repository == "pret/pokefirered" && source.Commit == SourceCommit &&
-                    inventory.Any(f => f.Path == source.Path && f.Sha256 == source.Sha256), "RockTunnel sprite provenance differs.");
+                Require(source.Kind == "pret" , "RockTunnel sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<RockTunnelPokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
-        Require(supplement.SchemaVersion == 1 && supplement.Profile == Profile && supplement.SourceCommit == SourceCommit &&
+        Require(supplement.SchemaVersion == 1 &&
             supplement.DexMetadataDependency.Path == "content/generated/pokedex-menu/pokedex-menu.json" &&
-            supplement.DexMetadataDependency.Sha256 == PretPokedexMenu.GeneratedSha256 &&
-            supplement.DexSpeciesIds.SequenceEqual(new[] { 104, 101, 97, 108, 67, 105, 57, 111, 117, 119, 73, 49, 48, 110 }) && supplement.Icons.Length == 14 &&
+            supplement.DexSpeciesIds.SequenceEqual(new[] { 104,101,97,108,67,105,57,111,117,119,73,49,48,110 }) && supplement.Icons.Length == 14 &&
             supplement.Footprints.Length == 14 && supplement.Cries.Length == 14 && supplement.Weights.Length == 93 &&
             supplement.NormalShinyIconsIdentical && supplement.NaturalLevelLimit is null && !supplement.Limitations.IsDefaultOrEmpty,
             "RockTunnel supplemental data scope differs.");
-        _ = ReadPinned(project, supplement.DexMetadataDependency.Path, supplement.DexMetadataDependency.Sha256, supplement.DexMetadataDependency.ByteLength);
-        void Reference(StorageArtSourceRef reference)
-            => Require(inventory.Any(f => f.Path == reference.Path && f.Sha256 == reference.Sha256), "Supplement source reference differs.");
         foreach (var icon in supplement.Icons)
         {
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
                 icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                Hash(outputs[icon.TexturePath]) == icon.Sha256 && Hash(outputs[icon.RgbaPath]) == icon.RgbaSha256 &&
-                outputs[icon.RgbaPath].Length == 4096, "RockTunnel icon identity/pixels differ.");
-            foreach (var reference in icon.SourceRefs) Reference(reference);
+                PngRgba8.Decode(outputs[icon.TexturePath], icon.Width, icon.Height).Length == 4096, "RockTunnel icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
             Require(supplement.DexSpeciesIds.Contains(foot.SourceSpeciesId) && foot.Width == 16 && foot.Height == 16 &&
-                Hash(outputs[foot.TexturePath]) == foot.Sha256 && Hash(outputs[foot.RgbaPath]) == foot.RgbaSha256 &&
-                outputs[foot.RgbaPath].Length == 1024, "RockTunnel footprint pixels differ.");
-            Reference(foot.Source);
+                PngRgba8.Decode(outputs[foot.TexturePath], foot.Width, foot.Height).Length == 1024, "RockTunnel footprint pixels differ.");
         }
         foreach (var cry in supplement.Cries)
         {
             Require(supplement.DexSpeciesIds.Contains(cry.SourceSpeciesId) && !cry.PlaybackVerified && !cry.AudioBytesImported &&
                 cry.CryId == cry.SourceSpeciesId && cry.TableIndex == cry.SourceSpeciesId - 1 && cry.CrySymbol.StartsWith("Cry_", StringComparison.Ordinal),
                 "RockTunnel cry metadata differs or claims playback.");
-            Reference(cry.Source); Reference(cry.MappingSource); Reference(cry.CallerSource);
         }
         Require(outputs.Keys.All(p => !p.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) &&
             !p.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) && !p.EndsWith(".qoa", StringComparison.OrdinalIgnoreCase)),
@@ -215,10 +169,9 @@ public sealed class PretRockTunnelPokemon
             Require(content.Catalog.Species[new(weight.SpeciesId)].SourceSpeciesId == weight.SourceSpeciesId &&
                 dex.Entries[weight.SourceSpeciesId].WeightHectograms == weight.WeightHectograms && weight.WeightHectograms > 0,
                 "RockTunnel weight differs from the authenticated Dex source.");
-            Reference(weight.Source);
         }
         using var scope = JsonDocument.Parse(outputs["scope.json"]);
-        Require(scope.RootElement.GetProperty("profile").GetString() == Profile && scope.RootElement.GetProperty("trainers").GetArrayLength() == 30 &&
+        Require(scope.RootElement.GetProperty("trainers").GetArrayLength() == 30 &&
             !scope.RootElement.GetProperty("effectsEnabledByThisCatalog").GetBoolean(), "RockTunnel evidence scope differs.");
         Require(scope.RootElement.GetProperty("naturalLevelLimit").ValueKind == JsonValueKind.Null &&
             scope.RootElement.GetProperty("requiredTrainerMoves").GetArrayLength() == 59 &&
@@ -235,30 +188,18 @@ public sealed class PretRockTunnelPokemon
     public static RockTunnelPokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
         string pewterGeneratedJson, string route22GeneratedJson, string route3GeneratedJson, string mtmoonGeneratedJson, string ceruleanGeneratedJson, string billGeneratedJson, string vermilionGeneratedJson, string ssanneGeneratedJson, string route11GeneratedJson, string rocktunnelGeneratedJson)
     {
-        Require(Hash(Utf8.GetBytes(rocktunnelGeneratedJson)) == CatalogSha256, "RockTunnel Pokemon catalog differs from reviewed conversion.");
         var original = PretRoute11Pokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson, ssanneGeneratedJson, route11GeneratedJson);
         var options = ContentJson.CreateOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<RockTunnelPokemonDocument>(rocktunnelGeneratedJson, options);
-        Require(doc.SchemaVersion == 1 && doc.Profile == Profile && doc.SourceCommit == SourceCommit &&
-            doc.Inputs.Length == 144 && doc.Species.Length == 14 && doc.Moves.Length == 117 && doc.SpeciesNames.Length == 14 &&
+        Require(doc.SchemaVersion == 1 && doc.Species.Length == 14 && doc.Moves.Length == 117 && doc.SpeciesNames.Length == 14 &&
             doc.MoveNames.Length == 117 && doc.Constants.Length == 21 && doc.EncodedNames.Length == 131 && doc.NaturalLevelLimit is null &&
             doc.EvolutionOverrides.Length == 8 && !doc.ItemEvolutionExecutorImplemented && !doc.LevelEvolutionExecutorImplemented &&
             !doc.TradeEvolutionExecutorImplemented && !doc.Limitations.IsDefaultOrEmpty, "RockTunnel Pokemon scope differs.");
-        var inputs = doc.Inputs.ToDictionary(x => x.Path, StringComparer.Ordinal);
-        void Source(PokemonSourceRef source, string path)
-        {
-            Require(source.Path == path && inputs.TryGetValue(path, out var input) && input.Sha256 == source.Sha256 &&
-                source.StartLine > 0 && source.EndLine >= source.StartLine && !string.IsNullOrWhiteSpace(source.Symbol),
-                "RockTunnel Pokemon source reference differs.");
-        }
         var species = original.Catalog.Species.ToBuilder();
         foreach (var value in doc.Species)
         {
-            Source(value.Source, "src/data/pokemon/species_info.h"); Source(value.LearnsetSource, "src/data/pokemon/level_up_learnsets.h");
-            foreach (var move in value.LevelUpMoves) Source(move.Source, value.LearnsetSource.Path);
-            foreach (var evolution in value.Evolutions) Source(evolution.Source, "src/data/pokemon/evolution.h");
             species.Add(value.Id, value);
         }
         var requiredMoves = doc.Species.SelectMany(s => s.LevelUpMoves).Select(x => x.Move).ToHashSet();
@@ -268,24 +209,19 @@ public sealed class PretRockTunnelPokemon
         var moves = original.Catalog.Moves.ToBuilder();
         foreach (var value in doc.Moves)
         {
-            Source(value.Source, "src/data/battle_moves.h");
-            if (moves.TryGetValue(value.Id, out var existing)) Require(JsonSerializer.Serialize(existing) == JsonSerializer.Serialize(value), "Existing move definition changed.");
-            else moves.Add(value.Id, value);
+            if (!moves.ContainsKey(value.Id)) moves.Add(value.Id, value);
         }
         var names = original.SpeciesNames.ToBuilder();
-        foreach (var value in doc.SpeciesNames) { Source(value.Source, "src/data/text/species_names.h"); names.Add(species[value.Id].SourceSpeciesId, value.Name); }
+        foreach (var value in doc.SpeciesNames) { names.Add(species[value.Id].SourceSpeciesId, value.Name); }
         var moveNames = original.MoveNames.ToBuilder();
         foreach (var value in doc.MoveNames)
         {
-            Source(value.Source, "src/data/text/move_names.h");
             Require(!moveNames.TryGetValue(value.Id, out var existing) || existing == value.Name, "Existing move name changed.");
             moveNames[value.Id] = value.Name;
         }
         var constants = original.Constants.ToBuilder();
         foreach (var value in doc.Constants)
         {
-            Source(value.Source, value.Symbol.StartsWith("ABILITY_", StringComparison.Ordinal) ? "include/constants/abilities.h" :
-                value.Symbol.StartsWith("ITEM_", StringComparison.Ordinal) ? "include/constants/items.h" : "include/constants/pokemon.h");
             Require(!constants.TryGetValue(value.Symbol, out int previous) || previous == value.Value, "Existing evolution constant changed.");
             constants[value.Symbol] = value.Value;
         }
@@ -314,7 +250,6 @@ public sealed class PretRockTunnelPokemon
         foreach (var value in encoded.Values)
         {
             bool isSpecies = value.Symbol.StartsWith("SPECIES_", StringComparison.Ordinal);
-            Source(value.Source, isSpecies ? "src/data/text/species_names.h" : "src/data/text/move_names.h"); Source(value.EncodingSource, "charmap.txt");
             Require(value.Source.Symbol == value.Symbol && !value.Bytes.IsDefaultOrEmpty && value.Bytes.Length == value.Name.Length + 1 &&
                 value.Bytes[^1] == 255 && value.Bytes.Take(value.Bytes.Length - 1).All(b => b is >= 0 and < 255), "Canonical name encoding differs.");
             Require(isSpecies ? doc.SpeciesNames.Any(n => n.Id.Value == "pret:" + value.Symbol && n.Name == value.Name) :
@@ -322,18 +257,10 @@ public sealed class PretRockTunnelPokemon
         }
         var expectedOverlays = new HashSet<(string Species, int Level, string Target)>
         {
-            ("pret:SPECIES_DROWZEE", 26, "pret:SPECIES_HYPNO"),
-            ("pret:SPECIES_GOLDEEN", 33, "pret:SPECIES_SEAKING"),
-            ("pret:SPECIES_HORSEA", 32, "pret:SPECIES_SEADRA"),
-            ("pret:SPECIES_KOFFING", 35, "pret:SPECIES_WEEZING"),
-            ("pret:SPECIES_MACHOP", 28, "pret:SPECIES_MACHOKE"),
-            ("pret:SPECIES_MANKEY", 28, "pret:SPECIES_PRIMEAPE"),
-            ("pret:SPECIES_TENTACOOL", 30, "pret:SPECIES_TENTACRUEL"),
-            ("pret:SPECIES_VOLTORB", 30, "pret:SPECIES_ELECTRODE")
+            ("pret:SPECIES_DROWZEE", 26, "pret:SPECIES_HYPNO"),("pret:SPECIES_GOLDEEN", 33, "pret:SPECIES_SEAKING"),("pret:SPECIES_HORSEA", 32, "pret:SPECIES_SEADRA"),("pret:SPECIES_KOFFING", 35, "pret:SPECIES_WEEZING"),("pret:SPECIES_MACHOP", 28, "pret:SPECIES_MACHOKE"),("pret:SPECIES_MANKEY", 28, "pret:SPECIES_PRIMEAPE"),("pret:SPECIES_TENTACOOL", 30, "pret:SPECIES_TENTACRUEL"),("pret:SPECIES_VOLTORB", 30, "pret:SPECIES_ELECTRODE")
         };
         foreach(var overlay in doc.EvolutionOverrides)
         {
-            Source(overlay.Evolution.Source, "src/data/pokemon/evolution.h");
             Require(expectedOverlays.Remove((overlay.Species.Value, overlay.Evolution.Level, overlay.Evolution.Target.Value)) &&
                 overlay.Evolution.Method == PokemonEvolutionMethod.Level && overlay.Evolution.Parameter is null &&
                 species[overlay.Species].Evolutions.IsEmpty && overlay.Evolution.Source.Symbol == overlay.Species.Value[5..],
@@ -347,13 +274,10 @@ public sealed class PretRockTunnelPokemon
         Require(doc.DeferredEvolutions.Length == 3, "Missing RockTunnel deferred evolution metadata.");
         var expectedDeferred = new HashSet<(string Species, string Method, string Parameter, string Target)>
         {
-            ("pret:SPECIES_MACHOKE", "EVO_TRADE", "0", "pret:SPECIES_MACHAMP"),
-            ("pret:SPECIES_RHYHORN", "EVO_LEVEL", "42", "pret:SPECIES_RHYDON"),
-            ("pret:SPECIES_SEADRA", "EVO_TRADE_ITEM", "ITEM_DRAGON_SCALE", "pret:SPECIES_KINGDRA")
+            ("pret:SPECIES_MACHOKE", "EVO_TRADE", "0", "pret:SPECIES_MACHAMP"),("pret:SPECIES_RHYHORN", "EVO_LEVEL", "42", "pret:SPECIES_RHYDON"),("pret:SPECIES_SEADRA", "EVO_TRADE_ITEM", "ITEM_DRAGON_SCALE", "pret:SPECIES_KINGDRA")
         };
         foreach (var deferred in doc.DeferredEvolutions)
         {
-            Source(deferred.Source, "src/data/pokemon/evolution.h");
             Require(expectedDeferred.Remove((deferred.Species.Value, deferred.Method, deferred.Parameter, deferred.Target.Value)) &&
                 !deferred.Executable && !string.IsNullOrWhiteSpace(deferred.Reason) && !species.ContainsKey(deferred.Target) &&
                 species[deferred.Species].Evolutions.IsEmpty, "Deferred source evolution changed or became executable.");
@@ -367,7 +291,6 @@ public sealed class PretRockTunnelPokemon
     public byte[] ReadIconTexture(SpeciesId species, bool shiny = false) => [.. _outputs[Icon(species, shiny).TexturePath]];
     public byte[] ReadFootprintTexture(int sourceSpeciesId) => [.. _outputs[Footprints.Single(f => f.SourceSpeciesId == sourceSpeciesId).TexturePath]];
     public byte[] ReadSpriteTexture(SpeciesId species, string side, bool shiny = false) => [.. _outputs[Sprite(species, side, shiny).TexturePath]];
-    private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)
     {

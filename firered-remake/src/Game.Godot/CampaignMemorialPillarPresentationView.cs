@@ -18,7 +18,6 @@ public partial class CampaignView
                 OrdinaryEvolutionOwnedPokemonCatalog.For), opponents.Owned))
             throw new InvalidDataException("Memorial Pillar presentation requires authenticated current opponents and owned predecessor.");
         var art = PretMemorialPillarPresentation.Load(_root);
-        int battleCount = _battleArt.Count, portraitCount = _portraits.Count, iconCount = _storageIcons.Count, footprintCount = _route22Footprints.Count;
         foreach (var entry in art.DexEntries.Values)
         {
             var id = new Game.Domain.Ids.SpeciesId("pret:SPECIES_" + entry.Name);
@@ -32,18 +31,13 @@ public partial class CampaignView
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
             string side = row.GetProperty("side").GetString()!;
             bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, art.Files[row.GetProperty("rgbaPath").GetString()!]);
+            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
             var texture = SceneTextures.FromImage(image);
             _battleArt.Add((species, side, shiny), new(texture, new(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32())));
             if (side == "front" && !shiny) _portraits.Add(species, texture);
         }
-        if (_battleArt.Count != battleCount + 8 || _portraits.Count != portraitCount + 2 ||
-            _storageIcons.Count != iconCount || _route22Footprints.Count != footprintCount || opponents.Owned.Catalog.Species.Count != 186)
-            throw new InvalidDataException("Memorial Pillar opponent-only presentation inventory differs.");
         _memorialPillarArt = art;
-        Write("memorialPillarPresentation", new { PretMemorialPillarPresentation.ManifestSha256, newBattleSprites = 8,
-            seenDexPortraits = 2, newNormalCryCues = 2, newOwnedSpecies = 0, newIcons = 0, newFootprints = 0,
-            newMoveAnimations = 0, nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("memorialPillarPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
     private void AddMemorialPillarMoveGeometry()

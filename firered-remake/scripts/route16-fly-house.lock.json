@@ -3,97 +3,71 @@
   "completeGame": false,
   "files": [
     {
-      "byteLength": 56947,
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
       "path": "asm/macros/event.inc",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671",
-      "storagePath": "content/raw/city-services/asm/macros/event.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/asm/macros/event.inc"
     },
     {
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
       "path": "charmap.txt",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061",
-      "storagePath": "content/raw/silph-catalogs/charmap.txt"
+      "storagePath": "content/raw/pokefirered/037335f4/charmap.txt"
     },
     {
-      "byteLength": 55643,
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
       "path": "data/event_scripts.s",
       "reuseExisting": true,
       "roles": [
         "script-label-closure",
         "source-dependency"
       ],
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
-      "storagePath": "content/raw/regional-service-maps/data/event_scripts.s"
+      "storagePath": "content/raw/pokefirered/037335f4/data/event_scripts.s"
     },
     {
-      "byteLength": 8,
-      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
       "path": "data/layouts/House1/border.bin",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "e0d28e51c7e052913771ad123ea4ae85d601f22af3040d698e9b1f6a6ecb5196",
-      "storagePath": "content/raw/city-services/data/layouts/House1/border.bin"
+      "storagePath": "content/raw/pokefirered/037335f4/data/layouts/House1/border.bin"
     },
     {
-      "byteLength": 198,
-      "gitBlobSha1": "7fb8f8319113d2efd2702b29c94577c2b01b678d",
       "path": "data/layouts/House1/map.bin",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "e6d350c5a60c8a27e510abc7a818c628225b0794959506b15d7c99e9dea8c090",
-      "storagePath": "content/raw/city-services/data/layouts/House1/map.bin"
+      "storagePath": "content/raw/pokefirered/037335f4/data/layouts/House1/map.bin"
     },
     {
-      "byteLength": 158096,
-      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
       "path": "data/layouts/layouts.json",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
-      "storagePath": "content/raw/regional-service-maps/data/layouts/layouts.json"
+      "storagePath": "content/raw/pokefirered/037335f4/data/layouts/layouts.json"
     },
     {
-      "byteLength": 6022,
-      "gitBlobSha1": "c49959463ba0dcb0bee1cc70fd2b078c51071b55",
       "path": "data/maps/Route16/map.json",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "40b6d9e1ce68a55b44dfd91e2915e3a12d2a2582b141556cfb90c71214b014d3",
-      "storagePath": "content/raw/snorlax-region/data/maps/Route16/map.json"
+      "storagePath": "content/raw/pokefirered/037335f4/data/maps/Route16/map.json"
     },
     {
-      "byteLength": 1699,
-      "gitBlobSha1": "b2a9374c73acc0b33e38d177a94f6b6392c5dec4",
       "path": "data/maps/Route16_House/map.json",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "f8a4073125b8cbb6daba90c1c7ed19c19fd9e4f4942ab1a0caf68d84b8ed6353",
-      "storagePath": "content/raw/snorlax-region/data/maps/Route16_House/map.json"
+      "storagePath": "content/raw/pokefirered/037335f4/data/maps/Route16_House/map.json"
     },
     {
-      "byteLength": 814,
-      "gitBlobSha1": "a1abb3d82bff2ae3453ee89f8a25af23e0ba6854",
       "path": "data/maps/Route16_House/scripts.inc",
       "reuseExisting": false,
       "roles": [
@@ -101,12 +75,9 @@
         "script-label-closure",
         "source-dependency"
       ],
-      "sha256": "406a9f3221438603f5cbcca8852385301e2ccf0dec2ebfec5180211d20591b28",
-      "storagePath": "content/raw/route16-fly-house/data/maps/Route16_House/scripts.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/data/maps/Route16_House/scripts.inc"
     },
     {
-      "byteLength": 641,
-      "gitBlobSha1": "3966d09827555805586d0eaacd67ef73d6c15a36",
       "path": "data/maps/Route16_House/text.inc",
       "reuseExisting": false,
       "roles": [
@@ -114,784 +85,573 @@
         "script-label-closure",
         "source-dependency"
       ],
-      "sha256": "79b035fef570bc40db24b62d5af2646849540eb64e440f0eee74f60ad55860d8",
-      "storagePath": "content/raw/route16-fly-house/data/maps/Route16_House/text.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/data/maps/Route16_House/text.inc"
     },
     {
-      "byteLength": 4344,
-      "gitBlobSha1": "272c358b9a300587bdd0635b90aa4b06118fea00",
       "path": "data/maps/Route16_NorthEntrance_1F/map.json",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "3d67f5e367e86eaacf29b7350db39bc6d679e8b588a23e4213332cade10d5e89",
-      "storagePath": "content/raw/snorlax-region/data/maps/Route16_NorthEntrance_1F/map.json"
+      "storagePath": "content/raw/pokefirered/037335f4/data/maps/Route16_NorthEntrance_1F/map.json"
     },
     {
-      "byteLength": 5866,
-      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9",
       "path": "data/scripts/obtain_item.inc",
       "reuseExisting": true,
       "roles": [
         "script-label-closure",
         "source-dependency"
       ],
-      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d",
-      "storagePath": "content/raw/regional-service-maps/data/scripts/obtain_item.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/data/scripts/obtain_item.inc"
     },
     {
-      "byteLength": 1040,
-      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde",
       "path": "data/scripts/std_msgbox.inc",
       "reuseExisting": true,
       "roles": [
         "script-label-closure",
         "source-dependency"
       ],
-      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431",
-      "storagePath": "content/raw/regional-service-maps/data/scripts/std_msgbox.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/data/scripts/std_msgbox.inc"
     },
     {
-      "byteLength": 129141,
-      "gitBlobSha1": "5ec6ef8f48493d5fac53600557bc8105fcb2fe67",
       "path": "data/scripts/trainers.inc",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945",
-      "storagePath": "content/raw/snorlax-region/data/scripts/trainers.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/data/scripts/trainers.inc"
     },
     {
-      "byteLength": 1065,
-      "gitBlobSha1": "8d2708166d4d21da3a6c20282e0ebf244ca0d57e",
       "path": "data/text/obtain_item.inc",
       "reuseExisting": true,
       "roles": [
         "script-label-closure",
         "source-dependency"
       ],
-      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813",
-      "storagePath": "content/raw/regional-service-maps/data/text/obtain_item.inc"
+      "storagePath": "content/raw/pokefirered/037335f4/data/text/obtain_item.inc"
     },
     {
-      "byteLength": 2560,
-      "gitBlobSha1": "3dbc31883fdd14f31c7b86981508cc08ed3cc395",
       "path": "data/tilesets/primary/building/metatile_attributes.bin",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "c609529ecdf1b443b75f144fd733f353a8ddaeb3584ab018a369bb2bea8da5d4",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/metatile_attributes.bin"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/metatile_attributes.bin"
     },
     {
-      "byteLength": 10240,
-      "gitBlobSha1": "024797c8ee2b805df8566a62fb4e65f3244dac39",
       "path": "data/tilesets/primary/building/metatiles.bin",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "6b53b219dcacf26af58c7174279c24a44ad13194c7292c74fcf24c48a1be4b4b",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/metatiles.bin"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/metatiles.bin"
     },
     {
-      "byteLength": 203,
-      "gitBlobSha1": "3b6416376ec903750b97307c613328b124481489",
       "path": "data/tilesets/primary/building/palettes/00.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "6d8396ee26f5d12f993004066251e5b0b578adad04740aa17745a70853a1a725",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/00.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/00.pal"
     },
     {
-      "byteLength": 203,
-      "gitBlobSha1": "66561f6d3326d5c3c717426abed1b9b5ce771c29",
       "path": "data/tilesets/primary/building/palettes/01.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "93c52f1deab53435356361fe1c47de7d6a038ae6f393adc8650a1641ed10846c",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/01.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/01.pal"
     },
     {
-      "byteLength": 200,
-      "gitBlobSha1": "87a022102f199020c802e20c91a39c6e3461f929",
       "path": "data/tilesets/primary/building/palettes/02.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "220932f7bc7c1a6ef2dfa2efdc47d6b0f238440361400b629c441acd89306bea",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/02.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/02.pal"
     },
     {
-      "byteLength": 203,
-      "gitBlobSha1": "783496dcd9bf89b72ffc26a29991f49600a8c355",
       "path": "data/tilesets/primary/building/palettes/03.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "103665f17a67f4a83acfefdfa04a4e1ce736927dd65a9b6b64867ecbb9437c6c",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/03.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/03.pal"
     },
     {
-      "byteLength": 206,
-      "gitBlobSha1": "89eace6050ad504ce38e5ee5615def5d5109d3bf",
       "path": "data/tilesets/primary/building/palettes/04.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "7a205e7a627e475e0f110f4082c221c39fb10c7b543cf4c90f1e6817831f30a1",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/04.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/04.pal"
     },
     {
-      "byteLength": 195,
-      "gitBlobSha1": "c7780e5c7515197b8faf0eda54968653ed5e8c04",
       "path": "data/tilesets/primary/building/palettes/05.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "63c7f7fc52611a66b6371ea09da8d30ab1e9763136aceeb93bcae1016ba42211",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/05.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/05.pal"
     },
     {
-      "byteLength": 119,
-      "gitBlobSha1": "1d08ce9a2024a64b883c14bc907b448733603a8a",
       "path": "data/tilesets/primary/building/palettes/06.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "a88e85688071309411a19eea8f42792b69e073af41b5be6be6743f7e36b435f0",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/palettes/06.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/palettes/06.pal"
     },
     {
-      "byteLength": 7011,
-      "gitBlobSha1": "8d864f27e2f1167e5879d3e8ec5b8546311208ba",
       "path": "data/tilesets/primary/building/tiles.png",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "0c6faa0058210ffd5794613c28969d1982737cc3b7d4feeab03a13895c8363f2",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/primary/building/tiles.png"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/primary/building/tiles.png"
     },
     {
-      "byteLength": 96,
-      "gitBlobSha1": "be95e451cd25ba56db5e830427fd37f0433d2ebb",
       "path": "data/tilesets/secondary/generic_building_1/metatile_attributes.bin",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "f3eeab19d3b86637c293fd535a3a3de6c22238c7efd126e79c74a0ada34ac637",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/metatile_attributes.bin"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/metatile_attributes.bin"
     },
     {
-      "byteLength": 384,
-      "gitBlobSha1": "806d040ce610b7b1e2704f4de10cb5586849cbed",
       "path": "data/tilesets/secondary/generic_building_1/metatiles.bin",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "f73d826f0ea271ecc32785c45b04697fb507b061259e9f0ce3dbd665fc928990",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/metatiles.bin"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/metatiles.bin"
     },
     {
-      "byteLength": 162,
-      "gitBlobSha1": "c1e7c3d5c579c24997b6530692a6e52e3d9c13e9",
       "path": "data/tilesets/secondary/generic_building_1/palettes/07.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "86e55272f3d9823763f6b4345297787f060aa3974efa53fa83ddea93ae4dc0c6",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/palettes/07.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/palettes/07.pal"
     },
     {
-      "byteLength": 197,
-      "gitBlobSha1": "18480092bee784156a935de6f9a746aec1e27edd",
       "path": "data/tilesets/secondary/generic_building_1/palettes/08.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "fcb5aa6ea392db03980cb83438f7858f01f22ec5655b38cb6057b1c20c35368a",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/palettes/08.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/palettes/08.pal"
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/generic_building_1/palettes/09.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/palettes/09.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/palettes/09.pal"
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/generic_building_1/palettes/10.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/palettes/10.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/palettes/10.pal"
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/generic_building_1/palettes/11.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/palettes/11.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/palettes/11.pal"
     },
     {
-      "byteLength": 117,
-      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
       "path": "data/tilesets/secondary/generic_building_1/palettes/12.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/palettes/12.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/palettes/12.pal"
     },
     {
-      "byteLength": 748,
-      "gitBlobSha1": "19128719751b5a94b37839d0701f6e5e339e5eb1",
       "path": "data/tilesets/secondary/generic_building_1/tiles.png",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "efff402dbbe15d908c73aed857c19ca61ea5cdc5347c2815f81304746cd5ac4f",
-      "storagePath": "content/raw/regional-service-maps/data/tilesets/secondary/generic_building_1/tiles.png"
+      "storagePath": "content/raw/pokefirered/037335f4/data/tilesets/secondary/generic_building_1/tiles.png"
     },
     {
-      "byteLength": 185,
-      "gitBlobSha1": "0c60b08a5b8b6e54123283eb221df86b06e2db59",
       "path": "graphics/object_events/palettes/npc_green.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "5197d4636852e15601d101670ae9889aaae3ad847f712f98df06df87f0906f19",
-      "storagePath": "content/raw/regional-service-maps/graphics/object_events/palettes/npc_green.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/palettes/npc_green.pal"
     },
     {
-      "byteLength": 186,
-      "gitBlobSha1": "1646e805e636837f975619827060764e7aa48293",
       "path": "graphics/object_events/palettes/npc_white.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "31668dbee587a2e6c7238d4ff94a090e753ddcc06336649a186ab124ad4a6c97",
-      "storagePath": "content/raw/regional-service-maps/graphics/object_events/palettes/npc_white.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/palettes/npc_white.pal"
     },
     {
-      "byteLength": 189,
-      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
       "path": "graphics/object_events/palettes/player.pal",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c",
-      "storagePath": "content/raw/regional-service-maps/graphics/object_events/palettes/player.pal"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/palettes/player.pal"
     },
     {
-      "byteLength": 742,
-      "gitBlobSha1": "377224e2f5c6bca2ff5d762f22fc214a6982f772",
       "path": "graphics/object_events/pics/people/red_normal.png",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "94eb37499a8bd663f47a0767c34b93569cf0c222a9906852943016e3a771054d",
-      "storagePath": "content/raw/regional-service-maps/graphics/object_events/pics/people/red_normal.png"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/pics/people/red_normal.png"
     },
     {
-      "byteLength": 1140,
-      "gitBlobSha1": "f4473bbae05befae4f520ae907a680a87567294d",
       "path": "graphics/object_events/pics/people/red_surf_run.png",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "c33a893e4449cadb417de8e201018975f99e056e582abdafe2cb9f7450931252",
-      "storagePath": "content/raw/regional-service-maps/graphics/object_events/pics/people/red_surf_run.png"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/pics/people/red_surf_run.png"
     },
     {
-      "byteLength": 744,
-      "gitBlobSha1": "73fef57d09f6343b7b18adf2d0a644b619666b89",
       "path": "graphics/object_events/pics/people/woman_1.png",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "cc6508fdb301902362bf094b11270acdb5fc98e99150503c96a81e0038ced77a",
-      "storagePath": "content/raw/regional-service-maps/graphics/object_events/pics/people/woman_1.png"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/pics/people/woman_1.png"
     },
     {
-      "byteLength": 419,
-      "gitBlobSha1": "905c00904128f797c55b69dc74e2fed14d71e545",
       "path": "graphics/object_events/pics/pokemon/fearow.png",
       "reuseExisting": false,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "78decbece1b2fdce74ce45d67e7e14f5f668739398d28d168ce4614ba761e564",
-      "storagePath": "content/raw/route16-fly-house/graphics/object_events/pics/pokemon/fearow.png"
+      "storagePath": "content/raw/pokefirered/037335f4/graphics/object_events/pics/pokemon/fearow.png"
     },
     {
-      "byteLength": 16440,
-      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
       "path": "include/constants/battle.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
-      "storagePath": "content/raw/regional-service-maps/include/constants/battle.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/battle.h"
     },
     {
-      "byteLength": 1436,
-      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
       "path": "include/constants/battle_ai.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5",
-      "storagePath": "content/raw/regional-service-maps/include/constants/battle_ai.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/battle_ai.h"
     },
     {
-      "byteLength": 701,
-      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
       "path": "include/constants/battle_setup.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1",
-      "storagePath": "content/raw/six-island-region/include/constants/battle_setup.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/battle_setup.h"
     },
     {
-      "byteLength": 19206,
-      "gitBlobSha1": "936ef4dfdd84bc2ad533dc466072cd4a9632da85",
       "path": "include/constants/event_object_movement.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "3d12e9868383a42afef346e968031a12504dc8fc4dda12a17623af3f9df6ecba",
-      "storagePath": "content/raw/regional-service-maps/include/constants/event_object_movement.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/event_object_movement.h"
     },
     {
-      "byteLength": 7965,
-      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
       "path": "include/constants/event_objects.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947",
-      "storagePath": "content/raw/regional-service-maps/include/constants/event_objects.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/event_objects.h"
     },
     {
-      "byteLength": 5109,
-      "gitBlobSha1": "0b2351017ba32d1dab03b2e765e215c7da66107f",
       "path": "include/constants/field_effects.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "ea4276af2ba5997c7639df6629ca7cebcc61f308b62c43ceabbfc7dd744473f0",
-      "storagePath": "content/raw/regional-service-maps/include/constants/field_effects.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/field_effects.h"
     },
     {
-      "byteLength": 792,
-      "gitBlobSha1": "e84dbc48c4ddb78a99fd07f4db81d446fff4c2f2",
       "path": "include/constants/field_weather.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "24518565778cd43ce060d190bd72d9796508d173a13ea402591f493862ce390d",
-      "storagePath": "content/raw/six-island-region/include/constants/field_weather.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/field_weather.h"
     },
     {
-      "byteLength": 95397,
-      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
       "path": "include/constants/flags.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493",
-      "storagePath": "content/raw/regional-service-maps/include/constants/flags.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/flags.h"
     },
     {
-      "byteLength": 2651,
-      "gitBlobSha1": "234091bff42b804cc8f958a06df67c68a0db9fda",
       "path": "include/constants/game_stat.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "e98ebe4c3d4448fd95ece37f84e15c8dbcbe91f7d61bf2dd3878c8aade0facc6",
-      "storagePath": "content/raw/six-island-region/include/constants/game_stat.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/game_stat.h"
     },
     {
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
       "path": "include/constants/global.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c",
-      "storagePath": "content/raw/regional-service-maps/include/constants/global.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/global.h"
     },
     {
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
       "path": "include/constants/items.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
-      "storagePath": "content/raw/regional-service-maps/include/constants/items.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/items.h"
     },
     {
-      "byteLength": 443,
-      "gitBlobSha1": "1353de360cf1e00b6efbb26ec59c4822c99b59bf",
       "path": "include/constants/map_scripts.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "02f8c3a4dd660d5b11f7d4af1f5a6d4530a994df33ba8304024e2a5ba004afc8",
-      "storagePath": "content/raw/regional-service-maps/include/constants/map_scripts.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/map_scripts.h"
     },
     {
-      "byteLength": 6143,
-      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde",
       "path": "include/constants/menu.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4",
-      "storagePath": "content/raw/regional-service-maps/include/constants/menu.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/menu.h"
     },
     {
-      "byteLength": 3471,
-      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
       "path": "include/constants/metatile_behaviors.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75",
-      "storagePath": "content/raw/regional-service-maps/include/constants/metatile_behaviors.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/metatile_behaviors.h"
     },
     {
-      "byteLength": 10249,
-      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
       "path": "include/constants/moves.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
-      "storagePath": "content/raw/regional-service-maps/include/constants/moves.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/moves.h"
     },
     {
-      "byteLength": 39946,
-      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
       "path": "include/constants/opponents.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source",
         "source-dependency"
       ],
-      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee",
-      "storagePath": "content/raw/regional-service-maps/include/constants/opponents.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/opponents.h"
     },
     {
-      "byteLength": 10894,
-      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b",
       "path": "include/constants/pokemon.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
-      "storagePath": "content/raw/regional-service-maps/include/constants/pokemon.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/pokemon.h"
     },
     {
-      "byteLength": 17891,
-      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
       "path": "include/constants/songs.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
-      "storagePath": "content/raw/regional-service-maps/include/constants/songs.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/songs.h"
     },
     {
-      "byteLength": 2051,
-      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee",
       "path": "include/constants/sound.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
-      "storagePath": "content/raw/regional-service-maps/include/constants/sound.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/sound.h"
     },
     {
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
       "path": "include/constants/species.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source",
         "source-dependency"
       ],
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
-      "storagePath": "content/raw/regional-service-maps/include/constants/species.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/species.h"
     },
     {
-      "byteLength": 1985,
-      "gitBlobSha1": "04e667eb0828173525f93cae4df2498415124628",
       "path": "include/constants/trade.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "15b093885ccdada14b62af66cde222d8c62a451540eefe4e8d4a2a0a173b09d4",
-      "storagePath": "content/raw/original-tutor-rooms/include/constants/trade.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/trade.h"
     },
     {
-      "byteLength": 20887,
-      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
       "path": "include/constants/trainers.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source",
         "source-dependency"
       ],
-      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9",
-      "storagePath": "content/raw/regional-service-maps/include/constants/trainers.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/trainers.h"
     },
     {
-      "byteLength": 17306,
-      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
       "path": "include/constants/vars.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12",
-      "storagePath": "content/raw/regional-service-maps/include/constants/vars.h"
+      "storagePath": "content/raw/pokefirered/037335f4/include/constants/vars.h"
     },
     {
-      "byteLength": 171904,
-      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
       "path": "src/battle_main.c",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
-      "storagePath": "content/raw/silph-catalogs/src/battle_main.c"
+      "storagePath": "content/raw/pokefirered/037335f4/src/battle_main.c"
     },
     {
-      "byteLength": 23522,
-      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
       "path": "src/data/object_events/object_event_graphics.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec",
-      "storagePath": "content/raw/regional-service-maps/src/data/object_events/object_event_graphics.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/object_events/object_event_graphics.h"
     },
     {
-      "byteLength": 97115,
-      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
       "path": "src/data/object_events/object_event_graphics_info.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512",
-      "storagePath": "content/raw/regional-service-maps/src/data/object_events/object_event_graphics_info.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/object_events/object_event_graphics_info.h"
     },
     {
-      "byteLength": 23651,
-      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
       "path": "src/data/object_events/object_event_graphics_info_pointers.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c",
-      "storagePath": "content/raw/regional-service-maps/src/data/object_events/object_event_graphics_info_pointers.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/object_events/object_event_graphics_info_pointers.h"
     },
     {
-      "byteLength": 82763,
-      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
       "path": "src/data/object_events/object_event_pic_tables.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995",
-      "storagePath": "content/raw/regional-service-maps/src/data/object_events/object_event_pic_tables.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/object_events/object_event_pic_tables.h"
     },
     {
-      "byteLength": 20597,
-      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
       "path": "src/data/pokemon/level_up_learnset_pointers.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de",
-      "storagePath": "content/raw/canonical-pokemon/src/data/pokemon/level_up_learnset_pointers.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h"
     },
     {
-      "byteLength": 182027,
-      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
       "path": "src/data/pokemon/level_up_learnsets.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6",
-      "storagePath": "content/raw/canonical-pokemon/src/data/pokemon/level_up_learnsets.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h"
     },
     {
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
       "path": "src/data/text/species_names.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f",
-      "storagePath": "content/raw/silph-catalogs/src/data/text/species_names.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/text/species_names.h"
     },
     {
-      "byteLength": 83873,
-      "gitBlobSha1": "5e6791a66f03876f2aaabe94bde3083e68f5bf2e",
       "path": "src/data/tilesets/graphics.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "63ca2a6588d938adcc4d4bf325578f23b7b1e2b622a3e27ffeccae2ac6133f61",
-      "storagePath": "content/raw/regional-service-maps/src/data/tilesets/graphics.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/tilesets/graphics.h"
     },
     {
-      "byteLength": 21121,
-      "gitBlobSha1": "676bd21050e753822a61aa127310c338938c3c00",
       "path": "src/data/tilesets/headers.h",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "bd8233763e26d3dbb025010ad379c53bcc5b102dd1a1de40cec85f8262686c8c",
-      "storagePath": "content/raw/regional-service-maps/src/data/tilesets/headers.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/tilesets/headers.h"
     },
     {
-      "byteLength": 242256,
-      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
       "path": "src/data/trainer_parties.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299",
-      "storagePath": "content/raw/six-island-region/src/data/trainer_parties.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/trainer_parties.h"
     },
     {
-      "byteLength": 302118,
-      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
       "path": "src/data/trainers.h",
       "reuseExisting": true,
       "roles": [
         "north-passage-double-source"
       ],
-      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc",
-      "storagePath": "content/raw/six-island-region/src/data/trainers.h"
+      "storagePath": "content/raw/pokefirered/037335f4/src/data/trainers.h"
     },
     {
-      "byteLength": 326145,
-      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
       "path": "src/event_object_movement.c",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
-      "storagePath": "content/raw/regional-service-maps/src/event_object_movement.c"
+      "storagePath": "content/raw/pokefirered/037335f4/src/event_object_movement.c"
     },
     {
-      "byteLength": 99258,
-      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
       "path": "src/graphics.c",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
-      "storagePath": "content/raw/regional-service-maps/src/graphics.c"
+      "storagePath": "content/raw/pokefirered/037335f4/src/graphics.c"
     },
     {
-      "byteLength": 7240,
-      "gitBlobSha1": "a868248cf07750504eec7d87c772e089c60aa211",
       "path": "tileset_rules.mk",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "aed8ebf86db60e11384c23e158208f3c5581b72a43ed014eabe5a5d3b60af9d4",
-      "storagePath": "content/raw/regional-service-maps/tileset_rules.mk"
+      "storagePath": "content/raw/pokefirered/037335f4/tileset_rules.mk"
     },
     {
-      "byteLength": 28254,
-      "gitBlobSha1": "8d8ec4e4e6e1c011b06f00819abe40bad10d19d5",
       "path": "tools/mapjson/mapjson.cpp",
       "reuseExisting": true,
       "roles": [
         "source-dependency"
       ],
-      "sha256": "c8a4af233a24c70ee49f2739bec7b313da8f50e15d2a25b31db1d40cc179aab9",
-      "storagePath": "content/raw/regional-service-maps/tools/mapjson/mapjson.cpp"
+      "storagePath": "content/raw/pokefirered/037335f4/tools/mapjson/mapjson.cpp"
     }
   ],
   "gameVersion": "FIRERED",
@@ -901,6 +661,5 @@
   "profile": "firered-route16-fly-house-v1",
   "repository": "pret/pokefirered",
   "revision": 0,
-  "schemaVersion": 1,
-  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+  "schemaVersion": 1
 }

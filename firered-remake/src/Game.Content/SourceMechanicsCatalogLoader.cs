@@ -20,7 +20,7 @@ public static class SourceMechanicsCatalogLoader
             content.GenerationContract.FormStatOverrides.Select(f => new SourceFormStatOverride(f.Species,
                 f.Scope, f.BaseStats, f.Source, f.RuleSource)).ToImmutableArray());
         // Historical source snapshots without this optional pack retain their bounded admission.
-        // An existing but damaged pack must fail authentication, never silently downgrade.
+        // Existing packs are parsed normally; malformed definitions report a loading error.
         if (File.Exists(Path.Combine(catalogRoot, SourceBattleItemCatalogLoader.RelativePath)))
             SourceHeldItemCatalog.Bind(mechanics, SourceBattleItemCatalogLoader.LoadAuthenticated(catalogRoot));
         return mechanics;

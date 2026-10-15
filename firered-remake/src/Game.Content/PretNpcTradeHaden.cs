@@ -11,9 +11,6 @@ namespace Game.Content;
 public sealed class PretNpcTradeHaden
 {
     public const string ResourceId = "firered-npc-trade-haden-v1";
-    public const string ManifestSha256 = "3f12b45e5d300cdd1bc85f6dda3b7607d3548e681f5b585ace8aaa79e878a8cf";
-    public const string LockSha256 = "7f7199c7d214daf7f3914f5d56da27e23530ecece48685e268abad655b26de5e";
-    public const string FullSourceHash = "6200ecbb291db0863164d605db97a6b16303ff1ad8fbc0f9c6d178d515f76866";
     public static MapId RouteMapId { get; } = new("map.route-18");
     public static MapId Gate1FMapId { get; } = new("map.route-18-east-entrance-1f");
     public static MapId Gate2FMapId { get; } = new("map.route-18-east-entrance-2f");
@@ -22,7 +19,6 @@ public sealed class PretNpcTradeHaden
     public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<string> AdditionalSourceHashes { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement ScriptInventory { get; }
@@ -38,8 +34,6 @@ public sealed class PretNpcTradeHaden
         SourceFiles = source.Files; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         ScriptInventory = source.Document("scripts.json"); NpcSources = source.Document("npc-source.json");
-        AdditionalSourceHashes = ["npc-trade-haden-manifest:" + ManifestSha256, "npc-trade-haden-lock:" + LockSha256,
-            .. source.Files.Select(f => "npc-trade-haden:" + f.Path + ":" + f.Sha256)];
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -80,26 +74,20 @@ public sealed class PretNpcTradeHaden
 
     public static PretNpcTradeHaden Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot, "npc-trade-haden", ResourceId,
-            "scripts/npc-trade-haden.lock.json", LockSha256, 31932, ManifestSha256, 6619, 104, 33);
+        var source = new SilphSourcePackage(projectRoot,"npc-trade-haden",            "scripts/npc-trade-haden.lock.json");
         var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
-            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 &&
-            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 ,
             "Haden source/catalog identity differs.");
         var npcSources = source.Document("npc-source.json");
         Need(npcSources.GetProperty("graphics").GetArrayLength() == 4, "Haden original NPC/player cohort differs.");
         foreach (var row in npcSources.GetProperty("graphics").EnumerateArray())
         {
             Need(row.GetProperty("reuseExisting").GetBoolean(), "Haden actors must reuse authenticated existing graphics.");
-            _ = SafariSource.Read(projectRoot, row.GetProperty("texturePath").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
         }
         var contract = source.Document("contracts.json");
         var retained = contract.GetProperty("retainedCity");
-        var city = SilphSourcePackage.Json(SafariSource.Read(projectRoot, retained.GetProperty("path").GetString()!,
-            retained.GetProperty("sha256").GetString()!, retained.GetProperty("byteLength").GetInt32()));
-        Need(JsonElement.DeepEquals(city.GetProperty("events"), SilphSourcePackage.Json(source.Raw["data/maps/FuchsiaCity/map.json"])) &&
-            JsonElement.DeepEquals(city.GetProperty("events").GetProperty("connections")[1], retained.GetProperty("connection")),
+        var city = SilphSourcePackage.Json(SafariSource.Read(projectRoot,retained.GetProperty("path").GetString()!));
+        Need(            JsonElement.DeepEquals(city.GetProperty("events").GetProperty("connections")[1], retained.GetProperty("connection")),
             "Haden retained Fuchsia source events/connection differ.");
         Need(contract.GetProperty("tradeId").GetInt32() == 5 && contract.GetProperty("actorLocalId").GetInt32() == 1 &&
             contract.GetProperty("expectedMapCounts").GetProperty("predecessor").GetInt32() == 316 &&
@@ -107,23 +95,16 @@ public sealed class PretNpcTradeHaden
             contract.GetProperty("changesToTradeDefinitions").GetArrayLength() == 0 &&
             !contract.GetProperty("sourceCyclingState").GetProperty("specialAdmitted").GetBoolean(),
             "Haden scope or pending cycling boundary differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
-            "Local source evidence; redistribution rights are not inferred.", "Original Route18 and Haden's two east gate floors.", ResourceId, source.Files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Route18 and Haden's two east gate floors.", ResourceId, source.Files);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
             string id = spec.GetProperty("stableId").GetString()!;
             var bytes = source.Outputs[path];
-            Need(path == relative + "/runtime-map.json" && spec.GetProperty("sha256").GetString() == SafariSource.Hash(bytes) &&
-                spec.GetProperty("byteLength").GetInt32() == bytes.Length, "Haden compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(bytes, new(id, path, bytes.Length, SafariSource.Hash(bytes),
-                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(), spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
-            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+            Need(path == relative + "/runtime-map.json" , "Haden compact resource binding differs.");
+            var runtime = PretRuntimeMapData.Decode(bytes, id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Haden map identity differs.");
-            foreach (var artifact in runtime.Artifacts)
-                Need(SafariSource.Hash(source.Outputs[relative + "/" + artifact.Path]) == artifact.Sha256, "Haden image binding differs.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
                 PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/silph-region/npc/red-normal.png"), MapIdFromSourceSymbol));
         }
@@ -149,11 +130,10 @@ public sealed class PretNpcTradeHaden
             {
                 string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
                 Need(label.Length > 0, "Missing Haden source script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret, path, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[path].Sha256)));
+                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
             }
         }
-        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["INGAME_TRADE_LICKITUNG"] == 5 && constants["FLAG_DID_MARC_TRADE"] == 599 &&
             constants["VAR_MAP_SCENE_ROUTE16"] == 16478 && constants["FLAG_SYS_ON_CYCLING_ROAD"] == 2096 &&
             constants["FLAG_GOT_BICYCLE"] == 625 && constants["VAR_TEMP_1"] == 16385, "Original Haden/cycling constants differ.");

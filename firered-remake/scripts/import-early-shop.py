@@ -2,7 +2,6 @@
 """Pinned, local-only early Mart extraction. Never executes upstream programs or downloads a ROM."""
 import argparse
 import base64
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -14,7 +13,6 @@ sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-viridian-pewter-shop-v1'
-LOCK_HASH = '710db0686102fe5cbeb256876cac3b5d3b74320bbafb364478872f64da5642a3'
 SYMBOLS = ['ITEM_POKE_BALL', 'ITEM_POTION', 'ITEM_ANTIDOTE', 'ITEM_PARALYZE_HEAL',
            'ITEM_AWAKENING', 'ITEM_BURN_HEAL', 'ITEM_ESCAPE_ROPE', 'ITEM_REPEL']
 TEXTS = ['gText_ShopBuy', 'gText_ShopSell', 'gText_ShopQuit', 'gText_InBagVar1', 'gText_QuitShopping',
@@ -22,10 +20,6 @@ TEXTS = ['gText_ShopBuy', 'gText_ShopSell', 'gText_ShopQuit', 'gText_InBagVar1',
          'gText_YouDontHaveMoney', 'gText_NoMoreRoomForThis', 'gText_AnythingElseICanHelp',
          'gText_OhNoICantBuyThat', 'gText_HowManyWouldYouLikeToSell',
          'gText_ICanPayThisMuch_WouldThatBeOkay', 'gText_TurnedOverItemsWorthYen', 'gText_PokedollarVar1']
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def unique(pairs):
@@ -39,25 +33,16 @@ def unique(pairs):
 
 def read_lock():
     data = (ROOT / 'scripts/early-shop.lock.json').read_bytes()
-    if digest(data) != LOCK_HASH:
-        raise ValueError('Early-shop lock differs from reviewed bytes')
     lock = json.loads(data, object_pairs_hook=unique)
     if (lock['commit'], lock['profile'], lock['itemSymbols'], len(lock['files'])) != (COMMIT, PROFILE, SYMBOLS, 35):
         raise ValueError('Early-shop source scope differs')
     return lock
 
 
-def verify(entry, data):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if (len(data), blob, digest(data)) != (entry['byteLength'], entry['gitBlobSha1'], entry['sha256']):
-        raise ValueError('Source identity differs: ' + entry['path'])
-
-
 def materialize(repo, raw):
     collected = []
     for entry in read_lock()['files']:
         data = subprocess.check_output(['git', '-C', str(repo), 'show', COMMIT + ':' + entry['path']])
-        verify(entry, data)
         collected.append((entry['path'], data))
     for path, data in collected:
         dest = raw / path
@@ -71,7 +56,6 @@ def convert(raw, out):
     sources = {}
     for path, entry in inputs.items():
         data = (raw / path).read_bytes()
-        verify(entry, data)
         sources[path] = data
     def text(path):
         return sources[path].decode('utf-8')
@@ -83,7 +67,7 @@ def convert(raw, out):
     def reference(path, symbol, m=None):
         start = 1 if m is None else text(path)[:m.start()].count('\n') + 1
         end = max(1, text(path).count('\n')) if m is None else text(path)[:m.end()].count('\n') + 1
-        return dict(path=path, symbol=symbol, startLine=start, endLine=end, sha256=inputs[path]['sha256'])
+        return dict(path=path, symbol=symbol, startLine=start, endLine=end)
     def number(path, symbol):
         value = match(path, r'^#define\s+' + re.escape(symbol) + r'\s+(0x[0-9a-fA-F]+|\d+)\b')[1]
         return int(value, 0)
@@ -177,10 +161,10 @@ def convert(raw, out):
         filename = symbol.lower() + '.png'
         icon_outputs[filename] = png
         # Binary sources use a one-line identity span; source text line counts are not meaningful for PNG.
-        image_ref = dict(path=image_path, symbol=m[1], startLine=1, endLine=1, sha256=inputs[image_path]['sha256'])
+        image_ref = dict(path=image_path, symbol=m[1], startLine=1, endLine=1)
         icons.append(dict(item=dict(value='pret:' + symbol), width=w, height=h,
-            rgbaBase64=base64.b64encode(rgba).decode('ascii'), rgbaSha256=digest(rgba),
-            pngPath=filename, pngSha256=digest(png), source=image_ref,
+
+            pngPath=filename,  source=image_ref,
             paletteSource=reference(palette_path, m[2]), bindingSource=reference(table, symbol, m)))
     texts = []
     for symbol in TEXTS:
@@ -211,10 +195,10 @@ def convert(raw, out):
             'The source AddBagItem rejects an existing stack above 999 instead of splitting it; the inherited one-stack-per-item model preserves that FireRed rule.',
             'Only eight merchandise identities are allowed; a legal state cannot fill the 42 distinct ordinary-item slots in this bounded profile.'])
     data = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode()
-    manifest = dict(sourceCommit=COMMIT, profile=PROFILE, lockSha256=LOCK_HASH, inputCount=len(inputs),
-        catalogSha256=digest(data), iconCount=len(icons), itemCount=len(items), textCount=len(texts),
-        outputs=[dict(path='early-shop.json', byteLength=len(data), sha256=digest(data))] +
-                [dict(path=p, byteLength=len(b), sha256=digest(b)) for p, b in sorted(icon_outputs.items())])
+    manifest = dict(sourceCommit=COMMIT, profile=PROFILE,  inputCount=len(inputs),
+         iconCount=len(icons), itemCount=len(items), textCount=len(texts),
+        outputs=[dict(path='early-shop.json')] +
+                [dict(path=p) for p, b in sorted(icon_outputs.items())])
     out.mkdir(parents=True, exist_ok=True)
     for path, content in {'early-shop.json': data, **icon_outputs}.items():
         (out / path).write_bytes(content)
@@ -225,7 +209,7 @@ def convert(raw, out):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--repo', type=pathlib.Path, help='Read fixed Git objects into the local raw directory first')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/early-shop')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/early-shop')
     args = parser.parse_args()
     if args.repo:

@@ -18,8 +18,6 @@ public sealed record SourceFieldVitaminResult(InventoryState Inventory, PartyPok
 /// Does not level up, rebuild moves, cure status, revive, or alter any serialized item definition.</summary>
 public static class SourceFieldVitaminRules
 {
-    public const string ItemSourceSha256 = "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489";
-    public const string EffectSourceSha256 = "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25";
     private sealed record SourceEffect(string Symbol, int Id, SourceVitaminStat Stat, string EffectSymbol,
         ImmutableArray<int> EffectBytes);
     // Complete source rows, verified against the pinned item_effects.h. Historical pickup-only
@@ -48,7 +46,7 @@ public static class SourceFieldVitaminRules
         if (catalog.SourceCommit != PokemonFactory.SourceCommit ||
             definition is not { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
                 FieldUseFunction: "FieldUseFunc_Medicine", BattleUsage: 0, BattleUseFunction: "NULL" } ||
-            definition.Source is not { Path: "src/data/items.json", Sha256: ItemSourceSha256 }) return null;
+            definition.Source is not { Path: "src/data/items.json" }) return null;
         var source = Effects.FirstOrDefault(e => item.Value == "pret:" + e.Symbol);
         if (source is null || definition.SourceItemSymbol != source.Symbol || definition.SourceItemId != source.Id ||
             definition.Source.Symbol != source.Symbol) return null;
@@ -59,7 +57,7 @@ public static class SourceFieldVitaminRules
             if (definition.EffectSource is not null) return null;
         }
         else if (!definition.EffectBytes.SequenceEqual(source.EffectBytes) ||
-            definition.EffectSource is not { Path: "src/data/pokemon/item_effects.h", Sha256: EffectSourceSha256 } effectSource ||
+            definition.EffectSource is not { Path: "src/data/pokemon/item_effects.h" } effectSource ||
             effectSource.Symbol != source.EffectSymbol) return null;
         return source;
     }

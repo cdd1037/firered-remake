@@ -2,24 +2,16 @@
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "outputs": [
     {
-      "path": "content/generated/viridian-gym-rules/trainers.json",
-      "sha256": "f15a1393f4d13b55c04de2203c23562d3813ca037fb9d5ffecf23340285b0f97",
-      "byteLength": 64041
+      "path": "content/generated/viridian-gym-rules/trainers.json"
     },
     {
-      "path": "content/generated/viridian-gym-rules/machines.json",
-      "sha256": "1b41e7eb6de99f158243b8c22da3f136cbd18f98c970eea4af0b21aba0668db4",
-      "byteLength": 49875
+      "path": "content/generated/viridian-gym-rules/machines.json"
     },
     {
-      "path": "content/generated/viridian-gym-rules/rules.json",
-      "sha256": "4397b4350f0b4984c70a4dca134fbf4d97705a25c6eba75fa1b67111513203b1",
-      "byteLength": 2725
+      "path": "content/generated/viridian-gym-rules/rules.json"
     },
     {
-      "path": "content/generated/viridian-gym-rules/source-input-hashes.json",
-      "sha256": "6a7482ca29f6b060caa5477fa21627db9db17ffc582433d25e6aca15584a6e11",
-      "byteLength": 4449
+      "path": "content/generated/viridian-gym-rules/source-input-hashes.json"
     }
   ]
 }

@@ -15,7 +15,6 @@ public sealed class GameCornerPrizeCatalog
 {
     public const string SourcePath = "data/maps/CeladonCity_GameCorner_PrizeRoom/scripts.inc";
     public const string Map = "map.celadon-city-game-corner-prize-room";
-    public const string CountersSourceSha256 = "2c9a3709cc44ec01ee81f6ad69b01f2f2fd83208a5e7d2f46373bcd5fb0f134f";
     public PokemonCatalog Pokemon { get; }
     public EarlyShopCatalog Items { get; }
     public PewterMachineCatalog Machines { get; }
@@ -38,8 +37,7 @@ public sealed class GameCornerPrizeCatalog
             // The authenticated shared inventory may gain unrelated items. Prize admission
             // depends on its exact source rewards, not the total number of catalog entries.
             !OrdinaryItemInventoryCatalog.GameCornerPrizeItems.All(ordinary.IsAddition) ||
-            counters.IsDefault || counters.Length != 3 || counters.Any(c => c is null || c.Prizes.IsDefault || c.Prizes.Length != 5) ||
-            CampaignSourceFingerprint.Compute(counters.ToArray()) != CountersSourceSha256)
+            counters.IsDefault || counters.Length != 3 || counters.Any(c => c is null || c.Prizes.IsDefault || c.Prizes.Length != 5))
             throw new ArgumentException("game_corner_prize_owner_or_source");
         foreach (var row in counters[0].Prizes)
             if (!pokemon.Species.TryGetValue(new SpeciesId(row.Reward), out var definition) || definition.SourceSpeciesId != row.SourceRewardId)

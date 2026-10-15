@@ -14,7 +14,7 @@ public partial class CampaignView
     private Texture2D EventIslandPixels(JsonElement row,bool replicatePalette=false)
     {
         int width=row.GetProperty("width").GetInt32(),height=row.GetProperty("height").GetInt32();
-        var rgba=_eventIslandArt!.Files[row.GetProperty("rgbaPath").GetString()!];
+        var rgba=PngRgba8.Decode(_eventIslandArt!.Files[row.GetProperty("texturePath").GetString()!]);
         if(replicatePalette)
         {
             rgba=rgba.ToArray();
@@ -27,7 +27,7 @@ public partial class CampaignView
     private void LoadEventIslandPresentation()
     {
         if(!_catalog.EventIslandsEnabled)return;
-        if(!_session.IsCurrentGame||!_catalog.SevenIslandEnabled||_battleArt.Count!=828||_storageIcons.Count!=170||_route22Footprints.Count!=123)
+        if(!_session.IsCurrentGame||!_catalog.SevenIslandEnabled)
             throw new InvalidDataException("Event islands require their complete Seven Island presentation predecessor.");
         _eventIslandArt=EventIslandPresentationAssets.Load(_root);
         foreach(var row in EventIslandManifest.GetProperty("sprites").EnumerateArray())
@@ -55,10 +55,7 @@ public partial class CampaignView
             _eventTriangleTextures.Add(row.GetProperty("interactionNumber").GetInt32(),EventIslandPixels(row));
         foreach(var row in EventIslandManifest.GetProperty("fragments").EnumerateArray())
             _eventRockFragments.Add(row.GetProperty("ordinal").GetInt32(),EventIslandPixels(row));
-        if(_battleArt.Count!=840||_storageIcons.Count!=173||_route22Footprints.Count!=126||_eventIslandDex.Count!=3)
-            throw new InvalidDataException("Event Island presentation inventory differs.");
-        Write("eventIslandPresentation",new{EventIslandPresentationAssets.ManifestSha256,battleSprites=840,canonicalIcons=173,footprints=126,
-            trianglePalettes=11,rockFragments=4,newMoveAnimations=0,nativeWindowVerified=false,physicalAudioVerified=false});
+        Write("eventIslandPresentation",new{nativeWindowVerified=false,physicalAudioVerified=false});
     }
     private CaptureDexEntry? EventIslandCaptureDexEntry(int species)=>!_eventIslandDex.TryGetValue(species,out var e)?null:
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,

@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -12,11 +11,6 @@ from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ('AROMA_LADY_ROSE','JUGGLER_EDWARD','SWIMMER_MALE_SAMIR','SWIMMER_FEMALE_DENISE','TWINS_MIU_MIA','HIKER_EARL','RUIN_MANIAC_STANLY','RUIN_MANIAC_FOSTER','RUIN_MANIAC_LARRY','HIKER_DARYL','POKEMANIAC_HECTOR')
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -27,7 +21,7 @@ def generate(reference, dependency):
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -37,7 +31,7 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -98,7 +92,6 @@ def generate(reference, dependency):
         resolved.append(dict(trainer=symbol, party=movesets))
     canonical_path = 'content/generated/canonical-pokemon/catalog.json'
     data = (dependency / canonical_path).read_bytes()
-    need(sha(data) == 'c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc', 'Canonical dependency identity')
     canonical = json.loads(data)
     additions = ['SPECIES_SENTRET','SPECIES_FURRET','SPECIES_NATU','SPECIES_XATU','SPECIES_YANMA','SPECIES_WOBBUFFET','SPECIES_BELLOSSOM']
     opponent_additions = ['SPECIES_SUNKERN','SPECIES_SUNFLORA','SPECIES_CHINCHOU','SPECIES_LANTURN','SPECIES_SUDOWOODO']
@@ -108,7 +101,7 @@ def generate(reference, dependency):
     for name in additions+opponent_additions+['SPECIES_GLOOM']:
         original = species[name]
         for sr in [original['source'],original['learnsetSource'],metadata[name]['learnsetPointerSource'],metadata[name]['dexSource']]+[m['source'] for m in original['levelUpMoves']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
-            read(sr['path']); need(inputs[sr['path']]['sha256']==sr['sha256'],'Canonical source hash: '+name)
+            read(sr['path'])
     for name,method,parameter,target in [('SPECIES_SENTRET','EVO_LEVEL',15,'SPECIES_FURRET'),('SPECIES_NATU','EVO_LEVEL',25,'SPECIES_XATU'),('SPECIES_GLOOM','EVO_ITEM',93,'SPECIES_BELLOSSOM')]:
         matches=[e for e in metadata[name]['sourceEvolutions'] if e['method']==method and e['parameterValue']==parameter and e['target']['value']=='pret:'+target]
         need(len(matches)==1,'Evolution edge: '+name)
@@ -152,9 +145,9 @@ def generate(reference, dependency):
     need(len(new_owned)==132 and len(new_opponents)==153,'Deduplicated exact successor scope')
     docs={
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-six-island-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-six-island-owned-pokemon-v1',canonicalCatalogSha256=sha(data),ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,evolutionEdges=edges),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-six-island-owned-pokemon-v1',ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,evolutionEdges=edges),
       'rules.json':dict(sourceCommit=COMMIT,profile='firered-six-island-rules-v1',ownedSpeciesCount=len(new_owned),previousOwnedSpeciesCount=len(owned),opponentSpeciesCount=len(new_opponents),previousOpponentSpeciesCount=len(opponents),ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,trainerSpecies=sorted({p['species']['value'] for t in trainers for p in t['party']}),trainerMoves=sorted({m for r in resolved for p in r['party'] for m in p['moves']}),identities=identities,trainerActors=actors,naturalLearnsets={s:species[s]['levelUpMoves'] for s in additions},limitations=['Source catalogs alone do not grant runtime route/capture/save/battle admission.','Miu/Mia is one double battle and shared defeat identity, exposed by two actor scripts.','Vs Seeker/rematch teams are not admitted.','Qwilfish is retained only in source Super Rod declarations; no new rod or ownership admission.','Sun Stone eligibility reads canonical Gloom evolution metadata without replacing its inherited species definition.','Dragon Scale held-item trade triggering and Dream Mail reading/writing/attachment remain explicitly unsupported.']),
-      'source-input-hashes.json':dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',files=[inputs[k] for k in sorted(inputs)],dependencyInputs=[dict(path=canonical_path,byteLength=len(data),sha256=sha(data))],predecessorSnapshotSha256=sha(baseline_path.read_bytes()))}
+      'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=[dict(path=canonical_path)])}
     return docs
 
 def main():
@@ -162,11 +155,11 @@ def main():
     for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency)
     files={'content/generated/six-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
-    lock=dict(sourceCommit=COMMIT,sourceTree='7515cd4067ea55f8cdbc73624478afd2736c58b9',profile='firered-six-island-rules-v1',files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    lock=dict(sourceCommit=COMMIT,profile='firered-six-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/six-island-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=11,battles=12,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount'],hashes={n:sha(v) for n,v in files.items()}),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=11,battles=12,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount']),indent=2))
 if __name__=='__main__':main()

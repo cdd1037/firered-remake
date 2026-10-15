@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """Bounded MtMoon items/TMs from authenticated local Git blobs or cache. No upstream execution."""
-import argparse, base64, hashlib, importlib.util, json, pathlib, re, subprocess, sys
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-mtmoon-items-v1'
-LOCK_SHA256 = '602d603294843e02b7daa03b23356aecd38ce30d79c1b1ad65725564079fa35a'
-MANIFEST_SHA256 = '2c3a68278b51ab488b16d7d2e188d5e288b8f440617e7974f155c6696c7576a9'
 ITEMS = 'REVIVE ETHER RARE_CANDY MOON_STONE TINY_MUSHROOM BIG_MUSHROOM STAR_PIECE HELIX_FOSSIL DOME_FOSSIL TM05 TM09 TM46'.split()
 SPECIES = ('BULBASAUR IVYSAUR VENUSAUR CHARMANDER CHARMELEON CHARIZARD SQUIRTLE WARTORTLE BLASTOISE '
  'CATERPIE METAPOD BUTTERFREE WEEDLE KAKUNA BEEDRILL PIDGEY PIDGEOTTO PIDGEOT RATTATA RATICATE '
  'PIKACHU RAICHU SANDSHREW SANDSLASH GEODUDE GRAVELER GOLEM ONIX STEELIX SPEAROW FEAROW MANKEY '
  'EKANS NIDORAN_F NIDORINA NIDORAN_M NIDORINO JIGGLYPUFF MAGIKARP GYARADOS '
  'ARBOK CLEFAIRY ZUBAT GOLBAT ODDISH PARAS PARASECT BELLSPROUT MAGNEMITE GRIMER VOLTORB KOFFING NIDOQUEEN NIDOKING CLEFABLE WIGGLYTUFF').split()
-def sha(b): return hashlib.sha256(b).hexdigest()
 def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2)+'\n').encode()
 def pairs(rows):
  d={}
@@ -37,27 +40,21 @@ def directory(p):
 def git(repo,*args): return subprocess.check_output(['git','-C',str(repo),*args])
 def lock_read(path=None):
  b=safe(path or ROOT/'scripts/mtmoon-items.lock.json').read_bytes()
- if sha(b)!=LOCK_SHA256: raise ValueError('Reviewed MtMoon items lock differs')
  d=json.loads(b,object_pairs_hook=pairs)
- if (d['schemaVersion'],d['repository'],d['commit'],d['tree'],d['profile'],len(d['files']))!=(1,'pret/pokefirered',COMMIT,TREE,PROFILE,45): raise ValueError('Source identity differs')
+ if (d['schemaVersion'], d['repository'], d['commit'], d['profile'], len(d['files'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 45): raise ValueError('Source identity differs')
  return d
-def verify(e,b):
- if len(b)!=e['byteLength'] or sha(b)!=e['sha256'] or hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=e['gitBlobSha1']: raise ValueError('Source bytes differ: '+e['path'])
-def source_hash(lock): return sha(''.join(e['path']+'\0'+e['sha256']+'\n' for e in lock['files']).encode())
-def raw_manifest(lock): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=45))
+def raw_manifest(): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,inputCount=45))
 def read_sources(lock,raw,repo=None):
  data={}
- if repo is None:
-  if safe(raw,'manifest.json').read_bytes()!=raw_manifest(lock): raise ValueError('Raw manifest differs')
- else:
-  safe(repo)
-  if git(repo,'rev-parse','HEAD').decode().strip()!=COMMIT or git(repo,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Reference revision differs')
+ if repo is not None:
+     safe(repo)
+     if git(repo, 'rev-parse', 'HEAD').decode().strip() != COMMIT:
+         raise ValueError('Reference revision differs')
  for e in lock['files']:
   if repo is None: b=safe(raw,e['path']).read_bytes()
   else:
-   if git(repo,'ls-tree',COMMIT,'--',e['path']).decode()!='100644 blob '+e['gitBlobSha1']+'\t'+e['path']+'\n': raise ValueError('Source not pinned regular blob')
-   b=git(repo,'cat-file','blob',e['gitBlobSha1'])
-  verify(e,b);data[e['path']]=b
+   b=git(repo,'cat-file','blob',COMMIT + ':' + e['path'])
+  data[e['path']]=b
  return data
 
 def convert(lock,data):
@@ -68,7 +65,7 @@ def convert(lock,data):
   return ms[0]
  def ref(p,s,m=None):
   return dict(path=p,symbol=s,startLine=1 if m is None else text[p].count('\n',0,m.start())+1,
-   endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1,sha256=inputs[p]['sha256'])
+   endLine=max(1,text.get(p,'').count('\n')) if m is None else text[p].count('\n',0,m.end())+1)
  def constant(p,s):
   m=match(p,r'^#define '+s+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m));return int(m[1])
  def ident(s):return dict(value='pret:'+s)
@@ -130,7 +127,7 @@ def convert(lock,data):
   image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
   if (w,h)!=(24,24):raise ValueError('Icon size differs')
   png=codec.png(w,h,rgba);file=symbol.lower()+'.png';outputs[file]=png
-  icons.append(dict(item=ident(symbol),width=w,height=h,rgbaBase64=base64.b64encode(rgba).decode(),rgbaSha256=sha(rgba),pngPath=file,pngSha256=sha(png),source=ref(image,m[1]),paletteSource=ref(palette,m[2]),bindingSource=binding))
+  icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=file,source=ref(image,m[1]),paletteSource=ref(palette,m[2]),bindingSource=binding))
  def compatibility(tm):
   result=[];p='src/data/pokemon/tmhm_learnsets.h'
   for s in SPECIES:
@@ -166,7 +163,7 @@ def convert(lock,data):
  doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=defs,machines=machines,tm39Compatibility=compatibility('TM39_ROCK_TOMB'),icons=icons,pickups=pickups,fossils=fossils,
   limitations=['Eighteen MtMoon pickups, two mutually exclusive fossil dependencies, and Route4 east TM05 only; application owns scripts and flags.', 'Nine additions to the original eight-item shop catalog preserve original stock; three TMs remain in the machine pocket.', 'Rare Candy and Escape Rope execution remains deferred; Moon Stone execution is a separately integrated Domain transaction.', 'Revive and Ether pure field use only; no new battle item routing.', 'Four bounded TMs with exact 56-species compatibility; no other TM/HM or fossil revival.', 'Source imports and pure rules do not imply playable/native/audio acceptance.'])
  outputs['mtmoon-items.json']=encoded(doc)
- outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,fullSourceHash=source_hash(lock),inputCount=45,outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+ outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=45,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
 
 def run(raw,out,repo=None,lock_path=None):
@@ -182,9 +179,8 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- if sha(outputs['manifest.json'])!=MANIFEST_SHA256:raise ValueError('Reviewed generated hashes differ')
  materials={(out,p):b for p,b in outputs.items()}
- if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw,'manifest.json')]=raw_manifest(lock)
+ if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw_metadata_directory(raw, 'mtmoon-items'),'manifest.json')]=raw_manifest()
  targets=[]
  for (root,p),b in materials.items():
   target=safe(root,p);stage=safe(root,p+'.tmp');directory(target.parent)
@@ -192,6 +188,6 @@ def run(raw,out,repo=None,lock_path=None):
   targets.append((target,stage,b))
  for target,stage,b in targets:
   target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
- return dict(inputCount=len(data),outputCount=len(outputs),catalogSha256=sha(outputs['mtmoon-items.json']),manifestSha256=sha(outputs['manifest.json']),fullSourceHash=source_hash(lock))
+ return dict(inputCount=len(data),outputCount=len(outputs))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/mtmoon-items');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/mtmoon-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/mtmoon-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/mtmoon-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/mtmoon-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))

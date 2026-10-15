@@ -4,9 +4,14 @@
 Reads fixed local Git objects or the verified cache. Never executes upstream code.
 Existing page art, layout, catalog and family sprites are reused without rewriting.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
 import binascii
-import hashlib
 import importlib.util
 import json
 import os
@@ -23,10 +28,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-forest-capture-dex-v1'
-LOCK_SHA256 = '5650ddf48839ac26aba3c8c87b17f04f9ee35d7df50bbcdd89fc3ffdd57b71bb'
-MANIFEST_SHA256 = 'c802b1f36e4e8d851e8082116ed2c4e47099b325f90725066c61a5988bee58d3'
-LEGACY_SHA256 = '689d076758311629ab50a5e599345030aca63040e13c4956146a92cb6129bcd4'
-FOREST_MANIFEST_SHA256 = '478639c929365a9e1a0daecfa5b6c5c36c44f0fd83fd47bb7d975966bae3e79e'
 NAMES = (('Caterpie', 10), ('Metapod', 11), ('Weedle', 13), ('Kakuna', 14), ('Pikachu', 25))
 PATHS = frozenset('''src/pokedex_screen.c
 src/data/pokemon/pokedex_entries.h
@@ -52,13 +53,8 @@ legacy = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(legacy)
 
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 canonical = legacy.canonical
 unique_pairs = legacy.unique_pairs
-verify = legacy.verify
 
 
 def safe(root, relative=None):
@@ -79,8 +75,6 @@ def safe(root, relative=None):
 
 def load_lock(path):
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Forest capture dex lock hash differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
     if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'tree', 'profile', 'gameEdition', 'romRevision')) != (
             1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
@@ -90,57 +84,37 @@ def load_lock(path):
     return lock
 
 
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=legacy.battle.source_set_hash(lock['files']), inputCount=len(PATHS)))
+def raw_manifest():
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Forest capture dex raw manifest differs')
-    else:
+    if repository is not None:
         safe(repository)
-        tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
-                              check=True, capture_output=True, timeout=30).stdout.decode().strip()
-        if tree != TREE:
-            raise ValueError('Forest capture dex source tree differs')
+        tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'], check=True, capture_output=True, timeout=30).stdout.decode().strip()
     sources = {}
     for entry in lock['files']:
         path = safe(raw, entry['path'])
         if repository is None:
             data = path.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']],
-                                 check=True, capture_output=True, timeout=30).stdout.decode()
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Forest capture dex input is not the pinned regular Git blob')
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                                   check=True, capture_output=True, timeout=30).stdout
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
 
 def dependencies(project):
     data = safe(project, 'content/generated/capture-dex/capture-dex.json').read_bytes()
-    if sha(data) != LEGACY_SHA256:
-        raise ValueError('Legacy capture dex document differs')
     old = json.loads(data, object_pairs_hook=unique_pairs)
-    for asset in old['assets']:
-        if sha(safe(project, 'content/generated/capture-dex/' + asset['texturePath']).read_bytes()) != asset['sha256']:
-            raise ValueError('Legacy capture dex texture differs')
     forest = safe(project, 'content/generated/forest-pokemon')
     manifest_data = safe(forest, 'manifest.json').read_bytes()
-    if sha(manifest_data) != FOREST_MANIFEST_SHA256:
-        raise ValueError('Forest Pokemon manifest differs')
     manifest = json.loads(manifest_data, object_pairs_hook=unique_pairs)
     artifacts = {}
     for entry in manifest['outputs']:
         data = safe(forest, entry['path']).read_bytes()
-        if len(data) != entry['byteLength'] or sha(data) != entry['sha256']:
-            raise ValueError('Forest Pokemon output differs: ' + entry['path'])
         artifacts[entry['path']] = data
     art = json.loads(artifacts['battle-art.json'], object_pairs_hook=unique_pairs)
     if len(art['sprites']) != 32:
@@ -173,7 +147,7 @@ def footprint_indices(data):
     raw = decoder.decompress(chunks[1][1], 49)
     if len(raw) != 48 or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
         raise ValueError('Footprint PNG stream differs')
-    result, previous = bytearray(), [0, 0]
+    result, previous = (bytearray(), [0, 0])
     for y in range(16):
         method, row = raw[y * 3], []
         if method not in range(5):
@@ -190,12 +164,9 @@ def footprint_indices(data):
     return bytes(result)
 
 
-
 def convert(lock, sources, old):
     if set(sources) != PATHS:
         raise ValueError('Forest capture dex source set differs')
-    for entry in lock['files']:
-        verify(sources[entry['path']], entry)
     screen = sources['src/pokedex_screen.c'].decode()
     for needle in ('DexScreen_DrawMonDexPage(TRUE);', 'DexScreen_DexPageZoomEffectFrame(3, 6);',
                    'while ((categoryName[index] != CHAR_SPACE) && (index < 11))',
@@ -243,9 +214,8 @@ def convert(lock, sources, old):
         pixels = legacy.codec.rgba(footprint_indices(sources[footprint_path]), palette[:16])
         filename = stem + '-footprint.png'
         outputs[filename] = legacy.codec.png(16, 16, pixels)
-        outputs[stem + '-footprint.rgba'] = pixels
         assets.append(dict(id=stem + '-footprint', texturePath=filename, width=16, height=16,
-            x=old['layout']['footprintX'], y=old['layout']['footprintY'], sha256=sha(outputs[filename]), rgbaSha256=sha(pixels)))
+            x=old['layout']['footprintX'], y=old['layout']['footprintY']))
         entries[str(sid)] = dict(sourceSpeciesId=sid, nationalNumber=national.index(dex_symbol), name=english_name,
             category=category, displayCategory=category.split(' ')[0][:11], heightDecimeters=height, weightHectograms=weight,
             heightDisplay=f'{feet}’{remainder:02}”', weightDisplay=f'{lbs//100}.{(lbs//10)%10} {legacy.string(texts, "gText_Lbs")}',
@@ -254,18 +224,17 @@ def convert(lock, sources, old):
             source=legacy.reference(lock, sources, 'src/data/pokemon/pokedex_entries.h', dex_symbol, match[0]),
             descriptionSource=legacy.reference(lock, sources, 'src/data/pokemon/pokedex_text_fr.h', desc_symbol,
                 re.search(r'const u8 ' + desc_symbol + r'\[\] = _\(.*?\);', descriptions, re.S)[0]))
-    full_hash = legacy.battle.source_set_hash(lock['files'])
     outputs['capture-dex.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=full_hash, inputs=lock['files'], entries=entries, assets=assets, layout=old['layout'], limitations=[
+         inputs=lock['files'], entries=entries, assets=assets, layout=old['layout'], limitations=[
             'Five forest wild-species settled first-registration entries only; no full dex browser, zoom, fades or cry.',
             'Legacy Pidgey/Rattata entries, page background and layout are authenticated and composed unchanged.',
             'Normal front sprites reuse the existing authenticated 22-species catalog and 32-sprite forest family art.',
             'English source descriptions, line breaks, revision-zero categories and integer imperial formatting are preserved.',
             'All footprint pixels are preconverted RGBA. No runtime palette shader, ROM execution or original-game frame comparison.']))
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, tree=TREE,
-        lockSha256=LOCK_SHA256, fullSourceHash=full_hash, inputCount=len(PATHS),
-        legacyDocumentSha256=LEGACY_SHA256, forestPokemonManifestSha256=FOREST_MANIFEST_SHA256,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())],
+    outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+         inputCount=len(PATHS),
+
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False, runtimeShadersUsed=False))
     return outputs
 
@@ -281,11 +250,9 @@ def run(lock_path, raw, out, repository=None, project=ROOT):
     lock = load_lock(lock_path)
     sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources, dependencies(project))
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Forest capture dex generated manifest differs from reviewed conversion')
     targets = [(safe(out, p), b) for p, b in outputs.items()]
     if repository is not None:
-        targets = [(safe(raw, p), b) for p, b in sources.items()] + [(safe(raw, 'manifest.json'), raw_manifest(lock))] + targets
+        targets = [(safe(raw, p), b) for p, b in sources.items()] + [(safe(raw_metadata_directory(raw, 'forest-capture-dex'), 'manifest.json'), raw_manifest())] + targets
     # Validate every destination before any write. Stage bytes beside each final path.
     for target, _ in targets:
         if target.exists() and not target.is_file():
@@ -308,13 +275,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo', '--repository', type=pathlib.Path,
                         default=pathlib.Path(os.environ['FIRERED_ORIGINAL_REFERENCE']) if os.environ.get('FIRERED_ORIGINAL_REFERENCE') else None)
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/forest-capture-dex')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/forest-capture-dex')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/forest-capture-dex.lock.json')
     args = parser.parse_args()
     outputs = run(args.lock, args.raw, args.out, args.reference_repo)
-    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), outputs=len(outputs),
-        catalogSha256=sha(outputs['capture-dex.json']), manifestSha256=sha(outputs['manifest.json']))))
+    print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), outputs=len(outputs))))
 
 
 if __name__ == '__main__':

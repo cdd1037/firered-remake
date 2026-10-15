@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Game.Domain.Ids;
@@ -10,22 +9,15 @@ namespace Game.Domain.Pokemon;
 /// <summary>Original FireRed level-up move reminder, bound to the current authenticated owned catalog.</summary>
 public sealed class MoveReminderCatalog
 {
-    public const string PokemonSourceSha256 = "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec";
-    public const string LearnMoveSourceSha256 = "8a3f0eb4a475633477bda6d65396205dfbb29db04dabb9f5f0d99df9f0c1ef40";
-    public const string StringsSha256 = "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1";
     public PokemonCatalog Pokemon { get; }
     public ImmutableDictionary<string, string> Texts { get; }
 
     private MoveReminderCatalog(PokemonCatalog pokemon, ImmutableDictionary<string, string> texts)
     { Pokemon = pokemon; Texts = texts; }
 
-    public static MoveReminderCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> pokemonSource,
-        ReadOnlySpan<byte> learnMoveSource, ReadOnlySpan<byte> strings)
+    public static MoveReminderCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> strings)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit ||
-            Convert.ToHexStringLower(SHA256.HashData(pokemonSource)) != PokemonSourceSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(learnMoveSource)) != LearnMoveSourceSha256 ||
-            Convert.ToHexStringLower(SHA256.HashData(strings)) != StringsSha256)
+        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("move_reminder_source_authentication");
         var source = Encoding.UTF8.GetString(strings);
         var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);

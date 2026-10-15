@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Game.Domain;
 using Game.Domain.Ids;
@@ -15,7 +13,6 @@ void Equal<T>(T expected, T actual) { if (!EqualityComparer<T>.Default.Equals(ex
 void True(bool value, string reason = "Condition not true") { if (!value) throw new Exception(reason); }
 void Throws<T>(Action action) where T : Exception { try { action(); } catch (T) { return; } throw new Exception($"Expected {typeof(T).Name}."); }
 string Json<T>(T x) => JsonSerializer.Serialize(x);
-string Hash<T>(T x) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Json(x))));
 
 var fixtureMove = new MoveDefinition(new("fixture/tackle"), ElementType.Normal, 40, 100, 35);
 var catalog = new Catalog(fixtureMove);
@@ -43,19 +40,23 @@ MoveIntent Walk(WorldSnapshot s, Direction d) => new(new("cmd/walk"), s.Revision
 
 Test("ids.stable-json-roundtrip", () => { var id = new SpeciesId("species/bulbasaur"); Equal(id, JsonSerializer.Deserialize<SpeciesId>(Json(id))); Equal("species/bulbasaur", id.ToString()); });
 Test("ids.reject-invalid", () => { foreach (var v in new[] { "", " ", "hello world", "皮卡丘", "x?y" }) Throws<ArgumentException>(() => new MapId(v)); True(!StableId.IsValid(default(MapId).Value)); });
-Test("rng.pinned-zero-seed-vectors", () =>
+Test("rng.zero-seed-independent-vectors", () =>
 {
-    string path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "rng-v1.json");
-    using var doc = JsonDocument.Parse(File.ReadAllText(path)); var root = doc.RootElement;
-    Equal(RuleVersions.SourceCommit, root.GetProperty("sourceCommit").GetString());
-    Equal(Gen3Rng.AlgorithmId, root.GetProperty("algorithmId").GetString());
-    var draws = root.GetProperty("draws"); True(draws.GetArrayLength() >= 8, "Fixture must not be empty/truncated.");
-    var s = new RngState(root.GetProperty("seed").GetUInt32());
-    foreach (var row in draws.EnumerateArray())
+    // Independently evaluated: s = (1103515245 * s + 24691) mod 2^32; raw = floor(s / 65536).
+    (uint Seed, ushort Raw, int Result)[] expected =
+    [
+        (24691u, 0, 0), (3917380458u, 59774, 74), (1383151765u, 21105, 5), (833674724u, 12720, 20),
+        (2386711175u, 36418, 18), (3805062638u, 58060, 60), (2948958921u, 44997, 97), (1742452232u, 26587, 87)
+    ];
+    var state = new RngState(0);
+    for (int i = 0; i < expected.Length; i++)
     {
-        var draw = Gen3Rng.Next(s, "fixture", 100);
-        Equal(row.GetProperty("seed").GetUInt32(), draw.State.Seed); Equal(row.GetProperty("cursor").GetUInt64(), draw.State.Cursor);
-        Equal(row.GetProperty("raw").GetUInt16(), draw.Value); Equal(s.Seed, draw.Trace.Before); Equal(draw.Value % 100, draw.Trace.Result); s = draw.State;
+        var row = expected[i]; ulong cursor = (ulong)i + 1;
+        uint before = i == 0 ? 0 : expected[i - 1].Seed;
+        var draw = Gen3Rng.Next(state, "independent-vector", 100);
+        Equal(new RngState(row.Seed, cursor, "gen3-lcg32-hi16-v1"), draw.State); Equal(row.Raw, draw.Value);
+        Equal(new RandomTrace(cursor, "independent-vector", before, row.Seed, row.Raw, 100, row.Result), draw.Trace);
+        state = draw.State;
     }
 });
 Test("rng.unsigned-overflow", () => { var d = Gen3Rng.Next(new(uint.MaxValue), "overflow"); Equal(3191476742u, d.State.Seed); Equal((ushort)48698, d.Value); });
@@ -109,7 +110,7 @@ Test("battle.ko-stops-opponent-rng-pp", () => { var s = Battle(); s = s with { B
 Test("battle.opponent-victory", () => { var s = Battle(); s = s with { Battlers = s.Battlers.SetItem(0, s.Battlers[0] with { Hp = 1, Stats = s.Battlers[0].Stats with { Speed = 1 } }) }; Equal(BattleOutcome.OpponentWon, Turn(s).State.Outcome); });
 Test("battle.input-snapshot-immutable", () => { var s = Battle(); string before = Json(s); Turn(s); Equal(before, Json(s)); });
 Test("battle.json-snapshot-roundtrip", () => { var s = Battle(); s = BattleRules.Apply(s, Player(s), catalog).State; var copy = JsonSerializer.Deserialize<BattleSnapshot>(Json(s))!; Equal(Json(s), Json(copy)); Equal(Json(BattleRules.Apply(s, Opponent(s), catalog)), Json(BattleRules.Apply(copy, Opponent(copy), catalog))); });
-Test("battle.deterministic-command-replay", () => { var initial = Battle(0x12345678); var a = initial; var b = initial; for (int i = 0; i < 5 && a.Outcome == BattleOutcome.Ongoing; i++) { var x = Turn(a, prefix: $"turn/{i}"); var y = Turn(b, prefix: $"turn/{i}"); Equal(Hash(x), Hash(y)); a = x.State; b = y.State; } Equal(Hash(a), Hash(b)); });
+Test("battle.deterministic-command-replay", () => { var initial = Battle(0x12345678); var a = initial; var b = initial; for (int i = 0; i < 5 && a.Outcome == BattleOutcome.Ongoing; i++) { var x = Turn(a, prefix: $"turn/{i}"); var y = Turn(b, prefix: $"turn/{i}"); Equal(Json(x), Json(y)); a = x.State; b = y.State; } Equal(Json(a), Json(b)); });
 Test("battle.selection-order-semantic-invariance", () => { var s = Battle(); var normal = Turn(s); var queued = BattleRules.Apply(s, Opponent(s), catalog); var reverse = BattleRules.Apply(queued.State, Player(queued.State), catalog); Equal(Json(normal.State), Json(reverse.State)); Equal(Json(normal.RandomTrace), Json(reverse.RandomTrace)); });
 Test("battle.rejected-input-does-not-perturb-replay", () => { var s = Battle(); var rejected = BattleRules.Apply(s, Player(s) with { MoveSlot = 8 }, catalog); Equal(Json(Turn(s)), Json(Turn(rejected.State))); });
 Test("world.orthogonal-move", () => { var s = World(); var t = WorldRules.Move(s, Walk(s, Direction.North), Map()); Equal(TransitionStatus.Accepted, t.Status); Equal(1, t.State.Player.X); Equal(0, t.State.Player.Y); Equal(Direction.North, t.State.Player.Facing); Equal(1L, t.State.StepCount); Equal(s.Rng, t.State.Rng); Equal(WorldEventKind.Moved, t.Events[0].Kind); });
@@ -162,32 +163,43 @@ Test("world.unsupported-current-tile-fault", () =>
 });
 Test("world.rng-algorithm-fault", () => { var s = World() with { Rng = new(0, 0, "unknown") }; Equal(TransitionStatus.Fault, WorldRules.Move(s, Walk(s, Direction.North), Map()).Status); });
 
-Test("battle.independently-constructed-golden-snapshot", () =>
+Test("battle.controlled-turn-trace-and-effects", () =>
 {
-    using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "battle-turn-v1.json")));
-    var fixture = document.RootElement; Equal(RuleVersions.SourceCommit, fixture.GetProperty("sourceCommit").GetString());
-    Equal(RuleVersions.SingleBattleV0, fixture.GetProperty("rulesVersion").GetString());
-    var result = Turn(Battle()); var actual = JsonSerializer.SerializeToElement(result.State);
-    byte[] Canonical(JsonElement value)
+    var result = Turn(Battle());
+    RandomTrace[] expected =
+    [
+        new(1, "move:player:accuracy", 0, 24691, 0, 100, 0),
+        new(2, "move:player:critical", 24691, 3917380458, 59774, 16, 14),
+        new(3, "move:player:damage-drop", 3917380458, 1383151765, 21105, 16, 1),
+        new(4, "move:opponent:accuracy", 1383151765, 833674724, 12720, 100, 20),
+        new(5, "move:opponent:critical", 833674724, 2386711175, 36418, 16, 2),
+        new(6, "move:opponent:damage-drop", 2386711175, 3805062638, 58060, 16, 12)
+    ];
+    True(result.RandomTrace.SequenceEqual(expected), "Controlled turn must preserve every RNG draw and purpose.");
+    Equal(TransitionStatus.Accepted, result.Status); True(result.Diagnostic is null);
+    Equal(BattlePhase.AwaitCommands, result.State.Phase); Equal(BattleOutcome.Ongoing, result.State.Outcome);
+    Equal(0, result.State.PendingMoves.Length); Equal(new RngState(3805062638, 6), result.State.Rng);
+    Equal(2, result.State.Battlers.Length);
+    foreach (var battler in result.State.Battlers)
     {
-        using var stream = new MemoryStream(); using (var writer = new Utf8JsonWriter(stream)) Write(writer, value); return stream.ToArray();
+        Equal(94, battler.Hp); Equal(new MoveSlot(fixtureMove.Id, 34, 35), battler.Moves.Single());
     }
-    void Write(Utf8JsonWriter writer, JsonElement value)
+    var changes = result.Events.OfType<HpChangedEvent>().ToArray(); Equal(2, changes.Length);
+    for (int i = 0; i < changes.Length; i++)
     {
-        if (value.ValueKind == JsonValueKind.Object)
-        {
-            writer.WriteStartObject(); foreach (var p in value.EnumerateObject().OrderBy(p => p.Name, StringComparer.Ordinal)) { writer.WritePropertyName(p.Name); Write(writer, p.Value); } writer.WriteEndObject();
-        }
-        else if (value.ValueKind == JsonValueKind.Array) { writer.WriteStartArray(); foreach (var v in value.EnumerateArray()) Write(writer, v); writer.WriteEndArray(); }
-        else value.WriteTo(writer);
+        var change = changes[i];
+        Equal(new CombatantId(i == 0 ? "player" : "opponent"), change.ActorId);
+        Equal(new CombatantId(i == 0 ? "opponent" : "player"), change.TargetId);
+        Equal(fixtureMove.Id, change.MoveId); Equal(100, change.Before); Equal(94, change.After);
+        Equal(6, change.Calculation.Damage); Equal(DamageCategory.Physical, change.Calculation.Category);
+        // Base 5, neutral critical, STAB 7; both floor(7 * 99/100) and floor(7 * 88/100) are 6.
+        Equal(5, change.Calculation.Steps.Single(s => s.Operation == "critical").Value);
+        Equal(7, change.Calculation.Steps.Single(s => s.Operation == "stab").Value);
     }
-    string expectedHash = fixture.GetProperty("expectedCanonicalStateSha256").GetString()!;
-    Equal(expectedHash, Convert.ToHexStringLower(SHA256.HashData(Canonical(fixture.GetProperty("expectedFinalSnapshot")))));
-    Equal(expectedHash, Convert.ToHexStringLower(SHA256.HashData(Canonical(actual))));
-    Equal(string.Join(',', fixture.GetProperty("rawRandomResults").EnumerateArray().Select(x => x.GetInt32())), string.Join(',', result.RandomTrace.Select(x => (int)x.Raw)));
+    Equal(1, result.Events.OfType<TurnEndedEvent>().Single().CompletedTurn);
 });
 
-Test("validation.valid-battle-and-world-pure", () => { var b = Battle(); var w = World(); string bh = Hash(b), wh = Hash(w); True(BattleRules.ValidateState(b, catalog) is null); True(WorldRules.ValidateState(w, Map()) is null); Equal(bh, Hash(b)); Equal(wh, Hash(w)); });
+Test("validation.valid-battle-and-world-pure", () => { var b = Battle(); var w = World(); string beforeBattle = Json(b), beforeWorld = Json(w); True(BattleRules.ValidateState(b, catalog) is null); True(WorldRules.ValidateState(w, Map()) is null); Equal(beforeBattle, Json(b)); Equal(beforeWorld, Json(w)); });
 Test("validation.duplicate-combatant-id", () => { var b = Battle(); b = b with { Battlers = b.Battlers.SetItem(1, b.Battlers[1] with { Id = b.Battlers[0].Id }) }; Equal("invalid-roster", BattleRules.ValidateState(b, catalog)!.Code); });
 Test("validation.two-player-sides", () => { var b = Battle(); b = b with { Battlers = b.Battlers.SetItem(1, b.Battlers[1] with { Side = BattleSide.Player }) }; Equal("invalid-roster", BattleRules.ValidateState(b, catalog)!.Code); });
 Test("validation.outcome-hp-disagreement", () => { var b = Battle() with { Phase = BattlePhase.Ended, Outcome = BattleOutcome.PlayerWon }; Equal("invalid-battle-outcome", BattleRules.ValidateState(b, catalog)!.Code); });

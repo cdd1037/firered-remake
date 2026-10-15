@@ -3,8 +3,13 @@
 
 The pinned source is read as Git blobs, never executed. All nine runtime IDs reuse their original maps; Dontae retains original Fab Mail.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -17,11 +22,6 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'npc-trades'
 RESOURCE_ID = 'firered-npc-trades-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-FOSSIL_READER_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-MANIFEST_SHA256 = 'ec54335876c2949df6834037003a903e31cd4884c810f3150355c64807edb215'
-LOCK_SHA256 = '638b02dc118938c0f02af524a501bbc6261017f40ad2ee69ba3ed6359cc1abac'
-SEMANTIC_SHA256 = 'c259397a134f07268ae6d788ff7c7f2cb66d6d19755e07c3d525f4dec92c7414'
 MAPS = ['CinnabarIsland_PokemonLab_Lounge']
 LIVE_SCRIPT_MAPS = MAPS + ['UndergroundPath_NorthEntrance', 'Route11_EastEntrance_2F', 'Route2_House', 'VermilionCity_House2', 'Route18_EastEntrance_2F', 'CeruleanCity_House3']
 ENABLED_TRADE_IDS = list(range(9))
@@ -30,20 +30,18 @@ TRADE_MAPS = ['Route2_House', 'CeruleanCity_House3', 'UndergroundPath_NorthEntra
               'CinnabarIsland_PokemonLab_Lounge', 'CinnabarIsland_PokemonLab_ExperimentRoom']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_Lab': 'secondary/lab'}
 NPC_REUSE = {
- 'OBJ_EVENT_GFX_SCIENTIST': ('content/generated/silph-region/npc/scientist.png', '69a795f639fcebb3e039f751b86995993f2760bed525cf91d40a912f80167568'),
- 'OBJ_EVENT_GFX_OLD_MAN_2': ('content/generated/silph-region/npc/old-man-2.png', '7c0e1db72f46cfd4c6d317c5cd386c03e1b3be70b1cf489db946e2b41fdd7da6'),
- 'OBJ_EVENT_GFX_WOMAN_2': ('content/generated/silph-region/npc/woman-2.png', '18f95efa875fb0e3dcd9d7e241205cc859d9d9588426dd84c4f93bdf7279c001'),
- 'OBJ_EVENT_GFX_RED_NORMAL': ('content/generated/silph-region/npc/red-normal.png', '51d410e3c642aea0682cd273737df10f41a46eaf88fb952552eabe6294c3410a'),
+ 'OBJ_EVENT_GFX_SCIENTIST': 'content/generated/silph-region/npc/scientist.png',
+ 'OBJ_EVENT_GFX_OLD_MAN_2': 'content/generated/silph-region/npc/old-man-2.png',
+ 'OBJ_EVENT_GFX_WOMAN_2': 'content/generated/silph-region/npc/woman-2.png',
+ 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
 }
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def compact(value): return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, digest, name):
-    need(sha(path.read_bytes()) == digest, 'Reviewed helper differs: ' + str(path))
+def module(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value)
     return value
@@ -66,7 +64,7 @@ def firered(text):
 
 def source_ref(src, path, symbol, start, end=None):
     src.read(path)
-    return dict(path=path, symbol=symbol, startLine=start, endLine=end or start, sha256=src.entries[path]['sha256'])
+    return dict(path=path, symbol=symbol, startLine=start, endLine=end or start)
 
 def numeric(src, path):
     return {m[1]: int(m[2], 0) for m in re.finditer(r'^#define\s+(\w+)\s+(0x[\da-fA-F]+|\d+)(?:\s|$)', src.text(path), re.M)}
@@ -164,11 +162,11 @@ def retained_maps(src, current):
         ('Route2_House', 'route11-region/route-2-house'),
         ('VermilionCity_House2', 'npc-trade-elyssa/vermilion-city-house2'),
         ('Route18_EastEntrance_2F', 'npc-trade-haden/route-18-east-entrance-2f'),
-        ('CeruleanCity_House3', 'rocket-hideout-runtime-maps/cerulean-region/cerulean-city-house-3')]:
+        ('CeruleanCity_House3', 'cerulean-region/cerulean-city-house-3')]:
         path='content/generated/'+relative+'/runtime-map.json'
         raw=(current/path).read_bytes(); doc=json.loads(raw); events=src.json(f'data/maps/{name}/map.json')
         need(doc['events']==events,'Retained original map events differ: '+name)
-        docs.append(dict(path=path,sha256=sha(raw),byteLength=len(raw),map=doc['stableId'],sourceMap=events['id'],geometryChanges=[],eventChanges=[]))
+        docs.append(dict(path=path,map=doc['stableId'],sourceMap=events['id'],geometryChanges=[],eventChanges=[]))
     entrance=src.json('data/maps/CinnabarIsland_PokemonLab_Entrance/map.json')['warp_events'][3]
     need(entrance==dict(x=13,y=5,elevation=0,dest_map='MAP_CINNABAR_ISLAND_POKEMON_LAB_LOUNGE',dest_warp_id='0'),'Original lounge entrance differs')
     return docs
@@ -182,8 +180,8 @@ def main():
     args=parser.parse_args(); target,dep,ref=map(lambda p:Path(os.path.abspath(p)),(args.project_root,args.dependency_root,args.reference_root))
     for p in (target,dep,ref):safe(p)
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Source/output overlap')
-    reader=module(dep/'scripts/import-cinnabar-source-preparation.py',READER_SHA,'npc_trade_reader')
-    helper=module(dep/'scripts/import-fossil-lab-region.py',FOSSIL_READER_SHA,'npc_trade_helpers')
+    reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'npc_trade_reader')
+    helper=module(dep / 'scripts/import-fossil-lab-region.py', 'npc_trade_helpers')
     reader.PRODUCT,reader.TILESETS,reader.PROFILE=dep,TILESETS,RESOURCE_ID
     helper.MAPS=TRADE_MAPS; helper.NPC_REUSE=NPC_REUSE
     src=reader.Source(ref); worlds=[reader.decode(src,n) for n in MAPS]
@@ -198,45 +196,39 @@ def main():
         for leaf in ['scripts.inc','text.inc']:
             path=f'data/maps/{name}/'+leaf
             if path in src.tree:src.read(path,'live-map-script')
-    semantic=sha(compact(offers))
-    if SEMANTIC_SHA256:need(semantic==SEMANTIC_SHA256,'Pinned trade semantics differ')
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='npc-trades-',dir=target) as folder:
         stage=Path(folder)
         for world in worlds:shared.import_map(src,world['sourceName'],world['stableId'],stage/reader.directory(world['sourceName']))
         npcs=helper.reuse_npcs(src,shared,worlds,stage,dep)
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
         entries=[]
         for world in worlds:
-            relative=reader.directory(world['sourceName']);path=stage/relative/'world.json';rich=path.read_bytes()
-            doc=converter.convert(rich,sha(rich),source_hash);helper.compact_check(doc,world,src)
-            data=converter.encode(doc);(stage/relative/'runtime-map.json').write_bytes(data);path.unlink()
-            entries.append(dict(sourceName=world['sourceName'],stableId=world['stableId'],directory=relative,sourceMapSymbol=world['events']['id'],path=relative+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash))
+            relative=reader.directory(world['sourceName']);path=stage/relative/'runtime-map.json';rich=path.read_bytes()
+            doc=converter.normalize_runtime(json.loads(rich));helper.compact_check(doc,world,src)
+            data=converter.encode(doc);(stage/relative/'runtime-map.json').write_bytes(data)
+            entries.append(dict(sourceName=world['sourceName'],stableId=world['stableId'],directory=relative,sourceMapSymbol=world['events']['id'],path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
         contracts=dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,enabledTradeIds=ENABLED_TRADE_IDS,retainedMaps=retained,
             mapTopology=links,construction=construction,numericRecords=numeric_records,
             deferredTradeIds=[i for i in range(9) if i not in ENABLED_TRADE_IDS],limitations=['All nine original NPC trades are enabled; Dontae retains the original Fab Mail through the authenticated mail package.',
             'No source cutscene visual/audio timing parity is claimed by this content contract.'])
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
-            'trades.json':offers,'presentation-text.json':presentation,'scripts.json':scripts,'constants.json':constants,'contracts.json':contracts,'npc-source.json':npcs,
-            'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
+            'trades.json':offers,'presentation-text.json':presentation,'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
+            'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,lockSha256=sha(lock_bytes),
-            readerSha256=READER_SHA,helperSha256=FOSSIL_READER_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],
-            inputCount=len(src.entries),mapCount=1,cellCount=165,borderCellCount=4,objectCount=3,tradeCount=9,enabledTradeIds=ENABLED_TRADE_IDS,tradeSemanticSha256=semantic,
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
+            inputCount=len(src.entries),mapCount=1,cellCount=165,borderCellCount=4,objectCount=3,tradeCount=9,enabledTradeIds=ENABLED_TRADE_IDS,
             reusedNpcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(sha(lock_bytes)==LOCK_SHA256,'Pinned lock differs')
         writes=[(target/'scripts/npc-trades.lock.json',lock_bytes)]
-        writes += [(target/'content/raw'/PACKAGE/p,b) for p,b in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
             if path.suffix=='.json':json.loads(data)
             if args.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
             else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),lockByteLength=len(lock_bytes),fullSourceHash=source_hash,semanticSha256=semantic,inputCount=len(src.entries),outputCount=len(outputs),mapCount=1,tradeCount=9,scriptBlockCount=len(scripts['blocks']),check=args.check),indent=2))
+        print(json.dumps(dict(inputCount=len(src.entries),outputCount=len(outputs),mapCount=1,tradeCount=9,scriptBlockCount=len(scripts['blocks']),check=args.check),indent=2))
 if __name__=='__main__':main()

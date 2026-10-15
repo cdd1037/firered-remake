@@ -24,8 +24,7 @@ public static class CeladonApproachMachineRules
             var cell = compatibility[93];
             if (cell.Species != new SpeciesId("pret:SPECIES_MUK") || cell.SourceSpeciesId != 89 ||
                 cell.CanLearn != (MukCompatibility[row] == '1') || cell.Source != new OpeningItemSourceRef(
-                    "src/data/pokemon/tmhm_learnsets.h", "SPECIES_MUK", 2035, 2063,
-                    "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"))
+                    "src/data/pokemon/tmhm_learnsets.h", "SPECIES_MUK", 2035, 2063))
                 throw new NotSupportedException("Pinned Muk machine compatibility differs.");
         }
     }

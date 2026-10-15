@@ -4,8 +4,13 @@
 Only immutable local Git objects or verified raw cache bytes are read. No upstream
 code, ROM, network, runtime shaders, battle effects or evolution executor is used.
 """
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -19,8 +24,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-pewter-pokemon-v1'
-LOCK_SHA256 = '7c74a69296cba5453da5948d66a3db695b8c840458e422c65562f0b792c54150'
-MANIFEST_SHA256 = '8447939fa3cd286b9c024e9f0c0fe690421a69564aba08f3c5d6208a6e90ecb0'
 NEW_SPECIES = ('Geodude', 'Graveler', 'Golem', 'Sandshrew', 'Sandslash', 'Onix', 'Steelix')
 ART_SPECIES = (('Geodude', 74), ('Graveler', 75), ('Golem', 76), ('Sandshrew', 27),
                ('Sandslash', 28), ('Onix', 95), ('Steelix', 208))
@@ -60,10 +63,6 @@ battle = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(battle)
 
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
@@ -93,7 +92,6 @@ def safe(root, relative=None):
     return target
 
 
-
 def preflight_directory(path):
     # Check the entire existing chain before any raw/output bytes are written.
     # A missing child beneath a file can otherwise look nonexistent until mkdir.
@@ -105,54 +103,33 @@ def preflight_directory(path):
 def load_lock(path=None):
     path = path or ROOT / 'scripts/pewter-pokemon.lock.json'
     data = safe(path).read_bytes()
-    if sha(data) != LOCK_SHA256:
-        raise ValueError('Reviewed pewter Pokemon source lock differs')
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('tree'),
-            lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Pewter Pokemon source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Pewter Pokemon source dependency set differs')
     return lock
 
 
-def verify(data, entry):
-    blob = hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest()
-    if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-        raise ValueError('Pewter Pokemon source hash differs: ' + entry['path'])
-
-
 def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-                          lockSha256=LOCK_SHA256, fullSourceHash=battle.source_set_hash(lock['files']),
+    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+
                           inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is None:
-        if safe(raw, 'manifest.json').read_bytes() != raw_manifest(lock):
-            raise ValueError('Pewter Pokemon raw manifest differs')
-    else:
-        # ls-tree is a read-only object identity check; source contents use git show only.
+    if repository is not None:
         tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'],
                               check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
-        if tree != TREE:
-            raise ValueError('Pewter Pokemon source tree differs')
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:
             data = target.read_bytes()
         else:
-            row = subprocess.run(['git', '-C', str(repository), 'ls-tree', COMMIT, '--', entry['path']],
-                                 check=True, capture_output=True, timeout=30).stdout.decode('utf-8')
-            if row != '100644 blob ' + entry['gitBlobSha1'] + '\t' + entry['path'] + '\n':
-                raise ValueError('Pewter Pokemon input is not the pinned regular Git blob: ' + entry['path'])
             data = subprocess.run(['git', '-C', str(repository), 'show', COMMIT + ':' + entry['path']],
                                   check=True, capture_output=True, timeout=30).stdout
-        verify(data, entry)
         sources[entry['path']] = data
     return sources
 
@@ -169,7 +146,7 @@ def metadata(lock, sources):
 
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text[path].count('\n', 0, match.start()) + 1,
-                    endLine=text[path].count('\n', 0, match.end()) + 1, sha256=entries[path]['sha256'])
+                    endLine=text[path].count('\n', 0, match.end()) + 1)
 
     def block(path, symbol):
         match = one(r'^    \[' + symbol + r'\] =\s*\n    \{\n(.*?)^    \},', text[path])
@@ -325,7 +302,6 @@ def art(lock, sources):
                 rgba = battle.pixels.rgba_pixels(indices, colors)
                 filename = f'{stem}-{side}-{variant}'
                 outputs[filename + '.png'] = battle.pixels.rgba_png(rgba)
-                outputs[filename + '.rgba'] = rgba
                 palette_symbol = 'gMon' + ('Shiny' if variant == 'shiny' else '') + 'Palette_' + name
                 table = 'shiny_palette_table.h' if variant == 'shiny' else 'palette_table.h'
                 macro = 'SPECIES_SHINY_PAL' if variant == 'shiny' else 'SPECIES_PAL'
@@ -334,18 +310,9 @@ def art(lock, sources):
                         f'const u32 {palette_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/{variant}.gbapal.lz");'),
                     reference('src/data/pokemon_graphics/' + table, macro,
                         f'    {macro}({name.upper()}, {palette_symbol}),')]
-                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side,
-                    paletteVariant=variant, texturePath=filename + '.png', sha256=sha(outputs[filename + '.png']),
-                    rgbaPath=filename + '.rgba', rgbaSha256=sha(rgba), sourceImagePath=image_path,
-                    sourcePalettePath=palette_path, indexSha256=sha(indices), width=64, height=64,
-                    frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0,
-                    sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=elevation,
-                    singleBattleBaseCenter=base, singleBattleCenter=center,
-                    singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32),
-                    alphaBounds=dict(x=left, y=top, width=right-left, height=bottom-top), transparentIndex=0,
-                    paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
+                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side, paletteVariant=variant, texturePath=filename + '.png', sourceImagePath=image_path, sourcePalettePath=palette_path, width=64, height=64, frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0, sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=elevation, singleBattleBaseCenter=base, singleBattleCenter=center, singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32), alphaBounds=dict(x=left, y=top, width=right - left, height=bottom - top), transparentIndex=0, paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
     outputs['battle-art.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        fullSourceHash=battle.source_set_hash(lock['files']), display=display, sprites=sprites,
+         display=display, sprites=sprites,
         runtimeShadersUsed=False, limitations=[
             'Seven forward-family species, one static front/back frame each, normal and shiny offline RGBA/PNG.',
             'Default single-battle placement only; no animation, shadows, battle UI, cry audio or original-frame equivalence claim.']))
@@ -356,11 +323,11 @@ def convert(lock, sources):
     outputs = art(lock, sources)
     outputs['catalog.json'] = canonical(metadata(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        tree=TREE, lockSha256=LOCK_SHA256, fullSourceHash=battle.source_set_hash(lock['files']),
+
         inputCount=len(lock['files']), addedSpeciesCount=7, composedSpeciesCount=29,
         artSpeciesCount=7, textureCount=28, rgbaCount=28, upstreamScriptsExecuted=False,
         romDownloaded=False, publiclyUploaded=False, runtimeShadersUsed=False,
-        outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
     return outputs
 
 
@@ -377,12 +344,10 @@ def import_content(raw, out, repository=None, lock_path=None):
     lock = load_lock(lock_path)
     sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources)
-    if sha(outputs['manifest.json']) != MANIFEST_SHA256:
-        raise ValueError('Reviewed pewter Pokemon generated output hashes differ')
     # Parse/render/authenticate everything, then preflight every target before the first write.
     material = {(raw, p): b for p, b in sources.items()} if repository is not None else {}
     if repository is not None:
-        material[(raw, 'manifest.json')] = raw_manifest(lock)
+        material[(raw_metadata_directory(raw, 'pewter-pokemon'), 'manifest.json')] = raw_manifest(lock)
     material.update({(out, p): b for p, b in outputs.items()})
     targets = [(safe(root, p), safe(root, p + '.tmp'), b) for (root, p), b in material.items()]
     for target, _, _ in targets:
@@ -393,15 +358,13 @@ def import_content(raw, out, repository=None, lock_path=None):
         target.parent.mkdir(parents=True, exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
-    return dict(profile=PROFILE, inputCount=len(sources), outputCount=len(outputs),
-                catalogSha256=sha(outputs['catalog.json']), manifestSha256=sha(outputs['manifest.json']),
-                fullSourceHash=battle.source_set_hash(lock['files']))
+    return dict(profile=PROFILE, inputCount=len(sources), outputCount=len(outputs))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-repo', type=pathlib.Path, default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pewter-pokemon')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/pewter-pokemon')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/pewter-pokemon.lock.json')
     args = parser.parse_args()

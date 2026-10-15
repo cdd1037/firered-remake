@@ -3,94 +3,49 @@
   "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "files": [
     {
-      "path": "asm/macros/event.inc",
-      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
-      "byteLength": 56947,
-      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+      "path": "asm/macros/event.inc"
     },
     {
-      "path": "include/constants/species.h",
-      "byteLength": 12982,
-      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
-      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+      "path": "include/constants/species.h"
     },
     {
-      "path": "include/constants/global.h",
-      "byteLength": 3785,
-      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
-      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+      "path": "include/constants/global.h"
     },
     {
-      "path": "include/constants/items.h",
-      "byteLength": 12436,
-      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
-      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+      "path": "include/constants/items.h"
     },
     {
-      "path": "src/data/text/species_names.h",
-      "byteLength": 15851,
-      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
-      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+      "path": "src/data/text/species_names.h"
     },
     {
-      "path": "src/field_specials.c",
-      "byteLength": 77314,
-      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
-      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+      "path": "src/field_specials.c"
     },
     {
-      "path": "src/naming_screen.c",
-      "byteLength": 69462,
-      "gitBlobSha1": "deef7054a11e4793ebfdb5e2710f9fc056540546",
-      "sha256": "fbed8534a89a801f357fa04cfcbe91798fb80a4a1e24b127ad76eef0454bea13"
+      "path": "src/naming_screen.c"
     },
     {
-      "path": "src/field_fadetransition.c",
-      "byteLength": 25263,
-      "gitBlobSha1": "f392a06d5c05966441ab448fec9f5a06c908c489",
-      "sha256": "6fa3cb3b827470de6c4942b0296bf823529faec41c6473ffe88675a44114851e"
+      "path": "src/field_fadetransition.c"
     },
     {
-      "path": "src/script_pokemon_util.c",
-      "byteLength": 5764,
-      "gitBlobSha1": "bc11dc001b4399ecd25b8699e316816e1ebd8058",
-      "sha256": "cfadee8f8c397485b66fc56a9a6e13fef1bbad47b4c6cd83dd42a9c1f8f9cf30"
+      "path": "src/script_pokemon_util.c"
     },
     {
-      "path": "src/scrcmd.c",
-      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
-      "byteLength": 56954,
-      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+      "path": "src/scrcmd.c"
     },
     {
-      "path": "src/pokemon.c",
-      "byteLength": 221865,
-      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
-      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+      "path": "src/pokemon.c"
     },
     {
-      "path": "data/event_scripts.s",
-      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
-      "byteLength": 55643,
-      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+      "path": "data/event_scripts.s"
     },
     {
-      "path": "include/constants/field_weather.h",
-      "byteLength": 792,
-      "gitBlobSha1": "e84dbc48c4ddb78a99fd07f4db81d446fff4c2f2",
-      "sha256": "24518565778cd43ce060d190bd72d9796508d173a13ea402591f493862ce390d"
+      "path": "include/constants/field_weather.h"
     },
     {
-      "path": "charmap.txt",
-      "byteLength": 21853,
-      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
-      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+      "path": "charmap.txt"
     },
     {
-      "path": "include/characters.h",
-      "byteLength": 12798,
-      "gitBlobSha1": "d00ecf0a3afcd9fc1fa9534c00f4b74793d5f06f",
-      "sha256": "6787db76f83c4f8426c5adbfa7aa061c46585db9522f1fef00ad888616199b98"
+      "path": "include/characters.h"
     }
   ]
 }

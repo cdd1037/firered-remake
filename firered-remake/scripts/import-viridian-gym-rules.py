@@ -5,7 +5,6 @@ Usage: python scripts/import-viridian-gym-rules.py PRET_REPO PREDECESSOR_ROOT OU
 No upstream code is executed. --check compares exact bytes without writing.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -15,13 +14,7 @@ COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ("TAMER_JASON", "TAMER_COLE", "BLACK_BELT_ATSUSHI", "BLACK_BELT_KIYO",
             "BLACK_BELT_TAKASHI", "COOLTRAINER_SAMUEL", "COOLTRAINER_YUJI",
             "COOLTRAINER_WARREN", "LEADER_GIOVANNI")
-BASELINE_SHA256 = "3775e076364c67d145c5754e88907d1bdf3de334b7e714e90a63b86cb87b396d"
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -32,7 +25,7 @@ def generate(reference, dependency):
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), sha256=sha(data))
+            inputs[path] = dict(path=path)
             texts[path] = data.decode()
         return texts[path]
     def one(path, pattern):
@@ -41,7 +34,7 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         return int(one(path, r"^#define " + symbol + r"\s+(\d+)\b[^\n]*")[1])
     def encode(name):
@@ -123,7 +116,6 @@ def generate(reference, dependency):
                        trainers=trainers, battles=battles, resolvedMoves=resolved)
 
     baseline = (dependency / "scripts/fuchsia-gym-baseline.lock.json").read_bytes()
-    need(sha(baseline) == BASELINE_SHA256, "Predecessor species lock differs")
     owned = json.loads(baseline)["species"] + ["CHANSEY", "SCYTHER", "TAUROS", "PSYDUCK", "GOLDUCK", "LAPRAS", "KRABBY", "KINGLER"]
     need(len(owned) == len(set(owned)) == 115, "Expected exactly 115 owned species")
     path = "src/data/items.json"
@@ -181,7 +173,7 @@ def generate(reference, dependency):
     need(len(rules["species"]) == 14 and len(rules["moves"]) == 43, "Move/species closure differs")
     outputs = {"trainers.json": trainer_doc, "machines.json": machine_doc, "rules.json": rules}
     outputs["source-input-hashes.json"] = dict(sourceCommit=COMMIT, files=[inputs[p] for p in sorted(inputs)],
-        predecessorInputs=[dict(path="scripts/fuchsia-gym-baseline.lock.json", sha256=BASELINE_SHA256)])
+        predecessorInputs=[dict(path="scripts/fuchsia-gym-baseline.lock.json")])
     return outputs
 
 def main():
@@ -194,7 +186,7 @@ def main():
     outputs = generate(args.reference, args.dependency)
     output = args.output / "content/generated/viridian-gym-rules"
     files = {name: (json.dumps(value, indent=2, ensure_ascii=False) + "\n").encode() for name, value in outputs.items()}
-    lock = dict(sourceCommit=COMMIT, outputs=[dict(path="content/generated/viridian-gym-rules/" + name, sha256=sha(data), byteLength=len(data)) for name, data in files.items()])
+    lock = dict(sourceCommit=COMMIT, outputs=[dict(path="content/generated/viridian-gym-rules/" + name) for name, data in files.items()])
     paths = {output / name: data for name, data in files.items()}
     paths[args.output / "scripts/viridian-gym-rules.lock.json"] = (json.dumps(lock, indent=2) + "\n").encode()
     for path, data in paths.items():
@@ -204,8 +196,7 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     print(json.dumps(dict(checked=args.check, trainers=9, members=29, heldDefaultMembers=6, ownedSpecies=115,
-                         rosterSpecies=14, moves=43, tm26EligibleSpecies=sum(r["canLearn"] for r in outputs["machines.json"]["machine"]["compatibility"]),
-                         hashes={name: sha(data) for name, data in files.items()}), indent=2))
+                         rosterSpecies=14, moves=43, tm26EligibleSpecies=sum(r["canLearn"] for r in outputs["machines.json"]["machine"]["compatibility"])), indent=2))
 
 if __name__ == "__main__":
     main()

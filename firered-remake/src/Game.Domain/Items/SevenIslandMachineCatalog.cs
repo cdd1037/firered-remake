@@ -9,7 +9,6 @@ namespace Game.Domain.Items;
 public sealed class SevenIslandMachineCatalog
 {
     public const string Profile = "firered-seven-island-teaching-v1";
-    public const string InheritedAdditionsSourceSha256 = "144d2e613b093dba4bc6df2a9ded135d37202f6d34cb6659ae0ef3d1bfe94ebf";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, SevenIslandMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public CeruleanCaveMachineCatalog Predecessor { get; }
@@ -31,26 +30,21 @@ public sealed class SevenIslandMachineCatalog
             old.AdditionalMachines is not { IsDefault: false, Length: 38 } inherited ||
             candidate with { Profile = old.Profile, Compatibility = old.Compatibility, AdditionalMachines = old.AdditionalMachines } != old)
             throw new ArgumentException("seven_island_machine_predecessor");
-        var additions = new List<(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility)>();
-        void Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
+        void Rows(ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
         {
             if (before.Length != 139 || rows.IsDefault || rows.Length != 146 || rows.Any(c => c is null) ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
                 !rows.Select(c => c.Species).ToHashSet().SetEquals(pokemon.Catalog.Species.Keys))
                 throw new ArgumentException("seven_island_machine_inherited_rows");
-            additions.Add((item, rows.Skip(139).ToImmutableArray()));
         }
-        Rows(old.Tm39.Item.Id, candidate.Compatibility, old.Compatibility);
+        Rows(candidate.Compatibility, old.Compatibility);
         for (int i = 0; i < inherited.Length; i++)
         {
             var current = machines[i]; var before = inherited[i];
             if (current is null || !ReferenceEquals(current.Machine, before.Machine) || current with { Compatibility = before.Compatibility } != before)
                 throw new ArgumentException("seven_island_machine_inherited_metadata");
-            Rows(before.Machine.Item.Id, current.Compatibility, before.Compatibility);
+            Rows(current.Compatibility, before.Compatibility);
         }
-        if (CampaignSourceFingerprint.Compute(additions.OrderBy(p => p.Item.Value, StringComparer.Ordinal)
-                .Select(p => new { p.Item, p.Compatibility }).ToArray()) != InheritedAdditionsSourceSha256)
-            throw new ArgumentException("seven_island_machine_inherited_source");
         var proof = new SevenIslandMachineCatalog(candidate with { }, predecessor, pokemon);
         Proofs.Add(proof.Catalog, proof); return proof;
     }

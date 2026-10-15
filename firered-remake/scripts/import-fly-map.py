@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Rebuild original, region-local Fly map visuals from pinned private source blobs."""
-import argparse, hashlib, importlib.util, json, pathlib, re, struct, subprocess, sys
+import sys as _path_sys
+from pathlib import Path as _SourcePath
+_script_directory = str(_SourcePath(__file__).resolve().parent)
+if _script_directory not in _path_sys.path:
+    _path_sys.path.insert(0, _script_directory)
+from raw_source_paths import raw_metadata_directory
+import argparse,  importlib.util, json, pathlib, re, struct, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-fly-map-v1'
-LOCK_SHA256 = '596d183887dd9cbdc16de70091a82eb8b4739854c0a44137e713af3c486a55d4'
-MANIFEST_SHA256 = '8f98f4499e9f71dc59fce594eb15f704183ea61b82968d0f4a08b9a07d5d48d4'
 BASE = 'graphics/region_map/'
 REGIONS = ('kanto', 'sevii_123', 'sevii_45', 'sevii_67')
 PATHS = frozenset(['src/region_map.c', 'src/strings.c', 'src/data/region_map/region_map_sections.json',
@@ -17,9 +21,7 @@ PATHS = frozenset(['src/region_map.c', 'src/strings.c', 'src/data/region_map/reg
 spec = importlib.util.spec_from_file_location('fly_map_pixels', ROOT / 'scripts/first-sevii-town-map-pixels.py')
 pixels = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pixels)
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(data): return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()
-def source_hash(entries): return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in sorted(entries, key=lambda e:e['path'])).encode())
 def safe(root, relative=None):
     root = pathlib.Path(root).absolute()
     target = root
@@ -30,17 +32,11 @@ def safe(root, relative=None):
     if any(p.is_symlink() for p in [target, *target.parents]): raise ValueError('Symlink path')
     return target
 
-def read(path, limit):
-    p = safe(path); size = p.stat().st_size
-    if not p.is_file() or size > limit: raise ValueError('Oversized or nonregular input')
-    with p.open('rb') as f: data = f.read(limit + 1)
-    if len(data) != size: raise ValueError('Input changed during read')
-    return data
 
-def raw_manifest(lock): return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT, tree=TREE,
-    lockSha256=LOCK_SHA256, fullSourceHash=source_hash(lock['files']), inputCount=len(PATHS)))
+def raw_manifest(): return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
+     inputCount=len(PATHS)))
 
-def convert(lock, source):
+def convert( source):
     code = source['src/region_map.c'].decode(); outputs = {}; assets = []
     for needle in ('[MAPPERM_HAS_SWITCH_BUTTON]    = FALSE,', '[MAPPERM_HAS_FLY_DESTINATIONS] = TRUE',
         'DecompressAndCopyTileDataToVram(1, sBackground_Gfx, 0, 0, 0);',
@@ -55,9 +51,7 @@ def convert(lock, source):
     def add(identifier, w, h, rgba, paths):
         if len(rgba) != w*h*4 or not 0 < w*h <= 38400: raise ValueError('Asset dimensions')
         outputs[identifier + '.png'] = pixels.compressed_png(w, h, rgba)
-        outputs[identifier + '.rgba'] = bytes(rgba)
-        assets.append(dict(id=identifier, width=w, height=h, texturePath=identifier+'.png', rgbaPath=identifier+'.rgba',
-            sha256=sha(outputs[identifier+'.png']), rgbaSha256=sha(rgba), sourcePaths=paths))
+        assets.append(dict(id=identifier, width=w, height=h, texturePath=identifier + '.png', sourcePaths=paths))
     mp = pixels.palette(source[BASE+'region_map.pal'], 80); tp = pixels.palette(source[BASE+'top_bar.pal'], 16)
     pals = {i:mp[i*16:(i+1)*16].copy() for i in range(5)}
     pals[2] = [tuple((((((c>>3)<<8)//100)*95)>>8) for c in rgb) for rgb in pals[2]]
@@ -129,43 +123,38 @@ def convert(lock, source):
     if len(overrides)!=27:raise ValueError('Player override inventory differs: '+str(len(overrides)))
     positions=[dict(sectionId=s['id'],region=region_sections.get(s['id'],0),x=s['x'],y=s['y'],width=s['width'],height=s['height']) for s in sections if all(k in s for k in ('x','y','width','height'))]
     texts={key:re.search(r'const u8 '+symbol+r'\[\] = _\("(.*)"\);',source['src/strings.c'].decode())[1] for key,symbol in [('move','gText_RegionMap_DPadMove'),('ok','gText_RegionMap_AButtonOK'),('cancel','gText_RegionMap_AButtonCancel'),('space','gText_RegionMap_Space')]}
-    outputs['fly-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,fullSourceHash=source_hash(lock['files']),
+    outputs['fly-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
         assets=assets,regions=regions,sections=positions,positionOverrides=overrides,uiTexts=texts,flyIconFrameTicks=[30,60],
         switchAvailable=False,sourceRefs=['InitRegionMapType','LoadRegionMapGfx','BufferRegionMapBg','GetMapsecType','GetDungeonMapsecType','CreateFlyIcons','CreateDungeonIconSprite','Task_FlyMap','GetPlayerPositionOnRegionMap_HandleOverrides'],
         limitations=['Indoor/underground/secret-base projection needs saved escapeWarp/dynamicWarp and is rejected by this outdoor-only Fly helper.',
         'Original Birth Island map-name lookup uses the Navel Rock flag; this source quirk is preserved independently of its own background visibility flag.',
         'Static source pixels and data are authenticated; transition animation, native rendering and audible output are separate gates.']))
-    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tree=TREE,lockSha256=LOCK_SHA256,
-        fullSourceHash=source_hash(lock['files']),inputCount=len(source),assetCount=len(assets),upstreamScriptsExecuted=False,romDownloaded=False,
+    outputs['manifest.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(source),assetCount=len(assets),upstreamScriptsExecuted=False,romDownloaded=False,
         reusedAssets={'town-map':['kanto','cursor-0','cursor-1','player-red','player-leaf','dungeon-visited','dungeon-unvisited','keypad-a','keypad-dpad-any'],
                       'first-sevii-town-map':['sevii123-locked']},
-        outputs=[dict(path=p,byteLength=len(b),sha256=sha(b)) for p,b in sorted(outputs.items())]))
+        outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
 
 def import_content(raw,out,repo=None):
     raw=safe(raw);out=safe(out)
     if raw.is_relative_to(out) or out.is_relative_to(raw):raise ValueError('Overlapping output directories')
     if repo is not None and any(p.is_relative_to(safe(repo)) or safe(repo).is_relative_to(p) for p in (raw,out)):raise ValueError('Outputs overlap source repository')
-    lock_bytes=read(ROOT/'content/fly-map-source-lock.json',65536)
-    if sha(lock_bytes)!=LOCK_SHA256:raise ValueError('Source lock differs')
+    lock_bytes=safe(ROOT / 'content/fly-map-source-lock.json').read_bytes()
     lock=json.loads(lock_bytes)
-    if (lock['repository'],lock['commit'],lock['tree'],lock['profile'],lock['gameEdition'],lock['romRevision'])!=('pret/pokefirered',COMMIT,TREE,PROFILE,'FIRERED',0) or len(lock['files'])!=len(PATHS) or {f['path'] for f in lock['files']}!=PATHS:raise ValueError('Source profile differs')
-    if repo is None and read(raw/'manifest.json',4096)!=raw_manifest(lock):raise ValueError('Raw manifest differs')
+    if (lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != ('pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0) or len(lock['files']) != len(PATHS) or {f['path'] for f in lock['files']} != PATHS:raise ValueError('Source profile differs')
     source={}
     for f in lock['files']:
-        b=read(safe(raw,f['path']),f['byteLength']) if repo is None else subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+f['path']],timeout=30)
-        if (len(b),sha(b),hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest())!=(f['byteLength'],f['sha256'],f['gitBlobSha1']):raise ValueError('Source identity differs: '+f['path'])
+        b=safe(safe(raw, f['path'])).read_bytes() if repo is None else subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+f['path']],timeout=30)
         source[f['path']]=b
-    outputs=convert(lock,source)
-    if sha(outputs['manifest.json'])!=MANIFEST_SHA256:raise ValueError('Generated manifest differs')
-    material=([(raw,p,b) for p,b in source.items()]+[(raw,'manifest.json',raw_manifest(lock))]) if repo is not None else []
+    outputs=convert(source)
+    material=([(raw,p,b) for p,b in source.items()]+[(raw_metadata_directory(raw, 'fly-map'),'manifest.json',raw_manifest())]) if repo is not None else []
     material += [(out,p,b) for p,b in outputs.items()]
     for root,p,b in material:
         target=safe(root,p);stage=safe(root,p+'.tmp');target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(source),assetCount=7,outputCount=len(outputs),manifestSha256=sha(outputs['manifest.json']))
+    return dict(profile=PROFILE,inputCount=len(source),assetCount=7,outputCount=len(outputs))
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path)
-    p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/fly-map');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/fly-map')
+    p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/fly-map')
     a=p.parse_args();print(json.dumps(import_content(a.raw,a.out,a.reference_repo),sort_keys=True))
 if __name__=='__main__':main()

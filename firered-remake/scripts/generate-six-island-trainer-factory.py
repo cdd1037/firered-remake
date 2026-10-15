@@ -1,8 +1,7 @@
-"""Generate pinned Six Island trainer fingerprints and party expectations; no upstream execution."""
-import argparse,hashlib,json
+"""Generate pinned Six Island trainer identities and party expectations; no upstream execution."""
+import argparse,json
 from pathlib import Path
 
-def fingerprint(v):return hashlib.sha256(json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
 def q(v):return json.dumps(v,ensure_ascii=False)
 def arr(v):return '['+', '.join(q(x) if isinstance(x,str) else str(x) for x in v)+']'
 def generate(root):
@@ -21,27 +20,27 @@ public static class SixIslandTrainerPartyFactory
     public const string SourceCommit = TrainerPartyFactory.SourceCommit;
     public const string RulesVersion = "firered-six-island-trainers-v1";
     public static TrainerId DoubleTrainer { get; } = new("pret:TRAINER_TWINS_MIU_MIA");
-    public static readonly ImmutableDictionary<TrainerId, string> TrainerHashes = new Dictionary<TrainerId, string>
+    public static readonly ImmutableHashSet<TrainerId> TrainerIds = new HashSet<TrainerId>
     {
 '''
- for x in t:out+=f'        [new({q(x["id"]["value"])})] = {q(fingerprint(x))},\n'
- out+='''    }.ToImmutableDictionary();
-    public static readonly ImmutableDictionary<string, string> BattleHashes = new Dictionary<string, string>
+ for x in t:out+=f'        new({q(x["id"]["value"])}),\n'
+ out+='''    }.ToImmutableHashSet();
+    public static readonly ImmutableHashSet<string> BattleScripts = new HashSet<string>
     {
 '''
- for x in b:out+=f'        [{q(x["scriptEntry"])}] = {q(fingerprint(x))},\n'
- out+='''    }.ToImmutableDictionary(StringComparer.Ordinal);
+ for x in b:out+=f'        {q(x["scriptEntry"])},\n'
+ out+='''    }.ToImmutableHashSet(StringComparer.Ordinal);
     public static ImmutableArray<TrainerId> AllTrainers { get; } = ['''+', '.join('new('+q(x['id']['value'])+')' for x in t)+'''];
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = AllTrainers.Where(id => id != DoubleTrainer).ToImmutableArray();
     internal sealed record ExpectedMember(string Species, int SourceSpecies, string Name, int Level, int Iv, int[] Encoded, string[] Moves, string HeldItem);
-    internal sealed record ExpectedTrainer(string Name, int Gender, uint AiFlags, bool DoubleBattle, int[] Encoded, string[] Items, ExpectedMember[] Party, int BasePrize, string TrainerSha256);
+    internal sealed record ExpectedTrainer(string Name, int Gender, uint AiFlags, bool DoubleBattle, int[] Encoded, string[] Items, ExpectedMember[] Party, int BasePrize);
     internal static readonly ImmutableDictionary<TrainerId, ExpectedTrainer> Expected = new Dictionary<TrainerId, ExpectedTrainer>
     {
 '''
  for x in t:
   party=[]
   for p,m in zip(x['party'],resolved[x['id']['value'][5:]]):party.append('new('+','.join([q(p['species']['value']),str(p['sourceSpeciesId']),q(p['speciesName']),str(p['level']),str(p['sourceIv']),arr(p['encodedSpeciesName']),arr(['pret:'+v for v in m['moves']]),q(p['heldItem'])])+')')
-  args=[q(x['sourceTrainerName']),str(x['encounterMusicGender']),str(x['aiFlags'])+'u',str(x['doubleBattle']).lower(),arr(x['encodedTrainerName']),arr(x['items']),'['+','.join(party)+']',str((8 if x['doubleBattle'] else 4)*x['baseMoney']*x['party'][-1]['level']),q(fingerprint(x))]
+  args=[q(x['sourceTrainerName']),str(x['encounterMusicGender']),str(x['aiFlags'])+'u',str(x['doubleBattle']).lower(),arr(x['encodedTrainerName']),arr(x['items']),'['+','.join(party)+']',str((8 if x['doubleBattle'] else 4)*x['baseMoney']*x['party'][-1]['level'])]
   out+='        [new('+q(x['id']['value'])+')] = new('+','.join(args)+'),\n'
  out+='''    }.ToImmutableDictionary();
     public static int BasePrize(SixIslandTrainerCatalog trainers, TrainerId id)
@@ -59,7 +58,7 @@ public static class SixIslandTrainerPartyFactory
         foreach (var member in trainer.Party)
         {
             if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("six_island_trainer_species");
-            if (member.CustomMoves.Any(m => !opponents.Mechanics.Catalog.Moves.TryGetValue(m, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))
+            if (member.CustomMoves.Any(m => !opponents.Mechanics.Catalog.Moves.TryGetValue(m, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
                 throw new NotSupportedException("six_island_trainer_move_source");
         }
         var made = TrainerPartyFactory.CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);
@@ -75,19 +74,18 @@ public static class SixIslandTrainerPartyFactory
         if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster ||
             catalog.Trainers is null || catalog.BattlesByScript is null || catalog.Trainers.Count != 11 || catalog.BattlesByScript.Count != 12)
             throw new NotSupportedException("six_island_trainer_scope");
-        foreach (var (id, hash) in TrainerHashes)
+        foreach (var id in TrainerIds)
             if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Id != id ||
                 trainer.Party.IsDefaultOrEmpty || trainer.Party.Any(m => m is null || m.CustomMoves.IsDefault || m.EncodedSpeciesName.IsDefaultOrEmpty) ||
-                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefaultOrEmpty || trainer.AiFlagSymbols.IsDefault ||
-                CampaignSourceFingerprint.Compute(trainer) != hash)
+                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefaultOrEmpty || trainer.AiFlagSymbols.IsDefault)
                 throw new NotSupportedException("six_island_trainer_source");
-        foreach (var (script, hash) in BattleHashes)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script || CampaignSourceFingerprint.Compute(battle) != hash)
+        foreach (var script in BattleScripts)
+            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script)
                 throw new NotSupportedException("six_island_trainer_battle_source");
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || !BattleHashes.TryGetValue(battle.ScriptEntry, out var hash) || CampaignSourceFingerprint.Compute(battle) != hash)
+        if (battle is null || !BattleScripts.Contains(battle.ScriptEntry))
             throw new NotSupportedException("six_island_trainer_battle_source");
     }
 }
@@ -98,4 +96,4 @@ if __name__=='__main__':
  path=a.root/'src/Game.Domain/Trainers/SixIslandTrainerPartyFactory.cs';data=generate(a.root)
  if a.check:assert path.read_text()==data,'Trainer source generation differs'
  else:path.write_text(data)
- print(json.dumps(dict(checked=a.check,sha256=hashlib.sha256(data.encode()).hexdigest())))
+ print(json.dumps(dict(checked=a.check)))

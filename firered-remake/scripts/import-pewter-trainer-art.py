@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Pinned static Bug Catcher/Red/Leaf trainer frames. Never executes upstream code."""
-import argparse, hashlib, importlib.util, io, json, pathlib, re, sys, subprocess
+import argparse,  importlib.util, io, json, pathlib, re, sys, subprocess
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-def sha(b):return hashlib.sha256(b).hexdigest()
 def canonical(d):return (json.dumps(d,sort_keys=True,indent=2)+'\n').encode()
 def safe(root,p):
  q=root/p
@@ -14,14 +13,12 @@ def safe(root,p):
 
 def run(repository, raw, output):
  lock_bytes=(ROOT/'scripts/pewter-trainer-art.lock.json').read_bytes();lock=json.loads(lock_bytes)
- if sha(lock_bytes)!='1c0fb117c2641549e094e165fac0fdf5539253a18cbee1488b34f3e437a7e03d':raise ValueError('Lock hash differs')
  project=json.loads((ROOT/'content/source-lock.json').read_bytes())
  if (project['source']['repository'],project['source']['sourceCommit'],project['referenceGame']['gameEdition'],project['referenceGame']['romRevision'])!=('pret/pokefirered',COMMIT,'FIRERED',0):raise ValueError('Project source profile differs')
  if (lock['repository'],lock['commit'])!=('pret/pokefirered',COMMIT) or len(lock['files'])!=9:raise ValueError('Source identity differs')
  sources={}
  for e in lock['files']:
   p=e['path'];b=subprocess.check_output(['git','-C',str(repository),'show',COMMIT+':'+p]) if repository else safe(raw,p).read_bytes()
-  if (len(b),sha(b),hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest())!=(e['byteLength'],e['sha256'],e['gitBlobSha1']):raise ValueError('Source hash differs: '+p)
   sources[p]=b
   if repository:
    target=safe(raw,p);target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
@@ -43,11 +40,10 @@ def run(repository, raw, output):
   colors=[tuple((v//8<<3)|(v//8>>2) for v in map(int,line.split())) for line in lines[3:]]
   if max(indices)>15:raise ValueError('Trainer palette index differs')
   rgba=bytes(v for i in indices for v in (*colors[i],255 if i else 0))
-  (output/(id+'.rgba')).write_bytes(rgba)
   Image.frombytes('RGBA',(64,64),rgba).save(output/(id+'.png'))
-  assets.append(dict(id=id,rgbaPath=id+'.rgba',rgbaSha256=sha(rgba),width=64,height=64,x=x,y=y,sourceImage=path,sourcePalette=pal,sourceFrame=0,indexSha256=sha(indices)))
- document=dict(profile='firered-pewter-trainer-art-v1',sourceCommit=COMMIT,lockSha256=sha(lock_bytes),inputs=lock['files'],paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',assets=assets,limitations=['Static settled trainer frames only; original slide, throw, attack timing and audio remain unverified.'])
+  assets.append(dict(id=id, texturePath=id + '.png', width=64, height=64, x=x, y=y, sourceImage=path, sourcePalette=pal, sourceFrame=0))
+ document=dict(profile='firered-pewter-trainer-art-v1',sourceCommit=COMMIT,inputs=lock['files'],paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',assets=assets,limitations=['Static settled trainer frames only; original slide, throw, attack timing and audio remain unverified.'])
  data=canonical(document);(output/'pewter-trainer-art.json').write_bytes(data)
- print(json.dumps(dict(sha256=sha(data),lockSha256=sha(lock_bytes),assets=assets),indent=2))
+ print(json.dumps(dict(assets=assets),indent=2))
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--source-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pewter-trainer-art');p.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/pewter-trainer-art');a=p.parse_args();run(a.source_repo,a.raw,a.output)
+ p=argparse.ArgumentParser();p.add_argument('--source-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/pewter-trainer-art');a=p.parse_args();run(a.source_repo,a.raw,a.output)

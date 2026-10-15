@@ -26,7 +26,7 @@ public static partial class WildBattleRules
 
     static partial void AddCalledScalarDamageSupport(PokemonMoveDefinition move, ref bool supported)
     {
-        if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledScalarDamageRecipe(move.Effect)) supported = true;
+        if (SourceMoveDefinitionRules.IsValid(move) && HasCalledScalarDamageRecipe(move.Effect)) supported = true;
     }
     internal static bool IsImprisoned(WildBattleCombatant actor, WildBattleCombatant? opposing, MoveId move) =>
         SourceMoveRestrictionRules.Imprisoned(move, opposing is null ? [] : [opposing]);
@@ -80,19 +80,19 @@ public static partial class WildBattleRules
         "EFFECT_ROLE_PLAY" or "EFFECT_RECYCLE" or "EFFECT_SKILL_SWAP" or "EFFECT_CAMOUFLAGE" or "EFFECT_TEETER_DANCE" or
         "EFFECT_TRICK" or "EFFECT_THIEF";
     private static void AddCalledPartyEffectSupport(PokemonMoveDefinition move, ref bool supported)
-    { if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledPartyRecipe(move.Effect)) supported = true; }
+    { if (SourceMoveDefinitionRules.IsValid(move) && HasCalledPartyRecipe(move.Effect)) supported = true; }
     private static bool HasCalledFieldRecipe(string effect) => effect is "EFFECT_FREEZE_HIT" or "EFFECT_MIST" or
         "EFFECT_THUNDER" or "EFFECT_TOXIC" or "EFFECT_LIGHT_SCREEN" or "EFFECT_THAW_HIT" or
         "EFFECT_SAFEGUARD" or "EFFECT_SUNNY_DAY" or "EFFECT_HAIL" or "EFFECT_POISON_FANG" or "EFFECT_WEATHER_BALL";
     private static void AddCalledFieldEffectSupport(PokemonMoveDefinition move, ref bool supported)
     {
-        if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledFieldRecipe(move.Effect)) supported = true;
+        if (SourceMoveDefinitionRules.IsValid(move) && HasCalledFieldRecipe(move.Effect)) supported = true;
     }
     private static bool HasCalledVolatileRecipe(string effect) => effect is "EFFECT_SUBSTITUTE" or "EFFECT_PERISH_SONG" or
         "EFFECT_FUTURE_SIGHT" or "EFFECT_STOCKPILE" or "EFFECT_SPIT_UP" or "EFFECT_SWALLOW" or "EFFECT_TORMENT" or
         "EFFECT_TAUNT" or "EFFECT_WISH" or "EFFECT_MAGIC_COAT" or "EFFECT_GRUDGE";
     private static void AddCalledVolatileSupport(PokemonMoveDefinition move, ref bool supported)
-    { if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledVolatileRecipe(move.Effect)) supported = true; }
+    { if (SourceMoveDefinitionRules.IsValid(move) && HasCalledVolatileRecipe(move.Effect)) supported = true; }
 
     /// <summary>Source move-selection restrictions. Taunt is also checked later by the action canceller.</summary>
     public static bool IsCalledMoveSelectable(PokemonCatalog catalog, WildBattleCombatant mon, int slot)
@@ -113,7 +113,7 @@ public static partial class WildBattleRules
     private static bool HasStatRecoveryRecipe(string effect) => SourceRecipeContext.HasStatRecoveryRecipe(effect);
     static partial void AddCalledStatRecoverySupport(PokemonMoveDefinition move, ref bool supported)
     {
-        if (MetronomeSourceMoveDefinition.Matches(move) && HasStatRecoveryRecipe(move.Effect)) supported = true;
+        if (SourceMoveDefinitionRules.IsValid(move) && HasStatRecoveryRecipe(move.Effect)) supported = true;
     }
     public const string CalledMoveKernelRulesVersion = "firered-called-action-v1";
     static partial void AddCalledMoveRecipeSupport(PokemonMoveDefinition move, ref bool supported);
@@ -121,7 +121,7 @@ public static partial class WildBattleRules
     static partial void AddCalledScalarDamageSupport(PokemonMoveDefinition move, ref bool supported);
     public static bool IsCalledMoveEffectSupported(PokemonMoveDefinition move)
     {
-        if (!MetronomeSourceMoveDefinition.Matches(move)) return false;
+        if (!SourceMoveDefinitionRules.IsValid(move)) return false;
         bool supported = FuchsiaBattleScope.Supports(move.Id) && FuchsiaBattleScope.ValidDefinition(move);
         AddCalledMoveRecipeSupport(move, ref supported);
         AddCalledStatRecoverySupport(move, ref supported);
@@ -136,7 +136,7 @@ public static partial class WildBattleRules
     }
     private static void AddPreparedMoveSupport(PokemonMoveDefinition move, ref bool supported)
     {
-        if (MetronomeSourceMoveDefinition.Matches(move) && move.Effect is "EFFECT_FOCUS_PUNCH" or "EFFECT_SNATCH")
+        if (SourceMoveDefinitionRules.IsValid(move) && move.Effect is "EFFECT_FOCUS_PUNCH" or "EFFECT_SNATCH")
             supported = true;
     }
     internal static bool MtMoonNeutral(WildBattleCombatant p) => p.SpecialAttackStageDelta == 0 && p.SpecialDefenseStageDelta == 0 &&
@@ -167,12 +167,12 @@ public static partial class WildBattleRules
     private static bool HasReusableSourceRecipe(string effect) => SourceRecipeContext.HasGenericRecipe(effect);
     static partial void AddCalledMoveRecipeSupport(PokemonMoveDefinition move, ref bool supported)
     {
-        if (MetronomeSourceMoveDefinition.Matches(move) && HasReusableSourceRecipe(move.Effect)) supported = true;
+        if (SourceMoveDefinitionRules.IsValid(move) && HasReusableSourceRecipe(move.Effect)) supported = true;
     }
     private static bool HasCalledCallerRecipe(string effect) => effect is "EFFECT_METRONOME" or
         "EFFECT_MIRROR_MOVE" or "EFFECT_NATURE_POWER" or "EFFECT_ASSIST" or "EFFECT_SLEEP_TALK" or "EFFECT_COUNTER" or "EFFECT_MIRROR_COAT" or "EFFECT_MIMIC" or "EFFECT_SKETCH";
     private static void AddCalledCallerSupport(PokemonMoveDefinition move, ref bool supported)
-    { if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledCallerRecipe(move.Effect)) supported = true; }
+    { if (SourceMoveDefinitionRules.IsValid(move) && HasCalledCallerRecipe(move.Effect)) supported = true; }
     public const string RulesVersion = "firered-route1-wild-battle-semantic-v1";
     public const string ForestRulesVersion = "firered-forest-wild-battle-semantic-v1";
     // User-approved correction: Pewter and its explicit extensions use roll < secondaryChance; legacy versions retain <=.
@@ -383,7 +383,7 @@ public static partial class WildBattleRules
 
     private static void AddCalledTurnLockSupport(PokemonMoveDefinition move, ref bool supported)
     {
-        if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledTurnLockRecipe(move.Effect)) supported = true;
+        if (SourceMoveDefinitionRules.IsValid(move) && HasCalledTurnLockRecipe(move.Effect)) supported = true;
     }
 
     public static WildBattleSemiInvulnerable CalledSemiInvulnerable(WildBattleCombatant mon) =>

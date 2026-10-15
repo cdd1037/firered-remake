@@ -75,7 +75,7 @@ public partial class CampaignView
             _forestTrainerPortraits.Add(portrait.Id,ImageTexture.CreateFromImage(image));
         }
         var icon=source.Document.Icon;
-        using(var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,PretPewterMachines.IconRgba(icon)))
+        using(var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("vermilion-gym-assets", icon)))
             _earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
         var field=PretVermilionGymFieldMoveArt.Load(_root);
         Texture2D Sheet(string id,int width,int height)

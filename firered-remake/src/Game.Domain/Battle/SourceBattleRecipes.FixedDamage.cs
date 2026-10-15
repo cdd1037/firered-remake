@@ -15,7 +15,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteFixedDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {
-        if (!HasFixedDamageRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
+        if (!HasFixedDamageRecipe(move.Effect) || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_fixed_damage_definition");
         if (move.Effect == "EFFECT_OHKO") { ExecuteOneHitKo(catalog, actor, target, slot, move, purpose); return; }
         bool endeavor = move.Effect == "EFFECT_ENDEAVOR", fang = move.Effect == "EFFECT_SUPER_FANG";

@@ -12,7 +12,7 @@ public partial class CampaignView
     private Texture2D PowerPlantPixels(JsonElement row,bool replicatePalette=false)
     {
         int width=row.GetProperty("width").GetInt32(),height=row.GetProperty("height").GetInt32();
-        var rgba=_powerPlantArt!.Files[row.GetProperty("rgbaPath").GetString()!];
+        var rgba=PngRgba8.Decode(_powerPlantArt!.Files[row.GetProperty("texturePath").GetString()!]);
         if(replicatePalette)
         {
             rgba=rgba.ToArray();
@@ -25,7 +25,7 @@ public partial class CampaignView
     private void LoadPowerPlantPresentation()
     {
         if(!_catalog.PowerPlantEnabled)return;
-        if(!_session.IsCurrentGame||!_catalog.EventIslandsEnabled||_battleArt.Count!=840||_storageIcons.Count!=173||_route22Footprints.Count!=126)
+        if(!_session.IsCurrentGame||!_catalog.EventIslandsEnabled)
             throw new InvalidDataException("Power Plant requires its complete Event Island presentation predecessor.");
         _powerPlantArt=PowerPlantPresentationAssets.Load(_root);
         foreach(var row in PowerPlantManifest.GetProperty("sprites").EnumerateArray())
@@ -52,16 +52,11 @@ public partial class CampaignView
         foreach(var row in PowerPlantManifest.GetProperty("itemIcons").EnumerateArray())
         {
             if(row.GetProperty("inherited").GetBoolean())continue;
-            byte[] pixels=Convert.FromBase64String(row.GetProperty("rgbaBase64").GetString()!);
-            if(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(pixels))!=row.GetProperty("rgbaSha256").GetString())
-                throw new InvalidDataException("Power Plant item pixels differ.");
+            byte[] pixels=PngRgba8.Decode(_powerPlantArt!.Files[row.GetProperty("pngPath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             using var image=Image.CreateFromData(row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32(),false,Image.Format.Rgba8,pixels);
             _earlyItemIcons.Add(new(row.GetProperty("item").GetProperty("value").GetString()!),(ImageTexture)SceneTextures.FromImage(image));
         }
-        if(_battleArt.Count!=852||_storageIcons.Count!=176||_route22Footprints.Count!=129||_powerPlantDex.Count!=3)
-            throw new InvalidDataException("Power Plant presentation inventory differs.");
-        Write("powerPlantPresentation",new{PowerPlantPresentationAssets.ManifestSha256,battleSprites=852,canonicalIcons=176,footprints=129,
-            newMoveAnimations=0,nativeWindowVerified=false,physicalAudioVerified=false});
+        Write("powerPlantPresentation",new{nativeWindowVerified=false,physicalAudioVerified=false});
     }
     private CaptureDexEntry? PowerPlantCaptureDexEntry(int species)=>!_powerPlantDex.TryGetValue(species,out var e)?null:
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,

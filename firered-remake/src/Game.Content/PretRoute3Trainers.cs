@@ -13,11 +13,10 @@ public static class PretRoute3Trainers
         var files = region.SourceFiles.ToDictionary(x => x.Path, StringComparer.Ordinal);
         TrainerSourceRef Ref(PretPewterSourceLocation r)
         {
-            if (r.Kind != SourceKind.Pret || r.Repository != "pret/pokefirered" ||
-                r.Commit != Route3TrainerPartyFactory.SourceCommit || r.Line < 1 ||
-                !files.TryGetValue(r.Path, out var file) || file.Sha256 != r.Sha256)
+            if (r.Kind != SourceKind.Pret || r.Line < 1 ||
+                !files.TryGetValue(r.Path, out var file) )
                 throw new InvalidDataException("Route3 trainer source identity differs.");
-            return new(r.Path, r.Symbol, r.Line, r.Line, r.Sha256);
+            return new(r.Path,r.Symbol,r.Line,r.Line);
         }
         var names = pokemon.SourceFiles.Single(f => f.Path == "src/data/text/species_names.h");
         var money = files["src/battle_main.c"];
@@ -40,13 +39,13 @@ public static class PretRoute3Trainers
                 return new TrainerPartyMemberDefinition(species, m.SourceSpeciesId, m.SpeciesName,
                     encoded, m.Level, m.SourceIv, m.HeldItem,
                     m.CustomMoves.Select(x => new MoveId("pret:" + x)).ToImmutableArray(), Ref(t.PartySourceRef),
-                    new(names.Path, m.Species, m.SourceSpeciesId + 2, m.SourceSpeciesId + 2, names.Sha256));
+                    new(names.Path,m.Species,m.SourceSpeciesId + 2,m.SourceSpeciesId + 2));
             }).ToImmutableArray();
             int line = d["trainerClass"] switch { "TRAINER_CLASS_YOUNGSTER" => 459, "TRAINER_CLASS_BUG_CATCHER" => 460, "TRAINER_CLASS_LASS" => 467, _ => throw new InvalidDataException("Route3 trainer class differs.") };
             trainers.Add(id, new(id, t.SourceTrainerId, d["trainerClass"], t.SourceTrainerClass, d["trainerPic"],
                 t.SourceTrainerPic, t.Name, t.EncodedName, t.EncounterMusicGender,
                 ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"], false, t.PartyFlags, (uint)t.AiFlags,
-                ["AI_SCRIPT_CHECK_BAD_MOVE"], t.BaseMoney, party, Ref(t.SourceRef), new(money.Path, d["trainerClass"], line, line, money.Sha256)));
+                ["AI_SCRIPT_CHECK_BAD_MOVE"], t.BaseMoney, party, Ref(t.SourceRef), new(money.Path,d["trainerClass"],line,line)));
             battles.Add(id, new(id, 0, 8, t.ScriptEntry, t.IntroText, t.DefeatText,
                 t.ScriptEntry.Replace("EventScript", "Text", StringComparison.Ordinal) + "PostBattle",
                 "EventScript_TryDoNormalTrainerBattle", "CB2_EndTrainerBattle", Ref(t.ScriptSourceRef)));

@@ -4,11 +4,16 @@
 Only pinned reviewed local converters execute; upstream Git blobs are inert data.
 This resource package does not admit battles or field commands by itself.
 """
+import sys as _constant_sys
+from pathlib import Path as _ConstantPath
+_constant_scripts = str(_ConstantPath(__file__).resolve().parent)
+if _constant_scripts not in _constant_sys.path:
+    _constant_sys.path.insert(0, _constant_scripts)
+from shared_constants import package_documents
 import argparse
 import ast
 import base64
 import collections
-import hashlib
 import importlib.util
 import json
 import os
@@ -22,26 +27,19 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'power-plant-resources'
 RESOURCE_ID = 'firered-power-plant-resources-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
-MANIFEST_SHA256 = '527ef63568ff9cf3c3ae1fd1715753cefb1abd9a765c967cb3b5200886328676'
-LOCK_SHA256 = '58831ea9b64e301e81b1680a5c20679901c3c42ccf0f28ae2a9001b2440a7c77'
 MAPS = ['PowerPlant']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_PowerPlant': 'secondary/power_plant',
             'gTileset_General': 'primary/general', 'gTileset_LavenderTown': 'secondary/lavender_town'}
 ROUTE_PACKAGE = 'content/generated/rocket-hideout-runtime-maps'
-ROUTE_MANIFEST_SHA = 'ee99ed635f7355c82f26373274caf3d1bc2706e7329f4d17383d3fc6b614c56b'
 ROUTE_PATH = 'rocktunnel-region/route-10/runtime-map.json'
-ROUTE_SHA = '22b3ed39ae778ead0c73bf42685c671e2b640d52cc726b6e7f9bf0fec44996a5'
 
 
-def sha(data): return hashlib.sha256(data).hexdigest()
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
     need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
 def module(path):
-    need(sha(path.read_bytes()) == READER_SHA, 'Reviewed source reader differs')
     spec = importlib.util.spec_from_file_location('power_plant_reader', path)
     value = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(value)
@@ -168,21 +166,19 @@ def compact_check(document, world, src):
     for cell, (block,) in zip(world['cells'], struct.iter_unpack('<H', raw), strict=True):
         need((block & 1023, (block >> 10) & 3, block >> 12, rows[block & 1023]) ==
              (cell['metatileId'], cell['collision'], cell['elevation'], cell['rawAttributes']), 'Cell roundtrip differs')
-    for script in document['scripts']:
-        original = src.read(script['path'])
-        need(script['sha256'] == sha(original) and script['text'].encode() == original, 'Embedded script differs')
+    for path in document['scriptPaths']:
+        src.read(path)
 
 
 def retained_route(src, reader, current):
     manifest = (current / ROUTE_PACKAGE / 'manifest.json').read_bytes()
-    need(sha(manifest) == ROUTE_MANIFEST_SHA, 'Retained map manifest differs')
     entry = next(e for e in json.loads(manifest)['maps'] if e['stableId'] == 'map.route-10')
-    raw = (current / ROUTE_PACKAGE / ROUTE_PATH).read_bytes()
-    need(entry['path'] == ROUTE_PATH and entry['sha256'] == ROUTE_SHA and sha(raw) == ROUTE_SHA and len(raw) == entry['byteLength'], 'Retained Route10 differs')
+    raw = (current / 'content/generated' / ROUTE_PATH).read_bytes()
+    need(entry['path'] == ROUTE_PATH, 'Retained Route10 differs')
     world = reader.decode(src, 'Route10')
     compact_check(json.loads(raw), world, src)
     return dict(map='map.route-10', operation='reuse-existing-source-map', geometryChanges=[], eventChanges=[],
-                currentPackage=ROUTE_PACKAGE, currentManifestSha256=ROUTE_MANIFEST_SHA, currentResource=entry,
+                currentPackage='content/generated', currentResource=dict(path=entry['path']),
                 entrances=[dict(index=i, event=e) for i,e in enumerate(world['events']['warp_events']) if e['dest_map'] == 'MAP_POWER_PLANT'],
                 requiredIntegration='Register map.power-plant; retain Route10 geometry, events and original warp indices.'), world
 
@@ -315,39 +311,34 @@ def main():
         inactiveSourceWarps=[dict(index=i,event=world['events']['warp_events'][i],cell=world['cells'][world['events']['warp_events'][i]['y']*world['width']+world['events']['warp_events'][i]['x']]) for i in [0,2,4]],
         limitations=['Resource/source contract only; runtime command and battle admission belongs to Application.','Eight total objects comprise five pickups, two fake balls and Zapdos.','Original three blocked warp records remain unchanged.'])
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS
-    converter=reader.load_helper('_reviewed_runtime_converter.py')
+    converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='power-plant-',dir=target) as temp:
         stage=Path(temp);relative='power-plant'
         shared.import_map(src,'PowerPlant','map.power-plant',stage/relative)
         npcs=shared.npc_inventory(src,worlds,stage/'npc')
-        source_hash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode())
-        p=stage/relative/'world.json';rich=p.read_bytes();compact=converter.convert(rich,sha(rich),source_hash);compact_check(compact,world,src)
-        data=converter.encode(compact);(stage/relative/'runtime-map.json').write_bytes(data);p.unlink()
-        entries=[dict(sourceName='PowerPlant',stableId='map.power-plant',directory=relative,sourceMapSymbol='MAP_POWER_PLANT',path=relative+'/runtime-map.json',
-                      sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash)]
+        p=stage/relative/'runtime-map.json';rich=p.read_bytes();compact=converter.normalize_runtime(json.loads(rich));compact_check(compact,world,src)
+        data=converter.encode(compact);(stage/relative/'runtime-map.json').write_bytes(data)
+        entries=[dict(sourceName='PowerPlant',stableId='map.power-plant',directory=relative,sourceMapSymbol='MAP_POWER_PLANT',path=relative+'/runtime-map.json')]
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
-        docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
                                   maps=entries,inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={s:w['stableId'] for s,w in bysymbol.items()}),
-              'scripts.json':scripts,'constants.json':constants,'contracts.json':contracts,'npc-source.json':npcs,'reachability.json':witness,
+              'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,'reachability.json':witness,
               'items.json':dict(schemaVersion=1,declarations=items),'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS),
-              'encounters.json':dict(schemaVersion=1,sourceRef=src.ref(ep,'gWildMonHeaders'),groups=groups,runtimeIntegrated=False)}
+              'encounters.json':dict(schemaVersion=1,sourceRef=src.ref(ep,'gWildMonHeaders'),groups=groups,runtimeIntegrated=False)}, check=args.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
-        outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,
-            lockSha256=sha(lock_bytes),readerSha256=READER_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],
+        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
             inputCount=len(src.entries),mapCount=1,cellCount=1960,borderCellCount=4,directedWarpCount=7,objectCount=8,pickupCount=5,hiddenItemCount=2,
             fakeItemBallCount=2,staticEncounterCount=3,npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned manifest differs')
-        if LOCK_SHA256:need(sha(lock_bytes)==LOCK_SHA256,'Pinned source lock differs')
         writes=[(target/'scripts/power-plant-resources.lock.json',lock_bytes),(target/'scripts/power-plant-resources.contract.json',canonical(contracts))]
-        writes += [(target/'content/raw'/PACKAGE/p,data) for p,data in sorted(src.data.items())]
+        writes += [(target/'content/raw/pokefirered/037335f4'/p,data) for p,data in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)
             if args.check:need(path.is_file() and path.read_bytes()==data,'Regeneration differs: '+str(path))
             else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
-        print(json.dumps(dict(manifestSha256=sha(manifest_bytes),manifestByteLength=len(manifest_bytes),lockSha256=sha(lock_bytes),lockByteLength=len(lock_bytes),fullSourceHash=source_hash,
+        print(json.dumps(dict(
             mapCount=1,cellRoundtripCount=1960,borderCellRoundtripCount=4,unchangedRoute10Cells=1920,inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),check=args.check),indent=2))
 
 

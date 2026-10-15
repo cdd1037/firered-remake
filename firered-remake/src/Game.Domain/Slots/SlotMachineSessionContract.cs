@@ -32,7 +32,6 @@ public sealed record SlotMachineSign(int Id, int X, int Y, Direction Facing)
 public static class SlotMachineSource
 {
     public const string Common = GameCornerCoinSource.Prefix + "SlotMachine";
-    public const string ScriptSha256 = "1e05d3520f34fa7a6bad3542e0f99b205d0308cdb9d9e812c33a8f0b71498da5";
     public static ImmutableArray<SlotMachineSign> Signs { get; } = [
         new(0,0,7,Direction.West), new(1,0,9,Direction.West), new(2,0,10,Direction.West),
         new(3,5,6,Direction.East), new(5,5,9,Direction.East), new(6,5,10,Direction.East),

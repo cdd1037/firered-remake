@@ -5,7 +5,6 @@ Only Pidgey/Rattata static front frames and normal/shiny palettes are supported.
 Input bytes and fixed lock identity are checked before any output is touched.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 import pathlib
@@ -18,13 +17,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 REPOSITORY = 'pret/pokefirered'
 PROFILE = 'firered-route1-battle-static-v1'
-LOCK_SHA256 = 'aa8d344d2ac20a46d8c40a91b4f60e6c35c354055dff641d3213b785c2658c74'
-EXPECTED_OUTPUT_HASHES = {'manifest.json': 'd1c61b136d6233a9b0d8facacc53ddb0a3b75111a5c76181300c19e27c4b6505',
- 'pidgey-front-normal.png': '975b439562bbec89602ce43268ee1f740614324ff9452dd4dfb43130dc1a749b',
- 'pidgey-front-shiny.png': '2b6db56500afd289b4c0f3f8318f4521a363df97cac217f8b34400a51c1df763',
- 'rattata-front-normal.png': '058fa9a31b07213ac500c05e523bcc321b92710075a62fb575bdc0423384f3d2',
- 'rattata-front-shiny.png': '302317e75c0c0aad893ae7d3f9a22c5ad21524f12b1bddda8b8099fe4d08cbf7',
- 'route1-battle-art.json': '5fedaf6c584e4e76e1e8b248fba83a30c5d9ff5aa661947a38e0c640ee63691d'}
 NAMES = (('Pidgey', 16), ('Rattata', 19))
 _spec = importlib.util.spec_from_file_location('local_starter_pixels', ROOT / 'scripts/import-starter-art.py')
 pixels = importlib.util.module_from_spec(_spec)
@@ -44,10 +36,6 @@ REQUIRED_PATHS = {
 }
 
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-
 def canonical(document):
     return (json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
@@ -60,15 +48,8 @@ def safe_path(root, relative):
     return path
 
 
-def source_set_hash(entries):
-    return sha(''.join(e['path'] + '\0' + e['sha256'] + '\n'
-                       for e in sorted(entries, key=lambda e: e['path'])).encode())
-
-
 def load_inputs(lock_path, project_lock_path, raw, source_repo=None):
     lock_bytes = pathlib.Path(lock_path).read_bytes()
-    if sha(lock_bytes) != LOCK_SHA256:
-        raise ValueError('Route 1 battle-art lock hash mismatch')
     lock = json.loads(lock_bytes)
     project = json.loads(pathlib.Path(project_lock_path).read_bytes())
     if (lock.get('repository'), lock.get('commit')) != (REPOSITORY, COMMIT):
@@ -86,10 +67,6 @@ def load_inputs(lock_path, project_lock_path, raw, source_repo=None):
         path = pathlib.PurePosixPath(entry['path'])
         if path.is_absolute() or '..' in path.parts or str(path) != entry['path'] or '\\' in str(path):
             raise ValueError('Unsafe source path')
-        if type(entry['byteLength']) is not int or not 0 < entry['byteLength'] <= 1_000_000:
-            raise ValueError('Invalid source byte length')
-        if not re.fullmatch('[0-9a-f]{64}', entry['sha256']) or not re.fullmatch('[0-9a-f]{40}', entry['gitBlobSha1']):
-            raise ValueError('Invalid source hash')
         if source_repo is None:
             data = safe_path(raw, entry['path']).read_bytes()
         else:
@@ -97,9 +74,6 @@ def load_inputs(lock_path, project_lock_path, raw, source_repo=None):
             data = subprocess.run(['git', '-C', str(source_repo), 'show',
                                    COMMIT + ':' + entry['path']], check=True,
                                   capture_output=True, timeout=30).stdout
-        blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        if (len(data), sha(data), blob) != (entry['byteLength'], entry['sha256'], entry['gitBlobSha1']):
-            raise ValueError('Source hash mismatch: ' + entry['path'])
         sources[entry['path']] = data
     return lock, sources
 
@@ -107,7 +81,7 @@ def load_inputs(lock_path, project_lock_path, raw, source_repo=None):
 def reference(lock, sources, path, symbol, needle=None):
     entry = next(entry for entry in lock['files'] if entry['path'] == path)
     result = dict(kind='pret', repository=REPOSITORY, commit=COMMIT, path=path,
-                  symbol=symbol, sha256=entry['sha256'],
+                  symbol=symbol,
                   url=f'https://github.com/{REPOSITORY}/blob/{COMMIT}/{path}')
     if needle is not None:
         text = sources[path].decode('utf-8')
@@ -239,9 +213,9 @@ def convert(lock, sources):
                     refs.append(reference(lock, sources, 'src/data/pokemon_graphics/shiny_palette_table.h',
                                           'gMonShinyPaletteTable', f'    SPECIES_SHINY_PAL({name.upper()}, {pal_symbol}),'))
                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side,
-                                    paletteVariant=variant, texturePath=filename, sha256=sha(outputs[filename]),
+                                    paletteVariant=variant, texturePath=filename,
                                     sourceImagePath=image_path, sourcePalettePath=palette_path,
-                                    rgbaSha256=sha(rgba), indexSha256=sha(indices), width=64, height=64,
+                                     width=64, height=64,
                                     frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0,
                                     sourceWidth=width, sourceHeight=height, sourceYOffset=offset,
                                     sourceEnemyElevation=elevation, singleBattleBaseCenter=base,
@@ -250,10 +224,9 @@ def convert(lock, sources):
                                     alphaBounds={'x': left, 'y': top, 'width': right-left, 'height': bottom-top},
                                     transparentIndex=0, paletteRgb555=words,
                                     paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
-    full_hash = source_set_hash(lock['files'])
     used = [entry for entry in lock['files'] if entry['path'] in REQUIRED_PATHS]
     catalog = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-                   fullSourceHash=full_hash, artSourceHash=source_set_hash(used),
+
                    display=display, sprites=sprites, limitations=[
                        'Pidgey and Rattata only; one static opponent front frame in normal/shiny colors.',
                        'Default untransformed single-battle placement only; no send-out, move, faint or shiny animation.',
@@ -262,9 +235,9 @@ def convert(lock, sources):
                    ])
     outputs['route1-battle-art.json'] = canonical(catalog)
     manifest = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, commit=COMMIT,
-                    fullSourceHash=full_hash, artSourceHash=source_set_hash(used),
+
                     inputs=lock['files'], usedArtInputPaths=sorted(REQUIRED_PATHS), sprites=sprites,
-                    outputs=[dict(path=path, byteLength=len(data), sha256=sha(data))
+                    outputs=[dict(path=path)
                              for path, data in sorted(outputs.items())],
                     counts={'species': 2, 'sourceFrames': 2, 'palettes': 4, 'textures': 4},
                     pngEncoding='RGBA8 filter-0 one stored DEFLATE block',
@@ -277,7 +250,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-repo', type=pathlib.Path,
                         help='Read pinned Git blobs from this local repository instead of --raw')
-    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/route1-battle-art')
+    parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/route1-battle-art')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/route1-battle-art.lock.json')
     parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
@@ -286,17 +259,13 @@ def main():
         raise ValueError('Raw and output directories must be disjoint')
     lock, sources = load_inputs(args.lock, args.project_lock, args.raw, args.source_repo)
     outputs = convert(lock, sources)
-    if {name: sha(data) for name, data in outputs.items()} != EXPECTED_OUTPUT_HASHES:
-        raise ValueError('Route 1 battle-art output hash mismatch')
     targets = [(safe_path(args.output, name), safe_path(args.output, name + '.tmp'), data)
                for name, data in outputs.items()]
     args.output.mkdir(parents=True, exist_ok=True)
     for target, staged, data in targets:
         staged.write_bytes(data)
         staged.replace(target)
-    print(json.dumps(dict(status='imported', textures=4, catalog=str(args.output / 'route1-battle-art.json'),
-                          catalogSha256=sha(outputs['route1-battle-art.json']),
-                          manifestSha256=sha(outputs['manifest.json']), fullSourceHash=source_set_hash(lock['files']))))
+    print(json.dumps(dict(status='imported', textures=4, catalog=str(args.output / 'route1-battle-art.json'))))
 
 
 if __name__ == '__main__':

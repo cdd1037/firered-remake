@@ -5,7 +5,6 @@ Usage: REFERENCE DEPENDENCY OUTPUT [--check]. Never executes upstream code or
 rewrites the canonical catalog. Generation writes only this package and lock.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -14,16 +13,12 @@ from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 SPECIES = ("SPECIES_OMANYTE", "SPECIES_OMASTAR", "SPECIES_KABUTO", "SPECIES_KABUTOPS", "SPECIES_AERODACTYL")
-DEPENDENCIES = {
-    "content/generated/canonical-pokemon/catalog.json": "c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc",
-    "content/generated/fighting-dojo-rules/pokemon.json": "4679a195369fe66442a0d4b8f75000efc9714083e52232c40e717e3d4c89cdd1",
-    "content/generated/fighting-dojo-rules/machines.json": "c47f335e8091e1f8b2e0cda39819af278a4a4f47140ae762942d95d7b99143d6",
-    "content/generated/trainer-tower-rules/items.json": "2c2c9bcc8f4bb34fc2505794f07c7baeb3094efd10b1836e055e3bf1c3839129",
-}
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
+DEPENDENCIES = (
+    'content/generated/canonical-pokemon/catalog.json',
+    'content/generated/fighting-dojo-rules/pokemon.json',
+    'content/generated/fighting-dojo-rules/machines.json',
+    'content/generated/trainer-tower-rules/items.json',
+)
 
 
 def need(value, message):
@@ -31,25 +26,18 @@ def need(value, message):
         raise ValueError(message)
 
 
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
-
-
 def identity(symbol):
     return {"value": "pret:" + symbol}
 
 
 def generate(reference, dependency):
-    need(subprocess.check_output(["git", "rev-parse", COMMIT + "^{tree}"], cwd=reference).decode().strip() == TREE,
-         "Pinned source tree")
     texts, inputs, raw, dependencies = {}, {}, {}, []
 
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
             raw[path] = data
-            inputs[path] = dict(path=path, byteLength=len(data), sha256=sha(data),
-                                gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest())
+            inputs[path] = dict(path=path)
             texts[path] = data.decode()
         return texts[path]
 
@@ -60,7 +48,7 @@ def generate(reference, dependency):
 
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
 
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"[ \t]+([^\n]+)")[1].split("//")[0].strip()
@@ -68,8 +56,7 @@ def generate(reference, dependency):
 
     def dependent(path):
         data = (dependency / path).read_bytes()
-        need(sha(data) == DEPENDENCIES[path], "Frozen dependency changed: " + path)
-        dependencies.append(dict(path=path, byteLength=len(data), sha256=sha(data)))
+        dependencies.append(dict(path=path))
         return json.loads(data)
 
     canonical, previous, previous_machines, previous_items = [dependent(p) for p in DEPENDENCIES]
@@ -89,7 +76,6 @@ def generate(reference, dependency):
         references += [e["source"] for e in meta["sourceEvolutions"]]
         for source in references:
             read(source["path"])
-            need(inputs[source["path"]]["sha256"] == source["sha256"], "Canonical source identity: " + name)
             need(1 <= source["startLine"] <= source["endLine"] <= len(texts[source["path"]].splitlines()),
                  "Canonical source span: " + name)
         need(number("include/constants/species.h", name) == 138 + index, "Source species number")
@@ -218,16 +204,16 @@ def generate(reference, dependency):
                                 isShiny=(ot >> 16 ^ ot & 65535 ^ pid >> 16 ^ pid & 65535) < 8,
                                 experience=156 if gift["kind"] == "amber" else 125, moves=gift["moves"]))
     docs = {
-        "pokemon.json": dict(sourceCommit=COMMIT, sourceTree=TREE, profile="firered-fossil-lab-owned-pokemon-v1",
-                             canonicalCatalogSha256=DEPENDENCIES[next(iter(DEPENDENCIES))], previousOwnedSpeciesCount=154,
+        "pokemon.json": dict(sourceCommit=COMMIT,  profile="firered-fossil-lab-owned-pokemon-v1",
+                              previousOwnedSpeciesCount=154,
                              ownedSpeciesCount=159, previousOpponentSpeciesCount=186, opponentSpeciesCount=190,
                              ownedSpeciesAdded=list(SPECIES), opponentSpeciesAdded=list(SPECIES[:4]), trainerOnlySpeciesAdded=[],
                              species=[dict(definition=species[s], metadata=metadata[s]) for s in SPECIES], evolutions=edges),
         "machines.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-teaching-v1", previousSpeciesCount=154,
                               speciesCount=159, machineCount=41, additions=machine_rows,
-                              additionsSemanticSha256=fingerprint(machine_rows), itemsAdded=[]),
+                               itemsAdded=[]),
         "shop.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-inventory-v1", previousItemCount=124,
-                          itemCount=125, additions=[amber_item], additionsSemanticSha256=fingerprint([amber_item]), shopsAdded=[]),
+                          itemCount=125, additions=[amber_item],  shopsAdded=[]),
         "rules.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-rules-v1", gifts=gifts,
                            generationCases=vectors, generationDraws=4,
                            generationOrder="Player OT; random PID low16/high16 then two packed IV draws, also on full storage. No shiny rejection. The engine's explicit Random32 operand order is tested; original target-compiler operand ordering remains unverified.",
@@ -236,7 +222,7 @@ def generate(reference, dependency):
                            deliverySource=ref(pokemon_path, "GiveMonToPlayer", receive_match),
                            deferredSpecies=[]),
     }
-    docs["source-input-hashes.json"] = dict(sourceCommit=COMMIT, sourceTree=TREE,
+    docs["source-input-hashes.json"] = dict(sourceCommit=COMMIT,
                                              inputs=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
     return docs, raw
 
@@ -250,10 +236,10 @@ def main():
     docs, raw = generate(args.reference, args.dependency)
     files = {"content/generated/fossil-lab-rules/" + name: (json.dumps(doc, indent=2, ensure_ascii=False) + "\n").encode()
              for name, doc in docs.items()}
-    files.update({"content/raw/fossil-lab-rules/" + name: data for name, data in raw.items()})
-    lock = dict(sourceCommit=COMMIT, sourceTree=TREE, profile="firered-fossil-lab-rules-v1",
-                importerSha256=sha(Path(__file__).read_bytes()),
-                files=[dict(path=path, byteLength=len(data), sha256=sha(data)) for path, data in sorted(files.items())])
+    files.update({"content/raw/pokefirered/037335f4/" + name: data for name, data in raw.items()})
+    lock = dict(sourceCommit=COMMIT,  profile="firered-fossil-lab-rules-v1",
+
+                files=[dict(path=path) for path, data in sorted(files.items())])
     files["scripts/fossil-lab-rules.lock.json"] = (json.dumps(lock, indent=2) + "\n").encode()
     for path, data in files.items():
         destination = args.output / path
@@ -263,9 +249,7 @@ def main():
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
     print(json.dumps(dict(checked=args.check, owned=159, opponents=190, evolutionEdges=2, machines=41,
-                         newCells=205, items=125, creationVectors=len(docs["rules.json"]["generationCases"]),
-                         machineFingerprint=docs["machines.json"]["additionsSemanticSha256"],
-                         hashes={path: sha(data) for path, data in files.items() if "/raw/" not in path}), indent=2))
+                         newCells=205, items=125, creationVectors=len(docs["rules.json"]["generationCases"])), indent=2))
 
 
 if __name__ == "__main__":

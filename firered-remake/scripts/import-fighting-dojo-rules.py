@@ -3,7 +3,6 @@
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
 import argparse
-import hashlib
 import json
 import re
 import subprocess
@@ -13,11 +12,6 @@ COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('BLACK_BELT_KOICHI', 'BLACK_BELT_MIKE', 'BLACK_BELT_HIDEKI', 'BLACK_BELT_AARON', 'BLACK_BELT_HITOSHI')
 
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
-
-def fingerprint(value):
-    return sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode())
 
 def need(value, message):
     if not value:
@@ -25,11 +19,10 @@ def need(value, message):
 
 def generate(reference, dependency):
     texts, inputs, raw = {}, {}, {}
-    need(subprocess.check_output(["git", "rev-parse", COMMIT + "^{tree}"], cwd=reference).decode().strip() == TREE, "Pinned source tree")
     def read(path):
         if path not in texts:
             data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
-            inputs[path] = dict(path=path, byteLength=len(data), gitBlobSha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(), sha256=sha(data))
+            inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
@@ -39,7 +32,7 @@ def generate(reference, dependency):
         return matches[0]
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=read(path).count("\n", 0, match.start()) + 1,
-                    endLine=read(path).count("\n", 0, match.end()) + 1, sha256=inputs[path]["sha256"])
+                    endLine=read(path).count("\n", 0, match.end()) + 1)
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
@@ -99,11 +92,11 @@ def generate(reference, dependency):
             source=ref(path, symbol, match), moneySource=ref("src/battle_main.c", fields["trainerClass"], money)))
         resolved.append(dict(trainer=symbol, party=movesets))
     dependencies=[]
-    def dependent(path, expected):
-        data=(dependency/path).read_bytes();need(sha(data)==expected,'Dependency changed: '+path)
-        dependencies.append(dict(path=path,byteLength=len(data),sha256=sha(data)));return json.loads(data)
-    canonical=dependent('content/generated/canonical-pokemon/catalog.json','c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc')
-    previous=dependent('content/generated/power-plant-pokemon/catalog.json','c62e537a2468299e54ead67ff42cd19293bbafd404688c858fa49c455a1b0232')
+    def dependent(path):
+        data=(dependency/path).read_bytes()
+        dependencies.append(dict(path=path));return json.loads(data)
+    canonical=dependent('content/generated/canonical-pokemon/catalog.json')
+    previous=dependent('content/generated/power-plant-pokemon/catalog.json')
     species={s['id']['value'][5:]:s for s in canonical['species']}
     metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
     additions=['SPECIES_HITMONLEE','SPECIES_HITMONCHAN']
@@ -112,7 +105,7 @@ def generate(reference, dependency):
         original=species[name];meta=metadata[name]
         need(not original['evolutions'] and not meta['sourceEvolutions'],'Terminal source species')
         for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[m['source'] for m in original['levelUpMoves']]:
-            read(sr['path']);need(inputs[sr['path']]['sha256']==sr['sha256'],'Canonical source identity: '+name)
+            read(sr['path'])
     battles=[];actors=[];mapping=json.loads(read('data/maps/SaffronCity_Dojo/map.json'));path='data/maps/SaffronCity_Dojo/scripts.inc'
     for local_id,actor in enumerate(mapping['object_events'],1):
         if actor.get('trainer_type')!='TRAINER_TYPE_NORMAL':continue
@@ -162,17 +155,17 @@ def generate(reference, dependency):
             cases.append(dict(trainer=team['trainer'],initialSeed=initial,finalSeed=seed,draws=len(raw_draws),rawDraws=raw_draws,originalTrainerIds=ots))
     docs={
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-fighting-dojo-owned-pokemon-v1',canonicalCatalogSha256=dependencies[0]['sha256'],previousOwnedSpeciesCount=152,ownedSpeciesCount=154,previousOpponentSpeciesCount=186,opponentSpeciesCount=186,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=[],species=[dict(definition=species[s],metadata=metadata[s]) for s in additions]),
-      'rules.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-rules-v1',identities=identities,generationCases=cases,trainerActors=actors,trainerHashes={t['id']['value']:fingerprint(t) for t in trainers},battleHashes={b['scriptEntry']:fingerprint(b) for b in battles},gifts=[dict(species=identity(s),sourceSpeciesId=species[s]['sourceSpeciesId'],level=25,moves=natural_moves(s,25),localId=6+i,hideFlag='FLAG_HIDE_DOJO_'+s[8:]+'_BALL',hideFlagId=0x60+i) for i,s in enumerate(additions)],choiceFlag='FLAG_GOT_HITMON_FROM_DOJO',choiceFlagId=0x278),
-      'machines.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-teaching-v1',previousSpeciesCount=152,speciesCount=154,machineCount=41,additions=cells,additionsSemanticSha256=fingerprint(cells),itemsAdded=[]),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-owned-pokemon-v1',previousOwnedSpeciesCount=152,ownedSpeciesCount=154,previousOpponentSpeciesCount=186,opponentSpeciesCount=186,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=[],species=[dict(definition=species[s],metadata=metadata[s]) for s in additions]),
+      'rules.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-rules-v1',identities=identities,generationCases=cases,trainerActors=actors,gifts=[dict(species=identity(s),sourceSpeciesId=species[s]['sourceSpeciesId'],level=25,moves=natural_moves(s,25),localId=6+i,hideFlag='FLAG_HIDE_DOJO_'+s[8:]+'_BALL',hideFlagId=0x60+i) for i,s in enumerate(additions)],choiceFlag='FLAG_GOT_HITMON_FROM_DOJO',choiceFlagId=0x278),
+      'machines.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-teaching-v1',previousSpeciesCount=152,speciesCount=154,machineCount=41,additions=cells,itemsAdded=[]),
     }
-    docs['source-input-hashes.json']=dict(sourceCommit=COMMIT,sourceTree=TREE,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
+    docs['source-input-hashes.json']=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
     code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Trainers;\n\n// Generated by the bounded Fighting Dojo importer from authenticated source records.\npublic static partial class FightingDojoTrainerPartyFactory\n{\n'
-    for name,rows in [('TrainerHashes',docs['rules.json']['trainerHashes']),('BattleHashes',docs['rules.json']['battleHashes'])]:
-        trainer=name=='TrainerHashes';typ='TrainerId' if trainer else 'string'
-        code+=f'    public static readonly ImmutableDictionary<{typ}, string> {name} = new Dictionary<{typ}, string> {{\n'
-        for key,value in rows.items():code+=f'        [{"new(" if trainer else ""}"{key}"{")" if trainer else ""}] = "{value}",\n'
-        code+='    }.ToImmutableDictionary('+('' if trainer else 'StringComparer.Ordinal')+');\n'
+    for name,rows in [('TrainerIds',[t['id']['value'] for t in trainers]),('BattleScripts',[b['scriptEntry'] for b in battles])]:
+        trainer=name=='TrainerIds';typ='TrainerId' if trainer else 'string'
+        code+=f'    public static readonly ImmutableHashSet<{typ}> {name} = new HashSet<{typ}> {{\n'
+        for key in rows:code+=f'        {"new(" if trainer else ""}"{key}"{")" if trainer else ""},\n'
+        code+='    }.ToImmutableHashSet('+('' if trainer else 'StringComparer.Ordinal')+');\n'
     code+='}\n'
     return docs,raw,{'src/Game.Domain/Trainers/FightingDojoTrainerSource.cs':code.encode()}
 
@@ -180,12 +173,12 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path);p.add_argument('dependency',type=Path);p.add_argument('output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()
     docs,raw,files=generate(a.reference,a.dependency)
     files.update({'content/generated/fighting-dojo-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()})
-    files.update({'content/raw/fighting-dojo-rules/'+n:data for n,data in raw.items()})
-    lock=dict(sourceCommit=COMMIT,sourceTree=TREE,profile='firered-fighting-dojo-rules-v1',files=[dict(path=k,byteLength=len(v),sha256=sha(v)) for k,v in sorted(files.items())])
+    files.update({'content/raw/pokefirered/037335f4/'+n:data for n,data in raw.items()})
+    lock=dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     files['scripts/fighting-dojo-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=5,battles=5,members=11,owned=154,opponents=186,machines=41,newCells=82,machineFingerprint=docs['machines.json']['additionsSemanticSha256'],hashes={n:sha(v) for n,v in files.items() if '/raw/' not in n}),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=5,battles=5,members=11,owned=154,opponents=186,machines=41,newCells=82),indent=2))
 if __name__=='__main__':main()

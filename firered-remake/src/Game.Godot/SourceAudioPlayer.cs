@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 using Godot;
 
 /// <summary>Source identity is independent of rendered PCM duration. Fixture is never original audio.</summary>
@@ -7,7 +6,7 @@ public sealed record SourceAudioMetadata(string Id, string SourceCommit, string 
     string SourcePath, int SourcePlayer, int Priority, int? SourceCounter, string Renderer,
     bool IsOriginalTestFixture = false);
 
-/// <summary>Immutable authenticated PCM16 or lossy Vorbis/QOA; encoded and original PCM identities remain separate.</summary>
+/// <summary>Decoded PCM16 or Vorbis/QOA audio with validated sample and loop formats.</summary>
 public sealed class VerifiedSourceAudioClip
 {
     private readonly byte[] _pcm;
@@ -15,7 +14,6 @@ public sealed class VerifiedSourceAudioClip
     private readonly byte[]? _qoa;
     public bool IsQoa => _qoa is not null;
     public bool IsVorbis => _ogg is not null;
-    public string? EncodedSha256 { get; }
     public SourceAudioMetadata Metadata { get; }
     public int SampleRate { get; }
     public int Channels { get; }
@@ -23,10 +21,9 @@ public sealed class VerifiedSourceAudioClip
     public int? LoopStartFrame { get; }
     public int? LoopEndFrame { get; }
     public double DurationSeconds => (double)FrameCount / SampleRate;
-    public string? PcmSha256 { get; }
 
     private VerifiedSourceAudioClip(SourceAudioMetadata metadata, byte[] pcm, int rate, int channels,
-        string sha256, int? loopStart, int? loopEnd)
+        int? loopStart, int? loopEnd)
     {
         if (string.IsNullOrWhiteSpace(metadata.Id) || string.IsNullOrWhiteSpace(metadata.SourceCommit)
             || string.IsNullOrWhiteSpace(metadata.SourceSymbol) || string.IsNullOrWhiteSpace(metadata.SourcePath)
@@ -35,25 +32,21 @@ public sealed class VerifiedSourceAudioClip
             throw new InvalidDataException("Invalid source player, priority or counter.");
         if (rate is < 8000 or > 192000 || channels is < 1 or > 2 || pcm.Length == 0 || pcm.Length % (channels * 2) != 0)
             throw new InvalidDataException("Expected nonempty aligned mono/stereo PCM16 at 8–192 kHz.");
-        if (sha256.Length != 64 || Convert.ToHexStringLower(SHA256.HashData(pcm)) != sha256)
-            throw new InvalidDataException("Audio PCM digest mismatch.");
         int frames = pcm.Length / (channels * 2);
         if (loopStart.HasValue != loopEnd.HasValue || loopStart < 0 || loopEnd > frames || loopStart >= loopEnd)
             throw new InvalidDataException("Invalid exclusive sample-frame loop range.");
         Metadata = metadata; _pcm = pcm.ToArray(); SampleRate = rate; Channels = channels; FrameCount = frames;
-        PcmSha256 = sha256; LoopStartFrame = loopStart; LoopEndFrame = loopEnd;
+        LoopStartFrame = loopStart; LoopEndFrame = loopEnd;
     }
 
     public static VerifiedSourceAudioClip FromPcm16(SourceAudioMetadata metadata, byte[] pcm,
-        int sampleRate, int channels, string expectedPcmSha256, int? loopStartFrame = null, int? loopEndFrame = null)
-        => new(metadata, pcm, sampleRate, channels, expectedPcmSha256, loopStartFrame, loopEndFrame);
+        int sampleRate, int channels, int? loopStartFrame = null, int? loopEndFrame = null)
+        => new(metadata, pcm, sampleRate, channels, loopStartFrame, loopEndFrame);
 
-    /// <summary>Strict RIFF/WAVE PCM16 reader. Loops come from the authenticated manifest, never guessed.</summary>
+    /// <summary>Strict RIFF/WAVE PCM16 reader. Loops come from the asset manifest, never guessed.</summary>
     public static VerifiedSourceAudioClip FromWav(SourceAudioMetadata metadata, byte[] wav,
-        string expectedWavSha256, string expectedPcmSha256, int? loopStartFrame = null, int? loopEndFrame = null)
+        int? loopStartFrame = null, int? loopEndFrame = null)
     {
-        if (expectedWavSha256.Length != 64 || Convert.ToHexStringLower(SHA256.HashData(wav)) != expectedWavSha256)
-            throw new InvalidDataException("Audio WAV digest mismatch.");
         var bytes = wav.AsSpan();
         if (bytes.Length < 12 || !bytes[..4].SequenceEqual("RIFF"u8) || !bytes.Slice(8, 4).SequenceEqual("WAVE"u8)
             || BinaryPrimitives.ReadUInt32LittleEndian(bytes[4..]) != bytes.Length - 8)
@@ -88,10 +81,10 @@ public sealed class VerifiedSourceAudioClip
             offset += checked(8 + (int)size + (int)(size & 1));
         }
         if (!formatSeen || pcm is null) throw new InvalidDataException("Missing WAV format or PCM.");
-        return new(metadata, pcm, rate, channels, expectedPcmSha256, loopStartFrame, loopEndFrame);
+        return new(metadata, pcm, rate, channels, loopStartFrame, loopEndFrame);
     }
 
-    private VerifiedSourceAudioClip(SourceAudioMetadata metadata, byte[] ogg, string encodedSha256,
+    private VerifiedSourceAudioClip(SourceAudioMetadata metadata, byte[] ogg,
         int rate, int channels, int frames, int? loopStart, int? loopEnd)
     {
         if (string.IsNullOrWhiteSpace(metadata.Id) || string.IsNullOrWhiteSpace(metadata.SourceCommit)
@@ -103,33 +96,31 @@ public sealed class VerifiedSourceAudioClip
             || loopStart.HasValue != loopEnd.HasValue || loopStart < 0 || loopStart >= loopEnd
             || (loopEnd.HasValue && loopEnd.Value != frames))
             throw new InvalidDataException("Vorbis loops require an exact exclusive file end and valid frame bounds.");
-        if (encodedSha256.Length != 64 || Convert.ToHexStringLower(SHA256.HashData(ogg)) != encodedSha256)
-            throw new InvalidDataException("Audio Vorbis encoded digest mismatch.");
         var b = ogg.AsSpan();
         if (b.Length < 58 || !b[..4].SequenceEqual("OggS"u8) || b[4] != 0 || b[5] != 2
             || b[26] != 1 || b[27] != 30 || !b.Slice(28, 7).SequenceEqual("\x01vorbis"u8)
             || BinaryPrimitives.ReadUInt32LittleEndian(b[35..]) != 0 || b[39] != channels
             || BinaryPrimitives.ReadUInt32LittleEndian(b[40..]) != rate)
             throw new InvalidDataException("Unsupported or mismatched Vorbis identification.");
-        Metadata = metadata; _pcm = []; _ogg = ogg.ToArray(); EncodedSha256 = encodedSha256;
+        Metadata = metadata; _pcm = []; _ogg = ogg.ToArray();
         SampleRate = rate; Channels = channels; FrameCount = frames; LoopStartFrame = loopStart; LoopEndFrame = loopEnd;
         using var verified = CreateOggStream();
     }
 
-    /// <summary>Expected encoded digest and logical frames must come from the independently frozen delivery catalog.</summary>
+    /// <summary>Sample format and logical frames come from the delivery catalog.</summary>
     public static VerifiedSourceAudioClip FromOgg(SourceAudioMetadata metadata, byte[] ogg,
-        string expectedEncodedSha256, int sampleRate, int channels, int logicalFrameCount,
+        int sampleRate, int channels, int logicalFrameCount,
         int? loopStartFrame = null, int? loopEndFrame = null)
-        => new(metadata, ogg, expectedEncodedSha256, sampleRate, channels, logicalFrameCount, loopStartFrame, loopEndFrame);
+        => new(metadata, ogg, sampleRate, channels, logicalFrameCount, loopStartFrame, loopEndFrame);
 
-    /// <summary>Pure QOA Data bytes, not a .res container. Expected identity and timing come from a frozen catalog.</summary>
+    /// <summary>Pure QOA Data bytes, not a .res container. Sample format and timing come from the delivery catalog.</summary>
     public static VerifiedSourceAudioClip FromQoa(SourceAudioMetadata metadata, byte[] qoa,
-        string expectedEncodedSha256, int sampleRate, int channels, int logicalFrameCount,
+        int sampleRate, int channels, int logicalFrameCount,
         int? loopStartFrame = null, int? loopEndFrame = null)
-        => new(metadata, qoa, expectedEncodedSha256, sampleRate, channels, logicalFrameCount,
+        => new(metadata, qoa, sampleRate, channels, logicalFrameCount,
             loopStartFrame, loopEndFrame, qoaData: true);
 
-    private VerifiedSourceAudioClip(SourceAudioMetadata metadata, byte[] qoa, string hash,
+    private VerifiedSourceAudioClip(SourceAudioMetadata metadata, byte[] qoa,
         int rate, int channels, int frames, int? begin, int? end, bool qoaData)
     {
         ArgumentNullException.ThrowIfNull(metadata); ArgumentNullException.ThrowIfNull(qoa);
@@ -142,8 +133,6 @@ public sealed class VerifiedSourceAudioClip
             || qoa.Length is < 32 or > 16 * 1024 * 1024 || begin.HasValue != end.HasValue
             || begin < 0 || begin >= end || end > frames)
             throw new InvalidDataException("Invalid QOA limits/loop bounds.");
-        if (hash is not { Length: 64 } || Convert.ToHexStringLower(SHA256.HashData(qoa)) != hash)
-            throw new InvalidDataException("QOA encoded digest mismatch.");
         var b = qoa.AsSpan();
         if (!b[..4].SequenceEqual("qoaf"u8) || BinaryPrimitives.ReadUInt32BigEndian(b[4..]) != frames)
             throw new InvalidDataException("Invalid QOA file header.");
@@ -161,7 +150,7 @@ public sealed class VerifiedSourceAudioClip
             offset += size; consumed += samples;
         }
         if (offset != b.Length || consumed != frames) throw new InvalidDataException("QOA sample count mismatch.");
-        Metadata = metadata; _pcm = []; _qoa = qoa.ToArray(); EncodedSha256 = hash;
+        Metadata = metadata; _pcm = []; _qoa = qoa.ToArray();
         SampleRate = rate; Channels = channels; FrameCount = frames; LoopStartFrame = begin; LoopEndFrame = end;
         using var verified = CreateQoaStream();
     }
@@ -173,7 +162,7 @@ public sealed class VerifiedSourceAudioClip
             LoopMode = LoopStartFrame.HasValue ? AudioStreamWav.LoopModeEnum.Forward : AudioStreamWav.LoopModeEnum.Disabled,
             LoopBegin = LoopStartFrame ?? 0, LoopEnd = LoopEndFrame ?? 0 };
         if (Math.Abs(stream.GetLength() - DurationSeconds) > .5 / SampleRate)
-        { stream.Dispose(); throw new InvalidDataException("Godot QOA length differs from authenticated logical frames."); }
+        { stream.Dispose(); throw new InvalidDataException("Godot QOA length differs from declared logical frames."); }
         return stream;
     }
 
@@ -181,9 +170,9 @@ public sealed class VerifiedSourceAudioClip
     private AudioStreamOggVorbis CreateOggStream()
     {
         var stream = AudioStreamOggVorbis.LoadFromBuffer(_ogg!);
-        if (stream is null) throw new InvalidDataException("Godot could not decode authenticated Vorbis.");
+        if (stream is null) throw new InvalidDataException("Godot could not decode Vorbis.");
         if (Math.Abs(stream.GetLength() - DurationSeconds) > .5 / SampleRate)
-        { stream.Dispose(); throw new InvalidDataException("Godot Vorbis length differs from authenticated logical frames."); }
+        { stream.Dispose(); throw new InvalidDataException("Godot Vorbis length differs from declared logical frames."); }
         stream.Loop = LoopStartFrame.HasValue;
         double offset = LoopStartFrame.HasValue ? (double)LoopStartFrame.Value / SampleRate : 0d;
         // Godot truncates time * sampleRate to an integer on seek. The nearest double can lie

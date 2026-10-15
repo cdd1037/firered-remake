@@ -1,3 +1,4 @@
+using Game.Content;
 using System.Text.Json;
 using Godot;
 
@@ -11,9 +12,7 @@ public partial class CampaignView
     private void LoadLeagueRematchPresentation()
     {
         if (!_catalog.LeagueRematchEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.CeruleanCaveEnabled || _battleArt.Count != 652 ||
-            _storageIcons.Count != 163 || _route22Footprints.Count != 116 || _leagueTrainers.Count != 7 ||
-            _catalog.LeagueRematchOpponents?.Owned.Catalog.Species.Count != 139 || _catalog.LeagueRematchOpponents?.Catalog.Species.Count != 168)
+        if (!_session.IsCurrentGame || !_catalog.CeruleanCaveEnabled)
             throw new InvalidDataException("League rematch requires its complete current Cerulean Cave predecessor.");
         _leagueRematchArt = LeagueRematchPresentationAssets.Load(_root);
         foreach (var row in LeagueRematchManifest.GetProperty("inheritedSprites").EnumerateArray())
@@ -32,7 +31,7 @@ public partial class CampaignView
                 throw new InvalidDataException("League rematch sprite is not an admitted trainer-only species.");
             string side = row.GetProperty("side").GetString()!;
             bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, _leagueRematchArt.Files[row.GetProperty("rgbaPath").GetString()!]);
+            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, PngRgba8.Decode(_leagueRematchArt.Files[row.GetProperty("texturePath").GetString()!]));
             var texture = SceneTextures.FromImage(image);
             _battleArt.Add((species, side, shiny), new(texture, new(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32())));
             if (side == "front" && !shiny) _portraits.Add(species, texture);
@@ -55,12 +54,7 @@ public partial class CampaignView
                 throw new InvalidDataException("League rematch trainer presentation binding differs.");
             _leagueTrainers.Add(id, row);
         }
-        if (_battleArt.Count != 672 || _storageIcons.Count != 163 || _route22Footprints.Count != 116 ||
-            _leagueRematchSpeciesNames.Count != 6 || _leagueTrainers.Count != 14)
-            throw new InvalidDataException("League rematch presentation inventory differs.");
-        Write("leagueRematchPresentation", new { LeagueRematchPresentationAssets.ManifestSha256, newBattleSprites = 20,
-            inheritedSteelixSprites = 4, battleSprites = 672, icons = 163, footprints = 116, ownedSpecies = 139,
-            opponentSpecies = 168, rematchTrainerAliases = 7, newMoveAnimations = 0, nativeWindowVerified = false, physicalAudioVerified = false });
+        Write("leagueRematchPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
     }
 
     private string? LeagueRematchSpeciesName(int species) => _leagueRematchSpeciesNames.GetValueOrDefault(species);

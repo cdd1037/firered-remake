@@ -62,7 +62,7 @@ Test("all 25 source-authenticated scalar moves execute meaningful unlearned resu
             return o.TargetHp < s.Opponent.Pokemon.CurrentHp;
         });
         s = s with { Rng = new(seed) }; Exact(name, s); var r = Act(name, s);
-        Check(WildBattleRules.IsCalledMoveEffectSupported(m) && MetronomeSourceMoveDefinition.Matches(m), name + " registered/authenticated");
+        Check(WildBattleRules.IsCalledMoveEffectSupported(m) && SourceMoveDefinitionRules.IsValid(m), name + " registered/authenticated");
         Check(!s.Player.Pokemon.Moves.Any(x => x.Move == m.Id) && !r.State!.Player.Pokemon.Moves.Any(x => x.Move == m.Id), name + " current stays unlearned");
         Check(r.State!.Player.LastUsedMove == Id("METRONOME") && r.State.Player.LastCalledMove == m.Id, name + " caller/result history");
         Check(!WildBattleRules.IsMoveSupported(m.Id, WildBattleRules.FuchsiaRulesVersion), name + " no ordinary v1 admission");

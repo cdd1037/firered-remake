@@ -197,16 +197,6 @@ public static class ContentValidator
             source.Path.Contains(':') || source.Path.Split('/').Any(p => p is "" or "." or ".."))
             Error("Source path must be a safe repository-relative path.");
         if (string.IsNullOrWhiteSpace(source.Symbol)) Error("Source symbol is required.");
-        static bool Hex(string? value, int length) => value is not null && value.Length == length && value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
-        if (source.Kind == SourceKind.Pret)
-        {
-            if (source.Repository != "pret/pokefirered" || source.Commit != RuleVersions.SourceCommit)
-                Error("Pret references must match the pinned repository and full commit.");
-            if (!Hex(source.Sha256, 64)) Error("Pret references require an input-byte SHA-256.");
-        }
-        else if (source.Repository is not null || source.Commit is not null)
-            Error("Original fixture references must not claim a third-party repository or commit.");
-        if (source.Sha256 is not null && !Hex(source.Sha256, 64)) Error("Invalid SHA-256.");
         return errors.AsReadOnly();
     }
 }

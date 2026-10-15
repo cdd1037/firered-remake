@@ -16,7 +16,7 @@ internal abstract partial class SourceRecipeContext
     // Keep the existing party-change/status event order at the singles compatibility boundary.
     internal void ExecutePartyHealing(BattlerSlot actor, int slot, PokemonMoveDefinition move)
     {
-        if (move.Effect != "EFFECT_HEAL_BELL" || !MetronomeSourceMoveDefinition.Matches(move))
+        if (move.Effect != "EFFECT_HEAL_BELL" || !SourceMoveDefinitionRules.IsValid(move))
             throw new SourceRecipeUnsupported("source_party_healing_move_definition");
         SpendEarlyPartyPp(actor, actor, slot, move);
         PartyHealingSynchronize();

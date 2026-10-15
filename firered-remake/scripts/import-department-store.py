@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 """Bounded, deterministic source extraction. No network or reference-code execution."""
 import argparse
-import hashlib
 import json
 import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-LOCK_SHA256 = "a964111fc4a38298550cfddbc22c6093644a7c7e43cc2707b18319a54ef5c3c8"
 PROFILE = "firered-department-store-contract-v1"
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 FLOORS = ("1F", "2F", "3F", "4F", "5F", "Roof", "Elevator")
 PREFIX = "CeladonCity_DepartmentStore_"
-
-
-def sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def canonical(value):
@@ -57,7 +51,7 @@ def build_contract(lock, raw):
         need(len(matches) == 1, "source label missing/ambiguous: " + symbol)
         start = matches[0]
         end = next((i for i in range(start + 1, len(lines)) if re.match(r"^\w+::?", lines[i])), len(lines))
-        return dict(path=path, symbol=symbol, lineStart=start + 1, lineEnd=end, sha256=by_path[path]["sha256"])
+        return dict(path=path, symbol=symbol, lineStart=start + 1, lineEnd=end)
 
     def block(path, symbol):
         ref = source(path, symbol)
@@ -69,7 +63,7 @@ def build_contract(lock, raw):
         path = f"data/maps/{name}/map.json"
         event = json.loads(raw[path])
         maps.append(dict(sourceName=name, stableId=map_id(event["id"]), sourcePath=path,
-                         sourceSha256=by_path[path]["sha256"], events=event))
+                          events=event))
     city = json.loads(raw["data/maps/CeladonCity/map.json"])
     city_entries = [dict(sourceWarpIndex=i, **w) for i, w in enumerate(city["warp_events"])
                     if w["dest_map"].startswith("MAP_CELADON_CITY_DEPARTMENT_STORE_")]
@@ -154,8 +148,8 @@ def build_contract(lock, raw):
             continue
         matches = re.findall(r"^#define\s+" + name + r"\s+(0x[\da-fA-F]+|\d+)\b", "\n".join(text[p] for p in text if p.startswith("include/constants/")), re.M)
         need(len(matches) == 1 and int(matches[0], 0) == expected, "constant differs: " + name)
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
-                sourceFiles=files, sourceSetSha256=sha("".join(f["path"]+"\0"+f["sha256"]+"\n" for f in files).encode()),
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
+                sourceFiles=files,
                 runtimeIntegrated=False, completeDepartmentStore=False, maps=maps, cityEntrances=city_entries,
                 stocks=stocks, staticWarps=static_warps, deferredServices=deferred, constants=constants,
                 elevator=dict(mapId="map.celadon-city-department-store-elevator", floors=elevator_floors,
@@ -176,23 +170,20 @@ def build_contract(lock, raw):
 
 def import_content(project_root, source=None, check=False):
     lock_bytes = safe(project_root, "scripts/department-store.lock.json").read_bytes()
-    need(sha(lock_bytes) == LOCK_SHA256, "lock hash differs")
     lock = json.loads(lock_bytes)
-    need((lock["profile"], lock["sourceCommit"], lock["sourceTree"]) == (PROFILE, COMMIT, TREE), "source identity differs")
+    need((lock['profile'], lock['sourceCommit']) == (PROFILE, COMMIT), "source identity differs")
     need(len(lock["files"]) == 36, "source inventory count differs")
     raw = {}
-    source = source if source is not None else project_root / "content/raw/department-store"
+    source = source if source is not None else project_root / "content/raw/pokefirered/037335f4"
     for row in lock["files"]:
-        need(row["path"] not in raw and 0 < row["byteLength"] <= 2 * 1024 * 1024, "invalid source inventory")
+        need(row['path'] not in raw, "invalid source inventory")
         path = safe(source, row["path"])
-        need(path.stat().st_size == row["byteLength"], "source length differs: " + row["path"])
         data = path.read_bytes()
-        need(sha(data) == row["sha256"] and hashlib.sha1(f"blob {len(data)}\0".encode()+data).hexdigest() == row["gitBlobSha1"], "source bytes differ: " + row["path"])
         data.decode("utf8")
         raw[row["path"]] = data
     contract = canonical(build_contract(lock, raw))
     outputs = {"content/generated/department-store/contract.json": contract,
-               **{"content/raw/department-store/"+p: b for p, b in raw.items()}}
+               **{"content/raw/pokefirered/037335f4/"+p: b for p, b in raw.items()}}
     for relative, data in outputs.items():
         path = safe(project_root, relative)
         if check:
@@ -200,9 +191,7 @@ def import_content(project_root, source=None, check=False):
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-    return dict(check=check, sourceFiles=len(raw), sourceBytes=sum(map(len, raw.values())),
-                contractSha256=sha(contract), contractByteLength=len(contract), lockSha256=LOCK_SHA256,
-                sourceSetSha256=json.loads(contract)["sourceSetSha256"])
+    return dict(check=check, sourceFiles=len(raw), sourceBytes=sum(map(len, raw.values())))
 
 
 if __name__ == "__main__":

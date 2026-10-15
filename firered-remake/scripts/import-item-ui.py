@@ -85,7 +85,7 @@ def convert(lock,sources):
     assets=[];outputs={}
     def add(id,w,h,pixels,x=0,y=0):
         data=codec.png(w,h,pixels);outputs[id+'.png']=data
-        assets.append(dict(id=id,texturePath=id+'.png',width=w,height=h,x=x,y=y,sha256=inputs.digest(data),rgbaSha256=inputs.digest(pixels)))
+        assets.append(dict(id=id,texturePath=id+'.png',width=w,height=h,x=x,y=y))
     pc=render_map(sources['graphics/item_pc/bg.png'],sources['graphics/item_pc/bg.bin'])
     add('pc-withdraw-background',240,160,pc)
     stdpal=codec.palette(sources['graphics/text_window/stdpal_3.pal'])
@@ -111,18 +111,9 @@ def convert(lock,sources):
     right=bytes(ai[y*16+(15-x)] for y in range(16) for x in range(16))
     add('pocket-right-arrow',16,16,codec.rgba(right,codec.palette(sources['graphics/interface/red_arrow.pal'])),64,64)
     menu=codec.palette(sources['graphics/interface/std_menu.pal']);desc=codec.palette(sources['graphics/text_window/stdpal_2.pal']);bagpal=codec.palette(sources['graphics/item_menu/bag_window_pal.pal'])
-    display=dict(logicalWidth=240,logicalHeight=160,textureFilter='nearest',paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',
-        pcListWindow=[56,8,152,96],bagListWindow=[88,8,144,96],pcListText=[65,10],bagListText=[97,10],pcListCursor=[57,10],bagListCursor=[89,10],pcQuantityText=[166,10],bagQuantityText=[198,10],rowStep=16,
-        pcListLetterSpacing=0,bagListLetterSpacing=0,quantityFont='small',quantityLetterSpacing=0,quantityFormat='source multiplication glyph + right-aligned three-character quantity',
-        descriptionText=[40,115],descriptionLetterSpacing=0,descriptionLineStep=14,descriptionFont='normal',
-        pcTitleText=[8,9],pcTitleFont='small',pcTitleLineStep=14,pcTitle='WITHDRAW\nITEM',bagTitleCenter=[44,9],bagTitleFont='normal',bagTitle='ITEMS',depositTitleCenter=[40,9],depositTitleFont='small',depositTitle='DEPOSIT ITEM',
-        pcActionFrame=[168,96,72,64],pcActionText=[184,106],pcActionCursor=[176,106],pcSelectedFrame=[40,112,128,48],pcSelectedText=[48,122],pcResultFrame=[40,112,200,48],pcResultText=[48,122],popupLetterSpacing=0,popupLineStep=14,
-        battleBagActionFrame=[168,120,72,40],battleBagActionText=[184,130],battleBagActionCursor=[176,130],bagSelectedFrame=[40,112,128,48],bagSelectedText=[48,122],
-        potionRect=[8,124,24,24],pocketRightArrowRect=[64,64,16,16],
-        menuTextRgb=list(menu[2]),menuShadowRgb=list(menu[3]),titleTextRgb=list(menu[1]),titleShadowRgb=list(menu[2]),descriptionTextRgb=list(desc[10]),descriptionShadowRgb=list(desc[2]),bagDescriptionTextRgb=list(bagpal[1]),bagDescriptionShadowRgb=list(bagpal[2]),
-        sourceDeclaredLetterSpacing=dict(pcList=1,description=2,popup=1),englishLetterSpacingRule='src/text.c ignores letterSpacing outside Japanese glyph rendering')
+    display = dict(logicalWidth=240, logicalHeight=160, textureFilter='nearest', paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', pcListWindow=[56, 8, 152, 96], bagListWindow=[88, 8, 144, 96], pcListText=[65, 10], bagListText=[97, 10], pcListCursor=[57, 10], bagListCursor=[89, 10], pcQuantityText=[166, 10], bagQuantityText=[198, 10], rowStep=16, pcListLetterSpacing=0, bagListLetterSpacing=0, quantityFont='small', quantityLetterSpacing=0, quantityFormat='source multiplication glyph + right-aligned three-character quantity', descriptionText=[40, 115], descriptionLetterSpacing=0, descriptionLineStep=14, descriptionFont='normal', pcTitleText=[8, 9], pcTitleFont='small', pcTitleLineStep=14, pcTitle='WITHDRAW\nITEM', bagTitleCenter=[44, 9], bagTitleFont='normal', bagTitle='ITEMS', depositTitleCenter=[40, 9], depositTitleFont='small', depositTitle='DEPOSIT ITEM', pcActionFrame=[168, 96, 72, 64], pcActionText=[184, 106], pcActionCursor=[176, 106], pcSelectedFrame=[40, 112, 128, 48], pcSelectedText=[48, 122], pcResultFrame=[40, 112, 200, 48], pcResultText=[48, 122], popupLetterSpacing=0, popupLineStep=14, battleBagActionFrame=[168, 120, 72, 40], battleBagActionText=[184, 130], battleBagActionCursor=[176, 130], bagSelectedFrame=[40, 112, 128, 48], bagSelectedText=[48, 122], potionRect=[8, 124, 24, 24], pocketRightArrowRect=[64, 64, 16, 16], menuTextRgb=list(menu[2]), menuShadowRgb=list(menu[3]), titleTextRgb=list(menu[1]), titleShadowRgb=list(menu[2]), descriptionTextRgb=list(desc[10]), descriptionShadowRgb=list(desc[2]), bagDescriptionTextRgb=list(bagpal[1]), bagDescriptionShadowRgb=list(bagpal[2]), sourceDeclaredLetterSpacing=dict(pcList=1, description=2, popup=1), englishLetterSpacingRule='src/text.c ignores letterSpacing outside Japanese glyph rendering')
     texts,text_refs=import_text(sources)
-    catalog=dict(schemaVersion=1,profile=inputs.PROFILE,repository=inputs.REPOSITORY,sourceCommit=inputs.COMMIT,fullSourceHash=inputs.source_set_hash(lock),display=display,texts=texts,textSourceRefs=text_refs,assets=assets,sourceRefs=lock['files'],limitations=[
+    catalog=dict(schemaVersion=1,profile=inputs.PROFILE,repository=inputs.REPOSITORY,sourceCommit=inputs.COMMIT,display=display,texts=texts,textSourceRefs=text_refs,assets=assets,sourceRefs=lock['files'],limitations=[
         'Only male opening ordinary-items Potion pages: PC withdrawal, PC deposit and field/battle bag.',
         'No female bag, other pockets, scrolling lists, reorder mode, quantity selector or other item icons.',
         'Backgrounds contain no title/item/quantity/description text, list cursors, popup choices or game-state changes.',
@@ -132,14 +123,14 @@ def convert(lock,sources):
         'PC action frame reuses LabBattleUiSkin frame1; blue selected/result/deposit windows use std-frame.',
         'Original emulator screenshots are independent tests only, never importer input or exported material.'])
     outputs['item-ui.json']=inputs.canonical(catalog)
-    outputs['manifest.json']=inputs.canonical(dict(schemaVersion=1,profile=inputs.PROFILE,commit=inputs.COMMIT,fullSourceHash=inputs.source_set_hash(lock),inputs=lock['files'],outputs=[dict(path=p,byteLength=len(d),sha256=inputs.digest(d)) for p,d in sorted(outputs.items())],upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False))
+    outputs['manifest.json']=inputs.canonical(dict(schemaVersion=1,profile=inputs.PROFILE,commit=inputs.COMMIT,inputs=lock['files'],outputs=[dict(path=p) for p,d in sorted(outputs.items())],upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False))
     return outputs
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/item-ui');p.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/item-ui');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/item-ui.lock.json');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--output',type=pathlib.Path,default=ROOT/'content/generated/item-ui');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/item-ui.lock.json');a=p.parse_args()
     if a.output.resolve().is_relative_to(a.raw.resolve()) or a.raw.resolve().is_relative_to(a.output.resolve()):raise ValueError('Raw/output roots overlap')
     lock=inputs.load_lock(a.lock);outputs=convert(lock,inputs.read_verified(lock,a.raw));targets=[(inputs.safe_path(a.output,n),d) for n,d in outputs.items()];a.output.mkdir(parents=True,exist_ok=True)
     for target,data in targets:
         stage=inputs.safe_path(a.output,target.name+'.tmp');stage.write_bytes(data);stage.replace(target)
-    print(json.dumps({'status':'imported','assets':len(outputs)-2,'fullSourceHash':inputs.source_set_hash(lock),'catalogSha256':inputs.digest(outputs['item-ui.json'])}))
+    print(json.dumps({'status':'imported','assets':len(outputs)-2}))
 if __name__=='__main__':main()
