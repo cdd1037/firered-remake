@@ -5,20 +5,19 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretBillMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+public sealed record PretBillMachinesDocument(int SchemaVersion,
+    ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons);
 
-/// <summary>Authenticates eight explicit TMs for 68 species, preserving every historical machine profile.</summary>
+/// <summary>Loads eight explicit TMs for 68 species.</summary>
 public static class PretBillMachines
 {
-    public const string Profile = "firered-bill-machines-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public static PretBillMachinesDocument Load(string json, SharedMachineCatalog machines)
     {
         var document = ContentJson.ParseStrict<PretBillMachinesDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 &&
-            document.Machines.Length == 8 && document.Icons.Length == 3 && !document.Limitations.IsDefaultOrEmpty,
+            document.Machines.Length == 8 && document.Icons.Length == 3,
             "Bill machine scope differs.");
         string[] symbols = ["TM39", "TM05", "TM09", "TM46", "TM03", "TM45", "TM43", "TM28"];
         for (int n = 0; n < document.Machines.Length; n++)
@@ -40,7 +39,7 @@ public static class PretBillMachines
 
     public static PretBillMachinesDocument LoadProject(string root)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/bill-machines/bill-machines.json")), SharedMachineCatalog.LoadProject(root));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/machine-learning/bill.json")), SharedMachineCatalog.LoadProject(root));
         return document;
     }
 

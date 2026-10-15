@@ -10,15 +10,12 @@ namespace Game.Domain.Trainers;
 public sealed record Route22TrainerBattleDefinition(TrainerId Trainer, int PlayerStarterVar, SpeciesId PlayerStarter,
     int Mode, int RivalFlags, uint BattleTypeFlags, int WonTrainerFlag, int BasePrizeMoney,
     string ScriptEntry, string DefeatText, string VictoryText, string EntryScript, string Callback, TrainerSourceRef Source);
-public sealed record Route22TrainerCatalog(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
+public sealed record Route22TrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
     ImmutableDictionary<TrainerId, Route22TrainerBattleDefinition> Battles);
 
 /// <summary>Only the three source Route22 early-rival custom-move parties; never a level-nine natural learnset.</summary>
 public static class Route22TrainerPartyFactory
 {
-    public const string SourceCommit = TrainerPartyFactory.SourceCommit;
-    public const string RulesVersion = "firered-route22-rival-trainers-v1";
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } =
         new[] { "SQUIRTLE", "BULBASAUR", "CHARMANDER" }
             .Select(x => new TrainerId("pret:TRAINER_RIVAL_ROUTE22_EARLY_" + x)).ToImmutableArray();
@@ -58,38 +55,7 @@ public static class Route22TrainerPartyFactory
     public static void ValidateCatalog(Route22TrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster)
-            throw new NotSupportedException("Unknown Route22 rival source/profile or complete-roster claim.");
-        if (catalog.Trainers is null || catalog.Battles is null || catalog.Trainers.Count != 3 || catalog.Battles.Count != 3)
-            throw new ArgumentException("All three bounded early-rival definitions are required.");
-        for (int branch = 0; branch < 3; branch++)
-        {
-            var id = SupportedTrainers[branch];
-            if (!catalog.Trainers.TryGetValue(id, out var t) || t is null || t.Id != id || t.SourceTrainerId != 329 + branch ||
-                t.SourceTrainerName != "TERRY" || !ValidEncoding("TERRY", t.EncodedTrainerName) ||
-                t.TrainerClass != "TRAINER_CLASS_RIVAL_EARLY" || t.SourceTrainerClass != 81 ||
-                t.TrainerPic != "TRAINER_PIC_RIVAL_EARLY" || t.SourceTrainerPic != 106 ||
-                t.EncounterMusicGender != 0 || t.DoubleBattle || t.PartyFlags != 1 || t.AiFlags != 7 || t.BaseMoney != 4 ||
-                t.Items.IsDefault || !t.Items.SequenceEqual(new[] { "ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE" }) ||
-                t.AiFlagSymbols.IsDefault || !t.AiFlagSymbols.SequenceEqual(new[] { "AI_SCRIPT_CHECK_BAD_MOVE", "AI_SCRIPT_TRY_TO_FAINT", "AI_SCRIPT_CHECK_VIABILITY" }))
-                throw new NotSupportedException("Route22 rival parameters differ from source; TERRY is the canonical generation name.");
-            if (t.Party.IsDefault || t.Party.Length != 2) throw new ArgumentException("The early rival has two Pokemon.");
-            for (int index = 0; index < 2; index++)
-            {
-                string species = index == 0 ? "PIDGEY" : branch switch { 0 => "SQUIRTLE", 1 => "BULBASAUR", _ => "CHARMANDER" };
-                int sourceId = index == 0 ? 16 : branch switch { 0 => 7, 1 => 1, _ => 4 };
-                string[] moves = index == 0 ? ["TACKLE", "SAND_ATTACK", "NONE", "NONE"] : branch switch
-                { 0 => ["TACKLE", "TAIL_WHIP", "NONE", "NONE"], 1 => ["TACKLE", "GROWL", "NONE", "NONE"], _ => ["SCRATCH", "GROWL", "NONE", "NONE"] };
-                var m = t.Party[index];
-                if (m is null || m.Species.Value != "pret:SPECIES_" + species || m.SpeciesName != species || m.SourceSpeciesId != sourceId ||
-                    !ValidEncoding(species, m.EncodedSpeciesName) || m.Level != 9 || m.SourceIv != 50 || m.HeldItem != "ITEM_NONE" ||
-                    m.CustomMoves.IsDefault || !m.CustomMoves.Select(x => x.Value).SequenceEqual(moves.Select(x => "pret:MOVE_" + x)))
-                    throw new NotSupportedException("Route22 rival party differs from its source custom-move roster.");
-            }
-            if (!catalog.Battles.TryGetValue(id, out var battle) || battle is null || battle.Trainer != id)
-                throw new ArgumentException("Missing early Route22 rival battle declaration.");
-            ValidateBattle(battle);
-        }
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.Battles.Values, ValidateBattle);
     }
 
     public static void ValidateBattle(Route22TrainerBattleDefinition battle)
@@ -107,7 +73,4 @@ public static class Route22TrainerPartyFactory
             throw new NotSupportedException("Route22 battle declaration differs; this is not the lab tutorial/heal battle.");
     }
 
-    private static bool ValidEncoding(string text, ImmutableArray<int> bytes) =>
-        !bytes.IsDefaultOrEmpty && bytes.Length == text.Length &&
-        text.Select((c, i) => c is >= 'A' and <= 'Z' && bytes[i] == 0xbb + c - 'A').All(x => x);
 }

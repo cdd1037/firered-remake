@@ -8,13 +8,13 @@ using Game.Domain.Pokemon;
 namespace Game.Content;
 
 public sealed record DepartmentRooftopIconAlias(ItemId Item, ItemId ReusedItem, OpeningItemSourceRef Source, OpeningItemSourceRef ReusedSource);
-public sealed record DepartmentRooftopMachinesDocument(string SourceCommit, string Profile, int PreviousMachineCount, int MachineCount, int SpeciesCount,
+public sealed record DepartmentRooftopMachinesDocument(int PreviousMachineCount, int MachineCount, int SpeciesCount,
     ImmutableArray<MachineDefinition> Additions, ImmutableArray<DepartmentRooftopIconAlias> IconAliases);
 
 /// <summary>One missing drink and three reward machines; all existing items, owners and icons remain shared.</summary>
 public static class PretDepartmentRooftopItems
 {
-    public const string Base = "content/generated/department-rooftop-items/";
+    public const string Base = "content/generated/data/items/department-rooftop/";
     public const string Profile = "firered-department-rooftop-items-v1";
     private static byte[] Read(string root,string relative)
     {

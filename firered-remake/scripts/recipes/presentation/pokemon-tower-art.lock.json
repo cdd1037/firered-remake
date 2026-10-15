@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "graphics/pokemon/gastly/front.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/front.png"
+    },
+    {
+      "path": "graphics/pokemon/gastly/back.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/back.png"
+    },
+    {
+      "path": "graphics/pokemon/gastly/normal.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/gastly/shiny.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/gastly/icon.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/gastly/footprint.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/gastly/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/haunter/front.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/front.png"
+    },
+    {
+      "path": "graphics/pokemon/haunter/back.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/back.png"
+    },
+    {
+      "path": "graphics/pokemon/haunter/normal.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/haunter/shiny.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/haunter/icon.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/haunter/footprint.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/haunter/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokemon/icon_palettes/icon_palette_2.pal"
+    },
+    {
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/pokedex/kanto_dex_bgpals.pal"
+    },
+    {
+      "path": "src/pokemon_icon.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/pokemon_icon.c"
+    },
+    {
+      "path": "src/data/graphics/pokemon.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/graphics/pokemon.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/front_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/back_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/enemy_mon_elevation.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/footprint_table.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/pokemon_graphics/footprint_table.h"
+    },
+    {
+      "path": "graphics/trainers/front_pics/channeler_front_pic.png",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/trainers/front_pics/channeler_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/palettes/channeler.pal",
+      "localPath": "content/raw/pokefirered/037335f4/graphics/trainers/palettes/channeler.pal"
+    },
+    {
+      "path": "src/data/graphics/trainers.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/graphics/trainers.h"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/trainer_graphics/front_pic_tables.h"
+    },
+    {
+      "path": "src/data/trainers.h",
+      "localPath": "content/raw/pokefirered/037335f4/src/data/trainers.h"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
+    }
+  ]
+}

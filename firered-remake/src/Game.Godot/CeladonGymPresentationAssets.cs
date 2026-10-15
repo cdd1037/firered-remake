@@ -16,14 +16,13 @@ internal static class CeladonGymPresentationAssets
             byte[] data=File.ReadAllBytes(file.FullName);
             return data;
         }
-        using var manifest=JsonDocument.Parse(Read("content/generated/celadon-gym-art/manifest.json"));
-        var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1||
-            m.GetProperty("profile").GetString()!="firered-celadon-gym-art-v1")throw new InvalidDataException("CeladonGym art provenance differs.");
+        using var manifest=JsonDocument.Parse(Read("content/generated/sprites/trainers/celadon-gym/manifest.json"));
+        var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1)throw new InvalidDataException("CeladonGym art provenance differs.");
         var result=new Dictionary<string,byte[]>(StringComparer.Ordinal);
         foreach(var row in m.GetProperty("outputs").EnumerateArray())
         {
             string name=row.GetProperty("path").GetString()!;
-            result.Add(name,Read("content/generated/celadon-gym-art/"+name));
+            result.Add(name,Read("content/generated/sprites/trainers/celadon-gym/"+name));
         }
         if(new[]{"beauty-front","cooltrainer-f-front","erika-front"}.Any(id=>!NativeImages.HasSize(result[id+".png"], 64, 64)))throw new InvalidDataException("CeladonGym art inventory differs.");
         return result;

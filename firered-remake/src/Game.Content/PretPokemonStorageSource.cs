@@ -29,30 +29,25 @@ public sealed class PretPokemonStorageSource
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public ImmutableDictionary<string, PretPokemonStorageSourceText> UiTextSources { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public ImmutableArray<PretPcMenuVariant> PcMenuVariants { get; }
     public ImmutableArray<PretPokemonStorageMenuOption> StorageMenu { get; }
     public ImmutableArray<OpeningItemSourceRef> RulesSources { get; }
 
-    public ImmutableArray<string> Limitations { get; }
     public string GeneratedDirectory { get; }
 
     private PretPokemonStorageSource(string generatedDirectory, ImmutableDictionary<string, int> constants,
-        ImmutableDictionary<string, PretPokemonStorageSourceText> uiTexts, ImmutableArray<PretWorldSourceFile> files,
-        ImmutableArray<PretPcMenuVariant> pcMenus, ImmutableArray<PretPokemonStorageMenuOption> storageMenu,
-        ImmutableArray<OpeningItemSourceRef> rules, ImmutableArray<string> limitations)
+        ImmutableDictionary<string, PretPokemonStorageSourceText> uiTexts, ImmutableArray<PretPcMenuVariant> pcMenus, ImmutableArray<PretPokemonStorageMenuOption> storageMenu,
+        ImmutableArray<OpeningItemSourceRef> rules )
     {
         GeneratedDirectory = generatedDirectory; Constants = constants;
-        UiTextSources = uiTexts; SourceUiTexts = uiTexts.ToImmutableDictionary(x => x.Key, x => x.Value.Text, StringComparer.Ordinal);
-        SourceFiles = files; PcMenuVariants = pcMenus; StorageMenu = storageMenu; RulesSources = rules;
-        Limitations = limitations;
+        UiTextSources = uiTexts; SourceUiTexts = uiTexts.ToImmutableDictionary(x => x.Key, x => x.Value.Text, StringComparer.Ordinal); PcMenuVariants = pcMenus; StorageMenu = storageMenu; RulesSources = rules;
     }
 
     public static PretPokemonStorageSource Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
 
-        var generatedDirectory = Path.Combine(project, "content/generated/pokemon-storage");
+        var generatedDirectory = Path.Combine(project, "content/generated/ui/pokemon-storage");
         byte[] Read(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -68,9 +63,7 @@ public sealed class PretPokemonStorageSource
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 , "Storage generated manifest differs.");
         var output = m.GetProperty("outputs")[0];
         Require(output.GetProperty("path").GetString() == "pokemon-storage.json" , "Storage generated output metadata differs.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
         var options = ContentJson.CreateOptions();
         T Decode<T>(JsonElement value) => value.Deserialize<T>(options) ?? throw new InvalidDataException("Missing storage document value.");
         var constants = ImmutableDictionary.CreateBuilder<string, int>(StringComparer.Ordinal);
@@ -86,8 +79,8 @@ public sealed class PretPokemonStorageSource
         var storageMenu = Decode<ImmutableArray<PretPokemonStorageMenuOption>>(root.GetProperty("storageMenu"));
         var rules = Decode<ImmutableArray<OpeningItemSourceRef>>(root.GetProperty("rulesSources"));
         Require(pcMenus.Length == 3 && storageMenu.Length == 5, "Incomplete storage source contract.");
-        return new(generatedDirectory, constants.ToImmutable(), uiTexts, inventory,
-            pcMenus, storageMenu, rules, Decode<ImmutableArray<string>>(root.GetProperty("limitations")));
+        return new(generatedDirectory, constants.ToImmutable(), uiTexts,
+            pcMenus, storageMenu, rules);
     }
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)

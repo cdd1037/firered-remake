@@ -31,7 +31,7 @@ public sealed class PretMagikarpContract
     public static PretMagikarpContract Load(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
-        const string generated = "content/generated/magikarp-gift/";
+        const string generated = "content/generated/data/services/magikarp-gift/";
             using var manifest = JsonDocument.Parse(ReadPinned(root,generated + "manifest.json"));
         var m = manifest.RootElement;
             Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&

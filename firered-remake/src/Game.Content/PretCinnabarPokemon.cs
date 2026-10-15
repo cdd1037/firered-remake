@@ -15,7 +15,7 @@ public static class PretCinnabarPokemon
         SilphSourcePackage.Need(d.SchemaVersion == 1 &&
             d.Species.Select(s => s.SourceSpeciesId).SequenceEqual([98, 99]) &&
             d.OpponentSpecies.Select(s => s.SourceSpeciesId).SequenceEqual([38, 59, 78, 91]) && d.Machines.Length == 6 &&
-            d.HeldItems.Length == 6 && d.SourceEvolutions.Length == 6 && !d.Limitations.IsDefaultOrEmpty , "Cinnabar Pokemon projection differs.");
+            d.HeldItems.Length == 6 && d.SourceEvolutions.Length == 6 , "Cinnabar Pokemon projection differs.");
         foreach (var s in d.Species.Concat(d.OpponentSpecies))
         {
             SilphSourcePackage.Need(JsonSerializer.Serialize(s) == JsonSerializer.Serialize(canonical.Catalog.Species[s.Id]), "Cinnabar species differs from canonical source.");

@@ -83,6 +83,9 @@ public static class PretCampaignMapPresentation
         if(catalog.ForestRegion is {} forest) Add(forest.NewMaps.Keys,forest.NpcSourcePath);
         if(catalog.ViridianCenter is {} center) Add([center.Map.Id],center.NpcSourcePath,false);
         if(catalog.ViridianRegion is {} region) Add([new("map.route-1"),new("map.viridian-city"),new("map.viridian-mart")],region.NpcSourcePath,false);
+        foreach (var opening in PretWorldCatalog.Specifications)
+            if (catalog.SourceMaps.TryGetValue(new MapId(opening.StableId), out var map))
+                Add([map.Id],System.IO.Path.Combine(PretRuntimeMapValidation.GeneratedRoot(map.MapPath),"sprites/overworld/opening.json"),false);
         return catalog.SourceMaps.Keys.ToFrozenDictionary(id=>id,
             id=>new PretMapPresentationBinding(npcs.GetValueOrDefault(id),localBorders.Contains(id)));
     }

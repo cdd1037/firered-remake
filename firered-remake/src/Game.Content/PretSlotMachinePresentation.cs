@@ -32,7 +32,7 @@ public sealed class SlotMachinePresentationData
 /// <summary>Loads slot machine art, layout and audio cue bindings.</summary>
 public static class PretSlotMachinePresentation
 {
-    public const string Base = "content/generated/slot-machine-presentation/";
+    public const string Base = "content/generated/ui/slot-machine-presentation/";
     public const string Profile = "firered-slot-machine-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 

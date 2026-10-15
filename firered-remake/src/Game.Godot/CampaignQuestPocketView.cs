@@ -17,7 +17,7 @@ public partial class CampaignView
     {
         _questPocketTextures.Clear(); _questPocketUi = null; ResetQuestPocketPresentation();
         if (_catalog.QuestItems is null) return;
-        var directory = System.IO.Path.Combine(_root, "content/generated/quest-item-ui");
+        var directory = System.IO.Path.Combine(_root, "content/generated/ui/quest-item-ui");
         var document = PretQuestItemUi.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "quest-item-ui.json")));
         PretQuestItemUi.ValidateCatalog(document, _catalog.QuestItems);
         try
@@ -32,7 +32,7 @@ public partial class CampaignView
             }
             if(_catalog.OldManTutorialEnabled)
             {
-                var oldDirectory=System.IO.Path.Combine(_root,"content/generated/old-man-art");
+                var oldDirectory=System.IO.Path.Combine(_root,"content/generated/sprites/pokemon/old-man");
                 var oldArt=PretOldManArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(oldDirectory,"old-man-art.json")));
                 var tv=oldArt.TeachyTv;var item=_catalog.QuestItems.Items.Single(x=>x.Id.Value==tv.Id);
                 if(item.SourceItemSymbol!=tv.SourceSymbol||item.Name!=tv.Name||item.FieldUseFunction!=tv.FieldUseFunction)throw new InvalidDataException("Teachy TV presentation differs from source item.");

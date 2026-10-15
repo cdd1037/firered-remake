@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "graphics/trainers/front_pics/biker_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/palettes/biker.pal"
+    },
+    {
+      "path": "include/constants/trainers.h"
+    },
+    {
+      "path": "src/data/graphics/trainers.h"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
+    },
+    {
+      "path": "src/data/trainers.h"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
+    }
+  ]
+}

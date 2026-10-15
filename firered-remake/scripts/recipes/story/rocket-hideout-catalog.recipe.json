@@ -1,0 +1,54 @@
+{
+  "baselineCommit": "62e9c577efff485725a6c34b21185f7298999a3d",
+  "dependencies": [
+    {
+      "path": "content/generated/data/items/celadon-approach/celadon-approach-machines.json"
+    },
+    {
+      "path": "content/generated/sprites/pokemon/celadon-gym/supplement.json"
+    },
+    {
+      "path": "content/generated/data/services/old-man-tutorial.json"
+    },
+    {
+      "path": "content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json"
+    },
+    {
+      "path": "content/generated/data/pokemon/route1/catalog.json"
+    },
+    {
+      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/imports/source/fetch-starter-art.py"
+    },
+    {
+      "path": "scripts/imports/pokemon/import-capture-dex.py"
+    },
+    {
+      "path": "scripts/imports/pokemon/import-forest-capture-dex.py"
+    },
+    {
+      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/imports/pokemon/import-rocktunnel-pokemon.py"
+    },
+    {
+      "path": "scripts/imports/presentation/import-route1-battle-art.py"
+    },
+    {
+      "path": "scripts/imports/pokemon/import-route22-pokemon.py"
+    },
+    {
+      "path": "scripts/imports/pokemon/import-route3-pokemon.py"
+    },
+    {
+      "path": "scripts/imports/presentation/import-starter-art.py"
+    },
+    {
+      "path": "scripts/imports/presentation/import-storage-art.py"
+    }
+  ],
+  "schemaVersion": 1
+}

@@ -29,8 +29,8 @@ public partial class CampaignView
     private void LoadBattlePresentation()
     {
         _battleText=PretBattleText.Load(_root);
-        var ui=System.IO.Path.Combine(_root,"content/generated/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
-        var fonts=System.IO.Path.Combine(_root,"content/generated/source-font");
+        var ui=System.IO.Path.Combine(_root,"content/generated/ui/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
+        var fonts=System.IO.Path.Combine(_root,"content/generated/ui/font");
         SourceGameFont Font(Color fore,Color shadow,bool small=false)=>SourceGameFont.Load(fonts,small?"small":"normal",fore,shadow);
         _battleWhite=Font(LabBattleUiSkin.BattleTextColor,LabBattleUiSkin.BattleTextShadow);
         _battleMenuFont=Font(LabBattleUiSkin.MenuTextColor,LabBattleUiSkin.MenuTextShadow);_battleMoveFont=Font(LabBattleUiSkin.MenuTextColor,LabBattleUiSkin.MenuTextShadow,true);
@@ -38,7 +38,7 @@ public partial class CampaignView
         var hf=LabBattleUiSkin.HealthboxTextColor;var hs=LabBattleUiSkin.HealthboxTextShadow;var male=Color.Color8(66,206,255);var female=Color.Color8(255,156,148);
         _healthFont=Font(hf,hs,true);_healthDarkFont=Font(LabBattleUiSkin.DarkenColor(hf),LabBattleUiSkin.DarkenColor(hs),true);
         _healthMale=Font(male,hs,true);_healthFemale=Font(female,hs,true);_healthDarkMale=Font(LabBattleUiSkin.DarkenColor(male),LabBattleUiSkin.DarkenColor(hs),true);_healthDarkFemale=Font(LabBattleUiSkin.DarkenColor(female),LabBattleUiSkin.DarkenColor(hs),true);
-        var folder=System.IO.Path.Combine(_root,"content/generated/lab-battle-art");var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,"lab-battle-art.json"));
+        var folder=System.IO.Path.Combine(_root,"content/generated/battle/art/lab-battle-art");var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,"lab-battle-art.json"));
         using var json=JsonDocument.Parse(bytes);
         foreach(var sprite in json.RootElement.GetProperty("sprites").EnumerateArray())
         {

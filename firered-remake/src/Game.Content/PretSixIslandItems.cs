@@ -10,7 +10,7 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record SixIslandMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record SixIslandItemsDocument(string SourceCommit, string Profile, ImmutableArray<MachineItem> Items,
+public sealed record SixIslandItemsDocument(ImmutableArray<MachineItem> Items,
     ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<SixIslandMachineRows> MachineAdditions,
     EarlyShopStock Shop, ImmutableArray<FieldPickupDefinition> Pickups);
 public sealed record SixIslandItemContent(ImmutableArray<MachineItem> Items, ImmutableArray<FieldPickupDefinition> Pickups,
@@ -21,7 +21,7 @@ public static partial class PretSixIslandItems
 {
     public static SixIslandItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/six-island-items/items.json"));
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/items/six-island.json"));
         var document = JsonSerializer.Deserialize<SixIslandItemsDocument>(bytes,
             (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("six_island_items_missing");

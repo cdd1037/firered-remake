@@ -9,11 +9,10 @@ public sealed record CenterHealingTiming(int BallSpacingTicks, int LastBallPause
     int FirstFlashCycles, int LastFlashTicks, int AfterFlashTicks, int FanfareCounterTicks, int ActiveTicksBase);
 public sealed record CenterHealingAsset(string Id, string TexturePath, int Width, int Height, int FrameWidth, int FrameHeight, int FrameCount,
     int PaletteCount);
-public sealed record CenterHealingArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretQuestItemInput> Inputs,
-    ImmutableArray<CenterHealingAsset> Assets, CenterHealingPoint FirstBall,
+public sealed record CenterHealingArtDocument(int SchemaVersion, ImmutableArray<CenterHealingAsset> Assets, CenterHealingPoint FirstBall,
     ImmutableArray<CenterHealingPoint> BallOffsets, CenterHealingPoint Monitor,
     ImmutableArray<CenterHealingFrame> MonitorFrames, int MonitorLoops,
-    ImmutableArray<string> PaletteVariants, CenterHealingTiming Timing, ImmutableArray<string> Limitations);
+    ImmutableArray<string> PaletteVariants, CenterHealingTiming Timing);
 
 /// <summary>Locked source sprites, palette phases and animation metadata; no healing business logic.</summary>
 public static class PretCenterHealingArt

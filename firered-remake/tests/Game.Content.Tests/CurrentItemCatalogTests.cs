@@ -28,10 +28,31 @@ public sealed class CurrentItemCatalogTests
     }
 
     [TestMethod]
+    public void CurrentCatalogUsesExplicitUniqueAdmissionRatherThanHistoricalCounts()
+    {
+        var shared = SharedItemCatalog.LoadProject(TestAssets.Root);
+        var original = JsonNode.Parse(File.ReadAllText(Path.Combine(TestAssets.Root,
+            "content/generated/data/available-items.json")))!;
+        var potion = original["items"]!.AsArray().Single(row => row!["item"]!.GetValue<string>() == "pret:ITEM_POTION")!;
+        original["items"] = new JsonArray(potion.DeepClone());
+        original["shops"] = new JsonArray(new JsonObject
+        {
+            ["id"] = "PotionCounter",
+            ["items"] = new JsonArray(new JsonObject { ["value"] = "pret:ITEM_POTION" })
+        });
+        var catalog = CurrentItemCatalog.Parse(original.ToJsonString(), shared);
+        Assert.AreEqual(1, catalog.Items.Length);
+        Assert.AreEqual(1, catalog.Shops.Length);
+        Assert.AreSame(shared.Definition(OpeningInventoryRules.PotionId), catalog.Items[0].Item);
+        original["items"]!.AsArray().Add(potion.DeepClone());
+        Assert.ThrowsExactly<InvalidDataException>(() => CurrentItemCatalog.Parse(original.ToJsonString(), shared));
+    }
+
+    [TestMethod]
     public void CurrentCatalogRejectsUnknownStockAndInconsistentMedicineEffects()
     {
         var shared = SharedItemCatalog.LoadProject(TestAssets.Root);
-        var json = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/current-items/catalog.json"));
+        var json = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/data/available-items.json"));
         var invalid = JsonNode.Parse(json)!;
         invalid["shops"]![0]!["items"]![0]!["value"] = "pret:ITEM_HM08";
         Assert.ThrowsExactly<InvalidDataException>(() => CurrentItemCatalog.Parse(invalid.ToJsonString(), shared));

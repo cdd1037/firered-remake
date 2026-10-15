@@ -2,27 +2,30 @@
 """Import 17 authentic service interiors; reference all four existing Saffron gates unchanged."""
 import sys as _constant_sys
 from pathlib import Path as _ConstantPath
-_constant_scripts = str(_ConstantPath(__file__).resolve().parents[2] / 'scripts')
+_constant_scripts = str(_ConstantPath(__file__).resolve().parents[2] / 'scripts/lib')
 if _constant_scripts not in _constant_sys.path:
     _constant_sys.path.insert(0, _constant_scripts)
 from shared_constants import package_documents
 from pathlib import Path
 import argparse, importlib.util, json, shutil, tempfile
-from build_source_lock import ROOT, COMMIT, PROFILE, MAPS, NEW_MAPS, REUSED_MAPS, TILESETS
+_lock_spec=importlib.util.spec_from_file_location('_regional_service_source_lock', Path(__file__).with_name('build_source_lock.py'))
+_lock=importlib.util.module_from_spec(_lock_spec);_lock_spec.loader.exec_module(_lock)
+for _name in ('ROOT','COMMIT','PROFILE','MAPS','NEW_MAPS','REUSED_MAPS','TILESETS'): globals()[_name]=getattr(_lock,_name)
+from map_runtime import generated_root, publish_map_package
 import script_inventory as INVENTORY
 def load_helper(name, path):
     spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 SHARED=load_helper('_regional_service_shared', Path(__file__).with_name('_regional_service_shared.py'))
-CONVERTER=load_helper('_regional_service_compact', ROOT/'scripts/export-runtime-maps.py')
+CONVERTER=load_helper('_regional_service_compact', ROOT/'scripts/imports/maps/export-runtime-maps.py')
 canonical=SHARED.canonical
 original_read_lock=SHARED.read_lock
-def read_lock(path=None):return original_read_lock(path or ROOT/'scripts/import-config/regional-service-maps.json')
+def read_lock(path=None):return original_read_lock(path or ROOT/'scripts/recipes/config/regional-service-maps.json')
 for k in ('ROOT','COMMIT','PROFILE','MAPS','TILESETS','read_lock'):setattr(SHARED,k,globals()[k])
 INVENTORY.PROFILE=PROFILE;INVENTORY.SERVICE_MAPS=[n for n,_,_ in MAPS]
 
 def protect(target,role):
     target=Path(target);SHARED.require_safe_target(ROOT,target)
-    for p in [ROOT/x for x in ['tools','src','tests','proof','evidence','scripts/import-config','content/'+('generated' if role=='raw' else 'raw')]]:
+    for p in [ROOT/x for x in ['tools','src','tests','proof','evidence','scripts/recipes/config','content/'+('generated' if role=='raw' else 'raw')]]:
         if target.resolve().is_relative_to(p.resolve()) or p.resolve().is_relative_to(target.resolve()):raise ValueError('Protected source/output overlap')
 
 def warp_inventory(src,worlds):
@@ -80,14 +83,15 @@ def build(raw,out,check=False):
         for (n,s,d),w in zip(NEW_MAPS,worlds):
             rich=(stage/d/'runtime-map.json').read_bytes();encoded=CONVERTER.encode(CONVERTER.normalize_runtime(json.loads(rich)));(stage/d/'runtime-map.json').write_bytes(encoded)
             compact_entries.append(dict(stableId=s,path=d+'/runtime-map.json'))
-        runtime=dict(schemaVersion=2,profile=PROFILE,converterVersion=CONVERTER.VERSION,sourceCommit=COMMIT,maps=compact_entries)
+        runtime=dict(schemaVersion=3,maps=compact_entries)
         unavailable=dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,enabledServices=[],
             unavailableServices=['Tea gift and shared guard handoff require bounded application integration','Eevee party/PC/storage-full/nickname require bounded application integration','Name Rater ownership, party selection, egg and nickname branches','Department Store marts, Counter tutor, vending, drink rewards, and dynamic elevator','Coin Case, coin economy, Prize Room exchange','Diploma completion and Game Freak computer menus','Fame viewer, invisible journal interaction and ordinary NPC branch replay'],
             dynamicWarpMap='map.celadon-city-department-store-elevator',externalDestinations=sorted({x['destinationMap'] for x in warps if x['runtimeStatus']=='externalBoundary'}),
             gates='Route5/6 maps and art remain owned by Vermilion, Route7/8 by Celadon approach; all four gate source declarations are authenticated here. Saffron city is not imported or enabled.')
-        for name,doc in package_documents(out.parent, constants, {'regional-service-maps-catalog.json':catalog,'runtime-catalog.json':runtime,'scripts.json':scripts,'npc-source.json':npcs,'objects.json':object_inventory(all_maps),'availability.json':unavailable}, check=check).items():(stage/name).write_text(canonical(doc))
+        for name,doc in package_documents(generated_root(out), constants, {'regional-service-maps-catalog.json':catalog,'runtime-catalog.json':runtime,'scripts.json':scripts,'npc-source.json':npcs,'objects.json':object_inventory(all_maps),'availability.json':unavailable}, check=check).items():(stage/name).write_text(canonical(doc))
+        publish_map_package(stage)
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(worlds),reusedMapCount=len(reused),sourceMapCount=len(all_maps),cellCount=sum(len(w['cells']) for w in worlds),borderCellCount=sum(len(w['borderCells']) for w in worlds),warpCount=len(warps),objectCount=sum(len(w['events']['object_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
+        manifest=dict(schemaVersion=1,outputs=outputs)
         data=canonical(manifest).encode()
         (stage/'manifest.json').write_bytes(data)
         for p in sorted(stage.rglob('*')):
@@ -100,7 +104,7 @@ def build(raw,out,check=False):
     print(json.dumps(report,sort_keys=True));return manifest
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-root',type=Path);p.add_argument('--materialize',action='store_true');p.add_argument('--check',action='store_true');p.add_argument('--raw',type=Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=Path,default=ROOT/'content/generated/regional-service-maps');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-root',type=Path);p.add_argument('--materialize',action='store_true');p.add_argument('--check',action='store_true');p.add_argument('--raw',type=Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=Path,default=ROOT/'content/generated/maps/regions/regional-service-maps');a=p.parse_args()
     if a.materialize:
         if not a.reference_root:p.error('--materialize requires --reference-root')
         if a.check:p.error('--materialize and --check are mutually exclusive')

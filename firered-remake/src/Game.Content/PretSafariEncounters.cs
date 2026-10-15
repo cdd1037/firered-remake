@@ -7,10 +7,9 @@ namespace Game.Content;
 
 public sealed record SafariEncounterSourceRef(SourceKind Kind, string Path, string Symbol, string Repository, string Commit, int Line);
 public sealed record SafariHeldItemRow(string Species, string Common, string Rare, SafariEncounterSourceRef SourceRef);
-public sealed record SafariEncounterDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<EarlyLandEncounterTable> Tables, ImmutableArray<SafariHeldItemRow> HeldItems,
+public sealed record SafariEncounterDocument(int SchemaVersion, ImmutableArray<EarlyLandEncounterTable> Tables, ImmutableArray<SafariHeldItemRow> HeldItems,
     int HeldItemDrawBound, JsonElement ExcludedTables, ImmutableArray<string> MissingGroundSpecies,
-    ImmutableArray<string> MissingDeferredSpecies, ImmutableArray<string> Limitations);
+    ImmutableArray<string> MissingDeferredSpecies);
 
 /// <summary>Four authenticated FireRed ground tables. Loading never admits water, fishing or a battle profile.</summary>
 public sealed class PretSafariEncounters
@@ -33,16 +32,13 @@ public sealed class PretSafariEncounters
         Need(doc.SchemaVersion == 1 &&
             doc.Tables.Length == 4 && doc.ExcludedTables.GetArrayLength() == 8 && doc.HeldItemDrawBound == 100 &&
             doc.MissingGroundSpecies.SequenceEqual(new[] { "SPECIES_CHANSEY","SPECIES_SCYTHER","SPECIES_TAUROS" }) &&
-            doc.MissingDeferredSpecies.SequenceEqual(new[] { "SPECIES_DRAGONAIR","SPECIES_DRATINI","SPECIES_PSYDUCK" }) &&
-            !doc.Limitations.IsDefaultOrEmpty, "Safari encounter scope differs.");
-        const string sourcePath = "src/data/wild_encounters.json";
+            doc.MissingDeferredSpecies.SequenceEqual(new[] { "SPECIES_DRAGONAIR","SPECIES_DRATINI","SPECIES_PSYDUCK" }), "Safari encounter scope differs.");
         var expectedAreas = new[] { "Center","East","North","West" };
         for (var index = 0; index < expectedAreas.Length; index++)
         {
             var area = expectedAreas[index]; var table = doc.Tables[index]; var symbol = "sSafariZone" + area + "_FireRed";
             var map = new MapId("map.safari-zone-" + area.ToLowerInvariant());
-            Need(table.Map == map && region.SourceMaps.ContainsKey(map) &&
-                table.SourceSymbol == symbol && table.SourcePath == sourcePath ,
+            Need(table.Map == map && region.SourceMaps.ContainsKey(map),
                 "Safari encounter map/version identity differs.");
             EarlyLandEncounterRules.ValidateTable(table);
             foreach (var method in new[] { "water_mons","fishing_mons" })

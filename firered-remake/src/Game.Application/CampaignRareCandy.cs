@@ -25,7 +25,7 @@ public sealed partial class CampaignSession
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
         var consumed = EarlyInventoryAddRules.Remove(ShopCatalog, state.Inventory!, new(RareCandyItem), 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
-        var result = RareCandyRules.Apply(_content.PokemonContent!, _binding.Ownership,
+        var result = RareCandyRules.Apply(_content.PokemonContent!,
             state.Party[command.PartyIndex], _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
         if (result.Outcome == RareCandyOutcome.UnsupportedEvolutionTarget)
             return No("rare_candy_evolution_target_not_supported");

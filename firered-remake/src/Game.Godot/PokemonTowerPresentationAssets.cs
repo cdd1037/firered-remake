@@ -26,10 +26,9 @@ internal static class PokemonTowerPresentationAssets
     {
         string[] roots = [root, .. dependencyRoots];
         string stem = art ? "pokemon-tower-art" : "pokemon-tower-presentation";
-        using var document = JsonDocument.Parse(Read([root], "content/generated/" + stem + "/manifest.json"));
+        using var document = JsonDocument.Parse(Read([root], "content/generated/" + (art ? "sprites/pokemon/pokemon-tower" : "ui/pokemon-tower-presentation") + "/manifest.json"));
         var manifest = document.RootElement;
-        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
-            manifest.GetProperty("profile").GetString() != "firered-" + stem + "-v1")
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Unsupported Tower presentation format.");
         var files = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         if (!art)
@@ -45,7 +44,7 @@ internal static class PokemonTowerPresentationAssets
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string relative = row.GetProperty("path").GetString()!;
-            files.Add(relative, Read([root], "content/generated/" + stem + "/" + relative));
+            files.Add(relative, Read([root], "content/generated/" + (art ? "sprites/pokemon/pokemon-tower" : "ui/pokemon-tower-presentation") + "/" + relative));
         }
         return new(manifest.Clone(), files.ToImmutable());
     }

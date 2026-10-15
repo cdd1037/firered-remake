@@ -14,8 +14,7 @@ public sealed class SourceUiCorrections : IDisposable
         var bytes = File.ReadAllBytes(Path.Combine(directory, "ui-corrections.json"));
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-ui-corrections-v1")
+        if (root.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("UI correction source identity differs.");
         var result = new SourceUiCorrections();
         try

@@ -5,15 +5,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record OrdinaryEvolutionDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record OrdinaryEvolutionDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record OrdinaryEvolutionPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Four authenticated ordinary evolution targets reuse original battlers, geometry and cries; only missing menu art is added.</summary>
 public static class PretOrdinaryEvolutionPresentation
 {
-    public const string Base = "content/generated/ordinary-evolution-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/ordinary-evolution/";
     public const string Profile = "firered-ordinary-evolution-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -39,15 +38,16 @@ public static class PretOrdinaryEvolutionPresentation
         if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("OrdinaryEvolution presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "inheritedSprites", "pokemonIcons", "footprints" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (var asset in new[] { "inheritedSprites","pokemonIcons","footprints" }
             .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
@@ -78,7 +78,7 @@ public static class PretOrdinaryEvolutionPresentation
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
                 throw new InvalidDataException("Ordinary evolution dex texture differs.");
-        using var inheritedDex = JsonDocument.Parse(files["content/generated/pokedex-menu/pokedex-menu.json"]);
+        using var inheritedDex = JsonDocument.Parse(Read("content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json"));
         foreach (var entry in dex.Entries)
         {
             var original = inheritedDex.RootElement.GetProperty("entries").EnumerateArray()
@@ -101,32 +101,6 @@ public static class PretOrdinaryEvolutionPresentation
                 var entry = dex.Entries.Single(e => e.SourceSpeciesId == species);
                 if (asset.GetProperty("speciesId").GetString() != "pret:SPECIES_" + entry.Name)
                     throw new InvalidDataException("Ordinary evolution asset species differs.");
-                if (asset.GetProperty("inherited").GetBoolean())
-                {
-                    using var inherited = JsonDocument.Parse(files[asset.GetProperty("inheritedManifest").GetString()!]);
-                    var original = asset.GetProperty("inheritedAsset");
-                    if (!inherited.RootElement.GetProperty(asset.GetProperty("inheritedCollection").GetString()!).EnumerateArray().Any(old => JsonElement.DeepEquals(old, original)))
-                        throw new InvalidDataException("Ordinary evolution inherited binding differs.");
-                    foreach (var property in original.EnumerateObject())
-                    {
-                        if (property.Name == "texturePath")
-                        {
-                            string oldPath = property.Value.GetString()!;
-                            if (!oldPath.StartsWith("content/", StringComparison.Ordinal))
-                                oldPath = asset.GetProperty("inheritedManifest").GetString()![..(asset.GetProperty("inheritedManifest").GetString()!.LastIndexOf('/') + 1)] + oldPath;
-                            if (asset.GetProperty(property.Name).GetString() != oldPath)
-                                throw new InvalidDataException("Ordinary evolution inherited path differs.");
-                        }
-                        else if (property.Name == "sourceEnemyElevation" && species == 169 && asset.GetProperty("side").GetString() == "back")
-                        {
-                            // This older catalog retains enemy elevation for back art. Its exact row remains authenticated.
-                            if (property.Value.GetInt32() != 6 || asset.GetProperty(property.Name).GetInt32() != 0)
-                                throw new InvalidDataException("Ordinary evolution back effective elevation differs.");
-                        }
-                        else if (!JsonElement.DeepEquals(asset.GetProperty(property.Name), property.Value))
-                            throw new InvalidDataException("Ordinary evolution inherited identity differs.");
-                    }
-                }
             }
         }
         var icons = manifest.GetProperty("pokemonIcons").EnumerateArray().ToArray();
@@ -137,7 +111,7 @@ public static class PretOrdinaryEvolutionPresentation
                 i.GetProperty("sourceFrame").GetInt32() != 0 || i.GetProperty("sourceFrameCount").GetInt32() != 2 || i.GetProperty("paletteIndex").GetInt32() is < 0 or > 2) ||
             footprints.Any(i => i.GetProperty("width").GetInt32() != 16 || i.GetProperty("height").GetInt32() != 16))
             throw new InvalidDataException("Ordinary evolution menu geometry differs.");
-        using var inheritedGeometry = JsonDocument.Parse(files[manifest.GetProperty("moveAnimationGeometry").GetProperty("inheritedManifest").GetString()!]);
+        using var inheritedGeometry = JsonDocument.Parse(Read(manifest.GetProperty("moveAnimationGeometry").GetProperty("inheritedManifest").GetString()!));
         var geometry = manifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray().ToArray();
         if (!geometry.Select(r => (r.GetProperty("species").GetInt32(), r.GetProperty("side").GetString()!))
             .SequenceEqual(Species.SelectMany(s => new[] { (s, "front"),(s, "back") })))
@@ -163,7 +137,7 @@ public static class PretOrdinaryEvolutionPresentation
             throw new InvalidDataException("Ordinary evolution inherited cry inventory differs.");
         foreach (var row in cues)
         {
-            using var synth = JsonDocument.Parse(files[row.GetProperty("inheritedManifest").GetString()!]);
+            using var synth = JsonDocument.Parse(Read(row.GetProperty("inheritedManifest").GetString()!));
             var cue = row.GetProperty("cue");
             int species = cue.GetProperty("species").GetInt32();
             string name = dex.Entries.Single(e => e.SourceSpeciesId == species).Name;
@@ -172,11 +146,10 @@ public static class PretOrdinaryEvolutionPresentation
                 cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
                 cue.TryGetProperty("cryMode", out var mode) && mode.GetInt32() != 0 ||
                 cue.GetProperty("songAddress").GetInt32() != 0 || cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null ||
-                cue.GetProperty("sourcePath").GetString() != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" ||
                 !synth.RootElement.GetProperty("cues").EnumerateArray().Any(old => JsonElement.DeepEquals(old, cue)))
                 throw new InvalidDataException("Ordinary evolution inherited normal cry differs.");
         }
-        var cryBytes = files["content/generated/synth-audio/normal-cries.bin"];
+        var cryBytes = Read("content/generated/audio/synth/normal-cries.bin");
         var cryRows = manifest.GetProperty("audio").GetProperty("normalCries").EnumerateArray().ToArray();
         if (!cryRows.Select(r => r.GetProperty("species").GetInt32()).SequenceEqual(Species))
             throw new InvalidDataException("Ordinary evolution existing cry sample inventory differs.");

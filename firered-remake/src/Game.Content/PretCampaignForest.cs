@@ -13,10 +13,10 @@ public sealed partial class PretCampaignCatalog
         tables.Add(EarlyLandEncounterRules.Route1Table.Map,EarlyLandEncounterRules.Route1Table);
         foreach(var entry in forest.Dependencies.GetProperty("encounters").EnumerateArray())
         {
-            var source=entry.GetProperty("sourceRef");var table=entry.GetProperty("table");var land=table.GetProperty("land_mons");
+            var table=entry.GetProperty("table");var land=table.GetProperty("land_mons");
             var weights=entry.GetProperty("slotWeights").EnumerateArray().Select(x=>x.GetInt32()).ToArray();
             var slots=land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new SpeciesId("pret:"+m.GetProperty("species").GetString()),checked((byte)m.GetProperty("min_level").GetInt32()),checked((byte)m.GetProperty("max_level").GetInt32()),weights[i])).ToImmutableArray();
-            var value=new EarlyLandEncounterTable(PretForestRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),source.GetProperty("commit").GetString()!,source.GetProperty("path").GetString()!,source.GetProperty("symbol").GetString()!,land.GetProperty("encounter_rate").GetInt32(),slots);
+            var value=new EarlyLandEncounterTable(PretForestRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),land.GetProperty("encounter_rate").GetInt32(),slots);
             EarlyLandEncounterRules.ValidateTable(value);tables.Add(value.Map,value);
         }
         if(tables.Count!=3)throw new InvalidDataException("forest_encounter_table_count");

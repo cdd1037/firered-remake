@@ -11,12 +11,12 @@ public sealed class GeneratedMailComposerTests
     public void VocabularyAndProgressionSelectionNeedOnlyGeneratedGameData()
     {
         var root = Path.Combine(Path.GetTempPath(), "firered-mail-" + Guid.NewGuid().ToString("N"));
-        var output = Path.Combine(root, "content/generated/mail-composer");
+        var output = Path.Combine(root, "content/generated/data/services/mail-composer");
         Directory.CreateDirectory(output);
         try
         {
             foreach (var name in new[] { "catalog.json", "contracts.json" })
-                File.Copy(Path.Combine(TestAssets.Root, "content/generated/mail-composer", name), Path.Combine(output, name));
+                File.Copy(Path.Combine(TestAssets.Root, "content/generated/data/services/mail-composer", name), Path.Combine(output, name));
             var catalog = PretMailComposer.Load(root).Catalog;
             Assert.AreEqual(1813, catalog.Words.Count);
             Assert.AreEqual(22, catalog.Groups.Length);

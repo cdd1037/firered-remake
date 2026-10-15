@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
     dependency = args.dependency_root.resolve()
-    package = dependency / 'content/generated/regional-service-maps'
+    package = dependency / 'content/generated/maps/regions/regional-service-maps'
     manifest_bytes = (package / 'manifest.json').read_bytes()
     manifest = json.loads(manifest_bytes)
     directory = 'celadon-city-game-corner-prize-room'

@@ -6,8 +6,8 @@ namespace Game.Content;
 /// <summary>81 pinned maps; the prior 80 compact payloads, entries and source registry remain exact.</summary>
 public static class PretVermilionGymRuntimeMaps
 {
-    public const string DirectoryName = "content/generated/runtime-vermilion-gym-maps";
+    public const string ManifestPath = "content/generated/maps/catalogs/vermilion-gym-maps.json";
 
     public static PretRuntimeMapCatalog Load(string projectRoot) =>
-        PretRuntimeMapCatalog.Load(Path.Combine(Path.GetFullPath(projectRoot), DirectoryName));
+        PretRuntimeMapCatalog.Load(Path.Combine(Path.GetFullPath(projectRoot), ManifestPath));
 }

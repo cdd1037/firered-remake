@@ -69,7 +69,6 @@ public sealed class PretMainMenuSource
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PretMainMenuConstant> ConstantSources { get; }
     public PretMainMenuRules Rules { get; }
-    public ImmutableArray<string> Limitations { get; }
     public string GeneratedDirectory { get; }
 
     private PretMainMenuSource(string directory, JsonElement root)
@@ -90,13 +89,12 @@ public sealed class PretMainMenuSource
         ConstantSources = Decode<ImmutableDictionary<string, PretMainMenuConstant>>("constants");
         Constants = ConstantSources.ToImmutableDictionary(x => x.Key, x => x.Value.Value, StringComparer.Ordinal);
         Rules = Decode<PretMainMenuRules>("rules");
-        Limitations = Decode<ImmutableArray<string>>("limitations");
     }
 
     public static PretMainMenuSource Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var generatedDirectory = Path.Combine(project, "content/generated/main-menu");
+        var generatedDirectory = Path.Combine(project, "content/generated/ui/main-menu");
         byte[] ReadPinned(string root,string path)
         {
 var bytes = File.ReadAllBytes(SafeFile(root,path));

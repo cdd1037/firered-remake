@@ -6,11 +6,10 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record OldRodDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<OldRodEncounterTable> Tables, int CastDelayFrames, int DotDelayFrames,
+public sealed record OldRodDocument(int SchemaVersion, ImmutableArray<OldRodEncounterTable> Tables, int CastDelayFrames, int DotDelayFrames,
     int FirstRoundMinimumDots, int FirstRoundMaximumDots, int BiteDrawBound, int BiteSuccessRoll,
     bool ReelReactionReachable, bool InFlightCancelSupported, int MinimumRoundDrawBound,
-    int HeldItemDrawBound, string HeldItem, ImmutableDictionary<string, string> Texts, ImmutableArray<string> Limitations);
+    int HeldItemDrawBound, string HeldItem, ImmutableDictionary<string, string> Texts);
 
 /// <summary>Authenticates both source evidence and the exact bounded Old Rod output.</summary>
 public sealed class PretOldRod
@@ -28,12 +27,12 @@ public sealed class PretOldRod
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var document = ContentJson.ParseStrict<OldRodDocument>(Encoding.UTF8.GetString(Read("content/generated/old-rod/old-rod.json")), ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<OldRodDocument>(Encoding.UTF8.GetString(Read("content/generated/data/services/old-rod.json")), ContentJson.CreateOptions());
                 if (document.SchemaVersion != 1 ||
             document.Tables.IsDefault || document.Tables.Length != 10 || document.CastDelayFrames != 60 || document.DotDelayFrames != 20 ||
             document.FirstRoundMinimumDots != 4 || document.FirstRoundMaximumDots != 10 || document.BiteDrawBound != 2 || document.BiteSuccessRoll != 0 ||
             document.ReelReactionReachable || document.InFlightCancelSupported || document.MinimumRoundDrawBound != 1 ||
-            document.HeldItemDrawBound != 100 || document.HeldItem != "ITEM_NONE" || document.Limitations.IsDefaultOrEmpty)
+            document.HeldItemDrawBound != 100 || document.HeldItem != "ITEM_NONE")
             throw new InvalidDataException("Old Rod source scope differs.");
         foreach (string symbol in new[] { "gText_PokemonOnHook", "gText_NotEvenANibble" })
             if (!document.Texts.TryGetValue(symbol, out var text) || !text.EndsWith("{PAUSE_UNTIL_PRESS}", StringComparison.Ordinal))

@@ -17,14 +17,12 @@ public sealed class PretStorageCustomization
     public ImmutableArray<StorageCustomizationCategory> Categories { get; }
     public ImmutableArray<StorageArtAsset> Assets { get; }
     public ImmutableDictionary<string, string> Texts { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Document { get; }
     public JsonElement Display => Document.GetProperty("display");
 
-    private PretStorageCustomization(JsonElement document, ImmutableArray<PretWorldSourceFile> sources,
-        ImmutableDictionary<string, byte[]> outputs)
+    private PretStorageCustomization(JsonElement document, ImmutableDictionary<string, byte[]> outputs)
     {
-        Document = document; SourceFiles = sources; outputBytes = outputs;
+        Document = document; outputBytes = outputs;
         var options = ContentJson.CreateOptions();
         Wallpapers = ContentJson.ParseStrict<ImmutableArray<StorageCustomizationWallpaper>>(document.GetProperty("wallpapers").GetRawText(), options);
         Categories = ContentJson.ParseStrict<ImmutableArray<StorageCustomizationCategory>>(document.GetProperty("categories").GetRawText(), options);
@@ -37,15 +35,14 @@ public sealed class PretStorageCustomization
     public static PretStorageCustomization Load(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
-        var generated = Path.Combine(root, "content/generated/storage-customization");
+        var generated = Path.Combine(root, "content/generated/ui/storage-customization");
         byte[] Read(string directory,string path)
         {
             byte[] bytes = File.ReadAllBytes(SafeFile(directory, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(Read(generated,"manifest.json"));
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var sourceFiles = files.ToImmutable();
+
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in manifest.RootElement.GetProperty("outputs").EnumerateArray())
         {
@@ -53,7 +50,7 @@ public sealed class PretStorageCustomization
             Require(outputs.TryAdd(path, Read(generated,path)), "Duplicate customization output");
         }
         using var document = JsonDocument.Parse(outputs["storage-customization.json"]);
-        var result = new PretStorageCustomization(document.RootElement.Clone(), sourceFiles, outputs.ToImmutable());
+        var result = new PretStorageCustomization(document.RootElement.Clone(), outputs.ToImmutable());
         Require(result.Wallpapers.Length == PokemonStorageCustomizationRules.WallpaperCount && result.Categories.Length == 4 &&
             result.Assets.Length == 42 && result.Document.GetProperty("boxNameLength").GetInt32() == PokemonStorageCustomizationRules.BoxNameLength &&
             result.Document.GetProperty("boxNameAlphabet").GetString()!.ToHashSet().SetEquals(PokemonStorageCustomizationRules.BoxNameAlphabet),

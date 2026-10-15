@@ -11,7 +11,7 @@ public sealed class GeneratedStoryRuntimeTests
     public void StoryRunsFromGeneratedArtifactWithoutRawSources()
     {
         var root = TestAssets.Output();
-        var relative = "content/generated/story/runtime.json";
+        var relative = "content/generated/data/story.json";
         var target = Path.Combine(root, relative);
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         File.Copy(Path.Combine(TestAssets.Root, relative), target, true);
@@ -102,7 +102,7 @@ public sealed class GeneratedStoryRuntimeTests
         })
             Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<StoryProgram>(invalid, PretStoryRuntime.JsonOptions));
         var root = TestAssets.Output();
-        var target = Path.Combine(root, "content/generated/story/runtime.json");
+        var target = Path.Combine(root, "content/generated/data/story.json");
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         var story = PretStoryRuntime.Load(TestAssets.Root);
         File.WriteAllText(target, JsonSerializer.Serialize(story with { SchemaVersion = 1 }, PretStoryRuntime.JsonOptions));

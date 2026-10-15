@@ -6,20 +6,19 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretSsAnneMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+public sealed record PretSsAnneMachinesDocument(int SchemaVersion,
+    ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons);
 
-/// <summary>Authenticates eleven explicit TM/HMs for 73 species, preserving every historical machine profile.</summary>
+/// <summary>Loads eleven explicit TM/HMs for 73 species.</summary>
 public static class PretSsAnneMachines
 {
-    public const string Profile = "firered-ssanne-machines-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public static PretSsAnneMachinesDocument Load(string json, SharedMachineCatalog machines)
     {
         var document = ContentJson.ParseStrict<PretSsAnneMachinesDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 &&
-            document.Machines.Length == 11 && document.Icons.Length == 3 && !document.Limitations.IsDefaultOrEmpty,
+            document.Machines.Length == 11 && document.Icons.Length == 3,
             "SsAnne machine scope differs.");
         string[] symbols = ["TM39", "TM05", "TM09", "TM46", "TM03", "TM45", "TM43", "TM28", "TM31", "TM44", "HM01"];
         for (int n = 0; n < document.Machines.Length; n++)
@@ -41,7 +40,7 @@ public static class PretSsAnneMachines
 
     public static PretSsAnneMachinesDocument LoadProject(string root)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/ssanne-machines/ssanne-machines.json")), SharedMachineCatalog.LoadProject(root));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/machine-learning/ssanne.json")), SharedMachineCatalog.LoadProject(root));
         return document;
     }
 

@@ -13,7 +13,6 @@ public sealed class PretFightingDojoRegion
     public const string ResourceId = "firered-fighting-dojo-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
@@ -25,8 +24,7 @@ public sealed class PretFightingDojoRegion
     private PretFightingDojoRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = maps; Constants = constants;
-        SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty; GeneratedDirectory = source.Directory;
+        NewMaps = maps; Constants = constants; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
     }
@@ -48,7 +46,7 @@ public sealed class PretFightingDojoRegion
 
     public static PretFightingDojoRegion Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"fighting-dojo-region");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/fighting-dojo");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Saffron Fighting Dojo catalog source identity differs.");
@@ -58,21 +56,19 @@ public sealed class PretFightingDojoRegion
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" ,
+            Need(path == relative ,
                 "Saffron Fighting Dojo compact resource binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 13 && runtime.Height == 16,
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 13 && runtime.Height == 16,
                 "Saffron Fighting Dojo map identity/dimensions differ.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata,
                 PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
+                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.ContainsKey(new("map.saffron-city-dojo")) && maps.Values.Single().FieldWarps.Length == 3,
             "Saffron Fighting Dojo map/warp collection differs.");
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["LOCALID_KARATE_MASTER"] == 5 && constants["FLAG_GOT_HITMON_FROM_DOJO"] == 0x278 &&

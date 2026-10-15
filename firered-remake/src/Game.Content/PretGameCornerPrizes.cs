@@ -8,7 +8,7 @@ using Game.Domain.Pokemon;
 namespace Game.Content;
 
 public sealed record GameCornerMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record GameCornerMachinesDocument(string SourceCommit, string Profile, int PreviousSpeciesCount, int SpeciesCount, int PreviousMachineCount,
+public sealed record GameCornerMachinesDocument(int PreviousSpeciesCount, int SpeciesCount, int PreviousMachineCount,
     int MachineCount, ImmutableArray<GameCornerMachineRows> Inherited,
     ImmutableArray<MachineDefinition> Additions, ImmutableArray<DepartmentRooftopIconAlias> IconAliases,
     ImmutableArray<NpcTradeItemIcon> Icons);
@@ -16,7 +16,7 @@ public sealed record GameCornerMachinesDocument(string SourceCommit, string Prof
 /// <summary>Source-backed content only. The caller owns current composition, receipt generation and coin transactions.</summary>
 public static class PretGameCornerPrizes
 {
-    public const string Base = "content/generated/game-corner-prizes/";
+    public const string Base = "content/generated/data/services/game-corner-prizes/";
     public const string Profile = "firered-game-corner-prizes-v1";
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private static byte[] Read(string root,string relative)

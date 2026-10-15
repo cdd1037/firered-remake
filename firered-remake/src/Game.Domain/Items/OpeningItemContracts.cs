@@ -20,8 +20,7 @@ public sealed record OpeningPotionDefinition(QuestItemDefinition Item, int HealH
     [JsonIgnore] public int BattleUsage => Item.BattleUsage;
     [JsonIgnore] public string BattleUseFunction => Item.BattleUseFunction;
 }
-public sealed record OpeningItemsCatalog(string SourceCommit, string Profile, bool CompleteItemCatalog,
-    InventoryLimits Limits, ImmutableArray<InventoryStack> InitialPcItems, OpeningPotionDefinition Potion);
+public sealed record OpeningItemsCatalog(InventoryLimits Limits, ImmutableArray<InventoryStack> InitialPcItems, OpeningPotionDefinition Potion);
 
 /// <summary>Ordinary Items and PC plus optional, independently validated quest pockets.
 /// Null quest pockets preserve legacy saves byte-for-byte; a depleted stack is removed.</summary>

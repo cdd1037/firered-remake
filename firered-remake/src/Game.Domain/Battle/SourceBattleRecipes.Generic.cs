@@ -105,11 +105,8 @@ internal abstract partial class SourceRecipeContext
 
         internal int SourceGenericDamage(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
             BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null, bool suppressTypeMiss = true, SourceTypeCommand typeCommand = SourceTypeCommand.TypeCalc, bool pursuitSwitch = false) =>
-            SourceTypeDamage(catalog, targetSide, move, ForestBattleDamage.Calculate(catalog, actor, target, move.Id, critical, percent,
-                true, true, true, true, pursuitSwitch: pursuitSwitch, route3Rules: true, dynamicPower: dynamicPower, mtMoonRules: true, ceruleanRules: true, billRules: true,
-                vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
-                rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
-                sourceDefinition: move, sourceEffectiveType: effectiveType, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
+            SourceTypeDamage(catalog, targetSide, move, SourceBattleDamage.Calculate(catalog, actor, target, move, critical, percent, pursuitSwitch: pursuitSwitch, dynamicPower: dynamicPower, rain: SourceCalledRain, reflect: RockTunnelReflects(targetSide),
+                sourceEffectiveType: effectiveType, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
                 sourceDamageMultiplier: damageMultiplier ?? SourceChargeRules.DamageMultiplier(SemiInvulnerable(targetSide),move),
                 sourceSolarBeamWeakWeather: move.Effect == "EFFECT_SOLAR_BEAM" && (SourceCalledRain || StruggleSandstorm || SettingWeather.HailTurnsRemaining > 0),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,

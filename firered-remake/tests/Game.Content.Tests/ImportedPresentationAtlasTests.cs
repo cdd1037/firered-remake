@@ -11,7 +11,7 @@ public sealed class ImportedPresentationAtlasTests
         string root = Path.Combine(Path.GetTempPath(), "firered-atlas-" + Guid.NewGuid().ToString("N"));
         try
         {
-            foreach (var package in new[] { "fly-map", "fame-checker-presentation" })
+            foreach (var package in new[] { "ui/fly-map", "ui/fame-checker-presentation" })
             {
                 string relative = "content/generated/" + package;
                 Directory.CreateDirectory(Path.Combine(root, relative));

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s",
+      "localPath": "content/raw/pokefirered/037335f4/data/battle_anim_scripts.s"
+    },
+    {
+      "path": "data/battle_scripts_1.s",
+      "localPath": "content/raw/pokefirered/037335f4/data/battle_scripts_1.s"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/songs.h"
+    },
+    {
+      "path": "include/constants/species.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/species.h"
+    },
+    {
+      "path": "include/constants/sound.h",
+      "localPath": "content/raw/pokefirered/037335f4/include/constants/sound.h"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "localPath": "content/raw/pokefirered/037335f4/sound/song_table.inc"
+    },
+    {
+      "path": "sound/cry_tables.inc",
+      "localPath": "content/raw/pokefirered/037335f4/sound/cry_tables.inc"
+    },
+    {
+      "path": "src/sound.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/sound.c"
+    },
+    {
+      "path": "src/itemfinder.c",
+      "localPath": "content/raw/pokefirered/037335f4/src/itemfinder.c"
+    },
+    {
+      "path": "sound/songs/midi/se_m_nightmare.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/se_m_nightmare.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_lick.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/se_m_lick.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_bonemerang.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/se_m_bonemerang.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_mist.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/se_m_mist.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_minimize.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/se_m_minimize.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_itemfinder.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/se_itemfinder.mid"
+    },
+    {
+      "path": "sound/songs/midi/mus_poke_tower.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/mus_poke_tower.mid"
+    },
+    {
+      "path": "sound/songs/midi/mus_poke_flute.mid",
+      "localPath": "content/raw/pokefirered/037335f4/sound/songs/midi/mus_poke_flute.mid"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/gastly.wav",
+      "localPath": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/gastly.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/haunter.wav",
+      "localPath": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/haunter.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/psyduck.wav",
+      "localPath": "content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/psyduck.wav"
+    },
+    {
+      "path": "data/maps/PokemonTower_1F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_1F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_1F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_1F/scripts.inc"
+    },
+    {
+      "path": "data/maps/PokemonTower_2F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_2F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_2F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_2F/scripts.inc"
+    },
+    {
+      "path": "data/maps/PokemonTower_3F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_3F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_3F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_3F/scripts.inc"
+    },
+    {
+      "path": "data/maps/PokemonTower_4F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_4F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_4F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_4F/scripts.inc"
+    },
+    {
+      "path": "data/maps/PokemonTower_5F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_5F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_5F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_5F/scripts.inc"
+    },
+    {
+      "path": "data/maps/PokemonTower_6F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_6F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_6F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_6F/scripts.inc"
+    },
+    {
+      "path": "data/maps/PokemonTower_7F/map.json",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_7F/map.json"
+    },
+    {
+      "path": "data/maps/PokemonTower_7F/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/PokemonTower_7F/scripts.inc"
+    },
+    {
+      "path": "data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc",
+      "localPath": "content/raw/pokefirered/037335f4/data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/lib/audit-early-audio.py"
+    },
+    {
+      "path": "content/generated/audio/synth/firered.pack"
+    },
+    {
+      "path": "content/generated/audio/synth/normal-cries.bin"
+    },
+    {
+      "path": "content/generated/audio/synth/manifest.json"
+    },
+    {
+      "path": "content/generated/audio/cues/route11.json"
+    },
+    {
+      "path": "content/generated/audio/cues/rocktunnel.json"
+    },
+    {
+      "path": "content/generated/audio/cues/celadon-approach.json"
+    },
+    {
+      "path": "content/generated/audio/cues/celadon-gym.json"
+    },
+    {
+      "path": "content/generated/audio/cues/rocket-hideout.json"
+    }
+  ]
+}

@@ -34,7 +34,7 @@ public partial class CampaignView
             _storageCustomizationTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
         var title = _storageCustomizationArt.Wallpapers[0];
-        _storageTitleFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/source-font"), "normal",
+        _storageTitleFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/ui/font"), "normal",
             StorageRgb555(title.TitleTextRgb555), StorageRgb555(title.TitleShadowRgb555));
     }
 

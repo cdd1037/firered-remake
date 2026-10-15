@@ -27,7 +27,7 @@ public partial class SynthSourceAudioPlayer
         {
             string name = art.DexEntries[normal.Species].Name;
             if (normal.Id != "CRY_" + name + "_NORMAL" || normal.CryMode != 0 || normal.SourcePlayer != 4 || normal.Priority != 10 ||
-                normal.SourceSymbol != "SPECIES_" + name || normal.SourcePath != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
+                normal.SourceSymbol != "SPECIES_" + name || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
                 _catalog.ContainsKey(normal.Id))
                 throw new InvalidDataException("Breeding normal source cue binding differs.");
         }

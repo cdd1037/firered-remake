@@ -7,7 +7,6 @@ namespace Game.Domain.Trainers;
 // Declarative species groups used by encounter data. No ownership or authorization state.
 public static class VsSeekerOpponentPokemonCatalog
 {
-    public const string Profile = "firered-vs-seeker-opponents-v1";
     public static ImmutableArray<SpeciesId> AdditionalSpecies { get; } =
         [new("pret:SPECIES_MAREEP"), new("pret:SPECIES_FLAAFFY"), new("pret:SPECIES_MARILL")];
 }

@@ -18,7 +18,6 @@ public sealed class PretTownMap
     public string TownMapSourcePath => Path.Combine(GeneratedDirectory,"town-map.json");
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory,"manifest.json");
     public ImmutableArray<TownMapAsset> Assets { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public TownMapLayout Layout { get; }
     public TownMapGift Gift { get; }
     public QuestItemDefinition Item { get; }
@@ -30,10 +29,10 @@ public sealed class PretTownMap
     public ImmutableArray<TownMapPositionSource> Positions { get; }
     public JsonElement TownMap { get; }
 
-    private PretTownMap(string directory, ImmutableArray<PretWorldSourceFile> files, JsonElement document,
+    private PretTownMap(string directory, JsonElement document,
         ImmutableDictionary<string,byte[]> payloads, SharedItemCatalog items)
     {
-        GeneratedDirectory=directory;SourceFiles=files;TownMap=document;outputs=payloads;
+        GeneratedDirectory=directory;TownMap=document;outputs=payloads;
         var options=items.CreateJsonOptions();
         T Parse<T>(string property)=>ContentJson.ParseStrict<T>(document.GetProperty(property).GetRawText(),options);
         Assets=Parse<ImmutableArray<TownMapAsset>>("assets"); Layout=Parse<TownMapLayout>("layout");
@@ -47,7 +46,7 @@ public sealed class PretTownMap
     /// <summary>Authenticates reviewed lock, all raw Git blobs and every output before exposing content.</summary>
     public static PretTownMap Load(string projectRoot, SharedItemCatalog? items = null)
     {
-            var project=Path.GetFullPath(projectRoot);        var generated=Path.Combine(project,"content/generated/town-map");
+            var project=Path.GetFullPath(projectRoot);        var generated=Path.Combine(project,"content/generated/ui/town-map");
         byte[] Pinned(string root, string relative)
         {
             var path = SafeFile(root, relative);
@@ -57,11 +56,9 @@ public sealed class PretTownMap
         }
         using var manifest=JsonDocument.Parse(Pinned(generated,"manifest.json"));
         var m=manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==10 &&
-            !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
+        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==10,
             "Town Map manifest profile differs.");
-        var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var inventory=files.ToImmutable();
+
         var payloads=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var output in m.GetProperty("outputs").EnumerateArray())
         {
@@ -73,7 +70,7 @@ public sealed class PretTownMap
         using var document=JsonDocument.Parse(payloads["town-map.json"]);var d=document.RootElement;
                 Require(d.GetProperty("schemaVersion").GetInt32()==1 ,
             "Town Map document profile differs.");
-        var result=new PretTownMap(generated,inventory,d.Clone(),payloads.ToImmutable(), items ?? SharedItemCatalog.LoadProject(projectRoot));
+        var result=new PretTownMap(generated,d.Clone(),payloads.ToImmutable(), items ?? SharedItemCatalog.LoadProject(projectRoot));
         result.Validate();return result;
     }
 
@@ -151,7 +148,7 @@ public sealed class PretTownMap
 
 public sealed record TownMapPoint(int X,int Y);
 public sealed record TownMapRect(int X,int Y,int Width,int Height);
-public sealed record TownMapAsset(string Id, int Width, int Height, string TexturePath, ImmutableArray<string> SourcePaths);
+public sealed record TownMapAsset(string Id, int Width, int Height, string TexturePath);
 public sealed record TownMapUiTexts(string Move,string Cancel,string Switch,string Space);
 public sealed record TownMapLayout(int LogicalWidth,int LogicalHeight,int Columns,int Rows,int CellPixels,int CenterOffsetX,int CenterOffsetY,
     int CursorWidth,int CursorHeight,int CursorFrameTicks,int CursorMoveTicks,int CursorMovePixelsPerTick,TownMapPoint Cancel,
@@ -163,4 +160,4 @@ public sealed record TownMapGift(string ItemId,int SourceItemId,string Pocket,bo
 public sealed record TownMapCell(int X,int Y,string SectionId,string Name,string DungeonSectionId,string DungeonName);
 public sealed record TownMapIcon(int X,int Y,int CenterX,int CenterY,string SectionId,string VisitedFlag,string? VisibleFlag);
 public sealed record TownMapPositionSource(string StableMapId,string SourceMap,string SourceName,string SectionId,int Width,int Height,
-    int SectionX,int SectionY,int SectionWidth,int SectionHeight,string MapType,TownMapPoint? Override,ImmutableArray<string> SourcePaths);
+    int SectionX,int SectionY,int SectionWidth,int SectionHeight,string MapType,TownMapPoint? Override);

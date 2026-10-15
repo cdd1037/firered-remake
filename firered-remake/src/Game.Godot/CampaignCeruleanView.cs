@@ -43,6 +43,6 @@ public partial class CampaignView
             _forestTrainerPortraits.Add(asset.Id,ImageTexture.CreateFromImage(image));
         }
         var machineIcon=PretCeruleanMachines.LoadProject(_root).Icon;
-        _earlyItemIcons.Add(machineIcon.Item,ItemTexture("cerulean-machines", machineIcon));
+        _earlyItemIcons.Add(machineIcon.Item,ItemTexture("data/machine-learning", machineIcon));
     }
 }

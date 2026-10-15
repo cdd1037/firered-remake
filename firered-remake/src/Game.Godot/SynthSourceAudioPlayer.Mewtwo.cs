@@ -2,7 +2,7 @@ using System.Text.Json;
 
 public partial class SynthSourceAudioPlayer
 {
-    private sealed record MewtwoSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record MewtwoSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
 
     private static SynthCue[] ExtendMewtwoCues(string root, bool includeCelio, SynthCue[] cues, JsonSerializerOptions options)
     {

@@ -1,33 +1,32 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
+using System.Collections.Immutable;
 using System.Text.Json.Nodes;
 using Game.Content;
+using Game.Domain.Ids;
+using Game.Domain.Trainers;
 
 namespace FireRed.Tests.Content;
 
 [TestClass]
 public sealed class CompiledEarlyTrainerCatalogTests
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-
-    // Hashes are the complete sorted trainer and battle arrays serialized from the
-    // pre-migration loaders. They include names, bytes, moves, money, and source lines.
+    // Representative original parties, not a second copy of the complete trainer catalog.
     [TestMethod]
-    [DataRow("forest", "725d171f7d3b3c064572abd9d70df4ac3f46ad950aa57e0373497823f74e123b")]
-    [DataRow("pewter", "12fcbc07b817118c2bf7600d60c91423b03b66f87879c425dc0a4bfff584e53a")]
-    [DataRow("route22", "0a8fa2bc057ec1be06531e9689460ed7b049e9b6ec678b4d3d696e871d2c7221")]
-    [DataRow("route3", "5dfc6987d463f13dfcd7f20edd80af14039098e2add6b276201ab96ec1051fba")]
-    [DataRow("mtmoon", "7189f2981517502ba4c83162415f4635089868bf3d781fde09e9abfb3ae334ff")]
-    public void CompiledCatalogAlonePreservesEveryBaselineDomainField(string region, string expectedHash)
+    [DataRow("forest", "BUG_CATCHER_RICK", "RICK", new[] { "WEEDLE", "CATERPIE" }, new[] { 6, 6 })]
+    [DataRow("pewter", "LEADER_BROCK", "BROCK", new[] { "GEODUDE", "ONIX" }, new[] { 12, 14 })]
+    [DataRow("route22", "RIVAL_ROUTE22_EARLY_SQUIRTLE", "TERRY", new[] { "PIDGEY", "SQUIRTLE" }, new[] { 9, 9 })]
+    [DataRow("route3", "LASS_SALLY", "SALLY", new[] { "RATTATA", "NIDORAN_F" }, new[] { 10, 10 })]
+    [DataRow("mtmoon", "SUPER_NERD_MIGUEL", "MIGUEL", new[] { "GRIMER", "VOLTORB", "KOFFING" }, new[] { 12, 12, 12 })]
+    public void CompiledCatalogLoadsNamedPartyInOrderWithoutRawInputs(string region, string id, string name,
+        string[] species, int[] levels)
     {
         WithCatalog(region, (root, _) =>
         {
-            var json = LoadDomainArrays(root, region);
-            var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
-            Assert.AreEqual(expectedHash, hash);
+            var trainer = LoadTrainers(root, region)[new("pret:TRAINER_" + id)];
+            Assert.AreEqual(name, trainer.SourceTrainerName);
+            CollectionAssert.AreEqual(species.Select(s => "pret:SPECIES_" + s).ToArray(), trainer.Party.Select(p => p.Species.Value).ToArray());
+            CollectionAssert.AreEqual(levels, trainer.Party.Select(p => p.Level).ToArray());
+            Assert.AreSame(SharedTrainerCatalog.LoadProject(root).Definition(trainer.Id), trainer);
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));
-            Assert.AreEqual(1, Directory.GetFiles(root, "*", SearchOption.AllDirectories).Length);
         });
     }
 
@@ -44,7 +43,7 @@ public sealed class CompiledEarlyTrainerCatalogTests
             var document = JsonNode.Parse(File.ReadAllText(path))!;
             document["battles"]![0]!["callback"] = "InvalidCallback";
             File.WriteAllText(path, document.ToJsonString());
-            Assert.ThrowsExactly<NotSupportedException>(() => LoadDomainArrays(root, region));
+            Assert.ThrowsExactly<NotSupportedException>(() => LoadTrainers(root, region));
         });
     }
 
@@ -54,55 +53,49 @@ public sealed class CompiledEarlyTrainerCatalogTests
     [DataRow("route22")]
     [DataRow("route3")]
     [DataRow("mtmoon")]
-    public void CompiledCatalogRejectsWrongSchemaAndTruncatedRoster(string region)
+    public void CompiledCatalogRejectsWrongSchemaAndUnboundBattleReference(string region)
     {
         WithCatalog(region, (root, path) =>
         {
             var document = JsonNode.Parse(File.ReadAllText(path))!;
             document["schemaVersion"] = 2;
             File.WriteAllText(path, document.ToJsonString());
-            Assert.ThrowsExactly<InvalidDataException>(() => LoadDomainArrays(root, region));
+            Assert.ThrowsExactly<InvalidDataException>(() => LoadTrainers(root, region));
             document["schemaVersion"] = 1;
             document["trainers"]!.AsArray().RemoveAt(0);
             File.WriteAllText(path, document.ToJsonString());
-            Assert.ThrowsExactly<InvalidDataException>(() => LoadDomainArrays(root, region));
+            var error = Assert.ThrowsExactly<ArgumentException>(() => LoadTrainers(root, region));
+            Assert.AreEqual("trainer_catalog_battle_reference", error.Message);
         });
     }
 
     private static void WithCatalog(string region, Action<string, string> action)
     {
         string root = Path.Combine(Path.GetTempPath(), "firered-compiled-trainers-" + Guid.NewGuid().ToString("N"));
-        string relative = $"content/generated/{region}-trainers/trainers.json";
+        string relative = region switch {
+            "forest" => PretForestTrainers.RelativePath, "pewter" => PretPewterTrainers.RelativePath,
+            "route22" => PretRoute22Trainers.RelativePath, "route3" => PretRoute3Trainers.RelativePath,
+            "mtmoon" => PretMtMoonTrainers.RelativePath, _ => throw new ArgumentOutOfRangeException(nameof(region))
+        };
         string path = Path.Combine(root, relative);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         try
         {
             File.Copy(Path.Combine(TestAssets.Root, relative), path);
+            string shared = Path.Combine(root, SharedTrainerCatalog.RelativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(shared)!);
+            File.Copy(Path.Combine(TestAssets.Root, SharedTrainerCatalog.RelativePath), shared);
             action(root, path);
         }
         finally { Directory.Delete(root, true); }
     }
 
-    private static string LoadDomainArrays(string root, string region)
-    {
-        switch (region)
-        {
-            case "forest":
-                var forest = PretForestTrainers.Load(root);
-                return JsonSerializer.Serialize(new { trainers = forest.Trainers.Values.OrderBy(t => t.Id.Value), battles = forest.Battles.Values.OrderBy(b => b.Trainer.Value) }, JsonOptions);
-            case "pewter":
-                var pewter = PretPewterTrainers.Load(root);
-                return JsonSerializer.Serialize(new { trainers = pewter.Trainers.Values.OrderBy(t => t.Id.Value), battles = pewter.Battles.Values.OrderBy(b => b.Trainer.Value) }, JsonOptions);
-            case "route22":
-                var route22 = PretRoute22Trainers.Load(root);
-                return JsonSerializer.Serialize(new { trainers = route22.Trainers.Values.OrderBy(t => t.Id.Value), battles = route22.Battles.Values.OrderBy(b => b.Trainer.Value) }, JsonOptions);
-            case "route3":
-                var route3 = PretRoute3Trainers.Load(root);
-                return JsonSerializer.Serialize(new { trainers = route3.Trainers.Values.OrderBy(t => t.Id.Value), battles = route3.Battles.Values.OrderBy(b => b.Trainer.Value) }, JsonOptions);
-            case "mtmoon":
-                var mtmoon = PretMtMoonTrainers.Load(root);
-                return JsonSerializer.Serialize(new { trainers = mtmoon.Trainers.Values.OrderBy(t => t.Id.Value), battles = mtmoon.Battles.Values.OrderBy(b => b.Trainer.Value) }, JsonOptions);
-            default: throw new ArgumentOutOfRangeException(nameof(region));
-        }
-    }
+    private static ImmutableDictionary<TrainerId, TrainerDefinition> LoadTrainers(string root, string region) => region switch {
+        "forest" => PretForestTrainers.Load(root).Trainers,
+        "pewter" => PretPewterTrainers.Load(root).Trainers,
+        "route22" => PretRoute22Trainers.Load(root).Trainers,
+        "route3" => PretRoute3Trainers.Load(root).Trainers,
+        "mtmoon" => PretMtMoonTrainers.Load(root).Trainers,
+        _ => throw new ArgumentOutOfRangeException(nameof(region))
+    };
 }

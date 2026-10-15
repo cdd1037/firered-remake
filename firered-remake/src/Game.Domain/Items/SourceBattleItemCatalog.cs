@@ -27,9 +27,9 @@ public sealed class SourceBattleItemCatalog
     public static InventoryLimits Limits { get; } = new(42, 30, 999);
     public ImmutableDictionary<ItemId, SourceBattleItemDefinition> Items { get; }
     private SourceBattleItemCatalog(ImmutableArray<SourceBattleItemDefinition> definitions) => Items = definitions.ToImmutableDictionary(d => d.Id);
-    public static SourceBattleItemCatalog Authenticate(string sourceCommit, ImmutableArray<SourceBattleItemDefinition> definitions)
+    public static SourceBattleItemCatalog Create(ImmutableArray<SourceBattleItemDefinition> definitions)
     {
-        if (sourceCommit != PokemonFactory.SourceCommit || definitions.IsDefaultOrEmpty || definitions.Any(d => d is null || d.EffectBytes.IsDefault))
+        if (definitions.IsDefaultOrEmpty || definitions.Any(d => d is null || d.EffectBytes.IsDefault))
             throw new ArgumentException("source_item_catalog_identity");
         return new(definitions);
     }

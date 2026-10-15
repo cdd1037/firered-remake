@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s"
+    },
+    {
+      "path": "data/maps/CeladonCity_Gym/map.json"
+    },
+    {
+      "path": "data/maps/CeladonCity_Gym/scripts.inc"
+    },
+    {
+      "path": "include/constants/songs.h"
+    },
+    {
+      "path": "include/constants/sound.h"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "sound/cry_tables.inc"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/exeggcute.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/tangela.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/victreebel.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/vileplume.wav"
+    },
+    {
+      "path": "sound/song_table.inc"
+    },
+    {
+      "path": "sound/songs/midi/se_m_absorb.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_morning_sun.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_petal_dance.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_shiny.mid"
+    },
+    {
+      "path": "src/sound.c"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "content/generated/audio/cues/celadon-approach.json"
+    },
+    {
+      "path": "content/generated/audio/cues/rocktunnel.json"
+    },
+    {
+      "path": "content/generated/audio/cues/route11.json"
+    },
+    {
+      "path": "content/generated/audio/synth/firered.pack"
+    },
+    {
+      "path": "content/generated/audio/synth/manifest.json"
+    },
+    {
+      "path": "content/generated/audio/synth/normal-cries.bin"
+    },
+    {
+      "path": "scripts/lib/audit-early-audio.py"
+    }
+  ]
+}

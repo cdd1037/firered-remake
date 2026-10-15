@@ -17,22 +17,20 @@ internal static class RocketHideoutPresentationAssets
     internal static Package Load(string root,bool portraits=false)
     {
         string stem=portraits?"rocket-hideout-art":"rocket-hideout-presentation";
-        using var manifest=JsonDocument.Parse(Read(root,"content/generated/"+stem+"/manifest.json"));
-        var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1||
-            m.GetProperty("profile").GetString()!="firered-"+stem+"-v1")throw new InvalidDataException("Rocket presentation provenance differs.");
+        using var manifest=JsonDocument.Parse(Read(root,"content/generated/"+(portraits?"sprites/trainers/rocket-hideout":"maps/objects/rocket-hideout-presentation")+"/manifest.json"));
+        var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1)throw new InvalidDataException("Rocket presentation provenance differs.");
         var result=new Dictionary<string,byte[]>(StringComparer.Ordinal);
         foreach(var row in m.GetProperty("outputs").EnumerateArray())
         {
             string name=row.GetProperty("path").GetString()!;
-            result.Add(name,Read(root,"content/generated/"+stem+"/"+name));
+            result.Add(name,Read(root,"content/generated/"+(portraits?"sprites/trainers/rocket-hideout":"maps/objects/rocket-hideout-presentation")+"/"+name));
         }
         return new(m.Clone(),result);
     }
     internal static byte[] LoadTerrain(string root)
     {
-        const string stem="rocket-hideout-terrain";
-        using var manifest=JsonDocument.Parse(Read(root,"content/generated/"+stem+"/manifest.json"));
-        var m=manifest.RootElement;        if(m.GetProperty("profile").GetString()!="firered-rocket-hideout-terrain-v1"||m.GetProperty("terrain").GetString()!="BATTLE_TERRAIN_INDOOR_2")throw new InvalidDataException("Rocket source terrain provenance differs.");
-        return Read(root,"content/generated/"+stem+"/indoor2-scene.png");
+        using var manifest=JsonDocument.Parse(Read(root,"content/generated/battle/terrain/rocket-hideout/manifest.json"));
+        var m=manifest.RootElement;        if(m.GetProperty("terrain").GetString()!="BATTLE_TERRAIN_INDOOR_2")throw new InvalidDataException("Rocket source terrain provenance differs.");
+        return Read(root,"content/generated/battle/terrain/rocket-hideout/indoor2-scene.png");
     }
 }

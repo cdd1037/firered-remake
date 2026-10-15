@@ -74,7 +74,7 @@ public sealed class OpeningItemUiSkin : IDisposable
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-opening-item-ui-static-v1")
+)
             throw new InvalidDataException("Opening item UI source identity differs.");
         var result = new OpeningItemUiSkin();
         try

@@ -5,15 +5,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record QwilfishDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record QwilfishDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record QwilfishPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Qwilfish owned icon/footprint and exact reuse of existing Tower battlers, geometry and normal cry.</summary>
 public static class PretQwilfishPresentation
 {
-    public const string Base = "content/generated/qwilfish-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/qwilfish/";
     public const string Profile = "firered-qwilfish-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -37,15 +36,16 @@ public static class PretQwilfishPresentation
         if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Qwilfish presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "inheritedSprites", "pokemonIcons", "footprints" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (var asset in new[] { "inheritedSprites","pokemonIcons","footprints" }
             .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
@@ -100,7 +100,7 @@ public static class PretQwilfishPresentation
             icon.GetProperty("sourceFrameCount").GetInt32() != 2 ||
             foot.GetProperty("width").GetInt32() != 16 || foot.GetProperty("height").GetInt32() != 16)
             throw new InvalidDataException("Qwilfish icon/footprint geometry differs.");
-        using var inherited = JsonDocument.Parse(files["content/generated/trainer-tower-presentation/catalog.json"]);
+        using var inherited = JsonDocument.Parse(Read("content/generated/sprites/pokemon/trainer-tower/catalog.json"));
         foreach (var row in sprites)
             if (!inherited.RootElement.GetProperty("sprites").EnumerateArray().Any(old => JsonElement.DeepEquals(old, row)))
                 throw new InvalidDataException("Qwilfish Tower sprite binding differs.");
@@ -115,7 +115,7 @@ public static class PretQwilfishPresentation
                 row.GetProperty("sourceHeight").GetInt32() != (front ? 48 : 56))
                 throw new InvalidDataException("Qwilfish move geometry differs.");
         }
-        using var synth = JsonDocument.Parse(files["content/generated/trainer-tower-audio/synth-manifest.json"]);
+        using var synth = JsonDocument.Parse(Read("content/generated/audio/cues/trainer-tower/synth-manifest.json"));
         var cue = manifest.GetProperty("audio").GetProperty("cues").EnumerateArray().Single();
         if (cue.GetProperty("id").GetString() != "CRY_QWILFISH_NORMAL" || cue.GetProperty("species").GetInt32() != 211 ||
             cue.GetProperty("cryMode").GetInt32() != 0 || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||

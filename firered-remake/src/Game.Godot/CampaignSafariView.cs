@@ -52,7 +52,7 @@ public partial class CampaignView
         foreach (var icon in items.Icons)
         {
             
-            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, ItemTexture("safari-items", icon));
+            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, ItemTexture("data/items/safari", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Safari key-item pocket missing.");
         var gold = items.Items.Single(i => i.Metadata.Item.Id == PretSafariItems.GoldTeethId).Metadata;
@@ -60,7 +60,7 @@ public partial class CampaignView
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
         const string id = "safari-gold-teeth";
         
-        _questPocketTextures.Add(id, ItemTexture("safari-items", goldIcon));
+        _questPocketTextures.Add(id, ItemTexture("data/items/safari", goldIcon));
         _questPocketUi = document with
         {
             Items = document.Items.Add(new(gold.Item.Id.Value, gold.Item.SourceItemSymbol, gold.Item.Name,

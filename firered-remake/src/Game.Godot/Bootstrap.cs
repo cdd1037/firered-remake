@@ -61,7 +61,7 @@ public partial class Bootstrap : Node2D
         _font = GD.Load<FontFile>("res://Assets/ProbeFont.ttc");
         if (_font is null)
         {
-            GD.PushError("Required font res://Assets/ProbeFont.ttc could not be loaded. From the project repository root, run bash scripts/ensure-godot-imports.sh to restore its Godot import cache, then launch again.");
+            GD.PushError("Required font res://Assets/ProbeFont.ttc could not be loaded. From the project repository root, run bash scripts/dev/ensure-godot-imports.sh to restore its Godot import cache, then launch again.");
             GetTree().Quit(18);
             return;
         }

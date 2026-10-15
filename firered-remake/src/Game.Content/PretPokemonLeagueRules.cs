@@ -7,11 +7,9 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record PokemonLeagueTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
-    JsonElement ResolvedMoves);
+public sealed record PokemonLeagueTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
-public sealed record PokemonLeagueOpponentDocument(string SourceCommit, string Profile, ImmutableArray<string> OwnedSpeciesAdded,
+public sealed record PokemonLeagueOpponentDocument(ImmutableArray<string> OwnedSpeciesAdded,
     ImmutableArray<PokemonSpeciesDefinition> OpponentSpecies);
 
 /// <summary>Exact first League source teams and the minimal trainer-only species continuation.</summary>
@@ -20,8 +18,8 @@ public static class PretPokemonLeagueRules
 
     private static T Read<T>(string root,string file)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/pokemon-league-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/pokemon-league", file));
+        return JsonSerializer.Deserialize<T>(bytes, SharedTrainerCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("Missing Pokemon League source document.");
     }
 
@@ -39,8 +37,7 @@ public static class PretPokemonLeagueRules
     {
         if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty)
             throw new InvalidDataException("Missing Pokemon League trainer or battle records.");
-        var result = new PokemonLeagueTrainerCatalog(document.SourceCommit, document.Profile, document.CompleteSourceRoster,
-            document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.Trainer));
+        var result = new PokemonLeagueTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.Trainer));
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(result);
         return result;
     }

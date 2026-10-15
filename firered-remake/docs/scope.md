@@ -59,7 +59,7 @@ NPC 交换是正常单机服务；它与真实玩家通信交换分开。图鉴�
 
 ## Language target and selected Chinese resource
 
-Chinese is a final delivery target. The user selected Xzonn/PretFRLG chinese commit `a04f63173ca5fcf9c2db18ee223cf057c7f232c0` as the later text basis; a user-supplied Chinese ROM is not required for that route. Current priority remains complete gameplay and comparison with the original English game. Only independently extracted, reviewed text/terminology may be imported; original pret rules remain authoritative, including EXP distribution. See [the decision](adr/0003-chinese-text-baseline.md) and `scripts/import-config/localization-zh-Hans.source.json`. Source choice does not mean Chinese menus, dialogue, fonts, line layout or name input are already implemented.
+Chinese is a final delivery target. The user selected Xzonn/PretFRLG chinese commit `a04f63173ca5fcf9c2db18ee223cf057c7f232c0` as the later text basis; a user-supplied Chinese ROM is not required for that route. Current priority remains complete gameplay and comparison with the original English game. Only independently extracted, reviewed text/terminology may be imported; original pret rules remain authoritative, including EXP distribution. See [the decision](adr/0003-chinese-text-baseline.md) and `scripts/recipes/config/localization-zh-Hans.source.json`. Source choice does not mean Chinese menus, dialogue, fonts, line layout or name input are already implemented.
 
 ## Input parity follow-up (2026-10-08)
 

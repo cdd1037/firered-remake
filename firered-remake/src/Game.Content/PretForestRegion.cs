@@ -17,7 +17,6 @@ public sealed class PretForestRegion
     public const string Profile = "firered-forest-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
     public JsonElement Catalog { get; }
     public string GeneratedDirectory { get; }
@@ -25,10 +24,10 @@ public sealed class PretForestRegion
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretForestRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog)
+        JsonElement dependencies, JsonElement catalog)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; Dependencies = dependencies; Catalog = catalog;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -61,7 +60,7 @@ public sealed class PretForestRegion
     public static PretForestRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/forest-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/forest");
 
         byte[] ReadPinned(string root,string path)
         {
@@ -71,35 +70,31 @@ public sealed class PretForestRegion
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
 
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Forest manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Forest manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
             if (path == "scripts.json") continue;
-            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"forest-region/"+path))continue;
+            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"maps/regions/forest/"+path))continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate forest output.");
         }
         using var catalog = JsonDocument.Parse(outputs["forest-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Viridian Route 2 / Viridian Forest; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             if(runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!),out var compact))
             {
 
-                var runtimeMap=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"),MapIdFromSourceSymbol);
+                var runtimeMap=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"),MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id,runtimeMap),"Duplicate runtime map.");continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
@@ -108,11 +103,9 @@ public sealed class PretForestRegion
         Require(constants["TRAINER_BUG_CATCHER_RICK"] == 102 && constants["TRAINER_BUG_CATCHER_CHARLIE"] == 532,
             "Forest trainer source constants differ.");
         using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        Require(!dependencies.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 5 &&
+        Require(dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 5 &&
             dependencies.RootElement.GetProperty("encounters").GetArrayLength() == 2, "Forest dependency scope differs.");
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone());
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(), dependencies.RootElement.Clone(), catalog.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

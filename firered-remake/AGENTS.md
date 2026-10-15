@@ -9,7 +9,8 @@
 
 ## Architecture
 Five product assemblies: Game.Domain (BCL-only deterministic rules), Game.Application (Domain), Game.Content (Domain), Game.Godot (composition/presentation), Game.Tooling (headless commands).
-Use stable string identifiers, authoritative command transactions, typed events, explicit RNG state and canonical hashes. Godot animations never determine game rules.
+Use stable string identifiers, authoritative command transactions, typed events and explicit RNG state. Godot animations never determine game rules.
+Runtime resources contain business and presentation data. Original-file inventories, provenance paths and conversion recipes belong to import tooling; do not add runtime source hashes, predecessor proofs or historical table-count gates. Preserve actual gameplay constraints and the existing save-integrity contract. Validate immutable definitions at load time, not repeatedly during every party, box or inventory operation.
 
 ## Work discipline
 Read README.md and docs/ before changes. One owner per file. Verify actual compiler/runtime and include full commands and evidence. Do not execute scripts from third-party reference repositories. Keep downloaded toolchains outside the project. Tests must fail on empty suites, missing data, incomplete evidence and unsupported operations. Never rewrite golden results merely to match implementation.

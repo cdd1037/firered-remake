@@ -8,8 +8,6 @@ namespace Game.Domain.Trainers;
 /// <summary>Exact original singles and preset doubles through the existing trainer construction kernel.</summary>
 public static class SevenIslandTrainerPartyFactory
 {
-    public const string SourceCommit = TrainerPartyFactory.SourceCommit;
-    public const string RulesVersion = "firered-seven-island-trainers-v1";
     public static readonly ImmutableHashSet<TrainerId> TrainerIds = ImmutableHashSet.CreateRange<TrainerId>([
         new("pret:TRAINER_CRUSH_GIRL_CYNDY"),
         new("pret:TRAINER_TAMER_EVAN"),
@@ -76,15 +74,7 @@ public static class SevenIslandTrainerPartyFactory
     public static void ValidateCatalog(SevenIslandTrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster ||
-            catalog.Trainers is null || catalog.BattlesByScript is null || catalog.Trainers.Count != 18 || catalog.BattlesByScript.Count != 20)
-            throw new NotSupportedException("seven_island_trainer_scope");
-        foreach (var id in TrainerIds)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Party.IsDefault ||
-                trainer.Party.Any(p => p is null || p.CustomMoves.IsDefault || p.EncodedSpeciesName.IsDefault) ||
-                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefault || trainer.AiFlagSymbols.IsDefault) throw new NotSupportedException("seven_island_trainer_source");
-        foreach (var script in BattleScripts)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script) throw new NotSupportedException("seven_island_trainer_battle_source");
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.BattlesByScript.Values, ValidateBattle);
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {

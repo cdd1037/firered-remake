@@ -9,7 +9,7 @@ public static class PretFieldRockSmash
 {
     public static FieldRockSmashSourceDocument LoadDocument(string root)
     {
-        using var stream = File.OpenRead(Path.Combine(root, "content", "generated", "field-rock-smash", "field.json"));
+        using var stream = File.OpenRead(Path.Combine(root, "content", "generated", "data/services/field-rock-smash", "field.json"));
         if (stream.Length is < 1 or > 262144) throw new InvalidDataException("field_rock_smash_file_size");
         var bytes = new byte[checked((int)stream.Length)]; stream.ReadExactly(bytes);
         if (stream.ReadByte() != -1 )

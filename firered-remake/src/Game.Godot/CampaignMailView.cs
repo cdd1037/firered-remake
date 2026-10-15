@@ -96,7 +96,7 @@ public partial class CampaignView
     }
     private SourceMailScreen? _mailSourceScreen;
     private SourceMailScreen MailSourceScreen => _mailSourceScreen ??= new(_catalog.MailPresentation ?? PretMailPresentation.Load(_root),
-        System.IO.Path.Combine(_root, "content/generated/source-font"), _root, SceneTextures);
+        System.IO.Path.Combine(_root, "content/generated/ui/font"), _root, SceneTextures);
     private void DisposeMailPresentation() { _mailSourceScreen?.Dispose(); _mailSourceScreen = null; }
     private Texture2D? MailSpeciesIcon(int renderSpecies)
     {

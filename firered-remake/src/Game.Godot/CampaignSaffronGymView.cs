@@ -38,7 +38,7 @@ public partial class CampaignView
         LoadSaffronGymTrainerArt(); LoadSaffronGymInterface();
         foreach (var icon in _catalog.SaffronGymItems!.Icons)
         {
-            _earlyItemIcons.Add(icon.Item, ItemTexture("saffron-gym-catalogs", icon));
+            _earlyItemIcons.Add(icon.Item, ItemTexture("data/regions/saffron-gym", icon));
         }
         if (!_trainerCard!.Badges.Any(b => b.Flag == "FLAG_BADGE06_GET" && _trainerCardTextures.ContainsKey(b.AssetId)))
             throw new InvalidDataException("Original Marsh Badge card pixels missing.");
@@ -59,7 +59,7 @@ public partial class CampaignView
     private void LoadSaffronGymInterface()
     {
 
-        using var json = JsonDocument.Parse(ReadSaffronPresentation("content/generated/saffron-gym-interface/manifest.json"));
+        using var json = JsonDocument.Parse(ReadSaffronPresentation("content/generated/ui/saffron-gym-interface/manifest.json"));
         var root = json.RootElement;
         if (root.GetProperty("item").GetString() != "pret:ITEM_MAX_REPEL")
             throw new InvalidDataException("Saffron interface source contract differs.");
@@ -67,7 +67,7 @@ public partial class CampaignView
         foreach (var row in root.GetProperty("outputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
-            byte[] bytes = ReadSaffronPresentation("content/generated/saffron-gym-interface/" + path);
+            byte[] bytes = ReadSaffronPresentation("content/generated/ui/saffron-gym-interface/" + path);
             if (path == "max-repel.png") rgba = NativeImages.ReadPixels(bytes, 24, 24);
         }
         if (rgba is null || rgba.Length != 24 * 24 * 4)
@@ -83,10 +83,10 @@ public partial class CampaignView
     {
 
         byte[] Read(string path) => ReadSaffronPresentation(path);
-        using var document = JsonDocument.Parse(Read("content/generated/saffron-gym-trainer-art/manifest.json"));
+        using var document = JsonDocument.Parse(Read("content/generated/sprites/trainers/saffron-gym/manifest.json"));
         var root = document.RootElement;
         var files = root.GetProperty("outputs").EnumerateArray().ToDictionary(o => o.GetProperty("path").GetString()!,
-            o => Read("content/generated/saffron-gym-trainer-art/" + o.GetProperty("path").GetString()), StringComparer.Ordinal);
+            o => Read("content/generated/sprites/trainers/saffron-gym/" + o.GetProperty("path").GetString()), StringComparer.Ordinal);
         foreach (var row in root.GetProperty("portraits").EnumerateArray())
         {
             string id = row.GetProperty("id").GetString()!, trainerPic = row.GetProperty("trainerPic").GetString()!;

@@ -69,7 +69,7 @@ public sealed class CanonicalPokemonOwnershipTests
     public void CompleteMoveCatalogRejectsConflictingPredecessorBusinessValues()
     {
         var canonical = Load();
-        var starter = PretPokemonCatalog.Load(canonical, File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/pokemon/starter-catalog.json")));
+        var starter = PretPokemonCatalog.Load(canonical, File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/data/pokemon/starters.json")));
         var expanded = canonical.MoveCatalog.Extend(starter);
         Assert.AreEqual(354, expanded.Moves.Count);
         foreach (var move in expanded.Moves.Values) Assert.AreSame(canonical.Catalog.Moves[move.Id], move);

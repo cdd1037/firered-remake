@@ -425,7 +425,7 @@ public sealed partial class CampaignSession
         if (_content.VermilionEnabled && won)
         {
             var payday = SourceBattleMoneyRules.SettlePayDay(money, trainer.Frame.Field.PayDayMoney, WildBattleOutcome.Won,trainer.Frame.Field.MoneyMultiplier);
-            var pickup = SafariOrdinaryOwnership is {} pickupOwned?VermilionPickupRules.ApplySafariOwned(pickupOwned,state.Party,state.World.Rng,WildBattleOutcome.Won):VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, WildBattleOutcome.Won,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
+            var pickup = VermilionPickupRules.Apply(_binding.Ownership, state.Party, state.World.Rng, WildBattleOutcome.Won);
             money = payday.Money;
             if (payday.Amount != 0) pages.Add(new($"{state.PlayerName} picked up\n¥{payday.DisplayAmount}!"));
             state = state with { Party = pickup.Party, World = state.World with { Rng = pickup.Rng } };

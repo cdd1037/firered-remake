@@ -10,5 +10,5 @@ internal static class PretRuntimeMapIntegration
 
     internal static PretWorldMap LoadBase(PretRuntimeMapCatalog runtime, PretWorldMapSpecification spec, string generated)
         => PretWorldMap.FromRuntime(runtime.Maps[new MapId(spec.StableId)], runtime.BaseMetadata,
-            Path.Combine(generated, spec.Directory));
+            Path.Combine(generated, "maps/regions/opening", spec.Name + ".json"));
 }

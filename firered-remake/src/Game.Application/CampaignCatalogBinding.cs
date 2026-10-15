@@ -83,7 +83,12 @@ public sealed partial class CampaignSession
         new DepartmentStoreMachineStock(machines).Validate();
         EarlyShopInventoryRules.ValidateCatalog(content.EarlyShop!);
         if (content.EarlyShop!.Inventory is null) throw new InvalidDataException("current_inventory_scope_missing");
-        if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
+        if (content.QuestItems is not { } questItems)
+            throw new InvalidDataException("current_quest_items_missing");
+        QuestItemRules.ValidateCatalog(questItems);
+        if (!questItems.Items.Any(item => item.Id == QuestItemRules.TeachyTvId) ||
+            !questItems.Items.Any(item => item.Id == QuestItemRules.TownMapId))
+            throw new InvalidDataException("current_quest_items_missing");
         if(content.FieldPickups.IsDefaultOrEmpty||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");
     }
 }

@@ -26,7 +26,7 @@ public partial class CampaignView
     private void LoadCapturePresentation()
     {
         if (!_catalog.CaptureEnabled) return;
-        var folder = System.IO.Path.Combine(_root, "content/generated/capture-dex");
+        var folder = System.IO.Path.Combine(_root, "content/generated/sprites/pokemon/capture-dex");
         var document = _catalog.ForestEnabled?PretForestCaptureDex.Load(_root):PretCaptureDex.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(folder, "capture-dex.json")));
         foreach (var texture in _captureTextures.Values) texture.Dispose();
         _captureTextures.Clear();
@@ -60,7 +60,7 @@ public partial class CampaignView
             _battleArt.Add(key, new(Texture(System.IO.Path.Combine(folder, file)),
                 new(position.GetProperty("x").GetInt32(), position.GetProperty("y").GetInt32())));
         }
-        var fontDirectory = System.IO.Path.Combine(_root, "content/generated/source-font");
+        var fontDirectory = System.IO.Path.Combine(_root, "content/generated/ui/font");
         static Color Rgb(ImmutableArray<int> rgb) => Color.Color8((byte)rgb[0], (byte)rgb[1], (byte)rgb[2]);
         _captureDexNormal = SourceGameFont.Load(fontDirectory, document.Layout.NameFont, Rgb(document.Layout.ForegroundColor), Rgb(document.Layout.StatsShadowColor));
         _captureDexSmall = SourceGameFont.Load(fontDirectory, document.Layout.StatsFont, Rgb(document.Layout.ForegroundColor), Rgb(document.Layout.StatsShadowColor));

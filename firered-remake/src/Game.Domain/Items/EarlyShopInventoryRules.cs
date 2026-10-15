@@ -3,11 +3,9 @@ using Game.Domain.Ids;
 
 namespace Game.Domain.Items;
 
-/// <summary>Opt-in future inventory profile. Does not relax OpeningInventoryRules or alter serialized defaults.</summary>
+/// <summary>Validates shop admission and delegates storage to the composed inventory catalog.</summary>
 public static class EarlyShopInventoryRules
 {
-    public const string MtMoonProfile = "firered-mtmoon-shop-v1";
-    public const string Profile = "firered-viridian-pewter-shop-v1";
     public const string ViridianMart = "ViridianCity_Mart_Items", PewterMart = "PewterCity_Mart_Items";
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {

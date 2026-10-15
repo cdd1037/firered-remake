@@ -22,8 +22,7 @@ public sealed class SourceTextCursor : IDisposable
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "text-cursor.json"));
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-text-down-arrow-v1")
+        if (root.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Source cursor identity differs.");
         var textures = new List<ImageTexture>();
         try

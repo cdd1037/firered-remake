@@ -5,20 +5,19 @@ using System.Text.Json;
 namespace Game.Content;
 
 public sealed record EarlyStarterStatusUiPoint(int X, int Y);
-public sealed record EarlyStarterStatusUiInput(string Path, string SourceUrl);
 public sealed record EarlyStarterStatusUiAsset(string Id, string TexturePath, int Width, int Height, int X, int Y, string Context,
     string Status, int SourceTile, string SourceImagePath, string SourcePalettePath,
     ImmutableArray<int> PaletteRgb555, int TransparentIndex);
-public sealed record EarlyStarterStatusUiDocument(int SchemaVersion, string Profile, string Repository, string SourceCommit, string RawRoot,
-    ImmutableArray<EarlyStarterStatusUiInput> Inputs, ImmutableArray<EarlyStarterStatusUiAsset> Assets,
-    ImmutableArray<EarlyStarterStatusUiPoint> PartyStatusTopLeft, ImmutableArray<string> Limitations);
+public sealed record EarlyStarterStatusUiDocument(int SchemaVersion, string Repository, string RawRoot,
+    ImmutableArray<EarlyStarterStatusUiAsset> Assets,
+    ImmutableArray<EarlyStarterStatusUiPoint> PartyStatusTopLeft);
 
 /// <summary>Loads status textures and their display layout.</summary>
 public static class PretEarlyStarterStatusUi
 {
     public const string Profile = "firered-early-starter-status-ui-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    private const string Generated = "content/generated/early-starter-status";
+    private const string Generated = "content/generated/ui/early-starter-status";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly ImmutableDictionary<string, (int Width, int X, int Y)> Expected =
         new Dictionary<string, (int, int, int)>(StringComparer.Ordinal)

@@ -3,15 +3,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record GiftEggDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record GiftEggDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record GiftEggPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Murkrow, Togepi and Togetic reuse four battlers, all geometry and cry samples; only missing source assets and cues are added.</summary>
 public static class PretGiftEggPresentation
 {
-    public const string Base = "content/generated/gift-egg-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/gift-egg/";
     public const string Profile = "firered-gift-egg-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -123,8 +122,7 @@ public static class PretGiftEggPresentation
                 cue.GetProperty("priority").GetInt32() != 10 ||
                 cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
                 cue.GetProperty("cryMode").GetInt32() != 0 || cue.GetProperty("songAddress").GetInt32() != 0 ||
-                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null ||
-                cue.GetProperty("sourcePath").GetString() != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav")
+                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null)
                 throw new InvalidDataException("GiftEgg normal cry source binding differs.");
         }
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));

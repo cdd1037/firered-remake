@@ -6,7 +6,7 @@ internal sealed record EventIslandPresentationData(JsonElement Manifest, Diction
 /// <summary>Original pixels and cue metadata; gameplay state remains outside presentation.</summary>
 internal static class EventIslandPresentationAssets
 {
-    internal const string Base = "content/generated/event-island-presentation/";
+    internal const string Base = "content/generated/sprites/pokemon/event-island/";
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
     internal static EventIslandPresentationData Load(string root)
@@ -27,9 +27,7 @@ internal static class EventIslandPresentationAssets
         }
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
         var manifest = document.RootElement;
-        const string profile = "firered-event-island-presentation-v1";
-        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
-            manifest.GetProperty("profile").GetString() != profile)
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Event Island presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var asset in manifest.GetProperty("assets").EnumerateArray())

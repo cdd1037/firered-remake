@@ -6,16 +6,15 @@ using Game.Domain.Trainers;
 
 namespace Game.Content;
 
-public sealed record FiveIslandTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles, JsonElement ResolvedMoves);
+public sealed record FiveIslandTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
 /// <summary>Source-authenticated initial trainer catalog and additive owned/opponent proofs; no runtime route admission.</summary>
 public static class PretFiveIslandRules
 {
     private static T Read<T>(string root,string file)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/five-island-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }) ?? throw new InvalidDataException("Missing Five Island source document.");
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/five-island", file));
+        return JsonSerializer.Deserialize<T>(bytes, SharedTrainerCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })) ?? throw new InvalidDataException("Missing Five Island source document.");
     }
     public static FiveIslandTrainerDocument LoadDocument(string root)
     {
@@ -26,8 +25,7 @@ public static class PretFiveIslandRules
     private static FiveIslandTrainerCatalog LoadTrainers(FiveIslandTrainerDocument document)
     {
         if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty) throw new InvalidDataException("Missing Five Island trainer records.");
-        var result = new FiveIslandTrainerCatalog(document.SourceCommit, document.Profile, document.CompleteSourceRoster,
-            document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
+        var result = new FiveIslandTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         FiveIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
     public static JsonElement LoadEncounterDeclarations(string root) => Read<JsonElement>(root,"encounters.json");

@@ -48,8 +48,7 @@ public sealed class SlotMachineRules
     {
         using var document = JsonDocument.Parse(data);
         var root = document.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1 || root.GetProperty("profile").GetString() != Profile ||
-            root.GetProperty("sourceCommit").GetString() != SourceCommit)
+        if (root.GetProperty("schemaVersion").GetInt32() != 1)
             throw new ArgumentException("slot_rules_source_identity");
         return new(root.GetProperty("tables"));
     }

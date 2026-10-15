@@ -17,13 +17,12 @@ public sealed class PretFirstSeviiTownMap
     public ImmutableArray<TownMapCell> Cells { get; }
     public ImmutableArray<TownMapIcon> Icons { get; }
     public ImmutableArray<FirstSeviiTownMapPosition> Positions { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public FirstSeviiTownMapSwitchMenu SwitchMenu { get; }
 
-    private PretFirstSeviiTownMap(JsonElement d, ImmutableDictionary<string, byte[]> payloads, ImmutableArray<PretWorldSourceFile> files)
+    private PretFirstSeviiTownMap(JsonElement d, ImmutableDictionary<string, byte[]> payloads)
     {
         T Parse<T>(string property) => ContentJson.ParseStrict<T>(d.GetProperty(property).GetRawText(), ContentJson.CreateOptions());
-        outputs = payloads; SourceFiles = files;
+        outputs = payloads;
         Assets = Parse<ImmutableArray<TownMapAsset>>("assets"); Cells = Parse<ImmutableArray<TownMapCell>>("cells");
         Icons = Parse<ImmutableArray<TownMapIcon>>("icons"); Positions = Parse<ImmutableArray<FirstSeviiTownMapPosition>>("positions");
         SwitchMenu = Parse<FirstSeviiTownMapSwitchMenu>("switchMenu");
@@ -44,7 +43,7 @@ public sealed class PretFirstSeviiTownMap
 
     public static PretFirstSeviiTownMap Load(string projectRoot)
     {
-        var root = Path.GetFullPath(projectRoot);         var generated = Path.Combine(root, "content/generated/first-sevii-town-map");
+        var root = Path.GetFullPath(projectRoot);         var generated = Path.Combine(root, "content/generated/ui/first-sevii-town-map");
         byte[] Pinned(string directory,string relative)
         {
             var path = Safe(directory, relative); var info = new FileInfo(path);
@@ -54,9 +53,7 @@ return bytes;
         }
         using var manifest = JsonDocument.Parse(Pinned(generated,"manifest.json"));
         var m = manifest.RootElement;
-        Need(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(), "First-Sevii atlas manifest differs.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
+        Need(m.GetProperty("schemaVersion").GetInt32() == 1, "First-Sevii atlas manifest differs.");
 
         var payloads = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var o in m.GetProperty("outputs").EnumerateArray())
@@ -66,7 +63,7 @@ return bytes;
         }
         Need(payloads.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds.Select(id => id + ".png").Append("town-map.json")) , "First-Sevii atlas output inventory differs.");
         using var document = JsonDocument.Parse(payloads["town-map.json"]);
-        return new(document.RootElement, payloads.ToImmutable(), files.ToImmutable());
+        return new(document.RootElement, payloads.ToImmutable());
     }
 
     public TownMapAsset Asset(string id) => Assets.Single(a => a.Id == id);
@@ -108,6 +105,6 @@ return bytes;
 
 public sealed record FirstSeviiTownMapPosition(string StableMapId, string SourceName, string SourceMap, string SectionId,
     int Width, int Height, int SectionX, int SectionY, int SectionWidth, int SectionHeight, string MapType,
-    TownMapPoint? Override, int Region, bool RequiresEscapeWarp, ImmutableArray<string> SourcePaths);
+    TownMapPoint? Override, int Region, bool RequiresEscapeWarp);
 public sealed record FirstSeviiTownMapSwitchMenu(int MaxSelection, int YOffset, int HighlightLeft, int HighlightRight,
     int HighlightHeight, int LeftArrowX, int RightArrowX, int ArrowSize, int ArrowFrameTicks, bool CancelRestoresPlayerRegion);

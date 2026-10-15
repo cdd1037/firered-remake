@@ -18,7 +18,7 @@ public partial class CampaignView
         foreach (var texture in _centerHealingTextures.Values) texture.Dispose();
         _centerHealingTextures.Clear(); _centerHealingArt = null; ResetCenterHealing();
         if (!_catalog.ViridianCenterEnabled) return;
-        var directory = System.IO.Path.Combine(_root, "content/generated/center-healing-art");
+        var directory = System.IO.Path.Combine(_root, "content/generated/ui/center-healing-art");
         var document = PretCenterHealingArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "center-healing-art.json")));
         try
         {

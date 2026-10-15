@@ -22,7 +22,7 @@ public static class PretRoute3TrainerArt
             byte[] bytes = File.ReadAllBytes(info.FullName);
             return bytes;
         }
-        var manifest = Read("content/generated/route3-trainer-art/route3-trainer-art.json");
+        var manifest = Read("content/generated/sprites/trainers/route3/route3-trainer-art.json");
         using var json = JsonDocument.Parse(manifest);
         var document = json.RootElement;
         if (            document.GetProperty("paletteExpansion").GetString() != "(rgb5 << 3) | (rgb5 >> 2)" || document.GetProperty("assets").GetArrayLength() != 2)
@@ -39,7 +39,7 @@ public static class PretRoute3TrainerArt
                 asset.GetProperty("sourceTrainerPicId").GetInt32() != (id == "youngster-front" ? 82 : 84) ||
                 asset.GetProperty("x").GetInt32() != 144 || asset.GetProperty("y").GetInt32() != 8)
                 throw new InvalidDataException("Route3 trainer portrait identity differs.");
-            var pngBytes = Read("content/generated/route3-trainer-art/" + id + ".png");
+            var pngBytes = Read("content/generated/sprites/trainers/route3/" + id + ".png");
             if (pngBytes.Length == 0) throw new InvalidDataException("Route3 trainer portrait size differs.");
             result.Add(new(id, 144, 8, pngBytes));
         }

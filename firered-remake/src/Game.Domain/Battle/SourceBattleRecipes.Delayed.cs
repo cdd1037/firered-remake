@@ -30,10 +30,7 @@ internal abstract partial class SourceRecipeContext
         }
         if (DelayedFuture(target) is not null)
         { Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move.Id, "future-slot-occupied")); return; }
-        int damage = ForestBattleDamage.Calculate(catalog, Get(actor), Get(target), move.Id, false, 100,
-            true, true, true, true, route3Rules: true, mtMoonRules: true, ceruleanRules: true, billRules: true,
-            vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
-            rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(target), sourceDefinition: move,
+        int damage = SourceBattleDamage.Calculate(catalog, Get(actor), Get(target), move, false, 100, rain: SourceCalledRain, reflect: RockTunnelReflects(target),
             sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(target), weatherSuppressed: SourceDamageWeatherSuppressed,
             sourceDoubleBattle: SourceDoubleBattle, sourceDefenderCount: SourceDefenderCount(target),
             sourcePlusMinusBoost: SourcePlusMinusBoost(Get(actor))).Steps.Single(s => s.Operation == "plus-two").Value;

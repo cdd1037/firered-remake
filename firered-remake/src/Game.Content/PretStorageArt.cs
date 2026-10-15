@@ -20,7 +20,6 @@ public sealed class PretStorageArt
     private readonly ImmutableDictionary<string, byte[]> outputBytes;
     public ImmutableArray<StorageArtIcon> Icons { get; }
     public ImmutableArray<StorageArtAsset> Assets { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Display { get; }
     public JsonElement StorageArt { get; }
     public string GeneratedDirectory { get; }
@@ -28,9 +27,9 @@ public sealed class PretStorageArt
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory, "manifest.json");
 
     private PretStorageArt(string directory, ImmutableArray<StorageArtIcon> icons, ImmutableArray<StorageArtAsset> assets,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement art, ImmutableDictionary<string, byte[]> outputs)
+        JsonElement art, ImmutableDictionary<string, byte[]> outputs)
     {
-        GeneratedDirectory=directory; Icons=icons; Assets=assets; SourceFiles=files; StorageArt=art;
+        GeneratedDirectory=directory; Icons=icons; Assets=assets; StorageArt=art;
         Display=art.GetProperty("display"); outputBytes=outputs;
     }
 
@@ -38,7 +37,7 @@ public sealed class PretStorageArt
     public static PretStorageArt Load(string projectRoot)
     {
         var project=Path.GetFullPath(projectRoot);
-        var directory=Path.Combine(project,"content/generated/storage-art");
+        var directory=Path.Combine(project,"content/generated/ui/storage-art");
         byte[] ReadPinned(string root,string path)
         {
             var bytes=File.ReadAllBytes(SafeFile(root,path));
@@ -47,11 +46,8 @@ public sealed class PretStorageArt
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m=manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("iconCount").GetInt32()==29 &&
-            m.GetProperty("assetCount").GetInt32()==9 && m.GetProperty("textureCount").GetInt32()==38 &&
-            !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean() &&
-            !m.GetProperty("runtimeShadersUsed").GetBoolean(),"Storage art manifest identity differs.");
-        var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var inventory=files.ToImmutable();
+            m.GetProperty("assetCount").GetInt32()==9 && m.GetProperty("textureCount").GetInt32()==38,"Storage art manifest identity differs.");
+
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var entry in m.GetProperty("outputs").EnumerateArray())
         {
@@ -84,7 +80,7 @@ public sealed class PretStorageArt
             d.GetProperty("boxColumns").GetInt32()==6 && d.GetProperty("boxRows").GetInt32()==5 &&
             d.GetProperty("normalShinyIconsIdentical").GetBoolean() && d.GetProperty("boxIconCenters").GetArrayLength()==30,
             "Storage art layout differs.");
-        return new(directory,icons,assets,inventory,a.Clone(),outputs.ToImmutable());
+        return new(directory,icons,assets,a.Clone(),outputs.ToImmutable());
     }
 
     public bool ContainsSpecies(SpeciesId species) => Icons.Any(i=>i.SpeciesId==species.Value);

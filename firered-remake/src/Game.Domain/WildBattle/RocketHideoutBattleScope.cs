@@ -31,8 +31,6 @@ internal static class RocketHideoutBattleScope
     internal static bool ValidSharedSpecies(PokemonSpeciesDefinition s) => CeladonGymBattleScope.ValidSharedSpecies(s) ||
         s.Id.Value=="pret:SPECIES_KANGASKHAN" && s.SourceSpeciesId==115 &&
         (s.Type1,s.Type2,s.Ability1,s.Ability2)==("TYPE_NORMAL","TYPE_NORMAL","ABILITY_EARLY_BIRD","ABILITY_NONE");
-    internal static bool SupportsAbilityForCatalog(PokemonCatalog? catalog, string value) => catalog?.Species.Count == 99 ? SupportsAbility(value) : RockTunnelBattleScope.SupportsAbility(value);
-    internal static bool SupportsHeldItemForCatalog(PokemonCatalog? catalog, string value) => catalog?.Species.Count == 99 ? SupportsHeldItem(value) : RockTunnelBattleScope.SupportsHeldItem(value);
     internal static bool SupportsAbility(string value) => value=="ABILITY_EARLY_BIRD" || RockTunnelBattleScope.SupportsAbility(value);
     internal static bool SupportsHeldItem(string value) => value=="ITEM_BLACK_GLASSES" || RockTunnelBattleScope.SupportsHeldItem(value);
 }

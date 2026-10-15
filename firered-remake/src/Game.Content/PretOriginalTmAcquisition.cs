@@ -38,9 +38,7 @@ public sealed class PretOriginalTmAcquisition
         NpcSources = source.Document("npc-source.json");
         MemorialTrainers = source.Parse<FiveIslandTrainerDocument>("memorial-trainers.json");
         MemorialEncounters = source.Document("memorial-encounters.json");
-        Need(            !MemorialTrainers.CompleteSourceRoster && MemorialTrainers.Trainers.Length == 3 && MemorialTrainers.Battles.Length == 3 &&
-            MemorialTrainers.Trainers.Sum(t => t.Party.Length) == 6 && MemorialTrainers.Trainers.All(t => !t.DoubleBattle && t.PartyFlags == 0),
-            "Original Memorial trainer source scope differs.");
+        _ = PretMemorialPillarTrainers.Load(MemorialTrainers);
         _pickups = ContentJson.ParseStrict<OriginalTmPickups>(File.ReadAllText(Path.Combine(source.Directory, "pickups.json")), ContentJson.CreateOptions());
         Need(_pickups.Memorial.Length == 5 && _pickups.Memorial.Count(p => p.Hidden) == 4 && _pickups.Machines.Length == 2,
             "Original TM pickup collection differs.");
@@ -148,7 +146,7 @@ public sealed class PretOriginalTmAcquisition
     public static PretOriginalTmAcquisition Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"original-tm-acquisition");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/original-tm-acquisition");
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 , "Original TM catalog scope differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
@@ -156,14 +154,14 @@ public sealed class PretOriginalTmAcquisition
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" ,
+            Need(path == relative ,
                 "Original TM compact map binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Original TM map symbol differs.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Original TM map symbol differs.");
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             maps.Add(map.Id, map);
         }
         Need(maps.Keys.ToHashSet().SetEquals([ReturnRoomMapId, PsychicHouseMapId, MemorialMapId]), "Original TM map collection differs.");

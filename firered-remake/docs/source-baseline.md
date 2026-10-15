@@ -2,7 +2,7 @@
 
 核查日期：2026-10-08 UTC。状态：P0 期间的只读来源研究，尚未导入可玩内容。
 
-本文件与 `scripts/import-config/source.json` 冻结研究依据；它们不能证明游戏已实现、工具链已通过或素材已获得再分发许可。产品最终范围见 [scope.md](scope.md)，实施门禁见 [implementation-roadmap.md](implementation-roadmap.md)。第一徽章仅为首个完整玩家流程里程碑。
+本文件与 `scripts/recipes/config/source.json` 冻结研究依据；它们不能证明游戏已实现、工具链已通过或素材已获得再分发许可。产品最终范围见 [scope.md](scope.md)，实施门禁见 [implementation-roadmap.md](implementation-roadmap.md)。第一徽章仅为首个完整玩家流程里程碑。
 
 ## 1. 唯一参考版本
 

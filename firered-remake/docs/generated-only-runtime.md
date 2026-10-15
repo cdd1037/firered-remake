@@ -4,14 +4,14 @@ The running game reads gameplay data and images/audio from `content/generated`. 
 
 Import tools own original-format parsing and conversion:
 
-- `scripts/import-story.py`: story program IR, event conditions/movements, text control codes and constants.
-- `scripts/import-field-tilesets.py`: layout and metatile behavior/terrain/encounter/layer attributes, including replacement tiles used by gameplay.
-- `scripts/import-map-numbers.py`: event map-number lookup.
+- `scripts/imports/story/import-story.py`: story program IR, event conditions/movements, text control codes and constants.
+- `scripts/imports/maps/import-field-tilesets.py`: layout and metatile behavior/terrain/encounter/layer attributes, including replacement tiles used by gameplay.
+- `scripts/imports/maps/import-map-numbers.py`: event map-number lookup.
 - Domain importers compile teaching, encounters/trainers and other actual game catalogs. Battle text and fanfare metadata have dedicated small importers.
-- `scripts/import-map-atlases.py --prune`: regional map-layer tile pages and compressed index streams. See [render atlas format](map-render-atlases.md).
+- `scripts/imports/maps/import-map-atlases.py --prune`: regional map-layer tile pages and compressed index streams. See [render atlas format](map-render-atlases.md).
 - Image decoding is a Godot boundary; offline image conversion belongs to import tools. See [generated images](generated-image-assets.md).
 
-Mail's generated vocabulary contains words, selection flags, ordered groups/alphabetical alternatives and actual author character encoding. It no longer repeats source path/line proofs for every word. `python3 scripts/test-mail-composer.py` regenerates these fields from retained original inputs; `GeneratedMailComposerTests` exercises generated-only loading and progression-based selection.
+Mail's generated vocabulary contains words, selection flags, ordered groups/alphabetical alternatives and actual author character encoding. It no longer repeats source path/line proofs for every word. `python3 scripts/checks/test-mail-composer.py` regenerates these fields from retained original inputs; `GeneratedMailComposerTests` exercises generated-only loading and progression-based selection.
 
 ## Focused verification
 
@@ -50,7 +50,7 @@ The startup simplification passed a zero-warning solution build and all 2,435 ma
 
 Learnset rows retain move and level semantics without per-row source spans. Generated top-level input inventories are tool bookkeeping and no longer belong to runtime documents. Breeding/ordinary-evolution/gift-egg metadata retain egg groups/cycles, base egg species and ordered egg moves; their repeated machine-move lists are projected from the existing shared compatibility catalog and preserved 58-slot machine mapping (including HM08, without enabling a teachable HM08 definition). All 188 metadata rows match frozen gameplay values.
 
-Breeding can regenerate from retained raw files with `python3 scripts/import-breeding-species.py - . . --check`; `-` selects ordinary raw input, not a claim of Git authentication. Ordinary-evolution and gift-egg importers retain their `--dependency-root . --project-root . --check` entry points.
+Breeding can regenerate from retained raw files with `python3 scripts/imports/pokemon/import-breeding-species.py - . . --check`; `-` selects ordinary raw input, not a claim of Git authentication. Ordinary-evolution and gift-egg importers retain their `--dependency-root . --project-root . --check` entry points.
 
 This JSON slice reduced 1,295 files / 30,320,868 bytes to 1,293 files / 26,067,341 bytes: 1,755,435 bytes of unused/duplicated semantics and 2,498,092 bytes of formatting. The same JSON set compressed with ZIP DEFLATE level 9 changed from 3,655,177 to 3,476,165 bytes; raw-file savings are not archive savings. Current direct-output producers emit the compact form, with parsed values and array order preserved. Two unused source-input receipts were removed.
 

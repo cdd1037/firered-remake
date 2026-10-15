@@ -6,19 +6,17 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record SafariItemsDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<ForestPokemonInput> Inputs,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
-    ImmutableArray<string> Limitations,ImmutableArray<SnorlaxArtOutput> Outputs);
+public sealed record SafariItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<SnorlaxArtOutput> Outputs);
 public sealed record SafariMachineAddition(ItemId Item,ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record SafariMachinesDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ItemId> InheritedItemIds,
-    ImmutableArray<SafariMachineAddition> Additions, ImmutableArray<MachineDefinition> NewMachines,
-    ImmutableArray<string> Limitations);
+public sealed record SafariMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds,
+    ImmutableArray<SafariMachineAddition> Additions, ImmutableArray<MachineDefinition> NewMachines);
 
 /// <summary>Twelve original Safari items, source icons and five full110 source HM matrices. Loading grants no rewards or field action.</summary>
 public sealed class PretSafariItems
 {
     public const string Profile="firered-safari-items-v1";
-    public const string GeneratedDirectory="content/generated/safari-items/";
+    public const string GeneratedDirectory="content/generated/data/items/safari/";
     public static ItemId Hm03Id { get; }=new("pret:ITEM_HM03");
     public static ItemId Hm04Id { get; }=new("pret:ITEM_HM04");
     public static ItemId GoldTeethId { get; }=new("pret:ITEM_GOLD_TEETH");
@@ -36,7 +34,7 @@ public sealed class PretSafariItems
         string root=Path.GetFullPath(projectRoot);
         var doc=SafariSource.Parse<SafariItemsDocument>(SafariSource.Read(root,GeneratedDirectory+"items.json"), root);
         SafariSource.Require(doc.SchemaVersion==1&&
-            doc.Items.Length==12&&doc.Icons.Length==12&&!doc.Limitations.IsDefaultOrEmpty,"Safari item scope differs.");
+            doc.Items.Length==12&&doc.Icons.Length==12,"Safari item scope differs.");
         SafariSource.Require(doc.Items.Select(i=>i.Metadata.Item.Id).SequenceEqual(new[]{"HM03","HM04","GOLD_TEETH","TM11","TM47","TM32","MAX_POTION","FULL_RESTORE","LEAF_STONE","PROTEIN","QUICK_CLAW","MAX_REVIVE"}.Select(s=>new ItemId("pret:ITEM_"+s))),"Safari item identity differs.");
         foreach(var i in doc.Items)
         {

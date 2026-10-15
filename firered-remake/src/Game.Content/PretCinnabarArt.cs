@@ -3,15 +3,14 @@ using System.Text;
 using System.Text.Json;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record CinnabarArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonSprite> Sprites,
+public sealed record CinnabarArtDocument(int SchemaVersion, ImmutableArray<ForestPokemonSprite> Sprites,
     ImmutableArray<StorageArtIcon> Icons, ImmutableArray<Route3PokemonFootprint> Footprints,
-    ImmutableArray<SnorlaxArtDex> Dex, ImmutableArray<string> Limits,
-    ImmutableArray<SnorlaxArtOutput> Outputs);
+    ImmutableArray<SnorlaxArtDex> Dex,     ImmutableArray<SnorlaxArtOutput> Outputs);
 /// <summary>Authenticated six-species Cinnabar normal/shiny sprites, source icons and footprints; no battle executor or audio activation.</summary>
 public sealed class PretCinnabarArt
 {
     public const string Profile="firered-cinnabar-art-v1";
-    public const string GeneratedDirectory="content/generated/cinnabar-art/";
+    public const string GeneratedDirectory="content/generated/sprites/pokemon/cinnabar/";
     public CinnabarArtDocument Document { get; }
     public JsonElement Manifest { get; }
     public ImmutableDictionary<string,byte[]> Files { get; }
@@ -37,7 +36,7 @@ public sealed class PretCinnabarArt
     {
         var root=Path.GetFullPath(projectRoot);var dependency=Path.GetFullPath(dependencyProjectRoot??root);
         var bytes=SafariSource.Read(root,GeneratedDirectory+"manifest.json");using var json=JsonDocument.Parse(bytes);var doc=SafariSource.Parse<CinnabarArtDocument>(bytes);
-        Require(doc.SchemaVersion==1&&doc.Sprites.Length==24&&doc.Icons.Length==6&&doc.Footprints.Length==6&&doc.Dex.Length==6&&!doc.Limits.IsDefaultOrEmpty,"Cinnabar art scope differs.");
+        Require(doc.SchemaVersion==1&&doc.Sprites.Length==24&&doc.Icons.Length==6&&doc.Footprints.Length==6&&doc.Dex.Length==6,"Cinnabar art scope differs.");
         var expected=new Dictionary<int,string>{{38,"NINETALES"},{59,"ARCANINE"},{78,"RAPIDASH"},{91,"CLOYSTER"},{98,"KRABBY"},{99,"KINGLER"}};var files=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var o in doc.Outputs)files.Add(o.Path,SafariSource.Read(root,GeneratedDirectory+o.Path));
         void Pixels(string png,int w,int h)=>Require((files[png]).Length > 0,"Cinnabar pixels differ.");

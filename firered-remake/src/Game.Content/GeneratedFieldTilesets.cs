@@ -17,7 +17,7 @@ internal sealed class GeneratedFieldTilesets
     }
     internal static GeneratedFieldTilesets ForPackage(string directory)
     {
-        string file = Path.Combine(PretRuntimeMapValidation.GeneratedRoot(directory), "field-tilesets.json");
+        string file = Path.Combine(PretRuntimeMapValidation.GeneratedRoot(directory), "maps/tilesets.json");
         return Cache.GetOrAdd(file, path => new(() => new GeneratedFieldTilesets(path))).Value;
     }
     internal FieldMetatileDefinition? Find(string layout, int metatile)

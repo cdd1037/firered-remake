@@ -31,14 +31,14 @@ public partial class CampaignView
     {
         if (_catalog.PewterMachines is not { } catalog) return;
         var machine = PretPewterMachines.LoadDocument(System.IO.File.ReadAllText(System.IO.Path.Combine(_root,
-            "content/generated/pewter-machines/pewter-machines.json")), SharedMachineCatalog.LoadProject(_root));
+            "content/generated/data/machine-learning/pewter.json")), SharedMachineCatalog.LoadProject(_root));
         string firstIcon = document.Items[0].Icon;
         var position = document.Assets.Single(x => x.Id == firstIcon);
         foreach (var icon in machine.Icons)
         {
             string id = icon.Item == MachineRules.TmCaseId ? MachineCaseIcon : MachineIcon;
             
-            _questPocketTextures.Add(id, ItemTexture("pewter-machines", icon));
+            _questPocketTextures.Add(id, ItemTexture("data/machine-learning", icon));
             document = document with { Assets = document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,                position.X,position.Y)) };
         }
         var item = catalog.TmCase;

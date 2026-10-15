@@ -33,7 +33,7 @@ public partial class CampaignView
             var icon=icons.Single(a=>a.Item==item.Item.Id);
             string id="city-service-"+item.Item.SourceItemSymbol;
             
-            _questPocketTextures.Add(id,ItemTexture(icon.Item.Value switch { "pret:ITEM_GOOD_ROD" => "good-rod-service", "pret:ITEM_SUPER_ROD" => "super-rod-service", "pret:ITEM_COIN_CASE" => "game-corner-coins", _ => "city-services" }, icon));
+            _questPocketTextures.Add(id,ItemTexture(icon.Item.Value switch { "pret:ITEM_GOOD_ROD" => "maps/regions/good-rod-service", "pret:ITEM_SUPER_ROD" => "maps/regions/super-rod-service", "pret:ITEM_COIN_CASE" => "data/services/game-corner-coins", _ => "maps/regions/city-services" }, icon));
             document=document with
             {
                 Assets=document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,position.X,position.Y)),

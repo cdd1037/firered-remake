@@ -20,12 +20,11 @@ public sealed class PretVermilionGymFieldMoveArt
     private readonly ImmutableDictionary<string, byte[]> _outputs;
     public ImmutableArray<VermilionGymFieldMoveAsset> Assets { get; }
     public VermilionGymFieldMoveCadence Cadence { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     private PretVermilionGymFieldMoveArt(ImmutableArray<VermilionGymFieldMoveAsset> assets,
-        VermilionGymFieldMoveCadence cadence, ImmutableArray<PretWorldSourceFile> files,
+        VermilionGymFieldMoveCadence cadence,
         ImmutableDictionary<string, byte[]> outputs)
     {
-        Assets = assets; Cadence = cadence; SourceFiles = files; _outputs = outputs;
+        Assets = assets; Cadence = cadence; _outputs = outputs;
     }
     public byte[] ReadPng(string id) => ReadAsset(id);
 
@@ -34,18 +33,13 @@ public sealed class PretVermilionGymFieldMoveArt
 
     public static PretVermilionGymFieldMoveArt Load(string root)
     {
-        using var manifest = JsonDocument.Parse(Read(root,"content/generated/vermilion-gym-field-move-art/manifest.json"));
-        var document = manifest.RootElement;                 var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var row in document.GetProperty("inputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(new(path));
-        }
+        using var manifest = JsonDocument.Parse(Read(root,"content/generated/ui/vermilion-gym-field-move-art/manifest.json"));
+        var document = manifest.RootElement;
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in document.GetProperty("outputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
-            Require(outputs.TryAdd(path, Read(root,"content/generated/vermilion-gym-field-move-art/" + path)), "Duplicate field-move output.");
+            Require(outputs.TryAdd(path, Read(root,"content/generated/ui/vermilion-gym-field-move-art/" + path)), "Duplicate field-move output.");
         }
         var assets = ContentJson.ParseStrict<ImmutableArray<VermilionGymFieldMoveAsset>>(
             document.GetProperty("assets").GetRawText(), ContentJson.CreateOptions());
@@ -63,7 +57,7 @@ public sealed class PretVermilionGymFieldMoveArt
         var cadence = ContentJson.ParseStrict<VermilionGymFieldMoveCadence>(document.GetProperty("cadence").GetRawText(), ContentJson.CreateOptions());
         Require(cadence == new VermilionGymFieldMoveCadence(40,80,15,-16,240,241,80,81,-16,2,40,120,6,80,81,320,80,120,-20,30,-64),
             "Field-move source cadence differs.");
-        return new(assets, cadence, files.ToImmutable(), outputs.ToImmutable());
+        return new(assets, cadence, outputs.ToImmutable());
     }
     private static byte[] Read(string root,string path)
     {

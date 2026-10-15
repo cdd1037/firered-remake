@@ -6,8 +6,7 @@ using Game.Domain.World;
 
 namespace Game.Domain.Encounters;
 
-public sealed record RockSmashEncounterTable(MapId Map, string SourceMapSymbol, string SourceSymbol,
-    int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots, FieldRockSmashSourceRef Source);
+public sealed record RockSmashEncounterTable(MapId Map, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
 public sealed record RockSmashEncounterCandidate(MapId Map, int Slot, SpeciesId Species, byte Level);
 public enum RockSmashEncounterOutcome { NoTable, RateMiss, RepelSuppressed, CandidateReady }
 

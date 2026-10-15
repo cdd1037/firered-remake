@@ -9,17 +9,15 @@ using Game.Domain.Items;
 using Game.Domain.Trainers;
 namespace Game.Content;
 
-public sealed record VictoryRoadTrainerDocument(string SourceCommit,string Profile,bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers,ImmutableArray<CeruleanTrainerBattleDefinition> Battles,JsonElement ResolvedMoves);
-public sealed record VictoryRoadFishingTable(MapId Map, string SourceMapSymbol, string SourceCommit, string SourcePath, string SourceSymbol,
-    int RawEncounterRate, ImmutableArray<OldRodEncounterSlot> Slots,
+public sealed record VictoryRoadTrainerDocument(ImmutableArray<TrainerDefinition> Trainers,ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
+public sealed record VictoryRoadFishingTable(MapId Map, int RawEncounterRate, ImmutableArray<OldRodEncounterSlot> Slots,
     ImmutableDictionary<string, ImmutableArray<int>> RodGroups);
 public sealed record VictoryRoadWildSpeciesSource(SpeciesId Species,int SourceSpeciesId,string Ability1,string Ability2,
     string ItemCommon,string ItemRare,OpeningItemSourceRef Source,OpeningItemSourceRef LearnsetSource);
-public sealed record VictoryRoadWildDocument(string SourceCommit,string Profile,ImmutableArray<EarlyLandEncounterTable> Land,
+public sealed record VictoryRoadWildDocument(ImmutableArray<EarlyLandEncounterTable> Land,
     ImmutableArray<WaterEncounterTable> Water,ImmutableArray<VictoryRoadFishingTable> Fishing,
     ImmutableArray<VictoryRoadInitialMoves> InitialMoves,ImmutableArray<VictoryRoadWildSpeciesSource> Species,
-    ImmutableArray<SpeciesId> OwnedSpeciesAdded,ImmutableArray<string> Limitations);
+    ImmutableArray<SpeciesId> OwnedSpeciesAdded);
 
 /// <summary>Authenticated Victory Road rules without new ownership or an Application profile.</summary>
 public static class PretVictoryRoadRules
@@ -27,19 +25,18 @@ public static class PretVictoryRoadRules
     public const string SourceCommit="037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public static VictoryRoadTrainerDocument LoadTrainerDocument(string root)
     {
-        var d=Parse<VictoryRoadTrainerDocument>(Read(root,"content/generated/victory-road-rules/trainers.json"));
+        var d=ContentJson.ParseStrict<VictoryRoadTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/data/regions/victory-road/trainers.json")), SharedTrainerCatalog.Options(root));
         _=Catalog(d);return d;
     }
     public static VictoryRoadTrainerCatalog LoadTrainers(string root)=>Catalog(LoadTrainerDocument(root));
     private static VictoryRoadTrainerCatalog Catalog(VictoryRoadTrainerDocument d)
     {
-        var c=new VictoryRoadTrainerCatalog(d.SourceCommit,d.Profile,d.CompleteSourceRoster,
-            d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.ScriptEntry,StringComparer.Ordinal));
+        var c=new VictoryRoadTrainerCatalog(d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.ScriptEntry,StringComparer.Ordinal));
         VictoryRoadTrainerPartyFactory.ValidateCatalog(c);return c;
     }
     public static VictoryRoadWildDocument LoadWild(string root)
     {
-        var d=Parse<VictoryRoadWildDocument>(Read(root,"content/generated/victory-road-rules/wild.json"));
+        var d=Parse<VictoryRoadWildDocument>(Read(root,"content/generated/data/regions/victory-road/wild.json"));
         Need(d.Land.Length==4 && d.Water.Length==1 &&
             d.Fishing.Length==1 && d.Fishing[0].Slots.Length==10 && d.InitialMoves.Length==122 && d.Species.Length==19 &&
             d.OwnedSpeciesAdded.IsEmpty,"Victory Road wild source scope differs.");
@@ -82,8 +79,8 @@ public static class PretVictoryRoadRules
     }
     private static void Need(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
     private sealed record Artifact(string Path);
-    private sealed record SourceLock(string SourceCommit, string Profile, ImmutableArray<Artifact> Files);
+    private sealed record SourceLock(ImmutableArray<Artifact> Files);
     private sealed record Input(string Path);
-    private sealed record InputDocument(string SourceCommit, ImmutableArray<Input> Files, ImmutableArray<Artifact> PredecessorInputs,
+    private sealed record InputDocument(ImmutableArray<Input> Files, ImmutableArray<Artifact> PredecessorInputs,
         ImmutableArray<Artifact> RegionInputs);
 }

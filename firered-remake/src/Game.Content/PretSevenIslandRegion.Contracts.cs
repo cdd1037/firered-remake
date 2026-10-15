@@ -8,17 +8,16 @@ namespace Game.Content;
 
 public sealed partial class PretSevenIslandRegion
 {
-    private static SevenIslandFieldData LoadField(SilphSourcePackage source, ImmutableDictionary<string, int> constants)
+    private static SevenIslandFieldData LoadField(JsonElement catalog, JsonElement contract, ImmutableDictionary<string, int> constants)
     {
-        var contract = source.Document("contracts.json");
         var pickups = ImmutableArray.CreateBuilder<SevenIslandPickup>();
         foreach (string kind in new[] { "itemPickups","hiddenItems" })
         foreach (var row in contract.GetProperty(kind).EnumerateArray())
         {
             bool hidden = kind == "hiddenItems", renewable = row.GetProperty("renewable").GetBoolean();
             var e = row.GetProperty("event"); string map = row.GetProperty("map").GetString()!, item = row.GetProperty("item").GetString()!, flag = e.GetProperty("flag").GetString()!;
-            var catalog = source.Document("catalog.json").GetProperty("maps").EnumerateArray().Single(m => m.GetProperty("sourceMapSymbol").GetString() == map);
-            string path = "data/maps/" + catalog.GetProperty("sourceName").GetString() + "/map.json";
+            var mapRow = catalog.GetProperty("maps").EnumerateArray().Single(m => m.GetProperty("sourceMapSymbol").GetString() == map);
+            string path = "data/maps/" + mapRow.GetProperty("sourceName").GetString() + "/map.json";
             pickups.Add(new(MapIdFromSourceSymbol(map), map, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
                 new("pret:" + item), item, constants[item], row.GetProperty("quantity").GetInt32(), flag, constants[flag], hidden,
                 hidden && e.GetProperty("underfoot").GetBoolean(), hidden ? null : row.GetProperty("localId").GetInt32(), hidden ? null : e.GetProperty("script").GetString(),

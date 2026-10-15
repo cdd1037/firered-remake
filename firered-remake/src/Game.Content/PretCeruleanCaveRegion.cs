@@ -12,7 +12,6 @@ public sealed class PretCeruleanCaveRegion
     public const string ResourceId = "firered-cerulean-cave-resources-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
@@ -26,8 +25,7 @@ public sealed class PretCeruleanCaveRegion
     private PretCeruleanCaveRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = maps; Constants = constants;
-        SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty; GeneratedDirectory = source.Directory;
+        NewMaps = maps; Constants = constants; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
         Encounters = source.Document("encounters.json"); Items = source.Document("items.json");
@@ -45,7 +43,7 @@ public sealed class PretCeruleanCaveRegion
 
     public static PretCeruleanCaveRegion Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"cerulean-cave");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/cerulean-cave");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Cerulean Cave catalog source identity differs.");
@@ -55,20 +53,18 @@ public sealed class PretCeruleanCaveRegion
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" ,
+            Need(path == relative ,
                 "Cerulean Cave compact resource binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 40 && runtime.Height == 23,
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 40 && runtime.Height == 23,
                 "Cerulean Cave map identity/dimensions differ.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata,
                 PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretOverworldTextures.Resolve(source.Directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
+                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Keys.ToHashSet().SetEquals(new[] { new MapId("map.cerulean-cave-1f"),new MapId("map.cerulean-cave-2f"),new MapId("map.cerulean-cave-b1f") }) , "Cerulean Cave map/warp collection differs.");
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         return new(source, maps.ToImmutable(), constants);

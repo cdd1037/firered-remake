@@ -21,7 +21,7 @@ public static class PretPewterTrainerArt
             byte[] bytes = File.ReadAllBytes(path);
             return bytes;
         }
-        var manifest = Read("content/generated/pewter-trainer-art/pewter-trainer-art.json");
+        var manifest = Read("content/generated/sprites/trainers/pewter/pewter-trainer-art.json");
         using var json = JsonDocument.Parse(manifest);
         var document = json.RootElement;
         if (document.GetProperty("assets").GetArrayLength() != 2)
@@ -33,7 +33,7 @@ public static class PretPewterTrainerArt
             if (id is not ("camper-front" or "brock-front") || asset.GetProperty("texturePath").GetString() != id + ".png" ||
                 asset.GetProperty("width").GetInt32() != 64 || asset.GetProperty("height").GetInt32() != 64 || asset.GetProperty("sourceFrame").GetInt32() != 0)
                 throw new InvalidDataException("Trainer portrait identity differs.");
-            var pngBytes = Read("content/generated/pewter-trainer-art/" + id + ".png");
+            var pngBytes = Read("content/generated/sprites/trainers/pewter/" + id + ".png");
             if (pngBytes.Length == 0) throw new InvalidDataException("Trainer portrait size differs.");
             result.Add(new(id, asset.GetProperty("x").GetInt32(), asset.GetProperty("y").GetInt32(), pngBytes));
         }

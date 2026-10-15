@@ -15,7 +15,6 @@ public sealed class PretTrainerCard
         "portrait-red","portrait-leaf","badge-1","badge-2","badge-3","badge-4","badge-5","badge-6","badge-7","badge-8"];
     private readonly ImmutableDictionary<string, byte[]> outputBytes;
     public ImmutableArray<TrainerCardAsset> Assets { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public TrainerCardLayout Layout { get; }
     public TrainerCardTexts Texts { get; }
     public TrainerCardRules Rules { get; }
@@ -26,9 +25,9 @@ public sealed class PretTrainerCard
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory,"manifest.json");
 
     private PretTrainerCard(string directory, ImmutableArray<TrainerCardAsset> assets,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement document, ImmutableDictionary<string,byte[]> outputs)
+        JsonElement document, ImmutableDictionary<string,byte[]> outputs)
     {
-        GeneratedDirectory=directory; Assets=assets; SourceFiles=files; TrainerCard=document; outputBytes=outputs;
+        GeneratedDirectory=directory; Assets=assets; TrainerCard=document; outputBytes=outputs;
         var options=ContentJson.CreateOptions();
         Layout=ContentJson.ParseStrict<TrainerCardLayout>(document.GetProperty("layout").GetRawText(),options);
         Texts=ContentJson.ParseStrict<TrainerCardTexts>(document.GetProperty("texts").GetRawText(),options);
@@ -39,7 +38,7 @@ public sealed class PretTrainerCard
     public static PretTrainerCard Load(string projectRoot)
     {
         var project=Path.GetFullPath(projectRoot);
-        var directory=Path.Combine(project,"content/generated/trainer-card");
+        var directory=Path.Combine(project,"content/generated/ui/trainer-card");
         byte[] ReadPinned(string root,string path)
         {
             var bytes=File.ReadAllBytes(SafeFile(root,path));
@@ -47,11 +46,9 @@ public sealed class PretTrainerCard
         }
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m=manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==14 &&
-            !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
+        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==14,
             "Trainer Card generated manifest identity differs.");
-        var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var inventory=files.ToImmutable();
+
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var entry in m.GetProperty("outputs").EnumerateArray())
         {
@@ -72,7 +69,7 @@ public sealed class PretTrainerCard
                 "Trainer Card asset metadata differs.");
 
         }
-        var result=new PretTrainerCard(directory,assets,inventory,a.Clone(),outputs.ToImmutable());
+        var result=new PretTrainerCard(directory,assets,a.Clone(),outputs.ToImmutable());
         Require(result.Layout.LogicalWidth==240 && result.Layout.LogicalHeight==160 && result.Layout.FontId==2 &&
             result.Layout.Badges.Length==8 && result.Rules.StarCount==0 && !result.Rules.PlayTimePersisted &&
             !result.Rules.GameStatisticsPersisted,"Trainer Card bounded display profile differs.");
@@ -121,8 +118,7 @@ public sealed class PretTrainerCard
 public sealed record TrainerCardPoint(int X,int Y);
 public sealed record TrainerCardRect(int X,int Y,int Width,int Height);
 public sealed record TrainerCardBadge(int Index,string Flag,string AssetId,int X,int Y);
-public sealed record TrainerCardAsset(string Id, string TexturePath, int Width, int Height, int X, int Y,
-    ImmutableArray<string> SourcePaths);
+public sealed record TrainerCardAsset(string Id, string TexturePath, int Width, int Height, int X, int Y);
 public sealed record TrainerCardTexts(string Name,string Id,string Money,string Currency,string Pokedex,string Time,
     string Colon,string HallOfFame,string LinkBattles,string Trades,string UnionRoom,string BerryCrush);
 public sealed record TrainerCardLayout(int LogicalWidth,int LogicalHeight,int FontId,int TextColor,int ShadowColor,

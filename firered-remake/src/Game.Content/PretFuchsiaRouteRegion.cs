@@ -17,7 +17,6 @@ public sealed class PretFuchsiaRouteRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps => SourceMaps;
     public ImmutableArray<MapId> ReusedMapIds => [new("map.route-12")];
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
 
     public JsonElement ObjectTemplates { get; }
@@ -28,11 +27,10 @@ public sealed class PretFuchsiaRouteRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretFuchsiaRouteRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableDictionary<string, int> constants, ImmutableArray<PretWorldSourceFile> sources,
-        JsonElement catalog, JsonElement objects, JsonElement npcs,
+        ImmutableDictionary<string, int> constants, JsonElement catalog, JsonElement objects, JsonElement npcs,
         JsonElement availability, ImmutableDictionary<MapId, JsonElement> reused)
     {
-        GeneratedDirectory = directory; SourceMaps = maps; Constants = constants; SourceFiles = sources;
+        GeneratedDirectory = directory; SourceMaps = maps; Constants = constants;
         Catalog = catalog; ObjectTemplates = objects;
         NpcSources = npcs; Availability = availability; ReusedEvents = reused;
     }
@@ -97,7 +95,7 @@ public sealed class PretFuchsiaRouteRegion
     public static PretFuchsiaRouteRegion Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/fuchsia-route-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/fuchsia-route");
 
         byte[] Pinned(string root,string path)
         {
@@ -106,7 +104,7 @@ public sealed class PretFuchsiaRouteRegion
         }
         using var manifestDocument = JsonDocument.Parse(Pinned(directory,"manifest.json"));
         var manifest = manifestDocument.RootElement;
-        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1 && manifest.GetProperty("unresolvedLabelCount").GetInt32() == 0,
+        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1,
             "Fuchsia route manifest scope differs.");
         var outputEntries = manifest.GetProperty("outputs").EnumerateArray().ToDictionary(x => x.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
@@ -118,22 +116,18 @@ public sealed class PretFuchsiaRouteRegion
         }
         JsonElement Document(string path) { using var doc = JsonDocument.Parse(outputs[path]); return doc.RootElement.Clone(); }
         var catalog = Document("fuchsia-route-region-catalog.json");
-        Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Fuchsia source inventory/availability differs.");
 
-        var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var files = sources.ToImmutable(); var byPath = files.ToDictionary(s => s.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Six source maps; unchanged Route12 reuse; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
-        Need(runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion , "Fuchsia runtime converter differs.");
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             var stableId = spec.GetProperty("stableId").GetString()!;
-            var relative = spec.GetProperty("directory").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(outputs[relative + "/runtime-map.json"], stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol does not match its ID.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            var relative = spec.GetProperty("mapPath").GetString()!;
+            var runtime = PretRuntimeMapData.Decode(outputs[relative], stableId, MapIdFromSourceSymbol);
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol does not match its ID.");
+            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             maps.Add(new(stableId), map);
         }
         foreach (var map in maps.Values)
@@ -152,7 +146,7 @@ public sealed class PretFuchsiaRouteRegion
         }
         Need(reused.Count == 1 && !maps.Keys.Any(reused.ContainsKey), "Reused maps must not be regenerated.");
         var availability = Document("availability.json");
-        Need(!availability.GetProperty("runtimeIntegrated").GetBoolean() && !availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
+        Need(!availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
         var center = maps[CenterMapId];
         var nurse = center.Events.GetProperty("object_events")[0];
         Need(nurse.GetProperty("local_id").GetString() == "LOCALID_FUCHSIA_NURSE" && nurse.GetProperty("x").GetInt32() == 7 &&
@@ -176,7 +170,7 @@ public sealed class PretFuchsiaRouteRegion
             dynamic[0].GetProperty("whenSet").GetString() == "OBJ_EVENT_GFX_OMANYTE" && dynamic[0].GetProperty("whenUnset").GetString() == "OBJ_EVENT_GFX_KABUTO" &&
             fuchsia.Events.GetProperty("object_events")[8].GetProperty("graphics_id").GetString() == "OBJ_EVENT_GFX_VAR_0",
             "Fuchsia fossil graphics branch differs.");
-        return new(directory, maps.ToImmutable(), constants, files, catalog,
+        return new(directory, maps.ToImmutable(), constants, catalog,
             Document("objects.json"), npcs, availability, reused.ToImmutable());
     }
     private static void Need(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }

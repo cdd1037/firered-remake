@@ -151,27 +151,11 @@ public abstract class FieldEffectFixture
     private protected DamageResult Damage(SourceBattleFrame frame, BattlerSlot actor, BattlerSlot target, bool critical, int percent)
     {
         var move = catalog.Moves[frame.Get(actor).Body!.Pokemon.Moves[0].Move];
-        var method = typeof(SourceBattleKernel).Assembly.GetType("Game.Domain.WildBattle.ForestBattleDamage")!.GetMethod("Calculate", BindingFlags.Static | BindingFlags.NonPublic)!;
-        var values = method.GetParameters().Select(p => p.DefaultValue).ToArray();
-        var named = new Dictionary<string, object?>
-        {
-            ["catalog"] = catalog,
-            ["user"] = frame.Get(actor).Body,
-            ["target"] = frame.Get(target).Body,
-            ["moveId"] = move.Id,
-            ["critical"] = critical,
-            ["randomPercent"] = percent,
-            ["sourceDefinition"] = move,
-            ["rockTunnelRules"] = true,
-            ["mtMoonRules"] = true,
-            ["reflect"] = frame.Sides[(int)target.Side].ReflectTurnsRemaining > 0,
-            ["lightScreen"] = frame.Sides[(int)target.Side].LightScreenTurnsRemaining > 0,
-            ["sourceDoubleBattle"] = frame.Layout == SourceBattleLayout.PresetDoubles,
-            ["sourceDefenderCount"] = SourceMoveTargeting.CountSourcePresentDefenders(frame, target)
-        };
-        foreach (var parameter in method.GetParameters())
-            if (named.TryGetValue(parameter.Name!, out var value))
-                values[parameter.Position] = value;
-        return (DamageResult)method.Invoke(null, values)!;
+        return SourceBattleDamage.Calculate(catalog, frame.Get(actor).Body!, frame.Get(target).Body!, move,
+            critical, percent,
+            reflect: frame.Sides[(int)target.Side].ReflectTurnsRemaining > 0,
+            lightScreen: frame.Sides[(int)target.Side].LightScreenTurnsRemaining > 0,
+            sourceDoubleBattle: frame.Layout == SourceBattleLayout.PresetDoubles,
+            sourceDefenderCount: SourceMoveTargeting.CountSourcePresentDefenders(frame, target));
     }
 }

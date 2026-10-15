@@ -18,7 +18,7 @@ public sealed record PretEarlyPickups(ImmutableArray<PretEarlyPickupDefinition> 
 
     public static PretEarlyPickups Load(string projectRoot)
     {
-        using var input = File.OpenRead(Path.Combine(projectRoot, "content/generated/early-pickups/early-pickups.json"));
+        using var input = File.OpenRead(Path.Combine(projectRoot, "content/generated/data/items/early-pickups.json"));
         var pickups = JsonSerializer.Deserialize<ImmutableArray<PretEarlyPickupDefinition>>(input, ContentJson.CreateOptions());
         if (pickups.IsDefaultOrEmpty) throw new InvalidDataException("Pickup definitions are missing.");
         return new(pickups);

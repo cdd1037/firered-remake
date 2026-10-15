@@ -257,7 +257,7 @@ public sealed partial class CampaignSession
         var course=Enum.Parse<TrainerTowerChallengeKind>(roster.Course);
         if(settled.PerformPickup)
         {
-            var pickup=VermilionPickupRules.ApplySafariOwned(SafariOrdinaryOwnership!,state.Party,frame.Rng,WildBattleOutcome.Won);
+            var pickup = VermilionPickupRules.Apply(_binding.Ownership, state.Party, frame.Rng, WildBattleOutcome.Won);
             state=state with{Party=pickup.Party,World=state.World with{Rng=pickup.Rng}};frame=frame with{Rng=pickup.Rng};
             if(frame.Layout==SourceBattleLayout.Singles)frame=SyncSourceTrainerPickup(frame,pickup.Party);
         }

@@ -51,7 +51,7 @@ public sealed partial class CampaignSession
     public SpeciesId? FieldEvolutionPartyTarget(PartyPokemon owned, ItemId item)
     {
         if (!FieldEvolutionSupported(item) || owned.IsEgg) return null;
-        var target = ItemEvolutionRules.PartyMenuTarget(_content.PokemonContent!, _binding.Ownership,
+        var target = ItemEvolutionRules.PartyMenuTarget(_content.PokemonContent!,
             owned, item.Value["pret:".Length..]);
         return target is { } species && (NationalDexEnabledIn(State) ||
             BattlePokemon.Species[species].SourceSpeciesId <= 151) ? target : null;
@@ -79,11 +79,11 @@ public sealed partial class CampaignSession
         if (command.TargetInstanceId is { } targetInstance && targetInstance != owned.InstanceId)
             return No("evolution_target_changed");
         var stone = evolutionItem.Value["pret:".Length..];
-        var proposal = owned.IsEgg ? null : ItemEvolutionRules.Eligibility(_content.PokemonContent!, _binding.Ownership, owned, stone);
+        var proposal = owned.IsEgg ? null : ItemEvolutionRules.Eligibility(_content.PokemonContent!, owned, stone);
         if (proposal is null || !NationalDexEnabledIn(state) && BattlePokemon.Species[proposal.TargetSpecies].SourceSpeciesId > 151)
             return new(CommandStatus.Accepted, state with { ItemMenu = menu with
                 { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = "bag" } });
-        var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, _binding.Ownership, owned, proposal);
+        var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal);
         int target = evolved.Pokemon.Pokemon.SourceSpeciesId;
         var pages = ImmutableArray.CreateBuilder<string>();
         pages.Add($"Congratulations! Your {owned.Nickname}\nevolved into {_content.PokemonContent!.SpeciesNames[target]}!");
@@ -323,7 +323,7 @@ public sealed partial class CampaignSession
                         ? entry.Level != entry.LevelBeforeBattle + 1 || !previous.Evolutions.Any(e =>
                             e.Target == target.Id && ValidNormalEvolutionTrigger(e, entry))
                         : entry.NormalTrigger is not null || entry.Level != entry.LevelBeforeBattle || !(entry.Item is { } stoneItem && stoneItem.StartsWith("pret:", StringComparison.Ordinal) && ItemEvolutionRules.SourceItemId(stoneItem[5..]) is not null &&
-                            ItemEvolutionRules.SourceEvolution(_content.PokemonContent!, _binding.Ownership, previous.Id,
+                            ItemEvolutionRules.SourceEvolution(_content.PokemonContent!, previous.Id,
                                 stoneItem[5..])?.Target == target.Id))
                     : entry.Level <= entry.LevelBeforeBattle || !previous.Evolutions.Any(e =>
                         e.Target == target.Id && ValidNormalEvolutionTrigger(e, entry))))

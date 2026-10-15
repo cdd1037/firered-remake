@@ -7,10 +7,8 @@ namespace Game.Domain.Encounters;
 public static class MemorialPillarEncounterTables
 {
     public static MapId Map { get; } = new("map.five-island-memorial-pillar");
-    public const string SourceMapSymbol = "MAP_FIVE_ISLAND_MEMORIAL_PILLAR";
-    public const string SourceSymbol = "sFiveIslandMemorialPillar_FireRed";
     public static ImmutableArray<EarlyLandEncounterTable> Land { get; } = [
-        new(Map, EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, SourceSymbol, 21, [
+        new(Map, 21, [
             new(0, new("pret:SPECIES_HOPPIP"), 10, 10, 20),
             new(1, new("pret:SPECIES_HOPPIP"), 12, 12, 20),
             new(2, new("pret:SPECIES_HOPPIP"), 8, 8, 10),
@@ -26,7 +24,7 @@ public static class MemorialPillarEncounterTables
         ])
     ];
     public static ImmutableArray<WaterEncounterTable> Water { get; } = [
-        new(Map, SourceMapSymbol, EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, SourceSymbol, 2, [
+        new(Map, 2, [
             new(0, new("pret:SPECIES_TENTACOOL"), 5, 35, 60),
             new(1, new("pret:SPECIES_HOPPIP"), 5, 15, 30),
             new(2, new("pret:SPECIES_TENTACOOL"), 35, 40, 5),
@@ -35,13 +33,13 @@ public static class MemorialPillarEncounterTables
         ])
     ];
     public static ImmutableArray<OldRodEncounterTable> OldRod { get; } = [
-        new(Map, EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, SourceSymbol, 20, [
+        new(Map, 20, [
             new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70),
             new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30),
         ])
     ];
     public static ImmutableArray<OldRodEncounterTable> GoodRod { get; } = [
-        new(Map, EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, SourceSymbol, 20, [
+        new(Map, 20, [
             new(2, new("pret:SPECIES_HORSEA"), 5, 15, 60),
             new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20),
             new(4, new("pret:SPECIES_HORSEA"), 5, 15, 20),

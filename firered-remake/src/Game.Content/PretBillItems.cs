@@ -11,10 +11,9 @@ public sealed record PretBillSourceItem(MachineItem Metadata, ImmutableArray<int
 public sealed record PretBillDexView(SpeciesId Species, int SourceSpeciesId, int NationalDex, string Name, int X, int Y, int Width, int Height,
     bool MarksSeen, bool MarksOwned, string PngPath, OpeningItemSourceRef Source,
     OpeningItemSourceRef PaletteSource, OpeningItemSourceRef ScriptSource, OpeningItemSourceRef NameSource);
-public sealed record PretBillItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record PretBillItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Rewards,
-    ImmutableArray<PretBillDexView> DexViews, ImmutableArray<string> Limitations);
+    ImmutableArray<PretBillDexView> DexViews);
 
 /// <summary>Authenticates northern-route items, exact pickups and Bill's four seen-only species pictures.</summary>
 public static class PretBillItems
@@ -28,8 +27,7 @@ public static class PretBillItems
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretBillItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 9 && document.Icons.Length == 9 &&
-            document.Pickups.Length == 7 && document.Rewards.Length == 3 && document.DexViews.Length == 4 &&
-            !document.Limitations.IsDefaultOrEmpty,
+            document.Pickups.Length == 7 && document.Rewards.Length == 3 && document.DexViews.Length == 4,
             "Bill item scope differs.");
         string[] items = ["NUGGET", "FAME_CHECKER", "SS_TICKET", "ELIXIR", "ETHER",
             "PECHA_BERRY", "ORAN_BERRY", "BLUK_BERRY", "BERRY_POUCH"];
@@ -65,11 +63,11 @@ public static class PretBillItems
 
     public static PretBillItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/bill-items/bill-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/items/bill/bill-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         foreach (var icon in document.Icons)
             _ = PretPewterMachines.TexturePage(icon, Read(root, icon.PngPath));
         foreach (var view in document.DexViews)
-            _ = DexPng(view, Read(root, "content/generated/bill-items/" + view.PngPath));
+            _ = DexPng(view, Read(root, "content/generated/data/items/bill/" + view.PngPath));
         return document;
     }
 

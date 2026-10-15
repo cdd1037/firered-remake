@@ -7,8 +7,6 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record CanonicalPokemonInput(string Path);
-public sealed record CanonicalPokemonArtifact(string Path);
 public sealed record CanonicalSourceEvolution(string Method, int SourceMethodId, string Parameter,
     int ParameterValue, SpeciesId Target);
 public sealed record CanonicalSpeciesMetadata(SpeciesId Id, int NationalDexNumber, int HeightDecimeters,
@@ -29,7 +27,7 @@ public sealed record CanonicalPokemonDocument(int SchemaVersion,
 public sealed class PretCanonicalPokemonCatalog
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string CatalogRelativePath = "content/generated/canonical-pokemon/catalog.json";
+    public const string CatalogRelativePath = "content/generated/data/pokemon/canonical/catalog.json";
 
     public CanonicalPokemonDocument Document { get; }
     public PokemonCatalog Catalog { get; }

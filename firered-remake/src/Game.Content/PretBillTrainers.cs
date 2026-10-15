@@ -4,9 +4,7 @@ using System.Text.Json;
 using Game.Domain.Trainers;
 namespace Game.Content;
 
-public sealed record BillTrainerDocument(int SchemaVersion, string Profile, string SourceCommit, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
-    JsonElement ResolvedMoves, ImmutableArray<string> Limitations);
+public sealed record BillTrainerDocument(int SchemaVersion, ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
 /// <summary>Loads trainer tables and their initial battle scripts.</summary>
 public static class PretBillTrainers
@@ -18,9 +16,9 @@ public static class PretBillTrainers
             var bytes=File.ReadAllBytes(SafeFile(root,path));
             return bytes;
         }
-        var doc=ContentJson.ParseStrict<BillTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/bill-trainers/trainers.json")),ContentJson.CreateOptions());
-        if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("Bill trainer document identity differs.");
-        var catalog=new BillTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
+        var doc=ContentJson.ParseStrict<BillTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/bill.json")),SharedTrainerCatalog.Options(root));
+        if(doc.SchemaVersion!=1) throw new InvalidDataException("Bill trainer document identity differs.");
+        var catalog=new BillTrainerCatalog(doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         BillTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
     }
     private static string SafeFile(string root,string relative)

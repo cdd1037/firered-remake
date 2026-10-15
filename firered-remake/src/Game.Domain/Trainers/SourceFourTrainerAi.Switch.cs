@@ -33,9 +33,9 @@ public static partial class SourceFourTrainerAi
             preparedSwitches, staleCurrentMove);
         if (slots.Reserved(actor) is not null) return Fail("source_four_trainer_switch_already_chosen");
         var user = frame.Get(actor).Body!;
-        var result = CeruleanTrainerActionAi.DecideSwitch(catalog,
+        var result = CeruleanTrainerActionAi.DecideSwitch(
             new(new("source:four-trainer"), slots.ActualParty, frame.Get(actor).Member!.Value.Index,
-                user, frame.Get(target).Body!, user.LastLandedMove), frame.Rng, fuchsiaRules: true, slots: slots);
+                user, frame.Get(target).Body!, user.LastLandedMove), frame.Rng, slots: slots);
         return result.Succeeded ? new(result.PartyIndex, result.Rng, result.Trace, [], null) : Fail(result.Diagnostic!.Code);
     }
 
@@ -72,10 +72,9 @@ public static partial class SourceFourTrainerAi
             if (frame.IsSourceAbsent(target)) target = target.Partner;
             if (frame.Get(target).Body is null || frame.IsSourceAbsent(target)) return Fail("source_four_trainer_replacement_no_target");
             var context = slots.WithTarget(target, rng);
-            var result = CeruleanTrainerAiReplacement.Choose(slots.Catalog,
+            var result = CeruleanTrainerAiReplacement.Choose(
                 new(context.ActualParty, frame.Get(actor).Member!.Value.Index, frame.Get(actor).Body!,
-                    frame.Get(target).Body!, slots.StaleCurrentMove), fuchsiaRules: true,
-                rain: frame.Field.RainTurnsRemaining > 0, reflect: frame.Sides[(int)target.Side].ReflectTurnsRemaining > 0,
+                    frame.Get(target).Body!, slots.StaleCurrentMove), rain: frame.Field.RainTurnsRemaining > 0, reflect: frame.Sides[(int)target.Side].ReflectTurnsRemaining > 0,
                 slots: context);
             if (!result.Succeeded) return Fail(result.Diagnostic!.Code);
             int? chosen = result.PartyIndex;

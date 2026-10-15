@@ -8,8 +8,6 @@ namespace Game.Domain.Trainers;
 /// <summary>Exact original Route19/20 singles and Lia/Luc doubles through the existing trainer construction kernel.</summary>
 public static partial class SeafoamTrainerPartyFactory
 {
-    public const string SourceCommit = TrainerPartyFactory.SourceCommit;
-    public const string RulesVersion = "firered-seafoam-trainers-v1";
     public static ImmutableArray<TrainerId> AllTrainers => TrainerIds.OrderBy(k => k.Value, StringComparer.Ordinal).ToImmutableArray();
     public static ImmutableArray<TrainerId> SupportedTrainers => AllTrainers;
     public static int BasePrize(SeafoamTrainerCatalog trainers, TrainerId id)
@@ -32,15 +30,7 @@ public static partial class SeafoamTrainerPartyFactory
     public static void ValidateCatalog(SeafoamTrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster ||
-            catalog.Trainers is null || catalog.BattlesByScript is null || catalog.Trainers.Count != 21 || catalog.BattlesByScript.Count != 22)
-            throw new NotSupportedException("seafoam_trainer_scope");
-        foreach (var id in TrainerIds)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Party.IsDefault ||
-                trainer.Party.Any(p => p is null || p.CustomMoves.IsDefault || p.EncodedSpeciesName.IsDefault) ||
-                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefault || trainer.AiFlagSymbols.IsDefault) throw new NotSupportedException("seafoam_trainer_source");
-        foreach (var script in BattleScripts)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script) throw new NotSupportedException("seafoam_trainer_battle_source");
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.BattlesByScript.Values, ValidateBattle);
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {

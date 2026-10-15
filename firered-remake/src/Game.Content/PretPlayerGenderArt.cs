@@ -14,8 +14,8 @@ public sealed record PlayerGenderArtAsset(int Gender, string GenderSymbol, strin
     string PaletteTag, string PaletteSlot, ImmutableArray<int> PaletteRgb555, int TransparentIndex,
     ImmutableDictionary<string, PlayerGenderArtDirection> Directions, PlayerGenderArtPoint TileCenterAnchor,
     PlayerGenderArtPoint DrawOffsetFromTileOrigin, int WalkFrameDurationSourceFrames, int SourceTimingHz);
-public sealed record PlayerGenderArtDocument(int SchemaVersion, string Profile, string SourceCommit, string PaletteExpansion,
-    ImmutableArray<PlayerGenderArtAsset> Assets, ImmutableArray<string> Limitations);
+public sealed record PlayerGenderArtDocument(int SchemaVersion, string PaletteExpansion,
+    ImmutableArray<PlayerGenderArtAsset> Assets);
 
 /// <summary>Authenticated source Red/Green standing and walking art. Gender is the canonical MALE=0/FEMALE=1.</summary>
 public sealed class PretPlayerGenderArt
@@ -26,13 +26,12 @@ public sealed class PretPlayerGenderArt
     private readonly ImmutableDictionary<int, byte[]> textures;
     public PlayerGenderArtDocument Document { get; }
     public ImmutableArray<PlayerGenderArtAsset> Assets => Document.Assets;
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public string GeneratedDirectory { get; }
 
     private PretPlayerGenderArt(string directory, PlayerGenderArtDocument document,
-        ImmutableArray<PretWorldSourceFile> sources, ImmutableDictionary<int, byte[]> textureBytes)
+        ImmutableDictionary<int, byte[]> textureBytes)
     {
-        GeneratedDirectory = directory; Document = document; SourceFiles = sources;
+        GeneratedDirectory = directory; Document = document;
         textures = textureBytes;
     }
 
@@ -40,13 +39,12 @@ public sealed class PretPlayerGenderArt
     public static PretPlayerGenderArt Load(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(root, "content/generated/player-gender-art");
+        var directory = Path.Combine(root, "content/generated/ui/player-gender-art");
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1             && !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1,
             "Player art manifest identity differs.");
-        var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var sourceFiles = sources.ToImmutable();
+
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var entry in m.GetProperty("outputs").EnumerateArray())
         {
@@ -58,8 +56,7 @@ public sealed class PretPlayerGenderArt
 , "Player art output inventory differs.");
         var document = ContentJson.ParseStrict<PlayerGenderArtDocument>(Utf8.GetString(outputs["player-gender-art.json"]), ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 && document.PaletteExpansion == "floor(rgb5 * 255 / 31)"
-            && document.Assets.Length == 2 && document.Assets.Select(a => a.Gender).Order().SequenceEqual([0, 1])
-            && !document.Limitations.IsDefaultOrEmpty, "Player art document differs.");
+            && document.Assets.Length == 2 && document.Assets.Select(a => a.Gender).Order().SequenceEqual([0, 1]), "Player art document differs.");
         var textures = ImmutableDictionary.CreateBuilder<int, byte[]>();
         foreach (var asset in document.Assets)
         {
@@ -67,7 +64,7 @@ public sealed class PretPlayerGenderArt
             var bytes = outputs[asset.TexturePath];
             textures.Add(asset.Gender, bytes);
         }
-        return new(directory, document, sourceFiles, textures.ToImmutable());
+        return new(directory, document, textures.ToImmutable());
     }
 
     public PlayerGenderArtAsset Sprite(int gender)

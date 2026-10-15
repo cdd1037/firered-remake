@@ -21,7 +21,6 @@ public sealed class PretSafariRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps => SourceMaps;
     public ImmutableArray<MapId> ReusedMapIds => [new("map.fuchsia-city")];
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
 
     public JsonElement ObjectTemplates { get; }
@@ -34,11 +33,10 @@ public sealed class PretSafariRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretSafariRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableDictionary<string, int> constants, ImmutableArray<PretWorldSourceFile> sources,
-        JsonElement catalog, JsonElement objects, JsonElement npcs,
+        ImmutableDictionary<string, int> constants, JsonElement catalog, JsonElement objects, JsonElement npcs,
         JsonElement availability, ImmutableDictionary<MapId, JsonElement> reused, JsonElement contracts, JsonElement encounters)
     {
-        GeneratedDirectory = directory; SourceMaps = maps; Constants = constants; SourceFiles = sources;
+        GeneratedDirectory = directory; SourceMaps = maps; Constants = constants;
         Catalog = catalog; ObjectTemplates = objects;
         NpcSources = npcs; Availability = availability; ReusedEvents = reused;
         Contracts = contracts; EncounterInventory = encounters;
@@ -99,7 +97,7 @@ public sealed class PretSafariRegion
     public static PretSafariRegion Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/safari-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/safari");
 
         byte[] Pinned(string root,string path)
         {
@@ -108,7 +106,7 @@ public sealed class PretSafariRegion
         }
         using var manifestDocument = JsonDocument.Parse(Pinned(directory,"manifest.json"));
         var manifest = manifestDocument.RootElement;
-        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1 && manifest.GetProperty("unresolvedLabelCount").GetInt32() == 0,
+        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1,
             "Safari region manifest scope differs.");
         var outputEntries = manifest.GetProperty("outputs").EnumerateArray().ToDictionary(x => x.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
@@ -120,27 +118,22 @@ public sealed class PretSafariRegion
         }
         JsonElement Document(string path) { using var doc = JsonDocument.Parse(outputs[path]); return doc.RootElement.Clone(); }
         var catalog = Document("safari-region-catalog.json");
-        Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Safari source inventory/availability differs.");
 
-        var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var files = sources.ToImmutable(); var byPath = files.ToDictionary(s => s.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Twelve source maps; unchanged FuchsiaCity reuse; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
-        Need(runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion &&
-            runtimeCatalog.GetProperty("maps").GetArrayLength() == 12, "Safari runtime converter differs.");
         var runtimeEntries = runtimeCatalog.GetProperty("maps").EnumerateArray().ToDictionary(e => e.GetProperty("stableId").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("directory").GetString()!;
+            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
             var runtimeEntry = runtimeEntries[stableId];
-            Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" , "Runtime source certificate differs.");
-            var payload = outputs[relative + "/runtime-map.json"];
+            Need(runtimeEntry.GetProperty("path").GetString() == relative , "Runtime source certificate differs.");
+            var payload = outputs[relative];
             var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol differs from its ID.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
             var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png");
+            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
         Need(maps.Count == 12 && maps.Values.Sum(m => m.Width * m.Height) == 8893 && maps.Values.Sum(m => m.BorderWidth * m.BorderHeight) == 56, "Source map collection differs.");
@@ -162,7 +155,7 @@ public sealed class PretSafariRegion
         }
         Need(reused.Count == 1 && !maps.Keys.Any(reused.ContainsKey), "Reused maps must not be regenerated.");
         var availability = Document("availability.json");
-        Need(!availability.GetProperty("runtimeIntegrated").GetBoolean() && !availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
+        Need(!availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
         var contracts = Document("contracts.json");
         Need(contracts.GetProperty("entryFee").GetInt32() == 500 && contracts.GetProperty("startingBalls").GetInt32() == 30 &&
             contracts.GetProperty("startingSteps").GetInt32() == 600 && contracts.GetProperty("pickups").GetArrayLength() == 13,
@@ -172,7 +165,7 @@ public sealed class PretSafariRegion
             gold.GetProperty("x").GetInt32() == 28 && gold.GetProperty("y").GetInt32() == 14, "Gold Teeth source object differs.");
         var npcs = Document("npc-source.json");
         Need(npcs.GetProperty("graphics").GetArrayLength() == 15 && npcs.GetProperty("dynamicGraphics").GetArrayLength() == 0, "Safari NPC inventory differs.");
-        return new(directory, maps.ToImmutable(), constants, files, catalog,
+        return new(directory, maps.ToImmutable(), constants, catalog,
             Document("objects.json"), npcs, availability, reused.ToImmutable(), contracts, Document("encounters.json"));
     }
     private static void Need(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }

@@ -3,15 +3,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record GameCornerDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record GameCornerDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record GameCornerPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Four authenticated Game Corner species reuse twelve battlers, three icons, all geometry and cry samples; only the missing source assets are added.</summary>
 public static class PretGameCornerPresentation
 {
-    public const string Base = "content/generated/game-corner-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/game-corner/";
     public const string Profile = "firered-game-corner-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -123,8 +122,7 @@ public static class PretGameCornerPresentation
                 cue.GetProperty("priority").GetInt32() != 10 ||
                 cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
                 cue.GetProperty("cryMode").GetInt32() != 0 || cue.GetProperty("songAddress").GetInt32() != 0 ||
-                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null ||
-                cue.GetProperty("sourcePath").GetString() != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav")
+                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null)
                 throw new InvalidDataException("Game Corner normal cry source binding differs.");
         }
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));

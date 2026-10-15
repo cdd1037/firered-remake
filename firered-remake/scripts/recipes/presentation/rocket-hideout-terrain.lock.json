@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/maps/CeladonCity_GameCorner/map.json"
+    },
+    {
+      "path": "data/maps/RocketHideout_B1F/map.json"
+    },
+    {
+      "path": "data/maps/RocketHideout_B2F/map.json"
+    },
+    {
+      "path": "data/maps/RocketHideout_B3F/map.json"
+    },
+    {
+      "path": "data/maps/RocketHideout_B4F/map.json"
+    },
+    {
+      "path": "data/maps/RocketHideout_Elevator/map.json"
+    },
+    {
+      "path": "graphics/battle_terrain/indoor/2.pal"
+    },
+    {
+      "path": "graphics/battle_terrain/indoor/terrain.bin"
+    },
+    {
+      "path": "graphics/battle_terrain/indoor/terrain.png"
+    },
+    {
+      "path": "graphics_file_rules.mk"
+    },
+    {
+      "path": "include/constants/battle.h"
+    },
+    {
+      "path": "src/battle_bg.c"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
+    }
+  ]
+}

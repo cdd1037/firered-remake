@@ -3,17 +3,9 @@ using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 namespace Game.Domain.WildBattle;
 
-/// <summary>Exact gift species103 catalog extends the102-species battle mechanics, not the wild opponent roster.</summary>
+/// <summary>Gift Eevee definition. Encounter admission is controlled separately.</summary>
 public static class EeveeBattleScope
 {
-    // Older trainer/encounter executors explicitly share the Snorlax mechanics; the factory still
-    // validates the real103-member identity set. Other unknown counts never collapse to this set.
-    public static int MechanicsCount(PokemonCatalog? catalog)
-    {
-        if (catalog?.Species.Count != 103) return catalog?.Species.Count ?? 0;
-        PokemonFactory.ValidateCatalog(catalog);
-        return 102;
-    }
     internal static bool SupportsSharedSpecies(SpeciesId id) => PokemonFactory.EeveeSupportedSpecies.Contains(id);
     internal static bool ValidSharedSpecies(PokemonSpeciesDefinition? s) => IsEeveeDefinition(s) || SnorlaxBattleScope.ValidSpecies(s);
     public static bool IsEeveeDefinition(PokemonSpeciesDefinition? s) => s is not null &&

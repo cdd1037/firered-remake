@@ -7,28 +7,27 @@ namespace Game.Domain.Encounters;
 /// <summary>Ten existing early-Kanto maps, Original Rod slots 0/1. No Surf or later rods.</summary>
 public static class OldRodEncounterRules
 {
-    public const string SourcePath = "src/data/wild_encounters.json";
     public static SpeciesId Magikarp { get; } = new("pret:SPECIES_MAGIKARP");
     public static ImmutableArray<OldRodEncounterTable> Tables { get; } =
     [
-        Table("pallet-town", "PalletTown", 10, 10),
-        Table("viridian-city", "ViridianCity", 10),
-        Table("cerulean-city", "CeruleanCity", 10),
-        Table("vermilion-city", "VermilionCity", 10),
-        Table("route-4", "Route4", 20),
-        Table("route-6", "Route6", 20),
-        Table("route-22", "Route22", 20),
-        Table("route-24", "Route24", 20),
-        Table("route-25", "Route25", 20),
-        Table("ssanne-exterior", "SSAnneExterior", 10)
+        Table("pallet-town", 10, 10),
+        Table("viridian-city", 10),
+        Table("cerulean-city", 10),
+        Table("vermilion-city", 10),
+        Table("route-4", 20),
+        Table("route-6", 20),
+        Table("route-22", 20),
+        Table("route-24", 20),
+        Table("route-25", 20),
+        Table("ssanne-exterior", 10)
     ];
     // Verified absent fishing tables, retained to model source short-circuit behavior explicitly.
     public static ImmutableArray<MapId> MapsWithoutFishingMons { get; } =
         [new("map.route-1"), new("map.route-2"), new("map.route-3"), new("map.route-5")];
     internal static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) || MapsWithoutFishingMons.Contains(map);
 
-    private static OldRodEncounterTable Table(string map, string symbol, int rate, byte max = 5) =>
-        new(new("map." + map), OldRodFishingRules.SourceCommit, SourcePath, "s" + symbol + "_FireRed",
+    private static OldRodEncounterTable Table(string map, int rate, byte max = 5) =>
+        new(new("map." + map),
             rate, [new(0, Magikarp, 5, max, 70), new(1, Magikarp, 5, max, 30)]);
 
     /// <summary>Fishing uses no land cooldown/rate RNG, Repel, lead ability or table encounter-rate roll.</summary>

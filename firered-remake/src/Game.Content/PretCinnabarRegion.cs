@@ -54,19 +54,19 @@ public sealed partial class PretCinnabarRegion
     public static PretCinnabarRegion Load(string root)
     {
         var source = CinnabarSource.Region(root);
-        var files = ImmutableArray<PretWorldSourceFile>.Empty;
+
         var directory = source.Directory;
         var catalog = source.Document("catalog.json");
-        Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean() , "Cinnabar source inventory differs.");
+
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Route21, Cinnabar and Mansion source maps; application admission remains separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             var stableId = spec.GetProperty("stableId").GetString()!;
-            var relative = spec.GetProperty("directory").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(source.Read(relative + "/runtime-map.json"), stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol does not match its ID.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            var relative = spec.GetProperty("mapPath").GetString()!;
+            var runtime = PretRuntimeMapData.Decode(source.Read(relative), stableId, MapIdFromSourceSymbol);
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol does not match its ID.");
+            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             maps.Add(new(stableId), map);
         }
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)

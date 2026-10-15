@@ -10,9 +10,9 @@ public static class PretMemorialPillarTrainers
 {
     public static MemorialPillarTrainerCatalog Load(string root)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/original-tm-acquisition/memorial-trainers.json"));
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/maps/regions/original-tm-acquisition/memorial-trainers.json"));
         return Load(JsonSerializer.Deserialize<FiveIslandTrainerDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+            SharedTrainerCatalog.Options(root))
             ?? throw new InvalidDataException("memorial_pillar_trainer_document_missing"));
     }
     public static MemorialPillarTrainerCatalog Load(FiveIslandTrainerDocument document)
@@ -20,8 +20,7 @@ public static class PretMemorialPillarTrainers
         ArgumentNullException.ThrowIfNull(document);
         if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty)
             throw new InvalidDataException("memorial_pillar_trainer_records_missing");
-        var result = new MemorialPillarTrainerCatalog(document.SourceCommit, document.Profile, document.CompleteSourceRoster,
-            document.Trainers.ToImmutableDictionary(t => t.Id),
+        var result = new MemorialPillarTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id),
             document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         MemorialPillarTrainerPartyFactory.ValidateCatalog(result); return result;
     }

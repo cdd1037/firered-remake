@@ -19,7 +19,7 @@ public sealed record PretStoryRuntime(
     public static PretStoryRuntime Load(string projectRoot)
     {
         var result = JsonSerializer.Deserialize<PretStoryRuntime>(File.ReadAllBytes(
-            Path.Combine(projectRoot, "content/generated/story/runtime.json")), JsonOptions)
+            Path.Combine(projectRoot, "content/generated/data/story.json")), JsonOptions)
             ?? throw new InvalidDataException("Story runtime resource is empty.");
         if (result.SchemaVersion != CurrentSchemaVersion || result.Compilation.Programs.Count == 0 ||
             result.TextBank.Count == 0 || result.NicknameCharacters.Length < 60)

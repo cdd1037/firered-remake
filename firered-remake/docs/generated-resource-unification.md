@@ -43,4 +43,4 @@ dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false
 dotnet tests/Game.CurrentComposition.Tests/bin/Debug/net10.0/Game.CurrentComposition.Tests.dll "$PWD" "$OUT" "$CHECKPOINT"
 ```
 
-机器可读短结果见 `evidence/generated-resource-unification.json`。本轮没有重走历史战役、没有新增原生窗口或音频验收；地图加载数也不表示每张图的所有事件已开发完毕。完成资源收敛后只更新普通工程交付，不开展新玩法。
+一次性迁移对照报告不随工程保留。本轮没有重走历史战役、没有新增原生窗口或音频验收；地图加载数也不表示每张图的所有事件已开发完毕。完成资源收敛后只更新普通工程交付，不开展新玩法。

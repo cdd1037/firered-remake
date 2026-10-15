@@ -22,7 +22,7 @@ public static class PretForestTrainerArt
             byte[] bytes = File.ReadAllBytes(path);
             return bytes;
         }
-        var manifest = Read("content/generated/forest-trainer-art/forest-trainer-art.json");
+        var manifest = Read("content/generated/sprites/trainers/forest/forest-trainer-art.json");
         using var json = JsonDocument.Parse(manifest);
         var document = json.RootElement;
         if (document.GetProperty("assets").GetArrayLength() != 3)
@@ -34,7 +34,7 @@ public static class PretForestTrainerArt
             if (id is not ("bug-catcher-front" or "red-back" or "leaf-back") || asset.GetProperty("texturePath").GetString() != id + ".png" ||
                 asset.GetProperty("width").GetInt32() != 64 || asset.GetProperty("height").GetInt32() != 64 || asset.GetProperty("sourceFrame").GetInt32() != 0)
                 throw new InvalidDataException("Trainer portrait identity differs.");
-            var pngBytes = Read("content/generated/forest-trainer-art/" + id + ".png");
+            var pngBytes = Read("content/generated/sprites/trainers/forest/" + id + ".png");
             if (pngBytes.Length == 0) throw new InvalidDataException("Trainer portrait size differs.");
             result.Add(new(id, asset.GetProperty("x").GetInt32(), asset.GetProperty("y").GetInt32(), pngBytes));
         }

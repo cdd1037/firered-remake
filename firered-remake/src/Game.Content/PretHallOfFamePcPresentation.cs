@@ -4,17 +4,15 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record HallOfFamePcSourceInput(string Path);
-public sealed record HallOfFamePcPresentation(string SourceCommit, string Profile, int MaximumTeams, int MaximumHallNumber,
+public sealed record HallOfFamePcPresentation(int MaximumTeams, int MaximumHallNumber,
     int MiscellaneousHelpContext, ImmutableArray<HallOfFamePcPosition> FullTeamPositions,
-    ImmutableArray<HallOfFamePcPosition> HalfTeamPositions, ImmutableDictionary<string, string> Text,
-    ImmutableArray<HallOfFamePcSourceInput> Inputs);
+    ImmutableArray<HallOfFamePcPosition> HalfTeamPositions, ImmutableDictionary<string, string> Text);
 
 /// <summary>Small authenticated PC-view contract. Existing League artwork stays owned by its existing package.</summary>
 public static class PretHallOfFamePcPresentation
 {
     public static HallOfFamePcPresentation Load(string root) => FromAuthenticatedBytes(
-        File.ReadAllBytes(Path.Combine(root, "content/generated/hall-pc/presentation.json")));
+        File.ReadAllBytes(Path.Combine(root, "content/generated/ui/hall-pc.json")));
 
     public static HallOfFamePcPresentation FromAuthenticatedBytes(byte[] bytes)
     {

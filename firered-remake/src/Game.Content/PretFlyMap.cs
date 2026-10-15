@@ -60,7 +60,7 @@ public sealed class PretFlyMap
     /// <summary>Loads map graphics and destination data.</summary>
     public static PretFlyMap Load(string projectRoot)
     {
-        string generated = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/fly-map");
+        string generated = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/ui/fly-map");
         using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(generated, "fly-map.json")));
         return new(generated, document.RootElement);
     }

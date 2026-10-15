@@ -1,7 +1,7 @@
 # Shared source constants
 
 Generated packages read one numeric symbol table at
-`content/generated/shared-constants/values.json`. Its JSON object maps original
+`content/generated/data/constants.json`. Its JSON object maps original
 source symbols directly to integer values. `PretSharedConstants` loads one
 immutable table per generated directory and rejects empty tables, duplicate
 symbols, and non-integer values. Package loaders do not read local constants
@@ -19,7 +19,7 @@ occupies 202,062 bytes. National Dex movement command bindings remain separate
 actual data in `national-dex-source/movement-bindings.json`; they are not numeric
 script operands and were not discarded with source annotations.
 
-`scripts/shared_constants.py` publishes resolved importer contributions and
+`scripts/lib/shared_constants.py` publishes resolved importer contributions and
 refuses conflicting numeric values. A different actual value must receive an
 explicit semantic scope before publication; a source-line annotation alone does
 not create a different constant. Check mode verifies the current importer's
@@ -29,9 +29,9 @@ inventories contain only their own resources. Rebuild affected source packages
 with their existing import commands to add their symbols to a fresh table.
 
 The source repository and pinned commit are configured in
-`scripts/import-config/source.json`. The actual contributing header paths and
+`scripts/recipes/config/source.json`. The actual contributing header paths and
 expression resolvers live in each importer; retained path/role recipes are under
-`scripts/import-config`. The duplicate descriptive inventory and write-only
+`scripts/recipes/config`. The duplicate descriptive inventory and write-only
 regional locks have been removed. None is needed by the runtime constant reader.
 No digest index, content-addressed blob store, per-value provenance table, or
 legacy format loader is involved.

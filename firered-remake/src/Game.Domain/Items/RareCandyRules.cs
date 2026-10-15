@@ -41,13 +41,10 @@ public static class RareCandyRules
     /// once. Status and existing PP/PP Ups survive. Level 100 has no effect, even when fainted.
     /// Caller must establish field context, bag ownership and exclusive modal state.
     /// </summary>
-    public static RareCandyResult Apply(CampaignPokemonContent content, GamePokemonCatalog ownership,
+    public static RareCandyResult Apply(CampaignPokemonContent content,
         PartyPokemon owned, string currentRegion)
     {
         ArgumentNullException.ThrowIfNull(content);
-        ArgumentNullException.ThrowIfNull(ownership);
-        if (!ReferenceEquals(content.Pokemon, ownership))
-            throw new ArgumentException("rare_candy_owned_catalog_identity", nameof(ownership));
         LevelEvolutionRules.Validate(content, owned);
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));

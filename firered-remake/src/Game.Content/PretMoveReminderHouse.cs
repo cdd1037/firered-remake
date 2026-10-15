@@ -14,7 +14,6 @@ public sealed class PretMoveReminderHouse
     public static MapId HouseMapId { get; } = new("map.two-island-house");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
@@ -25,7 +24,7 @@ public sealed class PretMoveReminderHouse
     private PretMoveReminderHouse(SilphSourcePackage source, PretWorldMap house,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
+        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants;
         GeneratedDirectory = source.Directory; Catalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); NpcSources = source.Document("npc-source.json");
     }
@@ -49,7 +48,7 @@ public sealed class PretMoveReminderHouse
     public static PretMoveReminderHouse Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"move-reminder-house");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/move-reminder-house");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Move Reminder house actor collection differs.");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
@@ -66,15 +65,15 @@ public sealed class PretMoveReminderHouse
             "Original Two Island Move Reminder house; service rules and current-game admission are separate.", ResourceId);
 
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
+        Need(id == HouseMapId.Value && path == relative ,
             "Move Reminder house compact map binding differs.");
         var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 11 && runtime.Height == 9 &&
+        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 11 && runtime.Height == 9 &&
             runtime.Events.GetProperty("layout").GetString() == "LAYOUT_HOUSE3", "Move Reminder house layout differs.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 1 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 0 &&
             house.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Move Reminder original event collection differs.");
@@ -88,8 +87,6 @@ public sealed class PretMoveReminderHouse
             door.GetProperty("elevation").GetInt32() == 3 && door.GetProperty("dest_map").GetString() == "MAP_TWO_ISLAND" &&
             door.GetProperty("dest_warp_id").GetString() == "1", "Move Reminder original exit differs.");
         ValidateTown(source, dependencyRoot);
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["CHECKED_MUSHROOMS"] == 1 && constants["HAS_BIG_MUSHROOM"] == 2 &&

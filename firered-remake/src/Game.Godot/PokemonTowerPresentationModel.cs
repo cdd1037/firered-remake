@@ -9,9 +9,9 @@ internal static class PokemonTowerPresentationModel
     internal readonly record struct FogSprite(int X, int Y);
     internal readonly record struct FogBlend(int Eva, int Evb);
     internal const string GhostName = "GHOST";
-    internal const string GhostTexture = "content/generated/pokemon-tower-region/presentation/ghost-front.png";
-    internal const string TerrainTexture = "content/generated/pokemon-tower-presentation/indoor1-scene.png";
-    internal const string FogTexture = "content/generated/pokemon-tower-presentation/fog-horizontal.png";
+    internal const string GhostTexture = "content/generated/maps/regions/pokemon-tower/presentation/ghost-front.png";
+    internal const string TerrainTexture = "content/generated/ui/pokemon-tower-presentation/indoor1-scene.png";
+    internal const string FogTexture = "content/generated/ui/pokemon-tower-presentation/fog-horizontal.png";
     internal const string FieldMusic = "MUS_POKE_TOWER";
     internal const string FluteFanfare = "MUS_POKE_FLUTE";
     internal const int FluteFanfareSourceId = 338;

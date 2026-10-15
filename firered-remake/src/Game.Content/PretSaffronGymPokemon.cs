@@ -14,7 +14,7 @@ public static class PretSaffronGymPokemon
         var source = SaffronGymSource.Catalogs(root); var d = source.Parse<SilphPokemonDocument>("pokemon.json", canonical);
         SilphSourcePackage.Need(d.SchemaVersion == 1 && d.Species.IsEmpty &&
             d.OpponentSpecies.Select(s => s.SourceSpeciesId).SequenceEqual([80]) && d.SpeciesNames.Length == 1 && d.EncodedNames.Length == 1 &&
-            d.Machines.Length == 1 && d.HeldItems.Length == 1 && d.SourceEvolutions.Length == 1 && !d.Limitations.IsDefaultOrEmpty , "Saffron Gym enemy-only projection differs.");
+            d.Machines.Length == 1 && d.HeldItems.Length == 1 && d.SourceEvolutions.Length == 1 , "Saffron Gym enemy-only projection differs.");
         var slowbro = d.OpponentSpecies[0];         SilphSourcePackage.Need(            d.RequiredMoves.ToHashSet().SetEquals(slowbro.LevelUpMoves.Select(m => m.Move)) ,
             "Saffron Gym canonical Slowbro differs.");
         SilphSourcePackage.Need(d.EncodedNames[0].Bytes[^1] == 255, "Saffron Gym source name terminator differs.");

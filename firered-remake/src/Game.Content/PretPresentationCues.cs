@@ -5,7 +5,7 @@ public sealed record PretPresentationCues(ImmutableSortedDictionary<string,int> 
 {
     public static PretPresentationCues Load(string root)
     {
-        using var stream = File.OpenRead(Path.Combine(root, "content/generated/presentation-cues/fanfares.json"));
+        using var stream = File.OpenRead(Path.Combine(root, "content/generated/audio/fanfares.json"));
         var counters = System.Text.Json.JsonSerializer.Deserialize<SortedDictionary<string, int>>(stream)
             ?? throw new InvalidDataException("Fanfare counters are missing.");
         return new(counters.ToImmutableSortedDictionary(StringComparer.Ordinal));

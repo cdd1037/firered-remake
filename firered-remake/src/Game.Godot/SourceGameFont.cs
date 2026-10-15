@@ -42,8 +42,7 @@ public sealed class SourceGameFont : IDisposable
         var catalogBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "source-font.json"));
         using var document = JsonDocument.Parse(catalogBytes);
         var root = document.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-english-source-font-v1")
+        if (root.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Source font identity differs.");
         var source = root.GetProperty("fonts").EnumerateArray().Single(f => f.GetProperty("id").GetString() == face);
         var png = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, face + ".png"));
@@ -100,8 +99,7 @@ public sealed class SourceGameFont : IDisposable
                 var levelBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "level-prefix.json"));
                 using var levelDocument = JsonDocument.Parse(levelBytes);
                 var level = levelDocument.RootElement;
-                if (level.GetProperty("profile").GetString() != "firered-healthbox-lv2-v1"
-                    || level.GetProperty("sourceGlyphId").GetInt32() != 0x105
+                if (level.GetProperty("sourceGlyphId").GetInt32() != 0x105
                     || level.GetProperty("codepoint").GetInt32() != LevelPrefixCodepoint)
                     throw new InvalidDataException("Source LV_2 identity differs.");
                 var levelPng = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "level-prefix-small.png"));

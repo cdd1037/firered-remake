@@ -15,7 +15,7 @@ public sealed class PretVsSeeker
     { Catalog = catalog; }
 
     public static PretVsSeeker Load(string projectRoot) => LoadPackage(
-        Path.Combine(projectRoot, "content/generated/vs-seeker/catalog.json"));
+        Path.Combine(projectRoot, "content/generated/data/services/vs-seeker.json"));
 
     public static PretVsSeeker LoadPackage(string catalogPath)
     {
@@ -36,7 +36,7 @@ public sealed class PretVsSeeker
         return new(catalog);
     }
 
-    private sealed record Document(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<VsSeekerRematch> Rematches,
+    private sealed record Document(int SchemaVersion, ImmutableArray<VsSeekerRematch> Rematches,
         ImmutableArray<VsSeekerActorBinding> ActorBindings, VsSeekerAcquisition Acquisition,
         ImmutableDictionary<int, int> RunningMovementByGraphics, int DefaultRunningMovement,
         ImmutableArray<VsSeekerRosterRequirement> RosterRequirements, ImmutableArray<string> ProgressFlags,

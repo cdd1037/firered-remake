@@ -19,7 +19,7 @@ public sealed partial class PretCampaignCatalog
     public GameOpponentPokemonCatalog? SilphOpponents { get; }
     public PretSilphArt? SilphArt { get; }
     public bool SilphEnabled=>SilphRegion is not null;
-    SilphTrainerCatalog? ICampaignCatalog.SilphTrainerParties=>SilphTrainers is {} t?new(t.SourceCommit,t.Profile,t.CompleteSourceRoster,t.Trainers,t.Battles):null;
+    SilphTrainerCatalog? ICampaignCatalog.SilphTrainerParties=>SilphTrainers is {} t?new(t.Trainers,t.Battles):null;
     public ImmutableArray<SilphWarpPad> SilphWarpPads=>(SilphRegion?.WarpPads??[]).AddRange(SaffronGymWarpPads);
     public ImmutableArray<SilphDoorDefinition> SilphDoors=>SilphRegion?.Doors??[];
     public ImmutableArray<CampaignSilphElevatorFloor> SilphElevatorFloors=>SilphRegion?.ElevatorFloors??[];

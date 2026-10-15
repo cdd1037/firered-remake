@@ -16,14 +16,13 @@ internal static class CeladonApproachPresentationAssets
             byte[] data=File.ReadAllBytes(file.FullName);
             return data;
         }
-        using var manifest=JsonDocument.Parse(Read("content/generated/celadon-approach-art/manifest.json"));
-        var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1||
-            m.GetProperty("profile").GetString()!="firered-celadon-approach-art-v1")throw new InvalidDataException("CeladonApproach art provenance differs.");
+        using var manifest=JsonDocument.Parse(Read("content/generated/sprites/trainers/celadon-approach/manifest.json"));
+        var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1)throw new InvalidDataException("CeladonApproach art provenance differs.");
         var result=new Dictionary<string,byte[]>(StringComparer.Ordinal);
         foreach(var row in m.GetProperty("outputs").EnumerateArray())
         {
             string name=row.GetProperty("path").GetString()!;
-            result.Add(name,Read("content/generated/celadon-approach-art/"+name));
+            result.Add(name,Read("content/generated/sprites/trainers/celadon-approach/"+name));
         }
         if(!NativeImages.HasSize(result["biker-front.png"], 64, 64))throw new InvalidDataException("CeladonApproach art inventory differs.");
         return result;

@@ -1,0 +1,457 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "asm/macros/event.inc"
+    },
+    {
+      "path": "data/event_scripts.s"
+    },
+    {
+      "path": "data/layouts/layouts.json"
+    },
+    {
+      "path": "data/maps/MtEmber_Exterior/map.json"
+    },
+    {
+      "path": "data/maps/MtEmber_Exterior/scripts.inc"
+    },
+    {
+      "path": "data/maps/MtEmber_RubyPath_B4F/scripts.inc"
+    },
+    {
+      "path": "data/maps/MtEmber_RubyPath_B5F/scripts.inc"
+    },
+    {
+      "path": "data/maps/OneIsland_PokemonCenter_1F/map.json"
+    },
+    {
+      "path": "data/maps/OneIsland_PokemonCenter_1F/scripts.inc"
+    },
+    {
+      "path": "data/text/braille.inc"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/00.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/01.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/02.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/03.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/04.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/05.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/06.pal"
+    },
+    {
+      "path": "data/tilesets/primary/building/tiles.png"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/00.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/01.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/02.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/03.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/04.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/05.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/palettes/06.pal"
+    },
+    {
+      "path": "data/tilesets/primary/general/tiles.png"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/metatile_attributes.bin"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/metatiles.bin"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/palettes/07.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/palettes/08.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/palettes/09.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/palettes/10.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/palettes/11.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/palettes/12.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/pokemon_center/tiles.png"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/metatile_attributes.bin"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/metatiles.bin"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/palettes/07.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/palettes/08.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/palettes/09.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/palettes/10.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/palettes/11.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/palettes/12.pal"
+    },
+    {
+      "path": "data/tilesets/secondary/sevii_islands_123/tiles.png"
+    },
+    {
+      "path": "graphics/battle_terrain/mountain/terrain.bin"
+    },
+    {
+      "path": "graphics/battle_terrain/mountain/terrain.pal"
+    },
+    {
+      "path": "graphics/battle_terrain/mountain/terrain.png"
+    },
+    {
+      "path": "graphics/fonts/braille.png"
+    },
+    {
+      "path": "graphics/fonts/down_arrow_3.png"
+    },
+    {
+      "path": "graphics/interface/std_menu.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/black_type_enhancing_item.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/dire_hit.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/fighting_tm_hm.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/fire_stone.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/rainbow_pass.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/ruby.pal"
+    },
+    {
+      "path": "graphics/items/icons/battle_stat_item.png"
+    },
+    {
+      "path": "graphics/items/icons/black_belt.png"
+    },
+    {
+      "path": "graphics/items/icons/fire_stone.png"
+    },
+    {
+      "path": "graphics/items/icons/gem.png"
+    },
+    {
+      "path": "graphics/items/icons/rainbow_pass.png"
+    },
+    {
+      "path": "graphics/items/icons/tm_hm.png"
+    },
+    {
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal"
+    },
+    {
+      "path": "graphics/pokemon/icon_palettes/icon_palette_0.pal"
+    },
+    {
+      "path": "graphics/pokemon/magcargo/back.png"
+    },
+    {
+      "path": "graphics/pokemon/magcargo/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/magcargo/front.png"
+    },
+    {
+      "path": "graphics/pokemon/magcargo/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/magcargo/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/magcargo/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/slugma/back.png"
+    },
+    {
+      "path": "graphics/pokemon/slugma/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/slugma/front.png"
+    },
+    {
+      "path": "graphics/pokemon/slugma/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/slugma/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/slugma/shiny.pal"
+    },
+    {
+      "path": "graphics/text_window/menu_message.png"
+    },
+    {
+      "path": "graphics/text_window/stdpal_0.pal"
+    },
+    {
+      "path": "graphics/trainers/front_pics/black_belt_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/camper_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/crush_girl_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/crush_kin_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/fisherman_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/picnicker_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/pokemon_ranger_f_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/pokemon_ranger_m_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/rocket_grunt_m_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/swimmer_f_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/swimmer_m_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/palettes/black_belt.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/camper.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/crush_girl.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/crush_kin.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/fisherman.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/picnicker.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/pokemon_ranger_f.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/pokemon_ranger_m.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/rocket_grunt_m.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/swimmer_f.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/swimmer_m.pal"
+    },
+    {
+      "path": "graphics_file_rules.mk"
+    },
+    {
+      "path": "include/characters.h"
+    },
+    {
+      "path": "include/constants/metatile_labels.h"
+    },
+    {
+      "path": "include/constants/opponents.h"
+    },
+    {
+      "path": "include/constants/songs.h"
+    },
+    {
+      "path": "include/constants/sound.h"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "include/constants/trainers.h"
+    },
+    {
+      "path": "sound/cry_tables.inc"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/magcargo.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/slugma.wav"
+    },
+    {
+      "path": "sound/song_table.inc"
+    },
+    {
+      "path": "sound/songs/midi/mus_sevii_cave.mid"
+    },
+    {
+      "path": "src/battle_bg.c"
+    },
+    {
+      "path": "src/braille_text.c"
+    },
+    {
+      "path": "src/data/graphics/items.h"
+    },
+    {
+      "path": "src/data/graphics/pokemon.h"
+    },
+    {
+      "path": "src/data/graphics/trainers.h"
+    },
+    {
+      "path": "src/data/item_icon_table.h"
+    },
+    {
+      "path": "src/data/items.json"
+    },
+    {
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/footprint_table.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/text/trainer_class_names.h"
+    },
+    {
+      "path": "src/data/tilesets/graphics.h"
+    },
+    {
+      "path": "src/data/tilesets/headers.h"
+    },
+    {
+      "path": "src/data/tilesets/metatiles.h"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
+    },
+    {
+      "path": "src/data/trainers.h"
+    },
+    {
+      "path": "src/field_specials.c"
+    },
+    {
+      "path": "src/graphics.c"
+    },
+    {
+      "path": "src/new_menu_helpers.c"
+    },
+    {
+      "path": "src/pokemon_icon.c"
+    },
+    {
+      "path": "src/scrcmd.c"
+    },
+    {
+      "path": "src/text.c"
+    },
+    {
+      "path": "src/text_printer.c"
+    },
+    {
+      "path": "tileset_rules.mk"
+    },
+    {
+      "path": "tools/gbagfx/font.c"
+    },
+    {
+      "path": "tools/preproc/asm_file.cpp"
+    }
+  ],
+  "inheritedInputs": [
+    {
+      "path": "content/generated/data/trainer-battles/cerulean/picnicker-front.png"
+    },
+    {
+      "path": "content/generated/sprites/trainers/cinnabar/fisherman-front.png"
+    },
+    {
+      "path": "content/generated/sprites/trainers/cinnabar/swimmer-m-front.png"
+    },
+    {
+      "path": "content/generated/ui/first-sevii-presentation/first-sevii-swimmer-f-front.png"
+    },
+    {
+      "path": "content/generated/sprites/trainers/pewter/camper-front.png"
+    },
+    {
+      "path": "content/generated/sprites/trainers/silph/rocket-grunt-m-front.png"
+    },
+    {
+      "path": "content/generated/audio/synth/firered.pack"
+    },
+    {
+      "path": "content/generated/audio/synth/normal-cries.bin"
+    },
+    {
+      "path": "content/generated/ui/viridian-gym-presentation/black-belt-front.png"
+    }
+  ],
+  "profile": "firered-sevii-ruby-presentation-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1
+}

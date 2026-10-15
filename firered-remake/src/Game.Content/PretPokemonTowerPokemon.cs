@@ -7,12 +7,11 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record PokemonTowerPokemonDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<ForestPokemonInput> Inputs, ImmutableArray<PokemonSpeciesDefinition> Species,
+public sealed record PokemonTowerPokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species,
     ImmutableArray<PokemonMoveDefinition> Moves, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
     ImmutableArray<PretRoute1MoveName> MoveNames, ImmutableArray<ForestPokemonConstant> Constants,
     ImmutableArray<PewterPokemonEncodedName> EncodedNames, ImmutableArray<MtMoonDeferredEvolution> DeferredEvolutions,
-    ImmutableArray<MoveId> RequiredMoves, int? NaturalLevelLimit, ImmutableArray<string> Limitations);
+    ImmutableArray<MoveId> RequiredMoves, int? NaturalLevelLimit);
 
 /// <summary>
 /// Source-authenticated Gastly/Haunter and five absent move definitions. Source bytes are reused from
@@ -22,7 +21,7 @@ public sealed class PretPokemonTowerPokemon
 {
     public const string Profile = "firered-pokemon-tower-pokemon-v1";
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public const string CatalogRelativePath = "content/generated/pokemon-tower-pokemon/catalog.json";
+    public const string CatalogRelativePath = "content/generated/data/pokemon/pokemon-tower.json";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public PokemonCatalog Catalog { get; }
@@ -33,14 +32,11 @@ public sealed class PretPokemonTowerPokemon
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<MtMoonDeferredEvolution> DeferredEvolutions => Document.DeferredEvolutions;
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
-    private PretPokemonTowerPokemon(PokemonCatalog catalog, PokemonTowerPokemonDocument document,
-        ImmutableArray<PretWorldSourceFile> files)
+    private PretPokemonTowerPokemon(PokemonCatalog catalog, PokemonTowerPokemonDocument document)
     {
         Catalog = catalog;
         Document = document;
-        SourceFiles = files;
         AdditionalSpeciesNames = document.SpeciesNames.ToImmutableSortedDictionary(
             n => catalog.Species[n.Id].SourceSpeciesId, n => n.Name);
         AdditionalMoveNames = document.MoveNames.ToImmutableDictionary(n => n.Id, n => n.Name);
@@ -61,8 +57,7 @@ public sealed class PretPokemonTowerPokemon
         foreach (var name in doc.EncodedNames)
             SafariSource.Require(!name.Bytes.IsDefaultOrEmpty && name.Bytes[^1] == 255,
                 "PokemonTower encoded name is unterminated.");
-        var files = doc.Inputs.Select(input => new PretWorldSourceFile(input.Path)).ToImmutableArray();
-        return new(catalog, doc, files);
+        return new(catalog, doc);
     }
 
     /// <summary>Convenience loader for the standalone 230-move Rocket catalog.</summary>

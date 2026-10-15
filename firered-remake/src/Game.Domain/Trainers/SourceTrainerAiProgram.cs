@@ -19,8 +19,6 @@ internal static class SourceTrainerAiProgram
         using var stream = typeof(SourceTrainerAiProgram).Assembly.GetManifestResourceStream("Game.Domain.SourceTrainerAiProgram.json")
             ?? throw new InvalidOperationException("source_trainer_ai_program_missing");
         using var json = JsonDocument.Parse(stream); var root = json.RootElement;
-        if (root.GetProperty("sourceCommit").GetString() != SourceTrainerAi.SourceCommit)
-            throw new InvalidOperationException("source_trainer_ai_program_source");
         Code = root.GetProperty("program").EnumerateArray().Select(x => x.GetByte()).ToArray();
         var entries = root.GetProperty("entries");
         AI_CheckBadMove = entries.GetProperty("AI_CheckBadMove").GetInt32();

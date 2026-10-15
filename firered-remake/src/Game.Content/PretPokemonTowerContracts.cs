@@ -6,7 +6,7 @@ namespace Game.Content;
 
 // Source contracts only. These records do not register script handlers or activate a campaign.
 public sealed record PretTowerCoordinateTrigger(MapId MapId, int EventIndex, int X, int Y, int Elevation,
-    string VariableSymbol, int VariableId, int RequiredValue, string Script, SourceRef Source)
+    string VariableSymbol, int VariableId, int RequiredValue, string Script)
 {
     public bool ElevationIsWildcard => Elevation == 0;
     public bool Matches(int x, int y, int elevation, int variableValue) =>

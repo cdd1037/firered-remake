@@ -16,7 +16,6 @@ public sealed partial class PretPokemonTowerRegion
     public static MapId FloorMapId(int floor) => floor is >= 1 and <= 7 ? new("map.pokemon-tower-" + floor + "f") : throw new ArgumentOutOfRangeException(nameof(floor));
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public PretRuntimeMapData ExistingHouse { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<int> InitiallySetFlags { get; }
     public JsonElement SourceContract { get; }
@@ -29,7 +28,6 @@ public sealed partial class PretPokemonTowerRegion
     public JsonElement Mechanics => ReadDocument("mechanics.json");
 
     public JsonElement NpcSources => ReadDocument("npc-source.json");
-    private readonly ImmutableHashSet<string> _outputs;
 
     public static MapId MapIdFromSourceSymbol(string symbol)
     {
@@ -46,49 +44,35 @@ public sealed partial class PretPokemonTowerRegion
 
     public static PretPokemonTowerRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
-        var project = Path.GetFullPath(projectRoot); var directory = Path.Combine(project, "content/generated/pokemon-tower-region");
+        var project = Path.GetFullPath(projectRoot); var directory = Path.Combine(project, "content/generated/maps/regions/pokemon-tower");
         var runtime = runtimeMaps ?? PretPokemonTowerRuntimeMaps.Load(project);
-            using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        var m = manifest.RootElement;
-            Need(m.GetProperty("schemaVersion").GetInt32() == 1 , "Tower region identity differs.");
-        var outputs = m.GetProperty("outputs").EnumerateArray()
-            .Select(x => x.GetProperty("path").GetString()!).ToImmutableHashSet(StringComparer.Ordinal);
-        byte[] ReadOutput(string path)
-        {
-            if (!outputs.Contains(path)) throw new InvalidDataException("Missing region output: " + path);
-            return ReadPinned(directory, path);
-        }
-        JsonElement Document(string path) { using var d = JsonDocument.Parse(ReadOutput(path)); return d.RootElement.Clone(); }
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty;
-        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        JsonElement Document(string path) { using var d = JsonDocument.Parse(ReadPinned(directory, path)); return d.RootElement.Clone(); }
 
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, "Local authenticated source data.",
             "Source contracts only; executable progression must be registered by Application.", Profile);
         var spec = Document("runtime.json"); var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        Need(!spec.GetProperty("runtimeIntegrated").GetBoolean(), "Map data cannot claim campaign integration.");
+
         foreach (var s in spec.GetProperty("maps").EnumerateArray())
         {
             var id = new MapId(s.GetProperty("stableId").GetString()!); var compact = runtime.Maps[id]; var isNew = s.GetProperty("isNew").GetBoolean();
-                Need(compact.SourceRef.Symbol == s.GetProperty("sourceMapSymbol").GetString() &&
-                MapIdFromSourceSymbol(compact.SourceRef.Symbol) == id, "Tower map identity differs.");
+                Need(compact.SourceMapSymbol == s.GetProperty("sourceMapSymbol").GetString() &&
+                MapIdFromSourceSymbol(compact.SourceMapSymbol) == id, "Tower map identity differs.");
                 if (!isNew) { Need(id == HouseMapId , "Existing house provenance changed."); continue; }
-            var relative = s.GetProperty("directory").GetString()!;
+            var relative = s.GetProperty("mapPath").GetString()!;
             maps.Add(id, PretWorldMap.FromRuntime(compact, metadata, PretRuntimeMapValidation.SafeFile(directory, relative),
-                PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
+                PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Count == 7 && maps.Values.All(x => x.Width == 24 && x.Height == 20) && maps.Values.Sum(x => x.Warps.Length) == 15, "Tower seven-floor geometry differs.");
 
         var constants = PretSharedConstants.ForPackage(directory);
         var contract = Document("pokemon-tower.json");
-            Need(!contract.GetProperty("runtimeIntegrated").GetBoolean() &&
-            contract.GetProperty("metatilePatches").GetArrayLength() == 0, "Tower scene contract differs.");
+            Need(contract.GetProperty("metatilePatches").GetArrayLength() == 0, "Tower scene contract differs.");
         using var city = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/LavenderTown/map.json"));
-        return new(directory, maps.ToImmutable(), runtime.Maps[HouseMapId], files, constants, outputs, contract, city.RootElement.Clone());
+        return new(directory, maps.ToImmutable(), runtime.Maps[HouseMapId], constants, contract, city.RootElement.Clone());
     }
     private JsonElement ReadDocument(string path)
     {
-            if (!_outputs.Contains(path)) throw new InvalidDataException("Missing region output: " + path); using var document = JsonDocument.Parse(ReadPinned(GeneratedDirectory,path)); return document.RootElement.Clone();
+            using var document = JsonDocument.Parse(ReadPinned(GeneratedDirectory,path)); return document.RootElement.Clone();
     }
     private static byte[] ReadPinned(string root, string path)
     {

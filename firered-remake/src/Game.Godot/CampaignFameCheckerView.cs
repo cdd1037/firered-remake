@@ -45,7 +45,7 @@ public partial class CampaignView
     {
         if (_fameFonts.TryGetValue((color,shadow), out var font)) return font;
         Color C(int i) { var p=_fameArt!.Palettes.GetProperty("text")[i]; return Color.Color8(p[0].GetByte(),p[1].GetByte(),p[2].GetByte()); }
-        font = SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/source-font"),foreground:C(color),shadow:C(shadow));
+        font = SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/ui/font"),foreground:C(color),shadow:C(shadow));
         _fameFonts.Add((color,shadow),font); return font;
     }
     private string FamePlain(FameCheckerText text) => text.Expand(_session.State.PlayerName,_session.State.RivalName).TrimEnd('$');

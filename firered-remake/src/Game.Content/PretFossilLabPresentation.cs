@@ -3,15 +3,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record FossilLabDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record FossilLabDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record FossilLabPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Five owned fossil species, source dex pages and menus, with inherited Aerodactyl League resources.</summary>
 public static class PretFossilLabPresentation
 {
-    public const string Base = "content/generated/fossil-lab-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/fossil-lab/";
     public const string Profile = "firered-fossil-lab-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 

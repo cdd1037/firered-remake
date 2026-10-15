@@ -9,11 +9,11 @@ public sealed class GeneratedBattleTextTests
     public void LoadsDialogueWithoutOriginalSources()
     {
         var root = Path.Combine(Path.GetTempPath(), "firered-battle-text-" + Guid.NewGuid().ToString("N"));
-        var output = Path.Combine(root, "content/generated/battle-text");
-        Directory.CreateDirectory(output);
+        var output = Path.Combine(root, "content/generated/battle/text.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
         try
         {
-            File.Copy(Path.Combine(TestAssets.Root, "content/generated/battle-text/catalog.json"), Path.Combine(output, "catalog.json"));
+            File.Copy(Path.Combine(TestAssets.Root, "content/generated/battle/text.json"), output);
             var texts = PretBattleText.Load(root);
             Assert.IsTrue(texts.ContainsKey("sText_AttackerUsedX"));
             Assert.IsTrue(texts.ContainsKey("gText_OakNoRunningFromATrainer"));
@@ -27,7 +27,7 @@ public sealed class GeneratedBattleTextTests
         var root = Path.Combine(Path.GetTempPath(), "firered-presentation-data-" + Guid.NewGuid().ToString("N"));
         try
         {
-            foreach (var relative in new[] { "presentation-cues/fanfares.json", "source-grid-menus/manifest.json" })
+            foreach (var relative in new[] { "audio/fanfares.json", "ui/grid-menus.json" })
             {
                 var output = Path.Combine(root, "content/generated", relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
@@ -43,11 +43,11 @@ public sealed class GeneratedBattleTextTests
     public void EarlyPickupDefinitionsLoadWithoutSourcesOrProofs()
     {
         var root = Path.Combine(Path.GetTempPath(), "firered-pickup-data-" + Guid.NewGuid().ToString("N"));
-        var output = Path.Combine(root, "content/generated/early-pickups");
-        Directory.CreateDirectory(output);
+        var output = Path.Combine(root, "content/generated/data/items/early-pickups.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
         try
         {
-            File.Copy(Path.Combine(TestAssets.Root, "content/generated/early-pickups/early-pickups.json"), Path.Combine(output, "early-pickups.json"));
+            File.Copy(Path.Combine(TestAssets.Root, "content/generated/data/items/early-pickups.json"), output);
             var pickups = PretEarlyPickups.Load(root);
             Assert.AreEqual(8, pickups.Pickups.Length);
             Assert.AreEqual(3, pickups.Pickups.Count(p => p.Kind == "hiddenItem"));

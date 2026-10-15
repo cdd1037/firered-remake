@@ -18,7 +18,7 @@ internal static class MapAtlasImages
         var generated = new DirectoryInfo(Path.GetDirectoryName(absolute)!);
         while (generated is not null && generated.Name != "generated") generated = generated.Parent;
         if (generated is null) throw new InvalidDataException("Map texture is outside generated resources: " + logicalPath);
-        var directory = Path.Combine(generated.FullName, "map-atlases");
+        var directory = Path.Combine(generated.FullName, "maps/atlases");
         if (!Catalogs.TryGetValue(directory, out var catalog))
         {
             catalog = JsonSerializer.Deserialize<Catalog>(File.ReadAllBytes(Path.Combine(directory, "catalog.json")),

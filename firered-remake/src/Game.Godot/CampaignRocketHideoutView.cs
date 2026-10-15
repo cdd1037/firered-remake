@@ -83,7 +83,7 @@ public partial class CampaignView
         foreach(var icon in items.Icons)
         {
             
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("rocket-hideout-items", icon));
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("data/items/rocket-hideout", icon));
         }
         var document=_questPocketUi??throw new InvalidDataException("Rocket key/ball pocket missing.");
         var position=document.Assets.Single(a=>a.Id==document.Items[0].Icon);
@@ -91,7 +91,7 @@ public partial class CampaignView
         {
             var item=value.Metadata;var icon=items.Icons.Single(i=>i.Item==item.Item.Id);string id="rocket-"+item.Item.SourceItemSymbol.ToLowerInvariant();
             
-            _questPocketTextures.Add(id,ItemTexture("rocket-hideout-items", icon));
+            _questPocketTextures.Add(id,ItemTexture("data/items/rocket-hideout", icon));
             document=document with
             {
                 Items=document.Items.Add(new(item.Item.Id.Value,item.Item.SourceItemSymbol,item.Item.Name,item.Description,id,item.Item.FieldUseFunction)),
@@ -100,7 +100,7 @@ public partial class CampaignView
         }
         _questPocketUi=document;
         _=RocketHideoutPresentationAssets.LoadTerrain(_root);
-        _rocketIndoorTerrain=SceneTextures.Texture(System.IO.Path.Combine(_root,"content/generated/rocket-hideout-terrain/indoor2-scene.png"));
+        _rocketIndoorTerrain=SceneTextures.Texture(System.IO.Path.Combine(_root,"content/generated/battle/terrain/rocket-hideout/indoor2-scene.png"));
         if(_rocketIndoorTerrain.GetWidth()!=240||_rocketIndoorTerrain.GetHeight()!=112)throw new InvalidDataException("Rocket Indoor2 terrain dimensions differ.");
         LoadRocketMetatilePresentation();
     }
@@ -113,7 +113,7 @@ public partial class CampaignView
             foreach(var layer in new[]{"bottom","middle","top"})
             {
                 string file=tileset+"-"+layer+".png";
-                layers[index++]=SceneTextures.Texture(System.IO.Path.Combine(_root,"content/generated/rocket-hideout-presentation",file));
+                layers[index++]=SceneTextures.Texture(System.IO.Path.Combine(_root,"content/generated/maps/objects/rocket-hideout-presentation",file));
             }
             _rocketTileLayers.Add(tileset,layers);
         }

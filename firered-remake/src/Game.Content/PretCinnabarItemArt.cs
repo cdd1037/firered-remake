@@ -2,13 +2,12 @@ using System.Collections.Immutable;
 
 namespace Game.Content;
 
-public sealed record CinnabarItemArtDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineIcon> Icons, string PaletteExpansion, int TransparentIndex);
+public sealed record CinnabarItemArtDocument(int SchemaVersion, ImmutableArray<PretPewterMachineIcon> Icons, string PaletteExpansion, int TransparentIndex);
 
 /// <summary>Four Cinnabar inventory icons referencing the shared item texture page.</summary>
 public sealed class PretCinnabarItemArt
 {
-    public const string GeneratedDirectory = "content/generated/cinnabar-item-art/";
+    public const string GeneratedDirectory = "content/generated/data/services/cinnabar-item-art/";
     public CinnabarItemArtDocument Document { get; }
     public ImmutableArray<PretPewterMachineIcon> Icons => Document.Icons;
     public ImmutableDictionary<string, byte[]> Files { get; }
@@ -29,8 +28,7 @@ public sealed class PretCinnabarItemArt
         {
             SilphSourcePackage.Need(icon.Width == 24 && icon.Height == 24 &&
                 icon.Region is not null &&
-                files.TryGetValue(icon.PngPath, out var png) &&
-                icon.Source.StartLine == 1 && icon.Source.EndLine == 1 && !string.IsNullOrWhiteSpace(icon.Source.Symbol),
+                files.ContainsKey(icon.PngPath),
                 "Cinnabar item icon identity differs.");
             _ = PretPewterMachines.TexturePage(icon, files[icon.PngPath]);
         }

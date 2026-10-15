@@ -52,7 +52,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         if(includeCeladonGym&&!includeCeladonApproach)throw new ArgumentException("Celadon Gym audio requires Celadon approach.");
         if(includeCeladonApproach&&!includeRockTunnel)throw new ArgumentException("Celadon approach audio requires RockTunnel.");
         if(includeRockTunnel&&!includeRoute11)throw new ArgumentException("RockTunnel audio requires Route11.");
-        string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/synth-audio");
+        string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/audio/synth");
         string pack = Path.Combine(directory, "firered.pack");
         if (new FileInfo(pack).Length != FireRedAudio.Resources.End - FireRedAudio.Resources.Base)
             throw new InvalidDataException("Synth resource pack length differs.");
@@ -69,7 +69,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         var cues = manifest.Cues;
         if (includeRoute11)
         {
-            string extraPath = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/route11-synth-audio/manifest.json");
+            string extraPath = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/audio/cues/route11.json");
             byte[] extraBytes = File.ReadAllBytes(extraPath);
             var extra = JsonSerializer.Deserialize<SynthManifest>(extraBytes, options)
                 ?? throw new InvalidDataException("Missing Route11 synth manifest.");
@@ -79,7 +79,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeRockTunnel)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/rocktunnel-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/rocktunnel.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing RockTunnel synth manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("RockTunnel synth manifest contract differs.");
@@ -87,7 +87,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeCeladonApproach)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/celadon-approach-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/celadon-approach.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing CeladonApproach synth manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("CeladonApproach synth manifest contract differs.");
@@ -95,7 +95,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeCeladonGym)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/celadon-gym-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/celadon-gym.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing CeladonGym synth manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("CeladonGym synth manifest contract differs.");
@@ -103,7 +103,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeRocketHideout)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/rocket-hideout-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/rocket-hideout.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing RocketHideout synth manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("RocketHideout synth manifest contract differs.");
@@ -111,7 +111,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includePokemonTower)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/pokemon-tower-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/pokemon-tower.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing PokemonTower synth manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("PokemonTower synth manifest contract differs.");
@@ -119,7 +119,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeSnorlax)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/snorlax-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/snorlax.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Snorlax synth manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("Snorlax synth manifest contract differs.");
@@ -127,7 +127,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeFuchsiaRoute)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/fuchsia-route-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/fuchsia-route.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Fuchsia route cry manifest.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("Fuchsia route cry manifest contract differs.");
@@ -135,7 +135,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeSafari)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/safari-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/safari.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Safari cry manifest.");
             if(extension.SchemaVersion!=1||
@@ -145,7 +145,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeSurf)
         {
-            string path=Path.Combine(Path.GetFullPath(surfContentRoot??projectRoot),"content/generated/surf-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(surfContentRoot??projectRoot),"content/generated/audio/cues/surf.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Surf cry manifest.");
             if(extension.SchemaVersion!=1||
@@ -159,7 +159,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         }
         if(includeSilph)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/silph-synth-audio/manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/silph.json");
             byte[] extensionBytes=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Silph synth manifest.");
             if(extension.SchemaVersion!=1||
@@ -170,7 +170,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         if(includeSaffronGym)
         {
             if(!includeSilph)throw new InvalidDataException("Saffron Gym audio requires Silph predecessor.");
-            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/saffron-gym-synth-audio/manifest.json"));
+            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/saffron-gym.json"));
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Saffron Gym cry manifest missing.");
             if(extension.SchemaVersion!=1||extension.Cues[0].Id!="CRY_SLOWBRO_NORMAL"||extension.Cues[0].Species!=80||cues.Any(c=>c.Id=="CRY_SLOWBRO_NORMAL"))
                 throw new InvalidDataException("Saffron Gym source cry scope differs.");
@@ -179,7 +179,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         if(includeCinnabar)
         {
             if(!includeSaffronGym)throw new InvalidDataException("Cinnabar audio requires Saffron predecessor.");
-            var extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/cinnabar-synth-audio/manifest.json"));
+            var extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/cinnabar.json"));
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Cinnabar synth manifest missing.");
             if(extension.SchemaVersion!=1||!extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_CINNABAR","MUS_POKE_MANSION","SE_FALL","CRY_NINETALES_NORMAL","CRY_ARCANINE_NORMAL","CRY_RAPIDASH_NORMAL","CRY_CLOYSTER_NORMAL","CRY_KRABBY_NORMAL","CRY_KINGLER_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
                 throw new InvalidDataException("Cinnabar source cue scope differs.");
@@ -188,7 +188,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         if(includeFirstSevii)
         {
             if(!includeCinnabar)throw new InvalidDataException("First-Sevii audio requires Cinnabar predecessor.");
-            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/first-sevii-presentation/synth-manifest.json"));
+            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/ui/first-sevii-presentation/synth-manifest.json"));
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("First-Sevii synth manifest missing.");
             if(extension.SchemaVersion!=1||
                 !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_123","MUS_NET_CENTER","SE_SHIP"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
@@ -265,9 +265,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         if (includeTrainerTower) cues = ExtendTrainerTowerCues(projectRoot,includePowerPlant,cues,options);
         if (includeFossilLab) cues = ExtendFossilLabCues(projectRoot,includeTrainerTower,cues,options);
         if (includeSeafoam) cues = ExtendSeafoamCues(projectRoot,includeFossilLab,cues,options);
-        if (includeMoveDeleter) cues = ExtendMoveDeleterCues(projectRoot,includeSeafoam,cues,options,manifest.SourceCommit);
-        if (includeVending) cues = ExtendVendingCues(projectRoot,cues,options,manifest.SourceCommit);
-        if (includeFieldFly) cues = ExtendFieldFlyCues(projectRoot,cues,options,manifest.SourceCommit);
+        if (includeMoveDeleter) cues = ExtendMoveDeleterCues(projectRoot,includeSeafoam,cues,options);
+        if (includeVending) cues = ExtendVendingCues(projectRoot,cues,options);
+        if (includeFieldFly) cues = ExtendFieldFlyCues(projectRoot,cues,options);
         if (includeSlotMachine) cues = ExtendSlotMachineCues(projectRoot,cues,options);
         if (includeFameChecker) cues = ExtendFameCheckerCues(cues);
         if (includeVsSeeker) cues = ExtendVsSeekerCues(cues);
@@ -275,7 +275,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
         if(includeFuchsiaRoute)
         {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/source-explosion-animations/synth-manifest.json");
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/battle/animations/explosion/synth-manifest.json");
             var addition=File.ReadAllBytes(path);
             var extension=JsonSerializer.Deserialize<SynthManifest>(addition,options)??throw new InvalidDataException("Missing explosion sound metadata.");
             if(extension.SchemaVersion!=1)throw new InvalidDataException("Explosion sound metadata contract differs.");
@@ -598,13 +598,13 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         public long StartGameFrame { get; } = startGameFrame;
         public long? EndFrame { get; set; }
     }
-    private sealed record SynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues);
-    private sealed record FiveIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
-    private sealed record SixIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
-    private sealed record FourIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
-    private sealed record SynthCue(string Id, string SourceCommit, string SourceSymbol, string SourcePath,
+    private sealed record SynthManifest(int SchemaVersion, SynthCue[] Cues);
+    private sealed record FiveIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record SixIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record FourIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record SynthCue(string Id, string SourceSymbol,
         int SourcePlayer, int Priority, int? SourceCounter, uint SongAddress, int Species, bool Looping, int CryMode = 0)
     {
-        public SourceAudioMetadata Metadata => new(Id, SourceCommit, SourceSymbol, SourcePath, SourcePlayer, Priority, SourceCounter, BackendId);
+        public SourceAudioMetadata Metadata => new(Id, SourceSymbol, SourcePlayer, Priority, SourceCounter, BackendId);
     }
 }

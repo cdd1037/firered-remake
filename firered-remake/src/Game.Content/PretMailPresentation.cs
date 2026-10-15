@@ -6,7 +6,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record MailPresentationAsset(string Id, int Width, int Height, string PngPath, ImmutableArray<string> SourcePaths, bool Shared, ImageRegion? Region = null);
+public sealed record MailPresentationAsset(string Id, int Width, int Height, string PngPath, bool Shared, ImageRegion? Region = null);
 public sealed record MailStationery(ushort ItemId, string ItemSymbol, string Name,
     ImmutableArray<string> BackgroundIds, string ItemIconId, int MessageX, int MessageY, int LineHeight,
     ImmutableArray<int> WordsPerLine, int AuthorX, int AuthorY, string AuthorPrefix,
@@ -17,7 +17,7 @@ public sealed record MailReaderLine(int X, int Y, string Text);
 public sealed class PretMailPresentation
 {
     public const string ResourceId = "firered-mail-presentation-v1";
-    public const string Base = "content/generated/mail-presentation/";
+    public const string Base = "content/generated/ui/mail-presentation/";
     public ImmutableArray<MailStationery> Stationery { get; }
     public ImmutableArray<EarlyShopItemDefinition> Items { get; }
     public ImmutableDictionary<string, MailPresentationAsset> Assets { get; }

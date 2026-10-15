@@ -216,10 +216,10 @@ public sealed class FieldItemTests
         var owner = context.Pokemon;
         var copy = GamePokemonCatalog.Create(owner.Mechanics, owner.Catalog with { }, owner.Opponents.Catalog with { }, owner.TrainerTowerOpponents.Catalog with { });
         var member = Supply(fixture, ("RARE_CANDY", 2)).Party[0];
-        Same(RareCandyRules.Apply(context, owner, member, "MAPSEC_ONE_ISLAND"),
-            RareCandyRules.Apply(context with { Pokemon = copy }, copy, member, "MAPSEC_ONE_ISLAND"), "equivalent definitions preserve candy result");
+        Same(RareCandyRules.Apply(context, member, "MAPSEC_ONE_ISLAND"),
+            RareCandyRules.Apply(context with { Pokemon = copy }, member, "MAPSEC_ONE_ISLAND"), "equivalent definitions preserve candy result");
         var unadmitted = member with { Pokemon = member.Pokemon with { Species = new("pret:SPECIES_MEW"), SourceSpeciesId = 151 } };
-        Assert.Throws<ArgumentException>(() => RareCandyRules.Apply(context, owner, unadmitted, "MAPSEC_ONE_ISLAND"));
+        Assert.Throws<ArgumentException>(() => RareCandyRules.Apply(context, unadmitted, "MAPSEC_ONE_ISLAND"));
     }
 
     [TestMethod]

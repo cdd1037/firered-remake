@@ -67,7 +67,7 @@ public partial class CampaignView
         return preview is not null?page with{Portrait=BillPcDexPortrait(preview)}:page;
     }
 
-    private static PokedexMenuTexture BillPcDexPortrait(PretBillDexView view)=>new("content/generated/bill-items/"+view.PngPath,64,64);
+    private static PokedexMenuTexture BillPcDexPortrait(PretBillDexView view)=>new("content/generated/data/items/bill/"+view.PngPath,64,64);
 
     private byte[] ReadPokedexTexture(PokedexMenuTexture texture)
     {
@@ -105,7 +105,7 @@ public partial class CampaignView
             foreach(var view in items.DexViews)
                 if(texture==BillPcDexPortrait(view))
                 {
-                    using var image=NativeImages.LoadPng(PretBillItems.DexPng(view, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/bill-items", view.PngPath))), 64, 64);
+                    using var image=NativeImages.LoadPng(PretBillItems.DexPng(view, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/data/items/bill", view.PngPath))), 64, 64);
                     return image.SavePngToBuffer();
                 }
         if(_catalog.RocketHideoutPokemon is {} rocket)

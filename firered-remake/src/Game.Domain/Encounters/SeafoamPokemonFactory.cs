@@ -12,7 +12,7 @@ public static class SeafoamPokemonFactory
 {
     public static Route1WildPokemonResult GenerateArticuno(GamePokemonCatalog owned, RngState rng, uint originalTrainerId)
     {
-        ValidateOwned(owned);
+        ArgumentNullException.ThrowIfNull(owned);
         var made = SourcePokemonFactory.Create(owned.Mechanics, new(SeafoamOwnedPokemonCatalog.ArticunoId, 50,
             originalTrainerId, IvPolicy.Random, PersonalityPolicy.Random), rng);
         if (made.Trace.Length != 4 || !SourceInitialInstance(owned, SeafoamWildBattleContract.ArticunoOrigin, made.Pokemon))
@@ -22,7 +22,7 @@ public static class SeafoamPokemonFactory
     public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, SeafoamWildOrigin origin,
         byte level, RngState rng, uint originalTrainerId)
     {
-        ValidateOwned(owned);
+        ArgumentNullException.ThrowIfNull(owned);
         var slot = SeafoamWildBattleContract.SourceSlot(origin);
         if (origin is null || origin.Kind == SeafoamEncounterKind.Articuno || slot is null || !owned.Catalog.Species.ContainsKey(slot.Species) ||
             level < Math.Min(slot.MinimumLevel, slot.MaximumLevel) || level > Math.Max(slot.MinimumLevel, slot.MaximumLevel))
@@ -57,15 +57,10 @@ public static class SeafoamPokemonFactory
     }
     public static PartyPokemon PreserveCaughtMetadata(GamePokemonCatalog owned, SeafoamWildOrigin origin, PartyPokemon caught)
     {
-        ValidateOwned(owned); ArgumentNullException.ThrowIfNull(caught);
+        ArgumentNullException.ThrowIfNull(owned); ArgumentNullException.ThrowIfNull(caught);
         if (!SeafoamWildBattleContract.Matches(origin, caught.Pokemon) ||
             SourcePokemonValidator.ValidatePermanent(owned.Mechanics, caught.Pokemon) is not null)
             throw new ArgumentException("seafoam_caught_identity");
         return caught with { ModernFatefulEncounter = false };
-    }
-    private static void ValidateOwned(GamePokemonCatalog owned)
-    {
-        if (owned is null || owned.Catalog.Moves.Count != 354)
-            throw new ArgumentException("seafoam_owned_proof");
     }
 }

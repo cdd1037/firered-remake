@@ -74,19 +74,19 @@ public sealed class PretSeafoamRegion
     public static PretSeafoamRegion Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"seafoam-resources");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/seafoam");
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("resourceId").GetString() == ResourceId &&
             catalog.GetProperty("maps").GetArrayLength() == 7 && catalog.GetProperty("layoutVariants").GetArrayLength() == 2 , "Seafoam catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Seafoam resources; current-game admission is separate.", ResourceId);
-        string player = PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png");
+        string player = PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png");
         PretWorldMap LoadMap(JsonElement spec, bool variant)
         {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" , "Seafoam compact binding differs.");
+            Need(path == relative , "Seafoam compact binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Seafoam map identity differs.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Seafoam map identity differs.");
             var layout = spec.GetProperty(variant ? "sourceLayout" : "layout");
             Need(runtime.Width == layout.GetProperty("width").GetInt32() && runtime.Height == layout.GetProperty("height").GetInt32(), "Seafoam layout dimensions differ.");
             return PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative), player, MapIdFromSourceSymbol);

@@ -6,7 +6,7 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record SharedItemDocument(int SchemaVersion, string SourceCommit,
+public sealed record SharedItemDocument(int SchemaVersion,
     ImmutableArray<QuestItemDefinition> Items);
 
 /// <summary>Immutable item business definitions. Resolving an item never admits it to an inventory or field service.</summary>
@@ -15,7 +15,7 @@ public sealed class SharedItemCatalog
     private readonly ImmutableDictionary<ItemId, QuestItemDefinition> _items;
     private SharedItemCatalog(SharedItemDocument document)
     {
-        if (document.SchemaVersion != 1 || document.SourceCommit != QuestItemRules.SourceCommit ||
+        if (document.SchemaVersion != 1 ||
             document.Items.IsDefault || document.Items.Length != 307)
             throw new InvalidDataException("item_catalog_shape");
         _items = document.Items.ToImmutableDictionary(item => item.Id);
@@ -27,7 +27,7 @@ public sealed class SharedItemCatalog
             throw new InvalidDataException("item_catalog_definition");
     }
     public static SharedItemCatalog LoadProject(string root) => new(ContentJson.ParseStrict<SharedItemDocument>(
-        File.ReadAllText(Path.Combine(root, "content/generated/item-catalog/catalog.json")), ContentJson.CreateOptions()));
+        File.ReadAllText(Path.Combine(root, "content/generated/data/items.json")), ContentJson.CreateOptions()));
     public QuestItemDefinition Definition(ItemId id) => _items.TryGetValue(id, out var item)
         ? item : throw new InvalidDataException("item_definition_missing: " + id.Value);
     public ImmutableDictionary<ItemId, QuestItemDefinition> Select(IEnumerable<ItemId> ids) =>

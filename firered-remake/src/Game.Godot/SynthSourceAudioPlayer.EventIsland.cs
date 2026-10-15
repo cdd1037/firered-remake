@@ -2,7 +2,7 @@ using System.Text.Json;
 
 public partial class SynthSourceAudioPlayer
 {
-    private sealed record EventIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record EventIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
 
     private static SynthCue[] ExtendEventIslandCues(string root, bool includeSevenIsland, SynthCue[] cues, JsonSerializerOptions options)
     {

@@ -3,7 +3,7 @@ using System.Text.Json;
 internal sealed record PokemonLeaguePresentationData(JsonElement Manifest,Dictionary<string,byte[]> Files);
 internal static class PokemonLeaguePresentationAssets
 {
-    internal const string Base="content/generated/pokemon-league-presentation/";
+    internal const string Base="content/generated/sprites/pokemon/pokemon-league/";
     internal const string SourceCommit="037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
     internal static PokemonLeaguePresentationData Load(string root)

@@ -4,6 +4,5 @@ using Game.Domain.Ids;
 namespace Game.Domain.Trainers;
 
 /// <summary>Twelve exact parties and thirteen source entries, including the shared Ray/Tyra double.</summary>
-public sealed record VictoryRoadTrainerCatalog(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
+public sealed record VictoryRoadTrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
     ImmutableDictionary<string, CeruleanTrainerBattleDefinition> BattlesByScript);

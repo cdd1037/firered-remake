@@ -19,12 +19,10 @@ public sealed class TeachyTvRenderer : IDisposable
         byte[] bytes = File.ReadAllBytes(Path.Combine(artDirectory, "teachy-tv-art.json"));
         using var document = JsonDocument.Parse(bytes);
         var manifest = document.RootElement;
-        if (manifest.GetProperty("profile").GetString() != "firered-teachy-tv-art-v1")
-            throw new InvalidDataException("teachy_tv_art_identity");
         var palette = manifest.GetProperty("contract").GetProperty("palettes");
         Color C(int index) => Color.Color8(palette[index][0].GetByte(), palette[index][1].GetByte(), palette[index][2].GetByte());
         _textBackground = C(60);
-        var fonts = Path.Combine(root, "content/generated/source-font");
+        var fonts = Path.Combine(root, "content/generated/ui/font");
         _menu = SourceGameFont.Load(fonts, foreground: C(49), shadow: C(50));
         try
         {
@@ -53,7 +51,7 @@ public sealed class TeachyTvRenderer : IDisposable
         catch { _menu.Dispose(); _dialogue?.Dispose(); foreach (var texture in _textures.Values) texture.Dispose(); throw; }
     }
     public static TeachyTvRenderer Load(string root, SourceTextCursor sharedCursor, string? artDirectory = null) =>
-        new(root, artDirectory ?? Path.Combine(root, "content/generated/teachy-tv-art"), sharedCursor);
+        new(root, artDirectory ?? Path.Combine(root, "content/generated/ui/teachy-tv-art"), sharedCursor);
 
     public bool Draw(CanvasItem canvas, TeachyTvPresentation view)
     {

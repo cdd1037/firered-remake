@@ -44,7 +44,7 @@ public sealed class FameCheckerCatalog
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         }) ?? throw new InvalidDataException("fame_checker_catalog_empty");
-        if (doc.SchemaVersion != 1 || doc.Profile != Profile || doc.SourceCommit != SourceCommit ||
+        if (doc.SchemaVersion != 1 ||
             doc.Persons.IsDefault || doc.Persons.Length != FameCheckerRules.PersonCount ||
             doc.UiTexts.IsDefault || doc.CollectionEvents.IsDefault || doc.Persons.Any(p => p is null || p.Facts.IsDefault) ||
             !doc.Persons.Select(p => p.SourceIndex).SequenceEqual(Enumerable.Range(0, FameCheckerRules.PersonCount)) ||
@@ -54,7 +54,7 @@ public sealed class FameCheckerCatalog
         return new(doc);
     }
 
-    private sealed record Document(int SchemaVersion, string Profile, string SourceCommit,
+    private sealed record Document(int SchemaVersion,
         ImmutableDictionary<string, int> PickStates,
         ImmutableArray<FameCheckerPerson> Persons, ImmutableArray<FameCheckerText> UiTexts,
         ImmutableArray<FameCheckerCollectionEvent> CollectionEvents);

@@ -10,7 +10,7 @@ public partial class CampaignView
     private void LoadOptionsPresentation()
     {
         if(!_catalog.PokemonStorageEnabled)return;
-        _optionValueFont=SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/source-font"),foreground:Color.Color8(231,8,8),shadow:Color.Color8(255,189,115));
+        _optionValueFont=SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/ui/font"),foreground:Color.Color8(231,8,8),shadow:Color.Color8(255,189,115));
         var source=PretOptionFrames.Load(_root);
         foreach(var asset in source.Assets)
         {

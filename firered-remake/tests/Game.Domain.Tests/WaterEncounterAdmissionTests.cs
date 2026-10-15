@@ -12,7 +12,7 @@ public sealed class WaterEncounterAdmissionTests
     {
         var table = CinnabarWaterEncounterCatalog.SourceAdditions[0];
         var tables = ImmutableDictionary<MapId, WaterEncounterTable>.Empty.Add(table.Map, table);
-        var copy = table with { Slots = table.Slots.ToImmutableArray(), SourcePath = "irrelevant-build-path" };
+        var copy = table with { Slots = table.Slots.ToImmutableArray() };
         WaterEncounterCatalog.ValidateAdmission(tables, copy);
         Assert.IsTrue(CinnabarWaterEncounterCatalog.MatchesDefinition(copy));
         Assert.Throws<ArgumentException>(() => WaterEncounterCatalog.ValidateAdmission(tables, table with { RawEncounterRate = table.RawEncounterRate + 1 }));

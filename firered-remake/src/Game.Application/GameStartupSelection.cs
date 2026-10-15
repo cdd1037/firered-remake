@@ -107,7 +107,7 @@ public sealed record GameStartupSelection(GameStartupMode Mode,string ProjectRoo
             if(Env(name).Length>0)throw new InvalidOperationException("startup_selector_retired: "+name);
         if(Env("FIRERED_COMPACT_MAPS") is not ("" or "1"))throw new InvalidOperationException("startup_compact_maps_required");
         string root=Env("FIRERED_PROJECT_ROOT"),checkpoint=Env("FIRERED_CAMPAIGN_CHECKPOINT");
-        if(mode==GameStartupMode.Current && string.IsNullOrWhiteSpace(root))throw new InvalidOperationException("Use scripts/launch-current.sh: FIRERED_PROJECT_ROOT is required.");
+        if(mode==GameStartupMode.Current && string.IsNullOrWhiteSpace(root))throw new InvalidOperationException("Use scripts/dev/launch-current.sh: FIRERED_PROJECT_ROOT is required.");
         if(mode!=GameStartupMode.Current && checkpoint.Length>0)throw new InvalidOperationException("startup_checkpoint_requires_current");
         return new(mode,root,checkpoint);
     }

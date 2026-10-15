@@ -3,7 +3,6 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-public sealed record PretDepartmentStoreSourceFile(string Path);
 public sealed record PretDepartmentStoreSourceReference(string Path, string Symbol, int LineStart, int LineEnd);
 public sealed record PretDepartmentStoreItem(string StableId, int SourceItemId, string Name, int Price, string Pocket, JsonElement Metadata);
 public sealed record PretDepartmentStoreStock(string Id, string ClerkScript, string ProposedAdmission,
@@ -27,7 +26,6 @@ public sealed class PretDepartmentStoreContract
     public const int ExitChoice = 5;
     public const int CancelChoice = 127;
     public JsonElement Document { get; }
-    public ImmutableArray<PretDepartmentStoreSourceFile> SourceFiles { get; }
     public ImmutableDictionary<string, JsonElement> MapEvents { get; }
     public ImmutableArray<PretDepartmentStoreStock> Stocks { get; }
     public ImmutableArray<PretDepartmentStoreFloor> ElevatorFloors { get; }
@@ -37,9 +35,9 @@ public sealed class PretDepartmentStoreContract
     public PretDepartmentStoreStock OrdinaryStock => Stocks.Single(s => s.Id == OrdinaryStockId);
     private readonly ImmutableArray<int> _shakeTable;
 
-    private PretDepartmentStoreContract(JsonElement document, ImmutableArray<PretDepartmentStoreSourceFile> files)
+    private PretDepartmentStoreContract(JsonElement document)
     {
-        Document = document.Clone(); SourceFiles = files;
+        Document = document.Clone();
         MapEvents = document.GetProperty("maps").EnumerateArray().ToImmutableDictionary(
             m => String(m, "stableId"), m => m.GetProperty("events").Clone(), StringComparer.Ordinal);
         Stocks = document.GetProperty("stocks").EnumerateArray().Select(s => new PretDepartmentStoreStock(
@@ -85,13 +83,10 @@ public sealed class PretDepartmentStoreContract
     public static PretDepartmentStoreContract Load(string projectRoot)
     {
         string root = Path.GetFullPath(projectRoot);
-        using var contract = JsonDocument.Parse(ReadPinned(root, "content/generated/department-store/contract.json"));
+        using var contract = JsonDocument.Parse(ReadPinned(root, "content/generated/data/services/department-store.json"));
         var document = contract.RootElement;
         Need(Int(document, "schemaVersion") == 1, "Unsupported department store schema.");
-        var files = document.GetProperty("sourceFiles").EnumerateArray().Select(row =>
-            new PretDepartmentStoreSourceFile(String(row, "path"))).ToImmutableArray();
-        Need(files.Select(file => file.Path).Distinct(StringComparer.Ordinal).Count() == files.Length, "Duplicate department store source path.");
-        var result = new PretDepartmentStoreContract(document, files);
+        var result = new PretDepartmentStoreContract(document);
         Need(result.Stocks.SelectMany(stock => stock.Items).All(item => item.Price > 0), "Department store item price is invalid.");
         return result;
     }

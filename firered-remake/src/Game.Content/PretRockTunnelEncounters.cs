@@ -4,9 +4,7 @@ using System.Text.Json;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record RockTunnelEncounterDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,ImmutableArray<RockTunnelHeldItemRow> HeldItems,JsonElement ExcludedTables,
-    ImmutableArray<string> Limitations);
+public sealed record RockTunnelEncounterDocument(int SchemaVersion,ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,ImmutableArray<RockTunnelHeldItemRow> HeldItems,JsonElement ExcludedTables);
 public sealed record RockTunnelHeldItemRow(string Species, string Common, string Rare, string SourcePath);
 /// <summary>Fixed source inputs and exact RockTunnel/cave land tables; no water or fishing admission.</summary>
 public sealed class PretRockTunnelEncounters
@@ -22,9 +20,9 @@ public sealed class PretRockTunnelEncounters
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var d=ContentJson.ParseStrict<RockTunnelEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/rocktunnel-encounters/encounters.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<RockTunnelEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/data/encounters/rocktunnel.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=4 ||
-            d.HeldItemDrawBound!=100 || d.HeldItems.Length!=9 || d.ExcludedTables.GetArrayLength()!=3 || d.Limitations.IsDefaultOrEmpty)
+            d.HeldItemDrawBound!=100 || d.HeldItems.Length!=9 || d.ExcludedTables.GetArrayLength()!=3)
             throw new InvalidDataException("RockTunnel encounter document scope differs.");
         if(!d.HeldItems.Select(x=>x.Species).ToHashSet(StringComparer.Ordinal).SetEquals(RockTunnelLandEncounterTables.WildSpecies.Select(x=>x.Value)))
             throw new InvalidDataException("RockTunnel held-item species differs.");

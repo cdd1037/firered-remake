@@ -6,8 +6,7 @@ using Game.Domain.Roaming;
 namespace Game.Domain.Encounters;
 
 public sealed record WaterEncounterSlot(int Index, SpeciesId Species, byte MinimumLevel, byte MaximumLevel, int Weight);
-public sealed record WaterEncounterTable(MapId Map, string SourceMapSymbol, string SourceCommit, string SourcePath,
-    string SourceSymbol, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
+public sealed record WaterEncounterTable(MapId Map, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
 public sealed record WaterEncounterCandidate(MapId Map, int Slot, SpeciesId Species, byte Level);
 public sealed record PendingWaterEncounter(WaterEncounterCandidate Candidate, byte MetatileBehavior);
 public sealed record WaterEncounterState(EncounterRateRngState RateRng, ushort PreviousMetatileBehavior = 0,

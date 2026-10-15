@@ -92,8 +92,7 @@ public static class LevelEvolutionRules
         var previous = content.Catalog.Species[before.Species];
         // Source changes species without changing the stored ability bit. These bounded families
         // keep compatible ability slots and growth curves, unlike an arbitrary species replacement.
-        bool authenticatedOwned = content.Pokemon.Catalog.Species.ContainsKey(targetSpecies);
-        bool sourceExtendedFamily = authenticatedOwned && (
+        bool sourceExtendedFamily = (
             previous.Evolutions.Any(e => e.Target == targetSpecies && SourceLevelEvolutionProjection.IsNormalMethod(e.Method)) ||
             (before.Species.Value, targetSpecies.Value) is
                 ("pret:SPECIES_SLUGMA", "pret:SPECIES_MAGCARGO") or
@@ -179,22 +178,8 @@ public static class LevelEvolutionRules
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         // Only Everstone has a prevent-evolution hold effect in this bounded static item profile.
         // In particular, Enigma Berry can obtain that effect from save data not represented here.
-        bool staticHeldItem = content.Pokemon is { } ownership
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(ownership.Mechanics.Catalog, owned.HeldItem)
-            : content.Catalog.Species.Count switch
-        {
-            107 => Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(owned.HeldItem),
-            40 => owned.HeldItem == "ITEM_ORAN_BERRY",
-            102 or 103 => Game.Domain.WildBattle.SnorlaxBattleScope.SupportsHeldItem(owned.HeldItem),
-            101 => Game.Domain.WildBattle.PokemonTowerBattleScope.SupportsHeldItem(owned.HeldItem),
-            99 => Game.Domain.WildBattle.RocketHideoutBattleScope.SupportsHeldItem(owned.HeldItem),
-            93 or 94 or 98 => Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(owned.HeldItem),
-            79 => Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(owned.HeldItem),
-            73 => Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(owned.HeldItem),
-            70 => Game.Domain.Pokemon.VermilionPickupRules.IsKnownHeldItem(owned.HeldItem),
-            56 or 65 or 68 => owned.HeldItem is "ITEM_ORAN_BERRY" or "ITEM_TINY_MUSHROOM" or "ITEM_BIG_MUSHROOM" or "ITEM_MOON_STONE",
-            _ => false
-        };
+        bool staticHeldItem = Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(
+            content.Pokemon.Mechanics.Catalog, owned.HeldItem);
         if (owned.HeldItem is not ("ITEM_NONE" or "ITEM_EVERSTONE") && !staticHeldItem)
             throw new NotSupportedException("Unsupported evolution held-item effect.");
     }

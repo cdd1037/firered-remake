@@ -12,7 +12,7 @@ public sealed record VsSeekerPresentationAsset(string Id, string Path, int Width
 /// trainer sheets and original synth pack; only missing scanner/icon pixels are added.</summary>
 public sealed class PretVsSeekerPresentation
 {
-    public const string Base = "content/generated/vs-seeker-presentation/";
+    public const string Base = "content/generated/ui/vs-seeker-presentation/";
     public const string Profile = "firered-vs-seeker-presentation-v1";
     private readonly ImmutableDictionary<string, byte[]> _textures;
     private readonly byte[] _itemIcon;

@@ -5,15 +5,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record StoneEvolutionDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record StoneEvolutionDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record StoneEvolutionPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Seven authenticated owned stone targets reuse original battlers, geometry and cries; only missing menu art is added.</summary>
 public static class PretStoneEvolutionPresentation
 {
-    public const string Base = "content/generated/stone-evolution-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/stone-evolution/";
     public const string Profile = "firered-stone-evolution-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -39,15 +38,16 @@ public static class PretStoneEvolutionPresentation
         if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("StoneEvolution presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "inheritedSprites", "pokemonIcons", "footprints" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (var asset in new[] { "inheritedSprites","pokemonIcons","footprints" }
             .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
@@ -78,7 +78,7 @@ public static class PretStoneEvolutionPresentation
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
                 throw new InvalidDataException("Stone evolution dex texture differs.");
-        using var inheritedDex = JsonDocument.Parse(files["content/generated/pokedex-menu/pokedex-menu.json"]);
+        using var inheritedDex = JsonDocument.Parse(Read("content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json"));
         foreach (var entry in dex.Entries)
         {
             var original = inheritedDex.RootElement.GetProperty("entries").EnumerateArray()
@@ -101,16 +101,6 @@ public static class PretStoneEvolutionPresentation
                 var entry = dex.Entries.Single(e => e.SourceSpeciesId == species);
                 if (asset.GetProperty("speciesId").GetString() != "pret:SPECIES_" + entry.Name)
                     throw new InvalidDataException("Stone evolution asset species differs.");
-                if (asset.GetProperty("inherited").GetBoolean())
-                {
-                    using var inherited = JsonDocument.Parse(files[asset.GetProperty("inheritedManifest").GetString()!]);
-                    var original = asset.GetProperty("inheritedAsset");
-                    if (!inherited.RootElement.GetProperty(asset.GetProperty("inheritedCollection").GetString()!).EnumerateArray().Any(old => JsonElement.DeepEquals(old, original)))
-                        throw new InvalidDataException("Stone evolution inherited binding differs.");
-                    foreach (string field in new[] { "width", "height", "sourceSpeciesId" })
-                        if (!JsonElement.DeepEquals(asset.GetProperty(field), original.GetProperty(field)))
-                            throw new InvalidDataException("Stone evolution inherited asset identity differs.");
-                }
             }
         }
         var icons = manifest.GetProperty("pokemonIcons").EnumerateArray().ToArray();
@@ -120,7 +110,7 @@ public static class PretStoneEvolutionPresentation
                 i.GetProperty("sourceFrame").GetInt32() != 0 || i.GetProperty("sourceFrameCount").GetInt32() != 2 || i.GetProperty("paletteIndex").GetInt32() is < 0 or > 2) ||
             footprints.Any(i => i.GetProperty("width").GetInt32() != 16 || i.GetProperty("height").GetInt32() != 16))
             throw new InvalidDataException("Stone evolution menu geometry differs.");
-        using var inheritedGeometry = JsonDocument.Parse(files[manifest.GetProperty("moveAnimationGeometry").GetProperty("inheritedManifest").GetString()!]);
+        using var inheritedGeometry = JsonDocument.Parse(Read(manifest.GetProperty("moveAnimationGeometry").GetProperty("inheritedManifest").GetString()!));
         var geometry = manifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray().ToArray();
         if (!geometry.Select(r => (r.GetProperty("species").GetInt32(), r.GetProperty("side").GetString()!))
             .SequenceEqual(Species.SelectMany(s => new[] { (s, "front"),(s, "back") })))
@@ -146,7 +136,7 @@ public static class PretStoneEvolutionPresentation
             throw new InvalidDataException("Stone evolution inherited cry inventory differs.");
         foreach (var row in cues)
         {
-            using var synth = JsonDocument.Parse(files[row.GetProperty("inheritedManifest").GetString()!]);
+            using var synth = JsonDocument.Parse(Read(row.GetProperty("inheritedManifest").GetString()!));
             var cue = row.GetProperty("cue");
             int species = cue.GetProperty("species").GetInt32();
             string name = dex.Entries.Single(e => e.SourceSpeciesId == species).Name;

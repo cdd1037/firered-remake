@@ -13,7 +13,7 @@ internal static class ViridianGymPresentationAssets
 {
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
-    internal const string Base = "content/generated/viridian-gym-presentation/";
+    internal const string Base = "content/generated/ui/viridian-gym-presentation/";
 
     internal static ViridianGymPresentationData Load(string root)
     {
@@ -30,19 +30,19 @@ internal static class ViridianGymPresentationAssets
         }
         using var manifest = JsonDocument.Parse(Read(Base + "manifest.json"));
         var m = manifest.RootElement;
-        if (m.GetProperty("schemaVersion").GetInt32() != 1 || m.GetProperty("profile").GetString() != "firered-viridian-gym-presentation-v1")
+        if (m.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Viridian Gym presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in m.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            if (!path.EndsWith(".png", StringComparison.Ordinal)) continue;
-            files.Add(path, Read(path));
-        }
         foreach (var row in m.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "portraits" }
+            .SelectMany(kind => m.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         var trainers = new Dictionary<string, ViridianGymTrainerPresentation>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("trainers").EnumerateArray())

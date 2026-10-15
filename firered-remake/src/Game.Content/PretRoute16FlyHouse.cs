@@ -9,8 +9,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record PretRoute16FlyTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles, JsonElement ResolvedMoves);
+public sealed record PretRoute16FlyTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
 /// <summary>One original house; existing Route16 and the divided gate retain their own identities. Runtime admission is separate.</summary>
 public sealed class PretRoute16FlyHouse
@@ -21,7 +20,6 @@ public sealed class PretRoute16FlyHouse
     public static MapId GateMapId { get; } = new("map.route-16-north-entrance-1f");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public PretRoute16FlyTrainerDocument Trainers { get; }
     public JsonElement Contracts { get; }
 
@@ -34,7 +32,7 @@ public sealed class PretRoute16FlyHouse
     private PretRoute16FlyHouse(Source source, PretWorldMap house, ImmutableDictionary<string, int> constants,
         ImmutableDictionary<MapId, PretRuntimeMapData> retained, PretRoute16FlyTrainerDocument trainers)
     {
-        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
+        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants;
         GeneratedDirectory = source.Directory; Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
         Trainers = trainers; _retained = retained;
@@ -77,7 +75,7 @@ public sealed class PretRoute16FlyHouse
             var id = new MapId(row.GetProperty("stableId").GetString()!);
             Need(maps.TryGetValue(id, out var map), "Missing retained north-passage map.");
             var original = _retained[id]; var events = original.Events;
-            Need(map!.SourceRef.Symbol == row.GetProperty("sourceMap").GetString() &&
+            Need(map!.SourceMapSymbol == row.GetProperty("sourceMap").GetString() &&
                 map.Width == original.Width && map.Height == original.Height &&
                 JsonElement.DeepEquals(map.Events, events), "Retained north-passage identity/events differ.");
             foreach (var c in original.ExpandCells())
@@ -96,7 +94,7 @@ public sealed class PretRoute16FlyHouse
         Need(catalog.GetProperty("maps").GetArrayLength() == 1 , "Fly house catalog differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "One house; north path admission remains separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0]; string path = spec.GetProperty("path").GetString()!;
-        Need(path == "route-16-house/runtime-map.json" && spec.GetProperty("stableId").GetString() == HouseMapId.Value ,
+        Need(path == "route-16-house.json" && spec.GetProperty("stableId").GetString() == HouseMapId.Value ,
             "Fly house compact map identity differs.");
         var house = LoadHouse(source, metadata, spec, dependencyRoot);
         Need(house.Width == 11 && house.Height == 9 && house.FieldWarps.Length == 3 &&
@@ -115,37 +113,29 @@ public sealed class PretRoute16FlyHouse
         var npcs = source.Document("npc-source.json").GetProperty("graphics");
         Need(npcs.GetArrayLength() == 3, "Fly house actor textures differ.");
 
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["ITEM_HM02"] == 340 && constants["FLAG_GOT_HM02"] == 0x238, "Original HM02 gift constants differ.");
-        var trainers = SafariSource.Parse<PretRoute16FlyTrainerDocument>(source.Read("trainers.json"));
-        Need(!trainers.CompleteSourceRoster &&
-            trainers.Trainers.Length == 1 && trainers.Battles.Length == 2, "Upper path trainer scope differs.");
-        var trainer = trainers.Trainers[0];
-        Need(trainer.Id.Value == "pret:TRAINER_YOUNG_COUPLE_LEA_JED" && trainer.SourceTrainerId == 489 && trainer.DoubleBattle &&
-            trainer.AiFlags == 1 && trainer.PartyFlags == 0 && trainer.Party.Length == 2 && trainer.Party.All(m => m.Level == 29 && m.SourceIv == 0 && m.HeldItem == "ITEM_NONE") &&
-            trainer.Party.Select(m => m.Species.Value).SequenceEqual(["pret:SPECIES_RAPIDASH", "pret:SPECIES_NINETALES"]), "Original Lea/Jed preset party differs.");
-        Need(trainers.Battles.All(b => b.Trainer == trainer.Id && b.Mode == 4 && b.BattleTypeFlags == 9 && b.EntryScript == "EventScript_TryDoDoubleTrainerBattle" &&
-            b.Callback == "CB2_EndTrainerBattle" && b.NotEnoughMonsText is not null) && trainers.Battles.Select(b => b.ScriptEntry).ToHashSet()
-            .SetEquals(["Route16_EventScript_Lea", "Route16_EventScript_Jed"]), "Original shared-double interactions differ.");
+        var trainers = ContentJson.ParseStrict<PretRoute16FlyTrainerDocument>(Encoding.UTF8.GetString(source.Read("trainers.json")), SharedTrainerCatalog.Options(dependencyRoot));
+        Game.Domain.Trainers.Route16FlyTrainerPartyFactory.ValidateCatalog(new(
+            trainers.Trainers.ToImmutableDictionary(trainer => trainer.Id),
+            trainers.Battles.ToImmutableDictionary(battle => battle.ScriptEntry, StringComparer.Ordinal)));
         return new(source, house, constants, retained.ToImmutable(), trainers);
     }
 
     // This house reuses the regional source-symbol mapping for its exterior warp.
     private static PretWorldMap LoadHouse(Source source, PretWorldMetadata metadata, JsonElement spec, string dependencyRoot)
     {
-        var runtime = PretRuntimeMapData.Decode(source.Read("route-16-house/runtime-map.json"), HouseMapId.Value, PretSnorlaxRegion.MapIdFromSourceSymbol);
+        var runtime = PretRuntimeMapData.Decode(source.Read("route-16-house.json"), HouseMapId.Value, PretSnorlaxRegion.MapIdFromSourceSymbol);
         Need((runtime.Width, runtime.Height, runtime.BorderWidth, runtime.BorderHeight) == (11, 9, 2, 2),
             "Fly house geometry differs.");
         return PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, "route-16-house"),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), PretSnorlaxRegion.MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), PretSnorlaxRegion.MapIdFromSourceSymbol);
     }
 
     private static void ValidateTopology(JsonElement contract, PretWorldMap house, ImmutableDictionary<MapId, PretRuntimeMapData>.Builder retained)
     {
         JsonElement Events(string symbol) => symbol == "MAP_ROUTE16_HOUSE" ? house.Events : retained[PretSnorlaxRegion.MapIdFromSourceSymbol(symbol)].Events;
-        Need(contract.GetProperty("topology").GetArrayLength() == 8 && !contract.GetProperty("runtimeIntegrated").GetBoolean(), "Fly house source topology scope differs.");
+        Need(contract.GetProperty("topology").GetArrayLength() == 8, "Fly house source topology scope differs.");
         foreach (var edge in contract.GetProperty("topology").EnumerateArray())
         {
             string symbol = edge.GetProperty("sourceMap").GetString()!; int index = edge.GetProperty("sourceIndex").GetInt32();
@@ -166,7 +156,7 @@ public sealed class PretRoute16FlyHouse
         internal string Directory { get; }
         internal Source(string root)
         {
-            Directory = Path.GetFullPath(Path.Combine(root, "content/generated/route16-fly-house"));
+            Directory = Path.GetFullPath(Path.Combine(root, "content/generated/maps/regions/route16-fly-house"));
         }
         internal byte[] Read(string path) => SafariSource.Read(Directory, path);
         internal JsonElement Document(string path) => SilphSourcePackage.Json(Read(path));

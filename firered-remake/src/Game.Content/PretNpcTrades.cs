@@ -48,7 +48,7 @@ public sealed class PretNpcTrades
     public static PretNpcTrades Load(string projectRoot, PokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
-        var source = new SilphSourcePackage(projectRoot,"npc-trades");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/npc-trades");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "NPC trade source/catalog identity differs.");
@@ -67,14 +67,14 @@ public sealed class PretNpcTrades
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" , "Lounge compact resource binding differs.");
+            Need(path == relative , "Lounge compact resource binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 15 && runtime.Height == 11,
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 15 && runtime.Height == 11,
                 "Lounge map identity/dimensions differ.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
+                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Count == 1 && maps.ContainsKey(LoungeMapId) && maps[LoungeMapId].FieldWarps.Length == 1 &&
             maps[LoungeMapId].Events.GetProperty("object_events").GetArrayLength() == 3,

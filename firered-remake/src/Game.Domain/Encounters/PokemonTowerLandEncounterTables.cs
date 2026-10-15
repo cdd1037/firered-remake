@@ -12,5 +12,5 @@ public static class PokemonTowerLandEncounterTables
     public static EarlyLandEncounterTable Floor7 { get; } = Create(7, 10, [("GASTLY",16),("GASTLY",17),("GASTLY",18),("GASTLY",15),("GASTLY",19),("HAUNTER",23),("CUBONE",17),("CUBONE",19),("GASTLY",18),("HAUNTER",23),("GASTLY",18),("HAUNTER",25)]);
     public static ImmutableArray<EarlyLandEncounterTable> All { get; } = [Floor3,Floor4,Floor5,Floor6,Floor7];
     public static bool IsCave(MapId map) => All.Any(t => t.Map == map);
-    private static EarlyLandEncounterTable Create(int floor,int rate,(string Species,byte Level)[] rows) => new(new("map.pokemon-tower-"+floor+"f"),EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"sPokemonTower"+floor+"F_FireRed",rate,rows.Select((s,i)=>new EarlyLandEncounterSlot(i,new("pret:SPECIES_"+s.Species),s.Level,s.Level,EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
+    private static EarlyLandEncounterTable Create(int floor,int rate,(string Species,byte Level)[] rows) => new(new("map.pokemon-tower-"+floor+"f"),rate,rows.Select((s,i)=>new EarlyLandEncounterSlot(i,new("pret:SPECIES_"+s.Species),s.Level,s.Level,EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

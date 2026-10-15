@@ -11,7 +11,7 @@ public static class PretSourceGridMenus
 
     public static ImmutableDictionary<string, StoryMenuDefinition> Load(string root)
     {
-        using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/source-grid-menus/manifest.json")));
+        using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/ui/grid-menus.json")));
         var manifest = document.RootElement;
         var options = new JsonSerializerOptions
         {

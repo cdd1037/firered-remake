@@ -7,9 +7,6 @@ namespace Game.Domain.Items;
 public static class QuestItemRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string Profile = "firered-oaks-parcel-items-v1";
-    public const string TutorialProfile = "firered-old-man-key-items-v1";
-    public const string TownMapProfile = "firered-town-map-key-items-v1";
     public const string TownMapSymbol = "ITEM_TOWN_MAP";
     public static ItemId TownMapId { get; } = new("pret:" + TownMapSymbol);
     public const string TeachyTvSymbol = "ITEM_TEACHY_TV";
@@ -23,9 +20,8 @@ public static class QuestItemRules
     public static void ValidateCatalog(QuestItemsCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile is not (Profile or TutorialProfile or TownMapProfile) || catalog.CompleteItemCatalog ||
-            catalog.Limits != SourceLimits || catalog.Items.IsDefault || catalog.Items.Length != (catalog.Profile==Profile?2:catalog.Profile==TutorialProfile?3:4))
-            throw new NotSupportedException("Only the pinned Parcel, tutorial and Town Map item storage profiles are supported.");
+        if (catalog.Limits != SourceLimits || catalog.Items.IsDefaultOrEmpty)
+            throw new NotSupportedException("Quest item definitions and inventory limits are required.");
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in catalog.Items)
         {
@@ -45,24 +41,26 @@ public static class QuestItemRules
                     item.FieldUseFunction == "NULL" && item.BattleUsage == 2 &&
                     item.BattleUseFunction == "BattleUseFunc_PokeBallEtc" && item.SecondaryId == 3 &&
                     item.CanToss && item.CanSell && item.CanGive,
-                TeachyTvSymbol => (catalog.Profile is TutorialProfile or TownMapProfile) && item.SourceItemId == 366 && item.Name == "TEACHY TV" && item.Price == 0 &&
+                TeachyTvSymbol => item.SourceItemId == 366 && item.Name == "TEACHY TV" && item.Price == 0 &&
                     item.Importance == 1 && item.Registrability == 1 && item.Pocket == "POCKET_KEY_ITEMS" && item.Type == "ITEM_TYPE_FIELD" &&
                     item.FieldUseFunction == "FieldUseFunc_TeachyTv" && item.BattleUsage == 0 && item.BattleUseFunction == "NULL" &&
                     item.SecondaryId == 0 && !item.CanToss && !item.CanSell && !item.CanGive,
-                TownMapSymbol => catalog.Profile == TownMapProfile && item.SourceItemId == 361 && item.Name == "TOWN MAP" && item.Price == 0 &&
+                TownMapSymbol => item.SourceItemId == 361 && item.Name == "TOWN MAP" && item.Price == 0 &&
                     item.Importance == 1 && item.Registrability == 1 && item.Pocket == "POCKET_KEY_ITEMS" && item.Type == "ITEM_TYPE_BAG_MENU" &&
                     item.FieldUseFunction == "FieldUseFunc_TownMap" && item.BattleUsage == 0 && item.BattleUseFunction == "NULL" &&
                     item.SecondaryId == 0 && !item.CanToss && !item.CanSell && !item.CanGive,
                 _ => false
             };
-            if (!valid) throw new NotSupportedException("Unsupported quest item metadata.");
+            if (!valid) throw new NotSupportedException("Unsupported quest item definition.");
         }
+        if (!seen.Contains(ParcelSymbol) || !seen.Contains(PokeBallSymbol))
+            throw new NotSupportedException("Parcel and Poke Ball definitions are required.");
     }
 
     /// <summary>Validates only the additional pockets. The caller also validates ordinary Items/PC.</summary>
     public static string? Validate(QuestItemsCatalog catalog, InventoryState? state)
     {
-        ValidateCatalog(catalog);
+        ArgumentNullException.ThrowIfNull(catalog);
         if (state is null) return "inventory_missing";
         return ValidatePocket(state.KeyItems, catalog.Limits.KeyItemSlots, catalog.Items.Where(x=>x.Pocket=="POCKET_KEY_ITEMS").Select(x=>x.Id).ToHashSet(), "key_items") ??
             ValidatePocket(state.Balls, catalog.Limits.BallSlots, new HashSet<ItemId>{PokeBallId}, "balls");

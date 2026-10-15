@@ -11,14 +11,13 @@ internal static class PretSharedConstants
 
     internal static ImmutableDictionary<string, int> ForPackage(string packageDirectory)
     {
-        string generated = Path.GetDirectoryName(Path.GetFullPath(packageDirectory))
-            ?? throw new InvalidDataException("Generated package directory has no parent.");
+        string generated = PretRuntimeMapValidation.GeneratedRoot(packageDirectory);
         return Tables.GetOrAdd(generated, directory => new(() => Read(directory))).Value;
     }
 
     private static ImmutableDictionary<string, int> Read(string generated)
     {
-        using var document = JsonDocument.Parse(SafariSource.Read(generated, "shared-constants/values.json"));
+        using var document = JsonDocument.Parse(SafariSource.Read(generated, "data/constants.json"));
         if (document.RootElement.ValueKind != JsonValueKind.Object)
             throw new InvalidDataException("Shared constants must be a numeric symbol table.");
         var result = ImmutableDictionary.CreateBuilder<string, int>(StringComparer.Ordinal);

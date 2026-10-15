@@ -14,7 +14,6 @@ public sealed partial class PretSaffronGymRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
@@ -26,7 +25,7 @@ public sealed partial class PretSaffronGymRegion
     private PretSaffronGymRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
+        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
         Catalog = source.Document("saffron-gym-region-catalog.json"); Contracts = source.Document("contracts.json");
         ObjectTemplates = source.Document("objects.json"); NpcSources = source.Document("npc-source.json");
     }
@@ -43,22 +42,22 @@ public sealed partial class PretSaffronGymRegion
     }
     public static PretSaffronGymRegion Load(string root)
     {
-        var source = new SilphSourcePackage(root,"saffron-gym-region");
- var files = ImmutableArray<PretWorldSourceFile>.Empty; var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        var source = new SilphSourcePackage(root,"maps/regions/saffron-gym");
+
         var directory = source.Directory;
         var catalog = source.Document("saffron-gym-region-catalog.json");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Saffron Gym, PokemonCenter1F and Mart; application admission remains separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("directory").GetString()!;
+            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
             var runtimeEntry = spec;
-            Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" , "Silph runtime certificate differs.");
-            var payload = source.Read(relative + "/runtime-map.json");
+            Need(runtimeEntry.GetProperty("path").GetString() == relative , "Silph runtime certificate differs.");
+            var payload = source.Read(relative);
             var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol differs from its ID.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
             var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png");
+            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
         Need(maps.Count == 3 && maps.Values.Sum(m => m.Width * m.Height) == 974 && maps.Values.Sum(m => m.FieldWarps.Length) == 40,

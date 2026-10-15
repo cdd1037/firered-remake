@@ -2,7 +2,7 @@ using System.Text.Json;
 
 public partial class SynthSourceAudioPlayer
 {
-    private sealed record LeagueRematchSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record LeagueRematchSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
 
     private static SynthCue[] ExtendLeagueRematchCues(string root, bool includeCeruleanCave, SynthCue[] cues, JsonSerializerOptions options)
     {

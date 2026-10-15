@@ -31,7 +31,7 @@ public sealed class TrainerPolicyTests
         var canonical = PretCanonicalPokemonCatalog.Load(root, root);
         trainerCatalog = catalog;
         loaded = PretFuchsiaGymTrainers.Load(canonical, root);
-        gym = new FuchsiaGymTrainerCatalog(loaded.SourceCommit, loaded.Profile, loaded.CompleteSourceRoster, loaded.Trainers, loaded.Battles);
+        gym = new FuchsiaGymTrainerCatalog(loaded.Trainers, loaded.Battles);
     }
 
     private string Json<T>(T value) => JsonSerializer.Serialize(value);

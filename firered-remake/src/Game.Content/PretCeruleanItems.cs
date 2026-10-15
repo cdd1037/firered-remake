@@ -6,8 +6,7 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretCeruleanItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, PretMtMoonItem Item, EarlyShopStock Shop, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
+public sealed record PretCeruleanItemsDocument(int SchemaVersion, PretMtMoonItem Item, EarlyShopStock Shop, PretPewterMachineIcon Icon);
 
 /// <summary>Authenticates original source, the generated data and palette-derived Super Potion art.</summary>
 public static class PretCeruleanItems
@@ -20,8 +19,7 @@ public static class PretCeruleanItems
         var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretCeruleanItemsDocument>(json, options);
-        Require(document.SchemaVersion == 1 &&
-            !document.Limitations.IsDefaultOrEmpty,
+        Require(document.SchemaVersion == 1,
             "Cerulean item scope differs.");
         CeruleanItemRules.ValidateSuperPotion(Definition(document.Item));
         CeruleanItemRules.ValidateStock(document.Shop);
@@ -32,7 +30,7 @@ public static class PretCeruleanItems
 
     public static PretCeruleanItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/cerulean-items/cerulean-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/items/cerulean/cerulean-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
 

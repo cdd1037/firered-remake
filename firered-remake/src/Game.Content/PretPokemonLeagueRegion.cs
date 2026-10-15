@@ -53,25 +53,25 @@ public sealed partial class PretPokemonLeagueRegion
                 _ => throw new InvalidDataException("Unknown PokemonLeague connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
     }
-    private static SilphSourcePackage PokemonLeagueSource(string root) => new(root,"pokemon-league-region");
+    private static SilphSourcePackage PokemonLeagueSource(string root) => new(root,"maps/regions/pokemon-league");
     public static PretPokemonLeagueRegion Load(string root)
     {
         var source = PokemonLeagueSource(root);
-        var files = ImmutableArray<PretWorldSourceFile>.Empty;
+
         var directory = source.Directory;
         var catalog = source.Document("catalog.json");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original seven Pokemon League interiors; battles, Hall of Fame saving and credits remain separate runtime work.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("directory").GetString()!;
+            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
             var runtimeEntry = spec;
-            Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" , "PokemonLeague runtime certificate differs.");
-            var payload = source.Read(relative + "/runtime-map.json");
+            Need(runtimeEntry.GetProperty("path").GetString() == relative , "PokemonLeague runtime certificate differs.");
+            var payload = source.Read(relative);
             var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol differs from its ID.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
             var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png");
+            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
         Need(maps.Count == 7 && maps.Values.Sum(m => m.Width * m.Height) == 2032 && maps.Values.Sum(m => m.FieldWarps.Length) == 14,

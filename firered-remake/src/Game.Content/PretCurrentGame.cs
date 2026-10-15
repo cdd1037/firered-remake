@@ -28,13 +28,13 @@ public sealed partial class PretCampaignCatalog
         var fightingDojo = PretFightingDojoRegion.Load(projectRoot);
         var fossilLab = PretFossilLabRegion.Load(projectRoot);
         var itemfinder = PretItemfinderSource.Load(projectRoot);
-        var teachyTv = PretTeachyTv.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/teachy-tv/teachy-tv.json")));
+        var teachyTv = PretTeachyTv.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/teachy-tv.json")));
         var fameChecker = PretFameChecker.Load(projectRoot);
         var vsSeeker = PretVsSeeker.Load(projectRoot);
         var vsSeekerPresentation = PretVsSeekerPresentation.Load(projectRoot);
         var vsSeekerTrainers = PretVsSeekerParties.Load(projectRoot);
         var vsSeekerOccurrences = PretVsSeekerParties.LoadOccurrences(projectRoot);
-        var slotRules = SlotMachineRules.FromAuthenticatedJson(File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/slot-machine/rules.json")));
+        var slotRules = SlotMachineRules.FromAuthenticatedJson(File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/data/services/slot-machine/rules.json")));
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
         var fiveIsland = PretFiveIslandRegion.Load(projectRoot);
@@ -70,13 +70,13 @@ public sealed partial class PretCampaignCatalog
         var schoolHouseInteriors = PretSchoolHouseInteriors.Load(projectRoot);
         var lostCave = PretLostCaveRegion.Load(projectRoot);
         var trainerFanClub = PretTrainerFanClub.Load(projectRoot);
-        var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers);
+        var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers, SharedTrainerCatalog.LoadProject(projectRoot).Select(LostCaveTrainerPartyFactory.AllTrainers));
         var fieldFly = PretFieldFly.Load(projectRoot, shared: sharedMachines);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
         var doubleItems = doubleMechanics.Catalog.BattleItems ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
-        var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName));
+        var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.ManifestPath));
         var route22 = PretRoute22Region.Load(projectRoot, runtimeMaps);
         var route3 = PretRoute3Region.Load(projectRoot, runtimeMaps);
         var oakPokedex = PretPokedexMenu.Load(projectRoot);
@@ -307,82 +307,10 @@ public sealed partial class PretCampaignCatalog
                 species => oakPokedex.Entries[species.SourceSpeciesId].Name), storyRuntime.NicknameCharacters)
         { AllowSleepStatus = true, AllowFreezeStatus = true, AllowToxicStatus = true };
 
-        PretRoute1PokemonContent route1Pokemon;
-        {
-            route1Pokemon = PretRoute1PokemonCatalog.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8));
-        }
-
-        var oldMan = PretOldManTutorial.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/old-man-tutorial/catalog.json"), Encoding.UTF8));
+        var oldMan = PretOldManTutorial.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/pokemon/route1/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/old-man-tutorial.json"), Encoding.UTF8));
         var forestPokemon = PretForestPokemon.Load(canonicalPokemon, projectRoot);
-        {
-            foreach (var(symbol, value)in forestPokemon.Constants)
-                constants[symbol] = value;
-        }
 
         var pewterPokemon = PretPewterPokemon.Load(canonicalPokemon, projectRoot);
-        {
-            foreach (var(symbol, value)in pewterPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in route22Pokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in route3Pokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in mtMoonPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in ceruleanPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in billPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in vermilionPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in ssAnnePokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in route11Pokemon.Constants)
-                constants[symbol] = value;
-        }
-        {
-            foreach (var(symbol, value)in rockTunnelPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in celadonApproachPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in celadonGymPokemon.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            foreach (var(symbol, value)in rocketHideoutPokemon.Constants)
-                constants[symbol] = value;
-        }
 
         {
             pokemonTowerPokemon = PretPokemonTowerPokemon.Load(canonicalPokemon, pokemonContent.Catalog, projectRoot);
@@ -437,7 +365,7 @@ public sealed partial class PretCampaignCatalog
         var machines = sharedMachines.LoadCurrent(gamePokemon);
         CampaignBattleContent battleContent;
         {
-            var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/lab-trainers/lab-trainers.json"), Encoding.UTF8));
+            var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/trainer-battles/lab/lab-trainers.json"), Encoding.UTF8), SharedTrainerCatalog.LoadProject(projectRoot));
             var names = storyRuntime.MoveNames.ToBuilder();
             foreach (var move in new[]
             {
@@ -451,95 +379,15 @@ public sealed partial class PretCampaignCatalog
             )
                 if (!names.ContainsKey("pret:MOVE_" + move))
                     throw new InvalidDataException("Battle move name missing.");
-            foreach (var(move, name)in route1Pokemon.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting source move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in oldMan.MoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in forestPokemon.MoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in pewterPokemon.MoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in route3Pokemon.MoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in mtMoonPokemon.MoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in route11Pokemon.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting Route11 move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in rockTunnelPokemon.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting RockTunnel move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in celadonApproachPokemon.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting CeladonApproach move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in celadonGymPokemon.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting CeladonGym move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in rocketHideoutPokemon.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting Rocket Hideout move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in pokemonTowerPokemon.AdditionalMoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in snorlaxPokemon.AdditionalMoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting Snorlax move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in eeveePokemon.AdditionalMoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting Eevee move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in fuchsiaPokemon.AdditionalMoveNames)
-                names[move.Value] = name;
-            foreach (var(move, name)in fuchsiaGymMoveSource.MoveNames)
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting Fuchsia Gym source move name: " + move.Value);
-                names[move.Value] = name;
-            }
-
-            foreach (var(move, name)in PretVermilionGymTrainers.LoadMoveNames(canonicalPokemon, projectRoot))
-            {
-                if (names.TryGetValue(move.Value, out var prior) && prior != name)
-                    throw new InvalidDataException("Conflicting Vermilion Gym move name: " + move.Value);
-                names[move.Value] = name;
-            }
+            foreach (var (move, name) in canonicalPokemon.MoveCatalog.MoveNames)
+                if (!names.TryGetValue(move.Value, out var displayed) || displayed != name)
+                    throw new InvalidDataException("Battle move name differs from the shared move catalog: " + move.Value);
 
             battleContent = new(trainers, names.ToImmutable());
         }
 
         OpeningItemsCatalog openingItems;
-        openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/opening-items/opening-items.json"), Encoding.UTF8), sharedItems);
+        openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/items/opening/opening-items.json"), Encoding.UTF8), sharedItems);
 
         // Variable and flag identity stays symbolic; numeric IDs are not save identity.
         foreach (var name in constants.Keys.Where(x => x.StartsWith("VAR_", StringComparison.Ordinal)).ToArray())
@@ -558,27 +406,12 @@ public sealed partial class PretCampaignCatalog
         QuestItemsCatalog questItems;
         PretMartMetatiles metatiles;
         {
-            questItems = PretQuestItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/quest-items/quest-items.json"), Encoding.UTF8), sharedItems);
-            {
-                var item = sharedItems.Definition(QuestItemRules.TeachyTvId);
-                questItems = questItems with
-                {
-                    Profile = QuestItemRules.TutorialProfile,
-                    Items = questItems.Items.Add(item)
-                };
-                QuestItemRules.ValidateCatalog(questItems);
-                constants[QuestItemRules.TeachyTvSymbol] = item.SourceItemId;
-            }
-
-            {
-                questItems = questItems with
-                {
-                    Profile = QuestItemRules.TownMapProfile,
-                    Items = questItems.Items.Add(townMap.Item)
-                };
-                QuestItemRules.ValidateCatalog(questItems);
-                constants[QuestItemRules.TownMapSymbol] = townMap.Item.SourceItemId;
-            }
+            questItems = PretQuestItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/items/quest/quest-items.json"), Encoding.UTF8), sharedItems);
+            var teachyTvItem = sharedItems.Definition(QuestItemRules.TeachyTvId);
+            questItems = questItems with { Items = questItems.Items.Add(teachyTvItem).Add(townMap.Item) };
+            QuestItemRules.ValidateCatalog(questItems);
+            constants[QuestItemRules.TeachyTvSymbol] = teachyTvItem.SourceItemId;
+            constants[QuestItemRules.TownMapSymbol] = townMap.Item.SourceItemId;
 
             metatiles = PretMartMetatiles.Load(projectRoot);
             constants["METATILE_Mart_CounterMid_Top"] = metatiles.OnLoadPatches.Single(x => x.Y == 3).RawMetatileId;
@@ -618,7 +451,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         var bank = storyRuntime.TextBank.ToBuilder();
-        var repel = PretEarlyRepel.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-repel/early-repel.json"), Encoding.UTF8));
+        var repel = PretEarlyRepel.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/early-repel.json"), Encoding.UTF8));
         {
             foreach (var label in magikarp.RequiredCommonScriptLabels)
                 if (compiled.FindProgram(label)is null)

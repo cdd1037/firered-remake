@@ -71,25 +71,25 @@ public sealed class PretLostCaveRegion
 
     public static PretLostCaveRegion Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"lost-cave-region");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/lost-cave");
         var catalog = source.Document("catalog.json");
-        Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean() , "Lost Cave catalog identity differs.");
+
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Lost Cave and connecting outdoor maps; gameplay and services require separate admission.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!,directory = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!,directory = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == directory + "/runtime-map.json" , "Lost Cave compact map binding differs.");
+            Need(path == directory , "Lost Cave compact map binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.TechnicalSpawn is null,
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.TechnicalSpawn is null,
                 "Lost Cave source map identity differs.");
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, directory),
-                PretOverworldTextures.Resolve(source.Directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             maps.Add(map.Id, map);
         }
-        Need(maps.Values.Select(m => m.SourceRef.Path).ToHashSet().SetEquals(SourceNames.Select(n => "data/maps/" + n + "/map.json")),
+        Need(maps.Values.Select(m => m.SourceMapName).ToHashSet().SetEquals(SourceNames),
             "Lost Cave exact eighteen-map cohort differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);
         return new(source,maps.ToImmutable(),constants);

@@ -9,7 +9,7 @@ namespace Game.Domain.Trainers;
 
 public sealed record SourceTwinsBattleDefinition(string ScriptEntry, string IntroText, string DefeatText,
     string PostBattleText, string NotEnoughMonsText, TrainerSourceRef Source);
-public sealed record SourceTwinsTrainerDefinition(string SourceCommit, string RulesVersion,
+public sealed record SourceTwinsTrainerDefinition(
     TrainerDefinition Trainer, ImmutableArray<SourceTwinsBattleDefinition> Interactions,
     string EntryScript, string Callback, int BattleMode, uint BattleTypeFlags,
     string EncounterMusic, int EncounterMusicId, int TrainerFlag, int VictoryMoney);
@@ -36,33 +36,17 @@ public static class SourceTwinsTrainerEncounter
     public static TrainerId TrainerId { get; } = new("pret:TRAINER_TWINS_ELI_ANNE");
     public const int SharedTrainerFlag = 0x500 + 484;
     public const int VictoryMoney = 528;
-    private static readonly string[][] NaturalMoves = [
-        ["SING", "DOUBLE_SLAP", "FOLLOW_ME", "MINIMIZE"],
-        ["DEFENSE_CURL", "POUND", "DISABLE", "ROLLOUT"]];
-    private static readonly string[] Species = ["CLEFAIRY", "JIGGLYPUFF"];
-
     public static string? ValidateDefinition(SourceTwinsTrainerDefinition? definition)
     {
-        if (definition is not { Trainer: { } t } || definition.SourceCommit != TrainerPartyFactory.SourceCommit ||
-            definition.RulesVersion != Version || t.Id != TrainerId || t.SourceTrainerId != 484 ||
-            t.TrainerClass != "TRAINER_CLASS_TWINS" || t.SourceTrainerClass != 92 || t.TrainerPic != "TRAINER_PIC_TWINS" ||
-            t.SourceTrainerPic != 127 || t.SourceTrainerName != "ELI & ANNE" || t.EncounterMusicGender != 9 ||
-            !t.DoubleBattle || t.PartyFlags != 0 || t.AiFlags != 1 || t.BaseMoney != 3 ||
-            t.EncodedTrainerName.IsDefault || !t.EncodedTrainerName.SequenceEqual(Encode(t.SourceTrainerName)) ||
-            t.Items.IsDefault || !t.Items.SequenceEqual(Enumerable.Repeat("ITEM_NONE", 4)) ||
-            t.AiFlagSymbols.IsDefault || !t.AiFlagSymbols.SequenceEqual(["AI_SCRIPT_CHECK_BAD_MOVE"]) ||
-            t.Party.IsDefault || t.Party.Length != 2 || definition.Interactions.IsDefault || definition.Interactions.Length != 2 ||
+        if (definition is not { Trainer: { } t } || t.Id != TrainerId || !t.DoubleBattle || t.Party.IsDefault || t.Party.Length != 2 || definition.Interactions.IsDefault || definition.Interactions.Length != 2 ||
             definition.EntryScript != "EventScript_TryDoDoubleTrainerBattle" || definition.Callback != "CB2_EndTrainerBattle" ||
             definition.BattleMode != 4 || definition.BattleTypeFlags != 9 || definition.EncounterMusic != "MUS_ENCOUNTER_GIRL" ||
             definition.EncounterMusicId != 284 || definition.TrainerFlag != SharedTrainerFlag || definition.VictoryMoney != VictoryMoney)
             return "source_twins_definition";
         for (int i = 0; i < 2; i++)
         {
-            var p = t.Party[i]; string name = i == 0 ? "Eli" : "Anne"; var b = definition.Interactions[i];
-            if (p is null || p.Species.Value != "pret:SPECIES_" + Species[i] || p.SourceSpeciesId != (i == 0 ? 35 : 39) ||
-                p.SpeciesName != Species[i] || p.EncodedSpeciesName.IsDefault || !p.EncodedSpeciesName.SequenceEqual(Encode(Species[i])) ||
-                p.Level != 22 || p.SourceIv != 0 || p.HeldItem != "ITEM_NONE" || p.CustomMoves.IsDefault || !p.CustomMoves.IsEmpty ||
-                b is null || b.ScriptEntry != $"Route8_EventScript_{name}" || b.IntroText != $"Route8_Text_{name}Intro" ||
+            string name = i == 0 ? "Eli" : "Anne"; var b = definition.Interactions[i];
+            if (b is null || b.ScriptEntry != $"Route8_EventScript_{name}" || b.IntroText != $"Route8_Text_{name}Intro" ||
                 b.DefeatText != $"Route8_Text_{name}Defeat" || b.PostBattleText != $"Route8_Text_{name}PostBattle" ||
                 b.NotEnoughMonsText != $"Route8_Text_{name}NotEnoughMons") return "source_twins_roster_or_interaction";
         }
@@ -89,7 +73,6 @@ public static class SourceTwinsTrainerEncounter
                 return Fail("source_twins_player_member");
         var active = playerParty.Select((m, i) => (m, i)).Where(x => !x.m.IsEgg && x.m.Pokemon.CurrentHp > 0).Take(2).Select(x => x.i).ToArray();
         if (active.Length != 2) return Fail("source_twins_two_usable_pokemon_required");
-        if (!NaturalMovesMatch(catalog)) return Fail("source_twins_natural_moves");
         try
         {
             // SetUpBattleVars runs while flags are TRAINER only: four setup draws.
@@ -127,33 +110,36 @@ public static class SourceTwinsTrainerEncounter
         catch (NotSupportedException) { return Fail("source_twins_generation_not_supported"); }
     }
 
-    public static SourceTwinsAiResult ChooseEnemyActions(PokemonCatalog catalog, SourceBattleFrame frame,
+    public static SourceTwinsAiResult ChooseEnemyActions(PokemonCatalog catalog, SourceTwinsTrainerDefinition definition, SourceBattleFrame frame,
         long expectedRevision, string? knownPlayerAbility = null)
     {
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability)
             return new(frame, [], [], capability);
-        if (!OriginalEnemyParty(frame)) return new(frame, [], [], "source_twins_ai_original_roster");
-        var result = SourceFourTrainerAi.ChooseCore(catalog, frame, expectedRevision, 1, knownPlayerAbility, "twins");
+        if (ValidateDefinition(definition) is not null || !OriginalEnemyParty(catalog, definition.Trainer, frame)) return new(frame, [], [], "source_twins_ai_original_roster");
+        var result = SourceFourTrainerAi.ChooseCore(catalog, frame, expectedRevision, definition.Trainer.AiFlags, knownPlayerAbility, "twins");
         return new(result.State, result.Choices.Select(c => new SourceTwinsEnemyChoice(c.Actor, c.ScoredTarget,
             c.Selection, c.Scores, c.SimulatedDamagePercent, c.AbilityReads)).ToImmutableArray(), result.Trace, result.Fault);
     }
 
-    private static bool NaturalMovesMatch(PokemonCatalog catalog) => Enumerable.Range(0, 2).All(i =>
-        PokemonMoveRules.InitialMovesCore(catalog, catalog.Species[new("pret:SPECIES_" + Species[i])], 22)
-            .Select(m => m.Move.Value).SequenceEqual(NaturalMoves[i].Select(m => "pret:MOVE_" + m)));
-    private static bool OriginalEnemyParty(SourceBattleFrame frame)
+    private static bool OriginalEnemyParty(PokemonCatalog catalog, TrainerDefinition trainer, SourceBattleFrame frame)
     {
         var party = frame.Party(BattleSide.Opponent).Members;
-        if (party.Length != 2) return false;
+        if (party.Length != trainer.Party.Length) return false;
         uint nameHash = 0;
-        for (int i = 0; i < 2; i++) {
-            foreach (int c in Encode("ELI & ANNE" + Species[i])) nameHash += (uint)c;
-            var m = party[i]; var p = m.Pokemon;
-            if (m.IsEgg || p.Species.Value != "pret:SPECIES_" + Species[i] || p.Level != 22 ||
-                p.Personality != 0x80 + (nameHash << 8) || p.Ivs != SixStats.Zero || p.Evs != SixStats.Zero ||
-                p.AbilityId != "ABILITY_CUTE_CHARM" || p.Moves.Any(m => m.PpUps != 0) || !p.Moves.Select(s => s.Move.Value).SequenceEqual(NaturalMoves[i].Select(s => "pret:MOVE_" + s))) return false;
+        for (int i = 0; i < party.Length; i++)
+        {
+            var expected = trainer.Party[i];
+            foreach (int c in trainer.EncodedTrainerName.Concat(expected.EncodedSpeciesName)) nameHash = unchecked(nameHash + (uint)c);
+            var member = party[i]; var pokemon = member.Pokemon;
+            var moves = (trainer.PartyFlags & 1) != 0
+                ? expected.CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
+                : PokemonMoveRules.InitialMovesCore(catalog, catalog.Species[expected.Species], expected.Level).Select(m => m.Move);
+            int iv = expected.SourceIv * 31 / 255;
+            if (member.IsEgg || pokemon.Species != expected.Species || pokemon.SourceSpeciesId != expected.SourceSpeciesId ||
+                pokemon.Level != expected.Level || pokemon.Personality != unchecked(0x80u + (nameHash << 8)) ||
+                pokemon.Ivs != new SixStats(iv, iv, iv, iv, iv, iv) || pokemon.Evs != SixStats.Zero ||
+                pokemon.Moves.Any(m => m.PpUps != 0) || !pokemon.Moves.Select(m => m.Move).SequenceEqual(moves)) return false;
         }
         return true;
     }
-    private static IEnumerable<int> Encode(string value) => value.Select(c => c switch { ' ' => 0, '&' => 0x2d, _ => 0xbb + c - 'A' });
 }

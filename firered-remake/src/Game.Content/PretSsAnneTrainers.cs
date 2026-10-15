@@ -4,9 +4,7 @@ using System.Text.Json;
 using Game.Domain.Trainers;
 namespace Game.Content;
 
-public sealed record SsAnneTrainerDocument(int SchemaVersion, string Profile, string SourceCommit, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
-    JsonElement ResolvedMoves, ImmutableArray<string> Limitations);
+public sealed record SsAnneTrainerDocument(int SchemaVersion, ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
 /// <summary>Hash-locked source tables and initial battle scripts, independent from all earlier catalogs.</summary>
 public static class PretSsAnneTrainers
@@ -17,9 +15,9 @@ public static class PretSsAnneTrainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var doc=ContentJson.ParseStrict<SsAnneTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/ssanne-trainers/trainers.json")),ContentJson.CreateOptions());
-                if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("SsAnne trainer document identity differs.");
-        var catalog=new SsAnneTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
+        var doc=ContentJson.ParseStrict<SsAnneTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/ssanne.json")),SharedTrainerCatalog.Options(root));
+                if(doc.SchemaVersion!=1) throw new InvalidDataException("SsAnne trainer document identity differs.");
+        var catalog=new SsAnneTrainerCatalog(doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         SsAnneTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
     }
     private static string SafeFile(string root,string relative)

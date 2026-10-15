@@ -15,8 +15,7 @@ public static class SourceFieldEvolutionRules
         try { EarlyShopInventoryRules.ValidateCatalog(catalog); }
         catch (Exception error) when (error is ArgumentException or NotSupportedException) { return false; }
         var definition = EarlyShopInventoryRules.Find(catalog, item);
-        return catalog.SourceCommit == PokemonFactory.SourceCommit &&
-            definition is { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
+        return definition is { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
                 FieldUseFunction: "FieldUseFunc_EvoItem", BattleUsage: 0, BattleUseFunction: "NULL" } &&
             ItemEvolutionRules.SourceItemId(definition.SourceItemSymbol) is { } number &&
             item.Value == "pret:" + definition.SourceItemSymbol && definition.SourceItemId == number &&

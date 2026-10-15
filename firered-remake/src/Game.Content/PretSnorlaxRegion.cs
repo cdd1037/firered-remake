@@ -15,7 +15,6 @@ public sealed class PretSnorlaxRegion
     public const string Profile = "firered-snorlax-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Boundaries { get; }
 
     public JsonElement Catalog { get; }
@@ -24,11 +23,10 @@ public sealed class PretSnorlaxRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretSnorlaxRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableDictionary<string, int> constants, ImmutableArray<PretWorldSourceFile> files,
-        JsonElement boundaries, JsonElement catalog, JsonElement npcs)
+        ImmutableDictionary<string, int> constants, JsonElement boundaries, JsonElement catalog, JsonElement npcs)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Boundaries = boundaries; Catalog = catalog;
+        Constants = constants; Boundaries = boundaries; Catalog = catalog;
         NpcSources = npcs;
     }
 
@@ -80,7 +78,7 @@ public sealed class PretSnorlaxRegion
     public static PretSnorlaxRegion Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/snorlax-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/snorlax");
 
         byte[] ReadPinned(string root,string path)
         {
@@ -90,8 +88,7 @@ public sealed class PretSnorlaxRegion
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
 
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Snorlax region identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Snorlax region identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
@@ -100,16 +97,14 @@ public sealed class PretSnorlaxRegion
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate Snorlax output.");
         }
         using var catalog = JsonDocument.Parse(outputs["snorlax-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable(); var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Bounded source import; application and native acceptance remain separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
@@ -118,8 +113,8 @@ public sealed class PretSnorlaxRegion
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_HIDE_ROUTE_12_SNORLAX"] == 84 && constants["FLAG_HIDE_ROUTE_16_SNORLAX"] == 128 && constants["FLAG_WOKE_UP_ROUTE_12_SNORLAX"] == 595 && constants["FLAG_SYS_SPECIAL_WILD_BATTLE"] == 2055 && constants["CRY_MODE_ENCOUNTER"] == 2, "Snorlax constants differ.");
         using var boundaries = JsonDocument.Parse(outputs["boundaries.json"]); using var npcs = JsonDocument.Parse(outputs["npc-source.json"]);
-        Require(!boundaries.RootElement.GetProperty("runtimeIntegrated").GetBoolean() && boundaries.RootElement.GetProperty("maps").GetArrayLength() == 4, "Boundary scope differs.");
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(), inventory,
+        Require(boundaries.RootElement.GetProperty("maps").GetArrayLength() == 4, "Boundary scope differs.");
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
             boundaries.RootElement.Clone(), catalog.RootElement.Clone(), npcs.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }

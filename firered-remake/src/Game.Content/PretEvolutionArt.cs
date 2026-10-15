@@ -20,23 +20,22 @@ public sealed class PretEvolutionArt
     }.ToImmutableDictionary(StringComparer.Ordinal);
     private readonly ImmutableDictionary<string, byte[]> outputBytes;
     public ImmutableArray<ForestPokemonSprite> Sprites { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
     public string GeneratedDirectory { get; }
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory, "manifest.json");
 
     private PretEvolutionArt(string directory, ImmutableArray<ForestPokemonSprite> sprites,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement art, ImmutableDictionary<string, byte[]> outputs)
+        JsonElement art, ImmutableDictionary<string, byte[]> outputs)
     {
-        GeneratedDirectory = directory; Sprites = sprites; SourceFiles = files; BattleArt = art; outputBytes = outputs;
+        GeneratedDirectory = directory; Sprites = sprites; BattleArt = art; outputBytes = outputs;
     }
 
     /// <summary>Authenticates the fixed lock, both manifests, all 50 raw inputs and all 73 generated payloads.</summary>
     public static PretEvolutionArt Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/evolution-art");
+        var directory = Path.Combine(project, "content/generated/sprites/pokemon/evolution");
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -44,9 +43,7 @@ public sealed class PretEvolutionArt
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 && !m.GetProperty("runtimeShadersUsed").GetBoolean() &&
-            !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean() &&
-            !m.GetProperty("publiclyUploaded").GetBoolean(), "Evolution art manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Evolution art manifest identity differs.");
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
@@ -57,12 +54,10 @@ public sealed class PretEvolutionArt
             new[] { "normal","shiny" }.SelectMany(variant => new[] { "png" }.Select(extension =>
                 $"{name.ToLowerInvariant()}-{side}-{variant}.{extension}")))).Append("battle-art.json");
         Require(outputs.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(expectedOutputs), "Evolution art output set differs.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var inventory = files.ToImmutable();
+
         using var art = JsonDocument.Parse(outputs["battle-art.json"]);
         var a = art.RootElement;
-        Require(a.GetProperty("schemaVersion").GetInt32() == 1 &&
-            !a.GetProperty("runtimeShadersUsed").GetBoolean(), "Evolution art document identity differs.");
+        Require(a.GetProperty("schemaVersion").GetInt32() == 1, "Evolution art document identity differs.");
         var sprites = ContentJson.ParseStrict<ImmutableArray<ForestPokemonSprite>>(a.GetProperty("sprites").GetRawText(), ContentJson.CreateOptions());
         Require(sprites.Length == 36 && sprites.Select(s => (s.SpeciesId, s.Side, s.PaletteVariant)).Distinct().Count() == 36,
             "Evolution art sprite inventory differs.");
@@ -80,7 +75,7 @@ public sealed class PretEvolutionArt
                 sprite.SingleBattleTopLeft.X == sprite.SingleBattleCenter.X - 32 &&
                 sprite.SingleBattleTopLeft.Y == sprite.SingleBattleCenter.Y - 32, "Evolution art placement differs.");
         }
-        return new(directory, sprites, inventory, a.Clone(), outputs.ToImmutable());
+        return new(directory, sprites, a.Clone(), outputs.ToImmutable());
     }
 
     public bool ContainsSpecies(SpeciesId species) => Sprites.Any(s => s.SpeciesId == species.Value);

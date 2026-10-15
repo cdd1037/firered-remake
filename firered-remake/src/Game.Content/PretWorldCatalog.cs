@@ -3,7 +3,7 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretWorldMapSpecification(string StableId, string SourceName, string SourceMapSymbol, string Directory);
+public sealed record PretWorldMapSpecification(string StableId, string SourceName, string SourceMapSymbol, string Name);
 public sealed record PretWorldWarp(int Index, int X, int Y, int Elevation, MapId DestinationMapId, int DestinationWarpId);
 
 /// <summary>A closed, source-verified collection. Warp indices are original zero-based map.json array indices.</summary>
@@ -26,7 +26,7 @@ public static class PretWorldCatalog
     });
     public static ImmutableDictionary<MapId, PretWorldMap> Load(string collectionRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
-        var maps = Specifications.Select(s => runtimeMaps is null ? PretWorldMap.Load(Path.Combine(collectionRoot, s.Directory)) : PretRuntimeMapIntegration.LoadBase(runtimeMaps,s,collectionRoot)).ToImmutableDictionary(m => m.Id);
+        var maps = Specifications.Select(s => runtimeMaps is null ? PretWorldMap.Load(Path.Combine(collectionRoot, "maps/regions/opening", s.Name + ".json")) : PretRuntimeMapIntegration.LoadBase(runtimeMaps,s,collectionRoot)).ToImmutableDictionary(m => m.Id);
         foreach (var map in maps.Values)
         foreach (var warp in map.Warps)
         {

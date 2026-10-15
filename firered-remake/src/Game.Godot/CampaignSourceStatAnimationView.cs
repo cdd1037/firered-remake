@@ -23,7 +23,7 @@ public partial class CampaignView
             dispatch=CampaignStatAnimationPresentation.AtResult(b,SourceTrainerPresentationActive(b),_sourceSubstituteHp.GetValueOrDefault(stat.Target)>0);
         if(dispatch is null)return;
         EnsureSourceMoveAssets();
-        if(_sourceStatScript is null)(_sourceStatScript,_sourceStatMaterial)=SourceStatAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-stat-mask"));
+        if(_sourceStatScript is null)(_sourceStatScript,_sourceStatMaterial)=SourceStatAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/stat-mask"));
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,0,new(dispatch.Affected.Value),new(dispatch.Affected.Value)){StatAnimationArgument=dispatch.AnimationArgument};
         var (assets,battlers)=CreateSourceAnimationScene(doubles);
         SourceBattleAnimationAudioAdapter? sound=null;

@@ -7,10 +7,9 @@ namespace Game.Content;
 
 public sealed record VictoryRoadPickup(string Id, MapId Map, int LocalId, int X, int Y, int Elevation,
     ItemId Item, int Quantity, string Flag, bool Hidden, bool Underfoot, string ScriptEntry, OpeningItemSourceRef Source);
-public sealed record VictoryRoadItemsDocument(string SourceCommit, string Profile, ImmutableArray<MachineItem> Items,
-    ImmutableArray<VictoryRoadPickup> Pickups, bool Renewable, ImmutableArray<string> Limitations);
-public sealed record VictoryRoadMachinesDocument(string SourceCommit, string Profile,
-    ImmutableArray<MachineDefinition> Machines);
+public sealed record VictoryRoadItemsDocument(ImmutableArray<MachineItem> Items,
+    ImmutableArray<VictoryRoadPickup> Pickups, bool Renewable);
+public sealed record VictoryRoadMachinesDocument(ImmutableArray<MachineDefinition> Machines);
 public sealed record VictoryRoadItemContent(VictoryRoadItemsDocument Items, VictoryRoadMachinesDocument Machines);
 
 /// <summary>Pinned source declarations plus two ordinary inventory additions and four machine additions.</summary>
@@ -20,10 +19,10 @@ public static class PretVictoryRoadItems
     public static VictoryRoadItemContent LoadProject(string root)
     {
         root = Path.GetFullPath(root);
-        var items = SafariSource.Parse<VictoryRoadItemsDocument>(SafariSource.Read(root,            "content/generated/victory-road-rules/items.json"), root);
-        var machines = SafariSource.Parse<VictoryRoadMachinesDocument>(SafariSource.Read(root,            "content/generated/victory-road-rules/machines.json"), root);
+        var items = SafariSource.Parse<VictoryRoadItemsDocument>(SafariSource.Read(root,            "content/generated/data/regions/victory-road/items.json"), root);
+        var machines = SafariSource.Parse<VictoryRoadMachinesDocument>(SafariSource.Read(root,            "content/generated/data/regions/victory-road/machines.json"), root);
         SafariSource.Require(items.Items.Length == 16 &&
-            items.Pickups.Length == 18 && !items.Renewable && !items.Limitations.IsDefaultOrEmpty &&
+            items.Pickups.Length == 18 && !items.Renewable &&
             items.Items.Select(i => i.Item.Id).Distinct().Count() == 16 &&
             items.Pickups.Select(p => p.Flag).Distinct().Count() == 18 && items.Pickups.Count(p => p.Hidden) == 10 &&
             items.Pickups.All(p => p.Quantity == 1 && !p.Underfoot && items.Items.Any(i => i.Item.Id == p.Item)),

@@ -6,7 +6,7 @@ using Game.Domain.Events;
 var root = Path.GetFullPath(args[0]);
 var input = JsonSerializer.Deserialize<StoryImportInput>(Console.In.ReadToEnd()) ?? throw new InvalidDataException("Missing story import input.");
 var output = StoryImport.Compile(input);
-var path = Path.Combine(root, "content/generated/story/runtime.json");
+var path = Path.Combine(root, "content/generated/data/story.json");
 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 using var document = JsonDocument.Parse(JsonSerializer.Serialize(output, PretStoryRuntime.JsonOptions));
 using var bytes = new MemoryStream();

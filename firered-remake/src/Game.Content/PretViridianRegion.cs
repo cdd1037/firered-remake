@@ -55,7 +55,7 @@ public sealed class PretViridianRegion
     public static PretViridianRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/viridian-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/viridian");
 
         static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
         static string SafeFile(string root, string path)
@@ -86,27 +86,24 @@ public sealed class PretViridianRegion
         {
             var path = output.GetProperty("path").GetString()!;
             if (path == "scripts.json") continue;
-            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"viridian-region/"+path))continue;
+            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"maps/regions/viridian/"+path))continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate region output.");
         }
         using var catalog = JsonDocument.Parse(outputs["viridian-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Source material remains local; no asset distribution rights are inferred.", "Authenticated Viridian region increment; runtime support is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
             if (spec.GetProperty("role").GetString() != "newMap") continue;
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             if(runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!),out var compact) )
             {
-                var runtimeMap=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),Path.Combine(project,"content/generated/pallet/player.png"),MapIdFromSourceSymbol);
+                var runtimeMap=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),Path.Combine(project,"content/generated/sprites/overworld/opening-player.png"),MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id,runtimeMap),"Duplicate runtime map.");continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, Path.Combine(project, "content/generated/pallet/player.png"), MapIdFromSourceSymbol);
+                metadata, Path.Combine(project, "content/generated/sprites/overworld/opening-player.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }

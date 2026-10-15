@@ -17,10 +17,9 @@ public sealed record OldManBallTiming(int ReleaseTrainerCommandIndex, int ArcTic
     int HitDelayTicks, int ShrinkDuration, int FallAmplitude, int BounceCount, int FirstShakeDelayTicks,
     int BetweenShakeDelayTicks, int SuccessShakeCount, int ClickTicks, int PaletteRestoreTicks,
     int CaughtIntroTicks, int RemoveMonsterTicks);
-public sealed record OldManArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretQuestItemInput> Inputs,
-    ImmutableArray<OldManArtAsset> Assets, QuestItemUiEntry TeachyTv, string PaletteExpansion,
+public sealed record OldManArtDocument(int SchemaVersion, ImmutableArray<OldManArtAsset> Assets, QuestItemUiEntry TeachyTv, string PaletteExpansion,
     ImmutableArray<OldManThrowFrame> OldManThrowFrames, ImmutableArray<OldManBallAnimation> BallAnimations,
-    OldManArtLayout Layout, OldManBallTiming BallTiming, ImmutableArray<string> Limitations);
+    OldManArtLayout Layout, OldManBallTiming BallTiming);
 
 /// <summary>Authenticated tutorial textures and source animation metadata, independent of game rules.</summary>
 public static class PretOldManArt
@@ -45,8 +44,7 @@ public static class PretOldManArt
             || doc.PaletteExpansion != "(rgb5 << 3) | (rgb5 >> 2)" || doc.BallAnimations.Length != 3
             || !doc.OldManThrowFrames.SequenceEqual(new[] { new OldManThrowFrame(1, 24),new(2, 9),new(3, 24),new(0, 9) })
             || doc.Layout != new OldManArtLayout(80, 80, 240, -2, 176, 57, 40, 32, 17, 60, 91, 176, 24)
-            || doc.BallTiming != new OldManBallTiming(1, 34, -40, 10, 28, 40, 4, 31, 31, 3, 40, 60, 95, 315)
-            || doc.Limitations.IsDefaultOrEmpty)
+            || doc.BallTiming != new OldManBallTiming(1, 34, -40, 10, 28, 40, 4, 31, 31, 3, 40, 60, 95, 315))
             throw new InvalidDataException("Old Man art profile is incomplete.");
         foreach (var asset in doc.Assets) ValidateAsset(asset);
         return doc;

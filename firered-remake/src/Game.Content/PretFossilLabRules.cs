@@ -8,7 +8,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record FossilLabShopDocument(string SourceCommit, string Profile, int PreviousItemCount, int ItemCount,
+public sealed record FossilLabShopDocument(int PreviousItemCount, int ItemCount,
     ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<EarlyShopStock> ShopsAdded);
 
 /// <summary>Authenticated three-fossil catalogs and level-five creation evidence over the exact Dojo resources.</summary>
@@ -17,7 +17,7 @@ public static class PretFossilLabRules
 
     private static T Read<T>(string root,string file, SharedMachineCatalog? shared = null)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/fossil-lab-rules", file));
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/fossil-lab", file));
         return JsonSerializer.Deserialize<T>(bytes, (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(new JsonSerializerOptions {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         })) ?? throw new InvalidDataException("fossil_lab_source_missing");

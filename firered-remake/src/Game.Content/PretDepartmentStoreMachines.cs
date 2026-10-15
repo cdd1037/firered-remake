@@ -5,10 +5,9 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record DepartmentMachineSourceInput(string Path, string LocalPath);
-public sealed record DepartmentMachineDocument(int SchemaVersion, string SourceCommit, string StockId, ImmutableArray<string> StockItems,
+public sealed record DepartmentMachineDocument(int SchemaVersion, string StockId, ImmutableArray<string> StockItems,
     int InheritedMachineCount, int MachineCount, int SpeciesCount,
-    ImmutableArray<DepartmentMachineSourceInput> Inputs, MachineDefinition Tm15, int MovePower,
+    MachineDefinition Tm15, int MovePower,
     int MoveAccuracy, string MoveType, string MoveEffect, string IconSourceItem);
 
 /// <summary>Reuses previously imported sources. No maps, species, graphics, or audio are imported.</summary>
@@ -17,7 +16,7 @@ public static class PretDepartmentStoreMachines
     public static ItemId ReusedTm15Icon { get; } = new("pret:ITEM_TM05");
     public static DepartmentMachineDocument LoadDocument(string projectRoot, SharedMachineCatalog? shared = null)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/department-machine-stock/machines.json"));
+        var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/data/machine-learning/department-machine-stock.json"));
         var document = JsonSerializer.Deserialize<DepartmentMachineDocument>(bytes,
             (shared ?? SharedMachineCatalog.LoadProject(projectRoot)).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })) ??
             throw new InvalidDataException("department_machine_document_missing");

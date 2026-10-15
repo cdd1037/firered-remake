@@ -18,7 +18,6 @@ public sealed class PretRoute22Region
     public const string Profile = "firered-route22-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
     /// <summary>Declarative source metadata only; this class registers no executable handlers.</summary>
     public JsonElement EarlyRivalTrainers => Dependencies.GetProperty("earlyRivalTrainers");
@@ -33,10 +32,10 @@ public sealed class PretRoute22Region
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretRoute22Region(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog)
+        JsonElement dependencies, JsonElement catalog)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; Dependencies = dependencies; Catalog = catalog;
         FirstBadgeRoute23SourceStops = FirstBadgeBoundary.GetProperty("stableRows").EnumerateArray()
             .SelectMany(row => row.GetProperty("x").EnumerateArray().Select(x => (x.GetInt32(), row.GetProperty("y").GetInt32())))
             .ToImmutableHashSet();
@@ -70,7 +69,7 @@ public sealed class PretRoute22Region
     public static PretRoute22Region Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/route22-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/route22");
 
         byte[] ReadPinned(string root,string path)
         {
@@ -80,34 +79,30 @@ public sealed class PretRoute22Region
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
 
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Route22 manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Route22 manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
             if (path == "scripts.json") continue;
-            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"route22-region/"+path))continue;
+            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"maps/regions/route22/"+path))continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate route22 output.");
         }
         using var catalog = JsonDocument.Parse(outputs["route22-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Route22 / League gate / Route23; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             if(runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!),out var compact) )
             {
-                var runtimeMap=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"),MapIdFromSourceSymbol);
+                var runtimeMap=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"),MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id,runtimeMap),"Duplicate runtime map.");continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
@@ -120,13 +115,11 @@ public sealed class PretRoute22Region
             constants["STDSTRING_BOULDER_BADGE"] == 15 && constants["STDSTRING_CASCADE_BADGE"] == 16,
             "Route22 trainer/badge string source constants differ.");
         using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        Require(!dependencies.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependencies.RootElement.GetProperty("earlyRivalTrainers").GetArrayLength() == 3 &&
+        Require(dependencies.RootElement.GetProperty("earlyRivalTrainers").GetArrayLength() == 3 &&
             dependencies.RootElement.GetProperty("firstBadgeBoundary").GetProperty("stableReachableCellCount").GetInt32() == 51 &&
             dependencies.RootElement.GetProperty("coordinateEvents").EnumerateArray().All(e => !e.GetProperty("enabled").GetBoolean()),
             "Route22 dependency scope differs.");
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone());
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(), dependencies.RootElement.Clone(), catalog.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

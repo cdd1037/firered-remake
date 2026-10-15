@@ -1,8 +1,8 @@
 # Regional map-render atlases
 
-`python3 scripts/import-map-atlases.py` runs after the ordinary map and border importers. It reads their generated `runtime-map.json` and `map-borders/*/border.json` artifact lists. It does not read upstream scripts, change collision/events, or touch animated and interactive patch assets. Original map PNGs are removed only by the explicit finalization command below; player sprites and patch/animation assets are excluded from packing and pruning.
+`python3 scripts/imports/maps/import-map-atlases.py` runs after the ordinary map and border importers. It reads their generated `runtime-map.json` and `map-borders/*/border.json` artifact lists. It does not read upstream scripts, change collision/events, or touch animated and interactive patch assets. Original map PNGs are removed only by the explicit finalization command below; player sprites and patch/animation assets are excluded from packing and pruning.
 
-Outputs are flat under `content/generated/map-atlases/`:
+Outputs are flat under `content/generated/maps/atlases/`:
 
 - `catalog.json`: schema version 1; `tileSize=16`, `pageColumns=64`, `tilesPerPage=4096`
 - `indices.bin`: concatenated independently zlib-compressed UInt16 little-endian streams
@@ -18,7 +18,7 @@ The Godot renderer reconstructs individual logical layers on entering a map thro
 
 Run the affected ordinary map importer(s), then:
 
-    python3 scripts/import-map-atlases.py --prune
+    python3 scripts/imports/maps/import-map-atlases.py --prune
 
 This regenerates the atlas set, verifies it, backs up original map PNGs and changed manifests outside the project, then removes only packed map PNGs. The output reports the backup directory. Use `--backup-dir /path/outside/project/new-empty-directory` to choose it. Runtime-map and border artifact paths remain logical image IDs; actual `manifest.json` output/file/artifact lists are updated to stop listing removed map PNGs.
 
@@ -27,10 +27,10 @@ Freshly emitted PNGs always take precedence. When an unaffected map's PNGs are a
 ## Verification and evidence
 
 - Generation reconstructs images from the newly encoded PNG pages and index streams before installing outputs. Fresh images are compared against the actual PNGs; recovered images are compared against their prior atlas representation.
-- `python3 scripts/import-map-atlases.py --check` regenerates in a temporary directory and compares every output byte. It works with full, mixed, or packed-only inputs.
-- `python3 scripts/import-map-atlases.py --verify` validates installed dimensions, page/tile bounds, index streams and logical inventory. Where original PNGs exist, it also compares their RGBA pixels.
+- `python3 scripts/imports/maps/import-map-atlases.py --check` regenerates in a temporary directory and compares every output byte. It works with full, mixed, or packed-only inputs.
+- `python3 scripts/imports/maps/import-map-atlases.py --verify` validates installed dimensions, page/tile bounds, index streams and logical inventory. Where original PNGs exist, it also compares their RGBA pixels.
 - Reports distinguish `originalImagesCompared`, `originalPixelsCompared`, `recoveredImagesCompared`, and `packedOnlyImages`. A packed-only consistency check is not independent evidence of original pixels. `originalPixelParity` is true only when every image was compared against an actual fresh PNG.
-- `python3 scripts/test-map-atlases.py` exercises explicit backup/prune, packed-only deterministic repacking, fresh-image precedence, transparent RGB preservation, and corrupt-index rejection using isolated test data.
+- `python3 scripts/checks/test-map-atlases.py` exercises explicit backup/prune, packed-only deterministic repacking, fresh-image precedence, transparent RGB preservation, and corrupt-index rejection using isolated test data.
 
 The importer uses Python and Pillow, the same image dependency as the existing map importers. It is an offline derived-render-data step, not a new renderer or a substitute for upstream resource import.
 

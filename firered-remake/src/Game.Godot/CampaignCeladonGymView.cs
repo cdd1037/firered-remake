@@ -47,7 +47,7 @@ public partial class CampaignView
         foreach(var icon in PretCeladonGymItems.LoadProject(_root).Icons)
         {
             
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("celadon-gym-items", icon));
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("data/items/celadon-gym", icon));
         }
     }
 

@@ -6,10 +6,10 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record SourceBattleItemDocument(string SourceCommit, ImmutableArray<SourceBattleItemDefinition> Items);
+public sealed record SourceBattleItemDocument( ImmutableArray<SourceBattleItemDefinition> Items);
 public static class SourceBattleItemCatalogLoader
 {
-    public const string RelativePath = "content/generated/source-battle-items/catalog.json";
+    public const string RelativePath = "content/generated/battle/items.json";
     public static SourceBattleItemCatalog LoadAuthenticated(string projectRoot) =>
         LoadAuthenticated(projectRoot, SharedItemCatalog.LoadProject(projectRoot));
 
@@ -18,6 +18,6 @@ public static class SourceBattleItemCatalogLoader
         byte[] bytes = File.ReadAllBytes(Path.Combine(projectRoot, RelativePath));
         var document = JsonSerializer.Deserialize<SourceBattleItemDocument>(bytes, items.CreateJsonOptions())
             ?? throw new InvalidDataException("source_item_document_missing");
-        return SourceBattleItemCatalog.Authenticate(document.SourceCommit, document.Items);
+        return SourceBattleItemCatalog.Create(document.Items);
     }
 }

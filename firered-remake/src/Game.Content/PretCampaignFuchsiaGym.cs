@@ -16,7 +16,7 @@ public sealed partial class PretCampaignCatalog
     public FuchsiaGymTrainerDocument? FuchsiaGymTrainerDocument { get; }
     public FuchsiaGymTrainerCatalogContent? FuchsiaGymTrainers { get; }
     Game.Domain.Trainers.FuchsiaGymTrainerCatalog? Game.Domain.World.ICampaignCatalog.FuchsiaGymTrainerParties =>
-        FuchsiaGymTrainers is { } trainers ? new(trainers.SourceCommit,trainers.Profile,trainers.CompleteSourceRoster,trainers.Trainers,trainers.Battles) : null;
+        FuchsiaGymTrainers is { } trainers ? new(trainers.Trainers,trainers.Battles) : null;
     public PretFuchsiaGymItemsDocument? FuchsiaGymItems { get; }
     public PretRockTunnelMachinesDocument? FuchsiaGymMachines { get; }
     /// <summary>Explicit source successor opt-in; native acceptance remains a separate gate.</summary>

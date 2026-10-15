@@ -9,7 +9,7 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record PowerPlantMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record PowerPlantPokemonDocument(string SourceCommit, string Profile, int OwnedSpeciesCount, int OpponentSpeciesCount, int ItemCount,
+public sealed record PowerPlantPokemonDocument(int OwnedSpeciesCount, int OpponentSpeciesCount, int ItemCount,
     int MachineCount, EarlyLandEncounterTable Land, ImmutableArray<PowerPlantHeldItemSource> HeldItems,
     ImmutableArray<PowerPlantMachineRows> Machines, ImmutableArray<MachineDefinition> NewMachines,
     ImmutableArray<EarlyShopItemDefinition> Items, ImmutableArray<FieldPickupDefinition> Pickups);
@@ -26,7 +26,7 @@ public static partial class PretPowerPlantRules
     }
     public static PowerPlantPokemonDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
-        var d = JsonSerializer.Deserialize<PowerPlantPokemonDocument>(Read(root,"content/generated/power-plant-pokemon/catalog.json"), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(Options))
+        var d = JsonSerializer.Deserialize<PowerPlantPokemonDocument>(Read(root,"content/generated/data/pokemon/power-plant.json"), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(Options))
             ?? throw new InvalidDataException("power_plant_source_missing");
         if (d.Machines.IsDefaultOrEmpty || d.NewMachines.IsDefaultOrEmpty || d.Items.IsDefaultOrEmpty ||
             d.Pickups.IsDefaultOrEmpty || d.HeldItems.IsDefault || d.Land is null || d.Land.Slots.IsDefaultOrEmpty)

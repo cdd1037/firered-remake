@@ -25,13 +25,12 @@ public sealed class PretSsAnneBattleArt
     public SsAnneDepartureSheet Wake { get; }
     public SsAnneDepartureSheet Smoke { get; }
     public SsAnneDepartureCadence Departure { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
     private PretSsAnneBattleArt(ImmutableArray<ForestTrainerPortrait> portraits, SsAnneDepartureSheet wake,
         SsAnneDepartureSheet smoke, SsAnneDepartureCadence departure,
-        ImmutableArray<PretWorldSourceFile> files, ImmutableDictionary<string, byte[]> outputs)
+        ImmutableDictionary<string, byte[]> outputs)
     {
-        Portraits = portraits; Wake = wake; Smoke = smoke; Departure = departure; SourceFiles = files; _outputs = outputs;
+        Portraits = portraits; Wake = wake; Smoke = smoke; Departure = departure; _outputs = outputs;
     }
 
     /// <summary>Authenticated palette-expanded PNG bytes; callers may load them without another path lookup.</summary>
@@ -42,22 +41,15 @@ public sealed class PretSsAnneBattleArt
 
     public static PretSsAnneBattleArt Load(string root)
     {
-        using var manifest = JsonDocument.Parse(Read(root,"content/generated/ssanne-battle-art/manifest.json"));
+        using var manifest = JsonDocument.Parse(Read(root,"content/generated/battle/art/ssanne-battle-art/manifest.json"));
         var document = manifest.RootElement;
         Require(document.GetProperty("schemaVersion").GetInt32() == 1 &&
             document.GetProperty("paletteExpansion").GetString() == "(rgb5 << 3) | (rgb5 >> 2)" && document.GetProperty("assets").GetArrayLength() == 6 , "S.S. Anne art manifest differs.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var input in document.GetProperty("inputs").EnumerateArray())
-        {
-            string path = input.GetProperty("path").GetString()!;
-            files.Add(new(path));
-        }
-        Require(files.Select(f => f.Path).Distinct(StringComparer.Ordinal).Count() == 22, "Duplicate S.S. Anne art input.");
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in document.GetProperty("outputs").EnumerateArray())
         {
             string path = output.GetProperty("path").GetString()!;
-            Require(outputs.TryAdd(path, Read(root,"content/generated/ssanne-battle-art/" + path)), "Duplicate S.S. Anne art output.");
+            Require(outputs.TryAdd(path, Read(root,"content/generated/battle/art/ssanne-battle-art/" + path)), "Duplicate S.S. Anne art output.");
         }
         var portraits = ImmutableArray.CreateBuilder<ForestTrainerPortrait>();
         var sheets = new Dictionary<string, SsAnneDepartureSheet>(StringComparer.Ordinal);
@@ -102,7 +94,7 @@ public sealed class PretSsAnneBattleArt
             throw new InvalidDataException("Missing ship cadence.");
         Require(departure == new SsAnneDepartureCadence(50,40,5,70,-120,80,109,6,22,-18,2,255,49,78,-32,4,8,"SE_SS_ANNE_HORN"),
             "Original ship task cadence differs.");
-        return new(portraits.ToImmutable(), sheets["wake"], sheets["smoke"], departure, files.ToImmutable(), outputs.ToImmutable());
+        return new(portraits.ToImmutable(), sheets["wake"], sheets["smoke"], departure, outputs.ToImmutable());
     }
 
     private static byte[] Read(string root,string relative)

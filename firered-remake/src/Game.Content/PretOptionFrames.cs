@@ -23,7 +23,7 @@ public sealed class PretOptionFrames
     public static PretOptionFrames Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/option-frames");
+        var directory = Path.Combine(project, "content/generated/ui/option-frames");
         using var catalog = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(directory, "option-frames.json")));
         var c = catalog.RootElement;
         Require(c.GetProperty("schemaVersion").GetInt32() == 1, "Unsupported option-frame catalog schema.");
@@ -36,8 +36,8 @@ public sealed class PretOptionFrames
                 "Option-frame index or kind differs.");
             bool shared = asset.Kind == "battle-message" || asset.FrameIndex == 0;
             var texturePath = shared
-                ? $"content/generated/lab-battle-ui/{(asset.Kind == "frame" ? "frame1" : asset.Kind)}.png"
-                : "content/generated/option-frames/frames.png";
+                ? $"content/generated/ui/lab-battle-ui/{(asset.Kind == "frame" ? "frame1" : asset.Kind)}.png"
+                : "content/generated/ui/option-frames/frames.png";
             bool frame = asset.Kind == "frame";
             Require(asset.TexturePath == texturePath &&
                 asset.Width == (frame ? 24 : 240) && asset.Height == (frame ? 24 : 48) &&

@@ -25,7 +25,7 @@ public partial class CampaignView
         foreach (var texture in _oldManTextures.Values) texture.Dispose();
         _oldManTextures.Clear(); _oldManArt = null; ResetOldManPresentation();
         if (!_catalog.OldManTutorialEnabled) return;
-        var directory = System.IO.Path.Combine(_root, "content/generated/old-man-art");
+        var directory = System.IO.Path.Combine(_root, "content/generated/sprites/pokemon/old-man");
         var document = PretOldManArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "old-man-art.json")));
         try
         {

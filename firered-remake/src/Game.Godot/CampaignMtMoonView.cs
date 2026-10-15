@@ -79,7 +79,7 @@ public partial class CampaignView
         foreach (var icon in items.Icons)
         {
             
-            _earlyItemIcons.Add(icon.Item, ItemTexture("mtmoon-items", icon));
+            _earlyItemIcons.Add(icon.Item, ItemTexture("data/items/mtmoon", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Missing source key item pocket.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
@@ -89,7 +89,7 @@ public partial class CampaignView
             var icon = items.Icons.Single(i => i.Item == fossil.Item);
             string id = "mtmoon-" + value.Item.SourceItemSymbol.ToLowerInvariant();
             
-            _questPocketTextures.Add(id, ItemTexture("mtmoon-items", icon));
+            _questPocketTextures.Add(id, ItemTexture("data/items/mtmoon", icon));
             document = document with
             {
                 Items = document.Items.Add(new(value.Item.Id.Value, value.Item.SourceItemSymbol, value.Item.Name, value.Description, id, value.Item.FieldUseFunction)),

@@ -10,7 +10,7 @@ namespace Game.Content;
 /// <summary>Original Lost Cave/Selphy inventory closure; acquisition remains owned by the existing current commands.</summary>
 public static class PretLostCaveItems
 {
-    public const string Base = "content/generated/lost-cave-items/";
+    public const string Base = "content/generated/data/items/lost-cave/";
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private static byte[] Read(string root,string relative)
     {

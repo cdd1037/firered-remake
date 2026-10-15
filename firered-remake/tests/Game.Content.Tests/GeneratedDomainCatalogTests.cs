@@ -30,8 +30,8 @@ public sealed class GeneratedDomainCatalogTests
     {
         var root = GeneratedRoot(PretCanonicalPokemonCatalog.CatalogRelativePath,
             PretMetronomeMoveCatalog.CatalogRelativePath,
-            SourceBattleItemCatalogLoader.RelativePath, "content/generated/item-catalog/catalog.json",
-            "content/generated/machine-catalog/catalog.json");
+            SourceBattleItemCatalogLoader.RelativePath, "content/generated/data/items.json",
+            "content/generated/data/machines.json");
         try
         {
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "scripts")));
@@ -55,9 +55,9 @@ public sealed class GeneratedDomainCatalogTests
     {
         string[] encounterFamilies = ["rocktunnel", "route11", "vermilion"];
         string[] trainerFamilies = ["rocktunnel", "route11", "vermilion", "ssanne", "vermilion-gym", "celadon-gym", "fuchsia-gym"];
-        var paths = encounterFamilies.Select(f => $"content/generated/{f}-encounters/encounters.json")
-            .Concat(trainerFamilies.Select(f => $"content/generated/{f}-trainers/trainers.json"))
-            .Concat(["content/generated/old-rod/old-rod.json", PretSurfEncounters.CatalogRelativePath, PretNameRaterContract.RelativePath, PretCeruleanTrainers.RelativePath]).ToArray();
+        var paths = encounterFamilies.Select(f => $"content/generated/data/encounters/{f}.json")
+            .Concat(trainerFamilies.Select(f => $"content/generated/data/trainer-battles/{f}.json"))
+            .Concat([SharedTrainerCatalog.RelativePath, "content/generated/data/services/old-rod.json", PretSurfEncounters.CatalogRelativePath, PretNameRaterContract.RelativePath, PretCeruleanTrainers.RelativePath]).ToArray();
         var root = GeneratedRoot(paths);
         var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);
         try

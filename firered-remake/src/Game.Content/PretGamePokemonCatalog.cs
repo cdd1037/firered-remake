@@ -14,7 +14,7 @@ public sealed record GameBreedingDocument(ImmutableArray<GameBreedingSpecies> Sp
 /// <summary>Current gameplay admission policy. Definitions and form mechanics are resolved from the shared catalog.</summary>
 public static class PretGamePokemonCatalog
 {
-    public const string RelativePath = "content/generated/game-pokemon/catalog.json";
+    public const string RelativePath = "content/generated/data/pokemon/game/catalog.json";
 
     public static GamePokemonCatalog Load(string root, PretCanonicalPokemonCatalog canonical,
         SourceMechanicsCatalog mechanics, NpcTradePokemonCatalog trades)
@@ -72,7 +72,7 @@ public static class PretGamePokemonCatalog
     private static PokemonBreedingData LoadBreeding(string root, PretCanonicalPokemonCatalog canonical, PokemonCatalog owned, SharedMachineCatalog machines)
     {
         var document = ContentJson.ParseStrict<GameBreedingDocument>(File.ReadAllText(Path.Combine(root,
-            "content/generated/game-pokemon/breeding.json")), ContentJson.CreateOptions());
+            "content/generated/data/pokemon/game/breeding.json")), ContentJson.CreateOptions());
         if (document.Species.IsDefaultOrEmpty || document.Species.Any(row => row is null || row.EggMoves.IsDefault) ||
             document.Species.Select(row => row.Species).Distinct().Count() != document.Species.Length ||
             !document.Species.Select(row => row.Species).ToHashSet().SetEquals(owned.Species.Keys) ||

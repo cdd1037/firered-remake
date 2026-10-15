@@ -46,7 +46,7 @@ public partial class CampaignView
         foreach(var icon in PretRockTunnelMachines.LoadProject(_root).Icons.Concat(PretRockTunnelItems.LoadProject(_root).Icons))
         {
             
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("rocktunnel-items", icon));
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("data/items/rocktunnel", icon));
         }
     }
     private Texture2D? _fieldFlashStreaks;

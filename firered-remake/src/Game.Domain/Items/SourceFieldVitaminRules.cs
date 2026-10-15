@@ -43,8 +43,7 @@ public static class SourceFieldVitaminRules
         try { EarlyShopInventoryRules.ValidateCatalog(catalog); }
         catch (Exception error) when (error is ArgumentException or NotSupportedException) { return null; }
         var definition = EarlyShopInventoryRules.Find(catalog, item);
-        if (catalog.SourceCommit != PokemonFactory.SourceCommit ||
-            definition is not { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
+        if (definition is not { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
                 FieldUseFunction: "FieldUseFunc_Medicine", BattleUsage: 0, BattleUseFunction: "NULL" }) return null;
         var source = Effects.FirstOrDefault(e => item.Value == "pret:" + e.Symbol);
         if (source is null || definition.SourceItemSymbol != source.Symbol || definition.SourceItemId != source.Id) return null;

@@ -75,7 +75,7 @@ public sealed class PretRegionalServiceMaps
     public static PretRegionalServiceMaps Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/regional-service-maps");
+        var directory = Path.Combine(project, "content/generated/maps/regions/regional-service-maps");
         byte[] Pinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(Safe(root, path));
@@ -83,7 +83,7 @@ public sealed class PretRegionalServiceMaps
         }
         using var manifestDocument = JsonDocument.Parse(Pinned(directory,"manifest.json"));
         var manifest = manifestDocument.RootElement;
-        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1 && manifest.GetProperty("unresolvedLabelCount").GetInt32() == 0,
+        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1,
             "Regional service manifest scope differs.");
         var outputEntries = manifest.GetProperty("outputs").EnumerateArray().ToDictionary(x => x.GetProperty("path").GetString()!, StringComparer.Ordinal);
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
@@ -94,24 +94,22 @@ public sealed class PretRegionalServiceMaps
         }
         JsonElement Document(string path) { using var doc = JsonDocument.Parse(outputs[path]); return doc.RootElement.Clone(); }
         var catalog = Document("regional-service-maps-catalog.json");
-        Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Regional source inventory/availability differs.");
-        var files = ImmutableArray<PretWorldSourceFile>.Empty;
+
+
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "17 source maps; four unchanged reused gates; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
-        Need(runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion &&
-            runtimeCatalog.GetProperty("maps").GetArrayLength() == 17, "Regional runtime converter differs.");
         var runtimeEntries = runtimeCatalog.GetProperty("maps").EnumerateArray().ToDictionary(e => e.GetProperty("stableId").GetString()!, StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("directory").GetString()!;
+            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
             var runtimeEntry = runtimeEntries[stableId];
-            Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" , "Runtime source certificate differs.");
-            var payload = outputs[relative + "/runtime-map.json"];
+            Need(runtimeEntry.GetProperty("path").GetString() == relative , "Runtime source certificate differs.");
+            var payload = outputs[relative];
             var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol differs from its ID.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
             var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png");
+            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
         Need(maps.Count == 17 && maps.Values.Sum(m => m.Width * m.Height) == 3241 && maps.Values.Sum(m => m.BorderWidth * m.BorderHeight) == 68, "Source map collection differs.");
@@ -122,7 +120,7 @@ public sealed class PretRegionalServiceMaps
         var constants = PretSharedConstants.ForPackage(directory);
         Need(constants["ITEM_TEA"] == 369 && constants["FLAG_GOT_TEA"] == 678 && constants["FLAG_GOT_EEVEE"] == 611 && constants["LOCALID_EEVEE_POKEBALL"] == 2 && constants["SPECIES_EEVEE"] == 133, "Tea/Eevee source constants differ.");
         var availability = Document("availability.json");
-        Need(!availability.GetProperty("runtimeIntegrated").GetBoolean() && !availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
+        Need(!availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
         return new(directory, maps.ToImmutable(), constants, catalog,
             Document("objects.json"), Document("npc-source.json"), availability);
     }

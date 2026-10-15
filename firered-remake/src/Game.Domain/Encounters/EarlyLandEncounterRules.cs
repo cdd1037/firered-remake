@@ -37,7 +37,6 @@ public static class EarlyLandEncounterRules
     public const string BillRulesVersion = "firered-bill-walking-candidates-v1";
     public const string MtMoonRulesVersion = "firered-mtmoon-walking-candidates-v1";
     public const string Route3RulesVersion = "firered-route3-walking-candidates-v1";
-    public const string SourcePath = "src/data/wild_encounters.json";
     public const byte TallGrassBehavior = Route1EncounterRules.TallGrassBehavior;
     public static ImmutableArray<int> SlotWeights { get; } = [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1];
     public static ImmutableArray<SpeciesId> WildSpecies { get; } =
@@ -48,12 +47,10 @@ public static class EarlyLandEncounterRules
     ];
     public static ImmutableArray<SpeciesId> Route22WildSpecies { get; } =
         [new("pret:SPECIES_RATTATA"), new("pret:SPECIES_MANKEY"), new("pret:SPECIES_SPEAROW")];
-    public static EarlyLandEncounterTable Route1Table { get; } = new(Route1EncounterRules.Map, SourceCommit,
-        SourcePath, "sRoute1_FireRed", 21,
+    public static EarlyLandEncounterTable Route1Table { get; } = new(Route1EncounterRules.Map, 21,
         Route1EncounterRules.Slots.Select(s => new EarlyLandEncounterSlot(s.Index, s.Species,
             s.MinimumLevel, s.MaximumLevel, s.Weight)).ToImmutableArray());
-    public static EarlyLandEncounterTable Route22Table { get; } = new(new("map.route-22"), SourceCommit,
-        SourcePath, "sRoute22_FireRed", 21,
+    public static EarlyLandEncounterTable Route22Table { get; } = new(new("map.route-22"), 21,
         new[] { ("RATTATA", 3), ("MANKEY", 3), ("RATTATA", 4), ("MANKEY", 4),
             ("RATTATA", 2), ("MANKEY", 2), ("SPEAROW", 3), ("SPEAROW", 5),
             ("RATTATA", 5), ("MANKEY", 5), ("RATTATA", 5), ("MANKEY", 5) }
@@ -64,8 +61,7 @@ public static class EarlyLandEncounterRules
     public static ImmutableArray<SpeciesId> Route3WildSpecies { get; } =
         [new("pret:SPECIES_EKANS"), new("pret:SPECIES_NIDORAN_F"),
          new("pret:SPECIES_NIDORAN_M"), new("pret:SPECIES_JIGGLYPUFF")];
-    public static EarlyLandEncounterTable Route3Table { get; } = new(new("map.route-3"), SourceCommit,
-        SourcePath, "sRoute3_FireRed", 21,
+    public static EarlyLandEncounterTable Route3Table { get; } = new(new("map.route-3"), 21,
         new[] { ("SPEAROW", 6), ("PIDGEY", 6), ("SPEAROW", 7), ("MANKEY", 7),
             ("NIDORAN_M", 6), ("PIDGEY", 7), ("SPEAROW", 8), ("JIGGLYPUFF", 3),
             ("NIDORAN_M", 7), ("JIGGLYPUFF", 5), ("NIDORAN_F", 6), ("JIGGLYPUFF", 7) }
@@ -261,19 +257,11 @@ public static class EarlyLandEncounterRules
     public static void ValidateTable(EarlyLandEncounterTable table)
     {
         ArgumentNullException.ThrowIfNull(table);
-        // Admission of a new exact map/symbol pair leaves old rejected aliases unchanged.
-        var mtMoonTable = MtMoonLandEncounterTables.All.Concat(BillLandEncounterTables.All).Concat(VermilionLandEncounterTables.All).Concat(Route11LandEncounterTables.All).Concat(RockTunnelLandEncounterTables.All).Concat(CeladonApproachLandEncounterTables.All).Concat(PokemonTowerLandEncounterTables.All).Concat(FuchsiaRouteLandEncounterTables.All).Concat(SafariLandEncounterTables.All).Concat(CinnabarLandEncounterTables.All).Concat(FirstSeviiEncounterTables.Land).Concat(VictoryRoadEncounterTables.Land).Concat(SeviiRubyEncounterTables.Land).Concat(FourIslandEncounterTables.Land).Concat(SixIslandEncounterTables.Land).Concat(FiveIslandEncounterTables.Land).Concat(CeruleanCaveEncounterTables.Land).Concat(SevenIslandEncounterTables.Land).Append(PowerPlantEncounterTables.Land).Concat(SeafoamEncounterTables.Land).Concat(SourceTableEncounterRegistry.Land).FirstOrDefault(t => t.Map == table.Map && t.SourceSymbol == table.SourceSymbol);
-        string symbol = table.Map.Value switch
-        {
-            "map.route-1" => "sRoute1_FireRed", "map.route-2" => "sRoute2_FireRed",
-            "map.viridian-forest" => "sViridianForest_FireRed",
-            "map.route-22" => "sRoute22_FireRed",
-            "map.route-3" => "sRoute3_FireRed",
-            _ when mtMoonTable is not null => mtMoonTable.SourceSymbol,
-            _ => throw new NotSupportedException("The land table map and source symbol are not registered.")
-        };
-        if (table.SourceCommit != SourceCommit || table.SourcePath != SourcePath || table.SourceSymbol != symbol)
-            throw new ArgumentException("Invalid early land table source metadata.");
+        // Map IDs determine admission; table labels and build provenance do not affect encounters.
+        var mtMoonTable = MtMoonLandEncounterTables.All.Concat(BillLandEncounterTables.All).Concat(VermilionLandEncounterTables.All).Concat(Route11LandEncounterTables.All).Concat(RockTunnelLandEncounterTables.All).Concat(CeladonApproachLandEncounterTables.All).Concat(PokemonTowerLandEncounterTables.All).Concat(FuchsiaRouteLandEncounterTables.All).Concat(SafariLandEncounterTables.All).Concat(CinnabarLandEncounterTables.All).Concat(FirstSeviiEncounterTables.Land).Concat(VictoryRoadEncounterTables.Land).Concat(SeviiRubyEncounterTables.Land).Concat(FourIslandEncounterTables.Land).Concat(SixIslandEncounterTables.Land).Concat(FiveIslandEncounterTables.Land).Concat(CeruleanCaveEncounterTables.Land).Concat(SevenIslandEncounterTables.Land).Append(PowerPlantEncounterTables.Land).Concat(SeafoamEncounterTables.Land).Concat(SourceTableEncounterRegistry.Land).FirstOrDefault(t => t.Map == table.Map);
+        if (mtMoonTable is null && table.Map.Value is not
+            ("map.route-1" or "map.route-2" or "map.viridian-forest" or "map.route-22" or "map.route-3"))
+            throw new NotSupportedException("The land table map is not registered.");
         if (table.RawEncounterRate is < 1 or > 255 || table.Slots.IsDefault || table.Slots.Length != 12)
             throw new ArgumentException("Invalid source land rate or slot count.");
         if (table.Map == Route22Table.Map || table.Map == Route3Table.Map || mtMoonTable is not null)

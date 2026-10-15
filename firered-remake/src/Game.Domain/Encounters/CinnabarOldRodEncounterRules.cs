@@ -11,9 +11,9 @@ public static class CinnabarOldRodEncounterRules
     public const string RulesVersion = "firered-cinnabar-old-rod-v1";
     public static ImmutableArray<OldRodEncounterTable> SourceAdditions { get; } =
     [
-        Table("route-21-north", "Route21North", 20),
-        Table("route-21-south", "Route21South", 20),
-        Table("cinnabar-island", "CinnabarIsland", 10)
+        Table("route-21-north", 20),
+        Table("route-21-south", 20),
+        Table("cinnabar-island", 10)
     ];
     public static ImmutableArray<OldRodEncounterTable> Tables { get; } =
         [.. OldRodEncounterRules.Tables, .. SourceAdditions];
@@ -21,9 +21,8 @@ public static class CinnabarOldRodEncounterRules
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) ||
         OldRodEncounterRules.MapsWithoutFishingMons.Contains(map);
 
-    private static OldRodEncounterTable Table(string map, string symbol, int rate) =>
-        new(new("map." + map), OldRodFishingRules.SourceCommit, OldRodEncounterRules.SourcePath,
-            "s" + symbol + "_FireRed", rate,
+    private static OldRodEncounterTable Table(string map, int rate) =>
+        new(new("map." + map), rate,
             [new(0, OldRodEncounterRules.Magikarp, 5, 5, 70), new(1, OldRodEncounterRules.Magikarp, 5, 5, 30)]);
 
     public static OldRodFishingResult Start(GamePokemonCatalog pokemon, OldRodCastContext context,

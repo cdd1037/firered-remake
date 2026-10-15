@@ -66,7 +66,7 @@ public sealed class FameCheckerPresentationData
 /// <summary>Generated Fame Checker texture regions, layout and presentation cues.</summary>
 public static class PretFameCheckerPresentation
 {
-    public const string Base = "content/generated/fame-checker-presentation/";
+    public const string Base = "content/generated/ui/fame-checker-presentation/";
     public const string Profile = "firered-fame-checker-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 

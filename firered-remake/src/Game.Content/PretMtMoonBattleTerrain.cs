@@ -29,7 +29,7 @@ public sealed class PretMtMoonBattleTerrain
 var bytes = File.ReadAllBytes(info.FullName);
 return bytes;
         }
-        using var json = JsonDocument.Parse(Read("content/generated/mtmoon-battle-terrain/mtmoon-battle-terrain.json"));
+        using var json = JsonDocument.Parse(Read("content/generated/battle/terrain/mtmoon/mtmoon-battle-terrain.json"));
         var document = json.RootElement; var display = document.GetProperty("display");
         if (document.GetProperty("assets").GetArrayLength() != 2 ||
             display.GetProperty("terrain").GetString() != "BATTLE_TERRAIN_CAVE" || display.GetProperty("terrainId").GetInt32() != 7 ||
@@ -50,6 +50,6 @@ return bytes;
             if (id == "background-scene") hasScene = true;
         }
         if (!hasScene) throw new InvalidDataException("MtMoon terrain scene missing.");
-        return new(Path.GetFullPath(Path.Combine(root, "content/generated/mtmoon-battle-terrain/background-scene.png")));
+        return new(Path.GetFullPath(Path.Combine(root, "content/generated/battle/terrain/mtmoon/background-scene.png")));
     }
 }

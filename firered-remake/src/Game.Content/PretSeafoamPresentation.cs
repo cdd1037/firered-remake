@@ -5,15 +5,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record SeafoamDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record SeafoamDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record SeafoamPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Pinned Articuno presentation and Roger's Bird Keeper portrait; shared source inputs remain authenticated.</summary>
 public static class PretSeafoamPresentation
 {
-    public const string Base = "content/generated/seafoam-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/seafoam/";
     public const string Profile = "firered-seafoam-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -37,15 +36,16 @@ public static class PretSeafoamPresentation
         if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Seafoam presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "sprites", "pokemonIcons", "footprints", "trainerPortraits" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (var asset in new[] { "sprites","pokemonIcons","footprints","trainerPortraits" }
             .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
@@ -114,8 +114,6 @@ public static class PretSeafoamPresentation
             portrait.GetProperty("paletteExpansion").GetString() != "(rgb5 << 3) | (rgb5 >> 2)" ||
             portrait.GetProperty("texturePath").GetString() != Base + "bird-keeper-front.png" ||
             portrait.GetProperty("texturePath").GetString() != Base + "bird-keeper-front.png" ||
-            !portrait.GetProperty("sourcePaths").EnumerateArray().Select(p => p.GetString()).SequenceEqual(new[] {
-                "graphics/trainers/front_pics/bird_keeper_front_pic.png","graphics/trainers/palettes/bird_keeper.pal" }) ||
             trainer.GetProperty("trainer").GetString() != "pret:TRAINER_BIRD_KEEPER_ROGER" ||
             trainer.GetProperty("name").GetString() != "ROGER" || trainer.GetProperty("portrait").GetString() != "bird-keeper-front" ||
             trainer.GetProperty("trainerPic").GetString() != "TRAINER_PIC_BIRD_KEEPER" ||
@@ -127,7 +125,6 @@ public static class PretSeafoamPresentation
         if (audio.GetProperty("schemaVersion").GetInt32() != 1 ||
             cue.GetProperty("id").GetString() != "CRY_ARTICUNO_NORMAL" ||
             cue.GetProperty("sourceSymbol").GetString() != "SPECIES_ARTICUNO" ||
-            cue.GetProperty("sourcePath").GetString() != "sound/direct_sound_samples/cries/articuno.wav" ||
             cue.GetProperty("species").GetInt32() != 144 || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
             cue.GetProperty("priority").GetInt32() != 10 || cue.GetProperty("cryMode").GetInt32() != 0 ||
             cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null || cue.GetProperty("songAddress").GetInt32() != 0 ||

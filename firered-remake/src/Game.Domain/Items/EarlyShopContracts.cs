@@ -25,8 +25,7 @@ public sealed record EarlyShopItemDefinition(QuestItemDefinition Item, string De
     [JsonIgnore] public int HoldEffectParam => Item.HoldEffectParam;
 }
 public sealed record EarlyShopStock(string Id, ImmutableArray<ItemId> Items);
-public sealed record EarlyShopCatalog(string SourceCommit, string Profile, bool CompleteItemCatalog,
-    InventoryLimits Limits, QuestInventoryLimits QuestLimits, int MaximumTransactionQuantity, int MaximumMoney,
+public sealed record EarlyShopCatalog(InventoryLimits Limits, QuestInventoryLimits QuestLimits, int MaximumTransactionQuantity, int MaximumMoney,
     ImmutableArray<EarlyShopItemDefinition> Items, ImmutableArray<EarlyShopStock> Shops)
 {
     [JsonIgnore]

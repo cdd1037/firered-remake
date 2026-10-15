@@ -110,7 +110,7 @@ public sealed class PretOakRating
             Require(info.Exists, "Missing Oak rating input: " + relative);
             return File.ReadAllBytes(path);
         }
-        using var catalogDocument = JsonDocument.Parse(Read("content/generated/oak-rating/oak-rating.json"));
+        using var catalogDocument = JsonDocument.Parse(Read("content/generated/data/services/oak-rating/oak-rating.json"));
         var catalog = catalogDocument.RootElement;
         var options = ContentJson.CreateOptions();
         T Decode<T>(JsonElement value) => value.Deserialize<T>(options) ?? throw new InvalidDataException("Missing Oak rating value.");

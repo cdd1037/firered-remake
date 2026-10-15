@@ -5,16 +5,13 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretCinnabarItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretBillSourceItem> Items, EarlyShopStock Mart,
-    ImmutableArray<string> Limitations)
+public sealed record PretCinnabarItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, EarlyShopStock Mart)
 {
     [JsonIgnore] public CinnabarMachinesDocument Machines { get; internal init; } = null!;
 }
 
-public sealed record CinnabarMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<MachineDefinition> NewMachines, ImmutableArray<string> Limitations);
+public sealed record CinnabarMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
+    ImmutableArray<MachineDefinition> NewMachines);
 
 /// <summary>Independent pinned declarations. All ordinary pickups except Secret Key already exist in Saffron.</summary>
 public static class PretCinnabarItems
@@ -27,11 +24,10 @@ public static class PretCinnabarItems
 
     public static PretCinnabarItemsDocument LoadProject(string root)
     {
-        var source = new SilphSourcePackage(root,"cinnabar-items");
+        var source = new SilphSourcePackage(root,"data/items/cinnabar");
         var items = source.Parse<PretCinnabarItemsDocument>("items.json");
         SilphSourcePackage.Need(items.SchemaVersion == 1 && !items.Items.IsDefault &&
-            items.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([SecretKeyId, Tm14Id, Tm22Id, Tm38Id]) &&
-            !items.Limitations.IsDefaultOrEmpty,
+            items.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([SecretKeyId, Tm14Id, Tm22Id, Tm38Id]),
             "Cinnabar item declaration scope differs.");
         foreach (var item in items.Items)
         {
@@ -41,8 +37,7 @@ public static class PretCinnabarItems
         SilphSourcePackage.Need(machines.SchemaVersion == 1 && machines.InheritedItemIds.Length == 28 &&
             machines.InheritedItemIds.Distinct().Count() == 28 && machines.Additions.Length == 28 &&
             machines.Additions.Select(a => a.Item).SequenceEqual(machines.InheritedItemIds) &&
-            machines.NewMachines.Select(m => m.Machine.Item.Id).SequenceEqual([Tm14Id, Tm22Id, Tm38Id]) &&
-            !machines.Limitations.IsDefaultOrEmpty, "Cinnabar teaching scope differs.");
+            machines.NewMachines.Select(m => m.Machine.Item.Id).SequenceEqual([Tm14Id, Tm22Id, Tm38Id]), "Cinnabar teaching scope differs.");
         foreach (var addition in machines.Additions)
         {
             SilphSourcePackage.Need(addition.Compatibility.Select(c => c.Species.Value).SequenceEqual(

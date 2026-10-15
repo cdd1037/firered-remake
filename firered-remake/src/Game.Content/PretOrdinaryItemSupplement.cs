@@ -10,7 +10,7 @@ namespace Game.Content;
 /// <summary>Original ordinary item definitions and pixels. Effect availability remains explicit.</summary>
 public static class PretOrdinaryItemSupplement
 {
-    public const string Base = "content/generated/ordinary-item-supplement/";
+    public const string Base = "content/generated/data/items/ordinary-item-supplement/";
     private static byte[] Read(string root, string relative)
     {
         return File.ReadAllBytes(Path.Combine(root, relative));

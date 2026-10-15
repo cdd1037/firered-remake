@@ -3,7 +3,7 @@ using Game.Content;
 
 public partial class SynthSourceAudioPlayer
 {
-    private sealed record TrainerTowerSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record TrainerTowerSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
     private static SynthCue[] ExtendTrainerTowerCues(string root, bool includePowerPlant, SynthCue[] cues, JsonSerializerOptions options)
     {
         if (!includePowerPlant) throw new InvalidDataException("Trainer Tower audio requires Power Plant.");

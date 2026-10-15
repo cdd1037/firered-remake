@@ -1,0 +1,2608 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s"
+    },
+    {
+      "path": "data/event_scripts.s"
+    },
+    {
+      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc"
+    },
+    {
+      "path": "data/maps/Route5/map.json"
+    },
+    {
+      "path": "data/maps/Route5/scripts.inc"
+    },
+    {
+      "path": "data/maps/Route5/text.inc"
+    },
+    {
+      "path": "data/maps/Route5_SouthEntrance/map.json"
+    },
+    {
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc"
+    },
+    {
+      "path": "data/maps/Route5_SouthEntrance/text.inc"
+    },
+    {
+      "path": "data/maps/Route6/map.json"
+    },
+    {
+      "path": "data/maps/Route6/scripts.inc"
+    },
+    {
+      "path": "data/maps/Route6/text.inc"
+    },
+    {
+      "path": "data/maps/Route6_NorthEntrance/map.json"
+    },
+    {
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc"
+    },
+    {
+      "path": "data/maps/Route6_NorthEntrance/text.inc"
+    },
+    {
+      "path": "data/maps/UndergroundPath_NorthEntrance/map.json"
+    },
+    {
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc"
+    },
+    {
+      "path": "data/maps/UndergroundPath_NorthSouthTunnel/map.json"
+    },
+    {
+      "path": "data/maps/UndergroundPath_NorthSouthTunnel/scripts.inc"
+    },
+    {
+      "path": "data/maps/UndergroundPath_SouthEntrance/map.json"
+    },
+    {
+      "path": "data/maps/UndergroundPath_SouthEntrance/scripts.inc"
+    },
+    {
+      "path": "data/maps/UndergroundPath_SouthEntrance/text.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity/map.json"
+    },
+    {
+      "path": "data/maps/VermilionCity/scripts.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity/text.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity_Mart/map.json"
+    },
+    {
+      "path": "data/maps/VermilionCity_Mart/scripts.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity_Mart/text.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/map.json"
+    },
+    {
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc"
+    },
+    {
+      "path": "data/scripts/bag_full.inc"
+    },
+    {
+      "path": "data/scripts/cable_club.inc"
+    },
+    {
+      "path": "data/scripts/fame_checker.inc"
+    },
+    {
+      "path": "data/scripts/field_moves.inc"
+    },
+    {
+      "path": "data/scripts/movement.inc"
+    },
+    {
+      "path": "data/scripts/obtain_item.inc"
+    },
+    {
+      "path": "data/scripts/pc.inc"
+    },
+    {
+      "path": "data/scripts/pkmn_center_nurse.inc"
+    },
+    {
+      "path": "data/scripts/pokedex_rating.inc"
+    },
+    {
+      "path": "data/scripts/seagallop.inc"
+    },
+    {
+      "path": "data/scripts/std_msgbox.inc"
+    },
+    {
+      "path": "data/scripts/trainer_battle.inc"
+    },
+    {
+      "path": "data/scripts/trainers.inc"
+    },
+    {
+      "path": "data/scripts/white_out.inc"
+    },
+    {
+      "path": "data/text/fame_checker.inc"
+    },
+    {
+      "path": "data/text/ingame_trade.inc"
+    },
+    {
+      "path": "data/text/obtain_item.inc"
+    },
+    {
+      "path": "data/text/pc.inc"
+    },
+    {
+      "path": "data/text/poke_mart.inc"
+    },
+    {
+      "path": "data/text/pokedex_rating.inc"
+    },
+    {
+      "path": "data/text/seagallop.inc"
+    },
+    {
+      "path": "data/text/trainers.inc"
+    },
+    {
+      "path": "data/text/white_out.inc"
+    },
+    {
+      "path": "include/constants/songs.h"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "sound/cry_tables.inc"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/meowth.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/persian.wav"
+    },
+    {
+      "path": "sound/song_table.inc"
+    },
+    {
+      "path": "sound/songs/midi/mus_vermillion.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_double_team.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_faint_attack.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_flatter.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_pay_day.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_screech.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_sketch.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_swagger.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_swagger2.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_thunder_wave.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_thunderbolt2.mid"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/synth-bill-cues.json"
+    },
+    {
+      "path": "content/generated/audio/synth/firered.pack"
+    },
+    {
+      "path": "content/generated/audio/synth/normal-cries.bin"
+    },
+    {
+      "path": "content/generated/maps/regions/vermilion/vermilion-catalog.json"
+    },
+    {
+      "path": "content/generated/sprites/pokemon/vermilion/supplement.json"
+    },
+    {
+      "path": "content/generated/data/pokemon/canonical/catalog.json"
+    },
+    {
+      "path": "content/generated/data/trainers.json"
+    },
+    {
+      "path": "content/generated/data/trainer-battles/vermilion.json"
+    }
+  ],
+  "profile": "firered-vermilion-synth-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1,
+  "scriptBlocks": [
+    {
+      "endLine": 1123,
+      "label": "CableClub_OnResume",
+      "labelLine": 1120,
+      "path": "data/scripts/cable_club.inc",
+      "startLine": 1121
+    },
+    {
+      "endLine": 27,
+      "label": "Common_Movement_FaceOriginalDirection",
+      "labelLine": 24,
+      "path": "data/scripts/movement.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 43,
+      "label": "Common_Movement_WalkInPlaceFasterDown",
+      "labelLine": 40,
+      "path": "data/scripts/movement.inc",
+      "startLine": 41
+    },
+    {
+      "endLine": 31,
+      "label": "Common_Movement_WalkInPlaceFasterLeft",
+      "labelLine": 28,
+      "path": "data/scripts/movement.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 39,
+      "label": "Common_Movement_WalkInPlaceFasterRight",
+      "labelLine": 36,
+      "path": "data/scripts/movement.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 65,
+      "label": "EventScript_AccessBillsPC",
+      "labelLine": 62,
+      "path": "data/scripts/pc.inc",
+      "startLine": 63
+    },
+    {
+      "endLine": 85,
+      "label": "EventScript_AccessHallOfFame",
+      "labelLine": 74,
+      "path": "data/scripts/pc.inc",
+      "startLine": 75
+    },
+    {
+      "endLine": 45,
+      "label": "EventScript_AccessPlayersPC",
+      "labelLine": 38,
+      "path": "data/scripts/pc.inc",
+      "startLine": 39
+    },
+    {
+      "endLine": 57,
+      "label": "EventScript_AccessPokemonStorage",
+      "labelLine": 46,
+      "path": "data/scripts/pc.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 97,
+      "label": "EventScript_AccessProfOaksPC",
+      "labelLine": 86,
+      "path": "data/scripts/pc.inc",
+      "startLine": 87
+    },
+    {
+      "endLine": 61,
+      "label": "EventScript_AccessSomeonesPC",
+      "labelLine": 58,
+      "path": "data/scripts/pc.inc",
+      "startLine": 59
+    },
+    {
+      "endLine": 13,
+      "label": "EventScript_AfterWhiteOutHeal",
+      "labelLine": 1,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 21,
+      "label": "EventScript_AfterWhiteOutHealMsg",
+      "labelLine": 18,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 17,
+      "label": "EventScript_AfterWhiteOutHealMsgPreBrock",
+      "labelLine": 14,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 7,
+      "label": "EventScript_BagIsFull",
+      "labelLine": 1,
+      "path": "data/scripts/bag_full.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 60,
+      "label": "EventScript_BufferBerryPouch",
+      "labelLine": 56,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 57
+    },
+    {
+      "endLine": 40,
+      "label": "EventScript_BufferItemsPocket",
+      "labelLine": 36,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 45,
+      "label": "EventScript_BufferKeyItemsPocket",
+      "labelLine": 41,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 42
+    },
+    {
+      "endLine": 35,
+      "label": "EventScript_BufferPocketNameTryFanfare",
+      "labelLine": 27,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 50,
+      "label": "EventScript_BufferPokeBallsPocket",
+      "labelLine": 46,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 55,
+      "label": "EventScript_BufferTMCase",
+      "labelLine": 51,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 52
+    },
+    {
+      "endLine": 117,
+      "label": "EventScript_CancelSail",
+      "labelLine": 112,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 113
+    },
+    {
+      "endLine": 41,
+      "label": "EventScript_CantCutTree",
+      "labelLine": 37,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 38
+    },
+    {
+      "endLine": 1211,
+      "label": "EventScript_ChooseMonForInGameTrade",
+      "labelLine": 1204,
+      "path": "data/event_scripts.s",
+      "startLine": 1205
+    },
+    {
+      "endLine": 37,
+      "label": "EventScript_ChoosePCMenu",
+      "labelLine": 28,
+      "path": "data/scripts/pc.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 18,
+      "label": "EventScript_CutTree",
+      "labelLine": 1,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 32,
+      "label": "EventScript_CutTreeDown",
+      "labelLine": 26,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 101,
+      "label": "EventScript_DepartingNotVermilion",
+      "labelLine": 97,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 98
+    },
+    {
+      "endLine": 96,
+      "label": "EventScript_DepartingVermilion",
+      "labelLine": 92,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 1227,
+      "label": "EventScript_DoInGameTrade",
+      "labelLine": 1218,
+      "path": "data/event_scripts.s",
+      "startLine": 1219
+    },
+    {
+      "endLine": 120,
+      "label": "EventScript_DoTrainerBattle",
+      "labelLine": 109,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 110
+    },
+    {
+      "endLine": 7,
+      "label": "EventScript_DoTrainerBattleFromApproach",
+      "labelLine": 1,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 46,
+      "label": "EventScript_DontCutTree",
+      "labelLine": 42,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 43
+    },
+    {
+      "endLine": 132,
+      "label": "EventScript_EndQuestLogBattle",
+      "labelLine": 128,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 129
+    },
+    {
+      "endLine": 124,
+      "label": "EventScript_EndTrainerBattle",
+      "labelLine": 121,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 122
+    },
+    {
+      "endLine": 127,
+      "label": "EventScript_EndTrainerBattleContinueScript",
+      "labelLine": 125,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 126
+    },
+    {
+      "endLine": 101,
+      "label": "EventScript_ExitOaksPC",
+      "labelLine": 98,
+      "path": "data/scripts/pc.inc",
+      "startLine": 99
+    },
+    {
+      "endLine": 42,
+      "label": "EventScript_FieldPoison",
+      "labelLine": 34,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 35
+    },
+    {
+      "endLine": 48,
+      "label": "EventScript_FieldWhiteOut",
+      "labelLine": 43,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 66,
+      "label": "EventScript_FieldWhiteOutFade",
+      "labelLine": 60,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 61
+    },
+    {
+      "endLine": 59,
+      "label": "EventScript_FieldWhiteOutHasMoney",
+      "labelLine": 54,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 53,
+      "label": "EventScript_FieldWhiteOutNoMoney",
+      "labelLine": 49,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 50
+    },
+    {
+      "endLine": 184,
+      "label": "EventScript_FoundCoins",
+      "labelLine": 180,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 181
+    },
+    {
+      "endLine": 141,
+      "label": "EventScript_FoundItem",
+      "labelLine": 138,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 139
+    },
+    {
+      "endLine": 189,
+      "label": "EventScript_FoundMultipleItems",
+      "labelLine": 185,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 186
+    },
+    {
+      "endLine": 179,
+      "label": "EventScript_FoundSingleItem",
+      "labelLine": 176,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 177
+    },
+    {
+      "endLine": 137,
+      "label": "EventScript_FoundTMHM",
+      "labelLine": 134,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 135
+    },
+    {
+      "endLine": 1217,
+      "label": "EventScript_GetInGameTradeSpecies",
+      "labelLine": 1212,
+      "path": "data/event_scripts.s",
+      "startLine": 1213
+    },
+    {
+      "endLine": 1203,
+      "label": "EventScript_GetInGameTradeSpeciesInfo",
+      "labelLine": 1198,
+      "path": "data/event_scripts.s",
+      "startLine": 1199
+    },
+    {
+      "endLine": 221,
+      "label": "EventScript_HiddenCoinsButCaseIsFull",
+      "labelLine": 213,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 214
+    },
+    {
+      "endLine": 157,
+      "label": "EventScript_HiddenItemScript",
+      "labelLine": 148,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 149
+    },
+    {
+      "endLine": 229,
+      "label": "EventScript_NoCaseForHiddenCoins",
+      "labelLine": 222,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 223
+    },
+    {
+      "endLine": 196,
+      "label": "EventScript_NoRoomForHiddenItem",
+      "labelLine": 190,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 191
+    },
+    {
+      "endLine": 147,
+      "label": "EventScript_NoRoomToPickUpItem",
+      "labelLine": 142,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 143
+    },
+    {
+      "endLine": 21,
+      "label": "EventScript_NoTrainerBattle",
+      "labelLine": 19,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 14,
+      "label": "EventScript_PC",
+      "labelLine": 1,
+      "path": "data/scripts/pc.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 19,
+      "label": "EventScript_PCDisabled",
+      "labelLine": 15,
+      "path": "data/scripts/pc.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 27,
+      "label": "EventScript_PCMainMenu",
+      "labelLine": 20,
+      "path": "data/scripts/pc.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 133,
+      "label": "EventScript_PickUpItem",
+      "labelLine": 122,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 123
+    },
+    {
+      "endLine": 175,
+      "label": "EventScript_PickedUpHiddenItem",
+      "labelLine": 166,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 167
+    },
+    {
+      "endLine": 11,
+      "label": "EventScript_PkmnCenterNurse",
+      "labelLine": 1,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 39,
+      "label": "EventScript_PkmnCenterNurse_CheckTrainerTowerAndUnionRoom",
+      "labelLine": 31,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 32
+    },
+    {
+      "endLine": 62,
+      "label": "EventScript_PkmnCenterNurse_Goodbye",
+      "labelLine": 59,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 20,
+      "label": "EventScript_PkmnCenterNurse_HealPkmn",
+      "labelLine": 12,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 58,
+      "label": "EventScript_PkmnCenterNurse_PlayerWaitingInUnionRoom",
+      "labelLine": 48,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 49
+    },
+    {
+      "endLine": 47,
+      "label": "EventScript_PkmnCenterNurse_ReturnPkmn",
+      "labelLine": 40,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 41
+    },
+    {
+      "endLine": 30,
+      "label": "EventScript_PkmnCenterNurse_TakeAndHealPkmn",
+      "labelLine": 21,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 22
+    },
+    {
+      "endLine": 76,
+      "label": "EventScript_PlayFanfareObtainedItem",
+      "labelLine": 73,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 74
+    },
+    {
+      "endLine": 80,
+      "label": "EventScript_PlayFanfareObtainedTMHM",
+      "labelLine": 77,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 45,
+      "label": "EventScript_ReceivedItemFanfare1",
+      "labelLine": 42,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 43
+    },
+    {
+      "endLine": 49,
+      "label": "EventScript_ReceivedItemFanfare2",
+      "labelLine": 46,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 53,
+      "label": "EventScript_ReceivedItemWaitFanfare",
+      "labelLine": 50,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 51
+    },
+    {
+      "endLine": 1177,
+      "label": "EventScript_ReleaseEnd",
+      "labelLine": 1171,
+      "path": "data/event_scripts.s",
+      "startLine": 1172
+    },
+    {
+      "endLine": 9,
+      "label": "EventScript_RestorePrevTextColor",
+      "labelLine": 6,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 155,
+      "label": "EventScript_SailToBirthIsland",
+      "labelLine": 149,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 150
+    },
+    {
+      "endLine": 91,
+      "label": "EventScript_SailToDest",
+      "labelLine": 85,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 86
+    },
+    {
+      "endLine": 188,
+      "label": "EventScript_SailToFiveIsland",
+      "labelLine": 184,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 185
+    },
+    {
+      "endLine": 183,
+      "label": "EventScript_SailToFourIsland",
+      "labelLine": 179,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 180
+    },
+    {
+      "endLine": 148,
+      "label": "EventScript_SailToNavelRock",
+      "labelLine": 142,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 143
+    },
+    {
+      "endLine": 168,
+      "label": "EventScript_SailToOneIsland",
+      "labelLine": 164,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 165
+    },
+    {
+      "endLine": 53,
+      "label": "EventScript_SailToOneIsland2",
+      "labelLine": 49,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 50
+    },
+    {
+      "endLine": 197,
+      "label": "EventScript_SailToSevenIsland",
+      "labelLine": 194,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 195
+    },
+    {
+      "endLine": 193,
+      "label": "EventScript_SailToSixIsland",
+      "labelLine": 189,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 190
+    },
+    {
+      "endLine": 178,
+      "label": "EventScript_SailToThreeIsland",
+      "labelLine": 174,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 175
+    },
+    {
+      "endLine": 63,
+      "label": "EventScript_SailToThreeIsland2",
+      "labelLine": 59,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 173,
+      "label": "EventScript_SailToTwoIsland",
+      "labelLine": 169,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 170
+    },
+    {
+      "endLine": 58,
+      "label": "EventScript_SailToTwoIsland2",
+      "labelLine": 54,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 163,
+      "label": "EventScript_SailToVermilionCity",
+      "labelLine": 159,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 160
+    },
+    {
+      "endLine": 1144,
+      "label": "EventScript_SetResultFalse",
+      "labelLine": 1141,
+      "path": "data/event_scripts.s",
+      "startLine": 1142
+    },
+    {
+      "endLine": 1140,
+      "label": "EventScript_SetResultTrue",
+      "labelLine": 1137,
+      "path": "data/event_scripts.s",
+      "startLine": 1138
+    },
+    {
+      "endLine": 111,
+      "label": "EventScript_SetSail",
+      "labelLine": 102,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 103
+    },
+    {
+      "endLine": 144,
+      "label": "EventScript_SeviiDestinationsPage1",
+      "labelLine": 130,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 131
+    },
+    {
+      "endLine": 158,
+      "label": "EventScript_SeviiDestinationsPage2",
+      "labelLine": 145,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 146
+    },
+    {
+      "endLine": 18,
+      "label": "EventScript_TryDoNormalTrainerBattle",
+      "labelLine": 8,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 212,
+      "label": "EventScript_TryPickUpHiddenCoins",
+      "labelLine": 197,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 198
+    },
+    {
+      "endLine": 165,
+      "label": "EventScript_TryPickUpHiddenItem",
+      "labelLine": 158,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 159
+    },
+    {
+      "endLine": 73,
+      "label": "EventScript_TurnOffPC",
+      "labelLine": 66,
+      "path": "data/scripts/pc.inc",
+      "startLine": 67
+    },
+    {
+      "endLine": 66,
+      "label": "Movement_Bow",
+      "labelLine": 63,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 64
+    },
+    {
+      "endLine": 36,
+      "label": "Movement_CutTreeDown",
+      "labelLine": 33,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 34
+    },
+    {
+      "endLine": 108,
+      "label": "Movement_RevealTrainer",
+      "labelLine": 105,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 106
+    },
+    {
+      "endLine": 114,
+      "label": "OneIsland_PokemonCenter_1F_Text_UsualPCServicesUnavailable",
+      "labelLine": 111,
+      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc",
+      "startLine": 112
+    },
+    {
+      "endLine": 76,
+      "label": "PokedexRating_EventScript_DexComplete",
+      "labelLine": 71,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 72
+    },
+    {
+      "endLine": 34,
+      "label": "PokedexRating_EventScript_DexCompleteFanfare",
+      "labelLine": 31,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 32
+    },
+    {
+      "endLine": 70,
+      "label": "PokedexRating_EventScript_DexIncomplete",
+      "labelLine": 66,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 67
+    },
+    {
+      "endLine": 79,
+      "label": "PokedexRating_EventScript_EndRating",
+      "labelLine": 77,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 30,
+      "label": "PokedexRating_EventScript_NormalFanfare",
+      "labelLine": 27,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 61,
+      "label": "PokedexRating_EventScript_Rate",
+      "labelLine": 35,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 36
+    },
+    {
+      "endLine": 65,
+      "label": "PokedexRating_EventScript_SetTextColor",
+      "labelLine": 62,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 63
+    },
+    {
+      "endLine": 26,
+      "label": "PokedexRating_EventScript_ShowRatingMsg",
+      "labelLine": 17,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 18
+    },
+    {
+      "endLine": 97,
+      "label": "PokedexRating_Text_LookForwardToFilledNationalDex",
+      "labelLine": 94,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 95
+    },
+    {
+      "endLine": 93,
+      "label": "PokedexRating_Text_NationalDexSeenXOwnedY",
+      "labelLine": 89,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 90
+    },
+    {
+      "endLine": 12,
+      "label": "PokedexRating_Text_SeenXOwnedY",
+      "labelLine": 6,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 104,
+      "label": "PokedexRating_Text_YouveCompletedDex",
+      "labelLine": 98,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 99
+    },
+    {
+      "endLine": 1398,
+      "label": "PokemonJournal_Text_SpecialFeatureLtSurge",
+      "labelLine": 1390,
+      "path": "data/text/fame_checker.inc",
+      "startLine": 1391
+    },
+    {
+      "endLine": 6,
+      "label": "Route5_EventScript_UndergroundPathSign",
+      "labelLine": 4,
+      "path": "data/maps/Route5/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "Route5_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/Route5/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 42,
+      "label": "Route5_SouthEntrance_EventScript_GiveTea",
+      "labelLine": 38,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 39
+    },
+    {
+      "endLine": 7,
+      "label": "Route5_SouthEntrance_EventScript_Guard",
+      "labelLine": 4,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 53,
+      "label": "Route5_SouthEntrance_EventScript_GuardDrinkTea",
+      "labelLine": 43,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 37,
+      "label": "Route5_SouthEntrance_EventScript_GuardTrigger",
+      "labelLine": 26,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 13,
+      "label": "Route5_SouthEntrance_EventScript_GuardTriggerLeft",
+      "labelLine": 8,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 19,
+      "label": "Route5_SouthEntrance_EventScript_GuardTriggerMid",
+      "labelLine": 14,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 25,
+      "label": "Route5_SouthEntrance_EventScript_GuardTriggerRight",
+      "labelLine": 20,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 58,
+      "label": "Route5_SouthEntrance_EventScript_WalkToGuardLeft",
+      "labelLine": 54,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 63,
+      "label": "Route5_SouthEntrance_EventScript_WalkToGuardMid",
+      "labelLine": 59,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 68,
+      "label": "Route5_SouthEntrance_EventScript_WalkToGuardRight",
+      "labelLine": 64,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 65
+    },
+    {
+      "endLine": 3,
+      "label": "Route5_SouthEntrance_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 84,
+      "label": "Route5_SouthEntrance_Movement_BlockPlayerEntry",
+      "labelLine": 82,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 83
+    },
+    {
+      "endLine": 81,
+      "label": "Route5_SouthEntrance_Movement_WalkToGuardLeft",
+      "labelLine": 78,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 79
+    },
+    {
+      "endLine": 72,
+      "label": "Route5_SouthEntrance_Movement_WalkToGuardMid",
+      "labelLine": 69,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 70
+    },
+    {
+      "endLine": 77,
+      "label": "Route5_SouthEntrance_Movement_WalkToGuardRight",
+      "labelLine": 73,
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "startLine": 74
+    },
+    {
+      "endLine": 26,
+      "label": "Route5_SouthEntrance_Text_HiHowsItGoing",
+      "labelLine": 24,
+      "path": "data/maps/Route5_SouthEntrance/text.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 23,
+      "label": "Route5_SouthEntrance_Text_ThanksIllShareTeaWithGuards",
+      "labelLine": 10,
+      "path": "data/maps/Route5_SouthEntrance/text.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 9,
+      "label": "Route5_SouthEntrance_Text_ThatTeaLooksTasty",
+      "labelLine": 6,
+      "path": "data/maps/Route5_SouthEntrance/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 5,
+      "label": "Route5_SouthEntrance_Text_ThirstyOnGuardDuty",
+      "labelLine": 1,
+      "path": "data/maps/Route5_SouthEntrance/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 4,
+      "label": "Route5_Text_UndergroundPathSign",
+      "labelLine": 1,
+      "path": "data/maps/Route5/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 307,
+      "label": "Route6_EventScript_Elijah",
+      "labelLine": 301,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 302
+    },
+    {
+      "endLine": 312,
+      "label": "Route6_EventScript_ElijahRematch",
+      "labelLine": 308,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 309
+    },
+    {
+      "endLine": 355,
+      "label": "Route6_EventScript_Isabelle",
+      "labelLine": 349,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 350
+    },
+    {
+      "endLine": 360,
+      "label": "Route6_EventScript_IsabelleRematch",
+      "labelLine": 356,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 357
+    },
+    {
+      "endLine": 331,
+      "label": "Route6_EventScript_Jeff",
+      "labelLine": 325,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 326
+    },
+    {
+      "endLine": 336,
+      "label": "Route6_EventScript_JeffRematch",
+      "labelLine": 332,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 333
+    },
+    {
+      "endLine": 295,
+      "label": "Route6_EventScript_Keigo",
+      "labelLine": 289,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 290
+    },
+    {
+      "endLine": 300,
+      "label": "Route6_EventScript_KeigoRematch",
+      "labelLine": 296,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 297
+    },
+    {
+      "endLine": 343,
+      "label": "Route6_EventScript_Nancy",
+      "labelLine": 337,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 338
+    },
+    {
+      "endLine": 348,
+      "label": "Route6_EventScript_NancyRematch",
+      "labelLine": 344,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 345
+    },
+    {
+      "endLine": 319,
+      "label": "Route6_EventScript_Ricky",
+      "labelLine": 313,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 314
+    },
+    {
+      "endLine": 324,
+      "label": "Route6_EventScript_RickyRematch",
+      "labelLine": 320,
+      "path": "data/scripts/trainers.inc",
+      "startLine": 321
+    },
+    {
+      "endLine": 6,
+      "label": "Route6_EventScript_UndergroundPathSign",
+      "labelLine": 4,
+      "path": "data/maps/Route6/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "Route6_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/Route6/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 42,
+      "label": "Route6_NorthEntrance_EventScript_GiveTea",
+      "labelLine": 38,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 39
+    },
+    {
+      "endLine": 7,
+      "label": "Route6_NorthEntrance_EventScript_Guard",
+      "labelLine": 4,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 53,
+      "label": "Route6_NorthEntrance_EventScript_GuardDrinkTea",
+      "labelLine": 43,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 37,
+      "label": "Route6_NorthEntrance_EventScript_GuardTrigger",
+      "labelLine": 26,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 13,
+      "label": "Route6_NorthEntrance_EventScript_GuardTriggerLeft",
+      "labelLine": 8,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 19,
+      "label": "Route6_NorthEntrance_EventScript_GuardTriggerMid",
+      "labelLine": 14,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 25,
+      "label": "Route6_NorthEntrance_EventScript_GuardTriggerRight",
+      "labelLine": 20,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 58,
+      "label": "Route6_NorthEntrance_EventScript_WalkToGuardLeft",
+      "labelLine": 54,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 63,
+      "label": "Route6_NorthEntrance_EventScript_WalkToGuardMid",
+      "labelLine": 59,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 68,
+      "label": "Route6_NorthEntrance_EventScript_WalkToGuardRight",
+      "labelLine": 64,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 65
+    },
+    {
+      "endLine": 3,
+      "label": "Route6_NorthEntrance_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 84,
+      "label": "Route6_NorthEntrance_Movement_BlockPlayerEntry",
+      "labelLine": 82,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 83
+    },
+    {
+      "endLine": 73,
+      "label": "Route6_NorthEntrance_Movement_WalkToGuardLeft",
+      "labelLine": 69,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 70
+    },
+    {
+      "endLine": 77,
+      "label": "Route6_NorthEntrance_Movement_WalkToGuardMid",
+      "labelLine": 74,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 75
+    },
+    {
+      "endLine": 81,
+      "label": "Route6_NorthEntrance_Movement_WalkToGuardRight",
+      "labelLine": 78,
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "startLine": 79
+    },
+    {
+      "endLine": 26,
+      "label": "Route6_NorthEntrance_Text_HiHowsItGoing",
+      "labelLine": 24,
+      "path": "data/maps/Route6_NorthEntrance/text.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 23,
+      "label": "Route6_NorthEntrance_Text_ThanksIllShareTeaWithGuards",
+      "labelLine": 10,
+      "path": "data/maps/Route6_NorthEntrance/text.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 9,
+      "label": "Route6_NorthEntrance_Text_ThatTeaLooksTasty",
+      "labelLine": 6,
+      "path": "data/maps/Route6_NorthEntrance/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 5,
+      "label": "Route6_NorthEntrance_Text_ThirstyOnGuardDuty",
+      "labelLine": 1,
+      "path": "data/maps/Route6_NorthEntrance/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 64,
+      "label": "Route6_Text_ElijahDefeat",
+      "labelLine": 62,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 63
+    },
+    {
+      "endLine": 61,
+      "label": "Route6_Text_ElijahIntro",
+      "labelLine": 58,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 59
+    },
+    {
+      "endLine": 69,
+      "label": "Route6_Text_ElijahPostBattle",
+      "labelLine": 65,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 66
+    },
+    {
+      "endLine": 78,
+      "label": "Route6_Text_ElijahRematchIntro",
+      "labelLine": 75,
+      "path": "data/text/trainers.inc",
+      "startLine": 76
+    },
+    {
+      "endLine": 53,
+      "label": "Route6_Text_IsabelleDefeat",
+      "labelLine": 51,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 52
+    },
+    {
+      "endLine": 50,
+      "label": "Route6_Text_IsabelleIntro",
+      "labelLine": 47,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 48
+    },
+    {
+      "endLine": 57,
+      "label": "Route6_Text_IsabellePostBattle",
+      "labelLine": 54,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 74,
+      "label": "Route6_Text_IsabelleRematchIntro",
+      "labelLine": 71,
+      "path": "data/text/trainers.inc",
+      "startLine": 72
+    },
+    {
+      "endLine": 42,
+      "label": "Route6_Text_JeffDefeat",
+      "labelLine": 39,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 40
+    },
+    {
+      "endLine": 38,
+      "label": "Route6_Text_JeffIntro",
+      "labelLine": 35,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 36
+    },
+    {
+      "endLine": 46,
+      "label": "Route6_Text_JeffPostBattle",
+      "labelLine": 43,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 70,
+      "label": "Route6_Text_JeffRematchIntro",
+      "labelLine": 67,
+      "path": "data/text/trainers.inc",
+      "startLine": 68
+    },
+    {
+      "endLine": 30,
+      "label": "Route6_Text_KeigoDefeat",
+      "labelLine": 27,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 26,
+      "label": "Route6_Text_KeigoIntro",
+      "labelLine": 24,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 34,
+      "label": "Route6_Text_KeigoPostBattle",
+      "labelLine": 31,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 32
+    },
+    {
+      "endLine": 66,
+      "label": "Route6_Text_KeigoRematchIntro",
+      "labelLine": 63,
+      "path": "data/text/trainers.inc",
+      "startLine": 64
+    },
+    {
+      "endLine": 19,
+      "label": "Route6_Text_NancyDefeat",
+      "labelLine": 16,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 15,
+      "label": "Route6_Text_NancyIntro",
+      "labelLine": 12,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 23,
+      "label": "Route6_Text_NancyPostBattle",
+      "labelLine": 20,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 62,
+      "label": "Route6_Text_NancyRematchIntro",
+      "labelLine": 57,
+      "path": "data/text/trainers.inc",
+      "startLine": 58
+    },
+    {
+      "endLine": 7,
+      "label": "Route6_Text_RickyDefeat",
+      "labelLine": 5,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "Route6_Text_RickyIntro",
+      "labelLine": 1,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "Route6_Text_RickyPostBattle",
+      "labelLine": 8,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 56,
+      "label": "Route6_Text_RickyRematchIntro",
+      "labelLine": 53,
+      "path": "data/text/trainers.inc",
+      "startLine": 54
+    },
+    {
+      "endLine": 73,
+      "label": "Route6_Text_UndergroundPathSign",
+      "labelLine": 70,
+      "path": "data/maps/Route6/text.inc",
+      "startLine": 71
+    },
+    {
+      "endLine": 121,
+      "label": "Std_FindItem",
+      "labelLine": 106,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 107
+    },
+    {
+      "endLine": 138,
+      "label": "Std_MsgboxAutoclose",
+      "labelLine": 133,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 134
+    },
+    {
+      "endLine": 23,
+      "label": "Std_MsgboxDefault",
+      "labelLine": 18,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 9,
+      "label": "Std_MsgboxNPC",
+      "labelLine": 1,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 17,
+      "label": "Std_MsgboxSign",
+      "labelLine": 10,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 29,
+      "label": "Std_MsgboxYesNo",
+      "labelLine": 24,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 41,
+      "label": "Std_ReceivedItem",
+      "labelLine": 30,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 31
+    },
+    {
+      "endLine": 6,
+      "label": "Text_AccessWhichPC",
+      "labelLine": 4,
+      "path": "data/text/pc.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 17,
+      "label": "Text_AccessedBillsPC",
+      "labelLine": 16,
+      "path": "data/text/pc.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 15,
+      "label": "Text_AccessedPlayersPC",
+      "labelLine": 13,
+      "path": "data/text/pc.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 951,
+      "label": "Text_AccessedProfOaksPC",
+      "labelLine": 947,
+      "path": "data/event_scripts.s",
+      "startLine": 948
+    },
+    {
+      "endLine": 9,
+      "label": "Text_AccessedSomeonesPC",
+      "labelLine": 7,
+      "path": "data/text/pc.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 7,
+      "label": "Text_AllAboardSeagallopNum",
+      "labelLine": 5,
+      "path": "data/text/seagallop.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 3,
+      "label": "Text_BootedUpPC",
+      "labelLine": 1,
+      "path": "data/text/pc.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 958,
+      "label": "Text_ClosedLinkToProfOaksPC",
+      "labelLine": 956,
+      "path": "data/event_scripts.s",
+      "startLine": 957
+    },
+    {
+      "endLine": 29,
+      "label": "Text_CoinCaseIsFull",
+      "labelLine": 26,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 51,
+      "label": "Text_CutTreeDown",
+      "labelLine": 47,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 48
+    },
+    {
+      "endLine": 4,
+      "label": "Text_FirstShouldRestoreMonsHealth",
+      "labelLine": 1,
+      "path": "data/text/white_out.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 13,
+      "label": "Text_FoundOneItem",
+      "labelLine": 11,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 12
+    },
+    {
+      "endLine": 1005,
+      "label": "Text_FoundTMHMContainsMove",
+      "labelLine": 999,
+      "path": "data/event_scripts.s",
+      "startLine": 1000
+    },
+    {
+      "endLine": 21,
+      "label": "Text_FoundXCoins",
+      "labelLine": 18,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 37,
+      "label": "Text_FoundXItems",
+      "labelLine": 34,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 35
+    },
+    {
+      "endLine": 955,
+      "label": "Text_HavePokedexRated",
+      "labelLine": 952,
+      "path": "data/event_scripts.s",
+      "startLine": 953
+    },
+    {
+      "endLine": 4,
+      "label": "Text_MayIHelpYou",
+      "labelLine": 1,
+      "path": "data/text/poke_mart.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 54,
+      "label": "Text_MonUsedMove",
+      "labelLine": 52,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 53
+    },
+    {
+      "endLine": 19,
+      "label": "Text_MonsHealed",
+      "labelLine": 15,
+      "path": "data/text/white_out.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 14,
+      "label": "Text_MonsHealedShouldBuyPotions",
+      "labelLine": 5,
+      "path": "data/text/white_out.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 33,
+      "label": "Text_NothingToPutThemIn",
+      "labelLine": 30,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 31
+    },
+    {
+      "endLine": 3,
+      "label": "Text_ObtainedTheX",
+      "labelLine": 1,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "Text_OpenedPkmnStorage",
+      "labelLine": 10,
+      "path": "data/text/pc.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 1516,
+      "label": "Text_PlayerIsPlayingRightNowGoForIt",
+      "labelLine": 1512,
+      "path": "data/scripts/cable_club.inc",
+      "startLine": 1513
+    },
+    {
+      "endLine": 839,
+      "label": "Text_PleaseComeAgain",
+      "labelLine": 836,
+      "path": "data/event_scripts.s",
+      "startLine": 837
+    },
+    {
+      "endLine": 25,
+      "label": "Text_PutCoinsAwayInCoinCase",
+      "labelLine": 22,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 23
+    },
+    {
+      "endLine": 10,
+      "label": "Text_PutItemAway",
+      "labelLine": 7,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 907,
+      "label": "Text_RestoredPkmnToFullHealth",
+      "labelLine": 900,
+      "path": "data/event_scripts.s",
+      "startLine": 901
+    },
+    {
+      "endLine": 896,
+      "label": "Text_TakeYourPkmnForFewSeconds",
+      "labelLine": 893,
+      "path": "data/event_scripts.s",
+      "startLine": 894
+    },
+    {
+      "endLine": 17,
+      "label": "Text_TooBadBagFull",
+      "labelLine": 14,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 58,
+      "label": "Text_TreeCanBeCutDown",
+      "labelLine": 55,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 56
+    },
+    {
+      "endLine": 899,
+      "label": "Text_WeHopeToSeeYouAgain",
+      "labelLine": 897,
+      "path": "data/event_scripts.s",
+      "startLine": 898
+    },
+    {
+      "endLine": 892,
+      "label": "Text_WelcomeWantToHealPkmn",
+      "labelLine": 888,
+      "path": "data/event_scripts.s",
+      "startLine": 889
+    },
+    {
+      "endLine": 53,
+      "label": "Text_WhitedOut",
+      "labelLine": 50,
+      "path": "data/text/white_out.inc",
+      "startLine": 51
+    },
+    {
+      "endLine": 49,
+      "label": "Text_WhitedOutLostMoney",
+      "labelLine": 43,
+      "path": "data/text/white_out.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 47,
+      "label": "Trade_Text_DoYouHaveMonWantToTradeForMon",
+      "labelLine": 42,
+      "path": "data/text/ingame_trade.inc",
+      "startLine": 43
+    },
+    {
+      "endLine": 60,
+      "label": "Trade_Text_HowIsMyOldMon",
+      "labelLine": 58,
+      "path": "data/text/ingame_trade.inc",
+      "startLine": 59
+    },
+    {
+      "endLine": 57,
+      "label": "Trade_Text_ThanksYoureAPal",
+      "labelLine": 55,
+      "path": "data/text/ingame_trade.inc",
+      "startLine": 56
+    },
+    {
+      "endLine": 50,
+      "label": "Trade_Text_ThatsTooBad",
+      "labelLine": 48,
+      "path": "data/text/ingame_trade.inc",
+      "startLine": 49
+    },
+    {
+      "endLine": 54,
+      "label": "Trade_Text_ThisIsNoMon",
+      "labelLine": 51,
+      "path": "data/text/ingame_trade.inc",
+      "startLine": 52
+    },
+    {
+      "endLine": 36,
+      "label": "UndergroundPath_NorthEntrance_EventScript_AlreadyTraded",
+      "labelLine": 33,
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
+      "startLine": 34
+    },
+    {
+      "endLine": 26,
+      "label": "UndergroundPath_NorthEntrance_EventScript_DeclineTrade",
+      "labelLine": 22,
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
+      "startLine": 23
+    },
+    {
+      "endLine": 32,
+      "label": "UndergroundPath_NorthEntrance_EventScript_NotRequestedMon",
+      "labelLine": 27,
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 21,
+      "label": "UndergroundPath_NorthEntrance_EventScript_Saige",
+      "labelLine": 4,
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "UndergroundPath_NorthEntrance_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 4,
+      "label": "UndergroundPath_NorthSouthTunnel_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/UndergroundPath_NorthSouthTunnel/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 7,
+      "label": "UndergroundPath_NorthSouthTunnel_OnTransition",
+      "labelLine": 5,
+      "path": "data/maps/UndergroundPath_NorthSouthTunnel/scripts.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 6,
+      "label": "UndergroundPath_SouthEntrance_EventScript_Woman",
+      "labelLine": 4,
+      "path": "data/maps/UndergroundPath_SouthEntrance/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "UndergroundPath_SouthEntrance_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/UndergroundPath_SouthEntrance/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 4,
+      "label": "UndergroundPath_SouthEntrance_Text_PeopleLoseThingsInTheDarkness",
+      "labelLine": 1,
+      "path": "data/maps/UndergroundPath_SouthEntrance/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 70,
+      "label": "VermilionCity_EventScript_CheckHasAuroraTicket",
+      "labelLine": 64,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 65
+    },
+    {
+      "endLine": 63,
+      "label": "VermilionCity_EventScript_CheckHasMysticTicket",
+      "labelLine": 57,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 58
+    },
+    {
+      "endLine": 78,
+      "label": "VermilionCity_EventScript_CheckSeagallopPresent",
+      "labelLine": 71,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 72
+    },
+    {
+      "endLine": 217,
+      "label": "VermilionCity_EventScript_CheckSeagallopPresentTrigger",
+      "labelLine": 209,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 210
+    },
+    {
+      "endLine": 202,
+      "label": "VermilionCity_EventScript_CheckTicket",
+      "labelLine": 190,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 191
+    },
+    {
+      "endLine": 178,
+      "label": "VermilionCity_EventScript_CheckTicketLeft",
+      "labelLine": 174,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 175
+    },
+    {
+      "endLine": 183,
+      "label": "VermilionCity_EventScript_CheckTicketRight",
+      "labelLine": 179,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 180
+    },
+    {
+      "endLine": 91,
+      "label": "VermilionCity_EventScript_ChooseSeagallopDestRainbowPass",
+      "labelLine": 79,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 80
+    },
+    {
+      "endLine": 169,
+      "label": "VermilionCity_EventScript_ChooseSeagallopDestTriPass",
+      "labelLine": 156,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 157
+    },
+    {
+      "endLine": 248,
+      "label": "VermilionCity_EventScript_CitySign",
+      "labelLine": 245,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 246
+    },
+    {
+      "endLine": 208,
+      "label": "VermilionCity_EventScript_DontHaveSSTicket",
+      "labelLine": 203,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 204
+    },
+    {
+      "endLine": 17,
+      "label": "VermilionCity_EventScript_ExitSSAnne",
+      "labelLine": 10,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 189,
+      "label": "VermilionCity_EventScript_ExitedTicketCheck",
+      "labelLine": 184,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 185
+    },
+    {
+      "endLine": 56,
+      "label": "VermilionCity_EventScript_FerrySailor",
+      "labelLine": 49,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 50
+    },
+    {
+      "endLine": 263,
+      "label": "VermilionCity_EventScript_GymSign",
+      "labelLine": 257,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 258
+    },
+    {
+      "endLine": 266,
+      "label": "VermilionCity_EventScript_HarborSign",
+      "labelLine": 264,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 265
+    },
+    {
+      "endLine": 122,
+      "label": "VermilionCity_EventScript_HasAuroraTicket",
+      "labelLine": 111,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 112
+    },
+    {
+      "endLine": 141,
+      "label": "VermilionCity_EventScript_HasMysticAndAuroraTickets",
+      "labelLine": 128,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 129
+    },
+    {
+      "endLine": 105,
+      "label": "VermilionCity_EventScript_HasMysticTicket",
+      "labelLine": 92,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 31,
+      "label": "VermilionCity_EventScript_HideOaksAide",
+      "labelLine": 28,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 244,
+      "label": "VermilionCity_EventScript_Machop",
+      "labelLine": 234,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 235
+    },
+    {
+      "endLine": 229,
+      "label": "VermilionCity_EventScript_OaksAide",
+      "labelLine": 222,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 223
+    },
+    {
+      "endLine": 43,
+      "label": "VermilionCity_EventScript_OldMan1",
+      "labelLine": 36,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 48,
+      "label": "VermilionCity_EventScript_OldMan1SSAnneLeft",
+      "labelLine": 44,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 45
+    },
+    {
+      "endLine": 233,
+      "label": "VermilionCity_EventScript_OldMan2",
+      "labelLine": 230,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 231
+    },
+    {
+      "endLine": 256,
+      "label": "VermilionCity_EventScript_PokemonFanClubSign",
+      "labelLine": 253,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 254
+    },
+    {
+      "endLine": 221,
+      "label": "VermilionCity_EventScript_Sailor",
+      "labelLine": 218,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 219
+    },
+    {
+      "endLine": 127,
+      "label": "VermilionCity_EventScript_ShowAuroraTicket",
+      "labelLine": 123,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 124
+    },
+    {
+      "endLine": 110,
+      "label": "VermilionCity_EventScript_ShowMysticTicket",
+      "labelLine": 106,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 107
+    },
+    {
+      "endLine": 252,
+      "label": "VermilionCity_EventScript_SnorlaxNotice",
+      "labelLine": 249,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 250
+    },
+    {
+      "endLine": 125,
+      "label": "VermilionCity_EventScript_WalkUpPier",
+      "labelLine": 118,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 119
+    },
+    {
+      "endLine": 35,
+      "label": "VermilionCity_EventScript_Woman",
+      "labelLine": 32,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 33
+    },
+    {
+      "endLine": 5,
+      "label": "VermilionCity_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "VermilionCity_Mart_EventScript_BaldingMan",
+      "labelLine": 8,
+      "path": "data/maps/VermilionCity_Mart/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 23,
+      "label": "VermilionCity_Mart_EventScript_Clerk",
+      "labelLine": 12,
+      "path": "data/maps/VermilionCity_Mart/scripts.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 7,
+      "label": "VermilionCity_Mart_EventScript_CooltrainerF",
+      "labelLine": 4,
+      "path": "data/maps/VermilionCity_Mart/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 34,
+      "label": "VermilionCity_Mart_Items",
+      "labelLine": 24,
+      "path": "data/maps/VermilionCity_Mart/scripts.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 3,
+      "label": "VermilionCity_Mart_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity_Mart/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 14,
+      "label": "VermilionCity_Mart_Text_MonsGoodOrBadDependingOnTrainer",
+      "labelLine": 11,
+      "path": "data/maps/VermilionCity_Mart/text.inc",
+      "startLine": 12
+    },
+    {
+      "endLine": 10,
+      "label": "VermilionCity_Mart_Text_TeamRocketAreWickedPeople",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity_Mart/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 22,
+      "label": "VermilionCity_Movement_ExitSSAnne",
+      "labelLine": 18,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 129,
+      "label": "VermilionCity_Movement_WalkUp",
+      "labelLine": 126,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 127
+    },
+    {
+      "endLine": 9,
+      "label": "VermilionCity_OnFrame",
+      "labelLine": 6,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 27,
+      "label": "VermilionCity_OnTransition",
+      "labelLine": 23,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 24
+    },
+    {
+      "endLine": 1266,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_ExplainVSSeeker",
+      "labelLine": 1259,
+      "path": "data/event_scripts.s",
+      "startLine": 1260
+    },
+    {
+      "endLine": 24,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_Hiker",
+      "labelLine": 21,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
+      "startLine": 22
+    },
+    {
+      "endLine": 20,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_Man",
+      "labelLine": 17,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
+      "startLine": 18
+    },
+    {
+      "endLine": 16,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_Nurse",
+      "labelLine": 10,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 94,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_PokemonJournalLtSurge",
+      "labelLine": 87,
+      "path": "data/scripts/fame_checker.inc",
+      "startLine": 88
+    },
+    {
+      "endLine": 1258,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_VSSeekerWoman",
+      "labelLine": 1247,
+      "path": "data/event_scripts.s",
+      "startLine": 1248
+    },
+    {
+      "endLine": 27,
+      "label": "VermilionCity_PokemonCenter_1F_EventScript_Youngster",
+      "labelLine": 25,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
+      "startLine": 26
+    },
+    {
+      "endLine": 5,
+      "label": "VermilionCity_PokemonCenter_1F_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 9,
+      "label": "VermilionCity_PokemonCenter_1F_OnTransition",
+      "labelLine": 6,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/scripts.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 19,
+      "label": "VermilionCity_PokemonCenter_1F_Text_AllMonWeakToSpecificTypes",
+      "labelLine": 12,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 44,
+      "label": "VermilionCity_PokemonCenter_1F_Text_ExplainVSSeeker",
+      "labelLine": 36,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 11,
+      "label": "VermilionCity_PokemonCenter_1F_Text_PoisonedMonFaintedWhileWalking",
+      "labelLine": 8,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 7,
+      "label": "VermilionCity_PokemonCenter_1F_Text_TrainerMonsStrongerThanWild",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 29,
+      "label": "VermilionCity_PokemonCenter_1F_Text_UrgeToBattleSomeoneAgain",
+      "labelLine": 20,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 35,
+      "label": "VermilionCity_PokemonCenter_1F_Text_UseDeviceForRematches",
+      "labelLine": 30,
+      "path": "data/maps/VermilionCity_PokemonCenter_1F/text.inc",
+      "startLine": 31
+    },
+    {
+      "endLine": 107,
+      "label": "VermilionCity_Text_BoardSeagallopFerry",
+      "labelLine": 104,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 105
+    },
+    {
+      "endLine": 91,
+      "label": "VermilionCity_Text_BoardSeagallopRainbowPass",
+      "labelLine": 87,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 88
+    },
+    {
+      "endLine": 81,
+      "label": "VermilionCity_Text_BoardSeagallopTriPass",
+      "labelLine": 77,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 20,
+      "label": "VermilionCity_Text_BuildingOnThisLand",
+      "labelLine": 15,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 35,
+      "label": "VermilionCity_Text_CitySign",
+      "labelLine": 32,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 33
+    },
+    {
+      "endLine": 9,
+      "label": "VermilionCity_Text_DidYouSeeSSAnneInHarbor",
+      "labelLine": 6,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 62,
+      "label": "VermilionCity_Text_DoYouHaveATicket",
+      "labelLine": 59,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 73,
+      "label": "VermilionCity_Text_DontHaveNeededSSTicket",
+      "labelLine": 68,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 69
+    },
+    {
+      "endLine": 67,
+      "label": "VermilionCity_Text_FlashedSSTicket",
+      "labelLine": 63,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 64
+    },
+    {
+      "endLine": 5,
+      "label": "VermilionCity_Text_GrimerMultipliesInSludge",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 52,
+      "label": "VermilionCity_Text_GymSign",
+      "labelLine": 48,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 49
+    },
+    {
+      "endLine": 23,
+      "label": "VermilionCity_Text_Machop",
+      "labelLine": 21,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 22
+    },
+    {
+      "endLine": 26,
+      "label": "VermilionCity_Text_MachopStompingLandFlat",
+      "labelLine": 24,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 103,
+      "label": "VermilionCity_Text_OhAuroraTicketTakeYouToBirthIsland",
+      "labelLine": 98,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 99
+    },
+    {
+      "endLine": 97,
+      "label": "VermilionCity_Text_OhMysticTicketTakeYouToNavelRock",
+      "labelLine": 92,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 47,
+      "label": "VermilionCity_Text_PokemonFanClubSign",
+      "labelLine": 44,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 45
+    },
+    {
+      "endLine": 131,
+      "label": "VermilionCity_Text_Route2AideHasPackageForYou",
+      "labelLine": 120,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 121
+    },
+    {
+      "endLine": 14,
+      "label": "VermilionCity_Text_SSAnneHasDepartedForYear",
+      "labelLine": 10,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 31,
+      "label": "VermilionCity_Text_SSAnneVisitsOnceAYear",
+      "labelLine": 27,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 113,
+      "label": "VermilionCity_Text_Seagallop10Departing",
+      "labelLine": 108,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 109
+    },
+    {
+      "endLine": 119,
+      "label": "VermilionCity_Text_Seagallop12Departing",
+      "labelLine": 114,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 115
+    },
+    {
+      "endLine": 86,
+      "label": "VermilionCity_Text_Seagallop7Departing",
+      "labelLine": 82,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 83
+    },
+    {
+      "endLine": 43,
+      "label": "VermilionCity_Text_SnorlaxBlockingRoute12",
+      "labelLine": 36,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 76,
+      "label": "VermilionCity_Text_TheShipSetSail",
+      "labelLine": 74,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 75
+    },
+    {
+      "endLine": 55,
+      "label": "VermilionCity_Text_VermilionHarbor",
+      "labelLine": 53,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 54
+    },
+    {
+      "endLine": 58,
+      "label": "VermilionCity_Text_WelcomeToTheSSAnne",
+      "labelLine": 56,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 57
+    },
+    {
+      "endLine": 173,
+      "label": "Vermilion_EventScript_Unused",
+      "labelLine": 170,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 171
+    }
+  ]
+}

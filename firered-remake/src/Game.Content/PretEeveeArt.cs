@@ -4,15 +4,15 @@ using System.Text.Json;
 using Game.Domain.Ids;
 namespace Game.Content;
 
-public sealed record EeveeArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonSprite> Sprites,
+public sealed record EeveeArtDocument(int SchemaVersion, ImmutableArray<ForestPokemonSprite> Sprites,
     ImmutableArray<StorageArtIcon> Icons, ImmutableArray<Route3PokemonFootprint> Footprints,
-    SnorlaxArtDex Dex, ImmutableArray<string> Limits, ImmutableArray<SnorlaxArtOutput> Outputs);
+    SnorlaxArtDex Dex, ImmutableArray<SnorlaxArtOutput> Outputs);
 
 /// <summary>Authenticated art and existing386-entry Dex projection. Does not activate presentation or battle effects.</summary>
 public sealed class PretEeveeArt
 {
     public const string Profile="firered-eevee-art-v1";
-    public const string GeneratedDirectory="content/generated/eevee-art/";
+    public const string GeneratedDirectory="content/generated/sprites/pokemon/eevee/";
     public EeveeArtDocument Document { get; }
     public JsonElement Manifest { get; }
     public ImmutableDictionary<string,byte[]> Files { get; }
@@ -39,7 +39,7 @@ public sealed class PretEeveeArt
         using var json=JsonDocument.Parse(bytes);
         var doc=ContentJson.ParseStrict<EeveeArtDocument>(Encoding.UTF8.GetString(bytes),ContentJson.CreateOptions());
         Require(doc.SchemaVersion==1&&
-            doc.Sprites.Length==4&&doc.Icons.Length==1&&doc.Footprints.Length==1&&!doc.Limits.IsDefaultOrEmpty,"Eevee art scope differs.");
+            doc.Sprites.Length==4&&doc.Icons.Length==1&&doc.Footprints.Length==1,"Eevee art scope differs.");
         var files=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var output in doc.Outputs)files.Add(output.Path,PretCeladonApproachSource.Read(project,GeneratedDirectory+output.Path));
         void Pixels(string png,int width,int height)

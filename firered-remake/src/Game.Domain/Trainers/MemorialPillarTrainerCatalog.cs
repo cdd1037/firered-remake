@@ -6,13 +6,11 @@ using Game.Domain.Randomness;
 namespace Game.Domain.Trainers;
 
 /// <summary>The three original first-visit singles at Memorial Pillar, with six source party members.</summary>
-public sealed record MemorialPillarTrainerCatalog(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
+public sealed record MemorialPillarTrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
     ImmutableDictionary<string, CeruleanTrainerBattleDefinition> BattlesByScript);
 
 public static class MemorialPillarTrainerPartyFactory
 {
-    public const string Profile = "firered-original-tm-acquisition-v1-trainers";
     public const string Map = "map.five-island-memorial-pillar";
     public const int VictoryMoney = 1176;
     public static ImmutableArray<TrainerId> AllTrainers { get; } =
@@ -29,15 +27,7 @@ public static class MemorialPillarTrainerPartyFactory
     public static void ValidateCatalog(MemorialPillarTrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != TrainerPartyFactory.SourceCommit || catalog.Profile != Profile || catalog.CompleteSourceRoster ||
-            catalog.Trainers is null || catalog.Trainers.Count != 3 || catalog.BattlesByScript is null || catalog.BattlesByScript.Count != 3)
-            throw new ArgumentException("memorial_pillar_trainer_scope");
-        foreach (var id in TrainerIds)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null)
-                throw new ArgumentException("memorial_pillar_trainer_source");
-        foreach (var script in BattleScripts)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null)
-                throw new ArgumentException("memorial_pillar_trainer_script_source");
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.BattlesByScript.Values, ValidateBattle);
     }
 
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)

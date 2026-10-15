@@ -13,7 +13,7 @@ public sealed record MetronomeMoveDocument(ImmutableArray<PokemonMoveDefinition>
 public sealed class PretMetronomeMoveCatalog
 {
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public const string CatalogRelativePath = "content/generated/metronome-moves/catalog.json";
+    public const string CatalogRelativePath = "content/generated/data/services/metronome-moves.json";
     public ImmutableDictionary<MoveId, PokemonMoveDefinition> Moves { get; }
     public ImmutableDictionary<MoveId, string> MoveNames { get; }
 

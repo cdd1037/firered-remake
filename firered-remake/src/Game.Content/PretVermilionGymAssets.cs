@@ -6,39 +6,31 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record VermilionGymLocalInput(string Path);
 public sealed record VermilionGymPortraitSource(string Id, int Width, int Height, int X, int Y, int SourceTrainerPicId, int SourceFrame,
     string SourceImage, string SourcePalette);
-public sealed record PretVermilionGymAssetsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<VermilionGymLocalInput> LocalInputs,
-    MachineDefinition Tm34,
-    PretPewterMachineIcon Icon, ImmutableArray<VermilionGymPortraitSource> Portraits,
-    ImmutableArray<string> Limitations);
+public sealed record PretVermilionGymAssetsDocument(int SchemaVersion, MachineDefinition Tm34,
+    PretPewterMachineIcon Icon, ImmutableArray<VermilionGymPortraitSource> Portraits);
 
 /// <summary>Original TM34, Engineer/Surge portraits and the bounded four-cue synthesis increment.</summary>
 public sealed class PretVermilionGymAssets
 {
     public const string Profile = "firered-vermilion-gym-assets-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const int SynthManifestBytes = 87317;
-    public const int SynthCueCount = 243;
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private readonly ImmutableDictionary<string, byte[]> _outputs;
     public PretVermilionGymAssetsDocument Document { get; }
     public ImmutableArray<ForestTrainerPortrait> Portraits { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
     private PretVermilionGymAssets(PretVermilionGymAssetsDocument document,
-        ImmutableArray<PretWorldSourceFile> sourceFiles, ImmutableDictionary<string, byte[]> outputs)
+        ImmutableDictionary<string, byte[]> outputs)
     {
-        Document = document; SourceFiles = sourceFiles; _outputs = outputs;
+        Document = document; _outputs = outputs;
         Portraits = document.Portraits.Select(p => new ForestTrainerPortrait(p.Id, p.X, p.Y,
             outputs[p.Id + ".png"])).ToImmutableArray();
     }
 
     public byte[] ReadPng(string id) => ReadAsset(id);
 
-    public byte[] ReadSynthManifestCandidate() => (byte[])_outputs["synth-manifest-candidate.json"].Clone();
     private byte[] ReadAsset(string id) => _outputs.TryGetValue(id + ".png", out var bytes)
         ? (byte[])bytes.Clone() : throw new InvalidDataException("Unknown Gym asset: " + id);
 
@@ -46,8 +38,7 @@ public sealed class PretVermilionGymAssets
     {
         var document = ContentJson.ParseStrict<PretVermilionGymAssetsDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 && document.Portraits.Length == 2 &&
-            document.Tm34.Compatibility.Length == 73 && !document.Limitations.IsDefaultOrEmpty, "Gym asset scope differs.");
-        var inputs = document.Inputs.ToDictionary(i => i.Path, StringComparer.Ordinal);
+            document.Tm34.Compatibility.Length == 73, "Gym asset scope differs.");
         Require(document.Tm34.Machine.Item.Id == MachineRules.Tm34Id &&
             document.Tm34.Move == MachineRules.ShockWaveId && document.Tm34.SourceMoveId == 351 &&
             document.Tm34.MovePp == 20 && document.Icon.Item == MachineRules.Tm34Id &&
@@ -61,8 +52,7 @@ public sealed class PretVermilionGymAssets
                 portrait.SourceTrainerPicId == (n == 0 ? 93 : 118) && portrait.SourceFrame == 0 &&
                 portrait.Width == 64 && portrait.Height == 64 && portrait.X == 144 && portrait.Y == 8 &&
                 portrait.SourceImage == "graphics/trainers/front_pics/" + stem + "_front_pic.png" &&
-                portrait.SourcePalette == "graphics/trainers/palettes/" + stem + ".pal" &&
-                inputs.ContainsKey(portrait.SourceImage) && inputs.ContainsKey(portrait.SourcePalette),
+                portrait.SourcePalette == "graphics/trainers/palettes/" + stem + ".pal",
                 "Gym original portrait geometry/binding differs.");
         }
         return document;
@@ -70,25 +60,19 @@ public sealed class PretVermilionGymAssets
 
     public static PretVermilionGymAssets Load(string root, SharedMachineCatalog? shared = null)
     {
-        using var manifest = JsonDocument.Parse(Read(root,"content/generated/vermilion-gym-assets/manifest.json"));
+        using var manifest = JsonDocument.Parse(Read(root,"content/generated/ui/vermilion-gym-assets/manifest.json"));
 var generated = manifest.RootElement;
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in generated.GetProperty("outputs").EnumerateArray())
         {
             string path = output.GetProperty("path").GetString()!;
-            Require(outputs.TryAdd(path, Read(root,path.StartsWith("content/generated/", StringComparison.Ordinal) ? path : "content/generated/vermilion-gym-assets/" + path)), "Duplicate Gym output.");
+            Require(outputs.TryAdd(path, Read(root,path.StartsWith("content/generated/", StringComparison.Ordinal) ? path : "content/generated/ui/vermilion-gym-assets/" + path)), "Duplicate Gym output.");
         }
         var document = LoadDocument(Utf8.GetString(outputs["assets.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var input in document.Inputs)
-        {
-            files.Add(new(input.Path));
-        }
         _ = PretPewterMachines.TexturePage(document.Icon, outputs[document.Icon.PngPath]);
         foreach (var portrait in document.Portraits)
             Require((outputs[portrait.Id + ".png"]).Length > 0, "Gym portrait pixels differ.");
-        Require(outputs["synth-manifest-candidate.json"].Length == SynthManifestBytes , "Gym synth candidate differs.");
-        return new(document, files.ToImmutable(), outputs.ToImmutable());
+        return new(document, outputs.ToImmutable());
     }
 
     private static byte[] Read(string root,string relative)

@@ -34,7 +34,7 @@ public sealed class PretRegionalGiftContract
     public static PretRegionalGiftContract Load(string projectRoot, SharedItemCatalog? items = null)
     {
         var root = Path.GetFullPath(projectRoot);
-            using var contract = JsonDocument.Parse(ReadPinned(root,"content/generated/regional-tea-eevee/contract.json"));
+            using var contract = JsonDocument.Parse(ReadPinned(root,"content/generated/data/services/regional-tea-eevee.json"));
         var d = contract.RootElement;
             Require(d.GetProperty("schemaVersion").GetInt32() == 1 && !d.GetProperty("gameplayEnabled").GetBoolean(),
             "Regional gift contract identity differs.");

@@ -10,7 +10,7 @@ The current route uses 23 BGM,80 SE (including three musical one-shots routed to
 
 ## Resource and source ownership
 
-Only `content/generated/synth-audio/{firered.pack,normal-cries.bin,manifest.json}` is required for audio at runtime:2,623,222 B including the 144-ID manifest. The pack is the fixed original sequence/voice/sample resource extent, not a rendered recording or full ROM. Runtime authenticates exact length and pinned SHA-256 before parsing. The normal-cry table and cue manifest are also fixed authenticated inputs.
+Only `content/generated/audio/synth/{firered.pack,normal-cries.bin,manifest.json}` is required for audio at runtime:2,623,222 B including the 144-ID manifest. The pack is the fixed original sequence/voice/sample resource extent, not a rendered recording or full ROM. Runtime authenticates exact length and pinned SHA-256 before parsing. The normal-cry table and cue manifest are also fixed authenticated inputs.
 
 `OriginalAudioCore_*.cs` originated as a byte-identical snapshot of our isolated C# project. The later bounded Snorlax mode2 extension is an explicitly recorded derived main-project patch in `OriginalAudioCore/PROVENANCE.json`; it leaves the independent original-player repository unchanged. See [Snorlax presentation](snorlax-presentation.md). `OriginalAudioCore/PROVENANCE.json` records individual source hashes and the baseline commit. There is no external project path, FFmpeg, agbplay dependency, or new NuGet package. Earlier independent research inspected agbplay; this is not certified clean-room provenance. This implementation is newly authored from explicit source-data/behavior specifications and primary format documentation.
 
@@ -38,7 +38,7 @@ The cloud device is Dummy. Actual engine consumption/nonzero PCM, muting, queue 
 
 ## Route3 recovery extension, 2026-10-09
 
-The current recovered Route3 profile adds seven ordinary cries (Ekans, Nidoran F, Nidorina, Nidorino, Jigglypuff, Magikarp and Gyarados): **151 admitted IDs, 40 ordinary cries**. The source pack, normal-cry table and seven core implementation files are unchanged. The 144-ID counts and campaign evidence above describe the earlier fixed checkpoint. Regenerate the current manifest with `python3 scripts/export-route3-synth-manifest.py`, or verify it with `--check`; the recipe and output identity are pinned independently from the historical exporter.
+The current recovered Route3 profile adds seven ordinary cries (Ekans, Nidoran F, Nidorina, Nidorino, Jigglypuff, Magikarp and Gyarados): **151 admitted IDs, 40 ordinary cries**. The source pack, normal-cry table and seven core implementation files are unchanged. The 144-ID counts and campaign evidence above describe the earlier fixed checkpoint. Regenerate the current manifest with `python3 scripts/imports/audio/export-route3-synth-manifest.py`, or verify it with `--check`; the recipe and output identity are pinned independently from the historical exporter.
 
 `Game.Route3SynthRecovery.Tests` renders all seven added cries at two block sizes, verifies finite nonzero output, exact block partition parity and natural completion, and writes only compact metadata. Original source cry hashes are recorded in its `source-identities.json`. This is signal/termination evidence, not audible listening. Move-animation SE scheduling remains incomplete.
 
@@ -60,4 +60,4 @@ Earlier failures remain recorded: old UI asset fixtures violated the new map pin
 
 ## Recorded backend retirement
 
-The historical `early-audio`, `audio-delivery`, `small-audio-delivery`, `repel-audio`, `town-route-audio`, and `route22-cry-audio` generated trees are no longer runtime or import dependencies. The live synth packs and original sequence/sample resources are retained unchanged. `scripts/audit-early-audio.py` remains an active shared MIDI reader and source-audit tool; it re-derives its audit from the pinned Git source and can write an explicitly requested `--report`; the redundant committed audio snapshot has been removed. Repel presentation retains its source sequencer stop at VBlank 27, independently of audio rendering.
+The historical `early-audio`, `audio-delivery`, `small-audio-delivery`, `repel-audio`, `town-route-audio`, and `route22-cry-audio` generated trees are no longer runtime or import dependencies. The live synth packs and original sequence/sample resources are retained unchanged. `scripts/lib/audit-early-audio.py` remains an active shared MIDI reader and source-audit tool; it re-derives its audit from the pinned Git source and can write an explicitly requested `--report`; the redundant committed audio snapshot has been removed. Repel presentation retains its source sequencer stop at VBlank 27, independently of audio rendering.

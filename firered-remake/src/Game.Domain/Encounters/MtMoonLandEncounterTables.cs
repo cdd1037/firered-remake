@@ -9,7 +9,7 @@ public static class MtMoonLandEncounterTables
     public const byte CaveBehavior = 0x08;
     public static ImmutableArray<SpeciesId> WildSpecies { get; } =
         [new("pret:SPECIES_ZUBAT"), new("pret:SPECIES_GEODUDE"), new("pret:SPECIES_PARAS"), new("pret:SPECIES_CLEFAIRY")];
-    public static EarlyLandEncounterTable MtMoon1F { get; } = Create("map.mt-moon-1f", "sMtMoon1F_FireRed", 7,
+    public static EarlyLandEncounterTable MtMoon1F { get; } = Create("map.mt-moon-1f", 7,
         [
             ("ZUBAT", 7),
             ("ZUBAT", 8),
@@ -24,7 +24,7 @@ public static class MtMoonLandEncounterTables
             ("ZUBAT", 7),
             ("CLEFAIRY", 8)
         ]);
-    public static EarlyLandEncounterTable MtMoonB1F { get; } = Create("map.mt-moon-b1f", "sMtMoonB1F_FireRed", 5,
+    public static EarlyLandEncounterTable MtMoonB1F { get; } = Create("map.mt-moon-b1f", 5,
         [
             ("PARAS", 7),
             ("PARAS", 8),
@@ -39,7 +39,7 @@ public static class MtMoonLandEncounterTables
             ("PARAS", 9),
             ("PARAS", 10)
         ]);
-    public static EarlyLandEncounterTable MtMoonB2F { get; } = Create("map.mt-moon-b2f", "sMtMoonB2F_FireRed", 7,
+    public static EarlyLandEncounterTable MtMoonB2F { get; } = Create("map.mt-moon-b2f", 7,
         [
             ("ZUBAT", 8),
             ("GEODUDE", 9),
@@ -54,7 +54,7 @@ public static class MtMoonLandEncounterTables
             ("ZUBAT", 11),
             ("CLEFAIRY", 12)
         ]);
-    public static EarlyLandEncounterTable Route4 { get; } = Create("map.route-4", "sRoute4_FireRed", 21,
+    public static EarlyLandEncounterTable Route4 { get; } = Create("map.route-4", 21,
         [
             ("SPEAROW", 10),
             ("RATTATA", 10),
@@ -73,8 +73,8 @@ public static class MtMoonLandEncounterTables
     public static ImmutableArray<EarlyLandEncounterTable> All { get; } = [MtMoon1F, MtMoonB1F, MtMoonB2F, Route4];
     public static bool IsCave(MapId map) => map.Value is "map.mt-moon-1f" or "map.mt-moon-b1f" or "map.mt-moon-b2f";
 
-    private static EarlyLandEncounterTable Create(string map, string symbol, int rate, (string Species, byte Level)[] slots) =>
-        new(new(map), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, symbol, rate,
+    private static EarlyLandEncounterTable Create(string map, int rate, (string Species, byte Level)[] slots) =>
+        new(new(map), rate,
             slots.Select((s, i) => new EarlyLandEncounterSlot(i, new("pret:SPECIES_" + s.Species), s.Level, s.Level,
                 EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

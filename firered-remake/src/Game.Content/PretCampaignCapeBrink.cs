@@ -43,7 +43,6 @@ public sealed partial class PretCampaignCatalog
         var encounter = document.GetProperty("encounters").EnumerateArray().Single();
         string mapSymbol = encounter.GetProperty("map").GetString()!;
         string symbol = encounter.GetProperty("base_label").GetString()!;
-        string path = reference.GetProperty("path").GetString()!;
         if (mapSymbol != source.NewMaps[PretCapeBrinkTutor.CapeMapId].SourceMapSymbol ||
             symbol != reference.GetProperty("symbol").GetString() )
             throw new InvalidDataException("cape_brink_encounter_source_identity");
@@ -53,7 +52,7 @@ public sealed partial class PretCampaignCatalog
         if (!species.SetEquals(tableSpecies) ||
             species.Any(s => !owned.Species.ContainsKey(new("pret:" + s))))
             throw new InvalidDataException("cape_brink_encounter_owned_species");
-        void Check(string kind, MapId map, string actualPath, string actualSymbol,
+        void Check(string kind, MapId map,
             int rate, IEnumerable<(int Index, SpeciesId Species, byte Min, byte Max, int Weight)> slots,
             string? rod = null)
         {
@@ -62,8 +61,7 @@ public sealed partial class PretCampaignCatalog
             int[] indexes = rod is null ? Enumerable.Range(0, sourceTable.GetProperty("mons").GetArrayLength()).ToArray() :
                 field.GetProperty("groups").GetProperty(rod).EnumerateArray().Select(i => i.GetInt32()).ToArray();
             var actual = slots.ToArray();
-            if (map != PretCapeBrinkTutor.CapeMapId || actualPath != path ||
-                actualSymbol != symbol || rate != sourceTable.GetProperty("encounter_rate").GetInt32() ||
+            if (map != PretCapeBrinkTutor.CapeMapId || rate != sourceTable.GetProperty("encounter_rate").GetInt32() ||
                 actual.Length != indexes.Length)
                 throw new InvalidDataException("cape_brink_encounter_table:" + kind + ":" + rod);
             for (int i = 0; i < indexes.Length; i++)
@@ -76,14 +74,13 @@ public sealed partial class PretCampaignCatalog
             }
         }
         var land = CapeBrinkEncounterTables.Land.Single();
-        Check("land_mons", land.Map, land.SourcePath, land.SourceSymbol,
+        Check("land_mons", land.Map,
             land.RawEncounterRate, land.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)));
         var water = CapeBrinkEncounterTables.Water.Single();
-        if (water.SourceMapSymbol != mapSymbol) throw new InvalidDataException("cape_brink_surf_source_map");
-        Check("water_mons", water.Map, water.SourcePath, water.SourceSymbol,
+        Check("water_mons", water.Map,
             water.RawEncounterRate, water.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)));
         foreach (var (rod, table) in new[] { ("old_rod", CapeBrinkEncounterTables.OldRod.Single()),("good_rod", CapeBrinkEncounterTables.GoodRod.Single()),("super_rod", superRod.SuperRodTables.Single(t => t.Map == PretCapeBrinkTutor.CapeMapId)) })
-            Check("fishing_mons", table.Map, table.SourcePath, table.SourceSymbol,
+            Check("fishing_mons", table.Map,
                 table.RawEncounterRate, table.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)), rod);
     }
 

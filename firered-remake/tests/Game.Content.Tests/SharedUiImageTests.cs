@@ -21,13 +21,13 @@ public sealed class SharedUiImageTests
             if (asset.FrameIndex == 0 || asset.Kind == "battle-message")
             {
                 var name = asset.Kind == "frame" ? "frame1" : asset.Kind;
-                Assert.AreEqual($"content/generated/lab-battle-ui/{name}.png", asset.TexturePath);
+                Assert.AreEqual($"content/generated/ui/lab-battle-ui/{name}.png", asset.TexturePath);
                 Assert.IsNull(asset.Region);
                 Assert.IsFalse(File.Exists(Path.Combine(frames.GeneratedDirectory, $"type{asset.FrameIndex + 1}/{asset.Kind}.png")));
             }
             else
             {
-                Assert.AreEqual("content/generated/option-frames/frames.png", asset.TexturePath);
+                Assert.AreEqual("content/generated/ui/option-frames/frames.png", asset.TexturePath);
                 Assert.IsNotNull(asset.Region);
                 Assert.AreEqual((asset.Width, asset.Height), (asset.Region.Width, asset.Region.Height));
             }
@@ -54,7 +54,7 @@ public sealed class SharedUiImageTests
     [TestMethod]
     public void DoubleBattleUsesTheSameHealthBarPixels()
     {
-        using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, "content/generated/double-battle-ui/double-battle-ui.json")));
+        using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, "content/generated/ui/double-battle-ui/double-battle-ui.json")));
         var shared = 0;
         foreach (var asset in document.RootElement.GetProperty("assets").EnumerateArray())
         {
@@ -68,8 +68,8 @@ public sealed class SharedUiImageTests
             if (id is "hp-label" or "hp-green" or "hp-yellow" or "hp-red")
             {
                 shared++;
-                Assert.AreEqual($"content/generated/lab-battle-ui/{id}.png", path);
-                Assert.IsFalse(File.Exists(Path.Combine(TestAssets.Root, $"content/generated/double-battle-ui/{id}.png")));
+                Assert.AreEqual($"content/generated/ui/lab-battle-ui/{id}.png", path);
+                Assert.IsFalse(File.Exists(Path.Combine(TestAssets.Root, $"content/generated/ui/double-battle-ui/{id}.png")));
             }
         }
         Assert.AreEqual(4, shared);

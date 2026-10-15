@@ -9,9 +9,8 @@ using Game.Domain.Trainers;
 using Game.Domain.World;
 namespace Game.Content;
 
-public sealed record SevenIslandTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles, JsonElement ResolvedMoves);
-public sealed record SevenIslandItemsDocument(string SourceCommit, string Profile, ImmutableArray<MachineItem> Items,
+public sealed record SevenIslandTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
+public sealed record SevenIslandItemsDocument(ImmutableArray<MachineItem> Items,
     ImmutableArray<EarlyShopItemDefinition> Additions, EarlyShopStock Shop, ImmutableArray<FieldPickupDefinition> Pickups,
     ImmutableArray<string> RenewableFlags);
 
@@ -20,8 +19,8 @@ public static class PretSevenIslandRules
 {
     private static T Read<T>(string root,string file, SharedMachineCatalog? shared = null)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/seven-island-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })) ?? throw new InvalidDataException("seven_island_source_missing");
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/seven-island", file));
+        return JsonSerializer.Deserialize<T>(bytes, SharedTrainerCatalog.Options(root, (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))) ?? throw new InvalidDataException("seven_island_source_missing");
     }
     public static SevenIslandTrainerDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
@@ -32,8 +31,7 @@ public static class PretSevenIslandRules
     private static SevenIslandTrainerCatalog LoadTrainers(SevenIslandTrainerDocument document, SharedMachineCatalog? shared = null)
     {
         if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty) throw new InvalidDataException("seven_island_trainers_missing");
-        var result = new SevenIslandTrainerCatalog(document.SourceCommit, document.Profile, document.CompleteSourceRoster,
-            document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
+        var result = new SevenIslandTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         SevenIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
     public static SevenIslandItemsDocument LoadItemsDocument(string root, SharedMachineCatalog? shared = null)

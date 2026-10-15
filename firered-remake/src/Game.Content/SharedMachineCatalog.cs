@@ -13,7 +13,7 @@ public sealed record SharedMachineSpecies(SpeciesId Species, int SourceSpeciesId
     ImmutableArray<ItemId> CompatibleItems);
 public sealed record CurrentMachineAdmission(ImmutableArray<ItemId> Order, MachineItem TmCase,
     int MachineSlots, int KeyItemSlots, int MaximumStack);
-public sealed record SharedMachineDocument(int SchemaVersion, string SourceCommit,
+public sealed record SharedMachineDocument(int SchemaVersion,
     ImmutableArray<SharedMachineDefinition> Machines, ImmutableArray<SharedMachineSpecies> Compatibility,
     CurrentMachineAdmission Current);
 
@@ -30,7 +30,7 @@ public sealed class SharedMachineCatalog
     {
         Items = items;
         _current = document.Current;
-        if (document.SourceCommit != QuestItemRules.SourceCommit || document.SchemaVersion != 1 || document.Machines.Length != 57 || document.Compatibility.Length != 386)
+        if (document.SchemaVersion != 1 || document.Machines.Length != 57 || document.Compatibility.Length != 386)
             throw new InvalidDataException("machine_catalog_shape");
         _machines = document.Machines.ToImmutableDictionary(m => m.Machine.Item.Id);
         _species = document.Compatibility.ToImmutableDictionary(s => s.Species);
@@ -46,7 +46,7 @@ public sealed class SharedMachineCatalog
         new Lazy<SharedMachineCatalog>(() => LoadProject(path, SharedItemCatalog.LoadProject(path)))).Value;
     public static SharedMachineCatalog LoadProject(string root, SharedItemCatalog items) => new(
         ContentJson.ParseStrict<SharedMachineDocument>(File.ReadAllText(Path.Combine(root,
-            "content/generated/machine-catalog/catalog.json")), items.CreateJsonOptions()), items);
+            "content/generated/data/machines.json")), items.CreateJsonOptions()), items);
     public MachineCatalog LoadCurrent(GamePokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);

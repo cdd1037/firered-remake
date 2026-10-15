@@ -36,7 +36,7 @@ public static class RockSmashWildBattleContract
     public static Route1WildPokemonResult Generate(GamePokemonCatalog owned, FieldRockSmashCatalog catalog,
         RockSmashWildOrigin origin, byte level, RngState rng, uint trainerId)
     {
-        if (!ValidOwned(owned) || SourceSlot(catalog, origin) is not { } slot || level < slot.MinimumLevel || level > slot.MaximumLevel ||
+        if (owned is null || SourceSlot(catalog, origin) is not { } slot || level < slot.MinimumLevel || level > slot.MaximumLevel ||
             !owned.Catalog.Species.TryGetValue(slot.Species, out var species) || rng.AlgorithmId != Gen3Rng.AlgorithmId)
             throw new ArgumentException("rock_smash_wild_generation");
         var moves = catalog.Wild.InitialMoves.Single(row => row.Species == slot.Species && row.Level == level).Moves;
@@ -50,7 +50,7 @@ public static class RockSmashWildBattleContract
     public static bool SourceInitialInstance(GamePokemonCatalog? owned, FieldRockSmashCatalog catalog,
         RockSmashWildOrigin? origin, PokemonInstance? pokemon)
     {
-        if (!ValidOwned(owned) || pokemon is null || !Matches(catalog, origin, pokemon) ||
+        if (owned is null || pokemon is null || !Matches(catalog, origin, pokemon) ||
             !owned!.Catalog.Species.TryGetValue(pokemon.Species, out var species) ||
             SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null) return false;
         var source = catalog.Wild.Species.Single(row => row.Species == pokemon.Species);
@@ -78,6 +78,4 @@ public static class RockSmashWildBattleContract
         var draw = Gen3Rng.Next(rng, "wild-battle.held-item", 100);
         return new(HeldItem(catalog, origin, draw.Trace.Result), draw.State, [draw.Trace]);
     }
-    private static bool ValidOwned(GamePokemonCatalog? owned) => owned is not null &&
-        owned is not null && owned.Catalog.Moves.Count == 354;
 }

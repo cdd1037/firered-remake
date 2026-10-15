@@ -6,14 +6,12 @@ using Game.Domain.Items;
 using Game.Domain.Ids;
 namespace Game.Content;
 
-public sealed record PretRocketHideoutItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+public sealed record PretRocketHideoutItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
 public sealed record PretRocketHideoutPickup(string Map, string Kind, int? LocalId, int? EventIndex,
     int X, int Y, int Elevation, string Flag, int SourceFlagId, bool InitiallyHidden, bool Underfoot,
     ItemId Item, int Quantity, string? Script, string? ScriptCommand, OpeningItemSourceRef MapSource,
     OpeningItemSourceRef? ScriptSource);
-public sealed record PretRocketHideoutPickupsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretRocketHideoutPickup> Pickups, ImmutableArray<string> Limitations);
+public sealed record PretRocketHideoutPickupsDocument(int SchemaVersion, ImmutableArray<PretRocketHideoutPickup> Pickups);
 
 public static class PretRocketHideoutItems
 {
@@ -24,7 +22,7 @@ public static class PretRocketHideoutItems
     {
         var options = machines.CreateJsonOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var document = ContentJson.ParseStrict<PretRocketHideoutItemsDocument>(json,options);
-        Require(document.SchemaVersion == 1 && document.Items.Length == 10 && document.Icons.Length == 10 && !document.Limitations.IsDefaultOrEmpty,"Rocket Hideout item scope differs.");
+        Require(document.SchemaVersion == 1 && document.Items.Length == 10 && document.Icons.Length == 10,"Rocket Hideout item scope differs.");
         foreach (var item in document.Items)
         {
             RocketHideoutItemRules.ValidateSourceItem(item.Metadata,item.EffectBytes);
@@ -40,7 +38,7 @@ PretPewterMachines.ValidateIcon(icon);
     }
     public static PretRocketHideoutItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var outputs = PretCeladonApproachSource.Outputs(root,"rocket-hideout-items");
+        var outputs = PretCeladonApproachSource.Outputs(root,"data/items/rocket-hideout");
         var document = Load(Utf8.GetString(outputs["rocket-hideout-items.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
@@ -57,11 +55,11 @@ PretPewterMachines.ValidateIcon(icon);
     }
     public static PretRocketHideoutPickupsDocument LoadPickupsProject(string root)
     {
-        var bytes = PretCeladonApproachSource.Read(root,"content/generated/rocket-hideout-items/rocket-hideout-pickups.json");
+        var bytes = PretCeladonApproachSource.Read(root,"content/generated/data/items/rocket-hideout/rocket-hideout-pickups.json");
         var document = ContentJson.ParseStrict<PretRocketHideoutPickupsDocument>(Utf8.GetString(bytes),ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 &&
             document.Pickups.Length == 18 && document.Pickups.Count(p => p.Kind == "visible") == 14 && document.Pickups.Count(p => p.Kind == "hidden") == 4 &&
-            document.Pickups.Count(p => p.InitiallyHidden) == 2 && document.Pickups.Select(p => p.Flag).Distinct().Count() == 18 && !document.Limitations.IsDefaultOrEmpty,"Rocket Hideout pickup scope differs.");
+            document.Pickups.Count(p => p.InitiallyHidden) == 2 && document.Pickups.Select(p => p.Flag).Distinct().Count() == 18,"Rocket Hideout pickup scope differs.");
         foreach (var pickup in document.Pickups)
         {
             Require(pickup.Quantity == 1 && pickup.Map is "MAP_ROCKET_HIDEOUT_B1F" or "MAP_ROCKET_HIDEOUT_B2F" or "MAP_ROCKET_HIDEOUT_B3F" or "MAP_ROCKET_HIDEOUT_B4F" &&

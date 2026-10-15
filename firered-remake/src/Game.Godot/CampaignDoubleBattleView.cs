@@ -40,7 +40,7 @@ public partial class CampaignView
     private void LoadDoubleBattlePresentation()
     {
         if (_doubleTextures.Count != 0) return;
-        var folder = Path.Combine(_root, "content/generated/double-battle-ui");
+        var folder = Path.Combine(_root, "content/generated/ui/double-battle-ui");
         var bytes = File.ReadAllBytes(Path.Combine(folder, "double-battle-ui.json"));
         using var json = JsonDocument.Parse(bytes);
         foreach (var asset in json.RootElement.GetProperty("assets").EnumerateArray())

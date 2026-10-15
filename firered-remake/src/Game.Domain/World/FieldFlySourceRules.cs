@@ -11,7 +11,7 @@ public sealed record FieldFlySectionRegion(string SectionId, FieldFlyRegion Regi
 public sealed record FieldFlyDestination(string SectionId, FieldFlyRegion Region, string MapSymbol, MapId MapId,
     string HealLocation, int HealLocationId, int X, int Y, string VisitedFlag, int VisitedFlagId,
     string VisitMapSymbol, OpeningItemSourceRef VisitSource);
-public sealed record FieldFlySourceDocument(string SourceCommit, ImmutableArray<FieldFlyDestination> Destinations,
+public sealed record FieldFlySourceDocument( ImmutableArray<FieldFlyDestination> Destinations,
     ImmutableArray<FieldFlySectionRegion> SectionRegions);
 
 /// <summary>Original party-menu predicates only. HP, status, PP, held item and HM possession are irrelevant.</summary>
@@ -56,7 +56,7 @@ public sealed class FieldFlyCatalog
     public static FieldFlyCatalog Authenticate(FieldFlySourceDocument source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (source.SourceCommit != FieldFlySourceRules.SourceCommit || source.Destinations.IsDefault || source.Destinations.Length != 20 ||
+        if (source.Destinations.IsDefault || source.Destinations.Length != 20 ||
             source.SectionRegions.IsDefault)
             throw new ArgumentException("field_fly_source");
         return new(source);

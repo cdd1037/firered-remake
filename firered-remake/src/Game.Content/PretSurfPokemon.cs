@@ -16,31 +16,28 @@ public sealed record SurfSpeciesEvolutions(SpeciesId Species, ImmutableArray<Can
 public sealed record SurfSpeciesCry(SpeciesId Species, int SourceSpeciesId, string CueId, int NormalTableIndex, string SourceSymbol,
     string SourceSamplePath, PokemonSourceRef NormalSource, PokemonSourceRef ReverseSource,
     PokemonSourceRef SampleBindingSource);
-public sealed record SurfPokemonDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonInput> Inputs,
-    ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
+public sealed record SurfPokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
     ImmutableArray<ForestPokemonConstant> Constants, ImmutableArray<PewterPokemonEncodedName> EncodedNames,
     ImmutableArray<MoveId> RequiredMoves, int? NaturalLevelLimit, ImmutableArray<SurfHeldItems> HeldItems,
     ImmutableArray<SurfMachineRow> Machines, ImmutableArray<SurfSpeciesRates> SurfRates,
-    ImmutableArray<SurfSpeciesEvolutions> SourceEvolutions, ImmutableArray<SurfSpeciesCry> Cries,
-    ImmutableArray<string> Limitations);
+    ImmutableArray<SurfSpeciesEvolutions> SourceEvolutions, ImmutableArray<SurfSpeciesCry> Cries);
 
 /// <summary>Authenticated two-species additive metadata; preserves source evolution triples without executing them.</summary>
 public sealed class PretSurfPokemon
 {
     public const string Profile = "firered-surf-pokemon-v1";
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public const string CatalogRelativePath = "content/generated/surf-pokemon/catalog.json";
+    public const string CatalogRelativePath = "content/generated/data/pokemon/surf.json";
     public PokemonCatalog Catalog { get; }
     public SurfPokemonDocument Document { get; }
     public ImmutableSortedDictionary<int, string> AdditionalSpeciesNames { get; }
     public ImmutableDictionary<MoveId, string> AdditionalMoveNames { get; } = ImmutableDictionary<MoveId,string>.Empty;
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
-    private PretSurfPokemon(PokemonCatalog catalog,SurfPokemonDocument document,        ImmutableArray<PretWorldSourceFile> files)
+    private PretSurfPokemon(PokemonCatalog catalog,SurfPokemonDocument document)
     {
-        Catalog = catalog; Document = document; SourceFiles = files;
+        Catalog = catalog; Document = document;
         AdditionalSpeciesNames = document.SpeciesNames.ToImmutableSortedDictionary(n => catalog.Species[n.Id].SourceSpeciesId, n => n.Name);
         Constants = document.Constants.ToImmutableDictionary(c => c.Symbol, c => c.Value, StringComparer.Ordinal);
         EncodedNames = document.EncodedNames.ToImmutableDictionary(n => n.Symbol, StringComparer.Ordinal);
@@ -56,7 +53,6 @@ public sealed class PretSurfPokemon
         foreach (var name in doc.EncodedNames)
             SafariSource.Require(!name.Bytes.IsDefaultOrEmpty && name.Bytes[^1] == 255,
                 "Surf encoded name is unterminated.");
-        var files = doc.Inputs.Select(input => new PretWorldSourceFile(input.Path)).ToImmutableArray();
-        return new(catalog, doc, files);
+        return new(catalog, doc);
     }
 }

@@ -75,7 +75,7 @@ public partial class CampaignView
             _forestTrainerPortraits.Add(portrait.Id,ImageTexture.CreateFromImage(image));
         }
         var icon=source.Document.Icon;
-        _earlyItemIcons.Add(icon.Item,ItemTexture("vermilion-gym-assets", icon));
+        _earlyItemIcons.Add(icon.Item,ItemTexture("ui/vermilion-gym-assets", icon));
         var field=PretVermilionGymFieldMoveArt.Load(_root);
         Texture2D Sheet(string id,int width,int height)
         {

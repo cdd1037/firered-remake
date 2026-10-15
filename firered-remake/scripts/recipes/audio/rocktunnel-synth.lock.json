@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/maps/LavenderTown/map.json"
+    },
+    {
+      "path": "data/maps/RockTunnel_1F/map.json"
+    },
+    {
+      "path": "data/maps/RockTunnel_B1F/map.json"
+    },
+    {
+      "path": "data/maps/Route10/map.json"
+    },
+    {
+      "path": "data/maps/Route10_PokemonCenter_1F/map.json"
+    },
+    {
+      "path": "data/maps/Route10_PokemonCenter_2F/map.json"
+    },
+    {
+      "path": "data/maps/Route9/map.json"
+    },
+    {
+      "path": "include/constants/songs.h"
+    },
+    {
+      "path": "include/constants/sound.h"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "sound/cry_tables.inc"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/cubone.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/electrode.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/hypno.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/lickitung.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/marowak.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/primeape.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/rhyhorn.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/seadra.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/seaking.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/tentacruel.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/venomoth.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/venonat.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/weezing.wav"
+    },
+    {
+      "path": "sound/song_table.inc"
+    },
+    {
+      "path": "sound/songs/midi/mus_lavender.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_reflect.mid"
+    },
+    {
+      "path": "src/sound.c"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "content/generated/audio/cues/route11.json"
+    },
+    {
+      "path": "content/generated/audio/synth/firered.pack"
+    },
+    {
+      "path": "content/generated/audio/synth/manifest.json"
+    },
+    {
+      "path": "content/generated/audio/synth/normal-cries.bin"
+    },
+    {
+      "path": "scripts/lib/audit-early-audio.py"
+    },
+    {
+      "path": "scripts/synth-rocktunnel-cues.json"
+    }
+  ]
+}

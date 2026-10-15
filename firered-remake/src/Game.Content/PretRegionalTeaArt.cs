@@ -6,14 +6,13 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record RegionalTeaArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretRegionalGiftSourceFile> Inputs,
-    QuestItemUiEntry Item, QuestItemUiAsset Asset, string TexturePath, ImmutableArray<string> Limitations);
+public sealed record RegionalTeaArtDocument(int SchemaVersion, QuestItemUiEntry Item, QuestItemUiAsset Asset, string TexturePath);
 
 /// <summary>Original Tea pixels and source item metadata. Loading admits no field-use or inventory action.</summary>
 public sealed class PretRegionalTeaArt
 {
     public const string Profile = "firered-regional-tea-art-v1";
-    public const string GeneratedDirectory = "content/generated/regional-tea-art/";
+    public const string GeneratedDirectory = "content/generated/ui/regional-tea-art/";
     public RegionalTeaArtDocument Document { get; }
     private readonly byte[] _png;
     private PretRegionalTeaArt(RegionalTeaArtDocument document, byte[] png) { Document = document; _png = png; }
@@ -24,7 +23,7 @@ public sealed class PretRegionalTeaArt
         var root = Path.GetFullPath(projectRoot);
         var document = ContentJson.ParseStrict<RegionalTeaArtDocument>(Encoding.UTF8.GetString(
             Read(root,GeneratedDirectory + "tea-art.json")), ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 1 && !document.Limitations.IsDefaultOrEmpty,
+        Require(document.SchemaVersion == 1,
             "Tea art scope differs.");
         var item = tea.Item;
         var ui = document.Item;

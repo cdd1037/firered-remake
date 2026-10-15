@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
     {
         foreach (var map in region.NewMaps.Values)
         {
-            string path = map.SourceRef.Path.Replace("/map.json", "/scripts.inc", StringComparison.Ordinal);
+            string path = "data/maps/" + map.SourceMapName + "/scripts.inc";
             if (scripts.UnsupportedInstructions.Any(d => d.Path.StartsWith(path, StringComparison.Ordinal)))
                 throw new InvalidDataException("lost_cave_script_composition:" + path);
         }

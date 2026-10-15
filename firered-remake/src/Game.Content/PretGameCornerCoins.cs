@@ -8,7 +8,7 @@ namespace Game.Content;
 /// <summary>One authenticated key item and five ordinary services on existing maps. No slots, hidden coins or prizes.</summary>
 public sealed class PretGameCornerCoins
 {
-    public const string Base = "content/generated/game-corner-coins/";
+    public const string Base = "content/generated/data/services/game-corner-coins/";
     public const string Profile = "firered-game-corner-coins-v1";
     public const string ScriptPath = "data/maps/CeladonCity_GameCorner/scripts.inc";
     public const string RestaurantScriptPath = "data/maps/CeladonCity_Restaurant/scripts.inc";

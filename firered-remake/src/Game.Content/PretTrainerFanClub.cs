@@ -48,7 +48,7 @@ public sealed class PretTrainerFanClub
     public static PretTrainerFanClub Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"trainer-fan-club");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/trainer-fan-club");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_BEAUTY", "OBJ_EVENT_GFX_BLACK_BELT",
             "OBJ_EVENT_GFX_CRUSH_GIRL", "OBJ_EVENT_GFX_GENTLEMAN", "OBJ_EVENT_GFX_LITTLE_GIRL",
             "OBJ_EVENT_GFX_RED_NORMAL", "OBJ_EVENT_GFX_ROCKER", "OBJ_EVENT_GFX_WOMAN_3",
@@ -65,14 +65,14 @@ public sealed class PretTrainerFanClub
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Saffron Trainer Fan Club and original shared script closure.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
-        Need(id == RoomMapId.Value && path == relative + "/runtime-map.json" ,
+        Need(id == RoomMapId.Value && path == relative ,
             "Trainer Fan Club compact map binding differs.");
         var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Trainer Fan Club map identity differs.");
+        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Trainer Fan Club map identity differs.");
         var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(map.Width == 11 && map.Height == 17 && map.FieldWarps.Length == 1 &&
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null &&
             map.Events.GetProperty("object_events").GetArrayLength() == 10 &&

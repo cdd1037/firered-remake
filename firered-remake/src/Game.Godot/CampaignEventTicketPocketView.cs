@@ -9,7 +9,7 @@ public partial class CampaignView
     {
         if (!_catalog.EventIslandsEnabled) return;
         var catalog = _catalog.EarlyShop ?? throw new InvalidDataException("Event-ticket item catalog missing.");
-        const string directory = "content/generated/event-ticket-ui";
+        const string directory = "content/generated/ui/event-ticket-ui";
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, directory, "event-ticket-ui.json"));
         using var manifest = JsonDocument.Parse(bytes);
         var root = manifest.RootElement;

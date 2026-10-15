@@ -10,14 +10,14 @@ namespace Game.Content;
 /// <summary>Original Water Stone metadata and icon. Original evolution effect is retained; actual use remains explicitly unsupported.</summary>
 public static class PretSeafoamItems
 {
-    public const string Base = "content/generated/seafoam-items/";
+    public const string Base = "content/generated/data/items/seafoam.json";
     private static byte[] Read(string root, string relative)
     {
         return File.ReadAllBytes(Path.Combine(root, relative));
     }
     public static NpcTradeItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
-            var doc = JsonSerializer.Deserialize<NpcTradeItemsDocument>(Read(root,Base + "items.json"),
+            var doc = JsonSerializer.Deserialize<NpcTradeItemsDocument>(Read(root,Base),
             (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions())
             ?? throw new InvalidDataException("seafoam_item_document_missing");
             if (            doc.PreviousItemCount != 127 || doc.ItemCount != 128 || doc.Additions.IsDefault || doc.Additions.Length != 1 ||

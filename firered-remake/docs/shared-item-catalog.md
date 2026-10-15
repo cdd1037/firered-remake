@@ -1,6 +1,6 @@
 # Shared item business catalog
 
-`content/generated/item-catalog/catalog.json` owns all 307 real pinned-source
+`content/generated/data/items.json` owns all 307 real pinned-source
 item definitions. The 375 source slots contain 68 `ITEM_NONE` placeholders;
 those placeholders are not items. IDs, names, prices, pockets, numeric source
 IDs, field/battle handlers, hold effects, secondary IDs and toss/sell/give
@@ -14,7 +14,7 @@ runtime reads generated resources only.
 
 ## Current inventory and shops
 
-`content/generated/current-items/catalog.json` is one flat current selection:
+`content/generated/data/available-items.json` is one flat current selection:
 151 ordered item/use entries and 14 ordered Mart stocks. Its import recipe
 contains item IDs, explicit supported-use choices and source stock labels.
 Descriptions, effect bytes, medicine amounts, status bits, prices and stock
@@ -38,12 +38,12 @@ expressions without compiling or running upstream C.
 ## Rebuild and tests
 
 ```sh
-python scripts/import-item-catalog.py --check
-python scripts/import-current-items.py --check
-python scripts/source-battle-items/import.py --check
-python scripts/test-item-catalog-import.py
-python scripts/test-current-items-import.py
-python scripts/test-machine-catalog-import.py
+python scripts/imports/items/import-item-catalog.py --check
+python scripts/imports/items/import-current-items.py --check
+python scripts/imports/items/import-source-battle-items.py --check
+python scripts/checks/test-item-catalog-import.py
+python scripts/checks/test-current-items-import.py
+python scripts/checks/test-machine-catalog-import.py
 ```
 
 Both rebuild drivers compile the shared item source first, then the final current
@@ -52,4 +52,9 @@ business values, strict identity references, bounded admission, retained deferre
 use, exact effect bytes and regeneration. Migration comparison against the
 original composed game was performed outside the repository: all 151 item
 business/use/description values, item order, 14 stock arrays and limits matched.
-The current profile name replaces a historical predecessor profile.
+Opening, quest and current availability catalogs contain definitions, admission
+and limits, without source commit, historical profile or completeness labels. Quest keys are admitted by
+actual IDs; the current game requires Parcel, Poke Ball, Teachy TV and Town Map.
+Load-time validation checks unique definitions and actual effects, pocket limits
+and stock references, rather than historical item or shop counts. Inventory
+transactions continue to check mutable stacks and capacity.

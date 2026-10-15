@@ -21,7 +21,7 @@ public static class PretRoute22TrainerArt
             byte[] bytes = File.ReadAllBytes(path);
             return bytes;
         }
-        var manifest = Read("content/generated/route22-trainer-art/route22-trainer-art.json");
+        var manifest = Read("content/generated/sprites/trainers/route22/route22-trainer-art.json");
         using var json = JsonDocument.Parse(manifest);
         var document = json.RootElement;
         if (document.GetProperty("assets").GetArrayLength() != 1)
@@ -34,7 +34,7 @@ public static class PretRoute22TrainerArt
                 asset.GetProperty("width").GetInt32() != 64 || asset.GetProperty("height").GetInt32() != 64 || asset.GetProperty("sourceFrame").GetInt32() != 0 || asset.GetProperty("sourceTrainerPicId").GetInt32() != 106 ||
                 asset.GetProperty("x").GetInt32() != 144 || asset.GetProperty("y").GetInt32() != 8)
                 throw new InvalidDataException("Trainer portrait identity differs.");
-            var pngBytes = Read("content/generated/route22-trainer-art/" + id + ".png");
+            var pngBytes = Read("content/generated/sprites/trainers/route22/" + id + ".png");
             if (pngBytes.Length == 0) throw new InvalidDataException("Trainer portrait size differs.");
             result.Add(new(id, asset.GetProperty("x").GetInt32(), asset.GetProperty("y").GetInt32(), pngBytes));
         }

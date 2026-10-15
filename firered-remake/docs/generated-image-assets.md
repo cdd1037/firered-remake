@@ -29,7 +29,7 @@ object store or restoration step.
   two large boats. The 119 canonical animation descriptors live in
   `shared-overworld/catalog.json`; 723 regional entries carry only graphics IDs.
   Frame sequence, dimensions, anchor, inanimate behavior and palette colors are
-  unchanged. Run `python scripts/import-shared-overworld.py` after regional imports
+  unchanged. Run `python scripts/imports/presentation/import-shared-overworld.py` after regional imports
   to regenerate the shared cohort; `--check` verifies deterministic output.
   `--raw` and `--generated` select input/output trees. Six importers share
   `overworld_sprites.py`; regional imports no longer render temporary image copies
@@ -43,7 +43,7 @@ object store or restoration step.
 - Inventory icons: 136 PNGs now share one 416×208 `item-icons/items.png` page,
   containing 120 exact RGBA variants for 174 logical records. This removes 135
   files and 250,599 PNG bytes. Palette variants remain distinct. After an item
-  import run `python scripts/item_icon_exports.py`; the pass can reuse existing
+  import run `python scripts/lib/item_icon_exports.py`; the pass can reuse existing
   atlas regions while replacing a single regenerated family, so a full reimport
   is not required. Region data stays in each package's existing item catalog.
 - Fame Checker: portraits, silhouettes, exact dimmed fact icons and cursor regions

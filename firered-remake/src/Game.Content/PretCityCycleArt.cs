@@ -9,10 +9,8 @@ public sealed record PretFishingArtAsset(int Gender, string GraphicsId, int Sour
 public sealed record PretFishingAnimCommand(string Opcode, int Value, int Duration, bool FlipH, int OffsetX, int OffsetY);
 public sealed record PretFishingAnimation(string Id, int SourceAnimationId, string Direction,
     ImmutableArray<PretFishingAnimCommand> Commands, string SourceText, PlayerGenderArtSourceRef SourceRef);
-public sealed record PretFishingArtDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretFishingArtAsset> Assets, ImmutableArray<PretFishingAnimation> Animations,
-    ImmutableDictionary<string, string> Texts, int SourceTimingHz, PlayerGenderArtSourceRef AlignmentSource,
-    ImmutableArray<string> Limitations);
+public sealed record PretFishingArtDocument(int SchemaVersion, ImmutableArray<PretFishingArtAsset> Assets, ImmutableArray<PretFishingAnimation> Animations,
+    ImmutableDictionary<string, string> Texts, int SourceTimingHz, PlayerGenderArtSourceRef AlignmentSource);
 
 /// <summary>Authenticated source Red/Green Bicycle art and bounded land-cycling contracts. Gender is the canonical MALE=0/FEMALE=1.</summary>
 public sealed class PretCityCycleArt
@@ -23,17 +21,16 @@ public sealed class PretCityCycleArt
     private readonly ImmutableDictionary<int, byte[]> textures;
     public PlayerGenderArtDocument Document { get; }
     public ImmutableArray<PlayerGenderArtAsset> Assets => Document.Assets;
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public string GeneratedDirectory { get; }
     public JsonElement Rules { get; }
     public PretFishingArtDocument Fishing { get; }
     private readonly ImmutableDictionary<int, byte[]> fishingTextures;
 
     private PretCityCycleArt(string directory, PlayerGenderArtDocument document,
-        ImmutableArray<PretWorldSourceFile> sources, ImmutableDictionary<int, byte[]> textureBytes, JsonElement rules, PretFishingArtDocument fishing,
+        ImmutableDictionary<int, byte[]> textureBytes, JsonElement rules, PretFishingArtDocument fishing,
         ImmutableDictionary<int, byte[]> fishingTextureBytes)
     {
-        GeneratedDirectory = directory; Document = document; SourceFiles = sources;
+        GeneratedDirectory = directory; Document = document;
         textures = textureBytes; Rules = rules; Fishing = fishing;
         fishingTextures = fishingTextureBytes;
     }
@@ -42,13 +39,12 @@ public sealed class PretCityCycleArt
     public static PretCityCycleArt Load(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(root, "content/generated/city-cycle-art");
+        var directory = Path.Combine(root, "content/generated/ui/city-cycle-art");
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1,
             "Player art manifest identity differs.");
-        var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var sourceFiles = sources.ToImmutable();
+
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var entry in m.GetProperty("outputs").EnumerateArray())
         {
@@ -60,8 +56,7 @@ public sealed class PretCityCycleArt
 , "Player art output inventory differs.");
         var document = ContentJson.ParseStrict<PlayerGenderArtDocument>(Utf8.GetString(outputs["city-cycle-art.json"]), ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 && document.PaletteExpansion == "floor(rgb5 * 255 / 31)"
-            && document.Assets.Length == 2 && document.Assets.Select(a => a.Gender).Order().SequenceEqual([0, 1])
-            && !document.Limitations.IsDefaultOrEmpty, "Player art document differs.");
+            && document.Assets.Length == 2 && document.Assets.Select(a => a.Gender).Order().SequenceEqual([0, 1]), "Player art document differs.");
         var textures = ImmutableDictionary.CreateBuilder<int, byte[]>();
         foreach (var asset in document.Assets)
         {
@@ -70,8 +65,7 @@ public sealed class PretCityCycleArt
             textures.Add(asset.Gender, bytes);
         }
         using var rules = JsonDocument.Parse(outputs["cycle-rules.json"]);
-        Require(!rules.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            rules.RootElement.GetProperty("ordinaryMovement").GetProperty("pixelsPerSourceFrame").EnumerateArray().Select(p => p.GetInt32()).SequenceEqual([2,3,3,2,3,3]),
+        Require(rules.RootElement.GetProperty("ordinaryMovement").GetProperty("pixelsPerSourceFrame").EnumerateArray().Select(p => p.GetInt32()).SequenceEqual([2,3,3,2,3,3]),
             "Cycle source movement contract differs.");
         var fishing = ContentJson.ParseStrict<PretFishingArtDocument>(Utf8.GetString(outputs["fishing-art.json"]), ContentJson.CreateOptions());
         Require(fishing.SchemaVersion == 1 &&
@@ -90,7 +84,7 @@ public sealed class PretCityCycleArt
         Require(fishing.Animations.Select(a => a.SourceAnimationId).Order().SequenceEqual(Enumerable.Range(0, 12)) &&
             fishing.Animations.All(a => a.Commands.All(c => c.Opcode is "frame" or "loop" or "jump" or "end" &&
                 (c.Opcode != "frame" || c.Value is >= 0 and < 12 && c.Duration > 0))), "Fishing animation commands differ.");
-        return new(directory, document, sourceFiles, textures.ToImmutable(), rules.RootElement.Clone(),
+        return new(directory, document, textures.ToImmutable(), rules.RootElement.Clone(),
             fishing, fishTextures.ToImmutable());
     }
 

@@ -6,20 +6,19 @@ using Game.Domain.Trainers;
 
 namespace Game.Content;
 
-public sealed record VsSeekerBattleOccurrenceDocument(string SourceCommit, string Profile,
-    ImmutableArray<VsSeekerBattleOccurrence> Occurrences);
+public sealed record VsSeekerBattleOccurrenceDocument(ImmutableArray<VsSeekerBattleOccurrence> Occurrences);
 
 /// <summary>Loads Vs. Seeker trainer parties and battle occurrences.</summary>
 public static class PretVsSeekerParties
 {
-    public const string CatalogRelativePath = "content/generated/vs-seeker-parties/catalog.json";
-    public const string OccurrencesRelativePath = "content/generated/vs-seeker-parties/battle-occurrences.json";
+    public const string CatalogRelativePath = "content/generated/data/services/vs-seeker-parties/catalog.json";
+    public const string OccurrencesRelativePath = "content/generated/data/services/vs-seeker-parties/battle-occurrences.json";
 
     private static readonly JsonSerializerOptions Options = new() {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,RespectNullableAnnotations = true,RespectRequiredConstructorParameters = true
     };
     public static VsSeekerTrainerCatalog Load(string root) => VsSeekerTrainerCatalog.Authenticate(
-        JsonSerializer.Deserialize<VsSeekerTrainerDocument>(Read(root,CatalogRelativePath), Options)
+        JsonSerializer.Deserialize<VsSeekerTrainerDocument>(Read(root,CatalogRelativePath), SharedTrainerCatalog.Options(root, Options))
         ?? throw new InvalidDataException("vs_seeker_trainer_document"));
 
     public static ImmutableArray<VsSeekerBattleOccurrence> LoadOccurrences(string root)

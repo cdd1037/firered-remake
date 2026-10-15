@@ -22,9 +22,8 @@ public sealed record CaptureDexLayout(int Width, int Height, int FrontX, int Fro
     string StatsFont, string NameFont, string FooterFont, int DescriptionCenterMeasureLetterSpacing,
     int StatsLetterSpacing, int NameLetterSpacing, string NumberPrefix, string CategorySuffix,
     string HeightLabel, string WeightLabel, string FooterText);
-public sealed record CaptureDexDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretPokemonInput> Inputs,
-    ImmutableDictionary<int, CaptureDexEntry> Entries, ImmutableArray<CaptureDexAsset> Assets,
-    CaptureDexLayout Layout, ImmutableArray<string> Limitations);
+public sealed record CaptureDexDocument(int SchemaVersion, ImmutableDictionary<int, CaptureDexEntry> Entries, ImmutableArray<CaptureDexAsset> Assets,
+    CaptureDexLayout Layout);
 
 /// <summary>Authenticated local-only English revision-0 first-capture data and static art.</summary>
 public static class PretCaptureDex
@@ -38,7 +37,7 @@ public static class PretCaptureDex
         VerifyJson(json,"Capture dex");
         var doc = ContentJson.ParseStrict<CaptureDexDocument>(json, ContentJson.CreateOptions());
         if (doc.SchemaVersion != 1             || doc.Entries.Count != 2 || !doc.Entries.Keys.Order().SequenceEqual(new[] { 16,19 })
-            || doc.Assets.Length != 3 || doc.Limitations.IsDefaultOrEmpty)
+            || doc.Assets.Length != 3)
             throw new InvalidDataException("Capture dex profile is incomplete.");
         return doc;
     }

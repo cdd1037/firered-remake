@@ -10,7 +10,7 @@ public static class PretForestCaptureDex
     public const string SourceCommit = PretCaptureDex.SourceCommit;
     public const string Profile = "firered-forest-capture-dex-v1";
     public const string ComposedProfile = "firered-forest-capture-dex-composed-v1";
-    private const string DirectoryName = "content/generated/forest-capture-dex";
+    private const string DirectoryName = "content/generated/sprites/pokemon/forest-capture-dex";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly int[] SpeciesIds = [10, 11, 13, 14, 25];
 
@@ -25,23 +25,14 @@ public static class PretForestCaptureDex
         var extension = LoadExtension(projectRoot);
         var entries = original.Entries.ToBuilder();
         foreach (var entry in extension.Entries) entries.Add(entry.Key, entry.Value);
-        var inputs = original.Inputs.ToDictionary(i => i.Path, StringComparer.Ordinal);
-        foreach (var input in extension.Inputs)
-        {
-            inputs[input.Path] = input;
-        }
-        var inventory = inputs.Values.OrderBy(i => i.Path, StringComparer.Ordinal).ToImmutableArray();
         var assets = original.Assets.AddRange(extension.Assets);
         Require(entries.Count == 7 && assets.Length == 8 ,
             "Composed forest capture dex scope differs.");
         return extension with
         {
-            Profile = ComposedProfile,
-            Inputs = inventory,
             Entries = entries.ToImmutable(),
             Assets = assets,
-            Layout = original.Layout,
-            Limitations = original.Limitations.AddRange(extension.Limitations)
+            Layout = original.Layout
         };
     }
 
@@ -52,7 +43,7 @@ public static class PretForestCaptureDex
         var directory = Path.Combine(project, DirectoryName);
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 && !m.GetProperty("runtimeShadersUsed").GetBoolean() ,
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1 ,
             "Forest capture dex manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
@@ -65,12 +56,13 @@ public static class PretForestCaptureDex
         Require(JsonSerializer.Serialize(document.Layout) == JsonSerializer.Serialize(original.Layout),
             "Forest capture dex changed the legacy layout.");
         var family = PretForestPokemon.Load(PretCanonicalPokemonCatalog.Load(project, project), project);
+        var dex = PretPokedexMenu.Load(project);
         foreach (var entry in document.Entries.Values)
         {
-            Require(family.SpeciesNames[entry.SourceSpeciesId] == entry.Name && entry.NationalNumber == entry.SourceSpeciesId,
+            Require(dex.Entries[entry.SourceSpeciesId].Name == entry.Name && entry.NationalNumber == entry.SourceSpeciesId,
                 "Forest capture dex species identity differs from the existing catalog.");
             var sprite = family.Sprites.Single(s => s.SourceSpeciesId == entry.SourceSpeciesId && s.Side == "front" && s.PaletteVariant == "normal");
-            Require(entry.FrontSpritePath == "forest-pokemon/" + sprite.TexturePath,
+            Require(entry.FrontSpritePath == "sprites/pokemon/forest/" + sprite.TexturePath,
                 "Forest capture dex must reuse existing normal front art.");
             var asset = document.Assets.Single(a => a.TexturePath == entry.FootprintPath);
             Require(asset.Width == 16 && asset.Height == 16 && asset.X == original.Layout.FootprintX && asset.Y == original.Layout.FootprintY && (outputs[asset.Id + ".png"]).Length > 0, "Forest capture dex footprint identity/pixels differ.");
@@ -88,15 +80,15 @@ public static class PretForestCaptureDex
             Require(asset == expected, "Forest capture dex texture metadata differs.");
             return ReadPinned(Path.Combine(project, DirectoryName),asset.TexturePath);
         }
-        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(project,"content/generated/capture-dex/capture-dex.json")));
+        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(project,"content/generated/sprites/pokemon/capture-dex/capture-dex.json")));
         Require(original.Assets.Any(a => a == asset), "Unknown or altered legacy capture dex texture.");
-        return PretCaptureDex.ReadTexture(Path.Combine(project, "content/generated/capture-dex"), asset);
+        return PretCaptureDex.ReadTexture(Path.Combine(project, "content/generated/sprites/pokemon/capture-dex"), asset);
     }
 
     private static CaptureDexDocument LoadLegacy(string projectRoot)
     {
-        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(projectRoot,"content/generated/capture-dex/capture-dex.json")));
-        foreach (var asset in original.Assets) _ = PretCaptureDex.ReadTexture(Path.Combine(projectRoot, "content/generated/capture-dex"), asset);
+        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(projectRoot,"content/generated/sprites/pokemon/capture-dex/capture-dex.json")));
+        foreach (var asset in original.Assets) _ = PretCaptureDex.ReadTexture(Path.Combine(projectRoot, "content/generated/sprites/pokemon/capture-dex"), asset);
         return original;
     }
 
@@ -104,7 +96,7 @@ public static class PretForestCaptureDex
     {
         var document = ContentJson.ParseStrict<CaptureDexDocument>(json, ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 && document.Assets.Length == 5 &&
-            document.Entries.Keys.Order().SequenceEqual(SpeciesIds) && !document.Limitations.IsDefaultOrEmpty,
+            document.Entries.Keys.Order().SequenceEqual(SpeciesIds),
             "Forest capture dex document scope differs.");
         return document;
     }

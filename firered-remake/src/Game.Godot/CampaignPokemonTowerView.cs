@@ -33,7 +33,7 @@ public partial class CampaignView
         PokedexMenuTexture DexTexture(JsonElement row)
         {
             string file = row.GetProperty("texturePath").GetString()!;
-            string path = "content/generated/pokemon-tower-art/" + file;
+            string path = "content/generated/sprites/pokemon/pokemon-tower/" + file;
             _towerDexTextures.Add(path, art.Files[file]);
             return new(path,row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32());
         }
@@ -70,13 +70,13 @@ public partial class CampaignView
         foreach(var icon in items.Icons)
         {
             
-            _earlyItemIcons.Add(icon.Item,ItemTexture("pokemon-tower-items", icon));
+            _earlyItemIcons.Add(icon.Item,ItemTexture("data/items/pokemon-tower", icon));
         }
         var pocket=_questPocketUi??throw new InvalidDataException("Tower key-item pocket missing.");
         var position=pocket.Assets.Single(a=>a.Id==pocket.Items[0].Icon);
         var flute=items.Items.Single(x=>x.Metadata.Item.SourceItemSymbol=="ITEM_POKE_FLUTE").Metadata;
         var fluteIcon=items.Icons.Single(x=>x.Item==flute.Item.Id);const string fluteId="tower-poke-flute";
-        _questPocketTextures.Add(fluteId,ItemTexture("pokemon-tower-items", fluteIcon));
+        _questPocketTextures.Add(fluteId,ItemTexture("data/items/pokemon-tower", fluteIcon));
         _questPocketUi=pocket with { Items=pocket.Items.Add(new(flute.Item.Id.Value,flute.Item.SourceItemSymbol,flute.Item.Name,flute.Description,fluteId,flute.Item.FieldUseFunction)),
             Assets=pocket.Assets.Add(new(fluteId,fluteIcon.PngPath,fluteIcon.Width,fluteIcon.Height,position.X,position.Y)) };
     }

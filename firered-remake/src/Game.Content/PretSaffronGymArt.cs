@@ -4,15 +4,14 @@ using System.Text;
 using System.Text.Json;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record SaffronGymArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonSprite> Sprites,
+public sealed record SaffronGymArtDocument(int SchemaVersion, ImmutableArray<ForestPokemonSprite> Sprites,
     ImmutableArray<StorageArtIcon> Icons, ImmutableArray<Route3PokemonFootprint> Footprints,
-    ImmutableArray<SnorlaxArtDex> Dex, ImmutableArray<string> Limits,
-    ImmutableArray<SnorlaxArtOutput> Outputs);
+    ImmutableArray<SnorlaxArtDex> Dex,     ImmutableArray<SnorlaxArtOutput> Outputs);
 /// <summary>Authenticated enemy-only Slowbro normal/shiny sprites, source icons and footprints; no battle executor or audio activation.</summary>
 public sealed class PretSaffronGymArt
 {
     public const string Profile="firered-saffron-gym-art-v1";
-    public const string GeneratedDirectory="content/generated/saffron-gym-art/";
+    public const string GeneratedDirectory="content/generated/sprites/pokemon/saffron-gym/";
     public SaffronGymArtDocument Document { get; }
     public JsonElement Manifest { get; }
     public ImmutableDictionary<string,byte[]> Files { get; }
@@ -38,7 +37,7 @@ public sealed class PretSaffronGymArt
     {
         var root=Path.GetFullPath(projectRoot);var dependency=Path.GetFullPath(dependencyProjectRoot??root);
         var bytes=SafariSource.Read(root,GeneratedDirectory+"manifest.json");using var json=JsonDocument.Parse(bytes);var doc=SafariSource.Parse<SaffronGymArtDocument>(bytes);
-        Require(doc.SchemaVersion==1&&doc.Sprites.Length==4&&doc.Icons.Length==1&&doc.Footprints.Length==1&&doc.Dex.Length==1&&!doc.Limits.IsDefaultOrEmpty,"Saffron Gym art scope differs.");
+        Require(doc.SchemaVersion==1&&doc.Sprites.Length==4&&doc.Icons.Length==1&&doc.Footprints.Length==1&&doc.Dex.Length==1,"Saffron Gym art scope differs.");
         var expected=new Dictionary<int,string>{{80,"SLOWBRO"}};var files=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var o in doc.Outputs)files.Add(o.Path,SafariSource.Read(root,GeneratedDirectory+o.Path));
         void Pixels(string png,int w,int h)=>Require((files[png]).Length > 0,"Saffron Gym pixels differ.");

@@ -4,9 +4,7 @@ using System.Text.Json;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record VermilionEncounterDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,string MeowthRareItem,int MeowthRareMinimumRoll,
-    ImmutableArray<string> Limitations);
+public sealed record VermilionEncounterDocument(int SchemaVersion,ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,string MeowthRareItem,int MeowthRareMinimumRoll);
 /// <summary>Fixed source inputs and exact Route5/6 land tables; no water or fishing admission.</summary>
 public sealed class PretVermilionEncounters
 {
@@ -20,9 +18,9 @@ public sealed class PretVermilionEncounters
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var d=ContentJson.ParseStrict<VermilionEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-encounters/encounters.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<VermilionEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/data/encounters/vermilion.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=2 ||
-            d.HeldItemDrawBound!=100 || d.MeowthRareItem!="ITEM_NUGGET" || d.MeowthRareMinimumRoll!=95 || d.Limitations.IsDefaultOrEmpty)
+            d.HeldItemDrawBound!=100 || d.MeowthRareItem!="ITEM_NUGGET" || d.MeowthRareMinimumRoll!=95)
             throw new InvalidDataException("Vermilion encounter document scope differs.");
         foreach(var t in d.Tables)
         {

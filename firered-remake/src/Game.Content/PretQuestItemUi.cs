@@ -10,10 +10,9 @@ public sealed record QuestItemUiTextSource(string Path, string Symbol, string? F
     int StartLine, ImmutableArray<string> TerminalControls);
 public sealed record QuestItemUiEntry(string Id, string SourceSymbol, string Name, string Description,
     string Icon, string FieldUseFunction);
-public sealed record QuestItemUiDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretQuestItemInput> Inputs,
-    ImmutableArray<string> Pockets, ImmutableDictionary<string, string> Texts,
+public sealed record QuestItemUiDocument(int SchemaVersion, ImmutableArray<string> Pockets, ImmutableDictionary<string, string> Texts,
     ImmutableArray<QuestItemUiTextSource> TextSources, ImmutableArray<QuestItemUiEntry> Items,
-    ImmutableArray<QuestItemUiAsset> Assets, ImmutableArray<string> Limitations);
+    ImmutableArray<QuestItemUiAsset> Assets);
 
 /// <summary>Only local, fixed Parcel/Poke Ball text and static male pocket art; no inventory actions.</summary>
 public static class PretQuestItemUi

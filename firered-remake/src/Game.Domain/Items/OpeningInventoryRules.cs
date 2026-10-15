@@ -7,15 +7,12 @@ namespace Game.Domain.Items;
 public static class OpeningInventoryRules
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string Profile = "firered-opening-potion-v1";
     public static ItemId PotionId { get; } = new("pret:ITEM_POTION");
     public static InventoryLimits SourceLimits { get; } = new(42, 30, 999);
 
     public static void ValidateCatalog(OpeningItemsCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile != Profile || catalog.CompleteItemCatalog)
-            throw new NotSupportedException("Only the pinned opening Potion profile is supported.");
         var p = catalog.Potion;
         if (catalog.Limits != SourceLimits || catalog.InitialPcItems.IsDefault ||
             catalog.InitialPcItems.Length != 1 || catalog.InitialPcItems[0] != new InventoryStack(PotionId, 1) ||
@@ -24,7 +21,7 @@ public static class OpeningInventoryRules
             p.FieldUseFunction != "FieldUseFunc_Medicine" || p.BattleUsage != 1 ||
             p.BattleUseFunction != "BattleUseFunc_Medicine" || p.HealHp != 20 ||
             p.EffectBytes.IsDefault || !p.EffectBytes.SequenceEqual(new[] { 0, 0, 0, 0, 4, 0, 20 }))
-            throw new NotSupportedException("Unsupported inventory or Potion data in the opening profile.");
+            throw new NotSupportedException("Unsupported initial inventory or Potion definition.");
     }
 
     public static InventoryState NewGame(OpeningItemsCatalog catalog)
@@ -35,7 +32,7 @@ public static class OpeningInventoryRules
 
     public static string? Validate(OpeningItemsCatalog catalog, InventoryState? state)
     {
-        ValidateCatalog(catalog);
+        ArgumentNullException.ThrowIfNull(catalog);
         if (state is null) return "inventory_missing";
         if (state.Limits != catalog.Limits) return "inventory_limits";
         return ValidateStacks(state.BagItems, state.Limits.BagItemSlots, state.Limits.MaximumStack, "bag") ??

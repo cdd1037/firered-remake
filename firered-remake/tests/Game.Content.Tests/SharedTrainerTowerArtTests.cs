@@ -9,7 +9,7 @@ public sealed class SharedTrainerTowerArtTests
     [TestMethod]
     public void TowerSharesEarlierArtworkWithoutDroppingLogicalAssets()
     {
-        const string prefix = "content/generated/trainer-tower-presentation/";
+        const string prefix = "content/generated/sprites/pokemon/trainer-tower/";
         var catalog = PretTrainerTowerPresentation.Load(TestAssets.Root);
         var shared = 0;
         foreach (var asset in catalog.GetProperty("assets").EnumerateArray())
@@ -38,13 +38,13 @@ public sealed class SharedTrainerTowerArtTests
     public void SharedMeowthAndSeakingKeepBothSidesAndPalettes()
     {
         var catalog = PretTrainerTowerPresentation.Load(TestAssets.Root);
-        foreach (var (name, package) in new[] { ("meowth", "vermilion-pokemon"), ("seaking", "rocktunnel-pokemon") })
+        foreach (var (name, package) in new[] { ("meowth", "vermilion"), ("seaking", "rocktunnel") })
         foreach (var side in new[] { "front", "back" })
         foreach (var palette in new[] { "normal", "shiny" })
         {
             var id = $"{name}-{side}-{palette}";
             var asset = catalog.GetProperty("sprites").EnumerateArray().Single(a => a.GetProperty("id").GetString() == id);
-            Assert.AreEqual($"content/generated/{package}/{id}.png", asset.GetProperty("texturePath").GetString());
+            Assert.AreEqual($"content/generated/sprites/pokemon/{package}/{id}.png", asset.GetProperty("texturePath").GetString());
             Assert.AreEqual(side, asset.GetProperty("side").GetString());
             Assert.AreEqual(palette, asset.GetProperty("paletteVariant").GetString());
             Assert.AreEqual(side == "front" ? 144 : 40, asset.GetProperty("x").GetInt32());

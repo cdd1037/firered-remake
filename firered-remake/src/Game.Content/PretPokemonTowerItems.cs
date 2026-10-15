@@ -6,14 +6,12 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 namespace Game.Content;
 
-public sealed record PretPokemonTowerItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+public sealed record PretPokemonTowerItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
 public sealed record PretPokemonTowerPickup(string Map, string Kind, int? LocalId, int? EventIndex,
     int X, int Y, int Elevation, string Flag, int SourceFlagId, bool InitiallyHidden, bool Underfoot,
     bool RequiresItemfinder, bool AllowsOrdinaryInteraction, ItemId Item, int Quantity, string? Script,
     string? ScriptCommand, OpeningItemSourceRef MapSource, OpeningItemSourceRef? ScriptSource);
-public sealed record PretPokemonTowerPickupsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPokemonTowerPickup> Pickups, ImmutableArray<string> Limitations)
+public sealed record PretPokemonTowerPickupsDocument(int SchemaVersion, ImmutableArray<PretPokemonTowerPickup> Pickups)
 {
     /// <summary>Only these nine records may be registered with ordinary adjacent-A interaction.</summary>
     [JsonIgnore] public ImmutableArray<PretPokemonTowerPickup> OrdinaryPickups =>
@@ -36,24 +34,21 @@ public sealed record PretPokemonTowerUnderfootContract(ItemId Item, ItemId Requi
     bool ExecutionImplemented, ImmutableArray<OpeningItemSourceRef> Sources);
 public sealed record PretPokemonTowerItemUseNote(ItemId Item, string Status, ImmutableArray<string> Rules,
     ImmutableArray<OpeningItemSourceRef> Sources);
-public sealed record PretPokemonTowerItemContractsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    PretPokemonTowerFluteReward FluteReward, PretPokemonTowerFluteContract PokeFlute,
-    PretPokemonTowerUnderfootContract SootheBell, ImmutableArray<PretPokemonTowerItemUseNote> ItemUseNotes,
-    ImmutableArray<string> Limitations);
+public sealed record PretPokemonTowerItemContractsDocument(int SchemaVersion, PretPokemonTowerFluteReward FluteReward, PretPokemonTowerFluteContract PokeFlute,
+    PretPokemonTowerUnderfootContract SootheBell, ImmutableArray<PretPokemonTowerItemUseNote> ItemUseNotes);
 
 /// <summary>Authenticates metadata and source contracts; does not enable any gameplay handler.</summary>
 public static class PretPokemonTowerItems
 {
     public const string Profile = PokemonTowerItemRules.Profile;
-    private const string Stem = "pokemon-tower-items";
+    private const string Stem = "data/items/pokemon-tower";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static void Require(bool condition, string message) => PretCeladonApproachSource.Require(condition, message);
     public static PretPokemonTowerItemsDocument Load(string json, SharedMachineCatalog machines)
     {
         var options = machines.CreateJsonOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretPokemonTowerItemsDocument>(json, options);
-        Require(document.SchemaVersion == 1 && document.Items.Length == 5 && document.Icons.Length == 5 &&
-            !document.Limitations.IsDefaultOrEmpty, "Pokemon Tower item scope differs.");
+        Require(document.SchemaVersion == 1 && document.Items.Length == 5 && document.Icons.Length == 5, "Pokemon Tower item scope differs.");
         foreach (var item in document.Items)
         {
             PokemonTowerItemRules.ValidateSourceItem(item.Metadata, item.EffectBytes);
@@ -88,7 +83,7 @@ public static class PretPokemonTowerItems
         Require(document.SchemaVersion == 1 &&
             document.Pickups.Length == 10 && document.Pickups.Count(p => p.Kind == "visible") == 8 &&
             document.Pickups.Count(p => p.Kind == "hidden") == 2 && document.OrdinaryPickups.Length == 9 &&
-            document.Pickups.Select(p => p.Flag).Distinct().Count() == 10 && !document.Limitations.IsDefaultOrEmpty,
+            document.Pickups.Select(p => p.Flag).Distinct().Count() == 10,
             "Pokemon Tower pickup scope differs.");
         foreach (var pickup in document.Pickups)
         {
@@ -115,7 +110,7 @@ public static class PretPokemonTowerItems
         var bytes = PretCeladonApproachSource.Read(root,"content/generated/" + Stem + "/pokemon-tower-item-contracts.json");
         var document = ContentJson.ParseStrict<PretPokemonTowerItemContractsDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 &&
-            document.ItemUseNotes.Length == 4 && !document.Limitations.IsDefaultOrEmpty, "Pokemon Tower item contract scope differs.");
+            document.ItemUseNotes.Length == 4, "Pokemon Tower item contract scope differs.");
         var reward = document.FluteReward;
         Require(reward.Item == PokemonTowerItemRules.PokeFluteId && reward.Quantity == 1 &&
             reward.Map == "MAP_LAVENDER_TOWN_VOLUNTEER_POKEMON_HOUSE" && reward.LocalId == 1 &&

@@ -6,9 +6,8 @@ using Game.Domain.Pokemon;
 using Game.Domain.Ids;
 namespace Game.Content;
 
-public sealed record VermilionGymTrainerDocument(int SchemaVersion, string Profile, string SourceCommit, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
-    JsonElement ResolvedMoves, ImmutableArray<PokemonMoveDefinition> Moves, ImmutableArray<PretRoute1MoveName> MoveNames, ImmutableArray<string> Limitations);
+public sealed record VermilionGymTrainerDocument(int SchemaVersion, ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
+    ImmutableArray<PokemonMoveDefinition> Moves, ImmutableArray<PretRoute1MoveName> MoveNames);
 
 /// <summary>Hash-locked source tables and initial battle scripts, independent from all earlier catalogs.</summary>
 public static class PretVermilionGymTrainers
@@ -19,9 +18,9 @@ public static class PretVermilionGymTrainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-gym-trainers/trainers.json")),canonical.ReferenceOptions());
-                if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("VermilionGym trainer document identity differs.");
-        var catalog=new VermilionGymTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
+        var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/vermilion-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
+                if(doc.SchemaVersion!=1) throw new InvalidDataException("VermilionGym trainer document identity differs.");
+        var catalog=new VermilionGymTrainerCatalog(doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         VermilionGymTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
     }
     public static PokemonCatalog ExtendPokemon(PretCanonicalPokemonCatalog canonical, string root, PokemonCatalog previous, bool route11Rules=false, bool rockTunnelRules=false, bool celadonApproachRules=false)
@@ -45,8 +44,8 @@ public static class PretVermilionGymTrainers
     }
     private static VermilionGymTrainerDocument ReadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
-        var bytes=File.ReadAllBytes(SafeFile(root,"content/generated/vermilion-gym-trainers/trainers.json"));
-        return ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(bytes),canonical.ReferenceOptions());
+        var bytes=File.ReadAllBytes(SafeFile(root,"content/generated/data/trainer-battles/vermilion-gym.json"));
+        return ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(bytes),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
     }
     private static string SafeFile(string root,string relative)
     {

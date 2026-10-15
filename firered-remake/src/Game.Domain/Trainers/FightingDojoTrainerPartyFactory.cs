@@ -8,8 +8,6 @@ namespace Game.Domain.Trainers;
 /// <summary>Exact original Dojo singles through the existing trainer construction kernel.</summary>
 public static partial class FightingDojoTrainerPartyFactory
 {
-    public const string SourceCommit = TrainerPartyFactory.SourceCommit;
-    public const string RulesVersion = "firered-fighting-dojo-trainers-v1";
     public static ImmutableArray<TrainerId> AllTrainers { get; } = new[] { "KOICHI", "MIKE", "HIDEKI", "AARON", "HITOSHI" }.Select(n => new TrainerId("pret:TRAINER_BLACK_BELT_" + n)).ToImmutableArray();
     public static ImmutableArray<TrainerId> SupportedTrainers => AllTrainers;
     public static int BasePrize(FightingDojoTrainerCatalog trainers, TrainerId id)
@@ -32,15 +30,7 @@ public static partial class FightingDojoTrainerPartyFactory
     public static void ValidateCatalog(FightingDojoTrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster ||
-            catalog.Trainers is null || catalog.BattlesByScript is null || catalog.Trainers.Count != 5 || catalog.BattlesByScript.Count != 5)
-            throw new NotSupportedException("fighting_dojo_trainer_scope");
-        foreach (var id in TrainerIds)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Party.IsDefault ||
-                trainer.Party.Any(p => p is null || p.CustomMoves.IsDefault || p.EncodedSpeciesName.IsDefault) ||
-                trainer.Items.IsDefault || trainer.EncodedTrainerName.IsDefault || trainer.AiFlagSymbols.IsDefault) throw new NotSupportedException("fighting_dojo_trainer_source");
-        foreach (var script in BattleScripts)
-            if (!catalog.BattlesByScript.TryGetValue(script, out var battle) || battle is null || battle.ScriptEntry != script) throw new NotSupportedException("fighting_dojo_trainer_battle_source");
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.BattlesByScript.Values, ValidateBattle);
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {

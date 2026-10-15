@@ -8,9 +8,8 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretRockTunnelItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
-    ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<string> Limitations);
+public sealed record PretRockTunnelItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretMtMoonPickup> Pickups);
 
 /// <summary>Authenticates seven RockTunnel item declarations, icons and fifteen source pickups.</summary>
 public static class PretRockTunnelItems
@@ -24,8 +23,7 @@ public static class PretRockTunnelItems
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretRockTunnelItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 7 && document.Icons.Length == 7 &&
-            document.Pickups.Length == 15 &&
-            !document.Limitations.IsDefaultOrEmpty,
+            document.Pickups.Length == 15,
             "RockTunnel item scope differs.");
         string[] items = ["MAX_ETHER", "PERSIM_BERRY", "NANAB_BERRY", "REVIVE", "EVERSTONE", "PEARL", "HARD_STONE"];
         var definitions = document.Items;
@@ -50,7 +48,7 @@ public static class PretRockTunnelItems
 
     public static PretRockTunnelItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/rocktunnel-items/rocktunnel-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/items/rocktunnel/rocktunnel-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
 

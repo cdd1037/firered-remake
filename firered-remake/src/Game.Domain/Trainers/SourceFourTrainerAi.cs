@@ -129,10 +129,10 @@ public static partial class SourceFourTrainerAi
                 if (frame.IsSourceAbsent(target)) target = new(target.Value ^ 2);
                 if (!frame.CanAct(target)) return Fail("source_four_trainer_ai_no_living_target");
                 var context = new SourceTrainerAiSlotContext(catalog, frame, actor, target, simulated.MoveToImmutable(), rng, aiFlags, staleCurrentMove: currentMove, knownTargetHoldEffect: knownPlayerHoldEffect);
-                var result = CeruleanTrainerAi.Choose(catalog, new(user, frame.Get(target).Body!, knownPlayerAbility, aiFlags) {
+                var result = CeruleanTrainerAi.Choose(new(user, frame.Get(target).Body!, knownPlayerAbility, aiFlags) {
                     UserHasReserves = context.HasReserves(actor.Side), TargetHasReserves = context.HasReserves(target.Side) }, rng,
-                    fuchsiaRules: true, rain: frame.Field.RainTurnsRemaining > 0,
-                    reflect: frame.Sides[0].ReflectTurnsRemaining > 0, userReflect: frame.Sides[1].ReflectTurnsRemaining > 0,
+                    rain: frame.Field.RainTurnsRemaining > 0,
+                    reflect: frame.Sides[0].ReflectTurnsRemaining > 0,
                     slots: context);
                 if (!result.Succeeded || result.MoveSlot is not { } chosen) return Fail(result.Diagnostic?.Code ?? "source_four_trainer_ai_choice");
                 rng = result.Rng; trace.AddRange(result.Trace);
@@ -172,11 +172,11 @@ public sealed class SourceTrainerAiSlotContext
         BattlerSlot target, ImmutableArray<int> simulated, RngState rng, uint aiFlags,
         ImmutableArray<SourceActionSelection> prepared = default, MoveId staleCurrentMove = default, string? knownTargetHoldEffect = null)
     { Catalog = catalog; Frame = frame; Actor = actor; Target = target; Simulated = simulated; this.rng = rng; this.aiFlags = aiFlags; Prepared = prepared.IsDefault ? [] : prepared; StaleCurrentMove = staleCurrentMove; KnownTargetHoldEffect = knownTargetHoldEffect; }
-    internal string? Validate(PokemonCatalog candidate, CeruleanTrainerAiInput input, RngState candidateRng) =>
-        !ReferenceEquals(candidate, Catalog) || input.User != Frame.Get(Actor).Body || input.Target != Frame.Get(Target).Body ||
+    internal string? Validate(CeruleanTrainerAiInput input, RngState candidateRng) =>
+        input.User != Frame.Get(Actor).Body || input.Target != Frame.Get(Target).Body ||
         input.AiFlags != aiFlags || candidateRng != rng ? "source_four_trainer_ai_slot_context" : null;
-    internal bool Matches(PokemonCatalog candidate, WildBattleCombatant user, WildBattleCombatant target) =>
-        ReferenceEquals(candidate, Catalog) && user == Frame.Get(Actor).Body && target == Frame.Get(Target).Body;
+    internal bool Matches(WildBattleCombatant user, WildBattleCombatant target) =>
+        user == Frame.Get(Actor).Body && target == Frame.Get(Target).Body;
     internal int? Reserved(BattlerSlot slot) => Prepared.FirstOrDefault(a => a.Actor.Slot == slot)?.Incoming?.Index
         ?? Frame.Reservations.FirstOrDefault(r => r.Outgoing.Slot == slot)?.Incoming.Index;
     internal BattlerSlot SwitchPartner => Frame.IsSourceAbsent(Actor.Partner) ? Actor : Actor.Partner;

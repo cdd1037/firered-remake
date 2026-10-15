@@ -16,7 +16,6 @@ public sealed class PretBillRegion
     public const string Profile = "firered-bill-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
     /// <summary>Declarative source metadata only; this class registers no executable handlers.</summary>
     public JsonElement Trainers => Dependencies.GetProperty("trainers");
@@ -33,10 +32,10 @@ public sealed class PretBillRegion
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretBillRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalCeruleanEvents, JsonElement encounters, JsonElement animations)
+        JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalCeruleanEvents, JsonElement encounters, JsonElement animations)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; Dependencies = dependencies; Catalog = catalog;
         Encounters = encounters; Animations = animations;
         NpcSources = npcSources; ExternalCeruleanEvents = externalCeruleanEvents;
     }
@@ -66,7 +65,7 @@ public sealed class PretBillRegion
     public static PretBillRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/bill-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/bill");
 
         byte[] ReadPinned(string root,string path)
         {
@@ -76,37 +75,33 @@ public sealed class PretBillRegion
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
 
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Bill manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Bill manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
             if (path == "scripts.json") continue;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "bill-region/" + path)) continue;
+            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "maps/regions/bill/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate bill output.");
         }
         using var catalog = JsonDocument.Parse(outputs["bill-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Routes 24/25 and Sea Cottage; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact))
             {
 
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate Bill runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
@@ -116,8 +111,7 @@ public sealed class PretBillRegion
             constants["LOCALID_BILL_HUMAN"] == 1 && constants["LOCALID_BILL_CLEFAIRY"] == 2,
             "Bill progression/local actor constants differ.");
         using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        Require(!dependencies.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 19 &&
+        Require(dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 19 &&
             dependencies.RootElement.GetProperty("billPcPreviews").GetArrayLength() == 4 &&
             !dependencies.RootElement.GetProperty("ceruleanNorthConnection").GetProperty("enabled").GetBoolean(),
             "Bill dependency scope differs.");
@@ -128,8 +122,7 @@ public sealed class PretBillRegion
             "Bill encounter or animation scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/CeruleanCity/map.json"));
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(), encounters.RootElement.Clone(), animations.RootElement.Clone());
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(), dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(), encounters.RootElement.Clone(), animations.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

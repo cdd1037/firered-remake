@@ -7,8 +7,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record PretGoodRodTablesDocument(int SchemaVersion, string ResourceId, string SourceCommit,
-    string Rod, ImmutableArray<OldRodEncounterTable> Tables, ImmutableArray<OldRodEncounterTable> SourceOnlyTables);
+public sealed record PretGoodRodTablesDocument(int SchemaVersion, string ResourceId, string Rod, ImmutableArray<OldRodEncounterTable> Tables, ImmutableArray<OldRodEncounterTable> SourceOnlyTables);
 
 /// <summary>Authenticates the original Good Rod house, key item and loaded ordinary Kanto tables. Admission belongs to the current composition.</summary>
 public sealed class PretGoodRodService
@@ -56,7 +55,7 @@ public sealed class PretGoodRodService
 
     public static PretGoodRodService Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"good-rod-service");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/good-rod-service");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Good Rod actor collection differs.");
         foreach (var texture in npc.EnumerateArray())
@@ -70,15 +69,15 @@ public sealed class PretGoodRodService
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Good Rod service resources; current-game admission is separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
+        string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
+        Need(id == HouseMapId.Value && path == relative ,
             "Good Rod compact map binding differs.");
         var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 10 && runtime.Height == 10,
+        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 10 && runtime.Height == 10,
             "Good Rod house dimensions differ.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 4 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 0,
             "Good Rod original event collection differs.");
@@ -113,7 +112,7 @@ public sealed class PretGoodRodService
             .SequenceEqual(document.Tables.Select(t => t.Map.Value).Order(StringComparer.Ordinal)), "Good Rod table IDs/order differ.");
         foreach (var table in all)
         {
-            Need(table.SourcePath == OldRodEncounterRules.SourcePath && table.Slots.Length == 3 &&
+            Need(table.Slots.Length == 3 &&
                 table.Slots.Select(s => s.Index).SequenceEqual([2, 3, 4]) && table.Slots.Select(s => s.Weight).SequenceEqual([60, 20, 20]),
                 "Good Rod source slot identity differs.");
             Need(table.RawEncounterRate is >= 1 and <= 255 && table.Slots.All(slot =>

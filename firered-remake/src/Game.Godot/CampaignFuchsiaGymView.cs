@@ -26,7 +26,7 @@ public partial class CampaignView
         foreach (var icon in PretFuchsiaGymItems.LoadProject(_root).Icons)
         {
             
-            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, ItemTexture("fuchsia-gym-items", icon));
+            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, ItemTexture("data/items/fuchsia-gym", icon));
         }
         _fuchsiaGymPresentation = presentation;
         Write("fuchsiaGymPresentation", new {             badgeFlag = "FLAG_BADGE05_GET", tm06Fanfare = "MUS_LEVEL_UP", audibleOutputVerified = false });

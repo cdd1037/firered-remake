@@ -33,7 +33,7 @@ encounter version chain in initialization, validation and encounter checks.
 
 ## Startup rules
 
-Run `bash scripts/launch-current.sh [current-checkpoint.json]`. The current save
+Run `bash scripts/dev/launch-current.sh [current-checkpoint.json]`. The current save
 folder is `.play/current`, separate from the original Celio files.
 
 The default is current. `--profile=current`, `--profile current`,
@@ -120,4 +120,4 @@ establish native visual or audible-output acceptance.
 
 ## Integrated checkpoint conversion
 
-The normal Godot and Tooling targets were built after integration with zero warnings/errors. `Game.Tooling convert-current-checkpoint SOURCE NEW_DESTINATION` converts only the backed-up Celio envelope into the current rules boundary. It strictly validates before publishing a flushed new file and refuses an existing destination. `scripts/check-current-checkpoint-conversion.py` exercised five actual CLI cases: valid47819 conversion, existing-target refusal, source-as-target refusal, malformed-envelope refusal before any target, and refusal to re-convert a current file. Every case preserved the original bytes; no temporary staging file remained. Full payload/generation equality and current output SHA598f8a51a736773c82d75b1ea47a987ec3424aae695f9c73a7baf6c1072c3a3b match the independent R1 current-save result. Evidence: `evidence/current-composition-20261013/conversion-run01/result.json`.
+The normal Godot and Tooling targets were built after integration with zero warnings/errors. `Game.Tooling convert-current-checkpoint SOURCE NEW_DESTINATION` converts only the backed-up Celio envelope into the current rules boundary. It strictly validates before publishing a flushed new file and refuses an existing destination. `scripts/checks/check-current-checkpoint-conversion.py` exercised five actual CLI cases: valid47819 conversion, existing-target refusal, source-as-target refusal, malformed-envelope refusal before any target, and refusal to re-convert a current file. Every case preserved the original bytes; no temporary staging file remained. Full payload/generation equality and current output SHA598f8a51a736773c82d75b1ea47a987ec3424aae695f9c73a7baf6c1072c3a3b match the independent R1 current-save result. Evidence: `evidence/current-composition-20261013/conversion-run01/result.json`.

@@ -9,18 +9,17 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record PretRuntimeMapSource(string Path);
 public sealed record PretRuntimeMapBehavior(int Id, string Name);
 public sealed record PretRuntimeMapEntry(string StableId, string Path);
 internal sealed record PretRuntimeMapRegistryEntry(string Path);
-internal sealed record PretRuntimeMapRegistry(int SchemaVersion, string ConverterVersion, string SourceCommit,
+internal sealed record PretRuntimeMapRegistry(int SchemaVersion,
     PretWorldMetadata Metadata);
-internal sealed record PretRuntimeMapManifest(int SchemaVersion, string ConverterVersion, string SourceCommit, ImmutableArray<PretRuntimeMapEntry> Maps,
+internal sealed record PretRuntimeMapManifest(int SchemaVersion, ImmutableArray<PretRuntimeMapEntry> Maps,
     PretRuntimeMapRegistryEntry SourceRegistry);
-internal sealed record PretRuntimeMapDocument(int SchemaVersion, string ConverterVersion, string SourceCommit, string StableId, SourceRef SourceRef,
+internal sealed record PretRuntimeMapDocument(int SchemaVersion, string StableId, string SourceMapSymbol, string SourceMapName,
     int Width, int Height, int TileSize, int BorderWidth, int BorderHeight, string TexturePath,
     ImmutableArray<PretWorldArtifact> Artifacts, PretWorldSpawn? TechnicalSpawn, JsonElement Events,
-    string Blocks, string BorderBlocks, ImmutableArray<PretRuntimeMapSource> AttributeSources,
+    string Blocks, string BorderBlocks,
     ImmutableArray<ImmutableArray<uint>> Metatiles, ImmutableArray<PretRuntimeMapBehavior> Behaviors,
     ImmutableArray<string> ScriptPaths);
 
@@ -29,7 +28,6 @@ internal sealed record PretRuntimeMapDocument(int SchemaVersion, string Converte
 /// </summary>
 public sealed class PretRuntimeMapCatalog
 {
-    public const string ConverterVersion = "firered-runtime-map-v2";
     public ImmutableDictionary<MapId, PretRuntimeMapData> Maps { get; }
     public ImmutableArray<PretRuntimeMapEntry> Entries { get; }
     public PretWorldMetadata BaseMetadata { get; }
@@ -39,9 +37,9 @@ public sealed class PretRuntimeMapCatalog
 
     public static PretRuntimeMapCatalog Load(string directory)
     {
-        var manifest = PretRuntimeMapValidation.Decode<PretRuntimeMapManifest>(File.ReadAllBytes(Path.Combine(directory, "manifest.json")));
-        PretRuntimeMapValidation.Require(manifest.SchemaVersion == 2 && manifest.ConverterVersion == ConverterVersion &&
-            manifest.SourceCommit == PretWorldMap.SourceCommit && !manifest.Maps.IsDefaultOrEmpty,
+        var manifest = PretRuntimeMapValidation.Decode<PretRuntimeMapManifest>(File.ReadAllBytes(directory));
+        PretRuntimeMapValidation.Require(manifest.SchemaVersion == 3 &&
+            !manifest.Maps.IsDefaultOrEmpty,
             "Unsupported runtime map format.");
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretRuntimeMapData>();
         var mapIds = new Dictionary<string, MapId>(StringComparer.Ordinal);
@@ -52,7 +50,7 @@ public sealed class PretRuntimeMapCatalog
         {
             var file = PretRuntimeMapValidation.SafeFile(PretRuntimeMapValidation.GeneratedRoot(directory), entry.Path);
             var map = PretRuntimeMapData.Decode(File.ReadAllBytes(file), entry.StableId, Resolve);
-            PretRuntimeMapValidation.Require(mapIds.TryAdd(map.SourceRef.Symbol, map.Id), "Duplicate runtime map source symbol.");
+            PretRuntimeMapValidation.Require(mapIds.TryAdd(map.SourceMapSymbol, map.Id), "Duplicate runtime map source symbol.");
             PretRuntimeMapValidation.Require(maps.TryAdd(map.Id, map), "Duplicate runtime map ID.");
         }
         foreach (var map in maps.Values)
@@ -66,14 +64,14 @@ public sealed class PretRuntimeMapCatalog
     // The Gym catalog references its canonical compact map; its region supplies source metadata.
     internal PretRuntimeMapCatalog FuchsiaGymPackage(string projectRoot)
     {
-        const string stem = "fuchsia-city-gym/";
-        var directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/fuchsia-gym-region");
+        const string filename = "fuchsia-city-gym.json";
+        var directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/maps/regions/fuchsia-gym");
         var manifestBytes = File.ReadAllBytes(Path.Combine(directory, "manifest.json"));
         using var manifest = JsonDocument.Parse(manifestBytes);
         var outputs = manifest.RootElement.GetProperty("outputs").EnumerateArray().ToDictionary(o => o.GetProperty("path").GetString()!, StringComparer.Ordinal);
-        _ = outputs[stem + "runtime-map.json"];
-        var bytes = File.ReadAllBytes(Path.Combine(directory, stem + "runtime-map.json"));
-        var entry = new PretRuntimeMapEntry("map.fuchsia-city-gym","fuchsia-gym-region/" + stem + "runtime-map.json");
+        _ = outputs[filename];
+        var bytes = File.ReadAllBytes(Path.Combine(directory, filename));
+        var entry = new PretRuntimeMapEntry("map.fuchsia-city-gym","maps/regions/fuchsia-gym/" + filename);
         var map = PretRuntimeMapData.Decode(bytes, entry);
         return new(ImmutableDictionary<MapId, PretRuntimeMapData>.Empty.Add(map.Id, map), [entry], BaseMetadata);
     }
@@ -82,7 +80,7 @@ public sealed class PretRuntimeMapCatalog
     {
         var registry = PretRuntimeMapValidation.Decode<PretRuntimeMapRegistry>(
             File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(PretRuntimeMapValidation.GeneratedRoot(directory), entry.Path)));
-        PretRuntimeMapValidation.Require(registry.SchemaVersion == 2 && registry.ConverterVersion == ConverterVersion && registry.SourceCommit == PretWorldMap.SourceCommit,
+        PretRuntimeMapValidation.Require(registry.SchemaVersion == 3,
             "Unsupported runtime source registry format.");
         return registry.Metadata;
     }
@@ -98,7 +96,7 @@ public sealed class PretRuntimeMapData : IFieldMap
     private readonly PretRuntimeMapDocument _data;
     private readonly ImmutableArray<ushort> _blocks;
     private readonly ImmutableArray<ushort> _borderBlocks;
-    private readonly ImmutableDictionary<int, (uint Attributes, SourceRef Source)> _metatiles;
+    private readonly ImmutableDictionary<int, uint> _metatiles;
     private readonly ImmutableDictionary<int, string> _behaviors;
     private readonly Func<string, MapId> _mapIdFromSymbol;
     public MapId Id { get; }
@@ -107,7 +105,8 @@ public sealed class PretRuntimeMapData : IFieldMap
     public int TileSize => _data.TileSize;
     public int BorderWidth => _data.BorderWidth;
     public int BorderHeight => _data.BorderHeight;
-    public SourceRef SourceRef => _data.SourceRef;
+    public string SourceMapSymbol => _data.SourceMapSymbol;
+    public string SourceMapName => _data.SourceMapName;
     public string TexturePath => _data.TexturePath;
     public JsonElement Events => _data.Events;
     public PretWorldSpawn? TechnicalSpawn => _data.TechnicalSpawn;
@@ -118,10 +117,10 @@ public sealed class PretRuntimeMapData : IFieldMap
     public ImmutableArray<FieldWarp> FieldWarps => Events.GetProperty("warp_events").EnumerateArray().Select((e, index) =>
         new FieldWarp(index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
             _mapIdFromSymbol(e.GetProperty("dest_map").GetString()!),
-            PretRocketHideoutRegion.ParseWarpId(SourceRef.Symbol, e))).ToImmutableArray();
+            PretRocketHideoutRegion.ParseWarpId(SourceMapSymbol, e))).ToImmutableArray();
 
     private PretRuntimeMapData(PretRuntimeMapDocument data, ImmutableArray<ushort> blocks,
-        ImmutableArray<ushort> borderBlocks, ImmutableDictionary<int, (uint Attributes, SourceRef Source)> metatiles,
+        ImmutableArray<ushort> borderBlocks, ImmutableDictionary<int, uint> metatiles,
         ImmutableDictionary<int, string> behaviors, Func<string, MapId>? mapResolver = null)
     {
         _data = data; _blocks = blocks; _borderBlocks = borderBlocks; _metatiles = metatiles; _behaviors = behaviors;
@@ -134,11 +133,11 @@ public sealed class PretRuntimeMapData : IFieldMap
         if (x < 0 || y < 0 || x >= Width || y >= Height) return null;
         var block = PretWorldDecoder.DecodeBlock(_blocks[y * Width + x]);
         return new(block.Collision != 0, block.Elevation,
-            PretWorldDecoder.Behavior((int)(_metatiles[block.MetatileId].Attributes & 511)));
+            PretWorldDecoder.Behavior((int)(_metatiles[block.MetatileId] & 511)));
     }
 
     public int? SourceBehaviorAt(int x, int y)
-        => x < 0 || y < 0 || x >= Width || y >= Height ? null : (int)(_metatiles[_blocks[y * Width + x] & 1023].Attributes & 511);
+        => x < 0 || y < 0 || x >= Width || y >= Height ? null : (int)(_metatiles[_blocks[y * Width + x] & 1023] & 511);
 
     public PretWorldCell? GetSourceCell(int x, int y)
         => x < 0 || y < 0 || x >= Width || y >= Height ? null : Expand(_blocks[y * Width + x], x, y);
@@ -153,10 +152,10 @@ public sealed class PretRuntimeMapData : IFieldMap
     {
         var block = PretWorldDecoder.DecodeBlock(raw);
         var metatile = _metatiles[block.MetatileId];
-        var a = PretWorldDecoder.DecodeAttributes(metatile.Attributes);
-        return new(x, y, raw, block.MetatileId, block.Collision, block.Elevation, metatile.Attributes,
+        var a = PretWorldDecoder.DecodeAttributes(metatile);
+        return new(x, y, raw, block.MetatileId, block.Collision, block.Elevation, metatile,
             a.BehaviorId, _behaviors[a.BehaviorId], a.Terrain, a.Attribute2, a.Attribute3, a.EncounterType,
-            a.Attribute5, a.LayerType, a.Attribute7, PretWorldDecoder.Movement(a.BehaviorId), metatile.Source);
+            a.Attribute5, a.LayerType, a.Attribute7, PretWorldDecoder.Movement(a.BehaviorId));
     }
 
     internal static PretRuntimeMapData Decode(byte[] bytes, PretRuntimeMapEntry expected) => Decode(bytes, expected.StableId);
@@ -172,53 +171,35 @@ public sealed class PretRuntimeMapData : IFieldMap
     {
         var d = PretRuntimeMapValidation.Decode<PretRuntimeMapDocument>(bytes);
         void Require(bool condition, string message) => PretRuntimeMapValidation.Require(condition, message);
-        Require(d.SchemaVersion == 2 && d.ConverterVersion == PretRuntimeMapCatalog.ConverterVersion &&
-            d.StableId == expectedStableId && d.SourceCommit == PretWorldMap.SourceCommit,
+        Require(d.SchemaVersion == 3 &&
+            d.StableId == expectedStableId,
             "Runtime map version/source identity differs.");
         Require(d.Width is > 0 and <= 1024 && d.Height is > 0 and <= 1024 && (long)d.Width * d.Height <= 262144 &&
             d.TileSize == 16 && d.BorderWidth is > 0 and <= 64 && d.BorderHeight is > 0 and <= 64,
             "Runtime map dimensions out of bounds.");
-        Require(d.SourceRef is not null && d.SourceRef.Kind == SourceKind.Pret && d.SourceRef.Repository == "pret/pokefirered" && d.SourceRef.Commit == PretWorldMap.SourceCommit &&
-            !string.IsNullOrWhiteSpace(d.SourceRef.Symbol) && d.SourceRef.Symbol.StartsWith("MAP_", StringComparison.Ordinal),
-            "Runtime map source reference differs.");
-        var source = d.SourceRef!;
-        _ = PretRuntimeMapValidation.SafeFile(".", source.Path);
-        Require(source.Path.StartsWith("data/maps/", StringComparison.Ordinal) && source.Path.EndsWith("/map.json", StringComparison.Ordinal),
-            "Runtime map source path differs.");
-        Require(!d.AttributeSources.IsDefaultOrEmpty && d.AttributeSources.Length <= 2 &&
-            !d.Metatiles.IsDefaultOrEmpty && d.Metatiles.Length <= 1024 && !d.Behaviors.IsDefaultOrEmpty && d.Behaviors.Length <= 512,
+        Require(!string.IsNullOrWhiteSpace(d.SourceMapSymbol) && d.SourceMapSymbol.StartsWith("MAP_", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(d.SourceMapName) && d.SourceMapName.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'),
+            "Invalid runtime map identity.");
+        Require(!d.Metatiles.IsDefaultOrEmpty && d.Metatiles.Length <= 1024 && !d.Behaviors.IsDefaultOrEmpty && d.Behaviors.Length <= 512,
             "Incomplete runtime map tables.");
-        var sourcePaths = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var s in d.AttributeSources)
-        {
-            Require(s is not null, "Invalid runtime attribute source.");
-            _ = PretRuntimeMapValidation.SafeFile(".", s!.Path);
-            Require(s.Path.StartsWith("data/tilesets/", StringComparison.Ordinal) && s.Path.EndsWith("/metatile_attributes.bin", StringComparison.Ordinal) &&
-                sourcePaths.Add(s.Path), "Invalid/duplicate runtime attribute source.");
-        }
         var behaviors = ImmutableDictionary.CreateBuilder<int, string>();
         foreach (var behavior in d.Behaviors)
             Require(behavior is not null && behavior.Id is >= 0 and <= 511 &&
                 !string.IsNullOrWhiteSpace(behavior.Name) && behavior.Name.Length <= 100 &&
                 behaviors.TryAdd(behavior.Id, behavior.Name), "Invalid/duplicate runtime behavior.");
-        var metatiles = ImmutableDictionary.CreateBuilder<int, (uint Attributes, SourceRef Source)>();
-        var usedSources = new HashSet<uint>();
+        var metatiles = ImmutableDictionary.CreateBuilder<int, uint>();
         var usedBehaviors = new HashSet<int>();
         foreach (var entry in d.Metatiles)
         {
-            Require(!entry.IsDefault && entry.Length == 3 && entry[0] <= 1023 && entry[2] < d.AttributeSources.Length,
+            Require(!entry.IsDefault && entry.Length == 2 && entry[0] <= 1023,
                 "Runtime metatile index out of bounds.");
             var id = (int)entry[0];
             var decoded = PretWorldDecoder.DecodeAttributes(entry[1]);
             Require(decoded.LayerType <= 2 && behaviors.ContainsKey(decoded.BehaviorId), "Runtime attribute layer/behavior is invalid.");
-            var s = d.AttributeSources[(int)entry[2]];
-            Require(s.Path.StartsWith(id < 640 ? "data/tilesets/primary/" : "data/tilesets/secondary/", StringComparison.Ordinal),
-                "Runtime metatile tileset partition differs.");
-            var localId = id < 640 ? id : id - 640;
-            Require(metatiles.TryAdd(id, (entry[1], new(SourceKind.Pret,s.Path,$"metatile_{localId:x3}",                source.Repository,source.Commit))), "Duplicate runtime metatile ID.");
-            usedSources.Add(entry[2]); usedBehaviors.Add(decoded.BehaviorId);
+            Require(metatiles.TryAdd(id, entry[1]), "Duplicate runtime metatile ID.");
+            usedBehaviors.Add(decoded.BehaviorId);
         }
-        Require(usedSources.Count == d.AttributeSources.Length && usedBehaviors.SetEquals(behaviors.Keys), "Unused runtime source/behavior table entry.");
+        Require(usedBehaviors.SetEquals(behaviors.Keys), "Unused runtime behavior table entry.");
         ImmutableArray<ushort> DecodeBlocks(string base64, int count)
         {
             Require(base64 is not null && base64.Length == ((count * 2 + 2) / 3) * 4, "Runtime block encoding length differs.");
@@ -238,35 +219,36 @@ public sealed class PretRuntimeMapData : IFieldMap
         var cells = DecodeBlocks(d.Blocks, d.Width * d.Height);
         var border = DecodeBlocks(d.BorderBlocks, d.BorderWidth * d.BorderHeight);
         Require(cells.Concat(border).Select(v => (int)(v & 1023)).ToHashSet().SetEquals(metatiles.Keys), "Unused runtime metatile definition.");
-        ValidateEvents(d.Events, source.Symbol, d.Width, d.Height);
+        ValidateEvents(d.Events, d.SourceMapSymbol, d.Width, d.Height);
         if (d.TechnicalSpawn is { } spawn)
         {
             Require(spawn.X >= 0 && spawn.X < d.Width && spawn.Y >= 0 && spawn.Y < d.Height && spawn.Elevation is >= 0 and <= 15 &&
                 !string.IsNullOrWhiteSpace(spawn.Reason), "Runtime spawn out of bounds.");
             var block = PretWorldDecoder.DecodeBlock(cells[spawn.Y * d.Width + spawn.X]);
-            Require(block.Collision == 0 && block.Elevation == spawn.Elevation && (metatiles[block.MetatileId].Attributes & 511) == 0,
+            Require(block.Collision == 0 && block.Elevation == spawn.Elevation && (metatiles[block.MetatileId] & 511) == 0,
                 "Runtime spawn is not an ordinary walkable source cell.");
         }
         Require(!d.ScriptPaths.IsDefaultOrEmpty && d.ScriptPaths.Length <= 2, "Missing runtime map scripts.");
         var scriptPaths = new HashSet<string>(StringComparer.Ordinal);
-        var stem = source.Path[..^"map.json".Length];
+        var stem = "data/maps/" + d.SourceMapName + "/";
         foreach (var path in d.ScriptPaths)
             Require(path is not null && (path == stem + "scripts.inc" || path == stem + "text.inc") &&
                 scriptPaths.Add(path), "Invalid runtime script path.");
         Require(scriptPaths.Contains(stem + "scripts.inc"), "Missing live runtime script dependency.");
-        Require(d.TexturePath == "map.png" && !d.Artifacts.IsDefaultOrEmpty && d.Artifacts.Length <= 9, "Invalid runtime artifact inventory.");
+        Require(Path.GetFileName(d.TexturePath) == d.TexturePath && d.TexturePath.EndsWith("map.png", StringComparison.Ordinal) && !d.Artifacts.IsDefaultOrEmpty && d.Artifacts.Length <= 9, "Invalid runtime artifact inventory.");
         var artifacts = new HashSet<string>(StringComparer.Ordinal);
         foreach (var artifact in d.Artifacts)
         {
             Require(artifact is not null && artifacts.Add(artifact.Path), "Invalid/duplicate runtime artifact.");
             var a = artifact!;
-            Require(a.Path is "bottom.png" or "middle.png" or "top.png" or "map.png" or "player.png" or
+            var artifactName = a.Path.StartsWith(d.TexturePath[..^"map.png".Length], StringComparison.Ordinal) ? a.Path[d.TexturePath[..^"map.png".Length].Length..] : a.Path;
+            Require(Path.GetFileName(a.Path) == a.Path && artifactName is "bottom.png" or "middle.png" or "top.png" or "map.png" or
                 "border.png" or "border-bottom.png" or "border-middle.png" or "border-top.png", "Unknown runtime artifact path.");
-            var size = a.Path == "player.png" ? (144, 32) : a.Path.StartsWith("border", StringComparison.Ordinal) ?
+            var size = artifactName.StartsWith("border", StringComparison.Ordinal) ?
                 (d.BorderWidth * 16, d.BorderHeight * 16) : (d.Width * 16, d.Height * 16);
             Require((a.Width, a.Height) == size, "Runtime artifact dimensions differ.");
         }
-        Require(new[] { "bottom.png", "middle.png", "top.png", "map.png" }.All(artifacts.Contains), "Missing runtime visual layer.");
+        Require(new[] { "bottom.png", "middle.png", "top.png", "map.png" }.All(name => artifacts.Contains(d.TexturePath[..^"map.png".Length] + name)), "Missing runtime visual layer.");
         return new(d, cells, border, metatiles.ToImmutable(), behaviors.ToImmutable(), mapResolver);
     }
 
@@ -309,6 +291,7 @@ public sealed class PretRuntimeMapData : IFieldMap
 internal static class PretRuntimeMapValidation
 {
     internal static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
+    internal static string ProjectRoot(string path) => Path.GetFullPath(Path.Combine(GeneratedRoot(path), "../.."));
     internal static string GeneratedRoot(string path)
     {
         for (var directory = new DirectoryInfo(Path.GetFullPath(path)); directory is not null; directory = directory.Parent)

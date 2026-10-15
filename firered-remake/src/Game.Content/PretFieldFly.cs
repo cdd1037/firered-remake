@@ -17,8 +17,8 @@ public static class PretFieldFly
         return File.ReadAllBytes(Path.Combine(root, path));
     }
     public static FieldFlySourceDocument LoadDocument(string root, SharedMachineCatalog? shared = null) => ContentJson.ParseStrict<FieldFlySourceDocument>(
-        Encoding.UTF8.GetString(Read(root,"content/generated/field-fly/field.json")), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
+        Encoding.UTF8.GetString(Read(root,"content/generated/data/services/field-fly/field.json")), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
     public static MachineDefinition LoadHm02(string root, SharedMachineCatalog? shared = null) => ContentJson.ParseStrict<MachineDefinition>(
-        Encoding.UTF8.GetString(Read(root,"content/generated/field-fly/hm02.json")), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
+        Encoding.UTF8.GetString(Read(root,"content/generated/data/services/field-fly/hm02.json")), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
     public static FieldFlyCatalog Load(string root, SharedMachineCatalog? shared = null) => FieldFlyCatalog.Authenticate(LoadDocument(root, shared));
 }

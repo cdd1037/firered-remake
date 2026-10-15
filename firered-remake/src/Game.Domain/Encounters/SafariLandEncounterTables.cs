@@ -11,7 +11,6 @@ public static class SafariLandEncounterTables
     public static ImmutableArray<EarlyLandEncounterTable> All { get; } = [Center, East, North, West];
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = All.SelectMany(t => t.Slots).Select(s => s.Species).Distinct().ToImmutableArray();
     private static EarlyLandEncounterTable Create(string area, (string Species, byte Level)[] rows) =>
-        new(new("map.safari-zone-" + area.ToLowerInvariant()), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath,
-            "sSafariZone" + area + "_FireRed", 21,
+        new(new("map.safari-zone-" + area.ToLowerInvariant()), 21,
             rows.Select((s, i) => new EarlyLandEncounterSlot(i, new("pret:SPECIES_" + s.Species), s.Level, s.Level, EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
 }

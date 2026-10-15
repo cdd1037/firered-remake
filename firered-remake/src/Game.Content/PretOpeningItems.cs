@@ -1,29 +1,18 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretOpeningItemInput(string Path);
-public sealed record PretOpeningItemsDocument(int SchemaVersion, ImmutableArray<PretOpeningItemInput> Inputs,
-    ImmutableArray<string> Limitations, OpeningItemsCatalog Catalog);
+public sealed record PretOpeningItemsDocument(int SchemaVersion, OpeningItemsCatalog Catalog);
 
-/// <summary>Validates the complete reviewed UTF-8 artifact; the caller owns filesystem access.</summary>
+/// <summary>Loads the initial PC inventory and executable Potion definition.</summary>
 public static class PretOpeningItems
 {
 
     public static OpeningItemsCatalog Load(string generatedJson, SharedItemCatalog items)
     {
         var document = ContentJson.ParseStrict<PretOpeningItemsDocument>(generatedJson, items.CreateJsonOptions());
-        if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||
-            document.Limitations.IsDefaultOrEmpty || document.Catalog is null)
-            throw ContentJson.Error("opening_items_profile", "$", "The complete bounded Potion document is required.");
-        var inputs = new Dictionary<string, PretOpeningItemInput>(StringComparer.Ordinal);
-        foreach (var input in document.Inputs)
-            if (input is null || string.IsNullOrWhiteSpace(input.Path) || !inputs.TryAdd(input.Path, input))
-                throw ContentJson.Error("opening_items_inputs", "$.inputs", "Invalid or duplicate source identity.");
+        if (document.SchemaVersion != 1 || document.Catalog is null)
+            throw ContentJson.Error("opening_items_schema", "$", "The opening item catalog is required.");
         try { OpeningInventoryRules.ValidateCatalog(document.Catalog); }
         catch (ArgumentException ex) { throw ContentJson.Error("opening_items_catalog", "$.catalog", ex.Message); }
         catch (NotSupportedException ex) { throw ContentJson.Error("opening_items_catalog", "$.catalog", ex.Message); }

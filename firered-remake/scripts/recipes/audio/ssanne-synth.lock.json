@@ -1,0 +1,3121 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "asm/macros/battle_anim_script.inc"
+    },
+    {
+      "path": "data/battle_anim_scripts.s"
+    },
+    {
+      "path": "data/event_scripts.s"
+    },
+    {
+      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Corridor/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Corridor/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Corridor/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room1/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room1/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room1/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room2/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room2/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room3/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room3/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room3/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room4/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room4/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room4/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room5/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room5/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room5/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room6/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room6/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room6/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room7/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room7/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_1F_Room7/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Corridor/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room1/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room1/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room1/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room2/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room2/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room2/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room3/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room3/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room3/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room4/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room4/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room4/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room5/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room5/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room5/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room6/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room6/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_2F_Room6/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_3F_Corridor/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_3F_Corridor/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_3F_Corridor/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Corridor/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Corridor/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room1/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room2/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room2/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room3/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room3/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room4/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room5/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room5/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_B1F_Room5/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_CaptainsOffice/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_Deck/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_Deck/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_Deck/text.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_Exterior/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_Exterior/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_Kitchen/map.json"
+    },
+    {
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc"
+    },
+    {
+      "path": "data/maps/SSAnne_Kitchen/text.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity/scripts.inc"
+    },
+    {
+      "path": "data/maps/VermilionCity/text.inc"
+    },
+    {
+      "path": "data/scripts/field_moves.inc"
+    },
+    {
+      "path": "data/scripts/item_ball_scripts.inc"
+    },
+    {
+      "path": "data/scripts/movement.inc"
+    },
+    {
+      "path": "data/scripts/obtain_item.inc"
+    },
+    {
+      "path": "data/scripts/pc.inc"
+    },
+    {
+      "path": "data/scripts/pkmn_center_nurse.inc"
+    },
+    {
+      "path": "data/scripts/pokedex_rating.inc"
+    },
+    {
+      "path": "data/scripts/seagallop.inc"
+    },
+    {
+      "path": "data/scripts/std_msgbox.inc"
+    },
+    {
+      "path": "data/scripts/trainer_battle.inc"
+    },
+    {
+      "path": "data/scripts/white_out.inc"
+    },
+    {
+      "path": "data/text/obtain_item.inc"
+    },
+    {
+      "path": "data/text/pc.inc"
+    },
+    {
+      "path": "data/text/pokedex_rating.inc"
+    },
+    {
+      "path": "data/text/seagallop.inc"
+    },
+    {
+      "path": "data/text/white_out.inc"
+    },
+    {
+      "path": "include/constants/songs.h"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "sound/cry_tables.inc"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/growlithe.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/machoke.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/ponyta.wav"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/tentacool.wav"
+    },
+    {
+      "path": "sound/song_table.inc"
+    },
+    {
+      "path": "sound/songs/midi/mus_ss_anne.mid"
+    },
+    {
+      "path": "sound/songs/midi/mus_surf.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_brick_break.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_confuse_ray.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_cut.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_detect.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_dizzy_punch.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_dragon_rage.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_psybeam.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_sky_uppercut.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_snore.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_m_vital_throw.mid"
+    },
+    {
+      "path": "sound/songs/midi/se_ss_anne_horn.mid"
+    },
+    {
+      "path": "src/ss_anne.c"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/recipes/audio/synth-ssanne-cues.json"
+    },
+    {
+      "path": "content/generated/audio/synth/firered.pack"
+    },
+    {
+      "path": "content/generated/audio/synth/normal-cries.bin"
+    },
+    {
+      "path": "content/generated/maps/regions/ssanne/ssanne-catalog.json"
+    },
+    {
+      "path": "content/generated/data/trainer-battles/ssanne.json"
+    },
+    {
+      "path": "content/generated/sprites/pokemon/ssanne/supplement.json"
+    },
+    {
+      "path": "content/generated/data/pokemon/canonical/catalog.json"
+    },
+    {
+      "path": "content/generated/data/trainers.json"
+    }
+  ],
+  "priorManifest": {
+    "cueCount": 222
+  },
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1,
+  "scriptBlocks": [
+    {
+      "endLine": 27,
+      "label": "Common_Movement_FaceOriginalDirection",
+      "labelLine": 24,
+      "path": "data/scripts/movement.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 19,
+      "label": "Common_Movement_FacePlayer",
+      "labelLine": 15,
+      "path": "data/scripts/movement.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 43,
+      "label": "Common_Movement_WalkInPlaceFasterDown",
+      "labelLine": 40,
+      "path": "data/scripts/movement.inc",
+      "startLine": 41
+    },
+    {
+      "endLine": 31,
+      "label": "Common_Movement_WalkInPlaceFasterLeft",
+      "labelLine": 28,
+      "path": "data/scripts/movement.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 39,
+      "label": "Common_Movement_WalkInPlaceFasterRight",
+      "labelLine": 36,
+      "path": "data/scripts/movement.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 65,
+      "label": "EventScript_AccessBillsPC",
+      "labelLine": 62,
+      "path": "data/scripts/pc.inc",
+      "startLine": 63
+    },
+    {
+      "endLine": 85,
+      "label": "EventScript_AccessHallOfFame",
+      "labelLine": 74,
+      "path": "data/scripts/pc.inc",
+      "startLine": 75
+    },
+    {
+      "endLine": 45,
+      "label": "EventScript_AccessPlayersPC",
+      "labelLine": 38,
+      "path": "data/scripts/pc.inc",
+      "startLine": 39
+    },
+    {
+      "endLine": 57,
+      "label": "EventScript_AccessPokemonStorage",
+      "labelLine": 46,
+      "path": "data/scripts/pc.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 97,
+      "label": "EventScript_AccessProfOaksPC",
+      "labelLine": 86,
+      "path": "data/scripts/pc.inc",
+      "startLine": 87
+    },
+    {
+      "endLine": 61,
+      "label": "EventScript_AccessSomeonesPC",
+      "labelLine": 58,
+      "path": "data/scripts/pc.inc",
+      "startLine": 59
+    },
+    {
+      "endLine": 13,
+      "label": "EventScript_AfterWhiteOutHeal",
+      "labelLine": 1,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 21,
+      "label": "EventScript_AfterWhiteOutHealMsg",
+      "labelLine": 18,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 17,
+      "label": "EventScript_AfterWhiteOutHealMsgPreBrock",
+      "labelLine": 14,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 60,
+      "label": "EventScript_BufferBerryPouch",
+      "labelLine": 56,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 57
+    },
+    {
+      "endLine": 40,
+      "label": "EventScript_BufferItemsPocket",
+      "labelLine": 36,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 45,
+      "label": "EventScript_BufferKeyItemsPocket",
+      "labelLine": 41,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 42
+    },
+    {
+      "endLine": 35,
+      "label": "EventScript_BufferPocketNameTryFanfare",
+      "labelLine": 27,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 50,
+      "label": "EventScript_BufferPokeBallsPocket",
+      "labelLine": 46,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 55,
+      "label": "EventScript_BufferTMCase",
+      "labelLine": 51,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 52
+    },
+    {
+      "endLine": 117,
+      "label": "EventScript_CancelSail",
+      "labelLine": 112,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 113
+    },
+    {
+      "endLine": 41,
+      "label": "EventScript_CantCutTree",
+      "labelLine": 37,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 38
+    },
+    {
+      "endLine": 37,
+      "label": "EventScript_ChoosePCMenu",
+      "labelLine": 28,
+      "path": "data/scripts/pc.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 18,
+      "label": "EventScript_CutTree",
+      "labelLine": 1,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 32,
+      "label": "EventScript_CutTreeDown",
+      "labelLine": 26,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 101,
+      "label": "EventScript_DepartingNotVermilion",
+      "labelLine": 97,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 98
+    },
+    {
+      "endLine": 96,
+      "label": "EventScript_DepartingVermilion",
+      "labelLine": 92,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 120,
+      "label": "EventScript_DoTrainerBattle",
+      "labelLine": 109,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 110
+    },
+    {
+      "endLine": 7,
+      "label": "EventScript_DoTrainerBattleFromApproach",
+      "labelLine": 1,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 46,
+      "label": "EventScript_DontCutTree",
+      "labelLine": 42,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 43
+    },
+    {
+      "endLine": 132,
+      "label": "EventScript_EndQuestLogBattle",
+      "labelLine": 128,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 129
+    },
+    {
+      "endLine": 124,
+      "label": "EventScript_EndTrainerBattle",
+      "labelLine": 121,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 122
+    },
+    {
+      "endLine": 127,
+      "label": "EventScript_EndTrainerBattleContinueScript",
+      "labelLine": 125,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 126
+    },
+    {
+      "endLine": 101,
+      "label": "EventScript_ExitOaksPC",
+      "labelLine": 98,
+      "path": "data/scripts/pc.inc",
+      "startLine": 99
+    },
+    {
+      "endLine": 42,
+      "label": "EventScript_FieldPoison",
+      "labelLine": 34,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 35
+    },
+    {
+      "endLine": 48,
+      "label": "EventScript_FieldWhiteOut",
+      "labelLine": 43,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 66,
+      "label": "EventScript_FieldWhiteOutFade",
+      "labelLine": 60,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 61
+    },
+    {
+      "endLine": 59,
+      "label": "EventScript_FieldWhiteOutHasMoney",
+      "labelLine": 54,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 53,
+      "label": "EventScript_FieldWhiteOutNoMoney",
+      "labelLine": 49,
+      "path": "data/scripts/white_out.inc",
+      "startLine": 50
+    },
+    {
+      "endLine": 184,
+      "label": "EventScript_FoundCoins",
+      "labelLine": 180,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 181
+    },
+    {
+      "endLine": 141,
+      "label": "EventScript_FoundItem",
+      "labelLine": 138,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 139
+    },
+    {
+      "endLine": 189,
+      "label": "EventScript_FoundMultipleItems",
+      "labelLine": 185,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 186
+    },
+    {
+      "endLine": 179,
+      "label": "EventScript_FoundSingleItem",
+      "labelLine": 176,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 177
+    },
+    {
+      "endLine": 137,
+      "label": "EventScript_FoundTMHM",
+      "labelLine": 134,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 135
+    },
+    {
+      "endLine": 221,
+      "label": "EventScript_HiddenCoinsButCaseIsFull",
+      "labelLine": 213,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 214
+    },
+    {
+      "endLine": 157,
+      "label": "EventScript_HiddenItemScript",
+      "labelLine": 148,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 149
+    },
+    {
+      "endLine": 229,
+      "label": "EventScript_NoCaseForHiddenCoins",
+      "labelLine": 222,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 223
+    },
+    {
+      "endLine": 196,
+      "label": "EventScript_NoRoomForHiddenItem",
+      "labelLine": 190,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 191
+    },
+    {
+      "endLine": 147,
+      "label": "EventScript_NoRoomToPickUpItem",
+      "labelLine": 142,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 143
+    },
+    {
+      "endLine": 21,
+      "label": "EventScript_NoTrainerBattle",
+      "labelLine": 19,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 1094,
+      "label": "EventScript_OutOfCenterPartyHeal",
+      "labelLine": 1087,
+      "path": "data/event_scripts.s",
+      "startLine": 1088
+    },
+    {
+      "endLine": 14,
+      "label": "EventScript_PC",
+      "labelLine": 1,
+      "path": "data/scripts/pc.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 19,
+      "label": "EventScript_PCDisabled",
+      "labelLine": 15,
+      "path": "data/scripts/pc.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 27,
+      "label": "EventScript_PCMainMenu",
+      "labelLine": 20,
+      "path": "data/scripts/pc.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 133,
+      "label": "EventScript_PickUpItem",
+      "labelLine": 122,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 123
+    },
+    {
+      "endLine": 175,
+      "label": "EventScript_PickedUpHiddenItem",
+      "labelLine": 166,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 167
+    },
+    {
+      "endLine": 30,
+      "label": "EventScript_PkmnCenterNurse_TakeAndHealPkmn",
+      "labelLine": 21,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 22
+    },
+    {
+      "endLine": 76,
+      "label": "EventScript_PlayFanfareObtainedItem",
+      "labelLine": 73,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 74
+    },
+    {
+      "endLine": 80,
+      "label": "EventScript_PlayFanfareObtainedTMHM",
+      "labelLine": 77,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 45,
+      "label": "EventScript_ReceivedItemFanfare1",
+      "labelLine": 42,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 43
+    },
+    {
+      "endLine": 49,
+      "label": "EventScript_ReceivedItemFanfare2",
+      "labelLine": 46,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 53,
+      "label": "EventScript_ReceivedItemWaitFanfare",
+      "labelLine": 50,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 51
+    },
+    {
+      "endLine": 1177,
+      "label": "EventScript_ReleaseEnd",
+      "labelLine": 1171,
+      "path": "data/event_scripts.s",
+      "startLine": 1172
+    },
+    {
+      "endLine": 9,
+      "label": "EventScript_RestorePrevTextColor",
+      "labelLine": 6,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 155,
+      "label": "EventScript_SailToBirthIsland",
+      "labelLine": 149,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 150
+    },
+    {
+      "endLine": 91,
+      "label": "EventScript_SailToDest",
+      "labelLine": 85,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 86
+    },
+    {
+      "endLine": 188,
+      "label": "EventScript_SailToFiveIsland",
+      "labelLine": 184,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 185
+    },
+    {
+      "endLine": 183,
+      "label": "EventScript_SailToFourIsland",
+      "labelLine": 179,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 180
+    },
+    {
+      "endLine": 148,
+      "label": "EventScript_SailToNavelRock",
+      "labelLine": 142,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 143
+    },
+    {
+      "endLine": 168,
+      "label": "EventScript_SailToOneIsland",
+      "labelLine": 164,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 165
+    },
+    {
+      "endLine": 53,
+      "label": "EventScript_SailToOneIsland2",
+      "labelLine": 49,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 50
+    },
+    {
+      "endLine": 197,
+      "label": "EventScript_SailToSevenIsland",
+      "labelLine": 194,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 195
+    },
+    {
+      "endLine": 193,
+      "label": "EventScript_SailToSixIsland",
+      "labelLine": 189,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 190
+    },
+    {
+      "endLine": 178,
+      "label": "EventScript_SailToThreeIsland",
+      "labelLine": 174,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 175
+    },
+    {
+      "endLine": 63,
+      "label": "EventScript_SailToThreeIsland2",
+      "labelLine": 59,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 173,
+      "label": "EventScript_SailToTwoIsland",
+      "labelLine": 169,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 170
+    },
+    {
+      "endLine": 58,
+      "label": "EventScript_SailToTwoIsland2",
+      "labelLine": 54,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 55
+    },
+    {
+      "endLine": 163,
+      "label": "EventScript_SailToVermilionCity",
+      "labelLine": 159,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 160
+    },
+    {
+      "endLine": 1144,
+      "label": "EventScript_SetResultFalse",
+      "labelLine": 1141,
+      "path": "data/event_scripts.s",
+      "startLine": 1142
+    },
+    {
+      "endLine": 1140,
+      "label": "EventScript_SetResultTrue",
+      "labelLine": 1137,
+      "path": "data/event_scripts.s",
+      "startLine": 1138
+    },
+    {
+      "endLine": 111,
+      "label": "EventScript_SetSail",
+      "labelLine": 102,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 103
+    },
+    {
+      "endLine": 144,
+      "label": "EventScript_SeviiDestinationsPage1",
+      "labelLine": 130,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 131
+    },
+    {
+      "endLine": 158,
+      "label": "EventScript_SeviiDestinationsPage2",
+      "labelLine": 145,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 146
+    },
+    {
+      "endLine": 18,
+      "label": "EventScript_TryDoNormalTrainerBattle",
+      "labelLine": 8,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 212,
+      "label": "EventScript_TryPickUpHiddenCoins",
+      "labelLine": 197,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 198
+    },
+    {
+      "endLine": 165,
+      "label": "EventScript_TryPickUpHiddenItem",
+      "labelLine": 158,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 159
+    },
+    {
+      "endLine": 73,
+      "label": "EventScript_TurnOffPC",
+      "labelLine": 66,
+      "path": "data/scripts/pc.inc",
+      "startLine": 67
+    },
+    {
+      "endLine": 66,
+      "label": "Movement_Bow",
+      "labelLine": 63,
+      "path": "data/scripts/pkmn_center_nurse.inc",
+      "startLine": 64
+    },
+    {
+      "endLine": 36,
+      "label": "Movement_CutTreeDown",
+      "labelLine": 33,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 34
+    },
+    {
+      "endLine": 108,
+      "label": "Movement_RevealTrainer",
+      "labelLine": 105,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 106
+    },
+    {
+      "endLine": 114,
+      "label": "OneIsland_PokemonCenter_1F_Text_UsualPCServicesUnavailable",
+      "labelLine": 111,
+      "path": "data/maps/OneIsland_PokemonCenter_1F/text.inc",
+      "startLine": 112
+    },
+    {
+      "endLine": 76,
+      "label": "PokedexRating_EventScript_DexComplete",
+      "labelLine": 71,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 72
+    },
+    {
+      "endLine": 34,
+      "label": "PokedexRating_EventScript_DexCompleteFanfare",
+      "labelLine": 31,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 32
+    },
+    {
+      "endLine": 70,
+      "label": "PokedexRating_EventScript_DexIncomplete",
+      "labelLine": 66,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 67
+    },
+    {
+      "endLine": 79,
+      "label": "PokedexRating_EventScript_EndRating",
+      "labelLine": 77,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 30,
+      "label": "PokedexRating_EventScript_NormalFanfare",
+      "labelLine": 27,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 28
+    },
+    {
+      "endLine": 61,
+      "label": "PokedexRating_EventScript_Rate",
+      "labelLine": 35,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 36
+    },
+    {
+      "endLine": 65,
+      "label": "PokedexRating_EventScript_SetTextColor",
+      "labelLine": 62,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 63
+    },
+    {
+      "endLine": 26,
+      "label": "PokedexRating_EventScript_ShowRatingMsg",
+      "labelLine": 17,
+      "path": "data/scripts/pokedex_rating.inc",
+      "startLine": 18
+    },
+    {
+      "endLine": 97,
+      "label": "PokedexRating_Text_LookForwardToFilledNationalDex",
+      "labelLine": 94,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 95
+    },
+    {
+      "endLine": 93,
+      "label": "PokedexRating_Text_NationalDexSeenXOwnedY",
+      "labelLine": 89,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 90
+    },
+    {
+      "endLine": 12,
+      "label": "PokedexRating_Text_SeenXOwnedY",
+      "labelLine": 6,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 104,
+      "label": "PokedexRating_Text_YouveCompletedDex",
+      "labelLine": 98,
+      "path": "data/text/pokedex_rating.inc",
+      "startLine": 99
+    },
+    {
+      "endLine": 10,
+      "label": "SSAnne_1F_Corridor_EventScript_Sailor",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_1F_Corridor/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_1F_Corridor_EventScript_WorkerM",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Corridor/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Corridor_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Corridor/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Corridor_Text_LeStrongSilentType",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Corridor/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 14,
+      "label": "SSAnne_1F_Corridor_Text_PassengersAreRestless",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_1F_Corridor/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_1F_Room1_EventScript_Gentleman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room1/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room1_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room1/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_1F_Room1_Text_ImAGlobalPoliceAgent",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room1/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_1F_Room2_EventScript_Ann",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 68,
+      "label": "SSAnne_1F_Room2_EventScript_ItemTM31",
+      "labelLine": 65,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 66
+    },
+    {
+      "endLine": 16,
+      "label": "SSAnne_1F_Room2_EventScript_Tyler",
+      "labelLine": 13,
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_1F_Room2_EventScript_Woman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room2_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room2/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 22,
+      "label": "SSAnne_1F_Room2_Text_AnnDefeat",
+      "labelLine": 19,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 18,
+      "label": "SSAnne_1F_Room2_Text_AnnIntro",
+      "labelLine": 15,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 27,
+      "label": "SSAnne_1F_Room2_Text_AnnPostBattle",
+      "labelLine": 23,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 24
+    },
+    {
+      "endLine": 31,
+      "label": "SSAnne_1F_Room2_Text_CruisingAroundWorld",
+      "labelLine": 28,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Room2_Text_TylerDefeat",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_1F_Room2_Text_TylerIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 14,
+      "label": "SSAnne_1F_Room2_Text_TylerPostBattle",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_1F_Room2/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_1F_Room3_EventScript_BaldingMan",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_1F_Room3/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_1F_Room3_EventScript_LittleGirl",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room3/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 20,
+      "label": "SSAnne_1F_Room3_EventScript_Wigglytuff",
+      "labelLine": 12,
+      "path": "data/maps/SSAnne_1F_Room3/scripts.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room3_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room3/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Room3_Text_AlwaysTravelWithWigglytuff",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_1F_Room3/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_1F_Room3_Text_CruiseIsElegantAndCozy",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room3/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_1F_Room3_Text_Wigglytuff",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_1F_Room3/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_1F_Room4_EventScript_Woman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room4/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 16,
+      "label": "SSAnne_1F_Room4_EventScript_WomanPlayerMale",
+      "labelLine": 13,
+      "path": "data/maps/SSAnne_1F_Room4/scripts.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room4_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room4/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_1F_Room4_Text_WaiterCherryPiePlease",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room4/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Room4_Text_WaitressCherryPiePlease",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_1F_Room4/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_1F_Room5_EventScript_Arthur",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room5/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room5_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room5/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Room5_Text_ArthurDefeat",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_1F_Room5/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_1F_Room5_Text_ArthurIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room5/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_1F_Room5_Text_ArthurPostBattle",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_1F_Room5/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 21,
+      "label": "SSAnne_1F_Room6_EventScript_DeclineHeal",
+      "labelLine": 15,
+      "path": "data/maps/SSAnne_1F_Room6/scripts.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 25,
+      "label": "SSAnne_1F_Room6_EventScript_DeclineHealMale",
+      "labelLine": 22,
+      "path": "data/maps/SSAnne_1F_Room6/scripts.inc",
+      "startLine": 23
+    },
+    {
+      "endLine": 14,
+      "label": "SSAnne_1F_Room6_EventScript_Woman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room6/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room6_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room6/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Room6_Text_GladEveryoneIsRefreshed",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_1F_Room6/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_1F_Room6_Text_SorryYouLookLikeMyBrother",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_1F_Room6/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 16,
+      "label": "SSAnne_1F_Room6_Text_SorryYouLookLikeMySister",
+      "labelLine": 13,
+      "path": "data/maps/SSAnne_1F_Room6/text.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_1F_Room6_Text_TakeAShortRest",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room6/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_1F_Room7_EventScript_Thomas",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_1F_Room7/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_1F_Room7_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room7/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_1F_Room7_Text_ThomasDefeat",
+      "labelLine": 6,
+      "path": "data/maps/SSAnne_1F_Room7/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 5,
+      "label": "SSAnne_1F_Room7_Text_ThomasIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_1F_Room7/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_1F_Room7_Text_ThomasPostBattle",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_1F_Room7/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 57,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalApproachLeft",
+      "labelLine": 53,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 54
+    },
+    {
+      "endLine": 63,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalApproachMid",
+      "labelLine": 58,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 59
+    },
+    {
+      "endLine": 69,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalApproachRight",
+      "labelLine": 64,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 65
+    },
+    {
+      "endLine": 77,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalBulbasaur",
+      "labelLine": 74,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 75
+    },
+    {
+      "endLine": 81,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalCharmander",
+      "labelLine": 78,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 79
+    },
+    {
+      "endLine": 86,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalExitLeft",
+      "labelLine": 82,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 83
+    },
+    {
+      "endLine": 91,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalExitMid",
+      "labelLine": 87,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 88
+    },
+    {
+      "endLine": 96,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalExitRight",
+      "labelLine": 92,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 73,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalSquirtle",
+      "labelLine": 70,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 71
+    },
+    {
+      "endLine": 52,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalTrigger",
+      "labelLine": 22,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 23
+    },
+    {
+      "endLine": 9,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalTriggerLeft",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 15,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalTriggerMid",
+      "labelLine": 10,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 21,
+      "label": "SSAnne_2F_Corridor_EventScript_RivalTriggerRight",
+      "labelLine": 16,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 169,
+      "label": "SSAnne_2F_Corridor_EventScript_Sailor",
+      "labelLine": 167,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 168
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Corridor_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 112,
+      "label": "SSAnne_2F_Corridor_Movement_PlayerFaceRivalMid",
+      "labelLine": 105,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 106
+    },
+    {
+      "endLine": 104,
+      "label": "SSAnne_2F_Corridor_Movement_PlayerFaceRivalRight",
+      "labelLine": 97,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 98
+    },
+    {
+      "endLine": 118,
+      "label": "SSAnne_2F_Corridor_Movement_RivalApproachLeft",
+      "labelLine": 113,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 114
+    },
+    {
+      "endLine": 126,
+      "label": "SSAnne_2F_Corridor_Movement_RivalApproachMid",
+      "labelLine": 119,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 120
+    },
+    {
+      "endLine": 135,
+      "label": "SSAnne_2F_Corridor_Movement_RivalApproachRight",
+      "labelLine": 127,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 128
+    },
+    {
+      "endLine": 146,
+      "label": "SSAnne_2F_Corridor_Movement_RivalExitLeft",
+      "labelLine": 136,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 137
+    },
+    {
+      "endLine": 156,
+      "label": "SSAnne_2F_Corridor_Movement_RivalExitMid",
+      "labelLine": 147,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 148
+    },
+    {
+      "endLine": 166,
+      "label": "SSAnne_2F_Corridor_Movement_RivalExitRight",
+      "labelLine": 157,
+      "path": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "startLine": 158
+    },
+    {
+      "endLine": 22,
+      "label": "SSAnne_2F_Corridor_Text_RivalDefeat",
+      "labelLine": 18,
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 17,
+      "label": "SSAnne_2F_Corridor_Text_RivalIntro",
+      "labelLine": 7,
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 37,
+      "label": "SSAnne_2F_Corridor_Text_RivalPostBattle",
+      "labelLine": 29,
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc",
+      "startLine": 30
+    },
+    {
+      "endLine": 28,
+      "label": "SSAnne_2F_Corridor_Text_RivalVictory",
+      "labelLine": 23,
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc",
+      "startLine": 24
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_2F_Corridor_Text_ThisShipIsLuxuryLiner",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Corridor/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 15,
+      "label": "SSAnne_2F_Room1_EventScript_Gentleman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Room1/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Room1_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room1/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_2F_Room1_Text_SleepingMonLookedLikeThis",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room1/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_2F_Room2_EventScript_Brooks",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_2F_Room2/scripts.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_2F_Room2_EventScript_Dale",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Room2/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 72,
+      "label": "SSAnne_2F_Room2_EventScript_ItemStardust",
+      "labelLine": 69,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 70
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Room2_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room2/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_2F_Room2_Text_BrooksDefeat",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_2F_Room2/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_2F_Room2_Text_BrooksIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room2/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_2F_Room2_Text_BrooksPostBattle",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_2F_Room2/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 18,
+      "label": "SSAnne_2F_Room2_Text_DaleDefeat",
+      "labelLine": 16,
+      "path": "data/maps/SSAnne_2F_Room2/text.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 15,
+      "label": "SSAnne_2F_Room2_Text_DaleIntro",
+      "labelLine": 13,
+      "path": "data/maps/SSAnne_2F_Room2/text.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 23,
+      "label": "SSAnne_2F_Room2_Text_DalePostBattle",
+      "labelLine": 19,
+      "path": "data/maps/SSAnne_2F_Room2/text.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_2F_Room3_EventScript_Gentleman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Room3/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 10,
+      "label": "SSAnne_2F_Room3_EventScript_OldMan",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_2F_Room3/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Room3_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room3/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_2F_Room3_Text_SeenMonsFerryPeople",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room3/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_2F_Room3_Text_SomeTreesCanBeCutDown",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_2F_Room3/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_2F_Room4_EventScript_Dawn",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_2F_Room4/scripts.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 76,
+      "label": "SSAnne_2F_Room4_EventScript_ItemXAttack",
+      "labelLine": 73,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 74
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_2F_Room4_EventScript_Lamar",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Room4/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Room4_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room4/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 18,
+      "label": "SSAnne_2F_Room4_Text_DawnDefeat",
+      "labelLine": 16,
+      "path": "data/maps/SSAnne_2F_Room4/text.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 15,
+      "label": "SSAnne_2F_Room4_Text_DawnIntro",
+      "labelLine": 12,
+      "path": "data/maps/SSAnne_2F_Room4/text.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 22,
+      "label": "SSAnne_2F_Room4_Text_DawnPostBattle",
+      "labelLine": 19,
+      "path": "data/maps/SSAnne_2F_Room4/text.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_2F_Room4_Text_LamarDefeat",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_2F_Room4/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_2F_Room4_Text_LamarIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room4/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_2F_Room4_Text_LamarPostBattle",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_2F_Room4/text.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_2F_Room5_EventScript_Gentleman",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Room5/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 10,
+      "label": "SSAnne_2F_Room5_EventScript_LittleBoy",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_2F_Room5/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Room5_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room5/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_2F_Room5_Text_HaveYouGoneToSafariZone",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room5/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_2F_Room5_Text_WeThinkSafariZoneIsAwesome",
+      "labelLine": 7,
+      "path": "data/maps/SSAnne_2F_Room5/text.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_2F_Room6_EventScript_Woman1",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_2F_Room6/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 10,
+      "label": "SSAnne_2F_Room6_EventScript_Woman2",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_2F_Room6/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_2F_Room6_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room6/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_2F_Room6_Text_CaptainIsAwfullySick",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_2F_Room6/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_2F_Room6_Text_ManyPeopleGetSeasick",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_2F_Room6/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_3F_Corridor_EventScript_Sailor",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_3F_Corridor/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_3F_Corridor_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_3F_Corridor/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_3F_Corridor_Text_CaptainTeachesCutToMons",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_3F_Corridor/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 2,
+      "label": "SSAnne_B1F_Corridor_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Corridor/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_B1F_Room1_EventScript_Barny",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_B1F_Room1_EventScript_Phillip",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room1_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room1/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 22,
+      "label": "SSAnne_B1F_Room1_Text_BarnyDefeat",
+      "labelLine": 19,
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 18,
+      "label": "SSAnne_B1F_Room1_Text_BarnyIntro",
+      "labelLine": 13,
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 26,
+      "label": "SSAnne_B1F_Room1_Text_BarnyPostBattle",
+      "labelLine": 23,
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
+      "startLine": 24
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_B1F_Room1_Text_PhillipDefeat",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_B1F_Room1_Text_PhillipIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_B1F_Room1_Text_PhillipPostBattle",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_B1F_Room1/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_B1F_Room2_EventScript_Huey",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 80,
+      "label": "SSAnne_B1F_Room2_EventScript_ItemTM44",
+      "labelLine": 77,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room2_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room2/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 6,
+      "label": "SSAnne_B1F_Room2_Text_HueyDefeat",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room2/text.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room2_Text_HueyIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room2/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 10,
+      "label": "SSAnne_B1F_Room2_Text_HueyPostBattle",
+      "labelLine": 7,
+      "path": "data/maps/SSAnne_B1F_Room2/text.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_B1F_Room3_EventScript_Dylan",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 84,
+      "label": "SSAnne_B1F_Room3_EventScript_ItemEther",
+      "labelLine": 81,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 82
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room3_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room3/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_B1F_Room3_Text_DylanDefeat",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room3/text.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room3_Text_DylanIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room3/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_B1F_Room3_Text_DylanPostBattle",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_B1F_Room3/text.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_B1F_Room4_EventScript_Duncan",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_B1F_Room4_EventScript_Leonard",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room4_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room4/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 19,
+      "label": "SSAnne_B1F_Room4_Text_DuncanDefeat",
+      "labelLine": 17,
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
+      "startLine": 18
+    },
+    {
+      "endLine": 16,
+      "label": "SSAnne_B1F_Room4_Text_DuncanIntro",
+      "labelLine": 13,
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 23,
+      "label": "SSAnne_B1F_Room4_Text_DuncanPostBattle",
+      "labelLine": 20,
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
+      "startLine": 21
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_B1F_Room4_Text_LeonardDefeat",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_B1F_Room4_Text_LeonardIntro",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "SSAnne_B1F_Room4_Text_LeonardPostBattle",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_B1F_Room4/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_B1F_Room5_EventScript_Boy",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_B1F_Room5/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 88,
+      "label": "SSAnne_B1F_Room5_EventScript_ItemSuperPotion",
+      "labelLine": 85,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 86
+    },
+    {
+      "endLine": 16,
+      "label": "SSAnne_B1F_Room5_EventScript_Machoke",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_B1F_Room5/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_B1F_Room5_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room5/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_B1F_Room5_Text_Machoke",
+      "labelLine": 6,
+      "path": "data/maps/SSAnne_B1F_Room5/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 5,
+      "label": "SSAnne_B1F_Room5_Text_MachokeHasStrengthToMoveRocks",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_B1F_Room5/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 40,
+      "label": "SSAnne_CaptainsOffice_EventScript_AlreadyGotCut",
+      "labelLine": 34,
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
+      "startLine": 35
+    },
+    {
+      "endLine": 47,
+      "label": "SSAnne_CaptainsOffice_EventScript_Book",
+      "labelLine": 45,
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
+      "startLine": 46
+    },
+    {
+      "endLine": 25,
+      "label": "SSAnne_CaptainsOffice_EventScript_Captain",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 33,
+      "label": "SSAnne_CaptainsOffice_EventScript_NoRoomForCut",
+      "labelLine": 26,
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 44,
+      "label": "SSAnne_CaptainsOffice_EventScript_TrashCan",
+      "labelLine": 41,
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
+      "startLine": 42
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_CaptainsOffice_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_CaptainsOffice/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 5,
+      "label": "SSAnne_CaptainsOffice_Text_CaptainIFeelSeasick",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 33,
+      "label": "SSAnne_CaptainsOffice_Text_ExplainCut",
+      "labelLine": 28,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 53,
+      "label": "SSAnne_CaptainsOffice_Text_HowToConquerSeasickness",
+      "labelLine": 50,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 51
+    },
+    {
+      "endLine": 27,
+      "label": "SSAnne_CaptainsOffice_Text_ObtainedHM01FromCaptain",
+      "labelLine": 24,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_CaptainsOffice_Text_RubbedCaptainsBack",
+      "labelLine": 6,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 41,
+      "label": "SSAnne_CaptainsOffice_Text_SSAnneWillSetSailSoon",
+      "labelLine": 34,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 35
+    },
+    {
+      "endLine": 23,
+      "label": "SSAnne_CaptainsOffice_Text_ThankYouHaveHMForCut",
+      "labelLine": 12,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 45,
+      "label": "SSAnne_CaptainsOffice_Text_YouHaveNoRoomForThis",
+      "labelLine": 42,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 43
+    },
+    {
+      "endLine": 49,
+      "label": "SSAnne_CaptainsOffice_Text_YuckShouldntHaveLooked",
+      "labelLine": 46,
+      "path": "data/maps/SSAnne_CaptainsOffice/text.inc",
+      "startLine": 47
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_Deck_EventScript_BaldingMan",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_Deck/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 20,
+      "label": "SSAnne_Deck_EventScript_Edmond",
+      "labelLine": 16,
+      "path": "data/maps/SSAnne_Deck/scripts.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 15,
+      "label": "SSAnne_Deck_EventScript_Sailor",
+      "labelLine": 12,
+      "path": "data/maps/SSAnne_Deck/scripts.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 24,
+      "label": "SSAnne_Deck_EventScript_Trevor",
+      "labelLine": 21,
+      "path": "data/maps/SSAnne_Deck/scripts.inc",
+      "startLine": 22
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_Deck_EventScript_Youngster",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_Deck/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_Deck_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_Deck/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 20,
+      "label": "SSAnne_Deck_Text_EdmondDefeat",
+      "labelLine": 18,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 17,
+      "label": "SSAnne_Deck_Text_EdmondIntro",
+      "labelLine": 14,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 24,
+      "label": "SSAnne_Deck_Text_EdmondPostBattle",
+      "labelLine": 21,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 22
+    },
+    {
+      "endLine": 13,
+      "label": "SSAnne_Deck_Text_FeelSeasick",
+      "labelLine": 9,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 10
+    },
+    {
+      "endLine": 8,
+      "label": "SSAnne_Deck_Text_ScrubbingDecksHardWork",
+      "labelLine": 5,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 4,
+      "label": "SSAnne_Deck_Text_ShipDepartingSoon",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 31,
+      "label": "SSAnne_Deck_Text_TrevorDefeat",
+      "labelLine": 29,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 30
+    },
+    {
+      "endLine": 28,
+      "label": "SSAnne_Deck_Text_TrevorIntro",
+      "labelLine": 25,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 26
+    },
+    {
+      "endLine": 35,
+      "label": "SSAnne_Deck_Text_TrevorPostBattle",
+      "labelLine": 32,
+      "path": "data/maps/SSAnne_Deck/text.inc",
+      "startLine": 33
+    },
+    {
+      "endLine": 32,
+      "label": "SSAnne_Exterior_ExitSSAnne",
+      "labelLine": 14,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 5,
+      "label": "SSAnne_Exterior_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 54,
+      "label": "SSAnne_Exterior_Movement_Exit",
+      "labelLine": 43,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 65,
+      "label": "SSAnne_Exterior_Movement_WalkDown",
+      "labelLine": 55,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 56
+    },
+    {
+      "endLine": 13,
+      "label": "SSAnne_Exterior_OnFrame",
+      "labelLine": 10,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 9,
+      "label": "SSAnne_Exterior_OnTransition",
+      "labelLine": 6,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 37,
+      "label": "SSAnne_Exterior_WalkDown",
+      "labelLine": 33,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 34
+    },
+    {
+      "endLine": 42,
+      "label": "SSAnne_Exterior_WalkInPlaceDown",
+      "labelLine": 38,
+      "path": "data/maps/SSAnne_Exterior/scripts.inc",
+      "startLine": 39
+    },
+    {
+      "endLine": 7,
+      "label": "SSAnne_Kitchen_EventScript_Chef1",
+      "labelLine": 4,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 11,
+      "label": "SSAnne_Kitchen_EventScript_Chef2",
+      "labelLine": 8,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 9
+    },
+    {
+      "endLine": 15,
+      "label": "SSAnne_Kitchen_EventScript_Chef3",
+      "labelLine": 12,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 13
+    },
+    {
+      "endLine": 27,
+      "label": "SSAnne_Kitchen_EventScript_Chef4",
+      "labelLine": 16,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 43,
+      "label": "SSAnne_Kitchen_EventScript_Chef5",
+      "labelLine": 40,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 41
+    },
+    {
+      "endLine": 47,
+      "label": "SSAnne_Kitchen_EventScript_Chef6",
+      "labelLine": 44,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 45
+    },
+    {
+      "endLine": 50,
+      "label": "SSAnne_Kitchen_EventScript_Chef7",
+      "labelLine": 48,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 49
+    },
+    {
+      "endLine": 35,
+      "label": "SSAnne_Kitchen_EventScript_EelsAuBarbecue",
+      "labelLine": 32,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 33
+    },
+    {
+      "endLine": 92,
+      "label": "SSAnne_Kitchen_EventScript_ItemGreatBall",
+      "labelLine": 89,
+      "path": "data/scripts/item_ball_scripts.inc",
+      "startLine": 90
+    },
+    {
+      "endLine": 39,
+      "label": "SSAnne_Kitchen_EventScript_PrimeBeefsteak",
+      "labelLine": 36,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 37
+    },
+    {
+      "endLine": 31,
+      "label": "SSAnne_Kitchen_EventScript_SalmonDuSalad",
+      "labelLine": 28,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 3,
+      "label": "SSAnne_Kitchen_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_Kitchen/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 5,
+      "label": "SSAnne_Kitchen_Text_BusyOutOfTheWay",
+      "labelLine": 1,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 43,
+      "label": "SSAnne_Kitchen_Text_EelsAuBarbecue",
+      "labelLine": 40,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 41
+    },
+    {
+      "endLine": 24,
+      "label": "SSAnne_Kitchen_Text_HearAboutSnorlaxItsAGlutton",
+      "labelLine": 19,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 20
+    },
+    {
+      "endLine": 34,
+      "label": "SSAnne_Kitchen_Text_IAmLeChefMainCourseIs",
+      "labelLine": 30,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 31
+    },
+    {
+      "endLine": 29,
+      "label": "SSAnne_Kitchen_Text_OnlyGetToPeelOnions",
+      "labelLine": 25,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 26
+    },
+    {
+      "endLine": 18,
+      "label": "SSAnne_Kitchen_Text_PeelSpudsEveryDay",
+      "labelLine": 14,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 48,
+      "label": "SSAnne_Kitchen_Text_PrimeBeefsteak",
+      "labelLine": 44,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 45
+    },
+    {
+      "endLine": 39,
+      "label": "SSAnne_Kitchen_Text_SalmonDuSalad",
+      "labelLine": 35,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 36
+    },
+    {
+      "endLine": 9,
+      "label": "SSAnne_Kitchen_Text_SawOddBerryInTrash",
+      "labelLine": 6,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 13,
+      "label": "SSAnne_Kitchen_Text_SoBusyImDizzy",
+      "labelLine": 10,
+      "path": "data/maps/SSAnne_Kitchen/text.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 121,
+      "label": "Std_FindItem",
+      "labelLine": 106,
+      "path": "data/scripts/obtain_item.inc",
+      "startLine": 107
+    },
+    {
+      "endLine": 138,
+      "label": "Std_MsgboxAutoclose",
+      "labelLine": 133,
+      "path": "data/scripts/trainer_battle.inc",
+      "startLine": 134
+    },
+    {
+      "endLine": 23,
+      "label": "Std_MsgboxDefault",
+      "labelLine": 18,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 9,
+      "label": "Std_MsgboxNPC",
+      "labelLine": 1,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 17,
+      "label": "Std_MsgboxSign",
+      "labelLine": 10,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 29,
+      "label": "Std_MsgboxYesNo",
+      "labelLine": 24,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 25
+    },
+    {
+      "endLine": 41,
+      "label": "Std_ReceivedItem",
+      "labelLine": 30,
+      "path": "data/scripts/std_msgbox.inc",
+      "startLine": 31
+    },
+    {
+      "endLine": 6,
+      "label": "Text_AccessWhichPC",
+      "labelLine": 4,
+      "path": "data/text/pc.inc",
+      "startLine": 5
+    },
+    {
+      "endLine": 17,
+      "label": "Text_AccessedBillsPC",
+      "labelLine": 16,
+      "path": "data/text/pc.inc",
+      "startLine": 17
+    },
+    {
+      "endLine": 15,
+      "label": "Text_AccessedPlayersPC",
+      "labelLine": 13,
+      "path": "data/text/pc.inc",
+      "startLine": 14
+    },
+    {
+      "endLine": 951,
+      "label": "Text_AccessedProfOaksPC",
+      "labelLine": 947,
+      "path": "data/event_scripts.s",
+      "startLine": 948
+    },
+    {
+      "endLine": 9,
+      "label": "Text_AccessedSomeonesPC",
+      "labelLine": 7,
+      "path": "data/text/pc.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 7,
+      "label": "Text_AllAboardSeagallopNum",
+      "labelLine": 5,
+      "path": "data/text/seagallop.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 3,
+      "label": "Text_BootedUpPC",
+      "labelLine": 1,
+      "path": "data/text/pc.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 958,
+      "label": "Text_ClosedLinkToProfOaksPC",
+      "labelLine": 956,
+      "path": "data/event_scripts.s",
+      "startLine": 957
+    },
+    {
+      "endLine": 29,
+      "label": "Text_CoinCaseIsFull",
+      "labelLine": 26,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 27
+    },
+    {
+      "endLine": 51,
+      "label": "Text_CutTreeDown",
+      "labelLine": 47,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 48
+    },
+    {
+      "endLine": 4,
+      "label": "Text_FirstShouldRestoreMonsHealth",
+      "labelLine": 1,
+      "path": "data/text/white_out.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 13,
+      "label": "Text_FoundOneItem",
+      "labelLine": 11,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 12
+    },
+    {
+      "endLine": 1005,
+      "label": "Text_FoundTMHMContainsMove",
+      "labelLine": 999,
+      "path": "data/event_scripts.s",
+      "startLine": 1000
+    },
+    {
+      "endLine": 21,
+      "label": "Text_FoundXCoins",
+      "labelLine": 18,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 37,
+      "label": "Text_FoundXItems",
+      "labelLine": 34,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 35
+    },
+    {
+      "endLine": 955,
+      "label": "Text_HavePokedexRated",
+      "labelLine": 952,
+      "path": "data/event_scripts.s",
+      "startLine": 953
+    },
+    {
+      "endLine": 54,
+      "label": "Text_MonUsedMove",
+      "labelLine": 52,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 53
+    },
+    {
+      "endLine": 19,
+      "label": "Text_MonsHealed",
+      "labelLine": 15,
+      "path": "data/text/white_out.inc",
+      "startLine": 16
+    },
+    {
+      "endLine": 14,
+      "label": "Text_MonsHealedShouldBuyPotions",
+      "labelLine": 5,
+      "path": "data/text/white_out.inc",
+      "startLine": 6
+    },
+    {
+      "endLine": 33,
+      "label": "Text_NothingToPutThemIn",
+      "labelLine": 30,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 31
+    },
+    {
+      "endLine": 3,
+      "label": "Text_ObtainedTheX",
+      "labelLine": 1,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 12,
+      "label": "Text_OpenedPkmnStorage",
+      "labelLine": 10,
+      "path": "data/text/pc.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 25,
+      "label": "Text_PutCoinsAwayInCoinCase",
+      "labelLine": 22,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 23
+    },
+    {
+      "endLine": 10,
+      "label": "Text_PutItemAway",
+      "labelLine": 7,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 8
+    },
+    {
+      "endLine": 17,
+      "label": "Text_TooBadBagFull",
+      "labelLine": 14,
+      "path": "data/text/obtain_item.inc",
+      "startLine": 15
+    },
+    {
+      "endLine": 58,
+      "label": "Text_TreeCanBeCutDown",
+      "labelLine": 55,
+      "path": "data/scripts/field_moves.inc",
+      "startLine": 56
+    },
+    {
+      "endLine": 53,
+      "label": "Text_WhitedOut",
+      "labelLine": 50,
+      "path": "data/text/white_out.inc",
+      "startLine": 51
+    },
+    {
+      "endLine": 49,
+      "label": "Text_WhitedOutLostMoney",
+      "labelLine": 43,
+      "path": "data/text/white_out.inc",
+      "startLine": 44
+    },
+    {
+      "endLine": 70,
+      "label": "VermilionCity_EventScript_CheckHasAuroraTicket",
+      "labelLine": 64,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 65
+    },
+    {
+      "endLine": 63,
+      "label": "VermilionCity_EventScript_CheckHasMysticTicket",
+      "labelLine": 57,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 58
+    },
+    {
+      "endLine": 217,
+      "label": "VermilionCity_EventScript_CheckSeagallopPresentTrigger",
+      "labelLine": 209,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 210
+    },
+    {
+      "endLine": 202,
+      "label": "VermilionCity_EventScript_CheckTicket",
+      "labelLine": 190,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 191
+    },
+    {
+      "endLine": 178,
+      "label": "VermilionCity_EventScript_CheckTicketLeft",
+      "labelLine": 174,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 175
+    },
+    {
+      "endLine": 183,
+      "label": "VermilionCity_EventScript_CheckTicketRight",
+      "labelLine": 179,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 180
+    },
+    {
+      "endLine": 91,
+      "label": "VermilionCity_EventScript_ChooseSeagallopDestRainbowPass",
+      "labelLine": 79,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 80
+    },
+    {
+      "endLine": 169,
+      "label": "VermilionCity_EventScript_ChooseSeagallopDestTriPass",
+      "labelLine": 156,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 157
+    },
+    {
+      "endLine": 208,
+      "label": "VermilionCity_EventScript_DontHaveSSTicket",
+      "labelLine": 203,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 204
+    },
+    {
+      "endLine": 17,
+      "label": "VermilionCity_EventScript_ExitSSAnne",
+      "labelLine": 10,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 11
+    },
+    {
+      "endLine": 189,
+      "label": "VermilionCity_EventScript_ExitedTicketCheck",
+      "labelLine": 184,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 185
+    },
+    {
+      "endLine": 122,
+      "label": "VermilionCity_EventScript_HasAuroraTicket",
+      "labelLine": 111,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 112
+    },
+    {
+      "endLine": 141,
+      "label": "VermilionCity_EventScript_HasMysticAndAuroraTickets",
+      "labelLine": 128,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 129
+    },
+    {
+      "endLine": 105,
+      "label": "VermilionCity_EventScript_HasMysticTicket",
+      "labelLine": 92,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 31,
+      "label": "VermilionCity_EventScript_HideOaksAide",
+      "labelLine": 28,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 29
+    },
+    {
+      "endLine": 127,
+      "label": "VermilionCity_EventScript_ShowAuroraTicket",
+      "labelLine": 123,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 124
+    },
+    {
+      "endLine": 110,
+      "label": "VermilionCity_EventScript_ShowMysticTicket",
+      "labelLine": 106,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 107
+    },
+    {
+      "endLine": 125,
+      "label": "VermilionCity_EventScript_WalkUpPier",
+      "labelLine": 118,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 119
+    },
+    {
+      "endLine": 5,
+      "label": "VermilionCity_MapScripts",
+      "labelLine": 1,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 2
+    },
+    {
+      "endLine": 22,
+      "label": "VermilionCity_Movement_ExitSSAnne",
+      "labelLine": 18,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 19
+    },
+    {
+      "endLine": 129,
+      "label": "VermilionCity_Movement_WalkUp",
+      "labelLine": 126,
+      "path": "data/scripts/seagallop.inc",
+      "startLine": 127
+    },
+    {
+      "endLine": 9,
+      "label": "VermilionCity_OnFrame",
+      "labelLine": 6,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 7
+    },
+    {
+      "endLine": 27,
+      "label": "VermilionCity_OnTransition",
+      "labelLine": 23,
+      "path": "data/maps/VermilionCity/scripts.inc",
+      "startLine": 24
+    },
+    {
+      "endLine": 107,
+      "label": "VermilionCity_Text_BoardSeagallopFerry",
+      "labelLine": 104,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 105
+    },
+    {
+      "endLine": 91,
+      "label": "VermilionCity_Text_BoardSeagallopRainbowPass",
+      "labelLine": 87,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 88
+    },
+    {
+      "endLine": 81,
+      "label": "VermilionCity_Text_BoardSeagallopTriPass",
+      "labelLine": 77,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 78
+    },
+    {
+      "endLine": 62,
+      "label": "VermilionCity_Text_DoYouHaveATicket",
+      "labelLine": 59,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 60
+    },
+    {
+      "endLine": 73,
+      "label": "VermilionCity_Text_DontHaveNeededSSTicket",
+      "labelLine": 68,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 69
+    },
+    {
+      "endLine": 67,
+      "label": "VermilionCity_Text_FlashedSSTicket",
+      "labelLine": 63,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 64
+    },
+    {
+      "endLine": 103,
+      "label": "VermilionCity_Text_OhAuroraTicketTakeYouToBirthIsland",
+      "labelLine": 98,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 99
+    },
+    {
+      "endLine": 97,
+      "label": "VermilionCity_Text_OhMysticTicketTakeYouToNavelRock",
+      "labelLine": 92,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 93
+    },
+    {
+      "endLine": 113,
+      "label": "VermilionCity_Text_Seagallop10Departing",
+      "labelLine": 108,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 109
+    },
+    {
+      "endLine": 119,
+      "label": "VermilionCity_Text_Seagallop12Departing",
+      "labelLine": 114,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 115
+    },
+    {
+      "endLine": 86,
+      "label": "VermilionCity_Text_Seagallop7Departing",
+      "labelLine": 82,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 83
+    },
+    {
+      "endLine": 76,
+      "label": "VermilionCity_Text_TheShipSetSail",
+      "labelLine": 74,
+      "path": "data/maps/VermilionCity/text.inc",
+      "startLine": 75
+    }
+  ]
+}

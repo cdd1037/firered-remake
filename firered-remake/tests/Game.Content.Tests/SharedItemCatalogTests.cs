@@ -15,9 +15,9 @@ public sealed class SharedItemCatalogTests
         var items = machines.Items;
         var potion = items.Definition(new("pret:ITEM_POTION"));
         var early = PretEarlyShop.Load(File.ReadAllText(Path.Combine(TestAssets.Root,
-            "content/generated/early-shop/early-shop.json")), items);
+            "content/generated/data/services/early-shop/early-shop.json")), items);
         var opening = PretOpeningItems.Load(File.ReadAllText(Path.Combine(TestAssets.Root,
-            "content/generated/opening-items/opening-items.json")), items);
+            "content/generated/data/items/opening/opening-items.json")), items);
         var battle = SourceBattleItemCatalogLoader.LoadAuthenticated(TestAssets.Root, items);
         Assert.AreSame(potion, early.Catalog.Items.Single(i => i.Id == potion.Id).Item);
         Assert.AreSame(potion, opening.Potion.Item);

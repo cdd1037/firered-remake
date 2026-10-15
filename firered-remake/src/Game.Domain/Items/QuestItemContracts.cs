@@ -8,5 +8,4 @@ public sealed record QuestItemDefinition(ItemId Id, string SourceItemSymbol, int
     string Name, int Price, int Importance, int Registrability, string Pocket, string Type,
     string HoldEffect, int HoldEffectParam, string FieldUseFunction, int BattleUsage,
     string BattleUseFunction, int SecondaryId, bool CanToss, bool CanSell, bool CanGive);
-public sealed record QuestItemsCatalog(string SourceCommit, string Profile, bool CompleteItemCatalog,
-    QuestInventoryLimits Limits, ImmutableArray<QuestItemDefinition> Items);
+public sealed record QuestItemsCatalog(QuestInventoryLimits Limits, ImmutableArray<QuestItemDefinition> Items);

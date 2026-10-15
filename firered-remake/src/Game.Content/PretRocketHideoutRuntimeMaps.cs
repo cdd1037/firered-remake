@@ -5,10 +5,10 @@ namespace Game.Content;
 /// <summary>120 pinned maps; all prior 114 entries, payloads and source registries remain exact.</summary>
 public static class PretRocketHideoutRuntimeMaps
 {
-    public const string DirectoryName = "content/generated/rocket-hideout-runtime-maps";
+    public const string ManifestPath = "content/generated/maps/catalogs/rocket-hideout-maps.json";
     public static PretRuntimeMapCatalog Load(string projectRoot)
     {
-        var directory=Path.Combine(Path.GetFullPath(projectRoot),DirectoryName);RequireNoLinks(directory,"manifest.json");
+        var directory=Path.Combine(Path.GetFullPath(projectRoot),ManifestPath);RequireNoLinks(Path.GetDirectoryName(directory)!, Path.GetFileName(directory));
         return PretRuntimeMapCatalog.Load(directory);
     }
     internal static void RequireNoLinks(string directory,string relative)

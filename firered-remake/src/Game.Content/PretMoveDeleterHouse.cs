@@ -16,7 +16,6 @@ public sealed class PretMoveDeleterHouse
     private readonly string _projectRoot;
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
 
@@ -27,8 +26,8 @@ public sealed class PretMoveDeleterHouse
     private PretMoveDeleterHouse(SilphSourcePackage source, PretWorldMap house,
         ImmutableDictionary<string, int> constants)
     {
-        _projectRoot = Path.GetFullPath(Path.Combine(source.Directory, "../../.."));
-        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
+        _projectRoot = PretRuntimeMapValidation.ProjectRoot(source.Directory);
+        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants;
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); NpcSources = source.Document("npc-source.json");
     }
@@ -55,7 +54,7 @@ public sealed class PretMoveDeleterHouse
     public static PretMoveDeleterHouse Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"move-deleter");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/move-deleter");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Move Deleter house actor collection differs.");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
@@ -72,15 +71,15 @@ public sealed class PretMoveDeleterHouse
             "Original Fuchsia City Move Deleter house; service rules and current-game admission are separate.", ResourceId);
 
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
+        Need(id == HouseMapId.Value && path == relative ,
             "Move Deleter house compact map binding differs.");
         var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 11 && runtime.Height == 9 &&
+        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 11 && runtime.Height == 9 &&
             runtime.Events.GetProperty("layout").GetString() == "LAYOUT_HOUSE1", "Move Deleter house layout differs.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 1 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 0 &&
             house.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Move Deleter original event collection differs.");
@@ -94,8 +93,6 @@ public sealed class PretMoveDeleterHouse
             door.GetProperty("elevation").GetInt32() == 3 && door.GetProperty("dest_map").GetString() == "MAP_FUCHSIA_CITY" &&
             door.GetProperty("dest_warp_id").GetString() == "10", "Move Deleter original exit differs.");
         ValidateTown(source, dependencyRoot);
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["PARTY_SIZE"] == 6 && constants["MAX_MON_MOVES"] == 4 &&

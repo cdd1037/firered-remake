@@ -4,12 +4,9 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretEarlyRepelSource(string Path);
 public sealed record PretEarlyRepelText(string Symbol, string Text, string Path, int Line);
-public sealed record PretEarlyRepelDocument(int SchemaVersion, string SourceCommit, string Profile,
-    int RepelVariable, string ItemSymbol, int Duration, int BattleUsage, string BattleUseFunction,
-    string FieldUseFunction, ImmutableArray<PretEarlyRepelSource> SourceFiles,
-    ImmutableArray<PretEarlyRepelText> Texts);
+public sealed record PretEarlyRepelDocument(int SchemaVersion, int RepelVariable, string ItemSymbol, int Duration, int BattleUsage, string BattleUseFunction,
+    string FieldUseFunction, ImmutableArray<PretEarlyRepelText> Texts);
 
 /// <summary>Three original texts and REPEL metadata; no art/audio or runtime reference-repository access.</summary>
 public static class PretEarlyRepel

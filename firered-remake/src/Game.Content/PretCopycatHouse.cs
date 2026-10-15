@@ -15,7 +15,6 @@ public sealed class PretCopycatHouse
     public static MapId Floor2MapId { get; } = new("map.saffron-city-copycats-house-2f");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
@@ -26,7 +25,7 @@ public sealed class PretCopycatHouse
     private PretCopycatHouse(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = maps; Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
+        NewMaps = maps; Constants = constants;
         GeneratedDirectory = source.Directory; Catalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); NpcSources = source.Document("npc-source.json");
     }
@@ -52,7 +51,7 @@ public sealed class PretCopycatHouse
     public static PretCopycatHouse Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"copycat-house");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/copycat-house");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
@@ -72,14 +71,14 @@ public sealed class PretCopycatHouse
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need((id == Floor1MapId.Value || id == Floor2MapId.Value) && path == relative + "/runtime-map.json" ,
+            Need((id == Floor1MapId.Value || id == Floor2MapId.Value) && path == relative ,
                 "Copycat house compact map binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Copycat house map identity differs.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Copycat house map identity differs.");
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null &&
                 map.Events.GetProperty("coord_events").GetArrayLength() == 0, "Copycat house indoor event boundaries differ.");
             maps.Add(map.Id, map);
@@ -92,8 +91,6 @@ public sealed class PretCopycatHouse
             first.Events.GetProperty("bg_events").GetArrayLength() == 0 && second.Events.GetProperty("bg_events").GetArrayLength() == 3,
             "Copycat house original map/event collection differs.");
         ValidateTopology(source, dependencyRoot, first, second);
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["MOVETUTOR_MIMIC"] == 7 && constants["ITEM_POKE_DOLL"] == 80 &&

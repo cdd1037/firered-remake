@@ -2,14 +2,14 @@
 """Authenticated Route22, League gate, and Route23 source increment; no gameplay or audio activation."""
 import sys as _constant_sys
 from pathlib import Path as _ConstantPath
-_constant_scripts = str(_ConstantPath(__file__).resolve().parents[2] / 'scripts')
+_constant_scripts = str(_ConstantPath(__file__).resolve().parents[2] / 'scripts/lib')
 if _constant_scripts not in _constant_sys.path:
     _constant_sys.path.insert(0, _constant_scripts)
 from shared_constants import package_documents
 from overworld_sprites import graphics_records
 import sys as _map_sys
 from pathlib import Path as _MapPath
-_map_scripts = str(_MapPath(__file__).resolve().parents[2] / 'scripts')
+_map_scripts = str(_MapPath(__file__).resolve().parents[2] / 'scripts/lib')
 if _map_scripts not in _map_sys.path:
     _map_sys.path.insert(0, _map_scripts)
 from map_runtime import compact_world as _compact_world, encode as _encode_runtime
@@ -59,7 +59,7 @@ def require_safe_target(root, target):
         raise ValueError('Target escapes selected directory')
 
 def read_lock(path=None):
-    target = path or ROOT / 'scripts/route22-region.lock.json'
+    target = path or ROOT / 'scripts/recipes/maps/route22-region.lock.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)
@@ -621,7 +621,7 @@ def import_catalog(raw, out):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
-    parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route22-region')
+    parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/maps/regions/route22')
     parser.add_argument('--reference-root',type=pathlib.Path,help='Pinned local reference; no network or upstream execution')
     parser.add_argument('--materialize',action='store_true',help='Copy locked Git blobs from --reference-root or .tools/reference-root')
     args=parser.parse_args()

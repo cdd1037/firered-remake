@@ -11,7 +11,7 @@ public partial class SynthSourceAudioPlayer
             ?? throw new InvalidDataException("Seafoam synth metadata missing.");
         if (extension.SchemaVersion != 1 || extension.Cues is not [var normal] ||
             normal.Id != "CRY_ARTICUNO_NORMAL" || normal.Species != 144 || normal.CryMode != 0 || normal.SourcePlayer != 4 || normal.Priority != 10 ||
-            normal.SourceSymbol != "SPECIES_ARTICUNO" || normal.SourcePath != "sound/direct_sound_samples/cries/articuno.wav" || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
+            normal.SourceSymbol != "SPECIES_ARTICUNO" || normal.SongAddress != 0 || normal.Looping || normal.SourceCounter is not null ||
             cues.Any(c => c.Id is "CRY_ARTICUNO_NORMAL" or "CRY_ARTICUNO_ENCOUNTER"))
             throw new InvalidDataException("Seafoam normal cry binding differs.");
         // B4F's authenticated playmoncry SPECIES_ARTICUNO, CRY_MODE_ENCOUNTER selects mode2.

@@ -3,47 +3,46 @@ using Game.Domain.Ids;
 namespace Game.Domain.Encounters;
 
 public sealed record SevenIslandHeldItemSource(SpeciesId Species, string Common, string Rare);
-public sealed record SevenIslandRockSmashSourceTable(MapId Map, string SourceCommit, string SourcePath,
-    string SourceSymbol, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
+public sealed record SevenIslandRockSmashSourceTable(MapId Map, int RawEncounterRate, ImmutableArray<WaterEncounterSlot> Slots);
 
 /// <summary>Exact FireRed declarations; inactive fishing groups retain their original source slot indexes.</summary>
 public static class SevenIslandEncounterTables
 {
     public static bool IsChamber(MapId map) => Game.Domain.Pokemon.UnownFormRules.IsChamber(map);
     public static ImmutableArray<EarlyLandEncounterTable> Land { get; } = [
-        new(new("map.seven-island-tanoby-ruins-monean-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsMoneanChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-monean-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-tanoby-ruins-liptoo-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsLiptooChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-liptoo-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-tanoby-ruins-weepth-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsWeepthChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-weepth-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-tanoby-ruins-dilford-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsDilfordChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-dilford-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-tanoby-ruins-scufib-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsScufibChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-scufib-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-tanoby-ruins-rixy-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsRixyChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-rixy-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-tanoby-ruins-viapois-chamber"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuinsViapoisChamber_FireRed", 7,
+        new(new("map.seven-island-tanoby-ruins-viapois-chamber"), 7,
             [new(0, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(1, new("pret:SPECIES_UNOWN"), 25, 25, 20), new(2, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(3, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(4, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(5, new("pret:SPECIES_UNOWN"), 25, 25, 10), new(6, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(7, new("pret:SPECIES_UNOWN"), 25, 25, 5), new(8, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(9, new("pret:SPECIES_UNOWN"), 25, 25, 4), new(10, new("pret:SPECIES_UNOWN"), 25, 25, 1), new(11, new("pret:SPECIES_UNOWN"), 25, 25, 1)]),
-        new(new("map.seven-island-sevault-canyon-entrance"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandSevaultCanyonEntrance_FireRed", 21,
+        new(new("map.seven-island-sevault-canyon-entrance"), 21,
             [new(0, new("pret:SPECIES_SPEAROW"), 44, 44, 20), new(1, new("pret:SPECIES_SENTRET"), 10, 10, 20), new(2, new("pret:SPECIES_PHANPY"), 10, 10, 10), new(3, new("pret:SPECIES_FEAROW"), 48, 48, 10), new(4, new("pret:SPECIES_SENTRET"), 15, 15, 10), new(5, new("pret:SPECIES_MEOWTH"), 41, 41, 10), new(6, new("pret:SPECIES_FEAROW"), 50, 50, 5), new(7, new("pret:SPECIES_PSYDUCK"), 41, 41, 5), new(8, new("pret:SPECIES_PHANPY"), 15, 15, 4), new(9, new("pret:SPECIES_PERSIAN"), 47, 47, 4), new(10, new("pret:SPECIES_PHANPY"), 15, 15, 1), new(11, new("pret:SPECIES_PERSIAN"), 50, 50, 1)]),
-        new(new("map.seven-island-sevault-canyon"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandSevaultCanyon_FireRed", 21,
+        new(new("map.seven-island-sevault-canyon"), 21,
             [new(0, new("pret:SPECIES_GEODUDE"), 46, 46, 20), new(1, new("pret:SPECIES_PHANPY"), 15, 15, 20), new(2, new("pret:SPECIES_CUBONE"), 46, 46, 10), new(3, new("pret:SPECIES_FEAROW"), 50, 50, 10), new(4, new("pret:SPECIES_MAROWAK"), 52, 52, 10), new(5, new("pret:SPECIES_MEOWTH"), 43, 43, 10), new(6, new("pret:SPECIES_ONIX"), 54, 54, 5), new(7, new("pret:SPECIES_SKARMORY"), 30, 30, 5), new(8, new("pret:SPECIES_LARVITAR"), 15, 15, 4), new(9, new("pret:SPECIES_PERSIAN"), 49, 49, 4), new(10, new("pret:SPECIES_LARVITAR"), 20, 20, 1), new(11, new("pret:SPECIES_PERSIAN"), 52, 52, 1)]),
     ];
     public static ImmutableArray<WaterEncounterTable> Water { get; } = [
-        new(new("map.seven-island-trainer-tower"), "MAP_SEVEN_ISLAND_TRAINER_TOWER", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTrainerTower_FireRed", 2,
+        new(new("map.seven-island-trainer-tower"), 2,
             [new(0, new("pret:SPECIES_TENTACOOL"), 5, 20, 60), new(1, new("pret:SPECIES_TENTACOOL"), 20, 35, 30), new(2, new("pret:SPECIES_TENTACOOL"), 35, 40, 5), new(3, new("pret:SPECIES_TENTACRUEL"), 35, 40, 4), new(4, new("pret:SPECIES_TENTACRUEL"), 35, 40, 1)]),
-        new(new("map.seven-island-tanoby-ruins"), "MAP_SEVEN_ISLAND_TANOBY_RUINS", EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuins_FireRed", 2,
+        new(new("map.seven-island-tanoby-ruins"), 2,
             [new(0, new("pret:SPECIES_TENTACOOL"), 5, 20, 60), new(1, new("pret:SPECIES_TENTACOOL"), 20, 35, 30), new(2, new("pret:SPECIES_TENTACOOL"), 35, 40, 5), new(3, new("pret:SPECIES_TENTACRUEL"), 35, 40, 4), new(4, new("pret:SPECIES_TENTACRUEL"), 35, 40, 1)]),
     ];
     public static ImmutableArray<OldRodEncounterTable> FishingSource { get; } = [
-        new(new("map.seven-island-trainer-tower"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTrainerTower_FireRed", 20,
+        new(new("map.seven-island-trainer-tower"), 20,
             [new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70), new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30), new(2, new("pret:SPECIES_HORSEA"), 5, 15, 60), new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20), new(4, new("pret:SPECIES_HORSEA"), 5, 15, 20), new(5, new("pret:SPECIES_HORSEA"), 15, 25, 40), new(6, new("pret:SPECIES_QWILFISH"), 15, 25, 40), new(7, new("pret:SPECIES_GYARADOS"), 15, 25, 15), new(8, new("pret:SPECIES_SEADRA"), 25, 35, 4), new(9, new("pret:SPECIES_PSYDUCK"), 25, 35, 1)]),
-        new(new("map.seven-island-tanoby-ruins"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandTanobyRuins_FireRed", 20,
+        new(new("map.seven-island-tanoby-ruins"), 20,
             [new(0, new("pret:SPECIES_MAGIKARP"), 5, 5, 70), new(1, new("pret:SPECIES_MAGIKARP"), 5, 5, 30), new(2, new("pret:SPECIES_HORSEA"), 5, 15, 60), new(3, new("pret:SPECIES_MAGIKARP"), 5, 15, 20), new(4, new("pret:SPECIES_HORSEA"), 5, 15, 20), new(5, new("pret:SPECIES_HORSEA"), 15, 25, 40), new(6, new("pret:SPECIES_QWILFISH"), 15, 25, 40), new(7, new("pret:SPECIES_GYARADOS"), 15, 25, 15), new(8, new("pret:SPECIES_SEADRA"), 25, 35, 4), new(9, new("pret:SPECIES_PSYDUCK"), 25, 35, 1)]),
     ];
     public static ImmutableArray<SevenIslandRockSmashSourceTable> RockSmashSource { get; } = [
-        new(new("map.seven-island-sevault-canyon"), EarlyLandEncounterRules.SourceCommit, EarlyLandEncounterRules.SourcePath, "sSevenIslandSevaultCanyon_FireRed", 25,
+        new(new("map.seven-island-sevault-canyon"), 25,
             [new(0, new("pret:SPECIES_GEODUDE"), 25, 35, 60), new(1, new("pret:SPECIES_GRAVELER"), 30, 45, 30), new(2, new("pret:SPECIES_GRAVELER"), 35, 50, 5), new(3, new("pret:SPECIES_GEODUDE"), 30, 40, 4), new(4, new("pret:SPECIES_GEODUDE"), 30, 40, 1)]),
     ];
     public static ImmutableArray<OldRodEncounterTable> OldRod { get; } =

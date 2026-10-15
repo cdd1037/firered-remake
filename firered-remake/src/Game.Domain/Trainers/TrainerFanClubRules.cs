@@ -27,7 +27,6 @@ public sealed record TrainerFanClubUpdate(TrainerFanClubState State, RngState Rn
 /// populated link-name records are deliberately not admitted by this single-player API.</summary>
 public static class TrainerFanClubRules
 {
-    public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourcePath = "src/trainer_fan_club.c";
     public const string CounterVariable = "VAR_FANCLUB_FAN_COUNTER";
     public const string LoseFanHoursVariable = "VAR_FANCLUB_LOSE_FAN_TIMER";

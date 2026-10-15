@@ -34,7 +34,7 @@ public sealed class PretViridianCenter
     public static PretViridianCenter Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/viridian-center");
+        var directory = Path.Combine(project, "content/generated/maps/regions/viridian-center");
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -42,30 +42,29 @@ public sealed class PretViridianCenter
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Center manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Center manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
-            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"viridian-center/"+path))continue;
+            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"maps/regions/viridian-center/"+path))continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate center output.");
         }
         using var catalog = JsonDocument.Parse(outputs["center-catalog.json"]);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Viridian Pokemon Center 1F; runtime certification is separate.", Profile);
         var spec = catalog.RootElement.GetProperty("map");
-        var relative = spec.GetProperty("directory").GetString()!;
+        var relative = spec.GetProperty("mapPath").GetString()!;
         PretWorldMap map;
         if(runtimeMaps is not null)
         {
             var compact=runtimeMaps.Maps[new MapId(spec.GetProperty("stableId").GetString()!)];
-            map=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"),MapIdFromSourceSymbol);
+            map=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"),MapIdFromSourceSymbol);
         }
         else
         {
             map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         }
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["HEAL_LOCATION_VIRIDIAN_CITY"] == 2 && constants["LOCALID_VIRIDIAN_NURSE"] == 1 &&

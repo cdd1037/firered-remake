@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Game.Content;
 
-internal sealed record FightingDojoDexDocument(int SchemaVersion, string Profile, string SourceCommit,
+internal sealed record FightingDojoDexDocument(int SchemaVersion,
     ImmutableArray<PokedexMenuEntry> Entries);
 internal sealed record FightingDojoPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
@@ -12,7 +12,7 @@ internal sealed record FightingDojoPresentationData(JsonElement Manifest, Dictio
 /// <summary>Two source dex footprints plus authenticated bindings to existing League and Black Belt art.</summary>
 internal static class FightingDojoPresentationAssets
 {
-    internal const string Base = "content/generated/fighting-dojo-presentation/";
+    internal const string Base = "content/generated/sprites/pokemon/fighting-dojo/";
     internal const string Profile = "firered-fighting-dojo-presentation-v1";
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -32,20 +32,19 @@ internal static class FightingDojoPresentationAssets
         }
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
         var manifest = document.RootElement;
-        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
-            manifest.GetProperty("profile").GetString() != Profile)
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Fighting Dojo presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            if (!path.EndsWith(".png", StringComparison.Ordinal)) continue;
-            files.Add(path, Read(path));
-        }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "sprites", "pokemonIcons", "footprints", "portraits" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (string kind in new[] { "sprites", "pokemonIcons", "footprints", "portraits" })
         foreach (var asset in manifest.GetProperty(kind).EnumerateArray())
@@ -61,7 +60,7 @@ internal static class FightingDojoPresentationAssets
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
             RespectNullableAnnotations = true, RespectRequiredConstructorParameters = true
         }) ?? throw new InvalidDataException("Fighting Dojo dex document missing.");
-        if (dex.SchemaVersion != 1 || dex.Profile != Profile ||
+        if (dex.SchemaVersion != 1 ||
             !dex.Entries.Select(e => e.SourceSpeciesId).SequenceEqual(new[] { 106, 107 }) ||
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(new[] { 106, 107 }) ||

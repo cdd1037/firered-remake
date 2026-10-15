@@ -4,13 +4,13 @@ namespace Game.Content;
 
 public sealed record SilphScrollArrow(string Id, int ArrowType, int SourceTileOffset, bool FlipV, int Width, int Height, string TexturePath,
     ImmutableArray<int> BounceOffsets);
-public sealed record SilphInterfaceDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<SilphScrollArrow> Arrows,
+public sealed record SilphInterfaceDocument(int SchemaVersion, ImmutableArray<SilphScrollArrow> Arrows,
     ImmutableArray<SnorlaxArtOutput> Outputs);
 
 /// <summary>The source elevator list's actual scroll sprites, with original integer sine bounce.</summary>
 public sealed class PretSilphInterface
 {
-    public const string GeneratedDirectory = "content/generated/silph-interface/";
+    public const string GeneratedDirectory = "content/generated/ui/silph-interface/";
     public SilphInterfaceDocument Document { get; }
     public ImmutableDictionary<string, byte[]> Files { get; }
     public SilphScrollArrow Up => Document.Arrows[0];

@@ -10,14 +10,26 @@ public sealed class GeneratedMenuAndRatingTests
     public void MenusRatingsAndCenterLoadWithGeneratedResourcesOnly()
     {
         var root = TestAssets.Output();
-        var generated = Path.Combine(TestAssets.Root, "content/generated");
         try
         {
-            foreach (var file in Directory.EnumerateFiles(generated, "*", SearchOption.AllDirectories))
+            string[] files =
+            [
+                "ui/main-menu/main-menu.json",
+                "data/services/oak-rating/oak-rating.json",
+                "data/constants.json",
+                "data/story.json",
+                "maps/metadata.json"
+            ];
+            var generated = Path.Combine(TestAssets.Root, "content/generated");
+            var packages = new[] { "maps/regions/viridian-center", "maps/regions/opening" };
+            var required = files.Concat(packages.SelectMany(package =>
+                Directory.EnumerateFiles(Path.Combine(generated, package), "*", SearchOption.AllDirectories)
+                    .Select(file => Path.GetRelativePath(generated, file))));
+            foreach (var relative in required)
             {
-                var target = Path.Combine(root, "content/generated", Path.GetRelativePath(generated, file));
+                var target = Path.Combine(root, "content/generated", relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                File.Copy(file, target);
+                File.Copy(Path.Combine(generated, relative), target);
             }
 
             var menu = PretMainMenuSource.Load(root);

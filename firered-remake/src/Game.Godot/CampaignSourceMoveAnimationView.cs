@@ -33,11 +33,11 @@ public partial class CampaignView
     private void EnsureSourceMoveAssets()
     {
         if(_sourceMoveManifest is not null)return;
-        string folder=System.IO.Path.Combine(_root,"content/generated/source-hit-animations");
+        string folder=System.IO.Path.Combine(_root,"content/generated/battle/animations/hit");
         _sourceMoveManifest=SourceHitAnimationCatalog.Read(folder);
         foreach(var row in _sourceMoveManifest.RootElement.GetProperty("assets").EnumerateArray())
         {string id=row.GetProperty("id").GetString()!;_sourceMoveAssets.Add(id,SourceHitAnimationCatalog.Asset(_sourceMoveManifest,folder,id));}
-        folder=System.IO.Path.Combine(_root,"content/generated/campaign-hit-art");
+        folder=System.IO.Path.Combine(_root,"content/generated/battle/art/campaign-hit-art");
         var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);
         foreach(var row in doc.RootElement.GetProperty("geometry").EnumerateArray())
@@ -185,12 +185,12 @@ public partial class CampaignView
     {
         if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceExplosionScripts is null)
         {
-            var imported=SourceExplosionAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-explosion-animations"));
+            var imported=SourceExplosionAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/explosion"));
             _sourceExplosionScripts=imported.Scripts;_sourceMoveAssets["explosion"]=imported.Explosion;
         }
         if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId))assets["explosion"]=_sourceMoveAssets["explosion"];
-        if(SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)&&_sourceStatMoveScripts is null)(_sourceStatMoveScripts,_sourceMetallicMaterial)=SourceStatMoveCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-stat-moves"));
-        if(SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceTraceScripts is null)_sourceTraceScripts=SourceTraceAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-trace-animations"),_sourceMoveManifest!);
+        if(SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)&&_sourceStatMoveScripts is null)(_sourceStatMoveScripts,_sourceMetallicMaterial)=SourceStatMoveCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/stat-moves"));
+        if(SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceTraceScripts is null)_sourceTraceScripts=SourceTraceAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/trace.json"),_sourceMoveManifest!);
         var script=SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceTraceScripts![dispatch.SourceMoveId]:SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceExplosionScripts![dispatch.SourceMoveId]:SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;

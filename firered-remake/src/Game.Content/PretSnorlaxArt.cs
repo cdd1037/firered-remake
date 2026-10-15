@@ -8,15 +8,15 @@ namespace Game.Content;
 public sealed record SnorlaxArtDex(int SourceSpeciesId,string Name,string Category,int HeightDecimeters,int WeightHectograms,
     string Description);
 public sealed record SnorlaxArtOutput(string Path);
-public sealed record SnorlaxArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonSprite> Sprites,
+public sealed record SnorlaxArtDocument(int SchemaVersion, ImmutableArray<ForestPokemonSprite> Sprites,
     ImmutableArray<StorageArtIcon> Icons, ImmutableArray<Route3PokemonFootprint> Footprints,
-    SnorlaxArtDex Dex, ImmutableArray<string> Limits, ImmutableArray<SnorlaxArtOutput> Outputs);
+    SnorlaxArtDex Dex, ImmutableArray<SnorlaxArtOutput> Outputs);
 
 /// <summary>Authenticated art and existing386-entry Dex projection. Does not activate presentation or battle effects.</summary>
 public sealed class PretSnorlaxArt
 {
     public const string Profile="firered-snorlax-art-v1";
-    public const string GeneratedDirectory="content/generated/snorlax-art/";
+    public const string GeneratedDirectory="content/generated/sprites/pokemon/snorlax/";
     public SnorlaxArtDocument Document { get; }
     public JsonElement Manifest { get; }
     public ImmutableDictionary<string,byte[]> Files { get; }
@@ -43,7 +43,7 @@ public sealed class PretSnorlaxArt
         using var json=JsonDocument.Parse(bytes);
         var doc=ContentJson.ParseStrict<SnorlaxArtDocument>(Encoding.UTF8.GetString(bytes),ContentJson.CreateOptions());
         Require(doc.SchemaVersion==1&&
-            doc.Sprites.Length==4&&doc.Icons.Length==1&&doc.Footprints.Length==1&&!doc.Limits.IsDefaultOrEmpty,"Snorlax art scope differs.");
+            doc.Sprites.Length==4&&doc.Icons.Length==1&&doc.Footprints.Length==1,"Snorlax art scope differs.");
         var files=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var output in doc.Outputs)files.Add(output.Path,PretCeladonApproachSource.Read(project,GeneratedDirectory+output.Path));
         void Pixels(string png,int width,int height)

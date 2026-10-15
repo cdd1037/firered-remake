@@ -3,15 +3,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record BreedingDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record BreedingDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record BreedingPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Eight authenticated breeding species reuse eight battlers, all geometry and cry samples; only missing source assets and cues are added.</summary>
 public static class PretBreedingPresentation
 {
-    public const string Base = "content/generated/breeding-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/breeding/";
     public const string Profile = "firered-breeding-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -150,8 +149,7 @@ public static class PretBreedingPresentation
                 cue.GetProperty("priority").GetInt32() != 10 ||
                 cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
                 cue.GetProperty("cryMode").GetInt32() != 0 || cue.GetProperty("songAddress").GetInt32() != 0 ||
-                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null ||
-                cue.GetProperty("sourcePath").GetString() != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav")
+                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null)
                 throw new InvalidDataException("Breeding normal cry source binding differs.");
         }
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));

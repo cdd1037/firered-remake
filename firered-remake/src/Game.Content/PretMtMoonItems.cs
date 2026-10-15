@@ -12,10 +12,9 @@ public sealed record PretMtMoonPickup(string Map, string Kind, ItemId Item, int 
     int X, int Y, int Elevation, string Flag, bool Underfoot, string? Script, OpeningItemSourceRef Source,
     OpeningItemSourceRef? ScriptSource);
 public sealed record PretMtMoonFossil(ItemId Item, string Script, OpeningItemSourceRef Source);
-public sealed record PretMtMoonItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretMtMoonItem> Items, ImmutableArray<MachineDefinition> Machines,
+public sealed record PretMtMoonItemsDocument(int SchemaVersion, ImmutableArray<PretMtMoonItem> Items, ImmutableArray<MachineDefinition> Machines,
     ImmutableArray<MachineCompatibility> Tm39Compatibility, ImmutableArray<PretPewterMachineIcon> Icons,
-    ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Fossils, ImmutableArray<string> Limitations);
+    ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Fossils);
 
 /// <summary>All reviewed input, generated and icon bytes are authenticated before bounded composition.</summary>
 public static class PretMtMoonItems
@@ -29,7 +28,7 @@ public static class PretMtMoonItems
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var d = ContentJson.ParseStrict<PretMtMoonItemsDocument>(json, options);
         Require(d.SchemaVersion == 1 && d.Items.Length == 12 && d.Machines.Length == 3 && d.Tm39Compatibility.Length == 56 &&
-            d.Icons.Length == 12 && d.Pickups.Length == 19 && d.Fossils.Length == 2 && !d.Limitations.IsDefaultOrEmpty, "MtMoon item scope differs.");
+            d.Icons.Length == 12 && d.Pickups.Length == 19 && d.Fossils.Length == 2, "MtMoon item scope differs.");
         foreach (var i in d.Icons)
         {
             PretPewterMachines.ValidateIcon(i);
@@ -47,7 +46,7 @@ public static class PretMtMoonItems
 
     public static PretMtMoonItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var d = Load(Utf8.GetString(Read(root,"content/generated/mtmoon-items/mtmoon-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
+        var d = Load(Utf8.GetString(Read(root,"content/generated/data/items/mtmoon/mtmoon-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return d;
     }
 

@@ -9,7 +9,7 @@ public sealed record FieldRockSmashSourceRef(string Path);
 public sealed record FieldRockSmashSourceActor(MapId Map, string SourceMapSymbol, int SourceLocalId,
     int X, int Y, int Elevation, string GraphicsId, string ScriptId, string MovementType,
     int MovementRangeX, int MovementRangeY, string HideFlag, FieldRockSmashSourceRef Source);
-public sealed record FieldRockSmashSourceDocument(string SourceCommit,
+public sealed record FieldRockSmashSourceDocument(
     ImmutableArray<FieldRockSmashSourceActor> Rocks, ImmutableArray<RockSmashEncounterTable> EncounterTables,
     RockSmashWildSourceDocument Wild);
 public sealed record RockSmashWildSpeciesSource(SpeciesId Species, int SourceSpeciesId, string Ability1, string Ability2,
@@ -65,7 +65,7 @@ public sealed class FieldRockSmashCatalog
     public static FieldRockSmashCatalog Authenticate(FieldRockSmashSourceDocument source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (source.SourceCommit != FieldRockSmashSourceRules.SourceCommit || source.Rocks.IsDefault ||
+        if (source.Rocks.IsDefault ||
             source.Rocks.Length != 97 || source.EncounterTables.IsDefault || source.EncounterTables.Length != 14 ||
             source.Wild is null || source.Wild.Species.IsDefault || source.Wild.Species.Length != 4 ||
             source.Wild.InitialMoves.IsDefault || source.Wild.InitialMoves.Length != 139)

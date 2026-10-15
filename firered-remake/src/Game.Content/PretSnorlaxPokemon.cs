@@ -7,19 +7,18 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record SnorlaxPokemonDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<ForestPokemonInput> Inputs, ImmutableArray<PokemonSpeciesDefinition> Species,
+public sealed record SnorlaxPokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species,
     ImmutableArray<PokemonMoveDefinition> Moves, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
     ImmutableArray<PretRoute1MoveName> MoveNames, ImmutableArray<ForestPokemonConstant> Constants,
     ImmutableArray<PewterPokemonEncodedName> EncodedNames, ImmutableArray<MtMoonDeferredEvolution> DeferredEvolutions,
-    ImmutableArray<MoveId> RequiredMoves, int? NaturalLevelLimit, ImmutableArray<string> Limitations);
+    ImmutableArray<MoveId> RequiredMoves, int? NaturalLevelLimit);
 
 /// <summary>Authenticated source143 and four absent moves. All fourteen learn entries remain metadata.</summary>
 public sealed class PretSnorlaxPokemon
 {
     public const string Profile = "firered-snorlax-pokemon-v1";
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public const string CatalogRelativePath = "content/generated/snorlax-pokemon/catalog.json";
+    public const string CatalogRelativePath = "content/generated/data/pokemon/snorlax.json";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     public PokemonCatalog Catalog { get; }
     public SnorlaxPokemonDocument Document { get; }
@@ -28,12 +27,10 @@ public sealed class PretSnorlaxPokemon
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<MtMoonDeferredEvolution> DeferredEvolutions => Document.DeferredEvolutions;
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
-    private PretSnorlaxPokemon(PokemonCatalog catalog, SnorlaxPokemonDocument document,
-        ImmutableArray<PretWorldSourceFile> files)
+    private PretSnorlaxPokemon(PokemonCatalog catalog, SnorlaxPokemonDocument document)
     {
-        Catalog = catalog; Document = document; SourceFiles = files;
+        Catalog = catalog; Document = document;
         AdditionalSpeciesNames = document.SpeciesNames.ToImmutableSortedDictionary(n => catalog.Species[n.Id].SourceSpeciesId, n => n.Name);
         AdditionalMoveNames = document.MoveNames.ToImmutableDictionary(n => n.Id, n => n.Name);
         Constants = document.Constants.ToImmutableDictionary(c => c.Symbol, c => c.Value, StringComparer.Ordinal);
@@ -50,8 +47,7 @@ public sealed class PretSnorlaxPokemon
         foreach (var name in doc.EncodedNames)
             SafariSource.Require(!name.Bytes.IsDefaultOrEmpty && name.Bytes[^1] == 255,
                 "Snorlax encoded name is unterminated.");
-        var files = doc.Inputs.Select(input => new PretWorldSourceFile(input.Path)).ToImmutableArray();
-        return new(catalog, doc, files);
+        return new(catalog, doc);
     }
     private static void Require(bool value,string message) { if (!value) throw new InvalidDataException(message); }
 }

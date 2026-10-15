@@ -4,9 +4,7 @@ using System.Text.Json;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record Route11EncounterDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,ImmutableArray<Route11HeldItemRow> HeldItems,JsonElement ExcludedTables,
-    ImmutableArray<string> Limitations);
+public sealed record Route11EncounterDocument(int SchemaVersion,ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,ImmutableArray<Route11HeldItemRow> HeldItems,JsonElement ExcludedTables);
 public sealed record Route11HeldItemRow(string Species, string Common, string Rare, string SourcePath);
 /// <summary>Fixed source inputs and exact Route11/cave land tables; no water or fishing admission.</summary>
 public sealed class PretRoute11Encounters
@@ -22,9 +20,9 @@ public sealed class PretRoute11Encounters
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var d=ContentJson.ParseStrict<Route11EncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/route11-encounters/encounters.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<Route11EncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/data/encounters/route11.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=2 ||
-            d.HeldItemDrawBound!=100 || d.HeldItems.Length!=5 || d.ExcludedTables.GetArrayLength()!=2 || d.Limitations.IsDefaultOrEmpty)
+            d.HeldItemDrawBound!=100 || d.HeldItems.Length!=5 || d.ExcludedTables.GetArrayLength()!=2)
             throw new InvalidDataException("Route11 encounter document scope differs.");
         if(!d.HeldItems.Select(x=>x.Species).ToHashSet(StringComparer.Ordinal).SetEquals(Route11LandEncounterTables.WildSpecies.Select(x=>x.Value)))
             throw new InvalidDataException("Route11 held-item species differs.");

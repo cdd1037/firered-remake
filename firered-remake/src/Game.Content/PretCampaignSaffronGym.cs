@@ -18,7 +18,7 @@ public sealed partial class PretCampaignCatalog
     public PretSaffronGymItemsDocument? SaffronGymItems{get;}
     public GameOpponentPokemonCatalog? SaffronGymOpponents{get;}
     public bool SaffronGymEnabled=>SaffronGymRegion is not null;
-    SaffronGymTrainerCatalog? ICampaignCatalog.SaffronGymTrainerParties=>SaffronGymTrainers is {} t?new(t.SourceCommit,t.Profile,t.CompleteSourceRoster,t.Trainers,t.Battles):null;
+    SaffronGymTrainerCatalog? ICampaignCatalog.SaffronGymTrainerParties=>SaffronGymTrainers is {} t?new(t.Trainers,t.Battles):null;
     public bool SupportsTeleportPads(MapId map)=>SilphEnabled&&SilphRegion!.NewMaps.ContainsKey(map)&&map.Value.StartsWith("map.silph-co-",StringComparison.Ordinal)||
         SaffronGymEnabled&&map.Value=="map.saffron-city-gym"&&SaffronGymRegion!.NewMaps.ContainsKey(map);
 

@@ -51,7 +51,7 @@ dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/tes
 
 全部 354 招式的四个位置共 1,416 行，386 种普通叫声也分别发现；Repel、进化石、Everstone 和生命周期变体保留参数化数据行。MSTest 负责结果与 TRX，不再维护手工成功计数或套件级 JSON/XML。普通游戏／音频测试不启动其他测试程序集或音频 CLI。
 
-仅 `Game.Process.Tests` 启动专用 .NET 辅助进程验证跨进程确定性；仅 `Game.ResourceImport.Tests` 调用 Python。可用 `FIRERED_PYTHON` 指定 Python。当前测试按原有隔离要求串行运行，各用例独立准备状态，不依赖执行顺序。
+仅 `Game.Process.Tests` 启动专用 .NET 辅助进程验证跨进程确定性；仅 `Game.ResourceImport.Tests` 直接调用 `scripts/checks/` 中的 Python 检查。脚本结构与离线物化回归可独立执行 `python scripts/checks/test-script-layout.py`。可用 `FIRERED_PYTHON` 指定 Python。当前测试按原有隔离要求串行运行，各用例独立准备状态，不依赖执行顺序。
 
 ## 输入和覆盖边界
 

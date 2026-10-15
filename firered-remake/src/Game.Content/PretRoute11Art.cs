@@ -12,7 +12,7 @@ public static class PretRoute11Art
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string Profile = "firered-route11-art-v1";
-    private const string Generated = "content/generated/route11-art/";
+    private const string Generated = "content/generated/sprites/trainers/route11/";
     private static readonly ImmutableDictionary<string, (int W, int H, int X, int Y)> Expected =
         new Dictionary<string, (int, int, int, int)>(StringComparer.Ordinal)
         {

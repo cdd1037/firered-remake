@@ -6,6 +6,10 @@ namespace FireRed.Tests.ResourceImport;
 public sealed class ResourceImportTests
 {
     [TestMethod]
+    public Task ScriptLayout() => Run("test-script-layout.py");
+    [TestMethod]
+    public Task SingleFileImportPublishing() => Run("test-single-file-imports.py");
+    [TestMethod]
     public Task FameChecker() => Run("test-fame-checker-importer.py", "--git-dir", TestAssets.Source);
     [TestMethod]
     public Task NationalDex() => Run("test-national-dex-source.py");
@@ -16,6 +20,12 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task ItemCatalog() => Run("test-item-catalog-import.py");
 
+    [TestMethod]
+    public Task RuntimeProofRetirement() => Run("test-runtime-proof-retirement.py");
+    [TestMethod]
+    public Task PresentationImportMetadata() => Run("test-presentation-import-metadata.py");
+    [TestMethod]
+    public Task RuntimeJsonEncoding() => Run("test-runtime-json.py");
     [TestMethod]
     public Task CurrentItems() => Run("test-current-items-import.py");
     [TestMethod]
@@ -50,7 +60,7 @@ public sealed class ResourceImportTests
             StandardErrorEncoding = System.Text.Encoding.UTF8
         };
         info.Environment["PYTHONIOENCODING"] = "utf-8";
-        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts", script));
+        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts", "checks", script));
         foreach (var arg in args)
             info.ArgumentList.Add(arg);
         using var p = Process.Start(info) ?? throw new InvalidOperationException("Python could not start");

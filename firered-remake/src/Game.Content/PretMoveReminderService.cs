@@ -3,13 +3,13 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record MoveReminderDocument(int SchemaVersion, string SourceCommit, ImmutableDictionary<string, string> Texts);
+public sealed record MoveReminderDocument(int SchemaVersion, ImmutableDictionary<string, string> Texts);
 
 /// <summary>Generated service text; field map admission is PretMoveReminderHouse.</summary>
 public sealed class PretMoveReminderService
 {
     public const string Profile = "firered-move-reminder-v1";
-    public const string RelativePath = "content/generated/move-reminder/catalog.json";
+    public const string RelativePath = "content/generated/data/services/move-reminder.json";
     public MoveReminderCatalog Catalog { get; }
     public ImmutableDictionary<string, string> Texts => Catalog.Texts;
 

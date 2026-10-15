@@ -6,33 +6,23 @@ using Game.Domain.Randomness;
 namespace Game.Domain.Trainers;
 
 /// <summary>The eleven original first-visit singles, including Selphy's no-intro continuation.</summary>
-public sealed record LostCaveTrainerCatalog(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
+public sealed record LostCaveTrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
     ImmutableDictionary<string, CeruleanTrainerBattleDefinition> BattlesByScript, VsSeekerTrainerCatalog InheritedTrainers);
 
 public static class LostCaveTrainerPartyFactory
 {
-    public const string Profile = "firered-lost-cave-trainers-v1";
     public static ImmutableArray<TrainerId> AllTrainers { get; } = LostCaveTrainerSource.TrainerIds.OrderBy(t => t.Value, StringComparer.Ordinal).ToImmutableArray();
-    public static LostCaveTrainerCatalog Authenticate(VsSeekerTrainerCatalog inherited)
+    public static LostCaveTrainerCatalog Authenticate(VsSeekerTrainerCatalog inherited, ImmutableDictionary<TrainerId, TrainerDefinition> shared)
     {
         ArgumentNullException.ThrowIfNull(inherited);
-        var result = LostCaveTrainerSource.Create(inherited);
+        var result = LostCaveTrainerSource.Create(inherited, shared);
         ValidateCatalog(result); return result;
     }
 
     public static void ValidateCatalog(LostCaveTrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != TrainerPartyFactory.SourceCommit || catalog.Profile != Profile || catalog.CompleteSourceRoster ||
-            catalog.InheritedTrainers is null || catalog.Trainers is null || catalog.Trainers.Count != 11 || catalog.BattlesByScript is null || catalog.BattlesByScript.Count != 11)
-            throw new ArgumentException("lost_cave_trainer_scope");
-        foreach (var id in LostCaveTrainerSource.TrainerIds)
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null)
-                throw new ArgumentException("lost_cave_trainer_source");
-        foreach (var label in LostCaveTrainerSource.BattleScripts)
-            if (!catalog.BattlesByScript.TryGetValue(label, out var battle) || battle is null)
-                throw new ArgumentException("lost_cave_battle_source");
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.BattlesByScript.Values, ValidateBattle);
     }
 
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
@@ -50,8 +40,6 @@ public static class LostCaveTrainerPartyFactory
         var source = owned.Mechanics;
         if (LostCaveTrainerSource.InheritedIds.Contains(id))
         {
-            if (!ReferenceEquals(trainer, trainers.InheritedTrainers.Trainers[id]))
-                throw new ArgumentException("lost_cave_inherited_trainer_identity");
             return VsSeekerTrainerPartyFactory.Create(trainers.InheritedTrainers, source, id, rng);
         }
         var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);

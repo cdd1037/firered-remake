@@ -11,7 +11,7 @@ public sealed class GeneratedImageBoundaryTests
         var root = Path.Combine(Path.GetTempPath(), "firered-images-" + Guid.NewGuid().ToString("N"));
         try
         {
-            foreach (var package in new[] { "player-gender-art", "city-cycle-art" })
+            foreach (var package in new[] { "ui/player-gender-art", "ui/city-cycle-art" })
             {
                 var relative = "content/generated/" + package;
                 var destination = Path.Combine(root, relative);

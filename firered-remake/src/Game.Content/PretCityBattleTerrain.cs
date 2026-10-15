@@ -56,7 +56,7 @@ public sealed class PretCityBattleTerrain
                 if (directory.LinkTarget is not null) throw new InvalidDataException("City terrain directory symlink rejected.");
             return File.ReadAllBytes(info.FullName);
         }
-        using var json = JsonDocument.Parse(Read("content/generated/city-battle-terrain/city-battle-terrain.json"));
+        using var json = JsonDocument.Parse(Read("content/generated/battle/terrain/city/city-battle-terrain.json"));
         var document = json.RootElement;
         if (document.GetProperty("assets").GetArrayLength() != 6 ||
             document.GetProperty("variants").GetArrayLength() != 3 )
@@ -75,7 +75,7 @@ public sealed class PretCityBattleTerrain
                 asset.GetProperty("height").GetInt32() != expectedHeight ||
                 asset.GetProperty("x").GetInt32() != 0 || asset.GetProperty("y").GetInt32() != 0)
                 throw new InvalidDataException("City terrain asset bounds differ.");
-            string relative = "content/generated/city-battle-terrain/" + id + ".png";
+            string relative = "content/generated/battle/terrain/city/" + id + ".png";
             if (expectedHeight == 112)
                 scenes.Add(id, new(id[..^6],Path.GetFullPath(Path.Combine(root, relative))));
         }

@@ -25,6 +25,8 @@ public static class SixIslandDoubleTrainerEncounter
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("six_island_double_source"); }
         if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Trainer != TrainerId || battle.Mode != 4)
             return Fail("six_island_double_script");
+        if (!trainers.Trainers.TryGetValue(TrainerId, out var definition) || !definition.DoubleBattle || definition.Party.Length < 2)
+            return Fail("six_island_double_roster");
         var owned = opponents.Owned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
         if (!Enum.IsDefined(terrain)) return Fail("six_island_double_terrain");
@@ -99,19 +101,23 @@ public static class SixIslandDoubleTrainerEncounter
         if (frame.Campaign is null || frame.SourceCampaignRulesVersion != opponents.RulesVersion) return "source_double_campaign_context";
         if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "six_island_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
-        var expected = SixIslandTrainerPartyFactory.Expected[TrainerId];
-        if (members.Length != expected.Party.Length) return "six_island_double_roster";
+        if (!trainers.Trainers.TryGetValue(TrainerId, out var trainer) || !trainer.DoubleBattle ||
+            members.Length != trainer.Party.Length) return "six_island_double_roster";
         uint hash = 0;
         for (int i = 0; i < members.Length; i++)
         {
-            var mon = members[i].Pokemon; var source = expected.Party[i];
-            foreach (int value in expected.Encoded.Concat(source.Encoded)) hash = unchecked(hash + (uint)value);
+            var mon = members[i].Pokemon; var source = trainer.Party[i];
+            foreach (int value in trainer.EncodedTrainerName.Concat(source.EncodedSpeciesName)) hash = unchecked(hash + (uint)value);
             uint personality = unchecked(0x80u + (hash << 8));
-            int iv = source.Iv * 31 / 255;
-            if (members[i].IsEgg || mon.Species.Value != source.Species || mon.SourceSpeciesId != source.SourceSpecies ||
+            int iv = source.SourceIv * 31 / 255;
+            var moves = (trainer.PartyFlags & 1) != 0
+                ? source.CustomMoves.TakeWhile(move => move.Value != "pret:MOVE_NONE")
+                : PokemonMoveRules.InitialMovesCore(opponents.Mechanics.Catalog,
+                    opponents.Mechanics.Catalog.Species[source.Species], source.Level).Select(move => move.Move);
+            if (members[i].IsEgg || mon.Species != source.Species || mon.SourceSpeciesId != source.SourceSpeciesId ||
                 mon.Level != source.Level || mon.Personality != personality || mon.IsShiny || mon.Evs != SixStats.Zero ||
                 mon.Ivs != new SixStats(iv,iv,iv,iv,iv,iv) || mon.Moves.Any(m => m.PpUps != 0) ||
-                !mon.Moves.Select(m => m.Move.Value).SequenceEqual(source.Moves)) return "six_island_double_roster";
+                !mon.Moves.Select(m => m.Move).SequenceEqual(moves)) return "six_island_double_roster";
         }
         return null;
     }

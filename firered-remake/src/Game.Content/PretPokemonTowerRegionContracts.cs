@@ -20,10 +20,10 @@ public sealed partial class PretPokemonTowerRegion
     public ImmutableArray<PretTowerPickup> Pickups { get; }
 
     private PretPokemonTowerRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        PretRuntimeMapData house, ImmutableArray<PretWorldSourceFile> files, ImmutableDictionary<string, int> constants,
-        ImmutableHashSet<string> outputs, JsonElement contract, JsonElement city)
+        PretRuntimeMapData house, ImmutableDictionary<string, int> constants,
+        JsonElement contract, JsonElement city)
     {
-        GeneratedDirectory = directory; NewMaps = maps; ExistingHouse = house; SourceFiles = files; Constants = constants; _outputs = outputs; SourceContract = contract; ExternalLavenderEvents = city;
+        GeneratedDirectory = directory; NewMaps = maps; ExistingHouse = house; Constants = constants; SourceContract = contract; ExternalLavenderEvents = city;
         InitiallySetFlags = [constants["FLAG_HIDE_POKEHOUSE_FUJI"]];
         var deps = Dependencies; var mechanics = Mechanics;
         SourceRef Source(string path, string symbol)
@@ -39,7 +39,7 @@ public sealed partial class PretPokemonTowerRegion
         ImmutableArray<PretTowerCoordinateTrigger> Triggers(int floor) => maps[FloorMapId(floor)].Events.GetProperty("coord_events").EnumerateArray().Select((e, index) =>
             new PretTowerCoordinateTrigger(FloorMapId(floor), index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
                 e.GetProperty("var").GetString()!, constants[e.GetProperty("var").GetString()!], int.Parse(e.GetProperty("var_value").GetString()!, CultureInfo.InvariantCulture),
-                e.GetProperty("script").GetString()!, maps[FloorMapId(floor)].SourceRef)).ToImmutableArray();
+                e.GetProperty("script").GetString()!)).ToImmutableArray();
         var purified = contract.GetProperty("purifiedGround"); var healing = mechanics.GetProperty("healing");
         var triggers = Triggers(5);
         Need(JsonElement.DeepEquals(maps[FloorMapId(5)].Events.GetProperty("coord_events"), purified.GetProperty("triggers")), "Purified trigger source differs.");

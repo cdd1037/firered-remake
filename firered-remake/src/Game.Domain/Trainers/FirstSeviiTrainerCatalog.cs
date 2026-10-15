@@ -6,8 +6,7 @@ public readonly record struct FirstSeviiBattleKey(string ScriptEntry, int Source
 {
     public static FirstSeviiBattleKey For(CeruleanTrainerBattleDefinition battle) => new(battle.ScriptEntry, battle.Source.StartLine);
 }
-public sealed record FirstSeviiTrainerCatalog(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
+public sealed record FirstSeviiTrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
     ImmutableDictionary<FirstSeviiBattleKey, CeruleanTrainerBattleDefinition> BattlesBySource)
 {
     public CeruleanTrainerBattleDefinition Battle(string scriptEntry, int sourceLine)

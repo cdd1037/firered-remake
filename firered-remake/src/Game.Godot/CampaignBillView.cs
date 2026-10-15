@@ -133,7 +133,7 @@ public partial class CampaignView
         }
         foreach (var picture in (_catalog.BillItems ?? throw new InvalidDataException("Bill picture catalog missing.")).DexViews)
         {
-            var texture = SceneTextures.Texture(System.IO.Path.Combine(_root, "content/generated/bill-items", picture.PngPath));
+            var texture = SceneTextures.Texture(System.IO.Path.Combine(_root, "content/generated/data/items/bill", picture.PngPath));
             if (texture.GetWidth() != picture.Width || texture.GetHeight() != picture.Height) throw new InvalidDataException("Bill picture dimensions differ.");
             _billPictures.Add(picture.SourceSpeciesId, texture);
         }

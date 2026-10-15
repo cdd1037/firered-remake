@@ -6,15 +6,12 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretSaffronGymItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
-    ImmutableArray<string> Limitations)
+public sealed record PretSaffronGymItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons)
 {
     [JsonIgnore] public SaffronGymMachinesDocument Machines { get; internal init; } = null!;
 }
-public sealed record SaffronGymMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<MachineDefinition> NewMachines, ImmutableArray<string> Limitations)
+public sealed record SaffronGymMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
+    ImmutableArray<MachineDefinition> NewMachines)
 {
     [JsonIgnore] public ImmutableArray<MachineDefinition> Machines => NewMachines;
 }
@@ -29,8 +26,7 @@ public static class PretSaffronGymItems
     {
         var source = SaffronGymSource.Catalogs(root); var d = source.Parse<PretSaffronGymItemsDocument>("items.json");
         SilphSourcePackage.Need(d.SchemaVersion == 1 &&
-            d.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([Tm04Id, MaxRepelId]) && d.Icons.Length == 1 &&
-            !d.Limitations.IsDefaultOrEmpty, "Saffron Gym item scope differs.");
+            d.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([Tm04Id, MaxRepelId]) && d.Icons.Length == 1, "Saffron Gym item scope differs.");
         foreach (var item in d.Items)
         {
             var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && i.Importance == 0 && i.Registrability == 0 &&
@@ -48,8 +44,7 @@ public static class PretSaffronGymItems
 PretPewterMachines.ValidateIcon(icon);
         var machines = source.Parse<SaffronGymMachinesDocument>("machines.json");
         SilphSourcePackage.Need(machines.SchemaVersion == 1 &&
-            machines.InheritedItemIds.Length == 27 && machines.InheritedItemIds.Distinct().Count() == 27 && machines.Additions.IsEmpty && machines.NewMachines.Length == 1 &&
-            !machines.Limitations.IsDefaultOrEmpty, "Saffron Gym machine scope differs.");
+            machines.InheritedItemIds.Length == 27 && machines.InheritedItemIds.Distinct().Count() == 27 && machines.Additions.IsEmpty && machines.NewMachines.Length == 1, "Saffron Gym machine scope differs.");
         var machine = machines.NewMachines[0];
         SilphSourcePackage.Need(machine.Machine == d.Items[0].Metadata && machine.Move.Value == "pret:MOVE_CALM_MIND" && machine.SourceMoveId == 347 && machine.MovePp == 20 &&
             machine.Compatibility.Length == 113 && machine.Compatibility.Select(c => c.Species).Distinct().Count() == 113 && machine.Compatibility.Count(c => c.CanLearn) == 10 &&

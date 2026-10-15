@@ -85,7 +85,7 @@ public partial class CampaignView
         _silphItemArt = PretSilphItemArt.Load(_root);
         foreach (var icon in _silphItemArt.Icons)
         {
-            if (!_earlyItemIcons.ContainsKey(icon.Item)) _earlyItemIcons.Add(icon.Item, ItemTexture("silph-item-art", icon));
+            if (!_earlyItemIcons.ContainsKey(icon.Item)) _earlyItemIcons.Add(icon.Item, ItemTexture("data/services/silph-item-art.json", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Silph item pockets missing.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
@@ -94,7 +94,7 @@ public partial class CampaignView
             if (document.Items.Any(i => i.Id == id.Value)) continue;
             var metadata = items.Items.Single(i => i.Metadata.Item.Id == id).Metadata;
             var icon = _silphItemArt.Icons.Single(i => i.Item == id); string assetId = "silph-" + id.Value[10..].ToLowerInvariant();
-            _questPocketTextures.Add(assetId, ItemTexture("silph-item-art", icon));
+            _questPocketTextures.Add(assetId, ItemTexture("data/services/silph-item-art.json", icon));
             document = document with { Items = document.Items.Add(new(id.Value, metadata.Item.SourceItemSymbol, metadata.Item.Name, metadata.Description, assetId, metadata.Item.FieldUseFunction)),
                 Assets = document.Assets.Add(new(assetId,icon.PngPath,icon.Width,icon.Height,position.X,position.Y)) };
         }

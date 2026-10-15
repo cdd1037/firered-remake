@@ -8,14 +8,14 @@ namespace FireRed.Tests.Content;
 public sealed class PresentationSchemaTests
 {
     [TestMethod]
-    [DataRow(typeof(ForestPokemonSprite), "forest-pokemon/battle-art.json", "sprites")]
-    [DataRow(typeof(StorageArtIcon), "storage-art/storage-art.json", "icons")]
-    [DataRow(typeof(PlayerGenderArtAsset), "player-gender-art/player-gender-art.json", "assets")]
-    [DataRow(typeof(PretFishingArtAsset), "city-cycle-art/fishing-art.json", "assets")]
-    [DataRow(typeof(OldManArtDocument), "old-man-art/old-man-art.json", "")]
-    [DataRow(typeof(EarlyStarterStatusUiDocument), "early-starter-status/early-starter-status-ui.json", "")]
-    [DataRow(typeof(ForestStatusUiDocument), "forest-status-ui/forest-status-ui.json", "")]
-    [DataRow(typeof(PretMainMenuRules), "main-menu/main-menu.json", "rules")]
+    [DataRow(typeof(ForestPokemonSprite), "sprites/pokemon/forest/battle-art.json", "sprites")]
+    [DataRow(typeof(StorageArtIcon), "ui/storage-art/storage-art.json", "icons")]
+    [DataRow(typeof(PlayerGenderArtAsset), "ui/player-gender-art/player-gender-art.json", "assets")]
+    [DataRow(typeof(PretFishingArtAsset), "ui/city-cycle-art/fishing-art.json", "assets")]
+    [DataRow(typeof(OldManArtDocument), "sprites/pokemon/old-man/old-man-art.json", "")]
+    [DataRow(typeof(EarlyStarterStatusUiDocument), "ui/early-starter-status/early-starter-status-ui.json", "")]
+    [DataRow(typeof(ForestStatusUiDocument), "ui/forest-status-ui/forest-status-ui.json", "")]
+    [DataRow(typeof(PretMainMenuRules), "ui/main-menu/main-menu.json", "rules")]
     public void PresentationRecordsRoundTripTheirRuntimeFieldsWithoutSourceReceipts(Type type, string path, string property)
     {
         var node = JsonNode.Parse(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated", path)))!;
@@ -38,7 +38,7 @@ public sealed class PresentationSchemaTests
     [DataRow("paletteRgb555")]
     public void TutorialArtStillRejectsInvalidRenderingMetadata(string field)
     {
-        var json = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/old-man-art/old-man-art.json"));
+        var json = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/sprites/pokemon/old-man/old-man-art.json"));
         var original = PretOldManArt.Load(json);
         Assert.AreEqual(5, original.Assets.Length);
         var changed = JsonNode.Parse(json)!;

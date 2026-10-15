@@ -5,8 +5,7 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 namespace Game.Content;
 
-public sealed record PretFuchsiaGymItemsDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,ImmutableArray<string> Limitations);
+public sealed record PretFuchsiaGymItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons);
 
 /// <summary>Authenticated TM06 metadata for future composition. No reward or teaching handler is registered.</summary>
 public static class PretFuchsiaGymItems
@@ -15,10 +14,10 @@ public static class PretFuchsiaGymItems
     public static readonly ItemId Tm06Id=new("pret:ITEM_TM06");
     public static PretFuchsiaGymItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var outputs=PretCeladonApproachSource.Outputs(root,"fuchsia-gym-items");
+        var outputs=PretCeladonApproachSource.Outputs(root,"data/items/fuchsia-gym");
         var document=ContentJson.ParseStrict<PretFuchsiaGymItemsDocument>(Encoding.UTF8.GetString(outputs["fuchsia-gym-items.json"]),(shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
         Need(document.SchemaVersion==1&&
-            document.Items.Length==1&&document.Icons.Length==1&&!document.Limitations.IsDefaultOrEmpty,"Fuchsia Gym item scope differs.");
+            document.Items.Length==1&&document.Icons.Length==1,"Fuchsia Gym item scope differs.");
         var item=document.Items.Single();var d=item.Metadata.Item;
         Need(d.Id==Tm06Id&&d.SourceItemSymbol=="ITEM_TM06"&&d.SourceItemId==294&&d.Name=="TM06"&&d.Price==3000&&
             d.Importance==0&&d.Registrability==0&&d.Pocket=="POCKET_TM_CASE"&&d.Type=="ITEM_TYPE_PARTY_MENU"&&d.HoldEffect=="HOLD_EFFECT_NONE"&&
@@ -40,11 +39,11 @@ public static class PretFuchsiaGymMachines
     public static PretRockTunnelMachinesDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
         var items=PretFuchsiaGymItems.LoadProject(root);
-        var bytes=PretCeladonApproachSource.Read(root,"content/generated/fuchsia-gym-items/fuchsia-gym-machines.json");
+        var bytes=PretCeladonApproachSource.Read(root,"content/generated/data/items/fuchsia-gym/fuchsia-gym-machines.json");
         var document=ContentJson.ParseStrict<PretRockTunnelMachinesDocument>(Encoding.UTF8.GetString(bytes),(shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
         void Need(bool value,string message)=>PretCeladonApproachSource.Require(value,message);
-        Need(document.SchemaVersion==1&&document.Inputs.SequenceEqual(items.Inputs)&&
-            document.Machines.Length==1&&document.Icons.Length==1&&!document.Limitations.IsDefaultOrEmpty,"Fuchsia Gym machine scope differs.");
+        Need(document.SchemaVersion==1&&
+            document.Machines.Length==1&&document.Icons.Length==1,"Fuchsia Gym machine scope differs.");
         Need(JsonSerializer.Serialize(document.Icons)==JsonSerializer.Serialize(items.Icons),"Fuchsia Gym machine icon provenance differs.");
         var machine=document.Machines.Single();
         Need(machine.Machine==items.Items.Single().Metadata&&machine.Move.Value=="pret:MOVE_TOXIC"&&machine.SourceMoveId==92&&machine.MovePp==10&&

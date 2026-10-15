@@ -2,7 +2,7 @@ using System.Text.Json;
 
 public partial class SynthSourceAudioPlayer
 {
-    private sealed record CelioSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record CelioSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
 
     private static SynthCue[] ExtendCelioCues(string root, bool includeFiveIsland, SynthCue[] cues, JsonSerializerOptions options)
     {

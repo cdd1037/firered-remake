@@ -151,14 +151,8 @@ public sealed class TrainerBattleTests
                     var move = mechanics.Moves[trainer.Combat.Battle.Player.Pokemon.Moves[slot].Move];
                     if (move.Power == 0)
                         return 0;
-                    try
-                    {
-                        return WildBattleDamage.Calculate(mechanics, trainer.Combat.Battle.Player, trainer.Combat.Battle.Opponent, move.Id, false, 100, trainer.Combat.Battle.RulesVersion).Damage;
-                    }
-                    catch (NotSupportedException)
-                    {
-                        return move.Power;
-                    }
+                    // Selection heuristic only; actual damage belongs to the battle engine.
+                    return move.Power;
                 }
 
                 var slots = Enumerable.Range(-1, trainer.Combat.Battle.Player.Pokemon.Moves.Length + 1).Where(i => SourceWildBattlePolicy.ValidateMoveSelection(mechanics, trainer.Frame, i)is null);

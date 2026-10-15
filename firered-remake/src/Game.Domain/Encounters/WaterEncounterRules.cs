@@ -84,7 +84,7 @@ public static class WaterEncounterRules
         int? repelLevel = party.FirstOrDefault(p => !p.IsEgg && p.Pokemon.CurrentHp > 0)?.Pokemon.Level;
         // This internal representation only shares arithmetic. Public land validation still rejects
         // five-slot water tables and EncounterTileType.Water; no land admission is widened.
-        var commonTable = new EarlyLandEncounterTable(table.Map,table.SourceCommit,table.SourcePath,table.SourceSymbol,table.RawEncounterRate,table.Slots.Select(s => new EarlyLandEncounterSlot(s.Index,s.Species,s.MinimumLevel,s.MaximumLevel,s.Weight)).ToImmutableArray());
+        var commonTable = new EarlyLandEncounterTable(table.Map,table.RawEncounterRate,table.Slots.Select(s => new EarlyLandEncounterSlot(s.Index,s.Species,s.MinimumLevel,s.MaximumLevel,s.Weight)).ToImmutableArray());
         var commonState = new EarlyLandEncounterState(state.RateRng,state.PreviousMetatileBehavior,state.EncounterRateBuff,state.StepsSinceLastEncounter)
             { CachedLeadHasCleanseTag = state.CachedLeadHasCleanseTag };
         var result = EarlyLandEncounterRules.CheckCore(commonState,commonTable,check,wildEncountersDisabled,globalRng,

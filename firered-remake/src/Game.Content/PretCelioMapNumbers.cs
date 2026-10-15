@@ -8,7 +8,7 @@ namespace Game.Content;
 /// <summary>Original map-group/member indexes, including distinct interior groups, for player history.</summary>
 public static class PretCelioMapNumbers
 {
-    public const string AssetPath = "content/generated/map-numbers.json";
+    public const string AssetPath = "content/generated/maps/numbers.json";
 
     public static ImmutableDictionary<string, RoamerMap> LoadSourceTable(string root)
     {
@@ -141,10 +141,7 @@ public static class PretCelioMapNumbers
         var result = ImmutableDictionary.CreateBuilder<MapId, RoamerMap>();
         foreach (var (id, map) in maps)
         {
-            var path = map.SourceRef.Path.Split('/');
-            if (map.Id != id || map.SourceRef.Kind != SourceKind.Pret || path.Length != 4 ||
-                path[0] != "data" || path[1] != "maps" || path[3] != "map.json" ||
-                !source.TryGetValue(path[2], out var number))
+            if (map.Id != id || !source.TryGetValue(map.SourceMapName, out var number))
                 throw new InvalidDataException("celio_map_numbers_unowned_map:" + id.Value);
             result.Add(id, number);
         }

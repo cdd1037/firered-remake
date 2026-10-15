@@ -80,7 +80,7 @@ public partial class CampaignView
     // Called after the existing, independently verified twelve-sprite lab catalog is loaded.
     private void LoadWildBattlePresentation()
     {
-        var terrain=System.IO.Path.Combine(_root,"content/generated/route1-battle-terrain/background-scene.png");
+        var terrain=System.IO.Path.Combine(_root,"content/generated/battle/terrain/route1/background-scene.png");
         _wildTerrain=Texture(terrain);
         if(_wildTerrain.GetWidth()!=240||_wildTerrain.GetHeight()!=112)throw new InvalidDataException("Wild terrain size invalid.");
         if (_catalog.MtMoonRegion is not null)
@@ -108,7 +108,7 @@ public partial class CampaignView
                 _cityBattleScenes.Add(scene.Terrain,texture);
             }
         }
-        var folder = System.IO.Path.Combine(_root, "content/generated/route1-battle-art");
+        var folder = System.IO.Path.Combine(_root, "content/generated/battle/art/route1-battle-art");
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder, "route1-battle-art.json"));
         using var json = JsonDocument.Parse(bytes);
         var sprites = json.RootElement.GetProperty("sprites");

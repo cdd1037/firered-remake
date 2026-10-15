@@ -108,7 +108,7 @@ internal static class SourceTrainerAiScript
                 currentMove = move.Id;
                 // TypeCalc's returned immunity flags are discarded by this original command;
                 // Levitate/Wonder Guard therefore retain the source nonzero damage quirk.
-                int value = CeruleanTrainerAi.TypePrediction(catalog, user, target, move, 40, true);
+                int value = CeruleanTrainerAi.TypePrediction(catalog, user, target, move, 40);
                 return (byte)(value switch { 120 => 80, 240 => 160, 30 => 20, 15 => 10, _ => value });
             }
             void Branch(bool condition, int pointerOffset, int width) => pc = condition ? Pointer(pc + pointerOffset) : pc + width;

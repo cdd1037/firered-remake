@@ -26,8 +26,8 @@ public sealed class GeneratedLearnsetTests
     }
 
     [TestMethod]
-    [DataRow("pokemon/starter-catalog.json", false)]
-    [DataRow("route1-pokemon/catalog.json", true)]
+    [DataRow("data/pokemon/starters.json", false)]
+    [DataRow("data/pokemon/route1/catalog.json", true)]
     public void EarlyCatalogsResolveCanonicalReferencesAndRejectInlineDefinitions(string relative, bool route1)
     {
         var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);

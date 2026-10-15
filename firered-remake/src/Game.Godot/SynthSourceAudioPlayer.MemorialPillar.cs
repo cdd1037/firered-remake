@@ -21,7 +21,7 @@ public partial class SynthSourceAudioPlayer
             string name = art.DexEntries[cue.Species].Name;
             var id = new Game.Domain.Ids.SpeciesId("pret:SPECIES_" + name);
             if (cue.Id != "CRY_" + name + "_NORMAL" || cue.CryMode != 0 || cue.SourcePlayer != 4 || cue.Priority != 10 ||
-                cue.SourceSymbol != "SPECIES_" + name || cue.SourcePath != "sound/direct_sound_samples/cries/" + name.ToLowerInvariant() + ".wav" || cue.SongAddress != 0 || cue.Looping || cue.SourceCounter is not null ||
+                cue.SourceSymbol != "SPECIES_" + name || cue.SongAddress != 0 || cue.Looping || cue.SourceCounter is not null ||
                 _catalog.ContainsKey(cue.Id) || !opponents.Catalog.Species.TryGetValue(id, out var species) || species.SourceSpeciesId != cue.Species)
                 throw new InvalidDataException("Memorial Pillar source cry binding differs.");
         }

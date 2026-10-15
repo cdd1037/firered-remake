@@ -2,7 +2,7 @@ using System.Text.Json;
 
 public partial class SynthSourceAudioPlayer
 {
-    private sealed record PowerPlantSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
+    private sealed record PowerPlantSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
 
     private static SynthCue[] ExtendPowerPlantCues(string root, bool includeEventIslands, SynthCue[] cues, JsonSerializerOptions options)
     {

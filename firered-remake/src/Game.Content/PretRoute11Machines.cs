@@ -6,20 +6,19 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretRoute11MachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+public sealed record PretRoute11MachinesDocument(int SchemaVersion,
+    ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons);
 
-/// <summary>Authenticates thirteen explicit TM/HMs for 79 species, preserving every historical machine profile.</summary>
+/// <summary>Loads thirteen explicit TM/HMs for 79 species.</summary>
 public static class PretRoute11Machines
 {
-    public const string Profile = "firered-route11-machines-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public static PretRoute11MachinesDocument Load(string json, SharedMachineCatalog machines)
     {
         var document = ContentJson.ParseStrict<PretRoute11MachinesDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 &&
-            document.Machines.Length == 13 && document.Icons.Length == 1 && !document.Limitations.IsDefaultOrEmpty,
+            document.Machines.Length == 13 && document.Icons.Length == 1,
             "Route11 machine scope differs.");
         string[] symbols = ["TM39", "TM05", "TM09", "TM46", "TM03", "TM45", "TM43", "TM28", "TM31", "TM44", "HM01", "TM34", "HM05"];
         for (int n = 0; n < document.Machines.Length; n++)
@@ -41,7 +40,7 @@ public static class PretRoute11Machines
 
     public static PretRoute11MachinesDocument LoadProject(string root)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/route11-machines/route11-machines.json")), SharedMachineCatalog.LoadProject(root));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/machine-learning/route11.json")), SharedMachineCatalog.LoadProject(root));
         return document;
     }
 

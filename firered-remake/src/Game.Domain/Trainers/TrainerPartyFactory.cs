@@ -8,8 +8,6 @@ namespace Game.Domain.Trainers;
 /// <summary>Bounded CreateNPCTrainerParty / OT_ID_RANDOM_NO_SHINY. No battle execution or IO.</summary>
 public static class TrainerPartyFactory
 {
-    public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string RulesVersion = "firered-oaks-lab-trainers-v1";
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } =
         new[] { "SQUIRTLE", "BULBASAUR", "CHARMANDER" }
             .Select(x => new TrainerId("pret:TRAINER_RIVAL_OAKS_LAB_" + x)).ToImmutableArray();
@@ -78,36 +76,7 @@ public static class TrainerPartyFactory
     public static void ValidateCatalog(TrainerCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.SourceCommit != SourceCommit || catalog.Profile != RulesVersion || catalog.CompleteSourceRoster)
-            throw new NotSupportedException("Unknown source/profile or unsupported complete-roster claim.");
-        if (catalog.Trainers is null || catalog.Battles is null || catalog.Trainers.Count != 3 || catalog.Battles.Count != 3)
-            throw new ArgumentException("The complete bounded three-trainer catalog is required.");
-        foreach (var id in SupportedTrainers)
-        {
-            if (!catalog.Trainers.TryGetValue(id, out var trainer) || trainer is null || trainer.Id != id ||
-                trainer.SourceTrainerId != 326 + SupportedTrainers.IndexOf(id))
-                throw new ArgumentException("Missing or inconsistent trainer identity.");
-            if (trainer.TrainerClass != "TRAINER_CLASS_RIVAL_EARLY" || trainer.SourceTrainerClass != 81 ||
-                trainer.TrainerPic != "TRAINER_PIC_RIVAL_EARLY" || trainer.SourceTrainerPic != 106 ||
-                trainer.SourceTrainerName != "TERRY" || trainer.EncounterMusicGender != 0 || trainer.DoubleBattle ||
-                trainer.PartyFlags != 0 || trainer.AiFlags != 7 || trainer.BaseMoney != 4 ||
-                trainer.Items.IsDefault || trainer.Items.Length != 4 || trainer.Items.Any(x => x != "ITEM_NONE") ||
-                trainer.AiFlagSymbols.IsDefault || !trainer.AiFlagSymbols.SequenceEqual(new[] {
-                    "AI_SCRIPT_CHECK_BAD_MOVE", "AI_SCRIPT_TRY_TO_FAINT", "AI_SCRIPT_CHECK_VIABILITY" }) ||
-                !ValidEncoding(trainer.SourceTrainerName, trainer.EncodedTrainerName))
-                throw new NotSupportedException("Unsupported or inconsistent lab trainer parameters.");
-            if (trainer.Party.IsDefault || trainer.Party.Length != 1 || trainer.Party[0] is not { } member ||
-                member.Species.Value != "pret:SPECIES_" + id.Value["pret:TRAINER_RIVAL_OAKS_LAB_".Length..] ||
-                member.SpeciesName != id.Value["pret:TRAINER_RIVAL_OAKS_LAB_".Length..] || member.Level != 5 || member.SourceIv != 0 ||
-                member.HeldItem != "ITEM_NONE" || member.CustomMoves.IsDefault || !member.CustomMoves.IsEmpty ||
-                !ValidEncoding(member.SpeciesName, member.EncodedSpeciesName))
-                throw new NotSupportedException("Only the source single level-5, zero-IV, no-item default-move parties are supported.");
-            int sourceSpeciesId = member.SpeciesName switch { "BULBASAUR" => 1, "CHARMANDER" => 4, "SQUIRTLE" => 7, _ => -1 };
-            if (member.SourceSpeciesId != sourceSpeciesId) throw new ArgumentException("Inconsistent source species ID.");
-            if (!catalog.Battles.TryGetValue(id, out var battle) || battle is null || battle.Trainer != id)
-                throw new ArgumentException("Missing or inconsistent lab battle parameters.");
-            ValidateBattle(battle);
-        }
+        TrainerCatalogValidation.Validate(catalog.Trainers, catalog.Battles.Values, ValidateBattle);
     }
 
     public static void ValidateBattle(EarlyRivalBattleDefinition battle)
@@ -121,7 +90,4 @@ public static class TrainerPartyFactory
             throw new NotSupportedException("Only the source tutorial/heal Oak's lab early-rival profile is supported.");
     }
 
-    private static bool ValidEncoding(string value, ImmutableArray<int> bytes) =>
-        value is not null && !bytes.IsDefaultOrEmpty && value.Length == bytes.Length &&
-        value.Select((c, index) => c is >= 'A' and <= 'Z' && bytes[index] == 0xbb + c - 'A').All(x => x);
 }

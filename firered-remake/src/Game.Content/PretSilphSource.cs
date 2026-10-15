@@ -15,5 +15,5 @@ internal sealed class SilphSourcePackage
     internal JsonElement Document(string path) => Json(Read(path));
     internal T Parse<T>(string path, PretCanonicalPokemonCatalog? canonical = null) => SafariSource.Parse<T>(Read(path), _projectRoot, canonical);
     internal static JsonElement Json(byte[] bytes) => SafariSource.Parse<JsonElement>(bytes);
-    internal static SilphSourcePackage Catalogs(string root) => new(root, "silph-catalogs");
+    internal static SilphSourcePackage Catalogs(string root) => new(root, "data/regions/silph");
 }

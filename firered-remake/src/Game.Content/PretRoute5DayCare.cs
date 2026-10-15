@@ -49,7 +49,7 @@ public sealed class PretRoute5DayCare
     public static PretRoute5DayCare Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"route5-daycare");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/route5-daycare");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Route 5 Day Care actor collection differs.");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
@@ -65,15 +65,15 @@ public sealed class PretRoute5DayCare
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Route 5 Day Care; service rules and current-game admission are separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
+        Need(id == HouseMapId.Value && path == relative ,
             "Route 5 Day Care compact map binding differs.");
         var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 12 && runtime.Height == 9 &&
+        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 12 && runtime.Height == 9 &&
             runtime.Events.GetProperty("layout").GetString() == "LAYOUT_ROUTE5_POKEMON_DAY_CARE", "Route 5 Day Care layout differs.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 3 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 0 &&
             house.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Route 5 Day Care original event collection differs.");

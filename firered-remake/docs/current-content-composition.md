@@ -1,66 +1,82 @@
 # Current content composition
 
-`PretCampaignCatalog.LoadCurrent(projectRoot)` builds the game from
-`content/generated`. Import tools read original sources; the running game does
-not parse pret C/ASM or require the raw checkout.
+`PretCampaignCatalog.LoadCurrent(projectRoot)` consumes `content/generated` without
+reading the raw pret checkout. Importers own source acquisition and conversion.
+See [resource layout](resource-layout.md) and [import tools](../scripts/README.md).
 
-## Business data
+## Shared definitions
 
-- `PretCanonicalPokemonCatalog` owns shared species, moves, abilities and form
-  mechanics. Regional resources reference these definitions instead of copying
-  full tables.
-- `GamePokemonCatalog` explicitly defines the supported campaign rosters:
-  189 owned species, 212 ordinary opponent species and 204 Trainer Tower species.
-  Availability and supported evolution edges are separate from canonical data;
-  having a canonical definition does not make a species obtainable.
-- `SharedItemCatalog` supplies common item definitions. The current shop data
-  defines 151 items and 14 stocks. `InventoryCatalog` also admits the actual
-  quest/service items and machines and validates quantities and pocket rules.
-- `MachineCatalog` contains the 50 TMs and seven usable HMs in their established
-  display order. Compatibility is a species lookup, with no regional catalog
-  ancestry. HM08 compatibility data does not make HM08 teachable.
-- Breeding, NPC trades, held-item effects and battle mechanics are explicit
-  immutable data. They are not recovered through object-identity registries.
+- Canonical species, moves, abilities and form mechanics have one definition.
+  Current playable ownership and encounter availability remain explicit; an entry
+  in the canonical catalog alone does not make a species obtainable.
+- Shared items and machines supply definitions. Regional resources describe actual
+  acquisition, shop stock and presentation. The 50 TMs and seven usable HMs retain
+  their ordering and compatibility; HM08 data does not admit teaching HM08.
+- Trainers reference shared definitions, retaining encoded names, numeric IDs,
+  party order and real creation parameters. Derived move lists are computed from
+  the shared learnsets or explicit custom slots, not stored as duplicate proofs.
+- Breeding, NPC trades, held items and battle mechanics are explicit immutable
+  data, without catalog-owner registries or predecessor reconstruction chains.
+- Older damage/AI helpers use the current explicit mechanics and original trainer
+  AI program; regional species counts do not select implementations.
 
-## Runtime responsibilities
+## Runtime boundaries
 
-Resources are validated when loaded. Transactions validate the player's current
-state, supported operations, quantities, capacity and atomic changes. Source
-file paths, line numbers, historical table sizes and predecessor construction
-order are not gameplay authority.
+Immutable definitions are validated on load; transactions validate current player
+state, capacity, legal actions and atomic changes. Catalog lengths and provenance
+commits are not permission gates. Resource filenames, dimensions, map identities,
+encounter rates and actual source-script dispatch keys are meaningful data.
 
-The presentation layer reads textures, atlas regions and cues, and uses current
-business definitions for names and descriptions. Source import information
-belongs in the tools, not in a duplicate runtime gameplay catalog.
+Runtime provenance inventories, unused manifests, conversion receipts and fixed
+verification flags have been removed. Names containing `source` are not removed
+blindly: topology source endpoints and script/event dispatch paths still have
+runtime meaning. Original acquisition recipes stay in import tooling.
 
-## Current migration status
+Generated resources have six functional roots. Most single-document packages are
+plain files, map files are flat inside regions, and opening/player/NPC art is
+shared. A few service packages still colocate item data and graphics; these are
+explicit residual layout debt, not required historical compatibility layers.
 
-The October 15 consolidation passes the full solution build and all 2,606
-maintained tests. Comparisons with the previous verified revision preserve all
-three species rosters, moves, breeding data, current items and stocks, and the
-57 machine definitions and compatibility values. The converted v4 checkpoint
-loads from a generated-only resource root in Godot 4.7.2; map rendering,
-movement, the field menu, Bag, Key Items and TM CASE (including all seven HMs)
-have been checked graphically.
-Audio used the Dummy driver in this check; this is not an audio-device test.
-
-Game completeness is tracked separately in [the scope audit](full-scope-audit.md).
-Data consolidation does not mean all optional content or dedicated move
-animations are finished.
-
-## Saved checkpoints
+## Checkpoints and verification limits
 
 The current content version is `firered-current-content-v4`; campaign rules remain
-`firered-current-campaign-v2`. Normal Continue does not accept older content schemas.
-Use `dotnet run --project src/Game.Tooling -- convert-current-checkpoint SOURCE NEW_DESTINATION`
-for an explicit offline conversion. For v3 checkpoints this removes only the obsolete
-NPC-trade catalog fingerprint, retaining trade identity, received level and all gameplay
-state. The original file is retained and the converted state must pass current validation.
+`firered-current-campaign-v2`. Use the explicit offline
+`convert-current-checkpoint SOURCE NEW_DESTINATION` tooling command for older
+checkpoints. Normal Continue does not silently migrate schemas. Save integrity
+and all actual player state remain part of the save contract.
 
-## Remaining cleanup boundary
+Game completeness is separate from this cleanup; see [scope audit](full-scope-audit.md).
+Not all optional content or dedicated move animations are implemented. Native
+checks use Dummy audio and do not establish audible output. Some original audio
+cue recipes are absent, so a complete cold resource rebuild is not claimed.
 
-Some legacy battle helpers still contain regional species-count branches and
-historical names. This consolidation removes their catalog-owner registries;
-it does not yet rewrite every older damage/AI helper. Immutable resource-read
-and JSON serializer-options caches are retained for their actual reuse benefit.
-They are not used as proof that a game object is authorized.
+## Measured cleanup results
+
+Against the preceding local revision `53435c7`, generated JSON decreased from
+20,792,637 to 16,962,939 bytes (1,241 to 1,192 files). All generated files total
+22,098,167 bytes. The intermediate directory-layout baseline had 806 directories;
+the current layout has 327, with six top-level categories instead of 363.
+These are on-disk source-resource sizes, not exported game or GPU-memory sizes.
+
+Independent Release measurements taken before the final directory migration showed
+fresh-process content-load allocation falling from about 547 to 408 MiB. Warm
+420-slot storage operations fell from about 659 to 300 KiB allocated per operation.
+These are managed headless measurements, not frame-rate or complete Godot startup
+benchmarks. The final nested-field cleanup was not assigned invented timing gains.
+
+## Verified local checkpoint
+
+The final serialized solution build completed with zero warnings and errors.
+The eight maintained MSTest suites passed 2,606 cases with zero failures or
+skips, summed from their TRX counters: Application 95, Audio 574, Battle 1587, Content 177, Domain 144, Presentation 12, Process 1, ResourceImport 16.
+
+Godot 4.7.2 loaded the current checkpoint from a generated-only resource root.
+Map/character rendering, movement and the right-click menu were checked after
+the final schema cleanup; Bag, Key Items and all seven HM rows in TM CASE were
+also checked during the same layout integration. The final native run logged no
+errors and closed normally. Audio was Dummy, not a listening test.
+
+The import checks include real raw-to-runtime regeneration and pixel comparisons.
+Five presentation importers now compare JSON types/values/array order and PNG
+dimensions/RGBA for --check; irrelevant object-key ordering and PNG compression
+do not cause false failures. Other binary formats remain byte-exact.

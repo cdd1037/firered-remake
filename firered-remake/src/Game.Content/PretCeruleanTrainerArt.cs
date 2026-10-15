@@ -8,7 +8,7 @@ public static class PretCeruleanTrainerArt
 {
     public static ImmutableArray<ForestTrainerPortrait> Load(string root)
     {
-        using var json = JsonDocument.Parse(PretCeruleanTrainers.ReadPinned(root,            "content/generated/cerulean-trainers/cerulean-trainers.json"));
+        using var json = JsonDocument.Parse(PretCeruleanTrainers.ReadPinned(root,            "content/generated/data/trainer-battles/cerulean/cerulean-trainers.json"));
         var document = json.RootElement;
         if (            document.GetProperty("paletteExpansion").GetString() != "(rgb5 << 3) | (rgb5 >> 2)" || document.GetProperty("assets").GetArrayLength() != 3)
             throw new InvalidDataException("Cerulean trainer art profile differs.");
@@ -30,7 +30,7 @@ public static class PretCeruleanTrainerArt
                 asset.GetProperty("width").GetInt32() != 64 || asset.GetProperty("height").GetInt32() != 64 ||
                 asset.GetProperty("x").GetInt32() != 144 || asset.GetProperty("y").GetInt32() != 8)
                 throw new InvalidDataException("Cerulean source portrait geometry differs.");
-            portraits.Add(new(id, 144, 8, PretCeruleanTrainers.ReadPinned(root,"content/generated/cerulean-trainers/" + id + ".png")));
+            portraits.Add(new(id, 144, 8, PretCeruleanTrainers.ReadPinned(root,"content/generated/data/trainer-battles/cerulean/" + id + ".png")));
         }
         return portraits.ToImmutable();
     }

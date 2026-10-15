@@ -5,12 +5,11 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record SilphPokemonDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PokemonSpeciesDefinition> Species,
+public sealed record SilphPokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species,
     ImmutableArray<PokemonSpeciesDefinition> OpponentSpecies,
     ImmutableArray<PretRoute1SpeciesName> SpeciesNames, ImmutableArray<PewterPokemonEncodedName> EncodedNames,
     ImmutableArray<SafariMachineRow> Machines, ImmutableArray<SafariHeldItems> HeldItems,
-    ImmutableArray<SafariSpeciesEvolutions> SourceEvolutions, ImmutableArray<MoveId> RequiredMoves,
-    ImmutableArray<string> Limitations);
+    ImmutableArray<SafariSpeciesEvolutions> SourceEvolutions, ImmutableArray<MoveId> RequiredMoves);
 
 /// <summary>Exact Lapras ownership metadata; Alakazam/Mr. Mime remain explicitly opponent-only.</summary>
 public sealed class PretSilphPokemon
@@ -45,7 +44,7 @@ public sealed class PretSilphPokemon
         SilphSourcePackage.Need(d.SchemaVersion == 1 &&
             d.Species.Select(s => s.SourceSpeciesId).SequenceEqual([131]) && d.OpponentSpecies.Select(s => s.SourceSpeciesId).SequenceEqual([65,122]) &&
             d.SpeciesNames.Length == 3 && d.EncodedNames.Length == 3 && d.Machines.Length == 3 && d.HeldItems.Length == 3 &&
-            d.SourceEvolutions.Length == 3 && !d.Limitations.IsDefaultOrEmpty ,
+            d.SourceEvolutions.Length == 3 ,
             "Silph species document scope differs.");
         foreach (var s in d.Species.Concat(d.OpponentSpecies))
         {

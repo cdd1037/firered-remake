@@ -1,149 +1,22 @@
+# Rebuildable compiler, engine and tool caches.
 **/bin/
 **/obj/
-evidence/doctor.json
-evidence/restore.log
-evidence/build.log
-evidence/current-default/
-evidence/Game.*.json
-evidence/Game.*.log
-evidence/p0-build.log
-evidence/p0-import.log
-evidence/p0-editor-runtime.log
-evidence/p0-editor-runtime.json
-evidence/p0-editor-runtime.events.log
-src/Game.Godot/*.cs.uid
 **/.godot/
+**/__pycache__/
+**/TestResults/
 .tools/
 .toolhome/
-**/TestResults/
-exports/
-content/raw/
+.build/
+.runtime-tmp/
 *.user
+src/Game.Godot/*.cs.uid
 
-# Local-only reference renderings and copyrighted game inputs
+# Local inputs and generated game resources are delivered separately from Git.
+content/raw/
 content/generated/
 src/Game.Godot/Assets/Reference/
 
-# Local-only source-map screenshots
-evidence/pallet-*.png
-
-# Local-only reference story screenshots
-evidence/story-*.png
-
-# Local runtime traces include complete source dialogue text
-evidence/story-*.jsonl
-evidence/story-window.log
-
-**/__pycache__/
-
-# Local-only starter reference captures and source-text traces
-evidence/starter-*.png
-evidence/starter-*.jsonl
-
-# Validated native player-save checkpoints for local QA only
-evidence/local-checkpoints/
-
-# Local-only native battle source-text traces and image captures
-evidence/lab-battle-*.jsonl
-evidence/lab-battle-*.png
-
-# Native source-fidelity captures and full dialogue traces stay local
-evidence/source-*.png
-evidence/source-*.jsonl
+# Temporary execution reports, screenshots, saves and exported builds.
+evidence/
 .play/
-evidence/pewter-play/
-tests/Game.EarlyStarterCampaign.Tests/evidence/
-
-# Bounded temporary test hosts and NuGet scratch, never source.
-/.runtime-tmp/
-
-# Reconstructed font link and Godot import metadata for the doubles test host.
-/tests/CampaignDoubleHost/Assets/
-
-# Derived Godot import sidecars beside immutable test screenshot evidence.
-/tests/**/evidence/**/*.png.import
-
-# Regenerated original C command body, not an authored oracle adapter.
-/tests/Game.SharedFieldRecipes.Tests/source-commands.h
-
-# Rebuilt original C oracle, not authored source.
-/tests/Game.SourceCaptureBalls.Tests/evidence/source-c-final/oracle.c
-
-# Frozen Ruby validation binaries are rebuildable; retain only their hashes and source manifests.
-/evidence/sevii-ruby-combination-20261013/product*/*.dll
-
-# Six Island fixed-cohort binaries and linked headless resources are regenerated.
-/evidence/six-island-combination-20261013/**/*.dll
-/tests/Game.SixIslandView.Tests/Assets/
-
-# Rebuildable recovery cohorts and linked late-postgame host resources.
-/evidence/recovery-20261013/product*/*.dll
-/tests/Game.FiveIslandView.Tests/Assets/
-/tests/Game.CelioView.Tests/Assets/
-/tests/Game.FiveIslandView.Tests/*.cs.uid
-/tests/Game.CelioView.Tests/*.cs.uid
-
-# Rebuildable event-island hosts and frozen execution binaries.
-/tests/Game.EventIslandView.Tests/Assets/
-/tests/Game.EventIslandView.Tests/*.cs.uid
-/evidence/event-island-integration-20261013/product*/*.dll
-/evidence/event-island-view-20261013/**/*.dll
-/evidence/itemfinder-integration-20261013/**/*.dll
-/evidence/birth-island-campaign-20261013/**/*runner/*.dll
-/evidence/birth-island-campaign-20261013/**/*runner/*.pdb
-
-# Rebuildable Power Plant execution cohorts.
-/evidence/power-plant-integration-20261013/product*/*.dll
-/evidence/power-plant-view-20261013/**/*.dll
-
-# Rebuildable Fighting Dojo execution cohorts and host assets.
-/evidence/fighting-dojo-*/**/*.dll
-/evidence/fighting-dojo-*/**/*.pdb
-/tests/Game.FightingDojoView.Tests/Assets/
-/tests/Game.FightingDojoView.Tests/*.cs.uid
-
-/tests/Game.FossilLabView.Tests/Assets/
-
-# Rebuildable fossil and Old Amber execution cohorts and duplicate host output.
-/evidence/fossil-lab-*/**/*.dll
-/evidence/fossil-lab-*/**/*.pdb
-/evidence/old-amber-*/**/*.dll
-/evidence/old-amber-*/**/*.pdb
-/evidence/old-amber-*/**/product/
-/evidence/old-amber-*/**/userdata/
-/evidence/old-amber-*/**/host.log
-
-/tests/Game.NpcTradeView.Tests/Assets/
-/tests/Game.NpcTradeView.Tests/*.cs.uid
-/evidence/npc-trades-*/**/*.dll
-/evidence/npc-trades-*/**/*.pdb
-
-/evidence/npc-trades-view-*/**/userdata/
-/evidence/npc-trades-view-*/**/host.log
-
-# Rebuildable NPC trade execution cohorts.
-/evidence/npc-trade-*/**/*.dll
-/evidence/npc-trade-*/**/*.pdb
-
-# Rebuildable Move Reminder host resources and binaries.
-/tests/Game.MoveReminderView.Tests/Assets/
-/tests/Game.MoveReminderView.Tests/*.cs.uid
-/evidence/move-reminder-*/**/*.dll
-/evidence/move-reminder-*/**/*.pdb
-/evidence/move-reminder-*/**/userdata/
-
-# Rebuildable shared probe outputs and linked private View assets.
-/.build/
-/tests/Game.MoveDeleterView.Tests/Assets/
-/tests/Game.MoveDeleterView.Tests/*.cs.uid
-/evidence/field-fly-view-*/**/userdata/
-
-/tests/Game.MailComposerView.Tests/Assets/
-
-/tests/Game.MailComposerView.Tests/*.cs.uid
-
-/tests/Game.MailPresentation.Tests/*.cs.uid
-
-/tests/Game.BagTossView.Tests/Assets/
-
-/tests/Game.BagTossView.Tests/*.cs.uid
+exports/

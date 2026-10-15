@@ -5,15 +5,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Game.Content;
 
-public sealed record MemorialPillarDexDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PokedexMenuEntry> Entries);
+public sealed record MemorialPillarDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
 public sealed record MemorialPillarPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
 /// <summary>Original opponent-only Hoothoot/Noctowl pixels, seen-Dex portraits, geometry and normal cry bindings.</summary>
 public static class PretMemorialPillarPresentation
 {
-    public const string Base = "content/generated/memorial-pillar-presentation/";
+    public const string Base = "content/generated/sprites/pokemon/memorial-pillar/";
     public const string Profile = "firered-memorial-pillar-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
@@ -37,15 +36,16 @@ public static class PretMemorialPillarPresentation
         if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Memorial Pillar presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
+        }
+        foreach (var asset in new[] { "sprites" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()))
+        {
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         var sprites = manifest.GetProperty("sprites").EnumerateArray().ToArray();
         var expected = (from species in new[] { 163,164 } from side in new[] { "front","back" }
@@ -97,8 +97,8 @@ public static class PretMemorialPillarPresentation
         using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
         var audio = manifest.GetProperty("audio");
         if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1 ||
-            audio.GetProperty("newCueCount").GetInt32() != 2 || !audio.GetProperty("originalPackUnchanged").GetBoolean() ||
-            audio.GetProperty("physicalAudioVerified").GetBoolean() || !JsonElement.DeepEquals(audio.GetProperty("cues"), synth.RootElement.GetProperty("cues")) ||
+            audio.GetProperty("newCueCount").GetInt32() != 2 ||
+            !JsonElement.DeepEquals(audio.GetProperty("cues"), synth.RootElement.GetProperty("cues")) ||
             !audio.GetProperty("cues").EnumerateArray().Select(c => c.GetProperty("species").GetInt32()).SequenceEqual(new[] { 163,164 }))
             throw new InvalidDataException("Memorial Pillar normal cry inventory differs.");
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));

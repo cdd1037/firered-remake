@@ -67,7 +67,7 @@ public sealed class PretNpcTradeHaden
 
     public static PretNpcTradeHaden Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"npc-trade-haden");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/npc-trade-haden");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 ,
             "Haden source/catalog identity differs.");
@@ -88,14 +88,14 @@ public sealed class PretNpcTradeHaden
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
+            string relative = spec.GetProperty("mapPath").GetString()!, path = spec.GetProperty("path").GetString()!;
             string id = spec.GetProperty("stableId").GetString()!;
             var bytes = source.Read(path);
-            Need(path == relative + "/runtime-map.json" , "Haden compact resource binding differs.");
+            Need(path == relative , "Haden compact resource binding differs.");
             var runtime = PretRuntimeMapData.Decode(bytes, id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Haden map identity differs.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Haden map identity differs.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
+                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Count == 3 && (maps[RouteMapId].Width, maps[RouteMapId].Height, maps[RouteMapId].FieldWarps.Length) == (60, 20, 2) &&
             (maps[Gate1FMapId].Width, maps[Gate1FMapId].Height, maps[Gate1FMapId].FieldWarps.Length) == (13, 12, 3) &&

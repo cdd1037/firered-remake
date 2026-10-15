@@ -11,8 +11,8 @@ public sealed class PretGymBattleTerrain
 
     private PretGymBattleTerrain(string root)
     {
-        GymSceneTexturePath = Path.GetFullPath(Path.Combine(root, "content/generated/gym-battle-terrain/gym-scene.png"));
-        LeaderSceneTexturePath = Path.GetFullPath(Path.Combine(root, "content/generated/gym-battle-terrain/leader-scene.png"));
+        GymSceneTexturePath = Path.GetFullPath(Path.Combine(root, "content/generated/battle/terrain/gym/gym-scene.png"));
+        LeaderSceneTexturePath = Path.GetFullPath(Path.Combine(root, "content/generated/battle/terrain/gym/leader-scene.png"));
     }
 
     // Deliberately exact; future Gym maps need their own admitted source/application selection.
@@ -31,7 +31,7 @@ public sealed class PretGymBattleTerrain
                 if (directory.LinkTarget is not null) throw new InvalidDataException("Gym terrain directory symlink rejected.");
             return File.ReadAllBytes(info.FullName);
         }
-        using var json = JsonDocument.Parse(Read("content/generated/gym-battle-terrain/gym-battle-terrain.json"));
+        using var json = JsonDocument.Parse(Read("content/generated/battle/terrain/gym/gym-battle-terrain.json"));
         var document = json.RootElement;
         var display = document.GetProperty("display");
         if (document.GetProperty("assets").GetArrayLength() != 4 ||

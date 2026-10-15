@@ -73,7 +73,7 @@ public partial class CampaignView
         {
             string id=entry.GetProperty("graphicsId").GetString()!;
             var sprite=_overworldSprites[id]; var r=sprite.Region;
-            var texture=owner.NativeTexture(System.IO.Path.Combine(generated,"shared-overworld",sprite.TexturePath),new Rect2I(r.X,r.Y,r.Width,r.Height));
+            var texture=owner.NativeTexture(System.IO.Path.Combine(generated,"sprites/overworld",sprite.TexturePath),new Rect2I(r.X,r.Y,r.Width,r.Height));
             if(r.Width!=sprite.FrameWidth*sprite.FrameCount||r.Height!=sprite.FrameHeight)
                 throw new InvalidDataException("Region NPC sheet size invalid.");
             result.Add(id,new(texture,sprite.FrameWidth,sprite.FrameHeight,sprite.FrameCount,

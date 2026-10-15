@@ -5,7 +5,6 @@ using System.Text.Json;
 namespace Game.Content;
 
 public sealed record ForestStatusUiPoint(int X, int Y);
-public sealed record ForestStatusUiInput(string Path, string SourceUrl);
 public sealed record ForestStatusUiAsset(string Id, string TexturePath, int Width, int Height, int X, int Y, string Context,
     string Status, int SourceTile, string SourceImagePath, string SourcePalettePath,
     ImmutableArray<int> PaletteRgb555, int TransparentIndex);
@@ -15,17 +14,16 @@ public sealed record ForestStatusUiDisplay(int LogicalWidth, int LogicalHeight, 
     bool PartyFaintedPrecedesStatus, bool PartyHealthyIconHidden);
 public sealed record ForestStatusUiTerrain(string MapId, string ComparisonMapId, string MapType, string MapBattleScene, string Terrain,
     int TerrainId, string Condition, bool SameAsRoute1TallGrass, string TexturePath);
-public sealed record ForestStatusUiDocument(int SchemaVersion, string Profile, string Repository, string SourceCommit,
-    ImmutableArray<ForestStatusUiInput> Inputs, ImmutableArray<ForestStatusUiAsset> Assets,
+public sealed record ForestStatusUiDocument(int SchemaVersion, string Repository, ImmutableArray<ForestStatusUiAsset> Assets,
     ForestStatusUiDisplay Display,
-    ForestStatusUiTerrain Terrain, ImmutableArray<string> Limitations);
+    ForestStatusUiTerrain Terrain);
 
 /// <summary>Loads status textures and their display layout.</summary>
 public static class PretForestStatusUi
 {
     public const string Profile = "firered-forest-status-ui-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    private const string Generated = "content/generated/forest-status-ui";
+    private const string Generated = "content/generated/ui/forest-status-ui";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly ImmutableDictionary<string, (int Width, int X, int Y)> Expected =
         new Dictionary<string, (int, int, int)>(StringComparer.Ordinal)

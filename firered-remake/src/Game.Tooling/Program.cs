@@ -23,7 +23,7 @@ if (args.Length >= 2 && args[0] == "save" && args[1].StartsWith("upgrade-", Stri
 
 if (args.Length == 4 && args[0] == "content" && args[1] == "inspect-pinned-map")
 {
-    using var sourceLock=JsonDocument.Parse(File.ReadAllText("scripts/import-config/source.json"));
+    using var sourceLock=JsonDocument.Parse(File.ReadAllText("scripts/recipes/config/source.json"));
     var path=args[3];
     var file=sourceLock.RootElement.GetProperty("evidenceFiles").EnumerateArray().SingleOrDefault(e=>e.GetProperty("path").GetString()==path);
     if(file.ValueKind==JsonValueKind.Undefined)throw new InvalidDataException("source_path_not_locked");

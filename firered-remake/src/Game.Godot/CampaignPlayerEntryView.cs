@@ -45,7 +45,7 @@ public partial class CampaignView
         _entrySource=PretMainMenuSource.Load(_root);
         static Color Rgb(System.Collections.Immutable.ImmutableArray<int> c)=>Color.Color8((byte)c[0],(byte)c[1],(byte)c[2]);
         var palette=_entrySource.Palettes["sTextbox_Pal"].Rgb8;var colors=_entrySource.TextColors["sTextColor1"];
-        string fontDirectory=Path.Combine(_root,"content/generated/source-font");
+        string fontDirectory=Path.Combine(_root,"content/generated/ui/font");
         _entryHeadingFont=SourceGameFont.Load(fontDirectory,foreground:Rgb(palette[colors.Foreground]),shadow:Rgb(palette[colors.Shadow]));
         foreach(var gender in _entrySource.GenderColors)_entryGenderFonts.Add(gender.Key,SourceGameFont.Load(fontDirectory,foreground:Rgb(gender.Value.Rgb8),shadow:Rgb(palette[colors.Shadow])));
         _entryNameEdit=new LineEdit{Position=new(24,60),Size=new(192,24),MaxLength=7,Visible=false,KeepEditingOnTextSubmit=true};

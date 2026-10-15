@@ -32,7 +32,7 @@ public sealed class PretMartMetatiles
 
     public static PretMartMetatiles Load(string projectRoot)
     {
-        var directory = Path.Combine(projectRoot, "content/generated/mart-metatiles");
+        var directory = Path.Combine(projectRoot, "content/generated/maps/objects/mart-metatiles");
         using var metadata = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(directory, "metatiles.json")));
         var catalog = metadata.RootElement;
         var definitions = catalog.GetProperty("metatiles").EnumerateArray().Select(tile =>

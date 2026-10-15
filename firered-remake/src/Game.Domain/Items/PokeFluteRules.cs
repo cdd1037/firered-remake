@@ -21,9 +21,9 @@ public static class PokeFluteRules
     public const string FieldNoEffectMessage = "gText_PlayedPokeFluteCatchy";
 
     public static PokeFluteFieldResult UseField(EarlyShopCatalog shop, CampaignPokemonContent content,
-        InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false, bool fuchsiaRules = false)
+        InventoryState inventory, ImmutableArray<PartyPokemon> party)
     {
-        var error = ValidateUse(shop, content, inventory, party, snorlaxRules, fuchsiaRules);
+        var error = ValidateUse(shop, content, inventory, party);
         if (error is not null) return new(false, party, [], error);
         var changed = party;
         var awakened = ImmutableArray.CreateBuilder<int>();
@@ -38,9 +38,9 @@ public static class PokeFluteRules
     }
 
     internal static string? ValidateUse(EarlyShopCatalog shop, CampaignPokemonContent content,
-        InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false, bool fuchsiaRules = false)
+        InventoryState inventory, ImmutableArray<PartyPokemon> party)
     {
-        if (shop.Profile != PokemonTowerItemRules.Profile || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) != (fuchsiaRules ? 107 : snorlaxRules ? 102 : 101))
+        if (!shop.Items.Any(item => item.Id == PokemonTowerItemRules.PokeFluteId && item.FieldUseFunction == "FieldUseFunc_PokeFlute"))
             return "poke_flute_profile_not_enabled";
         try
         {

@@ -15,8 +15,7 @@ public sealed record PokedexMenuRules(int RegionalCount, int NationalCount, stri
     bool SeenCanOpen, bool CaughtRequiredForDescription, bool CaughtRequiredForMeasures, bool CaughtRequiredForFootprint,
     bool CaughtRequiredForTypes, string UnseenCategory, string UnseenHeight, string UnseenWeight, int PageScroll,
     int PokedexFlag, int NationalFlag, int NationalVariable, int NationalVariableValue, int NationalMagic, bool StartRequiresSeen);
-public sealed record PokedexMenuDocument(int SchemaVersion, string Profile,
-    ImmutableArray<PokedexMenuEntry> Entries,
+public sealed record PokedexMenuDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries,
     CaptureDexLayout EntryLayout, ImmutableArray<PokedexMenuTexture> Assets, PokedexMenuTexture OwnedMarker,
     ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules);
 
@@ -74,7 +73,7 @@ public sealed class PretPokedexMenu
     public static PretPokedexMenu Load(string projectRoot)
     {
         var root = Path.GetFullPath(projectRoot);
-        const string directory = "content/generated/pokedex-menu/";
+        const string directory = "content/generated/sprites/pokemon/pokedex-menu/";
         var bytes = ReadPinned(root,directory + "pokedex-menu.json");
         var document = ContentJson.ParseStrict<PokedexMenuDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 && !document.Entries.IsDefaultOrEmpty,

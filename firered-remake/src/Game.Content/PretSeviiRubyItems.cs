@@ -11,7 +11,7 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record SeviiRubyMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record SeviiRubyItemsDocument(string SourceCommit, string Profile, ImmutableArray<MachineItem> Items,
+public sealed record SeviiRubyItemsDocument(ImmutableArray<MachineItem> Items,
     ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<SeviiRubyMachineRows> MachineAdditions, MachineDefinition Hm06);
 public sealed record SeviiRubyItemContent(ImmutableArray<MachineItem> Items, ImmutableArray<FieldPickupDefinition> Pickups,
     MachineCatalog Machines);
@@ -22,10 +22,10 @@ public static class PretSeviiRubyItems
     public static SeviiRubyItemContent Load(PretSeviiRubyRegion region, GamePokemonCatalog pokemon,
         EarlyShopCatalog previousShop, MachineCatalog previousMachines, PretStoryCompilation scripts, SharedMachineCatalog? shared = null)
     {
-        var path = Path.Combine(Path.GetDirectoryName(region.GeneratedDirectory)!, "sevii-ruby-items", "items.json");
+        var path = Path.Combine(PretRuntimeMapValidation.GeneratedRoot(region.GeneratedDirectory), "data/items/sevii-ruby.json");
         var bytes = File.ReadAllBytes(path);
         var document = JsonSerializer.Deserialize<SeviiRubyItemsDocument>(bytes,
-            (shared ?? SharedMachineCatalog.LoadProject(Path.GetFullPath(Path.Combine(region.GeneratedDirectory, "../../..")))).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
+            (shared ?? SharedMachineCatalog.LoadProject(PretRuntimeMapValidation.ProjectRoot(region.GeneratedDirectory))).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("sevii_ruby_items_missing");
         if (            document.Items.Length != 5 || document.Additions.Length != 4 || document.MachineAdditions.Length != 36)
             throw new InvalidDataException("sevii_ruby_items_scope");

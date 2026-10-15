@@ -11,7 +11,7 @@ internal static class FuchsiaGymPresentationAssets
 {
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
-    private const string Base = "content/generated/fuchsia-gym-presentation/";
+    private const string Base = "content/generated/ui/fuchsia-gym-presentation/";
 
     internal static FuchsiaGymPresentationData Load(string root)
     {
@@ -28,8 +28,7 @@ internal static class FuchsiaGymPresentationAssets
             return data;
         }
         using var manifest = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var m = manifest.RootElement;         if (m.GetProperty("schemaVersion").GetInt32() != 1 ||
-            m.GetProperty("profile").GetString() != "firered-fuchsia-gym-presentation-v1")
+        var m = manifest.RootElement;         if (m.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Fuchsia Gym presentation provenance differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("outputs").EnumerateArray())

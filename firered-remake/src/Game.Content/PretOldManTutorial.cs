@@ -8,14 +8,11 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record OldManTutorialInput(string Path);
 public sealed record OldManTutorialAsset(string Path, int Width, int Height);
 public sealed record OldManTutorialText(string Symbol, string Text, PokemonSourceRef Source);
 public sealed record OldManThrowFrame(int Frame, int Ticks);
 public sealed record OldManTeachyTv(ItemId Item, string Description);
-public sealed record OldManTutorialDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<OldManTutorialInput> Inputs, ImmutableArray<string> Limitations,
-    ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
+public sealed record OldManTutorialDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
     ImmutableArray<PretRoute1SpeciesName> SpeciesNames, ImmutableArray<PretRoute1MoveName> MoveNames,
     ImmutableArray<OldManTutorialText> Texts, OldManTeachyTv TeachyTv, ImmutableArray<OldManTutorialAsset> Assets,
     ImmutableArray<OldManThrowFrame> OldManThrowFrames, PokemonSourceRef OldManThrowSource,
@@ -40,7 +37,7 @@ public static class PretOldManTutorial
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         var doc = ContentJson.ParseStrict<OldManTutorialDocument>(tutorialGeneratedJson, options);
         if (doc.SchemaVersion != 1 || doc.Species.Length != 3 || doc.SpeciesNames.Length != 3 ||
-            doc.Texts.Length != 4 || doc.Assets.Length != 7 || doc.Limitations.IsDefaultOrEmpty)
+            doc.Texts.Length != 4 || doc.Assets.Length != 7)
             throw Error("profile", "Incomplete or unsupported tutorial source closure.");
         var species = original.Catalog.Species.ToBuilder();
         foreach (var value in doc.Species) species.Add(value.Id, value);

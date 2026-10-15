@@ -10,9 +10,9 @@ public sealed class CinnabarWaterEncounterCatalog
     private CinnabarWaterEncounterCatalog(WaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> added)
     { Predecessor = predecessor; Tables = predecessor.Tables.AddRange(added.Select(t => KeyValuePair.Create(t.Map,t))); }
     public static ImmutableArray<WaterEncounterTable> SourceAdditions { get; } = [
-        new(new("map.route-21-north"),"MAP_ROUTE21_NORTH",EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"sRoute21North_FireRed",2,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
-        new(new("map.route-21-south"),"MAP_ROUTE21_SOUTH",EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"sRoute21South_FireRed",2,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
-        new(new("map.cinnabar-island"),"MAP_CINNABAR_ISLAND",EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,"sCinnabarIsland_FireRed",1,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
+        new(new("map.route-21-north"),2,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
+        new(new("map.route-21-south"),2,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
+        new(new("map.cinnabar-island"),1,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
     ];
     public static CinnabarWaterEncounterCatalog Authenticate(WaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> additions)
     {

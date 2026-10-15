@@ -19,7 +19,7 @@ public sealed class PretMailComposer
 
     public static PretMailComposer Load(string root)
     {
-        var source = new SilphSourcePackage(root,"mail-composer");
+        var source = new SilphSourcePackage(root,"data/services/mail-composer");
         var document = SafariSource.Parse<ComposerDocument>(source.Read("catalog.json"));
         var contracts = SafariSource.Parse<ComposerContracts>(source.Read("contracts.json"));
         Need(            document.Groups.Length == 22 && document.Words.Length == 1813 && document.Alphabetical.Length == 27 &&

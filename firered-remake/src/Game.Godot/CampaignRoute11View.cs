@@ -55,7 +55,7 @@ public partial class CampaignView
         foreach (var icon in items.Icons.Concat(PretRoute11Machines.LoadProject(_root).Icons).Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
         {
             
-            _earlyItemIcons.Add(icon.Item, ItemTexture(items.Icons.Contains(icon) ? "route11-items" : "route11-machines", icon));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(items.Icons.Contains(icon) ? "data/items/route11" : "data/machine-learning", icon));
         }
     }
 

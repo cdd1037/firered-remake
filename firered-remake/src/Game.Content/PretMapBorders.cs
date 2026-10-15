@@ -72,9 +72,9 @@ public sealed class PretMapBorders
     public PretMapBorderCell BorderCellAt(int mapX, int mapY)
         => Cells[PatternCoordinate(mapY, BorderHeight) * BorderWidth + PatternCoordinate(mapX, BorderWidth)];
 
-    /// <summary>Pass content/generated/map-borders, not the parent world collection directory.</summary>
+    /// <summary>Pass content/generated/maps/borders, not the parent world collection directory.</summary>
     public static ImmutableDictionary<MapId, PretMapBorders> LoadCatalog(string borderCollectionRoot)
-        => PretWorldCatalog.Specifications.Select(s => Load(Path.Combine(borderCollectionRoot, s.Directory)))
+        => PretWorldCatalog.Specifications.Select(s => Load(Path.Combine(borderCollectionRoot, s.Name)))
             .ToImmutableDictionary(m => m.Id);
 
     public static PretMapBorders Load(string generatedDirectory)
@@ -88,8 +88,8 @@ public sealed class PretMapBorders
             ?? throw new InvalidDataException("Border document is null.");
         var generated = PretRuntimeMapValidation.GeneratedRoot(directory);
         var spec = PretWorldCatalog.Specifications.SingleOrDefault(s => s.StableId == data.StableId);
-        Require(data.SchemaVersion == 2 && spec is not null && data.MapPath == spec.Directory + "/runtime-map.json", "Unsupported border map reference.");
-        var map = PretWorldMap.Load(Path.GetDirectoryName(PretRuntimeMapValidation.SafeFile(generated, data.MapPath))!);
+        Require(data.SchemaVersion == 2 && spec is not null && data.MapPath == "maps/regions/opening/" + spec.Name + ".json", "Unsupported border map reference.");
+        var map = PretWorldMap.Load(PretRuntimeMapValidation.SafeFile(generated, data.MapPath));
         Require(data.RepeatRule == new PretMapBorderRepeatRule("map-local-metatiles", 7, 8, 0, 0, "euclidean-remainder", "not-implemented"),
             "Border repetition rule differs from source phase.");
         var cells = map.BorderCells.Select(cell => new PretMapBorderCell(

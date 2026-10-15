@@ -9,11 +9,11 @@ public sealed class GeneratedPokedexCatalogTests
     public void CatalogNeedsNoSourceProofManifest()
     {
         var root = Path.Combine(Path.GetTempPath(), "firered-dex-" + Guid.NewGuid().ToString("N"));
-        var output = Path.Combine(root, "content/generated/pokedex-menu");
+        var output = Path.Combine(root, "content/generated/sprites/pokemon/pokedex-menu");
         Directory.CreateDirectory(output);
         try
         {
-            File.Copy(Path.Combine(TestAssets.Root, "content/generated/pokedex-menu/pokedex-menu.json"), Path.Combine(output, "pokedex-menu.json"));
+            File.Copy(Path.Combine(TestAssets.Root, "content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json"), Path.Combine(output, "pokedex-menu.json"));
             var menu = PretPokedexMenu.Load(root);
             Assert.AreEqual(386, menu.Entries.Count);
             Assert.AreEqual("BULBASAUR", menu.Entries[1].Name);

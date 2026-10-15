@@ -5,7 +5,7 @@ namespace Game.Content;
 /// <summary>The five original Silph trainer portrait identities, including the later rival portrait.</summary>
 public static class PretSilphTrainerArt
 {
-    public const string GeneratedDirectory = "content/generated/silph-trainer-art/";
+    public const string GeneratedDirectory = "content/generated/sprites/trainers/silph/";
     public static ImmutableArray<ForestTrainerPortrait> Load(string root)
     {
         var bytes = SafariSource.Read(root,GeneratedDirectory + "manifest.json");

@@ -13,7 +13,7 @@ public partial class CampaignView
         {
             _ = items.Items.Single(i => i.Metadata.Item.Id == icon.Item);
             
-            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var old)))_earlyItemIcons.Add(icon.Item, ItemTexture("cinnabar-item-art", icon));
+            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var old)))_earlyItemIcons.Add(icon.Item, ItemTexture("data/services/cinnabar-item-art", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Cinnabar key-item pocket missing.");
         var key = items.Items.Single(i => i.Metadata.Item.Id == PretCinnabarItems.SecretKeyId).Metadata;
@@ -28,7 +28,7 @@ public partial class CampaignView
         }
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
         var keyIcon = art.Icons.Single(i => i.Item == key.Item.Id);
-        _questPocketTextures.Add(assetId, ItemTexture("cinnabar-item-art", keyIcon));
+        _questPocketTextures.Add(assetId, ItemTexture("data/services/cinnabar-item-art", keyIcon));
         _questPocketUi = document with
         {
             Items = document.Items.Add(new(key.Item.Id.Value, key.Item.SourceItemSymbol, key.Item.Name, key.Description, assetId, key.Item.FieldUseFunction)),

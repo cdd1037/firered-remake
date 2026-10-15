@@ -4,7 +4,7 @@ namespace Game.Content;
 
 public sealed class PretNameRaterContract
 {
-    public const string RelativePath = "content/generated/name-rater/prompts.json";
+    public const string RelativePath = "content/generated/data/services/name-rater.json";
     public NameRaterSourceContent Source { get; }
     private PretNameRaterContract(NameRaterSourceContent source) { Source = source; }
     public static PretNameRaterContract Load(string root)

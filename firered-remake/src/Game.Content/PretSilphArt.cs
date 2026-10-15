@@ -4,15 +4,14 @@ using System.Text;
 using System.Text.Json;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record SilphArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonSprite> Sprites,
+public sealed record SilphArtDocument(int SchemaVersion, ImmutableArray<ForestPokemonSprite> Sprites,
     ImmutableArray<StorageArtIcon> Icons, ImmutableArray<Route3PokemonFootprint> Footprints,
-    ImmutableArray<SnorlaxArtDex> Dex, ImmutableArray<string> Limits,
-    ImmutableArray<SnorlaxArtOutput> Outputs);
+    ImmutableArray<SnorlaxArtDex> Dex,     ImmutableArray<SnorlaxArtOutput> Outputs);
 /// <summary>Authenticated Lapras and enemy-only Alakazam/Mr. Mime normal/shiny sprites, source icons and footprints; no battle executor or audio activation.</summary>
 public sealed class PretSilphArt
 {
     public const string Profile="firered-silph-art-v1";
-    public const string GeneratedDirectory="content/generated/silph-art/";
+    public const string GeneratedDirectory="content/generated/sprites/pokemon/silph/";
     public SilphArtDocument Document { get; }
     public JsonElement Manifest { get; }
     public ImmutableDictionary<string,byte[]> Files { get; }
@@ -38,7 +37,7 @@ public sealed class PretSilphArt
     {
         var root=Path.GetFullPath(projectRoot);var dependency=Path.GetFullPath(dependencyProjectRoot??root);
         var bytes=SafariSource.Read(root,GeneratedDirectory+"manifest.json");using var json=JsonDocument.Parse(bytes);var doc=SafariSource.Parse<SilphArtDocument>(bytes);
-        Require(doc.SchemaVersion==1&&doc.Sprites.Length==12&&doc.Icons.Length==3&&doc.Footprints.Length==3&&doc.Dex.Length==3&&!doc.Limits.IsDefaultOrEmpty,"Silph art scope differs.");
+        Require(doc.SchemaVersion==1&&doc.Sprites.Length==12&&doc.Icons.Length==3&&doc.Footprints.Length==3&&doc.Dex.Length==3,"Silph art scope differs.");
         var expected=new Dictionary<int,string>{{65,"ALAKAZAM"},{122,"MR_MIME"},{131,"LAPRAS"}};var files=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var o in doc.Outputs)files.Add(o.Path,SafariSource.Read(root,GeneratedDirectory+o.Path));
         void Pixels(string png,int w,int h)=>Require((files[png]).Length > 0,"Silph pixels differ.");

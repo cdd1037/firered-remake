@@ -33,9 +33,8 @@ public sealed record OldManTutorialReturn(int SourceOutcome, int SelectedItemSou
     ImmutableDictionary<int, int> SpecialVariables, RngState Rng);
 
 /// <summary>
-/// Source semantic RNG for the early single-battle, no status/badge/weather profile.
-/// Route 3 explicitly admits Oran and deterministic Intimidate entry effects.
-/// Mt. Moon adds its authenticated catalog, neutral abilities and source wild-held items.
+/// Source semantic RNG for the forced-capture tutorial, with explicit campaign ownership.
+/// No status, badge or weather effects; Intimidate is the modeled entry effect.
 /// Start is an all-or-nothing pure calculation. Presentation consumes Events without performing rules.
 /// No party, inventory, dex, EXP, EV, PP, HP, capture formula or next-turn rules are invoked.
 /// The caller supplies its first alive non-egg party member and retains every original player field.
@@ -47,52 +46,23 @@ public static class OldManTutorialRules
     public const int PokeBallSourceItemId = 4;
     public static SpeciesId WeedleSpecies { get; } = new("pret:SPECIES_WEEDLE");
 
-    public static OldManTutorialResult Start(PokemonCatalog catalog, PartyPokemon hiddenPlayerPokemon, RngState rng, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool pokemonTowerRules = false, bool snorlaxRules = false, bool fuchsiaRules = false)
+    public static OldManTutorialResult Start(GamePokemonCatalog pokemon, PartyPokemon hiddenPlayerPokemon, RngState rng)
     {
-        if ((catalog.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Fuchsia tutorial profile required.");
-        if (!fuchsiaRules && (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax catalog profile required.");
-        snorlaxRules |= fuchsiaRules;
-        pokemonTowerRules |= snorlaxRules;
-        rocketHideoutRules |= pokemonTowerRules;
-        celadonGymRules |= rocketHideoutRules;
-        rockTunnelRules |= celadonApproachRules || celadonGymRules;
-        route11Rules |= rockTunnelRules;
-        ssAnneRules |= route11Rules;
-        vermilionRules |= ssAnneRules;
-        billRules |= vermilionRules;
-        ceruleanRules |= billRules;
-        mtMoonRules |= ceruleanRules;
-        route3Rules |= mtMoonRules;
-        PokemonFactory.ValidateCatalog(catalog);
+        ArgumentNullException.ThrowIfNull(pokemon);
         ArgumentNullException.ThrowIfNull(hiddenPlayerPokemon);
-        if ((fuchsiaRules ? catalog.Species.Count != 107 : snorlaxRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 102 : pokemonTowerRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 101 : rocketHideoutRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 99 : celadonGymRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 98 : celadonApproachRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 94 : rockTunnelRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 93 : route11Rules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 79 : ssAnneRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 73 : vermilionRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 70 : billRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 68 : ceruleanRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 65 : mtMoonRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 56 : route3Rules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 40 : route22Rules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 32 : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is not (17 or 22 or 29)) || !catalog.Species.TryGetValue(WeedleSpecies, out var species))
-            throw new NotSupportedException("The authenticated catalog must match the selected tutorial profile.");
+        var catalog = pokemon.Catalog;
+        if (!catalog.Species.TryGetValue(WeedleSpecies, out var species))
+            throw new NotSupportedException("Tutorial Weedle is missing from the campaign catalog.");
         var error = PokemonStateValidator.Validate(catalog, hiddenPlayerPokemon.Pokemon);
         if (error is not null) throw new ArgumentException(error, nameof(hiddenPlayerPokemon));
         if (hiddenPlayerPokemon.IsEgg || hiddenPlayerPokemon.Pokemon.CurrentHp <= 0)
             throw new ArgumentException("Select the first living non-egg member before starting the tutorial.", nameof(hiddenPlayerPokemon));
-        // Source items.json assigns these cave wild-held items HOLD_EFFECT_NONE.
-        bool mtMoonHeldItem = mtMoonRules && hiddenPlayerPokemon.HeldItem is
-            "ITEM_TINY_MUSHROOM" or "ITEM_BIG_MUSHROOM" or "ITEM_MOON_STONE";
-        if ((hiddenPlayerPokemon.HeldItem != "ITEM_NONE" && !(fuchsiaRules && Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(route3Rules && hiddenPlayerPokemon.HeldItem == "ITEM_ORAN_BERRY") && !mtMoonHeldItem && !(pokemonTowerRules && Game.Domain.WildBattle.PokemonTowerBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(rockTunnelRules && Game.Domain.WildBattle.RocketHideoutBattleScope.SupportsHeldItemForCatalog(catalog, hiddenPlayerPokemon.HeldItem)) && !(route11Rules && Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(ssAnneRules && Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(vermilionRules && VermilionPickupRules.IsKnownHeldItem(hiddenPlayerPokemon.HeldItem))) ||
+        // The forced catch has no damage, weather turn, contact or escape phase. Retain the
+        // implemented tutorial item/entry-ability boundary; ownership alone does not enable effects.
+        if (hiddenPlayerPokemon.HeldItem != "ITEM_NONE" && !Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem) ||
             hiddenPlayerPokemon.Status != 0 || hiddenPlayerPokemon.Mail != 255)
-            throw new NotSupportedException("Tutorial profile excludes unmodeled held items, status and mail.");
-        // Old profiles stay narrow. Route 3 models Intimidate below; the other admitted abilities
-        // have no effect before the forced catch in this no-weather/no-damage tutorial.
-        bool route3Ability = route3Rules && hiddenPlayerPokemon.Pokemon.AbilityId is
-            "ABILITY_INTIMIDATE" or "ABILITY_SWIFT_SWIM" or "ABILITY_POISON_POINT" or "ABILITY_CUTE_CHARM" or
-            "ABILITY_COMPOUND_EYES" or "ABILITY_STATIC" or "ABILITY_SAND_VEIL" or "ABILITY_ROCK_HEAD" or "ABILITY_STURDY";
-        // None of the additional source abilities handles ABILITYEFFECT_ON_SWITCHIN.
-        // The forced ball completes before attacks, contact, weather turns or escape checks.
-        bool mtMoonAbility = mtMoonRules && hiddenPlayerPokemon.Pokemon.AbilityId is
-            "ABILITY_INNER_FOCUS" or "ABILITY_CHLOROPHYLL" or "ABILITY_EFFECT_SPORE" or "ABILITY_MAGNET_PULL" or
-            "ABILITY_STENCH" or "ABILITY_STICKY_HOLD" or "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE";
-        bool ceruleanAbility = ceruleanRules && hiddenPlayerPokemon.Pokemon.AbilityId is
-            "ABILITY_SYNCHRONIZE" or "ABILITY_INSOMNIA" or "ABILITY_SHELL_ARMOR" or
-            "ABILITY_WATER_VEIL" or "ABILITY_NATURAL_CURE" or "ABILITY_ILLUMINATE";
-        bool billAbility=billRules && hiddenPlayerPokemon.Pokemon.AbilityId is "ABILITY_OBLIVIOUS" or "ABILITY_OWN_TEMPO";
-        if (hiddenPlayerPokemon.Pokemon.AbilityId is not ("ABILITY_OVERGROW" or "ABILITY_BLAZE" or "ABILITY_TORRENT" or
-            "ABILITY_KEEN_EYE" or "ABILITY_RUN_AWAY" or "ABILITY_GUTS" or "ABILITY_SHIELD_DUST" or "ABILITY_SHED_SKIN" or "ABILITY_SWARM") && !((route22Rules || route3Rules) && hiddenPlayerPokemon.Pokemon.AbilityId=="ABILITY_VITAL_SPIRIT") && !(fuchsiaRules && Game.Domain.WildBattle.FuchsiaBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(snorlaxRules && Game.Domain.WildBattle.SnorlaxBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !route3Ability && !mtMoonAbility && !ceruleanAbility && !billAbility && !(rockTunnelRules && Game.Domain.WildBattle.RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, hiddenPlayerPokemon.Pokemon.AbilityId)) && !(route11Rules && Game.Domain.WildBattle.Route11BattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(ssAnneRules && Game.Domain.WildBattle.SsAnneBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(vermilionRules && hiddenPlayerPokemon.Pokemon.AbilityId=="ABILITY_PICKUP"))
+            throw new NotSupportedException("Tutorial excludes unmodeled held items, status and mail.");
+        if (!Game.Domain.WildBattle.FuchsiaBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId))
             throw new NotSupportedException("Unmodeled tutorial entry ability.");
         if (species.SourceSpeciesId != 13 || species.GenderRatio != 127 || species.Ability1 != "ABILITY_SHIELD_DUST")
             throw new ArgumentException("Unexpected tutorial Weedle definition.", nameof(catalog));
@@ -166,7 +136,7 @@ public static class OldManTutorialRules
         ];
         // AbilityBattleEffects(INTIMIDATE1) runs before switch-in items and random turn number.
         // Weedle has Shield Dust, which does not block Intimidate; the script consumes no RNG.
-        bool intimidate = route3Rules && hiddenPlayerPokemon.Pokemon.AbilityId == "ABILITY_INTIMIDATE";
+        bool intimidate = hiddenPlayerPokemon.Pokemon.AbilityId == "ABILITY_INTIMIDATE";
         if (intimidate)
             events = events.Insert(4, new(OldManTutorialEventKind.IntimidateActivated,
                 "BattleScript_IntimidateActivatesEnd3", Value: -1));

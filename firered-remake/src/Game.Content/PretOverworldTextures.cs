@@ -5,9 +5,9 @@ public static class PretOverworldTextures
 {
     public static IReadOnlyDictionary<string, OverworldSprite> Load(string generatedDirectory)
         => ContentJson.ParseStrict<Dictionary<string, OverworldSprite>>(
-            File.ReadAllText(Path.Combine(generatedDirectory, "shared-overworld", "catalog.json")), ContentJson.CreateOptions());
+            File.ReadAllText(Path.Combine(generatedDirectory, "sprites/overworld", "catalog.json")), ContentJson.CreateOptions());
 
-    public const string RelativePrefix = "../shared-overworld/";
+    public const string RelativePrefix = "sprites/overworld/";
 
     public static string Resolve(string packageDirectory, string relative)
     {
@@ -18,12 +18,11 @@ public static class PretOverworldTextures
             name[..^4].Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('-' or '_')))
             throw new InvalidDataException("Invalid shared overworld texture filename.");
         var package = new DirectoryInfo(Path.GetFullPath(packageDirectory));
-        if (package.Parent is not { Name: "generated", Parent.Name: "content" } generated)
-            throw new InvalidDataException("Overworld textures require a direct generated package directory.");
+        var generated = new DirectoryInfo(PretRuntimeMapValidation.GeneratedRoot(packageDirectory));
         for (var cursor = package; cursor is not null; cursor = cursor.Parent)
             if (cursor.LinkTarget is not null)
                 throw new InvalidDataException("Overworld package directory symlink is unsupported.");
-        string directory = Path.Combine(generated.FullName, "shared-overworld");
+        string directory = Path.Combine(generated.FullName, "sprites/overworld");
         string file = Path.Combine(directory, name);
         if (new DirectoryInfo(directory).LinkTarget is not null || new FileInfo(file).LinkTarget is not null)
             throw new InvalidDataException("Overworld texture symlink is unsupported.");

@@ -8,9 +8,8 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretRoute11ItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
-    ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<string> Limitations);
+public sealed record PretRoute11ItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretMtMoonPickup> Pickups);
 
 /// <summary>Authenticates seven Route11 item declarations, icons and six source pickups.</summary>
 public static class PretRoute11Items
@@ -24,8 +23,7 @@ public static class PretRoute11Items
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretRoute11ItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 7 && document.Icons.Length == 7 &&
-            document.Pickups.Length == 6 &&
-            !document.Limitations.IsDefaultOrEmpty,
+            document.Pickups.Length == 6,
             "Route11 item scope differs.");
         string[] items = ["AWAKENING", "ETHER", "ESCAPE_ROPE", "GREAT_BALL", "PARALYZE_HEAL", "X_DEFEND", "ASPEAR_BERRY"];
         var definitions = document.Items;
@@ -50,7 +48,7 @@ public static class PretRoute11Items
 
     public static PretRoute11ItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/route11-items/route11-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/data/items/route11/route11-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
 

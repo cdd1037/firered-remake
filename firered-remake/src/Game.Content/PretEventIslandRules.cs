@@ -8,9 +8,8 @@ using Game.Domain.Pokemon;
 namespace Game.Content;
 
 public sealed record EventIslandMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record EventIslandSpeciesDocument(string SourceCommit, string Profile, int OwnedSpeciesCount, int OpponentSpeciesCount,
-    ImmutableArray<EventIslandMachineRows> Machines, ImmutableArray<EarlyShopItemDefinition> Items,
-    ImmutableArray<CanonicalPokemonInput> Inputs, ImmutableArray<CanonicalPokemonArtifact> DependencyInputs);
+public sealed record EventIslandSpeciesDocument(int OwnedSpeciesCount, int OpponentSpeciesCount,
+    ImmutableArray<EventIslandMachineRows> Machines, ImmutableArray<EarlyShopItemDefinition> Items);
 
 /// <summary>Source-locked additive event content; map access and distribution remain Application concerns.</summary>
 public static class PretEventIslandRules
@@ -24,7 +23,7 @@ public static class PretEventIslandRules
     }
     public static EventIslandSpeciesDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
-        var d = JsonSerializer.Deserialize<EventIslandSpeciesDocument>(Read(root,"content/generated/event-island-species/catalog.json"), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(Options))
+        var d = JsonSerializer.Deserialize<EventIslandSpeciesDocument>(Read(root,"content/generated/data/pokemon/event-island.json"), (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(Options))
             ?? throw new InvalidDataException("event_island_source_missing");
         if (d.Machines.IsDefault || d.Items.IsDefault) throw new InvalidDataException("event_island_catalog_arrays_missing");
         return d;

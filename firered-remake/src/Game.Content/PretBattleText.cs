@@ -7,7 +7,7 @@ public static class PretBattleText
 {
     public static ImmutableSortedDictionary<string,string> Load(string root)
     {
-        using var stream = File.OpenRead(Path.Combine(root, "content/generated/battle-text/catalog.json"));
+        using var stream = File.OpenRead(Path.Combine(root, "content/generated/battle/text.json"));
         var texts = System.Text.Json.JsonSerializer.Deserialize<SortedDictionary<string, string>>(stream)
             ?? throw new InvalidDataException("Battle text catalog is empty.");
         return texts.ToImmutableSortedDictionary(StringComparer.Ordinal);

@@ -3,13 +3,12 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record MoveTutorDocument(int SchemaVersion, string SourceCommit,
-    ImmutableArray<MoveTutorMove> Moves, ImmutableArray<MoveTutorCompatibility> Compatibility,
+public sealed record MoveTutorDocument(int SchemaVersion, ImmutableArray<MoveTutorMove> Moves, ImmutableArray<MoveTutorCompatibility> Compatibility,
     ImmutableDictionary<string, string> Texts);
 
 public sealed class PretMoveTutors
 {
-    public const string RelativePath = "content/generated/move-tutors/catalog.json";
+    public const string RelativePath = "content/generated/data/services/move-tutors.json";
     public MoveTutorCatalog Catalog { get; }
     private PretMoveTutors(MoveTutorCatalog catalog) { Catalog = catalog; }
 

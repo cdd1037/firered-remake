@@ -16,7 +16,7 @@ public partial class SynthSourceAudioPlayer
         var inherited = art.Manifest.GetProperty("audio").GetProperty("inheritedCues").EnumerateArray().Single();
         var aerodactyl = cues.SingleOrDefault(c => c.Id == "CRY_AERODACTYL_NORMAL");
         if (inherited.GetProperty("id").GetString() != "CRY_AERODACTYL_NORMAL" || aerodactyl is null ||
-            aerodactyl.Species != 142 || aerodactyl.CryMode != 0 || aerodactyl.SourcePlayer != 4 || aerodactyl.Priority != 10 || aerodactyl.SourcePath != inherited.GetProperty("sourcePath").GetString())
+            aerodactyl.Species != 142 || aerodactyl.CryMode != 0 || aerodactyl.SourcePlayer != 4 || aerodactyl.Priority != 10)
             throw new InvalidDataException("Fossil Lab inherited Aerodactyl cry binding differs.");
         return [.. cues, .. extension.Cues];
     }

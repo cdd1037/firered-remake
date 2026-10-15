@@ -9,15 +9,15 @@ internal static class GeneratedRegionEvents
     {
         string relative = sourcePath switch
         {
-            "data/maps/CeruleanCity/map.json" => "content/generated/cerulean-region/cerulean-city/runtime-map.json",
-            "data/maps/VermilionCity/map.json" => "content/generated/vermilion-region/vermilion-city/runtime-map.json",
-            "data/maps/CeladonCity/map.json" => "content/generated/celadon-approach-region/celadon-city/runtime-map.json",
-            "data/maps/FuchsiaCity/map.json" => "content/generated/fuchsia-route-region/fuchsia-city/runtime-map.json",
-            "data/maps/LavenderTown/map.json" => "content/generated/rocktunnel-region/lavender-town/runtime-map.json",
-            "data/maps/Route2/map.json" => "content/generated/forest-region/route-2/runtime-map.json",
-            "data/maps/Route9/map.json" => "content/generated/rocktunnel-region/route-9/runtime-map.json",
-            "data/maps/Route12/map.json" => "content/generated/snorlax-region/route-12/runtime-map.json",
-            "data/maps/Route16/map.json" => "content/generated/snorlax-region/route-16/runtime-map.json",
+            "data/maps/CeruleanCity/map.json" => "content/generated/maps/regions/cerulean/cerulean-city.json",
+            "data/maps/VermilionCity/map.json" => "content/generated/maps/regions/vermilion/vermilion-city.json",
+            "data/maps/CeladonCity/map.json" => "content/generated/maps/regions/celadon-approach/celadon-city.json",
+            "data/maps/FuchsiaCity/map.json" => "content/generated/maps/regions/fuchsia-route/fuchsia-city.json",
+            "data/maps/LavenderTown/map.json" => "content/generated/maps/regions/rocktunnel/lavender-town.json",
+            "data/maps/Route2/map.json" => "content/generated/maps/regions/forest/route-2.json",
+            "data/maps/Route9/map.json" => "content/generated/maps/regions/rocktunnel/route-9.json",
+            "data/maps/Route12/map.json" => "content/generated/maps/regions/snorlax/route-12.json",
+            "data/maps/Route16/map.json" => "content/generated/maps/regions/snorlax/route-16.json",
             _ => throw new InvalidDataException("No generated map owns the requested region events: " + sourcePath)
         };
         using var document = JsonDocument.Parse(File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(projectRoot, relative)));

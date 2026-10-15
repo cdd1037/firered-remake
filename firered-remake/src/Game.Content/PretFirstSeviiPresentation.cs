@@ -4,11 +4,11 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-public sealed record FirstSeviiPresentationAsset(string Id, int Width, int Height, string TexturePath, ImmutableArray<string> SourcePaths);
+public sealed record FirstSeviiPresentationAsset(string Id, int Width, int Height, string TexturePath);
 public sealed record FirstSeviiPresentationItem(string Id,string Symbol,string Name,string Description,string FieldUseFunction,string Pocket,string AssetId);
 public sealed record FirstSeviiPresentationPortrait(string AssetId,string TrainerPic,int SourceTrainerPicId);
 public sealed record FirstSeviiPresentationTrainer(string Id,string Name,string TrainerPic,string TrainerClass,string ClassName);
-public sealed record FirstSeviiPresentationDocument(int SchemaVersion,string Profile,ImmutableArray<FirstSeviiPresentationAsset> Assets,
+public sealed record FirstSeviiPresentationDocument(int SchemaVersion,ImmutableArray<FirstSeviiPresentationAsset> Assets,
     ImmutableArray<FirstSeviiPresentationItem> Items,ImmutableArray<FirstSeviiPresentationPortrait> Portraits,ImmutableArray<FirstSeviiPresentationTrainer> Trainers);
 
 /// <summary>Original ferry pixels, ten trainer bindings, eight item icons and three ID-only audio cues.
@@ -16,7 +16,7 @@ public sealed record FirstSeviiPresentationDocument(int SchemaVersion,string Pro
 public sealed class PretFirstSeviiPresentation
 {
     public const string Profile="firered-first-sevii-presentation-v1";
-    public const string GeneratedDirectory="content/generated/first-sevii-presentation/";
+    public const string GeneratedDirectory="content/generated/ui/first-sevii-presentation/";
     public FirstSeviiPresentationDocument Document {get;}
     private readonly ImmutableDictionary<string,byte[]> _outputs;
     private PretFirstSeviiPresentation(FirstSeviiPresentationDocument document,ImmutableDictionary<string,byte[]> outputs)

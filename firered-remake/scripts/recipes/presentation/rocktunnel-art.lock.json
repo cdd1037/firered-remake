@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "graphics/field_effects/pics/field_move_streaks_indoors.bin"
+    },
+    {
+      "path": "graphics/field_effects/pics/field_move_streaks_indoors.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/pokemaniac_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/palettes/pokemaniac.pal"
+    },
+    {
+      "path": "include/constants/trainers.h"
+    },
+    {
+      "path": "src/data/graphics/trainers.h"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
+    },
+    {
+      "path": "src/field_effect.c"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
+    },
+    {
+      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
+    }
+  ]
+}

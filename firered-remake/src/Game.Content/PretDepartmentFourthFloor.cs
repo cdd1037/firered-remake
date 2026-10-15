@@ -9,7 +9,7 @@ namespace Game.Content;
 /// <summary>Original 4F Retro Mail definition and full shelf provenance; Mail composition and stone effects stay separate.</summary>
 public static class PretDepartmentFourthFloor
 {
-    public const string Base = "content/generated/department-fourth-floor/";
+    public const string Base = "content/generated/data/services/department-fourth-floor/";
     private static byte[] Read(string root,string relative)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, relative));

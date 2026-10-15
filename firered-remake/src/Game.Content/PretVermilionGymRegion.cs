@@ -18,7 +18,6 @@ public sealed class PretVermilionGymRegion
     public const string Profile = "firered-vermilion-gym-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
     /// <summary>Declarative source metadata only; this class registers no executable handlers.</summary>
     public JsonElement Trainers => Dependencies.GetProperty("trainers");
@@ -36,11 +35,11 @@ public sealed class PretVermilionGymRegion
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretVermilionGymRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalVermilionEvents, JsonElement beamStates,
+        JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalVermilionEvents, JsonElement beamStates,
         ImmutableDictionary<int, PretMartMetatileDefinition> beamDefinitions)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; Dependencies = dependencies; Catalog = catalog;
         NpcSources = npcSources; ExternalVermilionEvents = externalVermilionEvents;
         BeamStates = beamStates; BeamDefinitions = beamDefinitions;
     }
@@ -68,7 +67,7 @@ public sealed class PretVermilionGymRegion
     public static PretVermilionGymRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/vermilion-gym-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/vermilion-gym");
 
         byte[] ReadPinned(string root,string path)
         {
@@ -78,36 +77,32 @@ public sealed class PretVermilionGymRegion
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
 
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Vermilion Gym manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Vermilion Gym manifest identity differs.");
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
             if (path == "scripts.json") continue;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "vermilion-gym-region/" + path)) continue;
+            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "maps/regions/vermilion-gym/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate Vermilion Gym output.");
         }
         using var catalog = JsonDocument.Parse(outputs["vermilion-gym-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Vermilion Gym source profile; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact) )
             {
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate Vermilion Gym runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
@@ -120,8 +115,7 @@ public sealed class PretVermilionGymRegion
             constants["VAR_TEMP_0"] == 0x4000 && constants["VAR_TEMP_1"] == 0x4001,
             "Vermilion Gym puzzle/Cut constants differ.");
         using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        Require(!dependencies.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 4 &&
+        Require(dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 4 &&
             dependencies.RootElement.GetProperty("puzzle").GetProperty("rngDrawCount").GetInt32() == 2 &&
             dependencies.RootElement.GetProperty("cut").GetProperty("localId").GetInt32() == 7 &&
             dependencies.RootElement.GetProperty("surge").GetProperty("rewardItem").GetString() == "ITEM_TM34",
@@ -130,8 +124,7 @@ public sealed class PretVermilionGymRegion
         var beamDefinitions = ReadBeams(beams.RootElement, outputs, directory);
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/VermilionCity/map.json"));
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(),
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(), dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(),
             beams.RootElement.GetProperty("states").Clone(), beamDefinitions);
     }
 

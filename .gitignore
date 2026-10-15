@@ -14,10 +14,5 @@
 **/.play/
 *.user
 
-# Source-derived cue data is shipped for runtime/import, not source Git.
-/firered-remake/scripts/synth-ssanne-cues.json
-/firered-remake/content/sources/seven-island-region.lock.json
-/firered-remake/content/sources/fuchsia-gym-source/
-
-# Local migration comparison outputs are not authored project sources.
-/firered-remake/evidence/shared-machine-catalog-20261015/
+# Source-derived cue tables are runtime/import assets, not authored source.
+/firered-remake/scripts/recipes/audio/synth-*-cues.json

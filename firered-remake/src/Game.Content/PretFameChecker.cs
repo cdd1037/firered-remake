@@ -14,7 +14,7 @@ public sealed class PretFameChecker
     private PretFameChecker(FameCheckerCatalog catalog) { Catalog = catalog; }
 
     public static PretFameChecker Load(string projectRoot) => LoadPackage(
-        Path.Combine(projectRoot, "content/generated/fame-checker/catalog.json"));
+        Path.Combine(projectRoot, "content/generated/data/services/fame-checker.json"));
 
     public static PretFameChecker LoadPackage(string catalogPath) =>
         new(FameCheckerCatalog.Authenticate(File.ReadAllBytes(catalogPath)));

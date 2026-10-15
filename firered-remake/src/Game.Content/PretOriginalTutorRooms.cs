@@ -50,7 +50,7 @@ public sealed class PretOriginalTutorRooms
     public static PretOriginalTutorRooms Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"original-tutor-rooms");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/original-tutor-rooms");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_FAT_MAN", "OBJ_EVENT_GFX_POKE_MANIAC",
             "OBJ_EVENT_GFX_SCIENTIST", "OBJ_EVENT_GFX_RED_NORMAL"], StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
@@ -67,13 +67,13 @@ public sealed class PretOriginalTutorRooms
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" ,
+            Need(path == relative ,
                 "Original tutor room compact map binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.FieldWarps.Length == 1 && map.Events.GetProperty("object_events").GetArrayLength() == 2 &&
                 map.Events.GetProperty("coord_events").GetArrayLength() == 0 &&
                 map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Original tutor room event scope differs.");

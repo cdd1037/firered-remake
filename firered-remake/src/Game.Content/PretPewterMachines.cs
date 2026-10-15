@@ -6,11 +6,8 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretPewterMachineInput(string Path);
-public sealed record PretPewterMachineIcon(ItemId Item, int Width, int Height, string PngPath, OpeningItemSourceRef Source,
-    OpeningItemSourceRef PaletteSource, OpeningItemSourceRef BindingSource, ImageRegion? Region = null);
-public sealed record PretPewterMachinesDocument(int SchemaVersion, ImmutableArray<PretPewterMachineInput> Inputs,
-    ImmutableArray<string> Limitations,
+public sealed record PretPewterMachineIcon(ItemId Item, int Width, int Height, string PngPath, ImageRegion? Region = null);
+public sealed record PretPewterMachinesDocument(int SchemaVersion,
     ImmutableArray<PretPewterMachineIcon> Icons);
 
 /// <summary>Loads the shared TM39 and TM CASE presentation icons.</summary>
@@ -20,14 +17,9 @@ public static class PretPewterMachines
     public static PretPewterMachinesDocument LoadDocument(string json, SharedMachineCatalog machines)
     {
         var document = ContentJson.ParseStrict<PretPewterMachinesDocument>(json, machines.CreateJsonOptions());
-        if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||
-            document.Icons.IsDefault || document.Icons.Length != 2 ||
-            document.Limitations.IsDefaultOrEmpty)
+        if (document.SchemaVersion != 1 ||
+            document.Icons.IsDefault || document.Icons.Length != 2)
             throw ContentJson.Error("pewter_machines_profile", "$", "TM39 and TM CASE icon metadata are required.");
-        var inputs = new Dictionary<string, PretPewterMachineInput>(StringComparer.Ordinal);
-        foreach (var input in document.Inputs)
-            if (input is null || string.IsNullOrWhiteSpace(input.Path) || !inputs.TryAdd(input.Path, input))
-                throw ContentJson.Error("pewter_machines_inputs", "$.inputs", "Invalid or duplicate source identity.");
         for (int n = 0; n < document.Icons.Length; n++)
         {
             var icon = document.Icons[n];

@@ -7,8 +7,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record PretSuperRodTablesDocument(int SchemaVersion, string ResourceId, string SourceCommit,
-    string Rod, ImmutableArray<OldRodEncounterTable> Tables, ImmutableArray<OldRodEncounterTable> SourceOnlyTables);
+public sealed record PretSuperRodTablesDocument(int SchemaVersion, string ResourceId, string Rod, ImmutableArray<OldRodEncounterTable> Tables, ImmutableArray<OldRodEncounterTable> SourceOnlyTables);
 
 /// <summary>Authenticates the original Super Rod house, key item and all ordinary FireRed tables. Admission belongs to the current composition.</summary>
 public sealed class PretSuperRodService
@@ -57,7 +56,7 @@ public sealed class PretSuperRodService
     public static PretSuperRodService Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"super-rod-service");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/super-rod-service");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Super Rod actor collection differs.");
         foreach (var texture in npc.EnumerateArray())
@@ -72,15 +71,15 @@ public sealed class PretSuperRodService
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
             "Original Super Rod service resources; current-game admission is separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+        string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
-        Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
+        Need(id == HouseMapId.Value && path == relative ,
             "Super Rod compact map binding differs.");
         var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 11 && runtime.Height == 9,
+        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 11 && runtime.Height == 9,
             "Super Rod house dimensions differ.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 3 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 1,
             "Super Rod original event collection differs.");
@@ -116,7 +115,7 @@ public sealed class PretSuperRodService
             .SequenceEqual(document.Tables.Select(t => t.Map.Value).Order(StringComparer.Ordinal)), "Super Rod table IDs/order differ.");
         foreach (var table in all)
         {
-            Need(table.SourcePath == OldRodEncounterRules.SourcePath && table.Slots.Length == 5 &&
+            Need(table.Slots.Length == 5 &&
                 table.Slots.Select(s => s.Index).SequenceEqual([5, 6, 7, 8, 9]) && table.Slots.Select(s => s.Weight).SequenceEqual([40, 40, 15, 4, 1]),
                 "Super Rod source slot identity differs.");
             Need(table.RawEncounterRate is >= 1 and <= 255 && table.Slots.All(slot =>

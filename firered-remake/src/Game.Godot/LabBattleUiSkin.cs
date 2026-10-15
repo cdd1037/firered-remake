@@ -53,8 +53,7 @@ public sealed class LabBattleUiSkin : IDisposable
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "lab-battle-ui.json"));
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1
-            || root.GetProperty("profile").GetString() != "firered-lab-battle-ui-static-v1")
+        if (root.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Lab battle UI source identity differs.");
         var result = new LabBattleUiSkin { DarkenCoefficient = darkenCoefficient };
         try

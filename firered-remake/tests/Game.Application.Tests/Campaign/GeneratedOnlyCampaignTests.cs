@@ -26,6 +26,11 @@ public sealed class GeneratedOnlyCampaignTests
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/sources")));
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "scripts")));
             var catalog = PretCampaignCatalog.LoadCurrent(root);
+            Assert.AreSame(catalog.ForestPokemon!.Catalog, catalog.PewterPokemon!.Catalog);
+            Assert.AreSame(catalog.ForestPokemon.Catalog, catalog.Route22Pokemon!.Catalog);
+            Assert.AreSame(catalog.ForestPokemon.Catalog, catalog.RocketHideoutPokemon!.Catalog);
+            Assert.IsTrue(catalog.PokemonContent!.Catalog.Species.Count < catalog.ForestPokemon.Catalog.Species.Count);
+
             var session = CampaignSession.CreateCurrent(catalog, new(0x11223344));
             Assert.IsNull(session.ValidatePlayerSave(session.State));
             var encoded = SaveCodec.Encode(session.State, session.Revision, session.RulesVersion, catalog.ContentVersion);

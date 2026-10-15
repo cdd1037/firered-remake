@@ -19,7 +19,6 @@ public sealed class PretTrainerTowerRegion
     public ImmutableDictionary<MapId, PretWorldMap> Maps { get; }
     public ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> Layouts { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
@@ -32,7 +31,7 @@ public sealed class PretTrainerTowerRegion
     {
         Layouts = layouts;
         Maps = layouts.Where(p => p.Key.Format is PretTrainerTowerLayoutFormat.Common or PretTrainerTowerLayoutFormat.Single)
-            .ToImmutableDictionary(p => p.Key.Map, p => p.Value); SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty; GeneratedDirectory = source.Directory;
+            .ToImmutableDictionary(p => p.Key.Map, p => p.Value); GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
         Constants = PretSharedConstants.ForPackage(source.Directory);
@@ -97,7 +96,7 @@ public sealed class PretTrainerTowerRegion
     {
         var selected = GetMap(map, format);
         return Catalog.GetProperty("maps").EnumerateArray().Single(s =>
-            s.GetProperty("directory").GetString() == Path.GetRelativePath(GeneratedDirectory, selected.DirectoryPath).Replace('\\', '/'))
+            s.GetProperty("mapPath").GetString() == Path.GetRelativePath(GeneratedDirectory, selected.MapPath).Replace('\\', '/'))
             .GetProperty("layoutId").GetString()!;
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -124,24 +123,22 @@ public sealed class PretTrainerTowerRegion
         var layouts = ImmutableDictionary.CreateBuilder<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
+            string relative = spec.GetProperty("mapPath").GetString()!, path = spec.GetProperty("path").GetString()!;
             string id = spec.GetProperty("stableId").GetString()!;
-            Need(path == relative + "/runtime-map.json", "Tower map path differs.");
+            Need(path == relative, "Tower map path differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Tower source map identity differs.");
+            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Tower source map identity differs.");
             var format = Enum.Parse<PretTrainerTowerLayoutFormat>(spec.GetProperty("format").GetString()!);
             string originalId = runtime.Events.GetProperty("layout").GetString()!;
             string expectedId = originalId + (format == PretTrainerTowerLayoutFormat.Double ? "_DOUBLES" : format == PretTrainerTowerLayoutFormat.Knockout ? "_KNOCKOUT" : "");
             Need(spec.GetProperty("layoutId").GetString() == expectedId, "Tower map/format layout binding differs.");
             layouts.Add((new(id), format), PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, relative),
-                PretOverworldTextures.Resolve(source.Directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
+                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(layouts.Count == 27 && layouts.Keys.Select(k => k.Map).Distinct().Count() == 11, "Tower map/layout count differs.");
 
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-
         return new(source, layouts.ToImmutable());
     }
-    private static SilphSourcePackage Source(string root) => new(root,"trainer-tower-region");
+    private static SilphSourcePackage Source(string root) => new(root,"maps/regions/trainer-tower");
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);
 }

@@ -1,6 +1,5 @@
 /// <summary>Source identity is independent of rendered PCM duration. Fixture is never original audio.</summary>
-public sealed record SourceAudioMetadata(string Id, string SourceCommit, string SourceSymbol,
-    string SourcePath, int SourcePlayer, int Priority, int? SourceCounter, string Renderer,
+public sealed record SourceAudioMetadata(string Id, string SourceSymbol, int SourcePlayer, int Priority, int? SourceCounter, string Renderer,
     bool IsOriginalTestFixture = false);
 
 public sealed record SourceAudioPlaybackEvent(string Kind, string Id, long Token, int SourcePlayer,

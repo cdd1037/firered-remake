@@ -9,7 +9,7 @@ public static partial class PretFourIslandItems
     public static FourIslandItemContent Load(PretFourIslandRegion region, GamePokemonCatalog pokemon,
         EarlyShopCatalog previousShop, MachineCatalog previousMachines, PretStoryCompilation scripts)
     {
-        var root = Path.GetFullPath(Path.Combine(region.GeneratedDirectory, "../../.."));
+        var root = PretRuntimeMapValidation.ProjectRoot(region.GeneratedDirectory);
         var document = LoadDocument(root);
         var content = LoadCatalogs(document, pokemon, previousShop, previousMachines);
         foreach (var metadata in document.Items)

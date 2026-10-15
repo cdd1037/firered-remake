@@ -7,8 +7,7 @@ public sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, 
 public static class PowerPlantEncounterTables
 {
     public static MapId Map { get; } = new("map.power-plant");
-    public static EarlyLandEncounterTable Land { get; } = new(Map, EarlyLandEncounterRules.SourceCommit,
-        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", 7,
+    public static EarlyLandEncounterTable Land { get; } = new(Map, 7,
         [new(0,new("pret:SPECIES_VOLTORB"),22,22,20),
             new(1,new("pret:SPECIES_MAGNEMITE"),22,22,20),
             new(2,new("pret:SPECIES_VOLTORB"),25,25,10),

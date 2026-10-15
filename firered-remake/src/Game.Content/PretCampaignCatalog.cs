@@ -321,8 +321,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         TrainerFanClub = trainerFanClub;
         FieldItemServices = originalTmAcquisition.ServiceDefinitions().AddRange(lostCave.ServiceDefinitions());
         FieldFly = fieldFly; FlyMapPresentation = flyMapPresentation; Route16FlyHouse = route16FlyHouse;
-        Route16FlyTrainers = new(route16FlyHouse.Trainers.SourceCommit, route16FlyHouse.Trainers.Profile,
-            route16FlyHouse.Trainers.Trainers.ToImmutableDictionary(t => t.Id),
+        Route16FlyTrainers = new(route16FlyHouse.Trainers.Trainers.ToImmutableDictionary(t => t.Id),
             route16FlyHouse.Trainers.Battles.ToImmutableDictionary(t => t.ScriptEntry, StringComparer.Ordinal));
         Route16FlyTrainerPartyFactory.ValidateCatalog(Route16FlyTrainers);
         MoveTutors = moveTutors.Catalog.WithCapeBrink(capeBrinkTutor.AuthenticateTutor(pokemonContent.Catalog));
@@ -415,7 +414,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         FuchsiaGymTrainerDocument = fuchsiaGymTrainers;
         FuchsiaGymItems = fuchsiaGymItems;
         FuchsiaGymMachines = fuchsiaGymMachines;
-        FuchsiaGymTrainers = new(fuchsiaGymTrainers.SourceCommit, fuchsiaGymTrainers.Profile, fuchsiaGymTrainers.CompleteSourceRoster, fuchsiaGymTrainers.Trainers.ToImmutableDictionary(t => t.Id), fuchsiaGymTrainers.Battles.ToImmutableDictionary(b => b.Trainer));
+        FuchsiaGymTrainers = new(fuchsiaGymTrainers.Trainers.ToImmutableDictionary(t => t.Id), fuchsiaGymTrainers.Battles.ToImmutableDictionary(b => b.Trainer));
         FuchsiaRouteRegion = fuchsiaRoute;
         FuchsiaRoutePokemon = fuchsiaPokemon;
         FuchsiaRouteArt = fuchsiaArt;
@@ -604,7 +603,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
             FiveIslandWaterEncounters = FiveIslandWaterEncounterCatalog.Authenticate(SixIslandWaterEncounters!, FiveIslandEncounterTables.Water);
         }
 
-        FieldPickups = FieldPickups.AddRange(SourceRegionPickupDefinitions(ceruleanCave.NewMaps, ceruleanCave.Items, ceruleanCave.Contracts, PretCeruleanCaveRegion.MapIdFromSourceSymbol, "cerulean-cave", earlyShop.Catalog, scripts));
+        FieldPickups = FieldPickups.AddRange(SourceRegionPickupDefinitions(ceruleanCave.NewMaps, ceruleanCave.Items, ceruleanCave.Contracts, PretCeruleanCaveRegion.MapIdFromSourceSymbol, "maps/regions/cerulean-cave", earlyShop.Catalog, scripts));
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(CeruleanCaveEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
         CeruleanCaveWaterEncounters = CeruleanCaveWaterEncounterCatalog.Authenticate(FiveIslandWaterEncounters!, CeruleanCaveEncounterTables.Water);
         if (FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != FieldPickups.Length)
@@ -724,7 +723,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     private FieldMapDefinition Definition(PretWorldMap map)
     {
         var e = map.Events;
-        var root = map.SourceRef.Path.Split('/')[2] + "_MapScripts";
+        var root = map.SourceMapName + "_MapScripts";
         var header = _scripts.MapHeaders.GetValueOrDefault(root, []);
         string? Target(string kind) => header.FirstOrDefault(x => x.EventKind == kind)?.Target;
         var actors = e.GetProperty("object_events").EnumerateArray().Select((x, index) => CampaignSourceActor(map, x, index)).ToImmutableArray();

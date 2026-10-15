@@ -181,9 +181,9 @@ public static class PokemonStateValidator
             (p.Level < 100 && p.Experience >= GrowthRules.ExperienceAtLevel(species.GrowthRate, p.Level + 1)))
             return "pokemon_experience";
         if (!Enum.IsDefined(p.Nature) || p.Nature != (Nature)(p.Personality % 25)) return "pokemon_nature";
-        if (p.Ivs is null || p.Ivs.Values.Any(x => x is < 0 or > 31)) return "pokemon_ivs";
+        if (p.Ivs is null || OutsideRange(p.Ivs, 31)) return "pokemon_ivs";
         if (!isEgg && p.EggStatCalculationIvs is not null) return "pokemon_egg_instance";
-        if (isEgg && (p.EggStatCalculationIvs is null || p.EggStatCalculationIvs.Values.Any(x => x is < 0 or > 31)))
+        if (isEgg && (p.EggStatCalculationIvs is null || OutsideRange(p.EggStatCalculationIvs, 31)))
             return "pokemon_egg_stat_basis";
         if (p.ContestConditions is { } conditions &&
             new[] { conditions.Cool, conditions.Beauty, conditions.Cute, conditions.Smart, conditions.Tough, conditions.Sheen }
@@ -191,10 +191,10 @@ public static class PokemonStateValidator
         if (NpcTradePokemonOriginRules.ValidateInstance(catalog, p, out int? tradeAbilitySlot) is { } originError)
             return originError;
         if (sourceAbilitySlot is not null && tradeAbilitySlot is not null) return "pokemon_npc_trade_origin";
-        if (p.Evs is null || p.Evs.Values.Any(x => x is < 0 or > 255) || p.Evs.Values.Sum() > 510) return "pokemon_evs";
+        if (p.Evs is null || OutsideRange(p.Evs, 255) || Total(p.Evs) > 510) return "pokemon_evs";
         var statEvs = p.StatCalculationEvs ?? p.Evs;
-        if (statEvs.Values.Any(x => x is < 0 or > 255) || statEvs.Values.Sum() > 510 ||
-            statEvs.Values.Where((value, index) => value > p.Evs.Values[index]).Any())
+        if (OutsideRange(statEvs, 255) || Total(statEvs) > 510 ||
+            Exceeds(statEvs, p.Evs))
             return "pokemon_stat_calculation_evs";
         var expected = PokemonStatCalculation.Calculate(species, p.Level, p.Nature,
             isEgg ? p.EggStatCalculationIvs! : p.Ivs, statEvs, mechanics);
@@ -225,6 +225,21 @@ public static class PokemonStateValidator
         }
         return null;
     }
+
+    // Validate six scalar fields without allocating an ordered Values array per check.
+    private static bool OutsideRange(SixStats stats, int maximum) =>
+        stats.Hp < 0 || stats.Hp > maximum || stats.Attack < 0 || stats.Attack > maximum ||
+        stats.Defense < 0 || stats.Defense > maximum || stats.Speed < 0 || stats.Speed > maximum ||
+        stats.SpecialAttack < 0 || stats.SpecialAttack > maximum ||
+        stats.SpecialDefense < 0 || stats.SpecialDefense > maximum;
+
+    private static int Total(SixStats stats) => stats.Hp + stats.Attack + stats.Defense +
+        stats.Speed + stats.SpecialAttack + stats.SpecialDefense;
+
+    private static bool Exceeds(SixStats value, SixStats limit) =>
+        value.Hp > limit.Hp || value.Attack > limit.Attack || value.Defense > limit.Defense ||
+        value.Speed > limit.Speed || value.SpecialAttack > limit.SpecialAttack ||
+        value.SpecialDefense > limit.SpecialDefense;
 
     private static string? ValidateCatalog(PokemonCatalog? catalog)
     {

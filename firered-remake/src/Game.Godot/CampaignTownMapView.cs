@@ -58,7 +58,7 @@ public partial class CampaignView
             var rgb = map.Layout.TextPaletteRgb[index];
             return Color.Color8((byte)rgb[0], (byte)rgb[1], (byte)rgb[2]);
         }
-        string fonts = System.IO.Path.Combine(_root, "content/generated/source-font");
+        string fonts = System.IO.Path.Combine(_root, "content/generated/ui/font");
         foreach (int index in new[] { map.Layout.MapTextColor, map.Layout.DungeonVisitedTextColor, map.Layout.DungeonUnvisitedTextColor }.Distinct())
             _townMapFonts.Add(index, SourceGameFont.Load(fonts, foreground: Palette(index), shadow: Palette(map.Layout.TextShadowColor)));
         _townMapSmallFont = SourceGameFont.Load(fonts, "small", Palette(map.Layout.MapTextColor), Palette(map.Layout.TextShadowColor));

@@ -73,14 +73,14 @@ public partial class CampaignView:Node2D
             _root=startup.ProjectRoot;_evidence=OS.GetEnvironment("FIRERED_EVIDENCE");
             _diagnostics=new(_evidence,OS.GetEnvironment("FIRERED_VERBOSE"));
             _font=GD.Load<FontFile>("res://Assets/ProbeFont.ttc");
-            var fontDirectory=System.IO.Path.Combine(_root,"content/generated/source-font");
+            var fontDirectory=System.IO.Path.Combine(_root,"content/generated/ui/font");
             _sourceNormal=SourceGameFont.Load(fontDirectory,colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);_sourceSmall=SourceGameFont.Load(fontDirectory,"small",colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);
             _sourceWhite=SourceGameFont.Load(fontDirectory,foreground:Colors.White,shadow:new Color("636363"));_sourceSmallWhite=SourceGameFont.Load(fontDirectory,"small",Colors.White,new Color("636363"));
             _sourceInactiveCursor=SourceGameFont.Load(fontDirectory,foreground:OpeningItemUiSkin.MenuTextShadow,shadow:OpeningItemUiSkin.MenuTextColor);
-            _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui-corrections"));
-            _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/text-cursor"));
+            _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui/ui-corrections"));
+            _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
             _catalog=PretCampaignCatalog.LoadCurrent(_root);
-            _borderSources=PretMapBorders.LoadCatalog(System.IO.Path.Combine(_root,"content/generated/map-borders"));
+            _borderSources=PretMapBorders.LoadCatalog(System.IO.Path.Combine(_root,"content/generated/maps/borders"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
             LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();if(_catalog.RegionEnabled)LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadLostCaveTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             _nicknameEdit=new LineEdit{Position=new(20,62),Size=new(200,22),MaxLength=10,Visible=false,PlaceholderText="",CaretBlink=true,KeepEditingOnTextSubmit=true};
@@ -107,7 +107,7 @@ public partial class CampaignView:Node2D
     }
     private void LoadPortraits()
     {
-        var directory=System.IO.Path.Combine(_root,"content/generated/starter-art");var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory,"starter-art.json"));
+        var directory=System.IO.Path.Combine(_root,"content/generated/sprites/trainers/starter");var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory,"starter-art.json"));
         using var document=JsonDocument.Parse(bytes);
         foreach(var entry in document.RootElement.GetProperty("sprites").EnumerateArray())
         {
@@ -125,24 +125,10 @@ public partial class CampaignView:Node2D
             var npcs=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
             var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
             if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner);
-            else
-            {
-            using var json=JsonDocument.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(source.DirectoryPath,"npc-sprites.json")));
-            foreach(var entry in json.RootElement.GetProperty("sprites").EnumerateArray())
-            {
-                var file=entry.GetProperty("texturePath").GetString()!;
-                if(System.IO.Path.GetFileName(file)!=file||!file.StartsWith("npc-",StringComparison.Ordinal)||!file.EndsWith(".png",StringComparison.Ordinal))throw new InvalidDataException("Unsafe NPC texture path.");
-                var path=System.IO.Path.Combine(source.DirectoryPath,file);
-                int width=entry.GetProperty("frameWidth").GetInt32(),height=entry.GetProperty("frameHeight").GetInt32(),count=entry.GetProperty("frameCount").GetInt32();
-                if(width is <1 or >64||height is <1 or >64||count is <1 or >64)throw new InvalidDataException("NPC frame dimensions invalid.");
-                var anchor=entry.GetProperty("tileCenterAnchor");var texture=owner.Texture(path);
-                if(texture.GetWidth()!=width*count||texture.GetHeight()!=height)throw new InvalidDataException("NPC sprite sheet dimensions mismatch.");
-                npcs.Add(entry.GetProperty("graphicsId").GetString()!,new(texture,width,height,count,new(anchor.GetProperty("x").GetInt32(),anchor.GetProperty("y").GetInt32()),entry.GetProperty("inanimate").GetBoolean()));
-            }
-            }
+            else throw new InvalidDataException("Map NPC presentation binding is missing.");
             BorderArt? borderArt=null;
             if(_borderSources.TryGetValue(id,out var border))borderArt=new(border.BorderWidth,border.BorderHeight,MapTexture(border.BottomTexturePath),MapTexture(border.MiddleTexturePath),MapTexture(border.TopTexturePath));
-            else if(binding.UsesLocalBorder)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-bottom.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-middle.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-top.png")));
+            else if(binding.UsesLocalBorder)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(source.BorderBottomTexturePath),MapTexture(source.BorderMiddleTexturePath),MapTexture(source.BorderTopTexturePath));
             return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
         });
     }

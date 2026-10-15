@@ -13,7 +13,6 @@ public sealed class PretCeladonGymRegion
     public const string Profile = "firered-celadon-gym-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
@@ -22,10 +21,10 @@ public sealed class PretCeladonGymRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretCeladonGymRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement catalog, JsonElement npcSources, JsonElement externalCeladonEvents)
+        JsonElement catalog, JsonElement npcSources, JsonElement externalCeladonEvents)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Catalog = catalog;
+        Constants = constants; Catalog = catalog;
         NpcSources = npcSources; ExternalCeladonEvents = externalCeladonEvents;
     }
 
@@ -52,7 +51,7 @@ public sealed class PretCeladonGymRegion
     public static PretCeladonGymRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
     {
         var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/celadon-gym-region");
+        var directory = Path.Combine(project, "content/generated/maps/regions/celadon-gym");
 
         byte[] ReadPinned(string root,string path)
         {
@@ -61,40 +60,36 @@ public sealed class PretCeladonGymRegion
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
 
         var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
-            m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Celadon Gym manifest identity differs.");
+        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Celadon Gym manifest identity differs.");
 
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
             if (path == "scripts.json") continue;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "celadon-gym-region/" + path)) continue;
+            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "maps/regions/celadon-gym/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate Celadon Gym output.");
         }
         using var catalog = JsonDocument.Parse(outputs["celadon-gym-catalog.json"]);
         Require(catalog.RootElement.GetProperty("schemaVersion").GetInt32() == 1 ,
             "Celadon Gym source inventory differs from fixed lock.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Celadon Gym source profile; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {
-            var relative = spec.GetProperty("directory").GetString()!;
+            var relative = spec.GetProperty("mapPath").GetString()!;
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact))
             {
 
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate Celadon Gym runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
@@ -114,8 +109,7 @@ public sealed class PretCeladonGymRegion
             gymEvents.GetProperty("warp_events")[1].GetProperty("dest_map").GetString() == "MAP_CELADON_CITY" &&
             gymEvents.GetProperty("warp_events")[1].GetProperty("dest_warp_id").GetString() == "6",
             "Celadon Gym city entry differs from original source.");
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

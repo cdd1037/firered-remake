@@ -4,14 +4,12 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 
 namespace Game.Content;
-public sealed record PretSilphItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<string> Limitations)
+public sealed record PretSilphItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items)
 {
     [JsonIgnore] public SilphMachinesDocument Machines { get; internal init; } = null!;
 }
-public sealed record SilphMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<MachineDefinition> NewMachines, ImmutableArray<string> Limitations);
+public sealed record SilphMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
+    ImmutableArray<MachineDefinition> NewMachines);
 public static class PretSilphItems
 {
     public const string Profile = "firered-silph-items-v1";
@@ -23,7 +21,7 @@ public static class PretSilphItems
         var source = SilphSourcePackage.Catalogs(root); var d = source.Parse<PretSilphItemsDocument>("items.json");
         string[] names = ["CARD_KEY","MASTER_BALL","ULTRA_BALL","TM01","TM08","TM41","HYPER_POTION","MAX_REVIVE","ESCAPE_ROPE","FULL_HEAL","PROTEIN","HP_UP","X_SPECIAL","CALCIUM","CARBOS","RARE_CANDY","IRON","ZINC","ELIXIR","PP_UP","NUGGET","MAX_POTION","REVIVE"];
         SilphSourcePackage.Need(d.SchemaVersion == 1 &&
-            d.Items.Select(i => i.Metadata.Item.Id.Value).SequenceEqual(names.Select(n => "pret:ITEM_" + n)) && !d.Limitations.IsDefaultOrEmpty,
+            d.Items.Select(i => i.Metadata.Item.Id.Value).SequenceEqual(names.Select(n => "pret:ITEM_" + n)),
             "Silph exact23 item scope differs.");
         foreach (var item in d.Items)
         {

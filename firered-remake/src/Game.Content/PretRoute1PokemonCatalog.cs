@@ -8,10 +8,8 @@ using Game.Domain.Pokemon;
 namespace Game.Content;
 
 public sealed record PretRoute1SpeciesName(SpeciesId Id, string Name, PokemonSourceRef Source);
-public sealed record PretRoute1MoveName(MoveId Id, string Name, PokemonSourceRef Source);
-public sealed record PretRoute1PokemonDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<string> Limitations,
-    ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
+public sealed record PretRoute1MoveName(MoveId Id, string Name);
+public sealed record PretRoute1PokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
     ImmutableArray<PretRoute1SpeciesName> SpeciesNames, ImmutableArray<PretRoute1MoveName> MoveNames);
 public sealed record PretRoute1PokemonContent(PokemonCatalog Catalog,
     ImmutableSortedDictionary<int, string> SpeciesNames, ImmutableDictionary<MoveId, string> MoveNames);
@@ -34,7 +32,7 @@ public static class PretRoute1PokemonCatalog
         var doc = ContentJson.ParseStrict<PretRoute1PokemonDocument>(generatedJson, options);
         if (doc.SchemaVersion != 1 )
             throw Error("profile", "Unknown Route 1 Pokemon profile or source commit.");
-        if (doc.Limitations.IsDefaultOrEmpty || doc.Species.IsDefaultOrEmpty ||
+        if (doc.Species.IsDefaultOrEmpty ||
             doc.Moves.IsDefaultOrEmpty || doc.SpeciesNames.IsDefaultOrEmpty || doc.MoveNames.IsDefaultOrEmpty)
             throw Error("missing_data", "Explicit nonempty source, species, move and name arrays are required.");
 
@@ -86,8 +84,6 @@ public static class PretRoute1PokemonCatalog
         {
             if (name is null || !moveIds.Contains(name.Id) || moveNames.ContainsKey(name.Id) || !CanonicalName(name.Name, 12))
                 throw Error("move_name", "Invalid or duplicate canonical English move name.");
-            if (name.Id.Value != "pret:" + name.Source.Symbol)
-                throw Error("move_name_symbol", "Name provenance must match its move.");
             moveNames.Add(name.Id, name.Name);
         }
         if (speciesNames.Count != speciesIds.Count || moveNames.Count != moveIds.Count)

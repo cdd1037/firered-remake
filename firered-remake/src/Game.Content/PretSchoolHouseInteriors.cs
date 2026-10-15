@@ -25,7 +25,6 @@ public sealed class PretSchoolHouseInteriors
             "MAP_THREE_ISLAND", "3", [(4,3)])];
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
 
@@ -36,7 +35,7 @@ public sealed class PretSchoolHouseInteriors
     private PretSchoolHouseInteriors(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = maps; Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
+        NewMaps = maps; Constants = constants;
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
         Contracts = source.Document("contracts.json"); NpcSources = source.Document("npc-source.json");
     }
@@ -65,7 +64,7 @@ public sealed class PretSchoolHouseInteriors
     public static PretSchoolHouseInteriors Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"school-house-interiors");
+        var source = new SilphSourcePackage(projectRoot,"maps/regions/school-house-interiors");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_WOMAN_2", "OBJ_EVENT_GFX_LASS",
             "OBJ_EVENT_GFX_OLD_MAN_1", "OBJ_EVENT_GFX_LITTLE_BOY", "OBJ_EVENT_GFX_RED_NORMAL",
             "OBJ_EVENT_GFX_ROCKER", "OBJ_EVENT_GFX_MAN"], StringComparer.Ordinal);
@@ -84,13 +83,13 @@ public sealed class PretSchoolHouseInteriors
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative + "/runtime-map.json" ,
+            Need(path == relative ,
                 "School/house interior compact map binding differs.");
             var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.FieldWarps.Length == Rooms.Single(r => r.Id == map.Id).Exits.Length &&
                 map.Events.GetProperty("coord_events").GetArrayLength() == 0 &&
                 map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "School/house interior event scope differs.");
@@ -99,8 +98,6 @@ public sealed class PretSchoolHouseInteriors
         Need(maps.Keys.ToHashSet().SetEquals(Rooms.Select(r => r.Id)), "School/house interior map collection differs.");
         foreach (var room in Rooms) ValidateRoom(maps[room.Id], room);
         ValidateAnchors(source, dependencyRoot, maps);
-
-        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["LOCALID_SCHOOL_WOMAN"] == 1 && constants["LOCALID_SCHOOL_LASS"] == 2 &&

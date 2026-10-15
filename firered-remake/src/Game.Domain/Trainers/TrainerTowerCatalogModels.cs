@@ -11,16 +11,15 @@ public sealed record TrainerTowerWord(string Symbol, int Value, string Text);
 public sealed record TrainerTowerPokemonTemplate(int PoolIndex, SpeciesId Species, int SourceSpeciesId,
     string HeldItem, int SourceHeldItemId, ImmutableArray<MoveId> Moves, int PpBonuses,
     SixStats Ivs, SixStats Evs, uint OriginalTrainerId, uint Personality, int AbilitySlot,
-    string AbilityId, string Nickname, int Friendship, PokemonSourceRef Source);
+    string AbilityId, string Nickname, int Friendship);
 public sealed record TrainerTowerTrainerTemplate(int Index, string Name, string FacilityClass,
     int SourceFacilityClass, string TrainerClass, int SourceTrainerClass, string TrainerPic,
     int SourceTrainerPic, int TextColor, ImmutableArray<TrainerTowerWord> SpeechBefore,
     ImmutableArray<TrainerTowerWord> SpeechWin, ImmutableArray<TrainerTowerWord> SpeechLose,
-    ImmutableArray<TrainerTowerWord> SpeechAfter, ImmutableArray<TrainerTowerPokemonTemplate> Mons,
-    PokemonSourceRef Source);
+    ImmutableArray<TrainerTowerWord> SpeechAfter, ImmutableArray<TrainerTowerPokemonTemplate> Mons);
 public sealed record TrainerTowerFloorTemplate(string Symbol, int SourceId, int EncodedFloorCount,
-    TrainerTowerBattleFormat Format, int PrizeIndex, string PrizeItem, uint Checksum,
-    ImmutableArray<TrainerTowerTrainerTemplate> Trainers, PokemonSourceRef Source);
+    TrainerTowerBattleFormat Format, int PrizeIndex, string PrizeItem,
+    ImmutableArray<TrainerTowerTrainerTemplate> Trainers);
 public sealed record TrainerTowerSelection(int TrainerIndex, int PoolIndex);
 public sealed record TrainerTowerFloor(int Index, string TemplateSymbol, TrainerTowerBattleFormat Format,
     ImmutableArray<TrainerTowerSelection> Selection);

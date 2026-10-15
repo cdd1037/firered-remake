@@ -10,18 +10,18 @@ public partial class CampaignView
         if(_catalog.ItemfinderDocument is not {} source)return;
         foreach(var entry in source.Icons.Where(i=>i.Item!="pret:ITEM_ITEMFINDER"))
         {
-            var pixels=System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root,"content/generated/itemfinder-source",entry.File));
+            var pixels=System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root,"content/generated/data/items/itemfinder-source",entry.File));
             using var itemImage=Image.CreateFromData(24,24,false,Image.Format.Rgba8,pixels);
             _earlyItemIcons.Add(new(entry.Item),ImageTexture.CreateFromImage(itemImage));
         }
         const string iconId="itemfinder-source-icon";
         var firstIcon=document.Items[0].Icon;
         var position=document.Assets.Single(a=>a.Id==firstIcon);
-        var rgba=System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root,"content/generated/itemfinder-source/itemfinder.rgba"));
+        var rgba=System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root,"content/generated/data/items/itemfinder-source/itemfinder.rgba"));
         using var image=Image.CreateFromData(24,24,false,Image.Format.Rgba8,rgba);
         _questPocketTextures.Add(iconId,SceneTextures.FromImage(image));
         document=document with{Items=document.Items.Add(new(ItemfinderRules.Item.Value,"ITEM_ITEMFINDER","ITEMFINDER",source.ItemfinderDescription,iconId,"ItemUseOutOfBattle_Itemfinder")),
-            Assets=document.Assets.Add(new(iconId,"content/generated/itemfinder-source/itemfinder.rgba",24,24,position.X,position.Y))};
+            Assets=document.Assets.Add(new(iconId,"content/generated/data/items/itemfinder-source/itemfinder.rgba",24,24,position.X,position.Y))};
     }
     private bool TryItemfinderInput(InputEvent input)
     {

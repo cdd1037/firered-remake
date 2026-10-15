@@ -9,7 +9,7 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record FiveIslandMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
-public sealed record FiveIslandItemsDocument(string SourceCommit, string Profile, ImmutableArray<MachineItem> Items,
+public sealed record FiveIslandItemsDocument(ImmutableArray<MachineItem> Items,
     ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<FiveIslandMachineRows> MachineAdditions,
     MachineDefinition Tm36, ImmutableArray<FieldPickupDefinition> Pickups);
 public sealed record FiveIslandItemContent(ImmutableArray<MachineItem> Items, ImmutableArray<FieldPickupDefinition> Pickups,
@@ -20,7 +20,7 @@ public static partial class PretFiveIslandItems
 {
     public static FiveIslandItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/five-island-rules/items.json"));
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/five-island/items.json"));
         var document = JsonSerializer.Deserialize<FiveIslandItemsDocument>(bytes,
             (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("five_island_items_missing");

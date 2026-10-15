@@ -186,9 +186,9 @@ public sealed class StoneEvolutionTests
     public void MoonStoneFamilies(string before, string after)
     {
         var mon = Factory(before, 22);
-        var proposal = ItemEvolutionRules.Eligibility(content, ownership, mon)!;
+        var proposal = ItemEvolutionRules.Eligibility(content, mon)!;
         Assert.IsTrue(proposal.TargetSpecies.Value == "pret:SPECIES_" + after && !proposal.CanCancel, "source Moon Stone family " + before);
-        var result = ItemEvolutionRules.Apply(content, ownership, mon, proposal);
+        var result = ItemEvolutionRules.Apply(content, mon, proposal);
         Assert.IsTrue(result.Pokemon.Pokemon.Species == proposal.TargetSpecies && result.Pokemon.InstanceId == mon.InstanceId, "apply exact owned family " + before);
     }
 
@@ -208,17 +208,17 @@ public sealed class StoneEvolutionTests
                 Moves = full
             }
         };
-        var nidProposal = ItemEvolutionRules.Eligibility(content, ownership, nidorino)!;
-        var nidResult = ItemEvolutionRules.Apply(content, ownership, nidorino, nidProposal);
+        var nidProposal = ItemEvolutionRules.Eligibility(content, nidorino)!;
+        var nidResult = ItemEvolutionRules.Apply(content, nidorino, nidProposal);
         Assert.IsTrue(nidResult.Pokemon.Nickname == "ROYAL" && Hash(nidResult.Pokemon.Pokemon.Moves) == Hash(full), "Nidorino keeps nickname, full HM moves and depleted PP Ups");
         Assert.IsTrue(nidResult.PendingMoves.Any(m => m.Move.Value == "pret:MOVE_THRASH") && nidResult.Pokemon.Pokemon.Stats.MaxHp - nidResult.Pokemon.Pokemon.CurrentHp == 9, "Nidoking exact level22 Thrash decision and HP deficit");
-        Refuses(() => ItemEvolutionRules.Apply(content, ownership, nidorino with { InstanceId = 92 }, nidProposal), "stale different-member proposal refused");
-        Refuses(() => ItemEvolutionRules.Apply(content, ownership, nidorino, nidProposal with { TargetSpecies = new("pret:SPECIES_CLEFABLE") }), "forged target refused");
+        Refuses(() => ItemEvolutionRules.Apply(content, nidorino with { InstanceId = 92 }, nidProposal), "stale different-member proposal refused");
+        Refuses(() => ItemEvolutionRules.Apply(content, nidorino, nidProposal with { TargetSpecies = new("pret:SPECIES_CLEFABLE") }), "forged target refused");
         var copy = GamePokemonCatalog.Create(ownership.Mechanics, ownership.Catalog with { }, ownership.Opponents.Catalog with { }, ownership.TrainerTowerOpponents.Catalog with { });
-        Assert.AreEqual(nidProposal, ItemEvolutionRules.Eligibility(content with { Pokemon = copy }, copy, nidorino), "equivalent definitions preserve proposal");
-        Refuses(() => ItemEvolutionRules.Eligibility(content, ownership, nidorino with { Pokemon = nidorino.Pokemon with { Species = new("pret:SPECIES_SUNKERN"), SourceSpeciesId = 191 } }), "opponent-only species cannot borrow ownership");
-        Refuses(() => ItemEvolutionRules.Eligibility(content, ownership, nidorino, "ITEM_KINGS_ROCK"), "trade evolution item refused");
-        Refuses(() => ItemEvolutionRules.SourceEvolution(content, ownership, new("pret:SPECIES_SUNKERN"), ItemEvolutionRules.SunStone), "trainer-only Sunkern cannot use source edge as ownership");
+        Assert.AreEqual(nidProposal, ItemEvolutionRules.Eligibility(content with { Pokemon = copy }, nidorino), "equivalent definitions preserve proposal");
+        Refuses(() => ItemEvolutionRules.Eligibility(content, nidorino with { Pokemon = nidorino.Pokemon with { Species = new("pret:SPECIES_SUNKERN"), SourceSpeciesId = 191 } }), "opponent-only species cannot borrow ownership");
+        Refuses(() => ItemEvolutionRules.Eligibility(content, nidorino, "ITEM_KINGS_ROCK"), "trade evolution item refused");
+        Refuses(() => ItemEvolutionRules.SourceEvolution(content, new("pret:SPECIES_SUNKERN"), ItemEvolutionRules.SunStone), "trainer-only Sunkern cannot use source edge as ownership");
         var edge = SixIslandItemEvolutionRules.EvolutionEdge(catalog.SixIslandOwnership!);
         Assert.AreEqual("EVO_ITEM", edge.Method);
         Assert.AreEqual("ITEM_SUN_STONE", edge.Parameter);
@@ -254,7 +254,7 @@ public sealed class StoneEvolutionTests
         {
             Party = fixture.Party.SetItem(index, mon)
         };
-        Assert.IsTrue(ItemEvolutionRules.PartyMenuTarget(content, ownership, mon, item[5..])is not null && ItemEvolutionRules.Eligibility(content, ownership, mon, item[5..])is null, item + " Everstone menu compatibility differs from actual use");
+        Assert.IsTrue(ItemEvolutionRules.PartyMenuTarget(content, mon, item[5..])is not null && ItemEvolutionRules.Eligibility(content, mon, item[5..])is null, item + " Everstone menu compatibility differs from actual use");
         var session = Session(held);
         Send(session, new("bag_open"));
         var before = session.State;

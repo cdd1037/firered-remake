@@ -9,7 +9,7 @@ namespace FireRed.Tests.Content;
 [TestClass, TestCategory("Game")]
 public sealed class GeneratedBreedingMetadataTests
 {
-    private const string BreedingPath = "content/generated/game-pokemon/breeding.json";
+    private const string BreedingPath = "content/generated/data/pokemon/game/breeding.json";
     private sealed record Inputs(PretCanonicalPokemonCatalog Canonical, SourceMechanicsCatalog Mechanics,
         NpcTradePokemonCatalog Trades, SharedMachineCatalog Machines);
     private static readonly Lazy<Inputs> Source = new(() =>
@@ -123,7 +123,7 @@ public sealed class GeneratedBreedingMetadataTests
         var root = TestAssets.Output();
         try
         {
-            Directory.CreateDirectory(Path.Combine(root, "content/generated/game-pokemon"));
+            Directory.CreateDirectory(Path.Combine(root, "content/generated/data/pokemon/game"));
             File.Copy(Path.Combine(TestAssets.Root, PretGamePokemonCatalog.RelativePath), Path.Combine(root, PretGamePokemonCatalog.RelativePath));
             File.WriteAllText(Path.Combine(root, BreedingPath), node.ToJsonString());
             Assert.ThrowsExactly<InvalidDataException>(() => Load(root));

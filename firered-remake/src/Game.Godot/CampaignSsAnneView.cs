@@ -75,7 +75,7 @@ public partial class CampaignView
         foreach (var icon in items.Icons.Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
         {
             
-            _earlyItemIcons.Add(icon.Item, ItemTexture("ssanne-items", icon));
+            _earlyItemIcons.Add(icon.Item, ItemTexture("data/items/ssanne", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("S.S. Anne key pocket missing.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
@@ -84,7 +84,7 @@ public partial class CampaignView
             var item = value.Metadata; var icon = items.Icons.Single(i => i.Item == item.Item.Id);
             string id = "ssanne-" + item.Item.SourceItemSymbol.ToLowerInvariant();
             
-            _questPocketTextures.Add(id, ItemTexture("ssanne-items", icon));
+            _questPocketTextures.Add(id, ItemTexture("data/items/ssanne", icon));
             document = document with
             {
                 Items = document.Items.Add(new(item.Item.Id.Value, item.Item.SourceItemSymbol, item.Item.Name, item.Description, id, item.Item.FieldUseFunction)),

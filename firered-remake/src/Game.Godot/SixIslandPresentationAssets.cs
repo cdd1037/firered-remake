@@ -6,7 +6,7 @@ internal sealed record SixIslandPresentationData(JsonElement Manifest, Dictionar
 /// <summary>Original pixels and cue metadata; gameplay state remains outside presentation.</summary>
 internal static class SixIslandPresentationAssets
 {
-    internal const string Base = "content/generated/six-island-presentation/";
+    internal const string Base = "content/generated/sprites/pokemon/six-island/";
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
     internal static SixIslandPresentationData Load(string root)
@@ -27,9 +27,7 @@ internal static class SixIslandPresentationAssets
         }
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
         var manifest = document.RootElement;
-        const string profile = "firered-six-island-presentation-v1";
-        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 ||
-            manifest.GetProperty("profile").GetString() != profile)
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Six Island presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var asset in manifest.GetProperty("assets").EnumerateArray())

@@ -16,32 +16,29 @@ public sealed record SafariSpeciesEvolutions(SpeciesId Species, ImmutableArray<C
 public sealed record SafariSpeciesCry(SpeciesId Species, int SourceSpeciesId, string CueId, int NormalTableIndex, string SourceSymbol,
     string SourceSamplePath, PokemonSourceRef NormalSource, PokemonSourceRef ReverseSource,
     PokemonSourceRef SampleBindingSource);
-public sealed record SafariPokemonDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ForestPokemonInput> Inputs,
-    ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
+public sealed record SafariPokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
     ImmutableArray<ForestPokemonConstant> Constants, ImmutableArray<PewterPokemonEncodedName> EncodedNames,
     ImmutableArray<MoveId> RequiredMoves, int? NaturalLevelLimit, ImmutableArray<SafariHeldItems> HeldItems,
     ImmutableArray<SafariMachineRow> Machines, ImmutableArray<SafariSpeciesRates> SafariRates,
-    ImmutableArray<SafariSpeciesEvolutions> SourceEvolutions, ImmutableArray<SafariSpeciesCry> Cries,
-    ImmutableArray<string> Limitations);
+    ImmutableArray<SafariSpeciesEvolutions> SourceEvolutions, ImmutableArray<SafariSpeciesCry> Cries);
 
 /// <summary>Authenticated three-species additive metadata; preserves source evolution triples without executing them.</summary>
 public sealed class PretSafariPokemon
 {
     public const string Profile = "firered-safari-pokemon-v1";
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public const string CatalogRelativePath = "content/generated/safari-pokemon/catalog.json";
+    public const string CatalogRelativePath = "content/generated/data/pokemon/safari.json";
     public PokemonCatalog Catalog { get; }
     public SafariPokemonDocument Document { get; }
     public ImmutableSortedDictionary<int, string> AdditionalSpeciesNames { get; }
     public ImmutableDictionary<MoveId, string> AdditionalMoveNames { get; } = ImmutableDictionary<MoveId,string>.Empty;
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
 
     private PretSafariPokemon(PokemonCatalog catalog, SafariPokemonDocument document,
-        ImmutableArray<PretWorldSourceFile> files, PretCanonicalPokemonCatalog canonical)
+        PretCanonicalPokemonCatalog canonical)
     {
-        Catalog = catalog; Document = document; SourceFiles = files;
+        Catalog = catalog; Document = document;
         AdditionalSpeciesNames = document.SpeciesNames.ToImmutableSortedDictionary(n => catalog.Species[n.Id].SourceSpeciesId, n => n.Name);
         Constants = document.Constants.ToImmutableDictionary(c => c.Symbol, c => c.Value, StringComparer.Ordinal);
         EncodedNames = document.EncodedNames.ToImmutableDictionary(n => n.Symbol, StringComparer.Ordinal);
@@ -57,8 +54,7 @@ public sealed class PretSafariPokemon
         foreach (var name in doc.EncodedNames)
             SafariSource.Require(!name.Bytes.IsDefaultOrEmpty && name.Bytes[^1] == 255,
                 "Safari encoded name is unterminated.");
-        var files = doc.Inputs.Select(input => new PretWorldSourceFile(input.Path)).ToImmutableArray();
-        return new(catalog, doc, files, canonical);
+        return new(catalog, doc, canonical);
     }
 }
 
@@ -87,7 +83,11 @@ internal static class SafariSource
         options.Converters.Add(new SafariEnumConverter<GrowthRate>());
         options.Converters.Add(new SafariEnumConverter<PokemonEvolutionMethod>());
         canonical?.AddReferenceConverters(options);
-        if (machineRoot is not null) SharedMachineCatalog.AddConverters(options, machineRoot);
+        if (machineRoot is not null)
+        {
+            SharedMachineCatalog.AddConverters(options, machineRoot);
+            SharedTrainerCatalog.AddConverters(options, machineRoot);
+        }
         return JsonSerializer.Deserialize<T>(bytes, options) ?? throw new InvalidDataException("Null Safari document.");
     }
     private sealed class SafariEnumConverter<T> : JsonConverter<T> where T : struct, Enum

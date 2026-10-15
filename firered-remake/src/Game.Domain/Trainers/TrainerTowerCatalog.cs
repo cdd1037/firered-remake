@@ -6,10 +6,9 @@ using Game.Domain.Randomness;
 
 namespace Game.Domain.Trainers;
 
-/// <summary>Only the four source local courses. e-Reader data cannot create this proof.</summary>
+/// <summary>Local facility courses and their immutable opponent templates.</summary>
 public sealed class TrainerTowerCatalog
 {
-    public const string Profile = "firered-trainer-tower-local-v1";
     public const int CreationRandomDrawsPerMember = 0;
     public TrainerTowerLocalData Data { get; }
     public ImmutableArray<TrainerTowerCourse> Courses => Data.Courses;
@@ -20,10 +19,30 @@ public sealed class TrainerTowerCatalog
     public static TrainerTowerCatalog Authenticate(TrainerTowerLocalData data)
     {
         ArgumentNullException.ThrowIfNull(data);
-        if (data.LocalSetId != 1 || data.ExternalEReaderEnabled || data.Courses.IsDefault || data.Courses.Length != 4 ||
-            data.Templates.IsDefault || data.Templates.Length != 28)
+        if (data.LocalSetId != 1 || data.ExternalEReaderEnabled || data.Courses.IsDefault || !data.Courses.Select(c => c.Kind).SequenceEqual(Enum.GetValues<TrainerTowerChallengeKind>()) ||
+            data.Templates.IsDefaultOrEmpty)
             throw new ArgumentException("trainer_tower_local_source");
-        return new(data);
+        var result = new TrainerTowerCatalog(data);
+        foreach (var course in data.Courses)
+        {
+            if (course.Floors.IsDefault || course.Floors.Length != 8)
+                throw new ArgumentException("trainer_tower_course_floors");
+            for (int index = 0; index < course.Floors.Length; index++)
+            {
+                var floor = course.Floors[index];
+                var template = result.Template(floor.TemplateSymbol);
+                int slots = floor.Format switch { TrainerTowerBattleFormat.Single => 2,
+                    TrainerTowerBattleFormat.Double => 2, TrainerTowerBattleFormat.Knockout => 3, _ => 0 };
+                if (floor.Index != index || slots == 0 || floor.Selection.IsDefault || floor.Selection.Length != slots ||
+                    template.Format != floor.Format || template.Trainers.IsDefaultOrEmpty)
+                    throw new ArgumentException("trainer_tower_floor_selection");
+                foreach (var selection in floor.Selection)
+                    if (selection.TrainerIndex < 0 || selection.TrainerIndex >= template.Trainers.Length ||
+                        selection.PoolIndex < 0 || selection.PoolIndex >= template.Trainers[selection.TrainerIndex].Mons.Length)
+                        throw new ArgumentException("trainer_tower_opponent_reference");
+            }
+        }
+        return result;
     }
     public TrainerTowerCourse Course(TrainerTowerChallengeKind kind)
     {
@@ -80,15 +99,14 @@ public sealed class TrainerTowerCatalog
     private static TrainerDefinition Adapter(TrainerTowerBattleDescriptor descriptor)
     {
         var lead = descriptor.Members[0].Trainer;
-        static TrainerSourceRef Source(PokemonSourceRef r) => new(r.Path, r.Symbol, r.StartLine, r.EndLine);
         var members = descriptor.Members.Select(m => new TrainerPartyMemberDefinition(m.Template.Species,
             m.Template.SourceSpeciesId, m.Template.Nickname, [], descriptor.Level, 0, m.Template.HeldItem,
-            m.Template.Moves, Source(m.Template.Source), Source(m.Template.Source))).ToImmutableArray();
+            m.Template.Moves)).ToImmutableArray();
         // This is a facility AI adapter, never a normal gTrainers record or a money/EXP admission.
         return new(new TrainerId($"tower:{descriptor.Course}:{descriptor.FloorIndex}:{descriptor.TrainerIndex}"), 0,
             lead.TrainerClass, lead.SourceTrainerClass, lead.TrainerPic, lead.SourceTrainerPic, lead.Name, [], 0,
             ["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"], descriptor.Format == TrainerTowerBattleFormat.Double,
             3, 7, ["AI_SCRIPT_CHECK_BAD_MOVE", "AI_SCRIPT_TRY_TO_FAINT", "AI_SCRIPT_CHECK_VIABILITY"], 0,
-            members, Source(lead.Source), Source(lead.Source));
+            members);
     }
 }

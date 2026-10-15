@@ -6,16 +6,15 @@ using Game.Domain.Trainers;
 
 namespace Game.Content;
 
-public sealed record ViridianGymTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles, JsonElement ResolvedMoves);
+public sealed record ViridianGymTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
 /// <summary>Hash-locked rules from pinned Git blobs; loads no new species or move metadata.</summary>
 public static class PretViridianGymRules
 {
     private static T Read<T>(string root,string file)
     {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/viridian-gym-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/viridian-gym", file));
+        return JsonSerializer.Deserialize<T>(bytes, SharedTrainerCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
             ?? throw new InvalidDataException("Missing Viridian Gym source document.");
     }
     public static ViridianGymTrainerDocument LoadDocument(string root)
@@ -28,8 +27,7 @@ public static class PretViridianGymRules
         LoadTrainers(Read<ViridianGymTrainerDocument>(root,"trainers.json"));
     private static ViridianGymTrainerCatalog LoadTrainers(ViridianGymTrainerDocument document)
     {
-        var result = new ViridianGymTrainerCatalog(document.SourceCommit, document.Profile, document.CompleteSourceRoster,
-            document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
+        var result = new ViridianGymTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         ViridianGymTrainerPartyFactory.ValidateCatalog(result);
         return result;
     }

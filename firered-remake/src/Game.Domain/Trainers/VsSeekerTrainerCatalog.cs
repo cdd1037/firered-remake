@@ -7,30 +7,24 @@ namespace Game.Domain.Trainers;
 
 public sealed record VsSeekerBattleOccurrence(string ActorScript, string ScriptEntry, string Opcode,
     ImmutableArray<string> Arguments, TrainerId Trainer, bool IsRematch, int Mode, TrainerSourceRef Source);
-public sealed record VsSeekerResolvedMoves(TrainerId Trainer, ImmutableArray<ImmutableArray<MoveId>> PartyMoves);
-public sealed record VsSeekerTrainerDocument(string SourceCommit, string Profile,
-    ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<VsSeekerResolvedMoves> ResolvedMoves);
+public sealed record VsSeekerTrainerDocument(
+    ImmutableArray<TrainerDefinition> Trainers);
 
-/// <summary>The exact 351 original definitions referenced by sRematches, authenticated once.
+/// <summary>The trainer selection referenced by the rematch rules.
 /// Species and move mechanics remain owned by the existing canonical source catalog.</summary>
 public sealed class VsSeekerTrainerCatalog
 {
-    public const string Profile = "firered-vs-seeker-parties-v1";
     public ImmutableDictionary<TrainerId, TrainerDefinition> Trainers { get; }
-    public ImmutableDictionary<TrainerId, ImmutableArray<ImmutableArray<MoveId>>> ResolvedMoves { get; }
     public ImmutableHashSet<SpeciesId> Species { get; }
     private VsSeekerTrainerCatalog(VsSeekerTrainerDocument document)
     {
         Trainers = document.Trainers.ToImmutableDictionary(t => t.Id);
-        ResolvedMoves = document.ResolvedMoves.ToImmutableDictionary(t => t.Trainer, t => t.PartyMoves);
         Species = document.Trainers.SelectMany(t => t.Party).Select(p => p.Species).ToImmutableHashSet();
     }
     public static VsSeekerTrainerCatalog Authenticate(VsSeekerTrainerDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        if (document.SourceCommit != TrainerPartyFactory.SourceCommit || document.Profile != Profile ||
-            document.Trainers.IsDefault || document.Trainers.Length != 351 || document.ResolvedMoves.IsDefault ||
-            document.ResolvedMoves.Length != 351)
+        if (document.Trainers.IsDefaultOrEmpty)
             throw new ArgumentException("vs_seeker_trainer_source");
         return new(document);
     }
@@ -52,21 +46,16 @@ public static class VsSeekerTrainerPartyFactory
     {
         ArgumentNullException.ThrowIfNull(trainers); ArgumentNullException.ThrowIfNull(source);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new ArgumentException("vs_seeker_trainer_catalog");
-        var expected = trainers.ResolvedMoves[id];
-        for (int i = 0; i < trainer.Party.Length; i++)
-        {
-            var member = trainer.Party[i];
-            if (!source.Catalog.Species.TryGetValue(member.Species, out var species) || species.SourceSpeciesId != member.SourceSpeciesId ||
-                expected[i].Any(m => !source.Catalog.Moves.ContainsKey(m))) throw new ArgumentException("vs_seeker_trainer_mechanics");
-            var initial = (trainer.PartyFlags & 1) != 0
-                ? member.CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                : PokemonMoveRules.InitialMovesCore(source.Catalog, species, member.Level).Select(m => m.Move);
-            if (!initial.SequenceEqual(expected[i])) throw new ArgumentException("vs_seeker_trainer_moves");
-        }
+        // Natural moves are produced once by PokemonFactory. Only custom slots need
+        // validation here; MOVE_NONE terminates the source party's explicit move list.
+        if ((trainer.PartyFlags & 1) != 0 && trainer.Party.Any(member =>
+            member.CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
+                .Any(m => !source.Catalog.Moves.ContainsKey(m))))
+            throw new ArgumentException("vs_seeker_trainer_moves");
         var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
         return (trainer.PartyFlags & 1) == 0 ? made : made with {
             Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-                Moves = expected[i].Select(m => new PokemonMoveSlot(m, source.Catalog.Moves[m].Pp,
+                Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE").Select(m => new PokemonMoveSlot(m, source.Catalog.Moves[m].Pp,
                     source.Catalog.Moves[m].Pp)).ToImmutableArray()
             } }).ToImmutableArray()
         };

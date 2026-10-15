@@ -1,0 +1,290 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceLockSha256": "132ab1bd43c68ad70fa69d87228fc50518b8323d5b7a7da827812a164d3384a6",
+  "scripts": [
+    {
+      "moveId": 68,
+      "label": "Move_COUNTER",
+      "commandCount": 30,
+      "dependencies": {
+        "commands": [
+          "blendoff",
+          "clearmonbg",
+          "createsprite",
+          "createvisualtask",
+          "delay",
+          "end",
+          "loadspritegfx",
+          "monbg",
+          "playsewithpan",
+          "setalpha",
+          "waitforvisualfinish"
+        ],
+        "spriteTemplates": [
+          "gBasicHitSplatSpriteTemplate",
+          "gFistFootSpriteTemplate",
+          "gSlideMonToOffsetSpriteTemplate",
+          "gSlideMonToOriginalPosSpriteTemplate"
+        ],
+        "taskCallbacks": [
+          "AnimTask_ShakeMon",
+          "AnimTask_TranslateMonEllipticalRespectSide"
+        ],
+        "graphicsTags": [
+          "ANIM_TAG_HANDS_AND_FEET",
+          "ANIM_TAG_IMPACT"
+        ],
+        "sounds": [
+          "SE_M_VITAL_THROW",
+          "SE_M_VITAL_THROW2"
+        ]
+      },
+      "singles": "real successful committed invocation",
+      "fourSlot": "typed presentation fixture only; rules not admitted"
+    },
+    {
+      "moveId": 233,
+      "label": "Move_VITAL_THROW",
+      "commandCount": 21,
+      "dependencies": {
+        "commands": [
+          "blendoff",
+          "clearmonbg",
+          "createsprite",
+          "createvisualtask",
+          "delay",
+          "end",
+          "loadspritegfx",
+          "monbg",
+          "playsewithpan",
+          "setalpha",
+          "waitforvisualfinish"
+        ],
+        "spriteTemplates": [
+          "gBasicHitSplatSpriteTemplate",
+          "gSlideMonToOffsetSpriteTemplate",
+          "gSlideMonToOriginalPosSpriteTemplate"
+        ],
+        "taskCallbacks": [
+          "AnimTask_TranslateMonEllipticalRespectSide"
+        ],
+        "graphicsTags": [
+          "ANIM_TAG_IMPACT"
+        ],
+        "sounds": [
+          "SE_M_VITAL_THROW",
+          "SE_M_VITAL_THROW2"
+        ]
+      },
+      "singles": "real successful committed invocation",
+      "fourSlot": "typed presentation fixture only; rules not admitted"
+    }
+  ],
+  "sharedSourceInputs": [
+    {
+      "path": "data/battle_anim_scripts.s",
+      "bytes": 406484,
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+      "functions": []
+    },
+    {
+      "path": "asm/macros/battle_anim_script.inc",
+      "bytes": 4279,
+      "sha256": "cb193c567289983c26ed8acaa8dd64501c64c7e088e28995c49439333b52b27c",
+      "functions": []
+    },
+    {
+      "path": "include/constants/battle_anim.h",
+      "bytes": 27801,
+      "sha256": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e",
+      "functions": []
+    },
+    {
+      "path": "include/constants/sound.h",
+      "bytes": 2051,
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
+      "functions": []
+    },
+    {
+      "path": "include/constants/species.h",
+      "bytes": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "functions": []
+    },
+    {
+      "path": "src/battle_anim.c",
+      "bytes": 46944,
+      "sha256": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5",
+      "functions": []
+    },
+    {
+      "path": "src/battle_anim_normal.c",
+      "bytes": 31800,
+      "sha256": "73478ff40f601740b58408caa3259f5abc29f90010f77017aecc69d71803a6c3",
+      "functions": []
+    },
+    {
+      "path": "src/battle_anim_mon_movement.c",
+      "bytes": 32082,
+      "sha256": "ce72119ff5d658784180bae2e171fae2affa45077e9a1d5e2d55a2caf1ce628c",
+      "functions": [
+        "AnimTask_TranslateMonEllipticalRespectSide",
+        "AnimTask_TranslateMonElliptical",
+        "AnimTask_TranslateMonElliptical_Step",
+        "SlideMonToOffset",
+        "SlideMonToOriginalPos",
+        "SlideMonToOriginalPos_Step"
+      ]
+    },
+    {
+      "path": "src/battle_anim_mons.c",
+      "bytes": 70676,
+      "sha256": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+      "functions": [
+        "InitSpriteDataForLinearTranslation",
+        "TranslateSpriteLinearByIdFixedPoint",
+        "WaitAnimForDuration",
+        "SetAnimSpriteInitialXOffset",
+        "InitSpritePosToAnimAttacker",
+        "InitSpritePosToAnimTarget"
+      ]
+    },
+    {
+      "path": "src/battle_main.c",
+      "bytes": 171904,
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
+      "functions": []
+    },
+    {
+      "path": "src/sprite.c",
+      "bytes": 48783,
+      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+      "functions": []
+    },
+    {
+      "path": "src/task.c",
+      "bytes": 5029,
+      "sha256": "8bdd5205ec396be7b66d6e384a82309b3cab59783d46fb8c4c991b2172d4868b",
+      "functions": []
+    },
+    {
+      "path": "src/graphics.c",
+      "bytes": 99258,
+      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
+      "functions": []
+    },
+    {
+      "path": "src/data/battle_anim.h",
+      "bytes": 61792,
+      "sha256": "c4cfe40d12623423e80d72946c4554783fc06b0d8cd80b48309295c475508ec1",
+      "functions": []
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "bytes": 44879,
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f",
+      "functions": []
+    },
+    {
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
+      "bytes": 44872,
+      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab",
+      "functions": []
+    },
+    {
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "bytes": 1834,
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/impact.png",
+      "bytes": 243,
+      "sha256": "8f2a0eb54120d2cc50d24ccd92e2934d9b5c94c13f008198b6306c193fd8721d",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/substitute.png",
+      "bytes": 446,
+      "sha256": "37cd465eb9cb552cc4ed3c5870c3ddd320217afb43228acdea5ec4625624eef5",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/substitute_back.png",
+      "bytes": 405,
+      "sha256": "52df6795b0e09adbd36d0367dc0638e89516dc4e41249510793b892e5299b8c3",
+      "functions": []
+    },
+    {
+      "path": "src/battle_anim_effects_1.c",
+      "bytes": 160557,
+      "sha256": "80de93553f73982ca5b1abab6af952fe96e0b4763fefddf8aa1dc5071ad20682",
+      "functions": []
+    },
+    {
+      "path": "src/battle_anim_effects_3.c",
+      "bytes": 157260,
+      "sha256": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/scratch.png",
+      "bytes": 377,
+      "sha256": "7e23319bb67eb8acc6f44a9ac0da7e6c68aea76ebab1f965dbca0aa61104d37d",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/cut.png",
+      "bytes": 234,
+      "sha256": "1afb812f767d52a17ff042f46a419cce15c0bc5a83c38d33792ac4b874053ae1",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/slash.png",
+      "bytes": 546,
+      "sha256": "5cfb2406b6e1d564fe87ac205fce48246867003c504c8d6f76becb2a4b3507c3",
+      "functions": []
+    },
+    {
+      "path": "graphics/battle_anims/sprites/slash_2.pal",
+      "bytes": 198,
+      "sha256": "925f81608bf61b1ccd7bf32e0aafcddadf22bdf5eda3981b1a047a8a153a3c0e",
+      "gitBlobBytes": 179,
+      "gitBlobSha256": "76bb16f7343a9cf52895ef14f5155e5d69322ce9c15262df027327ea4e3d7446",
+      "gitTextLineEndings": "lf",
+      "functions": []
+    },
+    {
+      "path": "src/battle_anim_fight.c",
+      "bytes": 29324,
+      "sha256": "343a674d3230233af2ecd681c104f550b13e51485b011534c1d60d68ba65f5f5",
+      "functions": [
+        "AnimBasicFistOrFoot"
+      ]
+    },
+    {
+      "path": "src/trig.c",
+      "bytes": 22537,
+      "sha256": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",
+      "functions": [
+        "Sin",
+        "Cos"
+      ]
+    },
+    {
+      "path": "graphics/battle_anims/sprites/hands_and_feet.png",
+      "bytes": 461,
+      "sha256": "d3196d88d1c4793ad3e10ff5d4744cb4c076b055966591cfa0a384ab1b1a267c",
+      "functions": []
+    }
+  ],
+  "generatedResources": [
+    "content/generated/battle/animations/hit",
+    "content/generated/battle/art/campaign-hit-art"
+  ],
+  "excluded": [
+    "Tail Whip",
+    "palette/fade scheduling",
+    "four-slot Counter/Vital Throw rules"
+  ]
+}

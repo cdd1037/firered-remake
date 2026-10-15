@@ -6,10 +6,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record PretPokemonInput(string Path);
-public sealed record PretPokemonDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<string> Limitations,
-    ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves);
+public sealed record PretPokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves);
 
 /// <summary>Strict, read-only loader for locally generated starter data. No filesystem or network access.</summary>
 public static class PretPokemonCatalog
@@ -21,7 +18,7 @@ public static class PretPokemonCatalog
         var doc = ContentJson.ParseStrict<PretPokemonDocument>(generatedJson, options);
         if (doc.SchemaVersion != 1 )
             throw ContentJson.Error("pokemon_profile", "$", "Unknown Pokemon profile or source commit.");
-        if (doc.Limitations.IsDefaultOrEmpty || doc.Species.IsDefaultOrEmpty || doc.Moves.IsDefaultOrEmpty)
+        if (doc.Species.IsDefaultOrEmpty || doc.Moves.IsDefaultOrEmpty)
             throw ContentJson.Error("pokemon_missing_data", "$", "Explicit nonempty inputs, limitations, species and moves are required.");
         foreach (var species in doc.Species)
         {

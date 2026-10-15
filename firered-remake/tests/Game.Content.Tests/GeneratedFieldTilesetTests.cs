@@ -11,12 +11,12 @@ public sealed class GeneratedFieldTilesetTests
     {
         string root = Path.Combine(Path.GetTempPath(), "field-runtime-" + Guid.NewGuid());
         string generated = Path.Combine(root, "content", "generated");
-        Directory.CreateDirectory(Path.Combine(generated, "silph-region"));
+        Directory.CreateDirectory(Path.Combine(generated, "maps/regions/silph"));
         try
         {
-            File.Copy(Path.Combine(TestAssets.Root, "content/generated/field-tilesets.json"), Path.Combine(generated, "field-tilesets.json"));
-            var table = GeneratedFieldTilesets.ForPackage(Path.Combine(generated, "silph-region"));
-            using var data = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(generated, "field-tilesets.json")));
+            File.Copy(Path.Combine(TestAssets.Root, "content/generated/maps/tilesets.json"), Path.Combine(generated, "maps/tilesets.json"));
+            var table = GeneratedFieldTilesets.ForPackage(Path.Combine(generated, "maps/regions/silph"));
+            using var data = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(generated, "maps/tilesets.json")));
             int checkedRows = 0;
             foreach (var layout in data.RootElement.GetProperty("layouts").EnumerateObject())
                 for (int bank = 0; bank < 2; bank++)

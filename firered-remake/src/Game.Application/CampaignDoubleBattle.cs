@@ -313,7 +313,7 @@ public sealed partial class CampaignSession
             ?FirstSeviiDoubleTrainerEncounter.ChooseEnemyActions(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
             :b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId
             ?CinnabarDoubleTrainerEncounter.ChooseEnemyActions(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
-            :SourceTwinsTrainerEncounter.ChooseEnemyActions(DoubleBattlePokemon,frame,frame.Revision);
+            :SourceTwinsTrainerEncounter.ChooseEnemyActions(DoubleBattlePokemon,TwinsDefinition,frame,frame.Revision);
         if(!ai.Succeeded)return No(ai.Fault!);
         var begun=SourceFourActionTurns.BeginActions(DoubleBattlePokemon,ai.State,ai.State.Revision,selections.AddRange(ai.Selections));
         if(!begun.Succeeded)return No(begun.Fault!);
@@ -479,8 +479,7 @@ public sealed partial class CampaignSession
         {
             var payday=SourceBattleMoneyRules.SettlePayDay(money,b.Frame.Field.PayDayMoney,WildBattleOutcome.Won,b.Frame.Field.MoneyMultiplier);money=payday.Money;
             if(payday.Amount!=0)pages.Add($"{state.PlayerName} picked up\n¥{payday.DisplayAmount}!");
-            var pickup=SafariOrdinaryOwnership is {} safari?VermilionPickupRules.ApplySafariOwned(safari,state.Party,state.World.Rng,WildBattleOutcome.Won):VermilionPickupRules.Apply(BattlePokemon,state.Party,state.World.Rng,WildBattleOutcome.Won,
-                ssAnneRules:true,route11Rules:true,rockTunnelRules:true,celadonApproachRules:true,celadonGymRules:true,rocketHideoutRules:true,pokemonTowerRules:true,snorlaxRules:true,fuchsiaRules:true);
+            var pickup = VermilionPickupRules.Apply(_binding.Ownership, state.Party, state.World.Rng, WildBattleOutcome.Won);
             state=state with{Party=pickup.Party,World=state.World with{Rng=pickup.Rng}};
             b=b with{Frame=b.Frame with{Rng=pickup.Rng},Trace=pickup.Trace};
         }

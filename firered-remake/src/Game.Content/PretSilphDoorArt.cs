@@ -3,14 +3,14 @@ namespace Game.Content;
 
 public sealed record SilphDoorMetatile(string Symbol, int MetatileId, uint RawAttributes, int X, int Y, int Width, int Height);
 public sealed record SilphDoorLayer(string Layer, string TexturePath, int Width, int Height);
-public sealed record SilphDoorArtDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<SilphDoorMetatile> Tiles,
+public sealed record SilphDoorArtDocument(int SchemaVersion, ImmutableArray<SilphDoorMetatile> Tiles,
     ImmutableArray<SilphDoorLayer> Layers, ImmutableArray<string> Limits,
     ImmutableArray<SnorlaxArtOutput> Outputs);
 
 /// <summary>Original three-layer Card Key gate tiles; authoritative door state is owned by Application.</summary>
 public sealed class PretSilphDoorArt
 {
-    public const string GeneratedDirectory = "content/generated/silph-door-art/";
+    public const string GeneratedDirectory = "content/generated/maps/objects/silph-door-art/";
     public SilphDoorArtDocument Document { get; }
     public ImmutableArray<SilphDoorMetatile> Tiles => Document.Tiles;
     public ImmutableArray<SilphDoorLayer> Layers => Document.Layers;

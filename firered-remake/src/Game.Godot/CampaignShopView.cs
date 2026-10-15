@@ -36,7 +36,7 @@ public partial class CampaignView
         {
             var icon = PretCeruleanItems.LoadProject(_root).Icon;
             
-            _earlyItemIcons.Add(icon.Item, ItemTexture("cerulean-items", icon));
+            _earlyItemIcons.Add(icon.Item, ItemTexture("data/items/cerulean", icon));
         }
         foreach (var icon in _catalog.NpcTradeElyssa.Items.Icons)
         {
