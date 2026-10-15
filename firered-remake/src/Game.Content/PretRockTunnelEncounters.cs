@@ -1,52 +1,38 @@
 using System.Collections.Immutable;
 using System.Text;
-using System.Text.Json;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
+
 namespace Game.Content;
-public sealed record RockTunnelEncounterDocument(int SchemaVersion,ImmutableArray<EarlyLandEncounterTable> Tables,int HeldItemDrawBound,ImmutableArray<RockTunnelHeldItemRow> HeldItems,JsonElement ExcludedTables);
-public sealed record RockTunnelHeldItemRow(string Species, string Common, string Rare, string SourcePath);
-/// <summary>Fixed source inputs and exact RockTunnel/cave land tables; no water or fishing admission.</summary>
+
+public sealed record RockTunnelEncounterDocument(int SchemaVersion,
+    ImmutableArray<EarlyLandEncounterTable> Tables, int HeldItemDrawBound,
+    ImmutableArray<EncounterHeldItemRow> HeldItems);
+
+/// <summary>Generated land encounter definitions; method admission remains in campaign rules.</summary>
 public sealed class PretRockTunnelEncounters
 {
-    public const string Profile="firered-rocktunnel-encounters-v1";
-    public ImmutableDictionary<MapId,EarlyLandEncounterTable> Tables { get; }
-    public JsonElement ExcludedTables { get; }
-    private PretRockTunnelEncounters(ImmutableDictionary<MapId,EarlyLandEncounterTable> tables,JsonElement excluded)
-    { Tables=tables;ExcludedTables=excluded; }
+    public const string Profile = "firered-rocktunnel-encounters-v1";
+    public ImmutableDictionary<MapId, EarlyLandEncounterTable> Tables { get; }
+    public ImmutableArray<EncounterHeldItemRow> HeldItems { get; }
+
+    private PretRockTunnelEncounters(RockTunnelEncounterDocument document)
+    {
+        Tables = document.Tables.ToImmutableDictionary(table => table.Map);
+        HeldItems = document.HeldItems;
+    }
+
     public static PretRockTunnelEncounters Load(string root)
     {
-        byte[] Read(string path)
-        {
-            return File.ReadAllBytes(SafeFile(root, path));
-        }
-        var d=ContentJson.ParseStrict<RockTunnelEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/data/encounters/rocktunnel.json")),ContentJson.CreateOptions());
-                if(d.SchemaVersion!=1 || d.Tables.Length!=4 ||
-            d.HeldItemDrawBound!=100 || d.HeldItems.Length!=9 || d.ExcludedTables.GetArrayLength()!=3)
-            throw new InvalidDataException("RockTunnel encounter document scope differs.");
-        if(!d.HeldItems.Select(x=>x.Species).ToHashSet(StringComparer.Ordinal).SetEquals(RockTunnelLandEncounterTables.WildSpecies.Select(x=>x.Value)))
-            throw new InvalidDataException("RockTunnel held-item species differs.");
-        foreach(var row in d.HeldItems)
-                    if(row.Common!="ITEM_NONE" || row.Rare!=(row.Species=="pret:SPECIES_ONIX" ? "ITEM_HARD_STONE" : "ITEM_NONE") || row.SourcePath!="src/data/pokemon/species_info.h" )
-                throw new InvalidDataException("RockTunnel held-item source differs.");
-        var expectedExcluded = new HashSet<(string Map, string Symbol, string Method)>
-        {
-                    ("map.route-10", "sRoute10_FireRed", "water_mons"),("map.route-10", "sRoute10_FireRed", "fishing_mons"),("map.rock-tunnel-b1f", "sRockTunnelB1F_FireRed", "rock_smash_mons")
-        };
-        foreach(var excluded in d.ExcludedTables.EnumerateArray())
-            if(excluded.GetProperty("enabled").GetBoolean() || !expectedExcluded.Remove((excluded.GetProperty("map").GetString()!,
-                excluded.GetProperty("sourceSymbol").GetString()!, excluded.GetProperty("method").GetString()!)))
-                throw new InvalidDataException("RockTunnel excluded water/fishing/rock-smash scope differs.");
-        if(expectedExcluded.Count != 0) throw new InvalidDataException("Missing RockTunnel exclusions.");
-        foreach(var t in d.Tables)
-        {
-            var expected=RockTunnelLandEncounterTables.All.SingleOrDefault(e=>e.Map==t.Map);
-            if(expected is null || t with {Slots=expected.Slots}!=expected || !t.Slots.SequenceEqual(expected.Slots))
-                throw new InvalidDataException("RockTunnel source slot differs.");
-            EarlyLandEncounterRules.ValidateTable(t);
-        }
-                return new(d.Tables.ToImmutableDictionary(t=>t.Map),d.ExcludedTables.Clone());
+        var bytes = File.ReadAllBytes(SafeFile(root, "content/generated/data/encounters/rocktunnel.json"));
+        var document = ContentJson.ParseStrict<RockTunnelEncounterDocument>(
+            Encoding.UTF8.GetString(bytes), ContentJson.CreateOptions());
+        GeneratedLandEncounterValidation.Validate(document.SchemaVersion, document.Tables,
+            document.HeldItemDrawBound, document.HeldItems,
+            row => row.Common == "ITEM_NONE" && row.Rare == (row.Species == "pret:SPECIES_ONIX" ? "ITEM_HARD_STONE" : "ITEM_NONE"));
+        return new(document);
     }
+
     private static string SafeFile(string root,string relative)
     {
         if(Path.IsPathRooted(relative)||relative.Contains('\\')||relative.Split('/').Any(p=>p is "" or "." or "..")) throw new InvalidDataException("Unsafe RockTunnel encounter path.");

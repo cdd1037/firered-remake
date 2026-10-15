@@ -6,7 +6,7 @@ namespace Game.Application;
 
 /// <summary>
 /// Retains business-referenced settlements, not a chronological audit log.
-/// Special encounter ledgers remain intact until their consumers have explicit state models.
+/// Special encounters retain their current attempt; the roamer continuity ledger is separate.
 /// </summary>
 public static class CampaignWildHistoryRetention
 {
@@ -38,6 +38,26 @@ public static class CampaignWildHistoryRetention
         var referenced = (state.EvolutionHistory ?? []).Where(e => e.BattleId is not null)
             .Select(e => e.BattleId!).ToHashSet(StringComparer.Ordinal);
         foreach (var capture in exploration.Captured ?? []) referenced.Add(capture.BattleId);
+        // Each event's latest outcome owns its flags/retry eligibility. Older captures and
+        // evolution-producing wins already have independent references above.
+        var latestEvents = new Dictionary<(string Family, int Variant), string>();
+        string? hiddenMewtwoEscape = null;
+        string? marowakVictory = null;
+        foreach (var battle in exploration.Battles)
+        {
+            if (EventKey(battle) is { } key) latestEvents[key] = battle.Id;
+            if (battle.MewtwoReceipt is not null && battle.Outcome == WildBattleOutcome.Escaped)
+                hiddenMewtwoEscape = battle.Id;
+            if (battle.ScriptedMarowak && battle.Outcome == WildBattleOutcome.Won)
+                marowakVictory = battle.Id;
+        }
+        foreach (var id in latestEvents.Values) referenced.Add(id);
+        // The accepted Mewtwo hide contract uses Any(Escaped), unlike Articuno's latest
+        // outcome contract. Preserve that one hide reason while it is still relevant.
+        if (hiddenMewtwoEscape is not null && state.Script is { } script &&
+            script.Flags.GetValueOrDefault("FLAG_HIDE_MEWTWO") && !script.Flags.GetValueOrDefault("FLAG_FOUGHT_MEWTWO"))
+            referenced.Add(hiddenMewtwoEscape);
+        if (marowakVictory is not null) referenced.Add(marowakVictory);
         var retained = ImmutableArray.CreateBuilder<CampaignWildHistory>();
         var rockSmashSeen = new HashSet<int>();
         var seafoamSeen = new HashSet<int>();
@@ -50,11 +70,11 @@ public static class CampaignWildHistoryRetention
             // Unown uses its first sighting unless a (separately retained) capture supersedes it.
             bool firstSighting = false;
             if (battle.RockSmashReceipt is not null) firstSighting |= rockSmashSeen.Add(battle.SourceSpeciesId);
-            if (battle.SeafoamReceipt is not null) firstSighting |= seafoamSeen.Add(battle.SourceSpeciesId);
-            if (battle.PowerPlantReceipt is not null) firstSighting |= powerPlantSeen.Add(battle.SourceSpeciesId);
+            if (battle.SeafoamReceipt is { Origin.Kind: not SeafoamEncounterKind.Articuno }) firstSighting |= seafoamSeen.Add(battle.SourceSpeciesId);
+            if (battle.PowerPlantReceipt is { Origin.Kind: PowerPlantEncounterKind.Land }) firstSighting |= powerPlantSeen.Add(battle.SourceSpeciesId);
             if (battle.SevenIsland is not null) firstSighting |= sevenIslandSeen.Add(battle.SourceSpeciesId);
             if (i == exploration.Battles.Length - 1 || battle.Outcome == WildBattleOutcome.Caught ||
-                referenced.Contains(battle.Id) || firstSighting || HasSpecialConsumer(battle))
+                referenced.Contains(battle.Id) || firstSighting || battle.CelioRoamer is not null)
                 retained.Add(battle);
         }
         var removed = exploration.Battles.Length - retained.Count;
@@ -67,12 +87,19 @@ public static class CampaignWildHistoryRetention
         };
     }
 
-    private static bool HasSpecialConsumer(CampaignWildHistory b) =>
-        b.EventIslandReceipt is not null || b.CelioRoamer is not null ||
-        b.CeruleanCaveOrigin?.Kind == CeruleanCaveEncounterKind.Mewtwo || b.MewtwoReceipt is not null ||
-        b.SeafoamReceipt?.Origin.Kind == SeafoamEncounterKind.Articuno ||
-        b.PowerPlantReceipt is { Origin.Kind: not PowerPlantEncounterKind.Land } ||
-        b.ScriptedMarowak || b.ScriptedSnorlaxRoute != 0 || b.LostelleHypno is not null;
+    private static (string Family, int Variant)? EventKey(CampaignWildHistory b)
+    {
+        if (b.EventIslandReceipt is { } island) return ("event-island", (int)island.Origin.Kind);
+        if (b.CeruleanCaveOrigin?.Kind == CeruleanCaveEncounterKind.Mewtwo || b.MewtwoReceipt is not null)
+            return ("mewtwo", 0);
+        if (b.SeafoamReceipt?.Origin.Kind == SeafoamEncounterKind.Articuno) return ("articuno", 0);
+        if (b.PowerPlantReceipt is { Origin.Kind: not PowerPlantEncounterKind.Land } plant)
+            return ("power-plant", (int)plant.Origin.Kind);
+        if (b.ScriptedMarowak) return ("marowak", 0);
+        if (b.ScriptedSnorlaxRoute != 0) return ("snorlax", b.ScriptedSnorlaxRoute);
+        if (b.LostelleHypno is not null) return ("lostelle", 0);
+        return null;
+    }
 
 }
 

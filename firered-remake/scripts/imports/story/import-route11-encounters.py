@@ -30,17 +30,15 @@ def convert(sources):
  for symbol in ('SPECIES_EKANS','SPECIES_SPEAROW','SPECIES_DROWZEE','SPECIES_DIGLETT','SPECIES_DUGTRIO'):
   block=re.search(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',species,re.M|re.S)
   if block is None or '.itemCommon = ITEM_NONE,' not in block[1] or '.itemRare = ITEM_NONE,' not in block[1]:raise ValueError('Source held item table differs: '+symbol)
-  held.append(dict(species='pret:'+symbol,common='ITEM_NONE',rare='ITEM_NONE',sourcePath='src/data/pokemon/species_info.h'))
+  held.append(dict(species='pret:'+symbol,common='ITEM_NONE',rare='ITEM_NONE'))
  method=re.search(r'^void SetWildMonHeldItem\(void\)\n\{(.*?)^\}',sources['src/pokemon.c'].decode(),re.M|re.S)
  if method is None or 'u16 rnd = Random() % 100;' not in method[1] or method[1].find('u16 rnd = Random() % 100;') > method[1].find('itemCommon'):raise ValueError('Source unconditional held-item draw differs')
- doc=json.loads(sources['src/data/wild_encounters.json'],object_pairs_hook=unique_pairs);tables=[];excluded=[]
+ doc=json.loads(sources['src/data/wild_encounters.json'],object_pairs_hook=unique_pairs);tables=[]
  for name,mapid in (('Route11','map.route-11'),('DiglettsCaveB1F','map.digletts-cave-b1f')):
   rows=[e for group in doc['wild_encounter_groups'] for e in group.get('encounters',[]) if e['base_label']=='s'+name+'_FireRed']
   if len(rows)!=1 or len(rows[0]['land_mons']['mons'])!=12:raise ValueError('Expected exact FireRed land table')
   land=rows[0]['land_mons'];tables.append(dict(map=dict(value=mapid),rawEncounterRate=land['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=WEIGHTS[i]) for i,m in enumerate(land['mons'])]))
-  for method in ('water_mons','fishing_mons'):
-   if method in rows[0]:excluded.append(dict(map=mapid,sourceSymbol=rows[0]['base_label'],method=method,sourceTable=rows[0][method],enabled=False))
- return dict(schemaVersion=1,tables=tables,heldItemDrawBound=100,heldItems=held,excludedTables=excluded)
+ return dict(schemaVersion=1,tables=tables,heldItemDrawBound=100,heldItems=held)
 
 def run(repo,raw,out):
  raw,out=pathlib.Path(raw).absolute(),pathlib.Path(out).absolute()

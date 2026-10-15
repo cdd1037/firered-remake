@@ -206,23 +206,20 @@ def source_contracts(src, worlds, doc):
         fieldMoveDependencies=[dict(name='Surf',sourceEntry='EventScript_UseSurf',enabled=False),dict(name='Strength',sourceEntry='EventScript_StrengthBoulder',enabled=False)])
 
 def encounter_contract(src):
-    path='src/data/wild_encounters.json';doc=src.json(path);weights=[20,20,10,10,10,10,5,5,4,4,1,1];tables=[];excluded=[];species=set()
+    path='src/data/wild_encounters.json';doc=src.json(path);weights=[20,20,10,10,10,10,5,5,4,4,1,1];tables=[];species=set()
     for area in ('Center','East','North','West'):
         symbol='sSafariZone'+area+'_FireRed';matches=[e for g in doc['wild_encounter_groups'] for e in g.get('encounters',[]) if e['base_label']==symbol]
         if len(matches)!=1 or len(matches[0]['land_mons']['mons'])!=12:raise ValueError('Missing exact FireRed Safari table')
         row=matches[0];land=row['land_mons'];mapid='map.safari-zone-'+area.lower()
         tables.append(dict(map=dict(value=mapid),rawEncounterRate=land['encounter_rate'],slots=[dict(index=i,species=dict(value='pret:'+m['species']),minimumLevel=m['min_level'],maximumLevel=m['max_level'],weight=weights[i]) for i,m in enumerate(land['mons'])]))
         species.update(m['species'] for m in land['mons'])
-        for method in ('water_mons','fishing_mons'):
-            excluded.append(dict(map=mapid,sourceSymbol=symbol,method=method,sourceTable=row[method],enabled=False))
     held=[];text=src.text('src/data/pokemon/species_info.h')
     for speciesid in sorted(species):
         m=re.search(r'^    \['+speciesid+r'\] =\s*\n    \{\n(.*?)^    \},',text,re.M|re.S)
         if not m:raise ValueError('Missing species held-item row')
         f=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M))
-        held.append(dict(species='pret:'+speciesid,common=f['itemCommon'],rare=f['itemRare'],sourceRef=src.ref('src/data/pokemon/species_info.h',speciesid,text[:m.start()].count('\n')+1)))
-    return dict(schemaVersion=1,tables=tables,heldItems=held,heldItemDrawBound=100,excludedTables=excluded,
-        missingGroundSpecies=['SPECIES_CHANSEY','SPECIES_SCYTHER','SPECIES_TAUROS'],missingDeferredSpecies=['SPECIES_DRAGONAIR','SPECIES_DRATINI','SPECIES_PSYDUCK'])
+        held.append(dict(species='pret:'+speciesid,common=f['itemCommon'],rare=f['itemRare']))
+    return dict(schemaVersion=1,tables=tables,heldItems=held,heldItemDrawBound=100)
 
 def main():
     global ROOT, PRODUCT
