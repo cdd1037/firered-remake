@@ -9,7 +9,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretCityServiceItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PewterMachineItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
+    ImmutableArray<MachineItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
 
 /// <summary>Authenticates Fan Club voucher, Old Rod and Bicycle exchange content. Registers no gameplay handlers.</summary>
 public sealed class PretCityServices
@@ -19,7 +19,7 @@ public sealed class PretCityServices
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
-    public ImmutableArray<PewterMachineItem> Items { get; }
+    public ImmutableArray<MachineItem> Items { get; }
     public ImmutableArray<PretPewterMachineIcon> Icons { get; }
     public JsonElement Services => Dependencies.GetProperty("services");
     public ImmutableArray<MapId> ReusedMapIds => [new("map.cerulean-city-bike-shop")];
@@ -59,11 +59,11 @@ public sealed class PretCityServices
             map.Cells.Select(c => new Game.Domain.World.ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), values);
     }
 
-    public static PretCityServices Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
+    public static PretCityServices Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null, SharedMachineCatalog? shared = null)
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/city-services");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -119,7 +119,7 @@ public sealed class PretCityServices
             "City-service dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         Require(npcSources.RootElement.GetProperty("graphics").GetArrayLength() == 8, "City-service actor inventory differs.");
-        var itemDocument = ContentJson.ParseStrict<PretCityServiceItemsDocument>(Encoding.UTF8.GetString(outputs["items.json"]), ContentJson.CreateOptions());
+        var itemDocument = ContentJson.ParseStrict<PretCityServiceItemsDocument>(Encoding.UTF8.GetString(outputs["items.json"]), (shared ?? SharedMachineCatalog.LoadProject(project)).CreateJsonOptions());
         Require(itemDocument.SchemaVersion == 1 &&
             itemDocument.Items.Length == 3 && itemDocument.Icons.Length == 3, "City-service item scope differs.");
         int[] sourceIds = [352, 262, 360]; string[] symbols = ["BIKE_VOUCHER", "OLD_ROD", "BICYCLE"];

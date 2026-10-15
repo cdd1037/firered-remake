@@ -32,10 +32,9 @@ public sealed partial class CampaignSession
         }
         if (!content.SeviiRubyEnabled || content.FourIslandOwnership is not {} owned ||
             content.FourIslandOpponents is not {} opponents || content.FourIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned.Predecessor, content.SeviiRubyOwnership) || !ReferenceEquals(content.SixIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SeviiRubyOpponents) ||
-            ((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            ((content.SevenIslandShop?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop)) is null)
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.NeverMeltIceId))
             throw new InvalidDataException("four_island_source_profile_missing");
         FourIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }
@@ -47,7 +46,7 @@ public sealed partial class CampaignSession
         int scene = state.Script.Variables.GetValueOrDefault(FourIslandSceneVariable);
         bool completed = Flag("FLAG_HIDE_RUIN_VALLEY_SCIENTIST");
         bool won = state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_45");
-        bool hm = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], FourIslandMachineCatalog.Hm07Id) != 0;
+        bool hm = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], new ItemId("pret:ITEM_HM07")) != 0;
         if (!_content.FourIslandEnabled) return state.IcefallIce is not null || state.FourIslandMovement is not null || state.FourIslandMovementDirection is not null || town != 0 || scene != 0 || completed || won || hm || FourIslandMap(state.World.Player.MapId)
             ? "save_four_island_profile_missing" : null;
         if (town is < 0 or > 1 || scene is < 0 or > 1 || town == 1 && !Flag("FLAG_HIDE_FOUR_ISLAND_RIVAL")) return "save_four_island_scene";

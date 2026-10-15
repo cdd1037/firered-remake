@@ -181,7 +181,11 @@ public sealed class ActionTurnTests
             Assert.IsTrue(admitted.State.Queue.Single(a => a.Slot.Value == 0).OriginalChosenMove == current.Slots[0].Body!.Pokemon.Moves[0].Move && admitted.State.Slots[0].Body!.Pokemon.Moves[0].CurrentPp == current.Slots[0].Body!.Pokemon.Moves[0].CurrentPp, "current recipe admission retains chosen move and unspent PP");
         }
 
-        Rejected(f, SourceFourActionTurns.BeginActions(catalog with { }, f, f.Revision, Choices(f)), "catalog clone carries no authority");
+        var direct = SourceFourActionTurns.BeginActions(catalog, f, f.Revision, Choices(f));
+        var copied = SourceFourActionTurns.BeginActions(catalog with { }, f, f.Revision, Choices(f));
+        Assert.IsTrue(direct.Succeeded && copied.Succeeded, "equivalent immutable definitions are usable");
+        Assert.AreEqual(Json(direct), Json(copied), "catalog copy preserves state, events and RNG");
+        Rejected(f, SourceFourActionTurns.BeginActions(catalog with { MechanicsData = null }, f, f.Revision, Choices(f)), "missing mechanics rejected");
         Rejected(f, SourceFourActionTurns.BeginActions(catalog, f, f.Revision, Choices(f).RemoveAt(2)), "missing actor");
     }
 

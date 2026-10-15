@@ -68,7 +68,7 @@ internal static class ForestBattleDamage
         if (mtMoonRules && move?.Effect == "EFFECT_DRAGON_RAGE") return new(40, category, [new("fixed-damage", 40)]);
         if (mtMoonRules && move?.Effect == "EFFECT_MAGNITUDE" && dynamicPower is null) throw new NotSupportedException("mtmoon_magnitude_power_required");
         int power = struggle ? 50 : route22Rules && move!.Effect == "EFFECT_LOW_KICK"
-            ? Route22BattleData.LowKickPower(SourceMechanicsCatalog.For(catalog) is { } sourceMechanics
+            ? Route22BattleData.LowKickPower(catalog.MechanicsData is { } sourceMechanics
                 ? sourceMechanics.SpeciesMechanics[target.Pokemon.Species].WeightHectograms : rockTunnelRules ? (canonicalSource || catalog.Species.Count == 107) && target.Pokemon.SourceSpeciesId is 83 or 84 or 85 or 132 ? FuchsiaBattleScope.WeightHectograms(target.Pokemon.SourceSpeciesId) : catalog.Species.Count is 103 or 107 && target.Pokemon.SourceSpeciesId == 133 ? 65 : (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107) && target.Pokemon.SourceSpeciesId == 143 ? 4600 : (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107) && target.Pokemon.SourceSpeciesId is 92 or 93 ? 1 : RockTunnelBattleData.WeightHectograms(target.Pokemon.Species) : route11Rules ? Route11BattleData.WeightHectograms(target.Pokemon.Species) : vermilionGymRules ? VermilionGymBattleData.WeightHectograms(target.Pokemon.Species) : ssAnneRules ? SsAnneBattleData.WeightHectograms(target.Pokemon.Species) : vermilionRules ? VermilionBattleData.WeightHectograms(target.Pokemon.Species) : billRules ? BillBattleData.WeightHectograms(target.Pokemon.Species) : ceruleanRules ? CeruleanBattleData.WeightHectograms(target.Pokemon.Species) : mtMoonRules ? MtMoonBattleData.WeightHectograms(target.Pokemon.Species) : route3Rules ? Route3BattleData.WeightHectograms(target.Pokemon.Species) : Route22BattleData.WeightHectograms(target.Pokemon.Species)) : move!.Power;
         if (rockTunnelRules && move?.Effect == "EFFECT_FLAIL")
         {
@@ -87,7 +87,7 @@ internal static class ForestBattleDamage
                 "EFFECT_HIDDEN_POWER" => overridden is >= 30 and <= 70,
                 "EFFECT_ERUPTION" => sourceDoubleBattle ? overridden >= 1 && overridden <= move.Power : overridden == Math.Max(1, user.Pokemon.CurrentHp * move.Power / user.Pokemon.Stats.MaxHp),
                 "EFFECT_FLAIL" => canonicalSource && overridden == SourceDynamicPowerRules.Flail(user.Pokemon.CurrentHp, user.Pokemon.Stats.MaxHp),
-                "EFFECT_LOW_KICK" => SourceMechanicsCatalog.For(catalog) is { } proof && overridden == SourceDynamicPowerRules.Weight(proof.SpeciesMechanics[target.Pokemon.Species].WeightHectograms),
+                "EFFECT_LOW_KICK" => catalog.MechanicsData is { } proof && overridden == SourceDynamicPowerRules.Weight(proof.SpeciesMechanics[target.Pokemon.Species].WeightHectograms),
                 "EFFECT_PRESENT" => overridden is 40 or 80 or 120,
                 "EFFECT_TRIPLE_KICK" => overridden is 10 or 20 or 30,
                 "EFFECT_ROLLOUT" => overridden is 30 or 60 or 120 or 240 or 480 or 960,

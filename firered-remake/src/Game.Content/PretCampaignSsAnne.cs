@@ -6,7 +6,7 @@ using Game.Domain.World;
 namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
- private static IEnumerable<FieldPickupDefinition> SsAnnePickupDefinitions(PretSsAnneItemsDocument items,PewterMachineCatalog machines,EarlyShopCatalog shop,PretStoryCompilation scripts)
+ private static IEnumerable<FieldPickupDefinition> SsAnnePickupDefinitions(PretSsAnneItemsDocument items,MachineCatalog machines,EarlyShopCatalog shop,PretStoryCompilation scripts)
  {
   foreach(var p in items.Pickups)
   {

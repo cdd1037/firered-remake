@@ -14,7 +14,7 @@ public static class SourcePresetTrainerEncounterEntry
 {
     public static SourceTwinsEncounterResult Begin(SourceMechanicsCatalog source,
         SourceTrainerEntryPreparation setup, TrainerPartyCreationResult created,
-        ImmutableArray<WildBattleCalledPartyMember> playerParty, OwnedBattlePokemonCatalog? owned = null,
+        ImmutableArray<WildBattleCalledPartyMember> playerParty, GamePokemonCatalog? owned = null,
         bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false,
         bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Plain)
     {
@@ -42,7 +42,7 @@ public static class SourcePresetTrainerEncounterEntry
             var enemies = created.Party.Select(p => new WildBattleCalledPartyMember(p.Pokemon, p.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.TrainerOpponentProfile,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.Opponents.RulesVersion, Campaign = owned,
                 BattleKind = WildBattleCalledBattleKind.Trainer, Rng = created.Rng,
                 Field = new() { Terrain = terrain },
                 Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemies)],
@@ -74,23 +74,23 @@ public static class SourcePresetTrainerEncounterEntry
     }
 
     public static string? ValidateFrame(SourceMechanicsCatalog source, TrainerPartyCreationResult created,
-        SourceBattleFrame frame, OwnedBattlePokemonCatalog? owned = null)
+        SourceBattleFrame frame, GamePokemonCatalog? owned = null)
     {
         if (CreationFault(source, created, owned) is { } creation) return creation;
         if (frame is null || frame.Layout != SourceBattleLayout.PresetDoubles || frame.BattleKind != WildBattleCalledBattleKind.Trainer ||
-            frame.KoReplacementTiming != KoReplacementTiming.EndOfTurn || frame.SourceCampaignRulesVersion != owned?.TrainerOpponentProfile ||
+            frame.KoReplacementTiming != KoReplacementTiming.EndOfTurn || frame.SourceCampaignRulesVersion != owned?.Opponents.RulesVersion ||
             frame.TrainerEncounter is not null || frame.TrainerTowerEncounter is not null ||
             SourceFourActionTurns.ValidateCapability(source.Catalog, frame) is not null ||
             SourcePokemonValidator.ValidateFrameParties(source.Catalog, frame) is not null)
             return "source_preset_trainer_frame";
         var party = frame.Party(BattleSide.Opponent).Members;
         if (party.Length != created.Party.Length || party.Where((p, i) => p.IsEgg ||
-                !created.Receipt!.MatchesIdentity(p.Pokemon, i)).Any()) return "source_preset_trainer_roster";
+                !created.Roster!.MatchesIdentity(p.Pokemon, i)).Any()) return "source_preset_trainer_roster";
         return null;
     }
 
     public static SourceTwinsAiResult ChooseEnemyActions(SourceMechanicsCatalog source, TrainerPartyCreationResult created,
-        SourceBattleFrame frame, long expectedRevision, OwnedBattlePokemonCatalog? owned = null, string? knownPlayerAbility = null)
+        SourceBattleFrame frame, long expectedRevision, GamePokemonCatalog? owned = null, string? knownPlayerAbility = null)
     {
         if (ValidateFrame(source, created, frame, owned) is { } invalid) return new(frame, [], [], invalid);
         var result = SourceFourTrainerAi.ChooseMoves(source.Catalog, created.Trainer, frame, expectedRevision, knownPlayerAbility);
@@ -103,7 +103,7 @@ public static class SourcePresetTrainerEncounterEntry
     public static SourceTrainerActionPreparationResult PrepareEnemyActions(SourceBattleItemCatalog items,
         SourceMechanicsCatalog source, TrainerPartyCreationResult created, SourceBattleFrame frame,
         long expectedRevision, SourceTrainerItemInventory inventory, MoveId staleCurrentMove,
-        OwnedBattlePokemonCatalog? owned = null, string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null)
+        GamePokemonCatalog? owned = null, string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null)
     {
         if (ValidateFrame(source, created, frame, owned) is { } invalid)
             return new(frame, inventory, [], [], [], invalid) { SourceCurrentMove = staleCurrentMove };
@@ -111,16 +111,15 @@ public static class SourcePresetTrainerEncounterEntry
             expectedRevision, inventory, staleCurrentMove, knownPlayerAbility, knownPlayerHoldEffect);
     }
 
-    private static string? CreationFault(SourceMechanicsCatalog? source, TrainerPartyCreationResult? created, OwnedBattlePokemonCatalog? owned)
+    private static string? CreationFault(SourceMechanicsCatalog? source, TrainerPartyCreationResult? created, GamePokemonCatalog? owned)
     {
-        if (source is null || !ReferenceEquals(SourceMechanicsCatalog.For(source.Catalog), source) ||
-            created?.Receipt is not { } proof || !proof.Matches(created) || !created.Trainer.DoubleBattle ||
+        if (source is null || source.Catalog.MechanicsData is null ||
+            created?.Roster is not { } proof || !proof.Matches(created) || !created.Trainer.DoubleBattle ||
             created.Party.Length is < 2 or > 6 || created.Trainer.AiFlags is not (1 or 7) ||
             created.Party.Any(p => SourcePokemonValidator.ValidateForBattle(source.Catalog, p.Pokemon) is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(p.HeldItem, source.Catalog))) return "source_preset_trainer_creation";
-        if (owned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Mechanics, source) ||
-            created.Party.Any(p => !owned.AdmitsTrainerOpponent(p.Pokemon.Species, owned.TrainerOpponentProfile))))
+        if (owned is not null && (!ReferenceEquals(owned.Mechanics.Catalog, source.Catalog) ||
+            created.Party.Any(p => !owned.Opponents.Catalog.Species.ContainsKey(p.Pokemon.Species))))
             return "source_preset_trainer_campaign_admission";
         return null;
     }

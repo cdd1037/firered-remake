@@ -12,25 +12,8 @@ namespace Game.Domain.Battle;
 [Flags]
 public enum SourceTrainerTowerBattleFlags : uint { Double = 1, Trainer = 8, TrainerTower = 1 << 19 }
 
-/// <summary>The proof is minted only by the authenticated local-course factory. Serialized keys
-/// resolve only while that proof is alive; player saves never contain an active battle.</summary>
-public sealed record SourceTrainerTowerEncounterContext
-{
-    public string RosterProof { get; init; }
-    public string Course { get; init; }
-    public int FloorIndex { get; init; }
-    public int TrainerIndex { get; init; }
-    public SourceTrainerTowerBattleFlags BattleFlags { get; init; }
-    private readonly SourceTrainerTowerPartyReceipt? receipt;
-    [JsonIgnore] internal SourceTrainerTowerPartyReceipt? Receipt => receipt?.Key == RosterProof ? receipt : null;
-    [JsonConstructor]
-    public SourceTrainerTowerEncounterContext(string rosterProof, string course, int floorIndex, int trainerIndex,
-        SourceTrainerTowerBattleFlags battleFlags)
-    {
-        RosterProof = rosterProof; Course = course; FloorIndex = floorIndex; TrainerIndex = trainerIndex;
-        BattleFlags = battleFlags; receipt = SourceTrainerTowerPartyReceipt.Resolve(rosterProof);
-    }
-}
+/// <summary>Explicit Tower encounter and its generated preset roster.</summary>
+public sealed record SourceTrainerTowerEncounterContext(TrainerTowerEncounterRoster Roster);
 
 /// <summary>Explicit facility settlement, with ordinary victory Pickup and persistent battle damage.
 /// The Application owns the nurse/lobby callback and inventory projection.</summary>
@@ -44,22 +27,21 @@ public static class SourceTrainerTowerEncounter
 
     /// <summary>Enemy creation has no RNG draws. Source SetUpBattleVars follows BuildEnemyParty;
     /// unlike ordinary doubles, Tower already has DOUBLE set and consumes the fifth AI target draw.</summary>
-    public static SourceTrainerEncounterEntryResult Begin(TrainerTowerOpponentPokemonCatalog opponents,
+    public static SourceTrainerEncounterEntryResult Begin(GameOpponentPokemonCatalog opponents,
         TrainerPartyCreationResult created, ImmutableArray<WildBattleCalledPartyMember> playerParty,
         ForestTrainerBattleStyle style = ForestTrainerBattleStyle.Shift,
         bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false,
         bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Building,
-        OwnedBattlePokemonCatalog? currentOwned = null)
+        GamePokemonCatalog? currentOwned = null)
     {
         var initial = created?.Rng ?? new RngState(0);
         SourceTrainerEncounterEntryResult Fail(string fault) => new(null, initial, [], [], fault);
-        if (opponents is null || !ReferenceEquals(TrainerTowerOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            created?.TowerReceipt is not { } proof || !proof.Matches(created) || !ReferenceEquals(proof.Mechanics, opponents.Mechanics))
+        if (opponents is null || opponents.RulesVersion != GameOpponentPokemonCatalog.TrainerTowerProfile ||
+            created?.TowerRoster is not { } proof || !proof.Matches(created))
             return Fail("source_tower_creation_receipt");
-        OwnedBattlePokemonCatalog current;
-        try { current = OwnedBattlePokemonCatalog.ResolveCurrent(opponents.Owned.SharedBattle, currentOwned); }
-        catch (ArgumentException) { return Fail("source_tower_current_owned"); }
-        var catalog = proof.Mechanics.Catalog;
+        var current = currentOwned ?? opponents.Owned;
+        if (!ReferenceEquals(current, opponents.Owned)) return Fail("source_tower_current_owned");
+        var catalog = opponents.Mechanics.Catalog;
         if (!Enum.IsDefined(style) || !Enum.IsDefined(terrain) || playerParty.IsDefaultOrEmpty || playerParty.Length > 6)
             return Fail("source_tower_player_party");
         foreach (var member in playerParty)
@@ -77,11 +59,10 @@ public static class SourceTrainerTowerEncounter
         if (created.Party.Any(m => m.Pokemon.Level != maximum)) return Fail("source_tower_party_maximum_level");
         try
         {
-            SourceTrainerTowerPartyReceipt.Register(proof);
             SourceTrainerEncounterContext? trainer = null;
             if (!proof.IsDouble)
             {
-                var withReceipt = created with { Receipt = SourceTrainerPartyReceipt.CreateTower(created, proof) };
+                var withReceipt = created with { Roster = TrainerEncounterRoster.CreateTower(created, proof) };
                 var context = SourceTrainerEncounterPolicy.CreateContext(catalog, withReceipt, style);
                 if (!context.Succeeded) return Fail(context.Fault!);
                 trainer = context.Context;
@@ -107,11 +88,11 @@ public static class SourceTrainerTowerEncounter
             }).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 SourceMechanicsRulesVersion = SourceBattleKernel.Version,
-                SourceCampaignRulesVersion = current.TrainerOpponentProfile,
+                SourceCampaignRulesVersion = current.Opponents.RulesVersion, Campaign = current,
                 Layout = proof.IsDouble ? SourceBattleLayout.PresetDoubles : SourceBattleLayout.Singles,
                 KoReplacementTiming = proof.IsDouble ? KoReplacementTiming.EndOfTurn : KoReplacementTiming.SourceImmediate,
                 BattleKind = WildBattleCalledBattleKind.Trainer, TrainerEncounter = trainer,
-                TrainerTowerEncounter = new(proof.Key, proof.Course, proof.FloorIndex, proof.TrainerIndex, proof.Flags),
+                TrainerTowerEncounter = new(proof),
                 Rng = rng, SourceAbsentMask = (byte)(proof.IsDouble ? 0 : 12), TurnStartAbsentMask = (byte)(proof.IsDouble ? 0 : 12),
                 Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)], Slots = slots,
                 Field = new() { Terrain = terrain }, Rewards = new()
@@ -130,17 +111,17 @@ public static class SourceTrainerTowerEncounter
     }
 
     public static SourceTrainerActionPreparationResult PrepareActions(SourceBattleItemCatalog items, PokemonCatalog catalog,
-        SourceBattleFrame frame, long expectedRevision, OwnedBattlePokemonCatalog? currentOwned = null)
+        SourceBattleFrame frame, long expectedRevision, GamePokemonCatalog? currentOwned = null)
     {
         var error = Validate(catalog, frame, currentOwned);
-        if (error is not null || frame.TrainerTowerEncounter?.Receipt is not { } proof)
+        if (error is not null || frame.TrainerTowerEncounter?.Roster is not { } proof)
             return new(frame, null!, [], [], [], error ?? "source_tower_encounter_required");
         if (frame.TrainerEncounter is not null) return SourceTrainerEncounterPolicy.PrepareActions(items, catalog, frame, expectedRevision);
         return SourceFourTrainerAi.PrepareEnemyActions(items, catalog, proof.Trainer, frame, expectedRevision,
             SourceTrainerItemInventory.Create(proof.Trainer), SourceTrainerEncounterPolicy.NoMove);
     }
 
-    public static SourceTrainerTowerSettlement Settle(PokemonCatalog catalog, SourceBattleFrame frame, int money, OwnedBattlePokemonCatalog? currentOwned = null)
+    public static SourceTrainerTowerSettlement Settle(PokemonCatalog catalog, SourceBattleFrame frame, int money, GamePokemonCatalog? currentOwned = null)
     {
         if (Validate(catalog, frame, currentOwned) is { } error) throw new ArgumentException(error, nameof(frame));
         if (frame.TrainerTowerEncounter is null || frame.FourTurn is { Phase: not SourceFourActionPhase.BattleEnded } ||
@@ -150,19 +131,16 @@ public static class SourceTrainerTowerEncounter
             frame.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw);
     }
 
-    public static string? Validate(PokemonCatalog catalog, SourceBattleFrame frame, OwnedBattlePokemonCatalog? currentOwned = null)
+    public static string? Validate(PokemonCatalog catalog, SourceBattleFrame frame, GamePokemonCatalog? currentOwned = null)
     {
         if (frame is null || catalog is null) return "source_tower_missing_input";
         if (frame.TrainerTowerEncounter is not { } tower) return null;
         if (SourceBattleIdentityRules.Validate(frame) is { } error) return error;
-        var proof = tower.Receipt!;
-        if (!ReferenceEquals(proof.Mechanics.Catalog, catalog)) return "source_tower_catalog";
-        var frameOwner = OwnedBattlePokemonCatalog.ForMechanics(catalog, frame.SourceCampaignRulesVersion);
-        var predecessor = TrainerTowerOpponentPokemonCatalog.ForMechanics(catalog)?.Owned.SharedBattle;
-        if (frameOwner is null || predecessor is null || currentOwned is not null && !ReferenceEquals(currentOwned, frameOwner))
+        var proof = tower.Roster!;
+        var frameOwner = frame.Campaign;
+        if (frameOwner is null || !ReferenceEquals(frameOwner.Mechanics.Catalog, catalog) ||
+            currentOwned is not null && !ReferenceEquals(currentOwned, frameOwner))
             return "source_tower_current_owned";
-        try { _ = OwnedBattlePokemonCatalog.ResolveCurrent(predecessor, frameOwner); }
-        catch (ArgumentException) { return "source_tower_current_owned"; }
         if (frame.Party(BattleSide.Player).Members.Any(m => !frameOwner.Catalog.Species.ContainsKey(m.Pokemon.Species)))
             return "source_tower_player_member";
         if (SourcePokemonValidator.ValidateFrameParties(catalog, frame) is not null) return "source_tower_party_pokemon";
@@ -172,11 +150,11 @@ public static class SourceTrainerTowerEncounter
     internal static string? ValidateIdentity(SourceBattleFrame frame)
     {
         if (frame.TrainerTowerEncounter is not { } tower) return null;
-        if (tower.Receipt is not { } proof || tower.Course != proof.Course || tower.FloorIndex != proof.FloorIndex ||
-            tower.TrainerIndex != proof.TrainerIndex || tower.BattleFlags != proof.Flags || frame.BattleKind != WildBattleCalledBattleKind.Trainer ||
+        if (tower.Roster is not { } proof || proof.Trainer is null || proof.Party.IsDefaultOrEmpty ||
+            proof.Party.Any(p => p?.Pokemon is null || p.Pokemon.Moves.IsDefault) || frame.BattleKind != WildBattleCalledBattleKind.Trainer ||
             frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || frame.WildEncounter is not null ||
             (frame.Layout == SourceBattleLayout.PresetDoubles) != proof.IsDouble ||
-            (proof.IsDouble ? frame.TrainerEncounter is not null : frame.TrainerEncounter?.Receipt?.Tower != proof))
+            (proof.IsDouble ? frame.TrainerEncounter is not null : frame.TrainerEncounter?.Roster?.Tower?.SameEncounter(proof) != true))
             return "source_tower_frame_proof";
         var party = frame.Party(BattleSide.Opponent).Members;
         if (party.Length != proof.Party.Length || party.Where((m, i) => m.IsEgg || !proof.MatchesIdentity(m.Pokemon, i)).Any())
@@ -187,50 +165,36 @@ public static class SourceTrainerTowerEncounter
     }
 }
 
-internal sealed class SourceTrainerTowerPartyReceipt
+/// <summary>Actual preset values generated for a Tower opponent, independent of any catalog identity.</summary>
+public sealed record TrainerTowerEncounterRoster(TrainerDefinition Trainer,
+    ImmutableArray<TrainerPartyPokemon> Party, RngState Rng, ImmutableArray<RandomTrace> Trace,
+    string Course, int FloorIndex, int TrainerIndex, bool IsDouble)
 {
-    private static readonly Dictionary<string, WeakReference<SourceTrainerTowerPartyReceipt>> Registry = [];
-    internal SourceMechanicsCatalog Mechanics { get; }
-    internal TrainerDefinition Trainer => expected.Trainer;
-    internal ImmutableArray<TrainerPartyPokemon> Party => expected.Party;
-    internal string Course { get; }
-    internal int FloorIndex { get; }
-    internal int TrainerIndex { get; }
-    internal bool IsDouble { get; }
-    internal string Key { get; }
-    internal SourceTrainerTowerBattleFlags Flags => SourceTrainerTowerBattleFlags.Trainer | SourceTrainerTowerBattleFlags.TrainerTower |
+    [JsonIgnore] public SourceTrainerTowerBattleFlags Flags => SourceTrainerTowerBattleFlags.Trainer | SourceTrainerTowerBattleFlags.TrainerTower |
         (IsDouble ? SourceTrainerTowerBattleFlags.Double : 0);
-    private readonly TrainerPartyCreationResult expected;
-    private SourceTrainerTowerPartyReceipt(SourceMechanicsCatalog mechanics, TrainerPartyCreationResult expected,
+    internal static TrainerTowerEncounterRoster Create(PokemonCatalog catalog, TrainerPartyCreationResult expected,
         string course, int floor, int trainerIndex, bool isDouble)
     {
-        Mechanics = mechanics; this.expected = expected; Course = course; FloorIndex = floor; TrainerIndex = trainerIndex; IsDouble = isDouble;
-        Key = CampaignSourceFingerprint.Compute(new { course, floor, trainerIndex, isDouble, expected });
-    }
-    internal static SourceTrainerTowerPartyReceipt Create(PokemonCatalog catalog, TrainerPartyCreationResult expected,
-        string course, int floor, int trainerIndex, bool isDouble)
-    {
-        if (SourceMechanicsCatalog.For(catalog) is not { } mechanics || expected.Trainer.AiFlags != 7 || expected.Trainer.DoubleBattle != isDouble ||
+        if (catalog.MechanicsData is null || expected.Trainer.AiFlags != 7 || expected.Trainer.DoubleBattle != isDouble ||
             expected.Trainer.Items.Any(i => i != "ITEM_NONE") || expected.Party.IsDefaultOrEmpty || expected.Trace.IsDefault ||
             floor is < 0 or > 7 || trainerIndex is < 0 or > 2)
-            throw new ArgumentException("source_tower_receipt_input");
-        var receipt = new SourceTrainerTowerPartyReceipt(mechanics, expected, course, floor, trainerIndex, isDouble);
-        if (expected.Party.Any(m => PokemonStateValidator.ValidateTrainerTowerInstance(catalog, m.Pokemon, receipt) is not null))
-            throw new ArgumentException("source_tower_receipt_pokemon");
-        return receipt;
+            throw new ArgumentException("source_tower_roster_input");
+        var roster = new TrainerTowerEncounterRoster(expected.Trainer, expected.Party, expected.Rng,
+            expected.Trace, course, floor, trainerIndex, isDouble);
+        if (expected.Party.Any(m => PokemonStateValidator.ValidateTrainerTowerInstance(catalog, m.Pokemon, roster) is not null))
+            throw new ArgumentException("source_tower_roster_pokemon");
+        return roster;
     }
-    internal bool Matches(TrainerPartyCreationResult actual) => actual.Trainer == Trainer && actual.Rng == expected.Rng &&
-        !actual.Trace.IsDefault && actual.Trace.SequenceEqual(expected.Trace) && !actual.Party.IsDefault && actual.Party.Length == Party.Length &&
+    internal bool Matches(TrainerPartyCreationResult actual) => TrainerEncounterRoster.SameTrainer(actual.Trainer, Trainer) && actual.Rng == Rng &&
+        !actual.Trace.IsDefault && actual.Trace.SequenceEqual(Trace) && !actual.Party.IsDefault && actual.Party.Length == Party.Length &&
         actual.Party.Where((p, i) => p?.Pokemon is null || p.HeldItem != Party[i].HeldItem || p.Pokemon.Moves.IsDefault ||
             p.Pokemon with { Moves = Party[i].Pokemon.Moves } != Party[i].Pokemon || !p.Pokemon.Moves.SequenceEqual(Party[i].Pokemon.Moves)).Any() == false;
-    internal bool MatchesIdentity(PokemonInstance? pokemon) => pokemon is not null && Enumerable.Range(0, Party.Length).Any(i => MatchesIdentity(pokemon, i));
-    internal bool MatchesIdentity(PokemonInstance? pokemon, int index) => pokemon is not null && index >= 0 && index < Party.Length &&
+    internal bool MatchesIdentity(PokemonInstance? pokemon) => pokemon is not null && !Party.IsDefault && Enumerable.Range(0, Party.Length).Any(i => MatchesIdentity(pokemon, i));
+    internal bool MatchesIdentity(PokemonInstance? pokemon, int index) => pokemon is not null && !Party.IsDefault && index >= 0 && index < Party.Length &&
         pokemon with { CurrentHp = Party[index].Pokemon.CurrentHp, Moves = Party[index].Pokemon.Moves,
             Friendship = Party[index].Pokemon.Friendship } == Party[index].Pokemon;
-    internal static void Register(SourceTrainerTowerPartyReceipt proof)
-    {
-        lock (Registry) { foreach (var key in Registry.Where(p => !p.Value.TryGetTarget(out _)).Select(p => p.Key).ToArray()) Registry.Remove(key); Registry[proof.Key] = new(proof); }
-    }
-    internal static SourceTrainerTowerPartyReceipt? Resolve(string key)
-    { lock (Registry) return key is not null && Registry.TryGetValue(key, out var reference) && reference.TryGetTarget(out var proof) ? proof : null; }
+    internal bool SameEncounter(TrainerTowerEncounterRoster other) => Course == other.Course && FloorIndex == other.FloorIndex &&
+        TrainerIndex == other.TrainerIndex && IsDouble == other.IsDouble && TrainerEncounterRoster.SameTrainer(Trainer, other.Trainer) &&
+        !Party.IsDefault && !other.Party.IsDefault && Party.Length == other.Party.Length &&
+        other.Party.Where((p, i) => !MatchesIdentity(p.Pokemon, i) || p.HeldItem != Party[i].HeldItem).Any() == false;
 }

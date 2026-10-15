@@ -10,7 +10,6 @@ public static class PretGameCornerHiddenCoins
 {
     public const string ScriptPath = "data/scripts/obtain_item.inc";
 
-
     internal static ImmutableArray<FieldPickupDefinition> Pickups(PretWorldMap map, PretStoryCompilation scripts)
     {
         var backgrounds = map.Events.GetProperty("bg_events").EnumerateArray()

@@ -62,11 +62,10 @@ public static class SixIslandTrainerPartyFactory
         return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
     }
     public static TrainerPartyCreationResult Create(SixIslandTrainerCatalog trainers,
-        SixIslandOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
+        GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(SixIslandOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("six_island_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("six_island_trainer_catalog");
         foreach (var member in trainer.Party)
         {
             if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("six_island_trainer_species");

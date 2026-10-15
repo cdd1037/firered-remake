@@ -7,8 +7,7 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretBillSourceItem(PewterMachineItem Metadata, ImmutableArray<int> EffectBytes,
-    OpeningItemSourceRef? EffectSource);
+public sealed record PretBillSourceItem(MachineItem Metadata, ImmutableArray<int> EffectBytes);
 public sealed record PretBillDexView(SpeciesId Species, int SourceSpeciesId, int NationalDex, string Name, int X, int Y, int Width, int Height,
     bool MarksSeen, bool MarksOwned, string PngPath, OpeningItemSourceRef Source,
     OpeningItemSourceRef PaletteSource, OpeningItemSourceRef ScriptSource, OpeningItemSourceRef NameSource);
@@ -23,9 +22,9 @@ public static class PretBillItems
     public const string Profile = "firered-bill-items-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretBillItemsDocument Load(string json)
+    public static PretBillItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions();
+        var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretBillItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 9 && document.Icons.Length == 9 &&
@@ -64,9 +63,9 @@ public static class PretBillItems
         return document;
     }
 
-    public static PretBillItemsDocument LoadProject(string root)
+    public static PretBillItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/bill-items/bill-items.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/bill-items/bill-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         foreach (var icon in document.Icons)
             _ = PretPewterMachines.TexturePage(icon, Read(root, icon.PngPath));
         foreach (var view in document.DexViews)
@@ -74,25 +73,10 @@ public static class PretBillItems
         return document;
     }
 
-    public static EarlyShopCatalog LoadShopProject(string root)
-    {
-        var document = LoadProject(root);
-        var old = PretCeruleanItems.LoadShopProject(root);
-        var result = old with
-        {
-            Profile = BillItemRules.Profile,Items = old.Items.AddRange(document.Items.Take(3).Select(Definition))
-        };
-        EarlyShopInventoryRules.ValidateCatalog(result);
-        return result;
-    }
-
     private static EarlyShopItemDefinition Definition(PretBillSourceItem value)
     {
         var item = value.Metadata.Item;
-        return new(item.Id, item.SourceItemSymbol, item.SourceItemId, item.Name, value.Metadata.Description,
-            item.Price, item.Pocket, item.Importance, item.Type, item.FieldUseFunction, item.BattleUsage,
-            item.BattleUseFunction, item.HoldEffectParam, 0, 0, value.EffectBytes, EarlyShopUseSupport.NoFieldUse,
-            item.Source, value.EffectSource) { SourceMetadata = item };
+        return new(item, value.Metadata.Description, 0, 0, value.EffectBytes, EarlyShopUseSupport.NoFieldUse);
     }
 
     public static byte[] DexPng(PretBillDexView view, byte[] png)

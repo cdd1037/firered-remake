@@ -23,18 +23,11 @@ public static class MtMoonTrainerPartyFactory
     }.Select(x => new TrainerId("pret:TRAINER_" + x)).ToImmutableArray();
 
     public static TrainerPartyCreationResult Create(MtMoonTrainerCatalog trainers, PokemonCatalog pokemon,
-        TrainerId trainerId, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
+        TrainerId trainerId, RngState rng)
     {
-        towerRules |= fuchsiaRules;
-        rocketHideoutRules |= towerRules;
-        celadonGymRules |= rocketHideoutRules;
-        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != (towerRules && !fuchsiaRules) || (pokemon.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
-        rockTunnelRules |= celadonGymRules;
-        route11Rules |= rockTunnelRules;
-        vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
+
         ValidateCatalog(trainers);
         PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) throw new NotSupportedException("MtMoon requires its complete fifty-six-species catalog.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer)) throw new NotSupportedException("Unknown MtMoon trainer.");
         foreach (var member in trainer.Party)
             if (!pokemon.Species.TryGetValue(member.Species, out var species) || !MtMoonTrainerAi.ValidSpecies(species))

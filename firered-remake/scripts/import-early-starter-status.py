@@ -78,17 +78,11 @@ def read_sources(lock, raw):
 
 
 def semantics(lock, sources):
-    refs = []
 
     def require(path, symbol, needle):
         source = sources[path].decode()
         if source.count(needle) != 1:
             raise ValueError('Missing/ambiguous sleep icon source semantics: ' + symbol)
-        line = source.count('\n', 0, source.index(needle)) + 1
-        end = line + needle.count('\n')
-        entry = next(e for e in lock['files'] if e['path'] == path)
-        refs.append(dict(path=path, symbol=symbol, startLine=line, endLine=end,
-                          url=entry['sourceUrl'] + f'#L{line}-L{end}'))
 
     for path, symbol, needle in [
         ('src/battle_interface.c', 'player SLP tile', '#define B_INTERFACE_GFX_STATUS_SLP_BATTLER0     27'),
@@ -127,13 +121,12 @@ def semantics(lock, sources):
         ('tools/gbagfx/convert_png.c', '4bpp source index modulo', '% (1 << destBitDepth)'),
     ]:
         require(path, symbol, needle)
-    return refs
 
 
 def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Incomplete early-starter status source data')
-    refs = semantics(lock, sources)
+    semantics(lock, sources)
     bw, bh, _, _ = codec.indexed_png(sources[BATTLE + 'healthbox_elements.png'])
     if (bw, bh) != (320, 24):
         raise ValueError('Battle atlas dimensions differ')
@@ -159,7 +152,7 @@ def convert(lock, sources):
     add('party-sleep', bytes(party_indices[y * pw + 64 + x] for y in range(8) for x in range(32)),
         codec.colors(party_rgb), 32, 0, 0, 8, PARTY, PARTY)
     document = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-        rawRoot=RAW_ROOT,  inputs=lock['files'], assets=assets, sourceRefs=refs,
+        rawRoot=RAW_ROOT,  inputs=lock['files'], assets=assets,
         partyStatusTopLeft=[dict(x=x, y=y) for x, y in [(40, 48), (128, 23), (128, 47), (128, 71), (128, 95), (128, 119)]],
         limitations=['Only ordinary single-battle player/opponent and party sleep pixels; no status-rule implementation.',
             'Nearest filtering, binary index-zero alpha, RGB555 expansion (rgb5 << 3) | (rgb5 >> 2).',

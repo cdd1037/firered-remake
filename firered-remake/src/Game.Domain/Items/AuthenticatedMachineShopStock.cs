@@ -9,6 +9,6 @@ public abstract class AuthenticatedMachineShopStock
     private protected AuthenticatedMachineShopStock() { }
     public abstract string Id { get; }
     public abstract ImmutableArray<ItemId> Items { get; }
-    public abstract PewterMachineCatalog Machines { get; }
+    public abstract MachineCatalog Machines { get; }
     public abstract void Validate();
 }

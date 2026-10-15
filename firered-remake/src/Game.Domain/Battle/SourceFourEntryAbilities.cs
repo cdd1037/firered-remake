@@ -43,7 +43,7 @@ public static class SourceFourEntryAbilities
         if (overlay.RulesVersion != WildBattleRules.CalledMoveKernelRulesVersion) return false;
         // Ability acquisition changes battle registers only. Its identity must still be from
         // the authenticated source catalog; the permanent species/ability remain validated separately.
-        if (overlay.Ability is { } ability && ability != "ABILITY_NONE" && SourceMechanicsCatalog.For(catalog)?.Abilities.ContainsKey(ability) != true) return false;
+        if (overlay.Ability is { } ability && ability != "ABILITY_NONE" && catalog?.MechanicsData?.Abilities.ContainsKey(ability) != true) return false;
         if (overlay.Type1 is null && overlay.Type2 is null && overlay.CastformForm is null)
             return overlay.Ability is not null || body.Pokemon.AbilityId == "ABILITY_TRACE";
         if (overlay.CastformForm is null)

@@ -15,21 +15,18 @@ public static class SevenIslandDoubleTrainerEncounter
         new("pret:TRAINER_YOUNG_COUPLE_EVE_JON"), new("pret:TRAINER_COOL_COUPLE_LEX_NYA")];
     public static int SharedTrainerFlag(SevenIslandTrainerCatalog trainers, TrainerId trainer) =>
         TrainerIds.Contains(trainer) ? 0x500 + trainers.Trainers[trainer].SourceTrainerId : throw new ArgumentException("seven_island_double_trainer");
-    public static SourceTwinsEncounterResult Begin(SevenIslandTrainerCatalog trainers, SevenIslandOpponentPokemonCatalog opponents, string battleScript,
+    public static SourceTwinsEncounterResult Begin(SevenIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, string battleScript,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
-        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass, OwnedBattlePokemonCatalog? successorOwned = null)
+        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass)
     {
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
-        if (opponents is null || !ReferenceEquals(SevenIslandOpponentPokemonCatalog.For(opponents.Catalog), opponents))
+        if (opponents is null)
             return Fail("seven_island_double_catalog");
         try { SevenIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("seven_island_double_source"); }
         if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || !TrainerIds.Contains(battle.Trainer) || battle.Mode != 4)
             return Fail("seven_island_double_script");
-        OwnedBattlePokemonCatalog predecessorOwned = opponents.Owned;
-        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(predecessorOwned,successorOwned))
-            return Fail("source_trainer_successor_owned");
-        var owned = successorOwned ?? predecessorOwned;
+        var owned = opponents.Owned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
         if (!Enum.IsDefined(terrain)) return Fail("seven_island_double_terrain");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("seven_island_double_rng");
@@ -56,7 +53,7 @@ public static class SevenIslandDoubleTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? SevenIslandOpponentPokemonCatalog.Profile : successorOwned.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = opponents.RulesVersion, Campaign = owned, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Field = new() { Terrain = terrain }, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
@@ -82,7 +79,7 @@ public static class SevenIslandDoubleTrainerEncounter
     }
 
     public static SourceTwinsAiResult ChooseEnemyActions(SevenIslandTrainerCatalog trainers,
-        SevenIslandOpponentPokemonCatalog opponents, TrainerId trainer, SourceBattleFrame frame, long expectedRevision,
+        GameOpponentPokemonCatalog opponents, TrainerId trainer, SourceBattleFrame frame, long expectedRevision,
         string? knownPlayerAbility = null)
     {
         if (ValidateFrame(trainers, opponents, trainer, frame) is { } error) return new(frame, [], [], error);
@@ -92,18 +89,15 @@ public static class SevenIslandDoubleTrainerEncounter
             c.Selection,c.Scores,c.SimulatedDamagePercent,c.AbilityReads)).ToImmutableArray(),result.Trace,result.Fault);
     }
 
-    public static string? ValidateFrame(SevenIslandTrainerCatalog trainers, SevenIslandOpponentPokemonCatalog opponents, TrainerId trainer, SourceBattleFrame frame)
+    public static string? ValidateFrame(SevenIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, TrainerId trainer, SourceBattleFrame frame)
     {
-        if (opponents is null || !ReferenceEquals(SevenIslandOpponentPokemonCatalog.For(opponents.Catalog), opponents))
+        if (opponents is null)
             return "seven_island_double_catalog";
         try { SevenIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "seven_island_double_source"; }
         if (!TrainerIds.Contains(trainer) || frame is null ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "seven_island_double_frame";
-        if (frame.SourceCampaignRulesVersion != SevenIslandOpponentPokemonCatalog.Profile &&
-            (OwnedBattlePokemonCatalog.ForMechanics(opponents.Mechanics.Catalog, frame.SourceCampaignRulesVersion) is not { } current ||
-             frame.SourceCampaignRulesVersion != current.TrainerOpponentProfile ||
-             !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(opponents.Owned.SharedBattle, current))) return "source_double_successor_owned";
+        if (frame.Campaign is null || frame.SourceCampaignRulesVersion != opponents.RulesVersion) return "source_double_campaign_context";
         if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "seven_island_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = trainers.Trainers[trainer];

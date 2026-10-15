@@ -45,16 +45,15 @@ public sealed class PretCeladonApproachPokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretCeladonApproachPokemon(string directory, CeladonApproachPokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        CeladonApproachPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        CeladonApproachPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -77,14 +76,13 @@ public sealed class PretCeladonApproachPokemon
         });
     }
 
-
-    public static PretCeladonApproachPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
+    public static PretCeladonApproachPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null)
     {
         var project=Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
-        var inherited=PretRockTunnelPokemon.Load(project,pokedexMenu);
+        var inherited=PretRockTunnelPokemon.Load(canonical, project,pokedexMenu);
         var outputs=PretCeladonApproachSource.Outputs(project,"celadon-approach-pokemon");
-        var options=ContentJson.CreateOptions();
+        var options=canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc=ContentJson.ParseStrict<CeladonApproachPokemonDocument>(Utf8.GetString(outputs["catalog.json"]),options);
@@ -117,7 +115,7 @@ species[grimer]=species[grimer] with{Evolutions=[overlay.Evolution]};
         }
         var catalog=new PokemonCatalog(SourceCommit,species.ToImmutable(),moves.ToImmutable());
         Require(inherited.Catalog.Species.Count==93&&catalog.Species.Count==94&&catalog.Moves.Count==inherited.Catalog.Moves.Count&&catalog.Moves.Count==217&&names.Count==94,"Celadon composed Pokemon scope differs.");
-        PokemonFactory.ValidateCatalog(catalog);
+        PokemonFactory.ValidateDefinitions(catalog);
         var content=new CeladonApproachPokemonCatalogContent(catalog,names.ToImmutable(),moveNames.ToImmutable(),constants.ToImmutable(),encoded.ToImmutable(),inherited.DeferredEvolutions.Where(e=>e.Species!=grimer).ToImmutableArray());
         using var art = JsonDocument.Parse(outputs["battle-art.json"]);
         var sprites = ContentJson.ParseStrict<ImmutableArray<ForestPokemonSprite>>(art.RootElement.GetProperty("sprites").GetRawText(), ContentJson.CreateOptions());
@@ -129,8 +127,6 @@ species[grimer]=species[grimer] with{Evolutions=[overlay.Evolution]};
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "CeladonApproach Pokemon sprite identity/pixels differ.");
-            foreach (var spriteSource in sprite.SourceRefs)
-                Require(spriteSource.Kind == "pret" , "CeladonApproach sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<CeladonApproachPokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -171,12 +167,7 @@ species[grimer]=species[grimer] with{Evolutions=[overlay.Evolution]};
                 "CeladonApproach weight differs from the authenticated Dex source.");
         }
 
-        using var scope=JsonDocument.Parse(outputs["scope.json"]);
-        var sc=scope.RootElement;
-        Require(sc.GetProperty("trainers").GetArrayLength()==11&&sc.GetProperty("requiredTrainerMoves").GetArrayLength()==44&&
-            sc.GetProperty("naturalLevelLimit").ValueKind==JsonValueKind.Null&&!sc.GetProperty("effectsEnabledByThisCatalog").GetBoolean()&&
-            sc.GetProperty("newAbilities").GetArrayLength()==0&&sc.GetProperty("newMoveDefinitions").GetArrayLength()==0,"Celadon source scope differs.");
-        return new(Path.Combine(project,"content/generated/celadon-approach-pokemon"),content,sprites,doc.Inputs.Select(i => new PretWorldSourceFile(i.Path)).ToImmutableArray(),art.RootElement.Clone(),supplement,dex,outputs,sc.Clone());
+        return new(Path.Combine(project,"content/generated/celadon-approach-pokemon"),content,sprites,doc.Inputs.Select(i => new PretWorldSourceFile(i.Path)).ToImmutableArray(),art.RootElement.Clone(),supplement,dex,outputs);
     }
     public ForestPokemonSprite Sprite(SpeciesId species, string side, bool shiny = false) => Sprites.Single(s => s.SpeciesId == species.Value && s.Side == side && s.PaletteVariant == (shiny ? "shiny" : "normal"));
     public StorageArtIcon Icon(SpeciesId species, bool shiny = false) => Icons.Single(i => i.SpeciesId == species.Value);

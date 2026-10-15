@@ -15,15 +15,13 @@ public static class SourceGiftEggRules
     /// <summary>The caller must first pass the original script's capacity check and commit the
     /// returned Egg, RNG and allocator together. The only original admitted gift is Togepi.</summary>
     public static SourceEggCreationResult GiveEgg(CampaignPokemonContent content,
-        BreedingSpeciesMetadataCatalog metadata, SpeciesId species, long nextInstanceId,
+        PokemonBreedingData metadata, SpeciesId species, long nextInstanceId,
         SourceEggTrainer trainer, int metGame, RngState rng)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(metadata);
         ArgumentNullException.ThrowIfNull(trainer);
-        if (!ReferenceEquals(content.Catalog, metadata.Catalog) ||
-            !ReferenceEquals(BreedingSpeciesMetadataCatalog.For(content.Catalog), metadata) ||
-            OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(content.Catalog), GiftEggOwnedPokemonCatalog.For) is null)
+        if (!ReferenceEquals(content.Catalog.BreedingData, metadata) || !content.Catalog.Species.ContainsKey(Togepi))
             throw new ArgumentException("gift_egg_content_identity");
         if (PokemonStateValidator.ValidatePartyCollection(content, [], 1) is { } error) throw new ArgumentException(error);
         if (species != Togepi || !metadata.Species.TryGetValue(species, out var row) || row.Breeding.EggCycles != 10)
@@ -67,7 +65,7 @@ public static class SourceGiftEggRules
     internal static bool AdmitsSpecialOrigin(PokemonCatalog catalog, PartyPokemon pokemon) =>
         pokemon.IsEgg && pokemon.Pokemon.Species == Togepi &&
         pokemon.Pokemon.EggStatCalculationIvs == pokemon.Pokemon.Ivs &&
-        OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(catalog), GiftEggOwnedPokemonCatalog.For) is not null;
+        catalog.BreedingData?.Species.ContainsKey(Togepi) == true;
 
     private static void ValidateParty(CampaignPokemonContent content, ImmutableArray<PartyPokemon> party)
     {

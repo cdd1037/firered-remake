@@ -62,11 +62,10 @@ public static class LeagueRivalTrainerPartyFactory
     }
 
     public static TrainerPartyCreationResult Create(LeagueRivalTrainerCatalog trainers,
-        CinnabarOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
+        GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("league_rival_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("league_rival_trainer_catalog");
         var source = opponents.Mechanics;
         foreach (var member in trainer.Party)
         {

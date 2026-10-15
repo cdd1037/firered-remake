@@ -17,7 +17,7 @@ public sealed class PretVsSeekerPresentation
     private readonly ImmutableDictionary<string, byte[]> _textures;
     private readonly byte[] _itemIcon;
     public ImmutableArray<VsSeekerPresentationAsset> Assets { get; }
-    /// <summary>Exact EarlyShopItemDefinition JSON, including original QuestItemDefinition SourceMetadata.
+    /// <summary>Explicit inventory capability plus a shared business item reference.
     /// Generic item use stays NoFieldUse; the application key-item owner handles the original field callback.</summary>
     public JsonElement ItemDefinition { get; }
     /// <summary>Original script encoding, including literal \n / \p / \l and the terminal '$'.</summary>

@@ -24,30 +24,7 @@ public static class SsAnneItemRules
         new("PECHA_BERRY", 135, "PECHA BERRY", 20, 0, 0, "POCKET_BERRY_POUCH", "ITEM_TYPE_PARTY_MENU", "FieldUseFunc_Medicine", 1, "BattleUseFunc_Medicine", "HOLD_EFFECT_CURE_PSN", 0, 0, EarlyShopUseSupport.StatusCure, 0, 8, [0,0,0,16,0,0]),
         new("BERRY_POUCH", 365, "BERRY POUCH", 0, 1, 1, "POCKET_KEY_ITEMS", "ITEM_TYPE_BAG_MENU", "FieldUseFunc_BerryPouch", 3, "BattleUseFunc_BerryPouch", "HOLD_EFFECT_NONE", 0, 0, EarlyShopUseSupport.NoFieldUse, 0, 0, []),
     ];
-    public static void ValidateShop(EarlyShopCatalog catalog)
-    {
-        ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.Profile != Profile || catalog.Items.IsDefault || catalog.Items.Length != 30)
-            throw new NotSupportedException("Exact S.S. Anne item profile required.");
-        VermilionItemRules.ValidateShop(catalog with { Profile = VermilionItemRules.Profile, Items = catalog.Items.Take(21).ToImmutableArray() });
-        for (int n = 0; n < Additions.Length; n++)
-        {
-            var e = Additions[n]; var i = catalog.Items[n + 21]; var m = i?.SourceMetadata;
-            bool ordinary = e.Importance == 0;
-            if (i is null || m is null || i.Id != new ItemId("pret:ITEM_" + e.Symbol) || i.SourceItemSymbol != "ITEM_" + e.Symbol ||
-                i.SourceItemId != e.Id || i.Name != e.Name || i.Price != e.Price || i.Importance != e.Importance ||
-                i.Pocket != e.Pocket || i.Type != e.Type || i.FieldUseFunction != e.FieldUse || i.BattleUsage != e.BattleUsage ||
-                i.BattleUseFunction != e.BattleUse || i.HoldEffectParam != e.Param || i.HealHp != e.Heal || i.CureStatus != e.Cure ||
-                i.UseSupport != e.Use || i.EffectBytes.IsDefault || !i.EffectBytes.SequenceEqual(e.Effects) ||
-                string.IsNullOrWhiteSpace(i.Description) || i.Source is null || (e.Effects.Length > 0) != (i.EffectSource is not null) ||
-                m.Id != i.Id || m.SourceItemSymbol != i.SourceItemSymbol || m.SourceItemId != e.Id || m.Name != e.Name ||
-                m.Price != e.Price || m.Importance != e.Importance || m.Registrability != e.Registrability || m.Pocket != e.Pocket ||
-                m.Type != e.Type || m.HoldEffect != e.HoldEffect || m.HoldEffectParam != e.Param || m.FieldUseFunction != e.FieldUse ||
-                m.BattleUsage != e.BattleUsage || m.BattleUseFunction != e.BattleUse || m.SecondaryId != e.SecondaryId ||
-                m.CanToss != ordinary || m.CanGive != ordinary || m.CanSell != (e.Price > 0) || m.Source != i.Source)
-                throw new NotSupportedException("S.S. Anne source item differs: " + e.Symbol);
-        }
-    }
+
 
     public static bool IsBerry(ItemId item) => item.Value is "pret:ITEM_CHERI_BERRY" or "pret:ITEM_CHESTO_BERRY" or "pret:ITEM_PECHA_BERRY";
     public static EarlyShopItemDefinition? Definition(EarlyShopCatalog catalog, ItemId item)

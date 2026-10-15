@@ -15,9 +15,9 @@ public static class PretSilphTrainers
 {
     public const string Profile = "firered-silph-trainers-v1";
     public const int TrainerCount = 34,PartyMemberCount = 101;
-    public static SilphTrainerDocument LoadDocument(string root)
+    public static SilphTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
-        var source = SilphSourcePackage.Catalogs(root); var d = source.Parse<SilphTrainerDocument>("trainers.json");
+        var source = SilphSourcePackage.Catalogs(root); var d = source.Parse<SilphTrainerDocument>("trainers.json", canonical);
         SilphSourcePackage.Need(d.SchemaVersion == 1 && !d.CompleteSourceRoster &&
             d.Trainers.Length == TrainerCount && d.Battles.Length == TrainerCount && d.Trainers.Select(t => t.Id).Distinct().Count() == TrainerCount &&
             d.Trainers.Sum(t => t.Party.Length) == PartyMemberCount && d.ResolvedMoves.GetArrayLength() == TrainerCount && !d.Limitations.IsDefaultOrEmpty,
@@ -38,6 +38,6 @@ public static class PretSilphTrainers
         foreach (var m in d.Moves) { SilphSourcePackage.Need(!m.BattleEffectImplemented, "Metadata cannot enable battle effects."); }
         return d;
     }
-    public static SilphTrainerCatalogContent Load(string root)
-    { var d = LoadDocument(root); return new(d.SourceCommit, d.Profile, false, d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles.ToImmutableDictionary(b => b.Trainer)); }
+    public static SilphTrainerCatalogContent Load(PretCanonicalPokemonCatalog canonical, string root)
+    { var d = LoadDocument(canonical, root); return new(d.SourceCommit, d.Profile, false, d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles.ToImmutableDictionary(b => b.Trainer)); }
 }

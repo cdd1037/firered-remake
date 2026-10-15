@@ -41,15 +41,12 @@ public static class RareCandyRules
     /// once. Status and existing PP/PP Ups survive. Level 100 has no effect, even when fainted.
     /// Caller must establish field context, bag ownership and exclusive modal state.
     /// </summary>
-    public static RareCandyResult Apply(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static RareCandyResult Apply(CampaignPokemonContent content, GamePokemonCatalog ownership,
         PartyPokemon owned, string currentRegion)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(ownership);
-        // The current composition binds the exact owned proof once. Opponent catalogs and
-        // reconstructed copies cannot enter through matching species counts or profile text.
-        if (!ReferenceEquals(ownership.Catalog, content.Catalog) ||
-            !ReferenceEquals(OwnedBattlePokemonCatalog.For(content.Catalog), ownership))
+        if (!ReferenceEquals(content.Pokemon, ownership))
             throw new ArgumentException("rare_candy_owned_catalog_identity", nameof(ownership));
         LevelEvolutionRules.Validate(content, owned);
         if (!ValidRegion(currentRegion))

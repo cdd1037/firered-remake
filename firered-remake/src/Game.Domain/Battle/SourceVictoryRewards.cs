@@ -31,7 +31,7 @@ public static class SourceVictoryRewards
     public const string SourceCommit = PokemonFactory.SourceCommit;
 
     public static SourceRewardCalculation Calculate(SourceMechanicsCatalog mechanics, SourceBattleParty actualPlayerParty,
-        ImmutableArray<SourceRewardMetadata> metadata, SourceRewardDefeat defeat, SourceRewardContext context, OwnedBattlePokemonCatalog? ownership = null)
+        ImmutableArray<SourceRewardMetadata> metadata, SourceRewardDefeat defeat, SourceRewardContext context, GamePokemonCatalog? ownership = null)
     {
         ArgumentNullException.ThrowIfNull(mechanics);
         ArgumentNullException.ThrowIfNull(actualPlayerParty);
@@ -80,7 +80,7 @@ public static class SourceVictoryRewards
                 mechanics.Catalog.Species[view.Pokemon.Species], view.Pokemon.Level, aliveParticipants, aliveExpShareHolders,
                 new(participated, share, held == "ITEM_LUCKY_EGG", context.BattleKind == SourceRewardBattleKind.OrdinaryTrainer,
                     traded, evMultiplier, held == "ITEM_SOOTHE_BELL", facts.Ball == "ITEM_LUXURY_BALL",
-                    facts.MetLocation == context.CurrentRegion), mechanics: mechanics);
+                    facts.MetLocation == context.CurrentRegion));
             if (SourcePokemonValidator.ValidatePermanent(mechanics, result.Pokemon) is { } resultError)
                 throw new InvalidOperationException(resultError);
             results.Add(new(facts.Key, result));
@@ -89,7 +89,7 @@ public static class SourceVictoryRewards
         return new(token, results.ToImmutable());
     }
 
-    private static void ValidateMember(SourceMechanicsCatalog mechanics, WildBattleCalledPartyMember? member, SourceRewardMetadata facts, OwnedBattlePokemonCatalog? ownership)
+    private static void ValidateMember(SourceMechanicsCatalog mechanics, WildBattleCalledPartyMember? member, SourceRewardMetadata facts, GamePokemonCatalog? ownership)
     {
         if (!Enum.IsDefined(facts.PokerusHistory) || facts.PokerusHistory == SourceRewardPokerusHistory.Unknown)
             throw new NotSupportedException("source_reward_pokerus_history_required");

@@ -50,7 +50,7 @@ public static partial class SourceWildBattlePolicy
         RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain) =>
         StartCore(mechanics, null, playerParty, activeIndex, opponent, rng, new(), terrain, false);
 
-    public static SourceWildEntryResult StartOwned(OwnedBattlePokemonCatalog owned,
+    public static SourceWildEntryResult StartOwned(GamePokemonCatalog owned,
         ImmutableArray<WildBattleCombatant> playerParty, int activeIndex, WildBattleCombatant opponent,
         RngState rng, SourceWildEncounterContext? encounter = null,
         WildBattleTerrain terrain = WildBattleTerrain.Plain, bool oldRodFishing = false)
@@ -62,14 +62,13 @@ public static partial class SourceWildBattlePolicy
         return StartCore(owned.Mechanics, owned, playerParty, activeIndex, opponent, rng, encounter ?? new(), terrain, oldRodFishing);
     }
 
-    public static SourceWildEntryResult StartCelioRoamer(OwnedBattlePokemonCatalog owned, RoamerIndividual individual,
+    public static SourceWildEntryResult StartCelioRoamer(GamePokemonCatalog owned, RoamerIndividual individual,
         uint originalTrainerId, ImmutableArray<WildBattleCombatant> playerParty, int activeIndex, RngState rng,
         WildBattleTerrain terrain = WildBattleTerrain.Grass)
     {
         try
         {
-            var celio = CelioSourceOwnership(owned) ?? throw new ArgumentException("celio_roamer_owned_source");
-            var opponent = CelioRoamerBattleContract.Restore(celio, individual, originalTrainerId);
+            var opponent = CelioRoamerBattleContract.Restore(owned, individual, originalTrainerId);
             return StartOwned(owned, playerParty, activeIndex, opponent, rng,
                 new() { CelioRoamer = new(individual, originalTrainerId) }, terrain);
         }
@@ -77,7 +76,7 @@ public static partial class SourceWildBattlePolicy
         { return EntryFail("celio_roamer_individual"); }
     }
 
-    private static SourceWildEntryResult StartCore(SourceMechanicsCatalog mechanics, OwnedBattlePokemonCatalog? owned,
+    private static SourceWildEntryResult StartCore(SourceMechanicsCatalog mechanics, GamePokemonCatalog? owned,
         ImmutableArray<WildBattleCombatant> players, int active, WildBattleCombatant opponent, RngState rng,
         SourceWildEncounterContext encounter, WildBattleTerrain terrain, bool oldRodFishing)
     {
@@ -108,7 +107,7 @@ public static partial class SourceWildBattlePolicy
         WildBattleCalledPartyMember Member(WildBattleCombatant mon) => new(mon.Pokemon, mon.HeldItem, mon.Status, mon.IsEgg);
         var frame = new SourceBattleFrame {
             Layout = SourceBattleLayout.Singles, KoReplacementTiming = KoReplacementTiming.SourceImmediate,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.RulesVersion,
+            SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.RulesVersion, Campaign = owned,
             BattleKind = WildBattleCalledBattleKind.Wild, Rng = rng, SourceAbsentMask = 12, TurnStartAbsentMask = 12,
             Field = new() { Terrain = terrain }, WildEncounter = encounter,
             Parties = [new(BattleSide.Player, players.Select(Member).ToImmutableArray()), new(BattleSide.Opponent, [Member(opponent)])],
@@ -147,7 +146,7 @@ public static partial class SourceWildBattlePolicy
         { return EntryFail(e.Message); }
     }
 
-    private static string HeldItem(SourceWildEncounterContext context, PokemonInstance mon, int roll, OwnedBattlePokemonCatalog owned) => context switch {
+    private static string HeldItem(SourceWildEncounterContext context, PokemonInstance mon, int roll, GamePokemonCatalog owned) => context switch {
         { RockSmash: { } rock } => RockSmashWildBattleContract.HeldItem(rock, roll),
         { SourceTable: { } sourceTable } => SourceTableWildBattleContract.HeldItem(sourceTable, roll),
         { Seafoam: { } seafoam } => SeafoamPokemonFactory.HeldItem(mon.Species, roll),
@@ -163,8 +162,7 @@ public static partial class SourceWildBattlePolicy
         { SeviiRuby: not null } => SeviiRubyWildPokemonFactory.HeldItem(mon.Species, roll),
         { VictoryRoad: not null } => VictoryRoadWildPokemonFactory.HeldItem(mon.Species, roll),
         { FirstSeviiWild: true } => FirstSeviiWildPokemonFactory.HeldItem(mon.Species, roll),
-        _ when OwnedBattlePokemonCatalog.SourceRoot(owned)?.RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile or SevenIslandOwnedPokemonCatalog.Profile or EventIslandOwnedPokemonCatalog.Profile or PowerPlantOwnedPokemonCatalog.Profile &&
-            CinnabarWildPokemonFactory.WildSpecies.Contains(mon.Species) => CinnabarWildPokemonFactory.HeldItem(mon.Species, roll),
+        _ when CinnabarWildPokemonFactory.WildSpecies.Contains(mon.Species) => CinnabarWildPokemonFactory.HeldItem(mon.Species, roll),
         _ => mon.SourceSpeciesId switch {
             132 => roll >= 95 ? "ITEM_METAL_POWDER" : "ITEM_NONE",
             93 or 104 or 105 => PokemonTowerBattleContract.WildHeldItem(mon.SourceSpeciesId, roll),
@@ -192,22 +190,21 @@ public static partial class SourceWildBattlePolicy
             !SourceTableWildBattleContract.IsAdmittedProfile(frame.SourceCampaignRulesVersion)))
             return "source_wild_table_origin";
         if (context.RockSmash is { } rock && (!RockSmashWildBattleContract.Matches(rock, mon) ||
-            frame.SourceCampaignRulesVersion is not { } rockProfile || !OwnedBattlePokemonCatalog.ProfileAdmits(rockProfile, mon.Species)))
+            frame.Campaign?.Catalog.Species.ContainsKey(mon.Species) != true))
             return "source_wild_rock_smash_origin";
         if (context.Fishing is { } fishing && (!FishingBattleContract.Matches(fishing, mon) ||
-            frame.SourceCampaignRulesVersion is not { } fishingProfile || !OwnedBattlePokemonCatalog.ProfileAdmits(fishingProfile, mon.Species)))
+            frame.Campaign?.Catalog.Species.ContainsKey(mon.Species) != true))
             return "source_wild_fishing_origin";
-        if (context.Seafoam is {} seafoam && (!OwnedBattlePokemonCatalog.IsRegisteredProfileOrSuccessor(frame.SourceCampaignRulesVersion, SeafoamOwnedPokemonCatalog.Profile) ||
+        if (context.Seafoam is {} seafoam && (frame.Campaign is null ||
             !SeafoamWildBattleContract.IsRuntimeKind(seafoam.Kind) || !SeafoamWildBattleContract.Matches(seafoam,mon)))
             return "source_wild_seafoam_origin";
-        var sourceProfile = OwnedBattlePokemonCatalog.InheritedWildProfile(frame.SourceCampaignRulesVersion);
-        if (context.CelioRoamer is { } roamer && (sourceProfile is not (CelioOwnedPokemonCatalog.Profile or CeruleanCaveOwnedPokemonCatalog.Profile or SevenIslandOwnedPokemonCatalog.Profile or EventIslandOwnedPokemonCatalog.Profile or PowerPlantOwnedPokemonCatalog.Profile) ||
+        if (context.CelioRoamer is { } roamer && (frame.Campaign is null ||
             !CelioRoamerBattleContract.MatchesIdentity(roamer, mon) || !CelioRoamerBattleContract.MatchesOutcome(roamer, frame.Outcome)))
             return "source_wild_roamer_origin";
-        if (context.PowerPlant is { } plant && (sourceProfile != PowerPlantOwnedPokemonCatalog.Profile || !PowerPlantWildBattleContract.Matches(plant, mon)) ||
-            context.EventIsland is { } eventOrigin && (sourceProfile is not (EventIslandOwnedPokemonCatalog.Profile or PowerPlantOwnedPokemonCatalog.Profile) || !EventIslandWildBattleContract.Matches(eventOrigin, mon)) ||
-            context.SevenIsland is { } seven && (sourceProfile is not (SevenIslandOwnedPokemonCatalog.Profile or EventIslandOwnedPokemonCatalog.Profile or PowerPlantOwnedPokemonCatalog.Profile) || !SevenIslandWildBattleContract.Matches(seven, mon)) ||
-            context.CeruleanCave is { } cave && (sourceProfile is not (CeruleanCaveOwnedPokemonCatalog.Profile or SevenIslandOwnedPokemonCatalog.Profile or EventIslandOwnedPokemonCatalog.Profile or PowerPlantOwnedPokemonCatalog.Profile) || !CeruleanCaveWildBattleContract.Matches(cave, mon)) ||
+        if (context.PowerPlant is { } plant && (frame.Campaign is null || !PowerPlantWildBattleContract.Matches(plant, mon)) ||
+            context.EventIsland is { } eventOrigin && (frame.Campaign is null || !EventIslandWildBattleContract.Matches(eventOrigin, mon)) ||
+            context.SevenIsland is { } seven && (frame.Campaign is null || !SevenIslandWildBattleContract.Matches(seven, mon)) ||
+            context.CeruleanCave is { } cave && (frame.Campaign is null || !CeruleanCaveWildBattleContract.Matches(cave, mon)) ||
             context.VictoryRoad is { } victory && !VictoryRoadWildBattleContract.Matches(victory, mon) ||
             context.SeviiRuby is { } ruby && (ruby.Kind == SeviiRubyEncounterKind.RockSmash || !SeviiRubyWildBattleContract.Matches(ruby, mon)) ||
             context.FourIsland is { } four && !FourIslandWildBattleContract.Matches(four, mon) ||

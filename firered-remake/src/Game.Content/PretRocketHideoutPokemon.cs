@@ -44,7 +44,6 @@ public sealed class PretRocketHideoutPokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public JsonElement OriginalSpecies { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
@@ -52,10 +51,10 @@ public sealed class PretRocketHideoutPokemon
 
     private PretRocketHideoutPokemon(string directory, RocketHideoutPokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        RocketHideoutPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        RocketHideoutPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
         using var original = JsonDocument.Parse(outputs["source-species.json"]); OriginalSpecies = original.RootElement.Clone();
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -78,15 +77,14 @@ public sealed class PretRocketHideoutPokemon
         });
     }
 
-
-    public static PretRocketHideoutPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null, string? dependencyProjectRoot = null)
+    public static PretRocketHideoutPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null, string? dependencyProjectRoot = null)
     {
         var project=Path.GetFullPath(projectRoot);
         var dependency = Path.GetFullPath(dependencyProjectRoot ?? project);
         pokedexMenu?.ForProjectRoot(dependency);
-        var inherited=PretCeladonGymPokemon.Load(dependency,pokedexMenu);
+        var inherited=PretCeladonGymPokemon.Load(canonical, dependency,pokedexMenu);
         var outputs=PretCeladonApproachSource.Outputs(project,"rocket-hideout-pokemon");
-        var options=ContentJson.CreateOptions();
+        var options=canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc=ContentJson.ParseStrict<RocketHideoutPokemonDocument>(Utf8.GetString(outputs["catalog.json"]),options);
@@ -116,7 +114,7 @@ public sealed class PretRocketHideoutPokemon
         }
         var catalog=new PokemonCatalog(SourceCommit,species.ToImmutable(),moves.ToImmutable());
         Require(inherited.Catalog.Species.Count==98&&catalog.Species.Count==99&&catalog.Moves.Count==inherited.Catalog.Moves.Count+8&&catalog.Moves.Count==230&&names.Count==99,"Rocket Hideout composed Pokemon scope differs.");
-        PokemonFactory.ValidateCatalog(catalog);
+        PokemonFactory.ValidateDefinitions(catalog);
         var content=new RocketHideoutPokemonCatalogContent(catalog,names.ToImmutable(),moveNames.ToImmutable(),constants.ToImmutable(),encoded.ToImmutable(),inherited.DeferredEvolutions);
         using var art = JsonDocument.Parse(outputs["battle-art.json"]);
         var sprites = ContentJson.ParseStrict<ImmutableArray<ForestPokemonSprite>>(art.RootElement.GetProperty("sprites").GetRawText(), ContentJson.CreateOptions());
@@ -128,8 +126,6 @@ public sealed class PretRocketHideoutPokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "RocketHideout Pokemon sprite identity/pixels differ.");
-            foreach (var spriteSource in sprite.SourceRefs)
-                Require(spriteSource.Kind == "pret" , "RocketHideout sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<RocketHideoutPokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(dependency);
@@ -144,8 +140,7 @@ public sealed class PretRocketHideoutPokemon
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
-                icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                (outputs[icon.TexturePath]).Length > 0, "RocketHideout icon identity/pixels differ.");
+                icon.PaletteRgb555.Length == 16 && (outputs[icon.TexturePath]).Length > 0, "RocketHideout icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
@@ -170,12 +165,7 @@ public sealed class PretRocketHideoutPokemon
                 "RocketHideout weight differs from the authenticated Dex source.");
         }
 
-        using var scope=JsonDocument.Parse(outputs["scope.json"]);
-        var sc=scope.RootElement;
-        Require(sc.GetProperty("trainers").GetArrayLength()==13&&sc.GetProperty("requiredTrainerMoves").GetArrayLength()==38&&
-            sc.GetProperty("naturalLevelLimit").ValueKind==JsonValueKind.Null&&!sc.GetProperty("effectsEnabledByThisCatalog").GetBoolean()&&
-            sc.GetProperty("newAbilities").GetArrayLength()==1&&sc.GetProperty("newMoveDefinitions").GetArrayLength()==8,"Celadon source scope differs.");
-        return new(Path.Combine(project,"content/generated/rocket-hideout-pokemon"),content,sprites,doc.Inputs.Select(i => new PretWorldSourceFile(i.Path)).ToImmutableArray(),art.RootElement.Clone(),supplement,dex,outputs,sc.Clone());
+        return new(Path.Combine(project,"content/generated/rocket-hideout-pokemon"),content,sprites,doc.Inputs.Select(i => new PretWorldSourceFile(i.Path)).ToImmutableArray(),art.RootElement.Clone(),supplement,dex,outputs);
     }
     public ForestPokemonSprite Sprite(SpeciesId species, string side, bool shiny = false) => Sprites.Single(s => s.SpeciesId == species.Value && s.Side == side && s.PaletteVariant == (shiny ? "shiny" : "normal"));
     public StorageArtIcon Icon(SpeciesId species, bool shiny = false) => Icons.Single(i => i.SpeciesId == species.Value);

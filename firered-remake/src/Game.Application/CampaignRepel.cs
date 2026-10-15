@@ -13,9 +13,6 @@ public sealed record CampaignRepel(CampaignRepelPhase Phase, string WaitId)
 
 public sealed partial class CampaignSession
 {
-    private CinnabarShopCatalog CinnabarShopProof => FirstSeviiShopProof.Predecessor;
-    private SaffronGymShopCatalog SaffronGymShopProof => CinnabarShopProof.Predecessor;
-    private InventoryState RepelInventory(InventoryState inventory) => CinnabarShopProof.InventoryForPredecessor(FirstSeviiPredecessorInventory(ShopInventoryView(inventory)));
     public const string RepelCounterVariable = "VAR_REPEL_STEP_COUNT";
     public ushort RepelSteps => checked((ushort)State.Script.Variables.GetValueOrDefault(RepelCounterVariable));
 
@@ -23,7 +20,7 @@ public sealed partial class CampaignSession
     {
         if (state.Repel is not null) return "save_event_active";
         int steps = state.Script.Variables.GetValueOrDefault(RepelCounterVariable);
-        return steps < 0 || steps > SaffronGymRepelRules.MaxDuration ? "save_repel_counter_invalid" : null;
+        return steps < 0 || steps > RepelRules.MaxDuration ? "save_repel_counter_invalid" : null;
     }
 
     private Decision<CampaignState> UseFieldRepel(CampaignState state, CampaignCommand command)
@@ -32,12 +29,12 @@ public sealed partial class CampaignSession
         if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
             !(command.Text == EarlyRepelRules.Item.Value ||
                 command.Text == LavenderItemRules.SuperRepelId.Value ||
-                command.Text == SaffronGymShopCatalog.MaxRepelId.Value))
+                command.Text == ItemIds.MaxRepelId.Value))
             return No("field_repel_context_invalid");
         var item = new ItemId(command.Text!);
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return No(error);
-        var use = SaffronGymRepelRules.Use(SaffronGymShopProof, RepelInventory(state.Inventory!),
+        var use = RepelRules.Use(ShopCatalog, _content.Inventory, state.Inventory!,
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field, item);
         if (!use.Succeeded)
             return use.Error == "repel_effects_lingered"
@@ -65,13 +62,13 @@ public sealed partial class CampaignSession
         if (command.Kind != "repel_presented" || command.Text != repel.WaitId) return No("repel_sound_pending");
         if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu)
             throw new InvalidDataException("repel_use_wait_context_invalid");
-        var use = SaffronGymRepelRules.Use(SaffronGymShopProof, RepelInventory(state.Inventory!),
+        var use = RepelRules.Use(ShopCatalog, _content.Inventory, state.Inventory!,
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field, repel.Item);
         if (!use.Succeeded) throw new InvalidDataException("repel_use_wait_changed: " + use.Error);
         return new(CommandStatus.Accepted, state with
         {
             Repel = null,
-            Inventory = MergeFirstSeviiPredecessorInventory(state.Inventory!, use.Inventory),
+            Inventory = use.Inventory,
             Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, use.Steps) },
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", ShopCatalog.Items.Single(i => i.Id == repel.Item).Name),
             ItemMenu = menu with { View = "message", MessageSymbol = "gText_PlayerUsedVar2", ReturnView = "bag" },
@@ -82,7 +79,7 @@ public sealed partial class CampaignSession
     private CampaignState ApplyRepelWalkingStep(CampaignState state)
     {
         ushort steps = checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable));
-        var step = SaffronGymRepelRules.AdvanceStep(SaffronGymShopProof, steps, EncounterCheckTrigger.WalkingStepCompleted);
+        var step = RepelRules.AdvanceStep(steps, EncounterCheckTrigger.WalkingStepCompleted);
         if (step.Steps == steps) return state; // Keep absent zero absent, including upgraded saves.
         state = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, step.Steps) } };
         return step.WoreOff ? state with

@@ -51,7 +51,7 @@ public sealed class PretPokemonStorageSource
     public static PretPokemonStorageSource Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        
+
         var generatedDirectory = Path.Combine(project, "content/generated/pokemon-storage");
         byte[] Read(string root,string path)
         {

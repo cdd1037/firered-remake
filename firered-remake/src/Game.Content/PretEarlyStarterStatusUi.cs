@@ -6,13 +6,11 @@ namespace Game.Content;
 
 public sealed record EarlyStarterStatusUiPoint(int X, int Y);
 public sealed record EarlyStarterStatusUiInput(string Path, string SourceUrl);
-public sealed record EarlyStarterStatusUiSourceRef(string Path, string Symbol, int StartLine, int EndLine, string Url);
 public sealed record EarlyStarterStatusUiAsset(string Id, string TexturePath, int Width, int Height, int X, int Y, string Context,
     string Status, int SourceTile, string SourceImagePath, string SourcePalettePath,
     ImmutableArray<int> PaletteRgb555, int TransparentIndex);
 public sealed record EarlyStarterStatusUiDocument(int SchemaVersion, string Profile, string Repository, string SourceCommit, string RawRoot,
     ImmutableArray<EarlyStarterStatusUiInput> Inputs, ImmutableArray<EarlyStarterStatusUiAsset> Assets,
-    ImmutableArray<EarlyStarterStatusUiSourceRef> SourceRefs,
     ImmutableArray<EarlyStarterStatusUiPoint> PartyStatusTopLeft, ImmutableArray<string> Limitations);
 
 /// <summary>Loads status textures and their display layout.</summary>
@@ -68,7 +66,6 @@ public static class PretEarlyStarterStatusUi
 
     /// <summary>Generated PNG bytes for the rendering layer.</summary>
 
-
     private static void ValidateAsset(EarlyStarterStatusUiAsset asset)
     {
         Require(asset is not null && Expected.TryGetValue(asset.Id, out var e)
@@ -79,8 +76,6 @@ public static class PretEarlyStarterStatusUi
             && asset.Status == "sleep" && asset.Context == asset.Id[..^6],
             "Early-starter status asset layout is invalid.");
     }
-
-
 
     private static byte[] ReadPinned(string root,string path)
     {

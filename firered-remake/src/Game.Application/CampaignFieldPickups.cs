@@ -53,7 +53,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("field_pickup_tm_query_context_invalid");
             // None of the three authenticated early pickup items is a TM/HM. The source
             // helper returns FALSE and leaves the item-name buffer untouched in this case.
-            var tm=_content.MtMoonEnabled?PewterMachineRules.Definition(_content.PewterMachines!,definition.Item):null;
+            var tm=_content.MtMoonEnabled?MachineRules.Definition(_content.PewterMachines!,definition.Item):null;
             next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",tm is null?0:1)},TextBuffers=tm is null?state.TextBuffers:state.TextBuffers.SetItem("STR_VAR_1",_content.BattleContent!.MoveNames[tm.Move.Value])};return true;
         }
         if(effect.Opcode=="special"&&args[0]=="SetHiddenItemFlag")
@@ -83,16 +83,16 @@ public sealed partial class CampaignSession
         if(_content.MtMoonEnabled&&definition.Pocket=="POCKET_TM_CASE")
         {
             var machines=_content.PewterMachines!;
-            var transaction=effect.Opcode=="additem"?PewterMachineRules.AddMachine(machines,inventory,definition.Item,quantity):new InventoryTransactionResult(inventory,PewterMachineRules.CanAddMachine(machines,inventory,definition.Item,quantity),null);
+            var transaction=effect.Opcode=="additem"?MachineRules.AddMachine(machines,inventory,definition.Item,quantity):new InventoryTransactionResult(inventory,MachineRules.CanAddMachine(machines,inventory,definition.Item,quantity),null);
             if(!transaction.Succeeded&&effect.Opcode=="additem")throw new InvalidDataException(transaction.Error??"field_pickup_machine_add_failed");
             bool committed=transaction.Succeeded&&effect.Opcode=="additem";
             next=state with{Inventory=transaction.State,FieldPickup=committed?context with{InventoryAdded=true}:context,Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",transaction.Succeeded?1:0)}};return true;
         }
-        var view=ShopInventoryView(inventory);
+        var view=inventory;
         var result=effect.Opcode=="additem"?EarlyInventoryAddRules.Add(ShopCatalog,view,definition.Item,quantity):EarlyInventoryAddRules.CheckSpace(ShopCatalog,view,definition.Item,quantity);
         if(!result.Succeeded&&result.Error is not("inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full"))throw new InvalidDataException(result.Error);
         bool added=result.Succeeded&&effect.Opcode=="additem";
-        next=state with{Inventory=added?MergeShopInventory(inventory,result.State):inventory,
+        next=state with{Inventory=added?result.State:inventory,
             FieldPickup=added?context with{InventoryAdded=true}:context,
             Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",result.Succeeded?1:0),Flags=added&&definition.Pocket=="POCKET_BERRY_POUCH"?state.Script.Flags.SetItem("FLAG_SYS_GOT_BERRY_POUCH",true):state.Script.Flags}};return true;
     }

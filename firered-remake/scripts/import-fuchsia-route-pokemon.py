@@ -63,23 +63,23 @@ def generate(root):
   return moves
  def move(sp):
   f,r=field('src/data/battle_moves.h',sp)
-  return dict(id=ident(sp),sourceMoveId=number('include/constants/moves.h',sp),pp=int(f['pp']),power=int(f['power']),type=f['type'],accuracy=int(f['accuracy']),effect=f['effect'],secondaryEffectChance=int(f['secondaryEffectChance']),target=f['target'],priority=int(f['priority']),flags=[] if f['flags']=='0' else f['flags'].split(' | '),battleEffectImplemented=False,source=r)
+  return ident(sp)
  species=[];required=set();names=[];machines=[];held=[]
  for short in NEW_SPECIES:
   sp='SPECIES_'+short;f,sr=field('src/data/pokemon/species_info.h',sp);lr,lref=learn(sp);required.update(x['move']['value'][5:] for x in lr)
   ep='src/data/pokemon/evolution.h';evol=[]
   if short=='DODUO':
-   em=one(ep,r'^    \[SPECIES_DODUO\][ \t]*= \{\{EVO_LEVEL, 31, SPECIES_DODRIO\}\},$');evol=[dict(method='level',level=31,target=ident('SPECIES_DODRIO'),source=ref(ep,sp,em))]
+   em=one(ep,r'^    \[SPECIES_DODUO\][ \t]*= \{\{EVO_LEVEL, 31, SPECIES_DODRIO\}\},$');evol=[dict(method='level', level=31, target=ident('SPECIES_DODRIO'))]
   else:assert not re.search(r'^    \['+sp+r'\]',text[ep],re.M)
   keys=('hp','attack','defense','speed','specialAttack','specialDefense');suffix=('HP','Attack','Defense','Speed','SpAttack','SpDefense');types=re.findall(r'TYPE_\w+',f['types']);abilities=re.findall(r'ABILITY_\w+',f['abilities'])
   assert f['growthRate']=='GROWTH_MEDIUM_FAST' and f['genderRatio'] in ('PERCENT_FEMALE(50)','MON_GENDERLESS')
-  species.append(dict(id=ident(sp),sourceSpeciesId=number('include/constants/species.h',sp),baseStats={k:int(f['base'+s]) for k,s in zip(keys,suffix)},type1=types[0],type2=types[1],catchRate=int(f['catchRate']),experienceYield=int(f['expYield']),evYield={k:int(f['evYield_'+s]) for k,s in zip(keys,suffix)},growthRate='mediumFast',genderRatio=255 if f['genderRatio']=='MON_GENDERLESS' else 127,ability1=abilities[0],ability2=abilities[1],friendship=int(f['friendship']),levelUpMoves=lr,evolutions=evol,source=sr,learnsetSource=lref))
-  names.append(name('src/data/text/species_names.h',sp));held.append(dict(species=ident(sp),common=f['itemCommon'],rare=f['itemRare'],source=sr))
-  p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+sp+r'\]\s*= TMHM_LEARNSET\((.*?)\),');machines.append(dict(species=ident(sp),machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1]),source=ref(p,sp,m)))
+  species.append(dict(id=ident(sp), sourceSpeciesId=number('include/constants/species.h', sp), baseStats={k: int(f['base' + s]) for k, s in zip(keys, suffix)}, type1=types[0], type2=types[1], catchRate=int(f['catchRate']), experienceYield=int(f['expYield']), evYield={k: int(f['evYield_' + s]) for k, s in zip(keys, suffix)}, growthRate='mediumFast', genderRatio=255 if f['genderRatio'] == 'MON_GENDERLESS' else 127, ability1=abilities[0], ability2=abilities[1], friendship=int(f['friendship']), levelUpMoves=lr, evolutions=evol))
+  names.append(name('src/data/text/species_names.h',sp));held.append(dict(species=ident(sp),common=f['itemCommon'],rare=f['itemRare']))
+  p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+sp+r'\]\s*= TMHM_LEARNSET\((.*?)\),');machines.append(dict(species=ident(sp),machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1])))
  move_names=[name('src/data/text/move_names.h',x) for x in NEW_MOVES];encoding=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'))
  encoded=[dict(symbol=n['source']['symbol'],name=n['name'],bytes=encode(n['name']+'$'),source=n['source'],encodingSource=encoding) for n in names+move_names]
  symbols=[('include/constants/species.h','SPECIES_'+s) for s in NEW_SPECIES]+[('include/constants/moves.h',s) for s in sorted(required)]+[('include/constants/abilities.h',s) for s in ('ABILITY_NONE','ABILITY_KEEN_EYE','ABILITY_INNER_FOCUS','ABILITY_RUN_AWAY','ABILITY_EARLY_BIRD','ABILITY_LIMBER')]+[('include/constants/items.h',s) for s in ('ITEM_NONE','ITEM_STICK','ITEM_METAL_POWDER')]+[('include/constants/hold_effects.h','HOLD_EFFECT_METAL_POWDER')]
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],species=species,moves=[move(s) for s in NEW_MOVES],speciesNames=names,moveNames=move_names,constants=[constant(*x) for x in symbols],encodedNames=encoded,requiredMoves=[ident(s) for s in sorted(required)],naturalLevelLimit=None,heldItems=held,machines=machines,limitations=['Metadata does not enable any battle effect, wild table, trainer entry, machine or held-item service.','All four complete source learnsets retained with Doduo level31 evolution; no artificial level cap.','Full initial route roster preserves37 singles and3 original doubles; doubles are not converted into singles.','Koga/FuchsiaGym, Good/Super Rod, Surf, rematches and additional evolution families remain separate increments.'])
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species],moves=[move(s) for s in NEW_MOVES],speciesNames=names,moveNames=move_names,constants=[constant(*x) for x in symbols],encodedNames=encoded,requiredMoves=[ident(s) for s in sorted(required)],naturalLevelLimit=None,heldItems=held,machines=machines,limitations=['Metadata does not enable any battle effect, wild table, trainer entry, machine or held-item service.','All four complete source learnsets retained with Doduo level31 evolution; no artificial level cap.','Full initial route roster preserves37 singles and3 original doubles; doubles are not converted into singles.','Koga/FuchsiaGym, Good/Super Rod, Surf, rematches and additional evolution families remain separate increments.'])
  trainers=[];battles=[];resolved=[];actors=[]
  def expr(v):
   result=0

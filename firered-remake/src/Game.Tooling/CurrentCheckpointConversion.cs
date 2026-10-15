@@ -37,7 +37,18 @@ internal static class CurrentCheckpointConversion
             payload.Add("Coins", 0);
             admitted = SaveCodec.Encode(payload, checkedSource.Generation, sourceRules, sourceContent);
         }
+        var removedProvenance = new List<string>();
+        if (sourceContent == "firered-current-content-v3")
+        {
+            // Verify the original envelope before the one declared schema transformation.
+            var checkedSource = SaveCodec.Decode<JsonElement>(admitted, sourceRules, sourceContent, input);
+            var payload = JsonNode.Parse(checkedSource.State.GetRawText())!;
+            RemoveTradeFingerprint(payload, "Payload", removedProvenance);
+            admitted = SaveCodec.Encode(payload, checkedSource.Generation, sourceRules, sourceContent);
+        }
         var catalog = PretCampaignCatalog.LoadCurrent(root);
+        if (sourceContent == catalog.ContentVersion && sourceRules == CurrentGameProfile.RulesVersion)
+            throw new InvalidDataException("checkpoint_already_current");
         var validator = CampaignSession.CreateCurrent(catalog);
         var prior = SaveCodec.Decode<CampaignState>(admitted, sourceRules,
             sourceContent, input, validator.ValidatePlayerSave);
@@ -56,7 +67,8 @@ internal static class CurrentCheckpointConversion
         // Every original value must survive; no old history, party or inventory may disappear.
         using var targetDocument = JsonDocument.Parse(converted);
         var addedDefaults = new List<string>();
-        RequirePreserved(sourceDocument.RootElement.GetProperty("Payload"),
+        using var admittedDocument = JsonDocument.Parse(admitted);
+        RequirePreserved(admittedDocument.RootElement.GetProperty("Payload"),
             targetDocument.RootElement.GetProperty("Payload"), "Payload", addedDefaults);
         NewCheckpointFile.Publish(output, converted);
         Console.WriteLine(JsonSerializer.Serialize(new
@@ -67,10 +79,33 @@ internal static class CurrentCheckpointConversion
             sourceRules, targetRules = CurrentGameProfile.RulesVersion,
             sourceContent, content = catalog.ContentVersion, sourcePreserved = true,
             originalPayloadHash = sourceDocument.RootElement.GetProperty("PayloadHash").GetString(),
-            originalGameplayValuesPreserved = true, addedNeutralDefaults = addedDefaults,
+            originalGameplayValuesPreserved = true, removedProvenance, addedNeutralDefaults = addedDefaults,
             scope = "Explicit offline checkpoint conversion; no automatic old-save acceptance or gameplay advancement."
         }, new JsonSerializerOptions { WriteIndented = true }));
         return 0;
+    }
+
+    private static void RemoveTradeFingerprint(JsonNode node, string path, List<string> removed)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach (var pair in obj.ToArray())
+            {
+                if (pair.Key == "NpcTradeOrigin" && pair.Value is JsonObject origin && origin.ContainsKey("CatalogFingerprint"))
+                {
+                    if (origin.Count != 3 || !origin.ContainsKey("TradeId") || !origin.ContainsKey("ReceivedLevel") ||
+                        origin["CatalogFingerprint"] is not JsonValue fingerprint ||
+                        !fingerprint.TryGetValue<string>(out var value) || value.Length != 64 || !value.All(Uri.IsHexDigit))
+                        throw new InvalidDataException("checkpoint_trade_origin_shape: " + path);
+                    origin.Remove("CatalogFingerprint");
+                    removed.Add(path + ".NpcTradeOrigin.CatalogFingerprint");
+                }
+                if (pair.Value is not null) RemoveTradeFingerprint(pair.Value, path + "." + pair.Key, removed);
+            }
+        }
+        else if (node is JsonArray array)
+            for (int index = 0; index < array.Count; index++)
+                if (array[index] is {} item) RemoveTradeFingerprint(item, path + "[" + index + "]", removed);
     }
 
     private static void RequirePreserved(JsonElement before, JsonElement after, string path, List<string> additions)

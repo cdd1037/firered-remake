@@ -2,6 +2,7 @@
 """Import only Lemonade, three rooftop reward machines and their service facts.
 REFERENCE DEPENDENCY OUTPUT [--check]. Reads shared inputs without copying them.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -16,7 +17,7 @@ SHARED = {'src/data/items.json': 'content/raw/pokefirered/037335f4/src/data/item
 
 def need(value, message):
     if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
+def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False, default=item_json) + '\n').encode()
 
 def generate(reference, dependency):
     inputs, raw, cache = {}, {}, {}
@@ -43,13 +44,7 @@ def generate(reference, dependency):
     def metadata(symbol):
         item = next(i for i in source_items if i['itemId'] == symbol)
         block = one(items_path, r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}')
-        row = dict(id=dict(value='pret:'+symbol), sourceItemSymbol=symbol,
-            sourceItemId=number('include/constants/items.h', symbol), name=item['english'], price=item['price'],
-            importance=item['importance'], registrability=item['registrability'], pocket=item['pocket'], type=str(item['type']),
-            holdEffect=item['holdEffect'], holdEffectParam=item['holdEffectParam'], fieldUseFunction=item['fieldUseFunc'],
-            battleUsage=item['battleUsage'], battleUseFunction=item['battleUseFunc'], secondaryId=item['secondaryId'],
-            canToss=item['importance'] == 0, canSell=item['price'] != 0, canGive=item['importance'] == 0,
-            source=source(items_path, symbol, block))
+        row = shared_item(symbol)
         return item, row
     drinks = []
     for symbol, name, price, hp in [('ITEM_FRESH_WATER','FreshWater',200,50), ('ITEM_SODA_POP','SodaPop',300,60), ('ITEM_LEMONADE','Lemonade',350,80)]:
@@ -59,15 +54,11 @@ def generate(reference, dependency):
         need(effect[1] == f'    [4] = ITEM4_HEAL_HP,\n    [6] = {hp}, // Amount of HP to recover\n', 'Drink healing bytes')
         flag = number('include/constants/item_effects.h', 'ITEM4_HEAL_HP')
         need(flag == 4 and item['price'] == price and item['holdEffectParam'] == hp and item['fieldUseFunc'] == 'FieldUseFunc_Medicine' and item['battleUsage'] == 1 and item['battleUseFunc'] == 'BattleUseFunc_Medicine', 'Drink semantics')
-        addition = {key:meta[key] for key in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
-        addition.update(description=item['description_english'].replace('\\n','\n'), healHp=hp, cureStatus=0,
-            effectBytes=[0,0,0,0,flag,0,hp], useSupport=1, effectSource=source(ep,effect_symbol,effect), sourceMetadata=meta)
+        addition = dict(item=meta)
+        addition.update(description=item['description_english'].replace('\\n','\n'), healHp=hp, cureStatus=0, effectBytes=[0,0,0,0,flag,0,hp], useSupport=1)
         drinks.append(addition)
-    dependency_paths = ['content/generated/first-sevii-rules/items.json',
-        'scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json']
+    dependency_paths = ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json']
     dependencies = [dict(path=p) for p in dependency_paths]
-    existing_drinks = json.loads((dependency/dependency_paths[0]).read_bytes())['additions']
-    for drink in drinks[:2]: need(drink == next(d for d in existing_drinks if d['id'] == drink['id']), 'Reuse exact existing drink')
     machines = machine_definitions(dependency, BASE + 'machines.json', 'additions')
     need(len(machines) == 3 and all(len(m['species']) == 170 for m in machines), 'Current admitted machines and species')
     icon_aliases = []
@@ -126,8 +117,8 @@ def generate(reference, dependency):
     facts=dict(sourceCommit=COMMIT,  mapId='map.celadon-city-department-store-roof',
         roofSources=[dict(path=roof+p) for p in ['scripts.inc','text.inc','map.json']],
         objects=map_data['object_events'],backgroundEvents=map_data['bg_events'],menus=menus,flags=flags,
-        drinks=[dict(item=d['id']['value'],sourceItemId=d['sourceItemId'],price=d['price'],healHp=d['healHp'],effectBytes=d['effectBytes']) for d in drinks],
-        rewardMappings=[dict(drink=d['id']['value'],reward=m['item'],flag=f['symbol']) for d,m,f in zip(drinks,machines,flags)],
+        drinks=[dict(item=d['item']['id']['value'],sourceItemId=d['item']['sourceItemId'],price=d['item']['price'],healHp=d['healHp'],effectBytes=d['effectBytes']) for d in drinks],
+        rewardMappings=[dict(drink=d['item']['id']['value'],reward=m['item'],flag=f['symbol']) for d,m,f in zip(drinks,machines,flags)],
         giveDrinkOrder=['removeitem','checkitemspace','additem','fanfare','putitemaway','setflag'],consumesDrinkWhenRewardHasNoRoom=True,dependencies=dependencies_facts)
     evidence=dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     files = {BASE + 'items.json': encoded(document), BASE + 'machines.json': encoded(machine_doc), BASE + 'source-contract.json': encoded(facts), BASE + 'source-input-hashes.json': encoded(evidence), icon['texturePath']: png, **raw}
@@ -144,4 +135,4 @@ if __name__ == '__main__':
         else: target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(data)
     catalog=load_catalog(args.dependency)
     print(json.dumps(dict(checked=args.check,
-        compatibility=[sum(catalog.compatibility(m['item'], species)['canLearn'] for species in m['species']) for m in machines['additions']]),indent=2))
+        compatibility=[sum(catalog.compatibility(m['item'], species)['canLearn'] for species in m['species']) for m in machines['additions']]),indent=2, default=item_json))

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Offline source Safari items and bounded24-machine metadata."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,base64,importlib.util,io,json,pathlib,re,subprocess,sys
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -34,11 +35,11 @@ def generate(root,dependency_root=None):
  outputs={};items=[];icons=[];new_machines=shared_machines.machine_definitions(dependency_root or root, 'content/generated/safari-items/machines.json');source_items=json.loads(text['src/data/items.json'])['items']
  for short in ('HM03','HM04','GOLD_TEETH','TM11','TM47','TM32','MAX_POTION','FULL_RESTORE','LEAF_STONE','PROTEIN','QUICK_CLAW','MAX_REVIVE'):
   symbol='ITEM_'+short;item=next(i for i in source_items if i['itemId']==symbol);p='src/data/items.json';im=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}');source=ref(p,symbol,im)
-  definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=source)
+  definition=shared_item(symbol)
   declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration
   if short.startswith(('HM','TM')):
    p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
-  wrapped=dict(item=definition,description=description);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
+  wrapped=dict(item=definition,description=description);items.append(dict(metadata=wrapped, effectBytes=[]))
   p='src/data/item_icon_table.h';im=one(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,im);image_symbol,palette_symbol=im.groups();paths=[]
   for asset_symbol in (image_symbol,palette_symbol):
    p='src/data/graphics/items.h';am=one(p,r'^const u32 '+asset_symbol+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,asset_symbol,am));paths.append(am[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
@@ -47,7 +48,7 @@ def generate(root,dependency_root=None):
  additions=shared_machines.compatibility_additions(dependency_root or root, 'content/generated/safari-items/machines.json')
  itemdoc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],items=items,icons=icons,limitations=['Twelve source Safari item declarations/icons; ordinary medicine/vitamin effect byte arrays remain separate source-kernel data.','Metadata does not grant story rewards, teach moves, consume HMs, enable field moves or expand item services.'],outputs=[dict(path=p) for p,b in sorted(outputs.items())])
  machinedoc=dict(schemaVersion=1,profile='firered-safari-machines-v1',sourceCommit=COMMIT,inheritedItemIds=[ident('ITEM_'+item) for item in MACHINES],additions=additions,newMachines=new_machines,limitations=['Exact24 machines and110 species; preserve inherited19x107 cells, append3 source cells each, add five source110 matrices for HM03/HM04/TM11/TM47/TM32.','Raw teaching candidate requires separate Domain authentication; field Surf and Strength are separate permissions.'])
- outputs['items.json']=meta.canonical(itemdoc);outputs['machines.json']=meta.canonical(machinedoc)
+ outputs['items.json']=(json.dumps(itemdoc,sort_keys=True,separators=(',',':'),ensure_ascii=False,default=item_json)+'\n').encode();outputs['machines.json']=meta.canonical(machinedoc)
  return {'content/generated/safari-items/'+p:b for p,b in outputs.items()}
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--dependency-root',type=pathlib.Path);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args()

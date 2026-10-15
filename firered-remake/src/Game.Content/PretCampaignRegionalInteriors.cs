@@ -47,8 +47,8 @@ public sealed partial class PretCampaignCatalog
     }
     public bool GameCornerCoinsEnabled => GameCornerCoins is not null;
     public bool DepartmentRooftopEnabled => RegionalInteriorServicesEnabled &&
-        DepartmentStoreMachineStock.HasRooftopRewards(PewterMachines) &&
-        OrdinaryItemInventoryCatalog.For(EarlyShop)?.IsAddition(new("pret:ITEM_LEMONADE")) == true;
+        PewterMachines is {} machines && new[] { "pret:ITEM_TM16", "pret:ITEM_TM20", "pret:ITEM_TM33" }.All(id => MachineRules.Definition(machines, new(id)) is not null) &&
+        EarlyShop?.Items.Any(i => i.Id == new ItemId("pret:ITEM_LEMONADE")) == true;
     public string? DeferredRegionalServiceReason(MapId map,string script)
     {
         if(DepartmentRooftopEnabled && map.Value==Game.Domain.Events.DepartmentRooftopSource.Map &&
@@ -58,7 +58,7 @@ public sealed partial class PretCampaignCatalog
         if(map.Value==PokeDollShopStock.ExpectedMapId&&script==PokeDollShopStock.ExpectedClerkScript&&PokeDollShopStock is not null)return null;
         if(!RegionalInteriorServicesEnabled)return null;
         if (map.Value == DepartmentStoreMachineStock.ExpectedMapId && script == DepartmentStoreMachineStock.ExpectedClerkScript &&
-            DepartmentStoreMachineStock.For(PewterMachines) is not null) return null;
+            PewterMachines is not null) return null;
         if (DepartmentStoreCounterStock.StockForClerk(map.Value, script) is {} counter && DepartmentStoreCounter(counter) is not null) return null;
         if(GameCornerCoinsEnabled && map.Value==Game.Domain.Events.GameCornerCoinSource.RestaurantMap &&
             script==Game.Domain.Events.GameCornerCoinSource.CoinCaseMan)return null;

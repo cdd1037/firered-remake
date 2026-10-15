@@ -26,8 +26,7 @@ public sealed partial class MoveTutorCatalog
     public static MoveTutorCatalog Authenticate(PokemonCatalog owned, ImmutableArray<MoveTutorMove> moves,
         ImmutableArray<MoveTutorCompatibility> compatibility, ImmutableDictionary<string, string> texts)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
-            throw new ArgumentException("move_tutor_source_authentication");
+        PokemonFactory.ValidateCatalog(owned);
         if (moves.IsDefault || moves.Length != 15 ||
             !moves.Select(m => m.Index).Order().SequenceEqual(Enumerable.Range(0, 15)) ||
             moves.Select(m => m.Move).Distinct().Count() != 15 || compatibility.IsDefaultOrEmpty ||
@@ -82,7 +81,7 @@ public static class MoveTutorRules
     public static MoveTutorResult Teach(MoveTutorCatalog catalog, PokemonCatalog owned, PartyPokemon mon, int tutorIndex, int? replacement = null)
     {
         MoveTutorResult Reject(string error) => new(mon, error);
-        if (!ReferenceEquals(catalog.Pokemon, owned) || OwnedBattlePokemonCatalog.For(owned) is null) return Reject("move_tutor_pokemon_catalog");
+        if (!ReferenceEquals(catalog.Pokemon, owned)) return Reject("move_tutor_pokemon_catalog");
         if (!catalog.Definitions.TryGetValue(tutorIndex, out var tutor)) return Reject("move_tutor_unsupported");
         string? error = PokemonStateValidator.Validate(owned, mon.Pokemon);
         if (error is not null) return Reject(error);

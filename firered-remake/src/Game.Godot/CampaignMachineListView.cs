@@ -15,7 +15,7 @@ public partial class CampaignView
         SourceText(_sourceNormal, new(40, 12), _catalog.TextPages("gText_TMCase")[0]);
         for (int i = start; i < Math.Min(stacks.Length, start + visibleCount); i++)
         {
-            var definition = PewterMachineRules.Definition(_catalog.PewterMachines!, stacks[i].Item)
+            var definition = MachineRules.Definition(_catalog.PewterMachines!, stacks[i].Item)
                 ?? throw new InvalidDataException("machine_list_definition_missing");
             SourceText(_sourceNormal, new(118, 40 + (i - start) * 16), definition.Machine.Item.Name + " " + MoveName(definition.Move));
         }
@@ -29,7 +29,7 @@ public partial class CampaignView
             if (_earlyItemIcons.TryGetValue(stack.Item, out var icon)) DrawTexture(icon, new(8, 40));
             else DrawTexture(_questPocketTextures[MachineIcon], new(8, 40));
             SourceText(_sourceSmall, new(44, 50), _itemSkin.FormatText("gText_TimesStrVar1", stack.Quantity.ToString()));
-            ItemLines(_sourceSmall, new(8, 80), PewterMachineRules.Definition(_catalog.PewterMachines!, stack.Item)!.Machine.Description, 13);
+            ItemLines(_sourceSmall, new(8, 80), MachineRules.Definition(_catalog.PewterMachines!, stack.Item)!.Machine.Description, 13);
         }
         else ItemLines(_sourceSmall, new(8, 128), _catalog.TextPages("gText_TMCaseWillBePutAway")[0], 13);
     }

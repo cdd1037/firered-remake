@@ -45,13 +45,13 @@ public static class SourceTableWildBattleContract
     }
 
     public static bool IsAdmittedProfile(string? profile) =>
-        OwnedBattlePokemonCatalog.IsRegisteredProfileOrSuccessor(profile, SuperRodOwnedPokemonCatalog.Profile);
+        profile == GamePokemonCatalog.Profile;
 
     public static bool Matches(SourceTableWildOrigin? origin, PokemonInstance? pokemon) => pokemon is not null &&
         SourceSlot(origin) is { } slot && pokemon.Species == slot.Species &&
         pokemon.Level >= slot.MinimumLevel && pokemon.Level <= slot.MaximumLevel;
 
-    public static Route1WildPokemonResult Generate(OwnedBattlePokemonCatalog owned, SourceTableWildOrigin origin,
+    public static Route1WildPokemonResult Generate(GamePokemonCatalog owned, SourceTableWildOrigin origin,
         byte level, RngState rng, uint trainerId)
     {
         if (!ValidOwned(owned) || SourceSlot(origin) is not { } slot || !owned.Catalog.Species.ContainsKey(slot.Species) ||
@@ -62,7 +62,7 @@ public static class SourceTableWildBattleContract
         return made;
     }
 
-    public static bool SourceInitialInstance(OwnedBattlePokemonCatalog? owned, SourceTableWildOrigin? origin,
+    public static bool SourceInitialInstance(GamePokemonCatalog? owned, SourceTableWildOrigin? origin,
         PokemonInstance? pokemon)
     {
         if (!ValidOwned(owned) || pokemon is null || !owned!.Catalog.Species.ContainsKey(pokemon.Species) ||
@@ -87,7 +87,6 @@ public static class SourceTableWildBattleContract
         };
     }
 
-    private static bool ValidOwned(OwnedBattlePokemonCatalog? owned) => owned is not null &&
-        ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) &&
-        OwnedBattlePokemonCatalog.SourceRoot(owned) is not null && IsAdmittedProfile(owned.RulesVersion);
+    private static bool ValidOwned(GamePokemonCatalog? owned) => owned is not null &&
+        owned is not null && IsAdmittedProfile(owned.RulesVersion);
 }

@@ -14,9 +14,9 @@ public sealed record PretOpeningItemsDocument(int SchemaVersion, ImmutableArray<
 public static class PretOpeningItems
 {
 
-    public static OpeningItemsCatalog Load(string generatedJson)
+    public static OpeningItemsCatalog Load(string generatedJson, SharedItemCatalog items)
     {
-        var document = ContentJson.ParseStrict<PretOpeningItemsDocument>(generatedJson, ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<PretOpeningItemsDocument>(generatedJson, items.CreateJsonOptions());
         if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||
             document.Limitations.IsDefaultOrEmpty || document.Catalog is null)
             throw ContentJson.Error("opening_items_profile", "$", "The complete bounded Potion document is required.");

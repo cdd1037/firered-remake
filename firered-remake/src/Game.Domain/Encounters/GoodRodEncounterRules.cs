@@ -14,21 +14,21 @@ public static class GoodRodEncounterRules
     public static ImmutableArray<MapId> MapsWithoutFishingMons => OldRodEncounterRules.MapsWithoutFishingMons;
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) || MapsWithoutFishingMons.Contains(map);
 
-    public static OldRodFishingResult Start(OwnedBattlePokemonCatalog owned, OldRodCastContext context,
+    public static OldRodFishingResult Start(GamePokemonCatalog owned, OldRodCastContext context,
         RngState rng, bool cancelBeforeCast = false)
     {
         ValidateOwned(owned);
         return OldRodFishingRules.StartCore(context, rng, cancelBeforeCast, cinnabarRules: false, goodRodRules: true);
     }
 
-    public static OldRodFishingResult Advance(OwnedBattlePokemonCatalog owned, OldRodFishingState state,
+    public static OldRodFishingResult Advance(GamePokemonCatalog owned, OldRodFishingState state,
         OldRodFrameInput input, RngState rng)
     {
         ValidateOwned(owned);
         return OldRodFishingRules.AdvanceCore(state, input, rng, cinnabarRules: false, goodRodRules: true);
     }
 
-    public static void ValidateState(OwnedBattlePokemonCatalog owned, OldRodFishingState state)
+    public static void ValidateState(GamePokemonCatalog owned, OldRodFishingState state)
     {
         ValidateOwned(owned);
         OldRodFishingRules.ValidateStateCore(state, cinnabarRules: false, goodRodRules: true);
@@ -60,7 +60,7 @@ public static class GoodRodEncounterRules
         return roll < 60 ? 2 : roll < 80 ? 3 : 4;
     }
 
-    public static OldRodEncounterResult GenerateCandidate(OwnedBattlePokemonCatalog owned,
+    public static OldRodEncounterResult GenerateCandidate(GamePokemonCatalog owned,
         OldRodEncounterTable table, OldRodFishingState fishing, RngState rng)
     {
         ValidateTable(table);
@@ -75,7 +75,7 @@ public static class GoodRodEncounterRules
             levelDraw.State, [slotDraw.Trace, levelDraw.Trace]);
     }
 
-    public static OldRodPokemonResult GeneratePokemon(OwnedBattlePokemonCatalog owned,
+    public static OldRodPokemonResult GeneratePokemon(GamePokemonCatalog owned,
         OldRodEncounterCandidate candidate, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -86,10 +86,9 @@ public static class GoodRodEncounterRules
         return new(made.Pokemon, made.GlobalRng, made.RandomTrace);
     }
 
-    private static void ValidateOwned(OwnedBattlePokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            OwnedBattlePokemonCatalog.SourceRoot(owned) is null)
+        if (owned is null || owned is null)
             throw new ArgumentException("good_rod_owned_proof");
     }
 }

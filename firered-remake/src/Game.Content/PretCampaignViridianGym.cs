@@ -16,20 +16,15 @@ public sealed partial class PretCampaignCatalog
     public ViridianGymTrainerCatalog? ViridianGymTrainerParties { get; }
     public bool ViridianGymEnabled=>ViridianGymRegion is not null;
 
-
-
     private static void ValidateViridianGymAnchors(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
         if (region.NewMaps.Keys.Any(maps.ContainsKey))
             throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
-    private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,PewterMachineCatalog machines,CinnabarOwnedPokemonCatalog owned)
+    private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,MachineCatalog machines,GamePokemonCatalog owned)
     {
         var gym=new MapId("map.viridian-city-gym");
-        if(owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||
-            ViridianGymMachineCatalog.For(machines) is not {} proof)
-            throw new InvalidDataException("viridian_gym_composition_scope");
         ViridianGymTrainerPartyFactory.ValidateCatalog(trainers);
         var sourceWarps=maps[gym].Warps;
         if(sourceWarps.Length!=3||sourceWarps.Any(w=>w.DestinationMapId.Value!="map.viridian-city"||w.DestinationWarpId!=2)||

@@ -33,13 +33,10 @@ public static class EarlyRepelRules
         EarlyRepelUseResult Fail(string error) => new(inventory, steps, false, 0, error);
         var error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return Fail(error);
-        bool towerCatalog = catalog.Profile is PokemonTowerItemRules.Profile or FuchsiaGymItemRules.Profile or SafariShopCatalog.Profile or SilphShopCatalog.Profile or SaffronGymShopCatalog.Profile;
-        if (pokemonTowerRules ? !towerCatalog : rocketHideoutRules ? catalog.Profile != RocketHideoutItemRules.Profile : celadonGymRules ? catalog.Profile != CeladonGymItemRules.Profile : celadonApproachRules && catalog.Profile != LavenderItemRules.Profile)
-            throw new NotSupportedException("Super Repel rules require the authenticated Lavender item profile.");
         if (context != PotionUseContext.Field) return Fail("repel_field_only");
         var selected = item ?? Item;
-        if (selected != Item && !((pokemonTowerRules && towerCatalog || rocketHideoutRules && catalog.Profile == RocketHideoutItemRules.Profile || celadonGymRules && catalog.Profile == CeladonGymItemRules.Profile || celadonApproachRules && catalog.Profile == LavenderItemRules.Profile) &&
-            selected == LavenderItemRules.SuperRepelId)) return Fail("repel_item_unsupported");
+        if (selected != Item && !(celadonApproachRules || celadonGymRules || rocketHideoutRules || pokemonTowerRules) ||
+            selected != Item && selected != LavenderItemRules.SuperRepelId) return Fail("repel_item_unsupported");
         var definition = catalog.Items.Single(i => i.Id == selected);
         int count = OpeningInventoryRules.Quantity(inventory.BagItems, selected);
         if (count == 0) return Fail("repel_not_in_bag");

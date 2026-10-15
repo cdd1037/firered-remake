@@ -14,15 +14,13 @@ public sealed partial class PretCampaignCatalog
 {
     public const string SeviiRubyContentProfile = "firered-sevii-ruby-campaign-v1";
     public PretSeviiRubyRegion? SeviiRubyRegion { get; }
-    public SeviiRubyOwnedPokemonCatalog? SeviiRubyOwnership { get; }
-    public SeviiRubyOpponentPokemonCatalog? SeviiRubyOpponents { get; }
+    public GamePokemonCatalog? SeviiRubyOwnership { get; }
+    public GameOpponentPokemonCatalog? SeviiRubyOpponents { get; }
     public SeviiRubyTrainerCatalog? SeviiRubyTrainers { get; }
     public SeviiRubyTrainerCatalog? SeviiRubyTrainerParties => SeviiRubyTrainers;
     public SeviiRubyWaterEncounterCatalog? SeviiRubyWaterEncounters { get; }
     public SeviiRubyItemContent? SeviiRubyItems { get; }
     public bool SeviiRubyEnabled => SeviiRubyRegion is not null;
-
-
 
     private static void ValidateSeviiRubyAnchors(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
@@ -30,19 +28,10 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
-    private static IEnumerable<KeyValuePair<int, string>> SeviiRubySpeciesNames(PretPokedexMenu pokedex,SeviiRubyOwnedPokemonCatalog owned) =>
-        SeviiRubyOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-        {
-            int sourceId = owned.Catalog.Species[id].SourceSpeciesId;
-            return KeyValuePair.Create(sourceId, pokedex.Entries[sourceId].Name);
-        });
 
-    private static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,SeviiRubyOwnedPokemonCatalog owned,SeviiRubyOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
+    private static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
     {
-        if (owned.Catalog.Species.Count != 118 ||
-            owned.Predecessor.Catalog.Species.Count != 115 || opponents.Catalog.Species.Count != 135 ||
-            opponents.Predecessor.Catalog.Species.Count != 133 ||
-            pokemon.SpeciesNames[78] != "RAPIDASH" || pokemon.SpeciesNames[218] != "SLUGMA" || pokemon.SpeciesNames[219] != "MAGCARGO")
+        if (pokemon.SpeciesNames[78] != "RAPIDASH" || pokemon.SpeciesNames[218] != "SLUGMA" || pokemon.SpeciesNames[219] != "MAGCARGO")
             throw new InvalidDataException("sevii_ruby_composition_scope");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
         foreach (var battle in trainers.BattlesByScript.Values)

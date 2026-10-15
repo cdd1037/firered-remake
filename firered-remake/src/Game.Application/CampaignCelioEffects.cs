@@ -57,10 +57,10 @@ public sealed partial class CampaignSession
             var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
             int quantity = OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], SapphireItem);
             if (quantity is < 0 or > 1) throw new InvalidDataException("celio_sapphire_quantity");
-            var result = EarlyInventoryAddRules.Remove(ShopCatalog, ShopInventoryView(inventory), SapphireItem, 1);
+            var result = EarlyInventoryAddRules.Remove(ShopCatalog, inventory, SapphireItem, 1);
             if (!result.Succeeded && result.Error != "inventory_insufficient_quantity") throw new InvalidDataException(result.Error);
             // The source branches on RECOVERED, not possession; a prior full Key pocket may have left no item.
-            next = state with { Inventory = result.Succeeded ? MergeShopInventory(inventory, result.State) with {
+            next = state with { Inventory = result.Succeeded ? result.State with {
                     KeyItems = (inventory.KeyItems ?? []).RemoveAll(k => k.Item == SapphireItem) } : inventory,
                 CelioHandoff = new(quantity, result.Succeeded, effect.Sequence),
                 Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", result.Succeeded ? 1 : 0) } };

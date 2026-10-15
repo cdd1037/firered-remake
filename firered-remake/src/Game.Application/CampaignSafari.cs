@@ -19,8 +19,7 @@ public sealed partial class CampaignSession
     private const string SafariEntranceMap = "map.fuchsia-city-safari-zone-entrance";
     private static readonly ItemId GoldTeeth = new("pret:ITEM_GOLD_TEETH");
 
-    private InventoryState WithoutSafariKeyItems(InventoryState inventory) => !_content.SafariEnabled ? inventory :
-        inventory with { KeyItems = inventory.KeyItems is { } keys ? keys.Where(s => s.Item != GoldTeeth).ToImmutableArray() : null };
+
 
     private string? ValidateSafariInventory(InventoryState inventory)
     {
@@ -257,11 +256,11 @@ public sealed partial class CampaignSession
                 if (effect.Opcode == "removeitem" || state.Script.Flags.GetValueOrDefault(surf ? "FLAG_GOT_HM03" : "FLAG_GOT_HM04") ||
                     strength && !state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFARI_ZONE_WEST_GOLD_TEETH"))
                     throw new InvalidDataException("safari_hm_reward_context");
-                if (effect.Opcode == "checkitemspace") result = PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
+                if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
                 else
                 {
                     if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], machine) != 0) throw new InvalidDataException("safari_hm_duplicate");
-                    var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
+                    var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
                     next = state with { Inventory = added.State }; result = added.Succeeded ? 1 : 0;
                 }
             }

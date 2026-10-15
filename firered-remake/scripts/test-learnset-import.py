@@ -66,13 +66,16 @@ def source_learnsets():
 
 
 class LearnsetImportTests(unittest.TestCase):
-    def test_every_generated_species_and_copied_learnset_matches_ordered_raw_rows(self):
+    def test_canonical_and_regional_natural_learnsets_match_ordered_raw_rows(self):
         expected = source_learnsets()
-        rows, documents = 0, 0
+        rows, documents, species_count = 0, 0, 0
         def check(value):
-            nonlocal rows
+            nonlocal rows, species_count
             if isinstance(value, dict):
                 if 'levelUpMoves' in value and 'id' in value:
+                    self.assertEqual(GENERATED / 'canonical-pokemon/catalog.json', path,
+                                     'Regional catalogs must use species references')
+                    species_count += 1
                     symbol = value['id']['value'][5:]
                     self.assertEqual(expected[symbol], value['levelUpMoves'], symbol)
                     rows += len(value['levelUpMoves'])
@@ -89,8 +92,42 @@ class LearnsetImportTests(unittest.TestCase):
             before = rows
             check(json.loads(path.read_bytes()))
             documents += rows > before
-        self.assertGreaterEqual(rows, 6161)
-        self.assertGreaterEqual(documents, 40)
+        self.assertEqual(386, species_count)
+        self.assertGreaterEqual(rows, 4011)
+        self.assertGreaterEqual(documents, 1)
+
+    def test_canonical_catalog_keeps_only_typed_business_fields(self):
+        document = json.loads((GENERATED / 'canonical-pokemon/catalog.json').read_bytes())
+        self.assertEqual({'schemaVersion', 'species', 'metadata', 'abilities', 'generationContract'}, set(document))
+        self.assertEqual({'maximumHpOneSpecies', 'formStatOverrides'}, set(document['generationContract']))
+        for form in document['generationContract']['formStatOverrides']:
+            self.assertEqual({'species', 'scope', 'baseStats'}, set(form))
+        self.assertEqual(76, len(document['abilities']))
+        for ability in document['abilities']:
+            self.assertEqual({'symbol', 'sourceAbilityId'}, set(ability))
+        source = (RAW / canonical.SPECIES_INFO).read_text()
+        fields_by_symbol = {symbol: dict(re.findall(r'^        \.(\w+) = (.*),$', body, re.M))
+            for symbol, body in re.findall(r'^    \[(SPECIES_\w+)\] =\n    \{\n(.*?)^    \},', source, re.M | re.S)}
+        self.assertEqual(386, len(document['metadata']))
+        for row in document['metadata']:
+            fields = fields_by_symbol[row['id']['value'][5:]]
+            self.assertNotIn('originalFields', row)
+            self.assertNotIn('dexSource', row)
+            self.assertNotIn('learnsetPointerSource', row)
+            self.assertEqual([value.strip() for value in fields['eggGroups'].strip('{}').split(',')], row['eggGroups'])
+            self.assertEqual(int(fields['eggCycles']), row['eggCycles'])
+            self.assertIs(type(row['eggCycles']), int)
+            self.assertEqual(int(fields['safariZoneFleeRate']), row['safariZoneFleeRate'])
+            self.assertIs(type(row['safariZoneFleeRate']), int)
+            for name in ('itemCommon', 'itemRare', 'bodyColor'):
+                self.assertEqual(fields[name], row[name])
+            self.assertEqual(fields['noFlip'] == 'TRUE', row['noFlip'])
+            self.assertIs(type(row['noFlip']), bool)
+            for edge in row['sourceEvolutions']:
+                self.assertEqual({'method', 'sourceMethodId', 'parameter', 'parameterValue', 'target'}, set(edge))
+        for species in document['species']:
+            self.assertNotIn('source', species)
+            self.assertNotIn('learnsetSource', species)
 
     def test_canonical_rebuild_matches_all_fields_and_is_repeatable(self):
         expected = json.loads((GENERATED / 'canonical-pokemon/catalog.json').read_bytes())
@@ -134,7 +171,8 @@ class LearnsetImportTests(unittest.TestCase):
         catalog, _, _ = importer.generate(None, ROOT, RAW)
         self.assertNotIn('inputs', catalog)
         self.assertNotIn('dependencyInputs', catalog)
-        self.assertEqual(catalog, json.loads((GENERATED / 'power-plant-pokemon/catalog.json').read_bytes()))
+        self.assertEqual(json.loads(importer.encoded(catalog)),
+                         json.loads((GENERATED / 'power-plant-pokemon/catalog.json').read_bytes()))
         outputs, result = importer.build_power_plant_presentation(lambda path: (RAW / path).read_bytes(), ROOT)
         manifest = result['manifest']
         self.assertNotIn('inputs', manifest)

@@ -145,7 +145,7 @@ public partial class CampaignView
                 { Apply(new("town_map_open",Text:QuestItemRules.TownMapId.Value)); return true; }
                 if (_catalog.SsAnneEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_BERRY_POUCH")
                 { Apply(new("berry_open")); return true; }
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == PewterMachineRules.TmCaseId)
+                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == MachineRules.TmCaseId)
                 { Apply(new("machine_open")); return true; }
                 if (_questPocketAction != actions.Length - 1)
                     _questPocketNotice = _questPocket == 1

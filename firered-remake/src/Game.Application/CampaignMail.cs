@@ -144,9 +144,9 @@ public sealed partial class CampaignSession
             if (attached && (command.PartyIndex != pending.PartyIndex || command.TargetInstanceId != pending.TargetInstanceId))
                 return No("held_item_target_stale");
             var result = attached
-                ? SourceMailRules.EraseAttachedToBag(shop, ShopInventoryView(state.Inventory), mail, state.Party, pending.PartyIndex, true)
-                : SourceMailRules.EraseMailboxToBag(shop, ShopInventoryView(state.Inventory), mail, state.Party, pending.MailboxSlot, true);
-            return result.Succeeded ? Completed(result.State, result.Party, MergeShopInventory(state.Inventory, result.Inventory),
+                ? SourceMailRules.EraseAttachedToBag(shop, state.Inventory, mail, state.Party, pending.PartyIndex, true)
+                : SourceMailRules.EraseMailboxToBag(shop, state.Inventory, mail, state.Party, pending.MailboxSlot, true);
+            return result.Succeeded ? Completed(result.State, result.Party, result.Inventory,
                 attached ? "gText_MailTakenFromPkmn" : "gText_MailReturnedToBagMessageErased") : No(result.Error!);
         }
         if (back) return Back();

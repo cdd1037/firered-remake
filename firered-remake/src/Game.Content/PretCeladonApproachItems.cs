@@ -14,9 +14,9 @@ public static class PretCeladonApproachItems
     public const string Profile="firered-celadon-approach-items-v1";
     private static readonly UTF8Encoding Utf8=new(false,true);
     private static void Require(bool x,string m)=>PretCeladonApproachSource.Require(x,m);
-    public static PretCeladonApproachItemsDocument Load(string json)
+    public static PretCeladonApproachItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options=ContentJson.CreateOptions();options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
+        var options=machines.CreateJsonOptions();options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var d=ContentJson.ParseStrict<PretCeladonApproachItemsDocument>(json,options);
         Require(d.SchemaVersion==1&&d.Items.Length==7&&d.Icons.Length==7&&d.Pickups.Length==13&&!d.Limitations.IsDefaultOrEmpty,"Celadon item scope differs.");
         string[] names=["SUPER_REPEL","RAWST_BERRY","LUM_BERRY","LEPPA_BERRY","WEPEAR_BERRY","PP_UP","ICE_HEAL"];
@@ -33,17 +33,12 @@ PretPewterMachines.ValidateIcon(icon);
         Require(d.Pickups.Count(p=>p.Kind=="hidden")==12,"Celadon hidden count differs.");        Require(d.Shop.Id=="LavenderTown_Mart_Items"&&d.Shop.Items.Select(i=>i.Value).SequenceEqual(new[]{"GREAT_BALL","SUPER_POTION","REVIVE","ANTIDOTE","PARALYZE_HEAL","BURN_HEAL","ICE_HEAL","ESCAPE_ROPE","SUPER_REPEL"}.Select(i=>"pret:ITEM_"+i)),"Lavender stock differs.");
         return d;
     }
-    public static PretCeladonApproachItemsDocument LoadProject(string root)
+    public static PretCeladonApproachItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
         var outputs=PretCeladonApproachSource.Outputs(root,"celadon-approach-items");
-        return Load(Utf8.GetString(outputs["celadon-approach-items.json"]));
+        return Load(Utf8.GetString(outputs["celadon-approach-items.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
     }
-    public static EarlyShopCatalog LoadShopProject(string root,EarlyShopCatalog rockTunnelShop)
-    {
-        RockTunnelItemRules.ValidateShop(rockTunnelShop);var d=LoadProject(root);
-        var result=rockTunnelShop with{Profile=LavenderItemRules.Profile,Items=rockTunnelShop.Items.AddRange(d.Items.Select(Definition)),Shops=rockTunnelShop.Shops.Add(d.Shop)};
-        LavenderItemRules.ValidateShop(result);return result;
-    }
+
     public static EarlyShopItemDefinition? Definition(PretCeladonApproachItemsDocument d,ItemId id)
     {var item=d.Items.SingleOrDefault(i=>i.Metadata.Item.Id==id);return item is null?null:Definition(item);}
     private static EarlyShopItemDefinition Definition(PretBillSourceItem item)

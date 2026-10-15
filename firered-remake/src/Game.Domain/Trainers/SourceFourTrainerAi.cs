@@ -65,7 +65,7 @@ public static partial class SourceFourTrainerAi
         if (frame.Revision != expectedRevision || frame.Outcome != WildBattleOutcome.Ongoing || frame.FourTurn is not null ||
             !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty || !frame.Reservations.IsEmpty || frame.DeferredKoVacancyMask != 0)
             return Fail("source_four_trainer_ai_phase");
-        if (knownPlayerAbility is not null && !SourceMechanicsCatalog.For(catalog)!.Abilities.ContainsKey(knownPlayerAbility))
+        if (knownPlayerAbility is not null && catalog.MechanicsData?.Abilities.ContainsKey(knownPlayerAbility) != true)
             return Fail("source_four_trainer_ai_ability_history");
         try
         {

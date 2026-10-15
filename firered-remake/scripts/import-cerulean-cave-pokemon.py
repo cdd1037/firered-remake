@@ -89,11 +89,9 @@ def generate(reference, dependency, raw=None):
     species_rows = []
     for name in additions:
         original, meta = species[name], metadata[name]
-        for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']]:
-            read(sr['path'])
         info = one('src/data/pokemon/species_info.h', r'^    \[' + name + r'\] =\n    \{\n(.*?)^    \},')
         source_fields = dict(re.findall(r'^        \.(\w+) = (.*),$', info[1], re.M))
-        need(source_fields == meta['originalFields'], 'Complete original species fields')
+
         for source_key, key in [('baseHP','hp'),('baseAttack','attack'),('baseDefense','defense'),('baseSpeed','speed'),('baseSpAttack','specialAttack'),('baseSpDefense','specialDefense')]:
             need(original['baseStats'][key] == int(source_fields[source_key]), 'Base stats: ' + name)
         need(source_fields['abilities'] == '{ABILITY_PRESSURE, ABILITY_NONE}' and original['ability1'] == 'ABILITY_PRESSURE' and original['ability2'] == 'ABILITY_NONE', 'Pressure identity')
@@ -109,9 +107,8 @@ def generate(reference, dependency, raw=None):
             if level > static_level: break
             if move not in initial: initial = (initial + [move])[-4:]
         need(initial == ['pret:MOVE_SWIFT', 'pret:MOVE_RECOVER', 'pret:MOVE_SAFEGUARD', 'pret:MOVE_PSYCHIC'], 'Original level70 moves')
-        species_rows.append(dict(definition=original, metadata=meta))
+        species_rows.append(dict(definition=dict(id=original['id'],evolutions=original['evolutions']), metadata=meta))
     ability = next(a for a in canonical['abilities'] if a['symbol'] == 'ABILITY_PRESSURE')
-    read(ability['source']['path'])
     pokemon = dict(sourceCommit=COMMIT,  profile='firered-cerulean-cave-owned-pokemon-v1',
 
         previousOwnedSpeciesCount=len(owned), ownedSpeciesCount=len(owned) + len(additions),
@@ -121,7 +118,7 @@ def generate(reference, dependency, raw=None):
                              source=source_ref(static_path, 'CeruleanCave_B1F_EventScript_Mewtwo', static)),
         admittedEncounterSpecies=sorted(admitted_species), originalEncounters=encounters, originalEncounterFields=fields,
         runtimeMethods=['land', 'surf', 'oldRod'], retainedMetadataOnlyMethods=['rockSmash', 'goodRod', 'superRod'],
-        pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId'], source=ability['source']),
+        pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId']),
         limitation='This catalog authenticates data only; it grants no encounter, battle, trainer, map, lifecycle or save admission.')
     machines = dict(sourceCommit=COMMIT, profile='firered-cerulean-cave-teaching-v1', previousSpeciesCount=len(owned),
         speciesCount=len(owned) + len(additions), machineCount=len(cells), additions=cells,

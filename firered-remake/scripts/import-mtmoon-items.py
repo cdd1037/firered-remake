@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Bounded MtMoon items/TMs from authenticated local Git blobs or cache. No upstream execution."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _path_sys
 from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
@@ -23,7 +24,7 @@ SPECIES = ('BULBASAUR IVYSAUR VENUSAUR CHARMANDER CHARMELEON CHARIZARD SQUIRTLE 
  'PIKACHU RAICHU SANDSHREW SANDSLASH GEODUDE GRAVELER GOLEM ONIX STEELIX SPEAROW FEAROW MANKEY '
  'EKANS NIDORAN_F NIDORINA NIDORAN_M NIDORINO JIGGLYPUFF MAGIKARP GYARADOS '
  'ARBOK CLEFAIRY ZUBAT GOLBAT ODDISH PARAS PARASECT BELLSPROUT MAGNEMITE GRIMER VOLTORB KOFFING NIDOQUEEN NIDOKING CLEFABLE WIGGLYTUFF').split()
-def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2)+'\n').encode()
+def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2, default=item_json)+'\n').encode()
 def pairs(rows):
  d={}
  for k,v in rows:
@@ -113,10 +114,7 @@ def convert(lock,data):
  for name in ITEMS:
   symbol='ITEM_'+name;i=next(i for i in all_items if i['itemId']==symbol)
   p='src/data/items.json';m=match(p,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}')
-  source=ref(p,symbol,m);definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constant('include/constants/items.h',symbol),
-   name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),
-   holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],
-   battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
+  source=ref(p,symbol,m);definition=shared_item(symbol)
   declaration=i['description_english'].replace('\\n','\n');description=declaration
   effect_bytes,effect_source=effect(effects[name][0]) if name in effects else ([],None)
   support=effects[name][1] if name in effects else ('fossil' if 'FOSSIL' in name else 'noFieldUse')
@@ -124,7 +122,7 @@ def convert(lock,data):
    p='src/move_descriptions.c';m=match(p,r'^const u8 gMoveDescription_'+i['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
    description=json.loads(m[1])
   wrapped=dict(item=definition,description=description)
-  defs.append(dict(metadata=wrapped,effectBytes=effect_bytes,effectSource=effect_source,useSupport=support))
+  defs.append(dict(metadata=wrapped, effectBytes=effect_bytes, useSupport=support))
   p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);paths=[]
   for sym in m.groups():
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
@@ -185,4 +183,4 @@ def run(raw,out,repo=None,lock_path=None):
   target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
  return dict(inputCount=len(data),outputCount=len(outputs))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/mtmoon-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/mtmoon-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/mtmoon-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/mtmoon-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True, default=item_json))

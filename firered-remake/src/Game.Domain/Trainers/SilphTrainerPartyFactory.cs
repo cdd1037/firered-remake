@@ -52,12 +52,11 @@ public static class SilphTrainerPartyFactory
         [new("pret:TRAINER_TEAM_ROCKET_GRUNT_41")] = new("GRUNT",6,1u,[193, 204, 207, 200, 206],["ITEM_NONE","ITEM_NONE","ITEM_NONE","ITEM_NONE"],[new("pret:SPECIES_CUBONE",104,"CUBONE",32,0,[189, 207, 188, 201, 200, 191],["pret:MOVE_LEER","pret:MOVE_FOCUS_ENERGY","pret:MOVE_BONEMERANG","pret:MOVE_RAGE"]),new("pret:SPECIES_DROWZEE",96,"DROWZEE",32,0,[190, 204, 201, 209, 212, 191, 191],["pret:MOVE_HEADBUTT","pret:MOVE_POISON_GAS","pret:MOVE_MEDITATE","pret:MOVE_PSYCHIC"]),new("pret:SPECIES_MAROWAK",105,"MAROWAK",32,0,[199, 187, 204, 201, 209, 187, 197],["pret:MOVE_LEER","pret:MOVE_FOCUS_ENERGY","pret:MOVE_BONEMERANG","pret:MOVE_RAGE"])]),
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(t => t.Value, StringComparer.Ordinal).ToImmutableArray();
-    public static TrainerPartyCreationResult Create(SilphTrainerCatalog trainers, SilphOpponentPokemonCatalog opponents,
+    public static TrainerPartyCreationResult Create(SilphTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(SilphOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("silph_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("silph_trainer_catalog");
         var source = opponents.Mechanics; var expected = Expected[id];
         for (int i = 0; i < trainer.Party.Length; i++)
         {

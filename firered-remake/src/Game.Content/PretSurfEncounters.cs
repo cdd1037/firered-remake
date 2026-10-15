@@ -6,7 +6,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record SurfWaterHeldItem(SpeciesId Species,string Common,string Rare,PokemonSourceRef Source);
+public sealed record SurfWaterHeldItem(SpeciesId Species,string Common,string Rare);
 public sealed record SurfEncounterDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<WaterEncounterTable> Tables,
     ImmutableArray<SurfWaterHeldItem> HeldItems, int HeldItemDrawBound, ImmutableArray<string> Limitations);
 

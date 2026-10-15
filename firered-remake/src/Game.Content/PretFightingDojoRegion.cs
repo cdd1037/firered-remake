@@ -73,7 +73,7 @@ public sealed class PretFightingDojoRegion
             "Saffron Fighting Dojo map/warp collection differs.");
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["LOCALID_KARATE_MASTER"] == 5 && constants["FLAG_GOT_HITMON_FROM_DOJO"] == 0x278 &&
             constants["FLAG_HIDE_DOJO_HITMONLEE_BALL"] == 0x60 && constants["FLAG_HIDE_DOJO_HITMONCHAN_BALL"] == 0x61 &&

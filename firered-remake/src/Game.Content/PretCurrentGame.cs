@@ -17,6 +17,9 @@ public sealed partial class PretCampaignCatalog
     /// <summary>Builds the current game from generated gameplay resources and compiled story IR.</summary>
     public static PretCampaignCatalog LoadCurrent(string projectRoot)
     {
+        var canonicalPokemon = PretCanonicalPokemonCatalog.Load(projectRoot, projectRoot);
+        var sharedItems = SharedItemCatalog.LoadProject(projectRoot);
+        var sharedMachines = SharedMachineCatalog.LoadProject(projectRoot, sharedItems);
         // Resource readers validate their formats; no original-file identity pass is required.
         var mapNumbers = PretCelioMapNumbers.LoadSourceTable(projectRoot);
         var eventIsland = PretEventIslandRegion.Load(projectRoot);
@@ -43,13 +46,14 @@ public sealed partial class PretCampaignCatalog
         var seviiRuby = PretSeviiRubyRegion.Load(projectRoot);
         var seviiRubyTrainers = PretSeviiRubyRules.LoadTrainers(projectRoot);
         var twins = PretRoute8Twins.Load(projectRoot);
-        var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(projectRoot);
-        var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics);
+        var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(canonicalPokemon, projectRoot, sharedItems);
+        var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics.Catalog);
+        var gamePokemon = PretGamePokemonCatalog.Load(projectRoot, canonicalPokemon, doubleMechanics, npcTrades.Trades, sharedMachines);
         var npcTradeElyssa = PretNpcTradeElyssa.Load(projectRoot);
         var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
         var mailComposer = PretMailComposer.Load(projectRoot);
-        var mailPresentation = PretMailPresentation.Load(projectRoot);
+        var mailPresentation = PretMailPresentation.Load(projectRoot, items: sharedItems);
         var goodRodService = PretGoodRodService.Load(projectRoot);
         var superRodService = PretSuperRodService.Load(projectRoot);
         var seafoam = PretSeafoamRegion.Load(projectRoot);
@@ -67,25 +71,25 @@ public sealed partial class PretCampaignCatalog
         var lostCave = PretLostCaveRegion.Load(projectRoot);
         var trainerFanClub = PretTrainerFanClub.Load(projectRoot);
         var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers);
-        var fieldFly = PretFieldFly.Load(projectRoot);
+        var fieldFly = PretFieldFly.Load(projectRoot, shared: sharedMachines);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
-        var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
+        var doubleItems = doubleMechanics.Catalog.BattleItems ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName));
         var route22 = PretRoute22Region.Load(projectRoot, runtimeMaps);
         var route3 = PretRoute3Region.Load(projectRoot, runtimeMaps);
         var oakPokedex = PretPokedexMenu.Load(projectRoot);
-        var route22Pokemon = PretRoute22Pokemon.Load(projectRoot, includeSourceCryWaves: false, pokedexMenu: oakPokedex);
-        var route3Pokemon = PretRoute3Pokemon.Load(projectRoot, pokedexMenu: oakPokedex);
-        var ceruleanPokemon = PretCeruleanPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
+        var route22Pokemon = PretRoute22Pokemon.Load(canonicalPokemon, projectRoot, includeSourceCryWaves: false, pokedexMenu: oakPokedex);
+        var route3Pokemon = PretRoute3Pokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
+        var ceruleanPokemon = PretCeruleanPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var pokemonTower = PretPokemonTowerRegion.Load(projectRoot, PretPokemonTowerRuntimeMaps.Load(projectRoot));
         PretPokemonTowerPokemon pokemonTowerPokemon;
         var snorlax = PretSnorlaxRegion.Load(projectRoot);
         PretSnorlaxPokemon snorlaxPokemon;
         var snorlaxArt = PretSnorlaxArt.Load(projectRoot, pokedexMenu: oakPokedex);
         var regionalServices = PretRegionalServiceMaps.Load(projectRoot);
-        var regionalGift = PretRegionalGiftContract.Load(projectRoot);
+        var regionalGift = PretRegionalGiftContract.Load(projectRoot, sharedItems);
         var eeveeArt = PretEeveeArt.Load(projectRoot, pokedexMenu: oakPokedex);
         var departmentStore = PretDepartmentStoreContract.Load(projectRoot);
         var nameRater = PretNameRaterContract.Load(projectRoot);
@@ -93,20 +97,20 @@ public sealed partial class PretCampaignCatalog
         var fuchsiaRoute = PretFuchsiaRouteRegion.Load(projectRoot);
         PretFuchsiaRoutePokemon fuchsiaPokemon;
         var fuchsiaGym = PretFuchsiaGymRegion.Load(projectRoot, runtimeMaps.FuchsiaGymPackage(projectRoot));
-        var fuchsiaGymTrainers = PretFuchsiaGymTrainers.LoadDocument(projectRoot);
-        var fuchsiaGymItems = PretFuchsiaGymItems.LoadProject(projectRoot);
+        var fuchsiaGymTrainers = PretFuchsiaGymTrainers.LoadDocument(canonicalPokemon, projectRoot);
+        var fuchsiaGymItems = PretFuchsiaGymItems.LoadProject(projectRoot, shared: sharedMachines);
         var fuchsiaGymMachines = PretFuchsiaGymMachines.LoadProject(projectRoot);
-        var fuchsiaGymMoveSource = PretMetronomeMoveCatalog.Load(projectRoot);
+        var fuchsiaGymMoveSource = canonicalPokemon.MoveCatalog;
         var safari = PretSafariRegion.Load(projectRoot);
         var safariEncounters = PretSafariEncounters.Load(safari);
         var safariItems = PretSafariItems.LoadProject(projectRoot);
         var safariArt = PretSafariArt.Load(projectRoot);
         PretSafariPokemon safariPokemon;
-        SafariOwnedPokemonCatalog safariOwned;
+
         PretSurfPokemon surfPokemon;
         PretSurfArt surfArt;
         PretSurfEncounters surfEncounters;
-        SurfOwnedPokemonCatalog surfOwned;
+
         var viridianGym = PretViridianGymRegion.Load(projectRoot);
         var viridianGymTrainers = PretViridianGymRules.LoadTrainers(projectRoot);
         var leagueRivalTrainers = PretLeagueRivalRules.LoadTrainers(projectRoot);
@@ -117,80 +121,78 @@ public sealed partial class PretCampaignCatalog
         var pokemonLeague = PretPokemonLeagueRegion.Load(projectRoot);
         var pokemonLeagueTrainers = PretPokemonLeagueRules.LoadTrainers(projectRoot);
         var firstSevii = PretFirstSeviiRegion.Load(projectRoot);
-        var firstSeviiTrainers = PretFirstSeviiRules.LoadTrainers(projectRoot);
-        var firstSeviiItems = PretFirstSeviiRules.LoadItems(projectRoot);
+        var firstSeviiTrainers = PretFirstSeviiRules.LoadTrainers(projectRoot, shared: sharedMachines);
+        var firstSeviiItems = PretFirstSeviiRules.LoadItems(projectRoot, shared: sharedMachines);
         var firstSeviiPresentation = PretFirstSeviiPresentation.LoadProject(projectRoot, projectRoot);
         var cinnabar = PretCinnabarRegion.Load(projectRoot);
-        var cinnabarPokemon = PretCinnabarPokemon.LoadDocument(projectRoot, projectRoot);
+        var cinnabarPokemon = PretCinnabarPokemon.LoadDocument(canonicalPokemon, projectRoot, projectRoot);
         var cinnabarTrainers = PretCinnabarTrainers.Load(projectRoot);
         var cinnabarItems = PretCinnabarItems.LoadProject(projectRoot);
-        CinnabarOwnedPokemonCatalog cinnabarOwned;
-        CinnabarOpponentPokemonCatalog cinnabarOpponents;
+
         var saffronGym = PretSaffronGymRegion.Load(projectRoot);
-        var saffronGymTrainers = PretSaffronGymTrainers.Load(projectRoot);
+        var saffronGymTrainers = PretSaffronGymTrainers.Load(canonicalPokemon, projectRoot);
         var saffronGymArt = PretSaffronGymArt.Load(projectRoot, projectRoot, pokedexMenu: oakPokedex);
         var cinnabarArt = PretCinnabarArt.Load(projectRoot, projectRoot, pokedexMenu: oakPokedex);
         var cinnabarPresentation = PretCinnabarPresentation.Load(projectRoot);
         var saffronGymItems = PretSaffronGymItems.LoadProject(projectRoot);
-        var saffronGymPokemon = PretSaffronGymPokemon.LoadDocument(projectRoot, projectRoot);
-        SaffronGymOpponentPokemonCatalog saffronGymOpponents;
+        var saffronGymPokemon = PretSaffronGymPokemon.LoadDocument(canonicalPokemon, projectRoot, projectRoot);
+
         var silph = PretSilphRegion.Load(projectRoot);
         var silphItems = PretSilphItems.LoadProject(projectRoot);
-        var silphTrainers = PretSilphTrainers.Load(projectRoot);
+        var silphTrainers = PretSilphTrainers.Load(canonicalPokemon, projectRoot);
         PretSilphPokemon silphPokemon;
-        SilphOwnedPokemonCatalog silphOwned;
-        SilphOpponentPokemonCatalog silphOpponents;
+
         PretSilphArt silphArt;
         var fuchsiaArt = PretFuchsiaRouteArt.Load(projectRoot, pokedexMenu: oakPokedex);
-        var pokemonTowerItems = PretPokemonTowerItems.LoadProject(projectRoot);
+        var pokemonTowerItems = PretPokemonTowerItems.LoadProject(projectRoot, shared: sharedMachines);
         var pokemonTowerPickups = PretPokemonTowerItems.LoadPickupsProject(projectRoot);
-        var pokemonTowerTrainers = PretPokemonTowerTrainers.Load(projectRoot);
+        var pokemonTowerTrainers = PretPokemonTowerTrainers.Load(canonicalPokemon, projectRoot);
         var rocketHideout = PretRocketHideoutRegion.Load(projectRoot, runtimeMaps);
-        var rocketHideoutPokemon = PretRocketHideoutPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
-        var rocketHideoutItems = PretRocketHideoutItems.LoadProject(projectRoot);
+        var rocketHideoutPokemon = PretRocketHideoutPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
+        var rocketHideoutItems = PretRocketHideoutItems.LoadProject(projectRoot, shared: sharedMachines);
         var rocketHideoutPickups = PretRocketHideoutItems.LoadPickupsProject(projectRoot);
-        var rocketHideoutTrainers = PretRocketHideoutTrainers.Load(projectRoot);
+        var rocketHideoutTrainers = PretRocketHideoutTrainers.Load(canonicalPokemon, projectRoot);
         var celadonGym = PretCeladonGymRegion.Load(projectRoot, runtimeMaps);
-        var celadonGymPokemon = PretCeladonGymPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
-        var celadonGymItems = PretCeladonGymItems.LoadProject(projectRoot);
-        var celadonGymTrainers = PretCeladonGymTrainers.Load(projectRoot);
+        var celadonGymPokemon = PretCeladonGymPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
+        var celadonGymItems = PretCeladonGymItems.LoadProject(projectRoot, shared: sharedMachines);
+        var celadonGymTrainers = PretCeladonGymTrainers.Load(canonicalPokemon, projectRoot);
         var celadonApproach = PretCeladonApproachRegion.Load(projectRoot, runtimeMaps);
-        var celadonApproachPokemon = PretCeladonApproachPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
-        var celadonApproachItems = PretCeladonApproachItems.LoadProject(projectRoot);
+        var celadonApproachPokemon = PretCeladonApproachPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
+        var celadonApproachItems = PretCeladonApproachItems.LoadProject(projectRoot, shared: sharedMachines);
         var celadonApproachEncounters = PretCeladonApproachEncounters.Load(projectRoot);
         var celadonApproachTrainers = PretCeladonApproachTrainers.Load(projectRoot);
         var rockTunnel = PretRockTunnelRegion.Load(projectRoot, runtimeMaps);
-        var rockTunnelPokemon = PretRockTunnelPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
-        var rockTunnelItems = PretRockTunnelItems.LoadProject(projectRoot);
+        var rockTunnelPokemon = PretRockTunnelPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
+        var rockTunnelItems = PretRockTunnelItems.LoadProject(projectRoot, shared: sharedMachines);
         var rockTunnelEncounters = PretRockTunnelEncounters.Load(projectRoot);
         var rockTunnelTrainers = PretRockTunnelTrainers.Load(projectRoot);
         var route11 = PretRoute11Region.Load(projectRoot, runtimeMaps);
-        var route11Pokemon = PretRoute11Pokemon.Load(projectRoot, pokedexMenu: oakPokedex);
-        var route11Items = PretRoute11Items.LoadProject(projectRoot);
+        var route11Pokemon = PretRoute11Pokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
+        var route11Items = PretRoute11Items.LoadProject(projectRoot, shared: sharedMachines);
         var route11Encounters = PretRoute11Encounters.Load(projectRoot);
         var route11Trainers = PretRoute11Trainers.Load(projectRoot);
-        var cityServices = PretCityServices.Load(projectRoot, runtimeMaps);
-        var gameCornerCoins = PretGameCornerCoins.Load(projectRoot);
+        var cityServices = PretCityServices.Load(projectRoot, runtimeMaps, shared: sharedMachines);
+        var gameCornerCoins = PretGameCornerCoins.Load(projectRoot, shared: sharedMachines);
         var oldRod = PretOldRod.Load(projectRoot);
         var vermilionGym = PretVermilionGymRegion.Load(projectRoot, runtimeMaps);
-        var vermilionGymTrainers = PretVermilionGymTrainers.Load(projectRoot);
-        var vermilionGymAssets = PretVermilionGymAssets.Load(projectRoot);
+        var vermilionGymTrainers = PretVermilionGymTrainers.Load(canonicalPokemon, projectRoot);
+        var vermilionGymAssets = PretVermilionGymAssets.Load(projectRoot, shared: sharedMachines);
         var ssAnne = PretSsAnneRegion.Load(projectRoot, runtimeMaps);
-        var ssAnnePokemon = PretSsAnnePokemon.Load(projectRoot, pokedexMenu: oakPokedex);
+        var ssAnnePokemon = PretSsAnnePokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var ssAnneTrainers = PretSsAnneTrainers.Load(projectRoot);
-        var ssAnneItems = PretSsAnneItems.LoadProject(projectRoot);
-        var vermilionPokemon = PretVermilionPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
+        var ssAnneItems = PretSsAnneItems.LoadProject(projectRoot, shared: sharedMachines);
+        var vermilionPokemon = PretVermilionPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var vermilion = PretVermilionRegion.Load(projectRoot, runtimeMaps);
         var vermilionTrainers = PretVermilionTrainers.Load(projectRoot);
-        var billPokemon = PretBillPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
+        var billPokemon = PretBillPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var bill = PretBillRegion.Load(projectRoot, runtimeMaps);
-        var billItems = PretBillItems.LoadProject(projectRoot);
+        var billItems = PretBillItems.LoadProject(projectRoot, shared: sharedMachines);
         var billTrainers = PretBillTrainers.Load(projectRoot);
         var cerulean = PretCeruleanRegion.Load(projectRoot, runtimeMaps);
         var mtMoon = PretMtMoonRegion.Load(projectRoot, runtimeMaps);
-        var mtMoonPokemon = PretMtMoonPokemon.Load(projectRoot, pokedexMenu: oakPokedex);
+        var mtMoonPokemon = PretMtMoonPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var oakRating = PretOakRating.Load(projectRoot);
-        var townMap = PretTownMap.Load(projectRoot);
+        var townMap = PretTownMap.Load(projectRoot, sharedItems);
         // Extend map anchors in source order; each retained predecessor validates current data.
         var maps = PretWorldCatalog.Load(Path.Combine(projectRoot, "content/generated"), runtimeMaps);
         var region = PretViridianRegion.Load(projectRoot, runtimeMaps);
@@ -300,200 +302,96 @@ public sealed partial class PretCampaignCatalog
         var storyRuntime = PretStoryRuntime.Load(projectRoot);
         var constants = storyRuntime.Compilation.Constants.ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal);
 
-        // Compose the owned and opponent catalogs used by campaign encounters.
-        CampaignPokemonContent pokemonContent;
-        {
-            var pokemon = PretPokemonCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/pokemon/starter-catalog.json")));
-            pokemonContent = new(pokemon, storyRuntime.StarterSpeciesNames, storyRuntime.NicknameCharacters);
-        }
+        var pokemonContent = new CampaignPokemonContent(gamePokemon,
+            gamePokemon.Catalog.Species.Values.ToImmutableSortedDictionary(species => species.SourceSpeciesId,
+                species => oakPokedex.Entries[species.SourceSpeciesId].Name), storyRuntime.NicknameCharacters)
+        { AllowSleepStatus = true, AllowFreezeStatus = true, AllowToxicStatus = true };
 
         PretRoute1PokemonContent route1Pokemon;
         {
-            route1Pokemon = PretRoute1PokemonCatalog.LoadContent(File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8));
-            pokemonContent = pokemonContent with
-            {
-                Catalog = route1Pokemon.Catalog,
-                SpeciesNames = route1Pokemon.SpeciesNames
-            };
+            route1Pokemon = PretRoute1PokemonCatalog.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8));
         }
 
-        var oldMan = PretOldManTutorial.LoadContent(File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/old-man-tutorial/catalog.json"), Encoding.UTF8));
+        var oldMan = PretOldManTutorial.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/route1-pokemon/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/old-man-tutorial/catalog.json"), Encoding.UTF8));
+        var forestPokemon = PretForestPokemon.Load(canonicalPokemon, projectRoot);
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = oldMan.Catalog,
-                SpeciesNames = oldMan.SpeciesNames
-            };
-        }
-
-        var forestPokemon = PretForestPokemon.Load(projectRoot);
-        {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = forestPokemon.Catalog,
-                SpeciesNames = forestPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in forestPokemon.Constants)
                 constants[symbol] = value;
         }
 
-        var pewterPokemon = PretPewterPokemon.Load(projectRoot);
+        var pewterPokemon = PretPewterPokemon.Load(canonicalPokemon, projectRoot);
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = pewterPokemon.Catalog,
-                SpeciesNames = pewterPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in pewterPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = route22Pokemon.Catalog,
-                SpeciesNames = route22Pokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in route22Pokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = route3Pokemon.Catalog,
-                SpeciesNames = route3Pokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in route3Pokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = mtMoonPokemon.Catalog,
-                SpeciesNames = mtMoonPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in mtMoonPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = ceruleanPokemon.Catalog,
-                SpeciesNames = ceruleanPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in ceruleanPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = billPokemon.Catalog,
-                SpeciesNames = billPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in billPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = vermilionPokemon.Catalog,
-                SpeciesNames = vermilionPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in vermilionPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = ssAnnePokemon.Catalog,
-                SpeciesNames = ssAnnePokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in ssAnnePokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = route11Pokemon.Catalog,
-                SpeciesNames = route11Pokemon.SpeciesNames,
-                AllowFreezeStatus = true
-            };
             foreach (var(symbol, value)in route11Pokemon.Constants)
                 constants[symbol] = value;
         }
-
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = PretVermilionGymTrainers.ExtendPokemon(projectRoot, route11Pokemon.Catalog, route11Rules: true)
-            };
-        }
-
-        {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = RockTunnelCampaignPokemon(rockTunnelPokemon.Catalog, pokemonContent.Catalog),
-                SpeciesNames = rockTunnelPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in rockTunnelPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = CeladonApproachCampaignPokemon(celadonApproachPokemon.Catalog, pokemonContent.Catalog),
-                SpeciesNames = celadonApproachPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in celadonApproachPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = CeladonGymCampaignPokemon(celadonGymPokemon.Catalog, pokemonContent.Catalog),
-                SpeciesNames = celadonGymPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in celadonGymPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonContent = pokemonContent with
-            {
-                Catalog = RocketHideoutCampaignPokemon(rocketHideoutPokemon.Catalog, pokemonContent.Catalog),
-                SpeciesNames = rocketHideoutPokemon.SpeciesNames
-            };
             foreach (var(symbol, value)in rocketHideoutPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            pokemonTowerPokemon = PretPokemonTowerPokemon.Load(pokemonContent.Catalog, projectRoot);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = pokemonTowerPokemon.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(pokemonTowerPokemon.AdditionalSpeciesNames)
-            };
+            pokemonTowerPokemon = PretPokemonTowerPokemon.Load(canonicalPokemon, pokemonContent.Catalog, projectRoot);
             foreach (var(symbol, value)in pokemonTowerPokemon.Constants)
                 constants[symbol] = value;
         }
 
         {
-            snorlaxPokemon = PretSnorlaxPokemon.Load(pokemonContent.Catalog, projectRoot);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = snorlaxPokemon.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(snorlaxPokemon.AdditionalSpeciesNames)
-            };
+            snorlaxPokemon = PretSnorlaxPokemon.Load(canonicalPokemon, pokemonContent.Catalog, projectRoot);
             foreach (var(symbol, value)in snorlaxPokemon.Constants)
             {
                 if (constants.TryGetValue(symbol, out var prior) && prior != value)
@@ -504,129 +402,39 @@ public sealed partial class PretCampaignCatalog
 
         var snorlaxCompositionPokemon = pokemonContent;
         {
-            eeveePokemon = PretEeveePokemon.Load(pokemonContent.Catalog, projectRoot);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = eeveePokemon.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(eeveePokemon.AdditionalSpeciesNames)
-            };
+            eeveePokemon = PretEeveePokemon.Load(canonicalPokemon, pokemonContent.Catalog, projectRoot);
             MergeRegionalServiceConstants(constants, eeveePokemon.Constants);
         }
 
         var regionalServiceCompositionPokemon = pokemonContent;
         {
-            fuchsiaPokemon = PretFuchsiaRoutePokemon.Load(pokemonContent.Catalog, projectRoot);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = fuchsiaPokemon.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(fuchsiaPokemon.AdditionalSpeciesNames)
-            };
+            fuchsiaPokemon = PretFuchsiaRoutePokemon.Load(canonicalPokemon, pokemonContent.Catalog, projectRoot);
             MergeRegionalServiceConstants(constants, fuchsiaPokemon.Constants);
         }
 
         var fuchsiaRouteCompositionPokemon = pokemonContent;
-        pokemonContent = pokemonContent with
         {
-            Catalog = FuchsiaGymPokemon(pokemonContent.Catalog, fuchsiaGymTrainers, fuchsiaGymMoveSource),
-            AllowToxicStatus = true
-        };
-        {
-            safariPokemon = PretSafariPokemon.Load(pokemonContent.Catalog, projectRoot);
-            safariOwned = SafariOwnedPokemonCatalog.Authenticate(pokemonContent.Catalog, safariPokemon.Catalog, doubleMechanics);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = safariOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(safariPokemon.AdditionalSpeciesNames)
-            };
+            safariPokemon = PretSafariPokemon.Load(canonicalPokemon, pokemonContent.Catalog, projectRoot);
+
             MergeRegionalServiceConstants(constants, safariPokemon.Constants);
         }
 
         {
-            surfPokemon = PretSurfPokemon.Load(safariOwned.Catalog, projectRoot, projectRoot);
-            surfOwned = SurfOwnedPokemonCatalog.Authenticate(safariOwned, surfPokemon.Catalog);
+            surfPokemon = PretSurfPokemon.Load(canonicalPokemon, gamePokemon.Catalog, projectRoot);
+
             surfArt = PretSurfArt.Load(projectRoot, projectRoot);
             surfEncounters = PretSurfEncounters.Load(projectRoot);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = surfOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(surfPokemon.AdditionalSpeciesNames)
-            };
             MergeRegionalServiceConstants(constants, surfPokemon.Constants);
         }
 
         {
-            silphPokemon = PretSilphPokemon.Load(surfOwned.Catalog, projectRoot, projectRoot);
-            silphOwned = SilphOwnedPokemonCatalog.Authenticate(surfOwned, silphPokemon.Catalog);
-            silphOpponents = SilphOpponentPokemonCatalog.Authenticate(silphOwned, silphPokemon.OpponentSpecies);
-            saffronGymOpponents = SaffronGymOpponentPokemonCatalog.Authenticate(silphOpponents, saffronGymPokemon.OpponentSpecies);
+            silphPokemon = PretSilphPokemon.Load(canonicalPokemon, gamePokemon.Catalog, projectRoot);
+
             silphArt = PretSilphArt.Load(projectRoot, projectRoot, oakPokedex);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = silphOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.Add(131, silphPokemon.AdditionalSpeciesNames[131])
-            };
             MergeRegionalServiceConstants(constants, silphPokemon.Constants);
         }
-
-        {
-            var candidate = PretCinnabarPokemon.Extend(silphOwned.Catalog, cinnabarPokemon);
-            cinnabarOwned = CinnabarOwnedPokemonCatalog.Authenticate(silphOwned, candidate);
-            cinnabarOpponents = CinnabarOpponentPokemonCatalog.Authenticate(cinnabarOwned, saffronGymOpponents, cinnabarPokemon.OpponentSpecies);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = cinnabarOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(cinnabarPokemon.SpeciesNames.Where(n => cinnabarPokemon.Species.Any(p => p.Id == n.Id)).Select(n => KeyValuePair.Create(cinnabarPokemon.Species.Single(p => p.Id == n.Id).SourceSpeciesId, n.Name)))
-            };
-        }
-
-        var mtMoonItems = PretMtMoonItems.LoadProject(projectRoot);
-        var machines = PretSsAnneMachines.LoadCatalogProject(projectRoot);
-        machines = vermilionGymAssets.ExtendMachines(machines);
-        {
-            machines = PretRoute11Machines.LoadCatalogProject(projectRoot);
-        }
-
-        {
-            machines = PretRockTunnelMachines.LoadCatalogProject(projectRoot);
-        }
-
-        {
-            machines = PretCeladonApproachMachines.LoadCatalogProject(projectRoot);
-        }
-
-        {
-            machines = PretCeladonGymMachines.LoadCatalogProject(projectRoot);
-        }
-
-        {
-            machines = PretRocketHideoutMachines.LoadCatalogProject(projectRoot);
-        }
-
-        {
-            machines = PretPokemonTowerMachines.Extend(projectRoot, machines);
-        }
-
-        {
-            machines = PretSnorlaxMachines.Extend(projectRoot, machines);
-        }
-
-        {
-            machines = PretEeveeMachines.Extend(projectRoot, machines);
-        }
-
-        {
-            machines = PretFuchsiaMachines.Extend(machines, fuchsiaPokemon);
-        }
-
-        machines = ComposeFuchsiaGymMachines(machines, fuchsiaGymMachines);
-        {
-            var safariTeaching = SafariMachineCatalog.Authenticate(machines, PretSafariMachines.Extend(machines, safariPokemon, safariItems), safariOwned);
-            {
-                var surfTeaching = SurfMachineCatalog.Authenticate(safariTeaching, PretSurfMachines.Extend(safariTeaching, surfPokemon), surfOwned);
-                machines = SilphMachineCatalog.Authenticate(surfTeaching, PretSilphMachines.Extend(surfTeaching, silphPokemon, silphItems), silphOwned).Catalog;
-            }
-        }
-
+        var mtMoonItems = PretMtMoonItems.LoadProject(projectRoot, shared: sharedMachines);
+        var machines = sharedMachines.LoadCurrent(gamePokemon);
         CampaignBattleContent battleContent;
         {
             var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/lab-trainers/lab-trainers.json"), Encoding.UTF8));
@@ -720,7 +528,7 @@ public sealed partial class PretCampaignCatalog
                 names[move.Value] = name;
             }
 
-            foreach (var(move, name)in PretVermilionGymTrainers.LoadMoveNames(projectRoot))
+            foreach (var(move, name)in PretVermilionGymTrainers.LoadMoveNames(canonicalPokemon, projectRoot))
             {
                 if (names.TryGetValue(move.Value, out var prior) && prior != name)
                     throw new InvalidDataException("Conflicting Vermilion Gym move name: " + move.Value);
@@ -731,7 +539,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         OpeningItemsCatalog openingItems;
-        openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/opening-items/opening-items.json"), Encoding.UTF8));
+        openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/opening-items/opening-items.json"), Encoding.UTF8), sharedItems);
 
         // Variable and flag identity stays symbolic; numeric IDs are not save identity.
         foreach (var name in constants.Keys.Where(x => x.StartsWith("VAR_", StringComparison.Ordinal)).ToArray())
@@ -750,18 +558,16 @@ public sealed partial class PretCampaignCatalog
         QuestItemsCatalog questItems;
         PretMartMetatiles metatiles;
         {
-            questItems = PretQuestItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/quest-items/quest-items.json"), Encoding.UTF8));
+            questItems = PretQuestItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/quest-items/quest-items.json"), Encoding.UTF8), sharedItems);
             {
-                var tv = oldMan.TeachyTv;
-                var r = tv.Source;
-                var item = new QuestItemDefinition(QuestItemRules.TeachyTvId, QuestItemRules.TeachyTvSymbol, tv.SourceItemId, tv.Name, tv.Price, tv.Importance, tv.Registrability, tv.Pocket, tv.Type, tv.HoldEffect, tv.HoldEffectParam, tv.FieldUseFunc, tv.BattleUsage, tv.BattleUseFunc, tv.SecondaryId, false, false, false, new(r.Path,r.Symbol,r.StartLine,r.EndLine));
+                var item = sharedItems.Definition(QuestItemRules.TeachyTvId);
                 questItems = questItems with
                 {
                     Profile = QuestItemRules.TutorialProfile,
                     Items = questItems.Items.Add(item)
                 };
                 QuestItemRules.ValidateCatalog(questItems);
-                constants[QuestItemRules.TeachyTvSymbol] = tv.SourceItemId;
+                constants[QuestItemRules.TeachyTvSymbol] = item.SourceItemId;
             }
 
             {
@@ -779,122 +585,7 @@ public sealed partial class PretCampaignCatalog
             constants["METATILE_Mart_CounterMid_Bottom"] = metatiles.OnLoadPatches.Single(x => x.Y == 4).RawMetatileId;
         }
 
-        var earlyShop = PretEarlyShop.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-shop/early-shop.json"), Encoding.UTF8));
-        earlyShop = earlyShop with
-        {
-            Catalog = PretBillItems.LoadShopProject(projectRoot)
-        };
-        earlyShop = earlyShop with
-        {
-            Catalog = VermilionShop(earlyShop.Catalog, vermilion)
-        };
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretSsAnneItems.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretRoute11Items.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretRockTunnelItems.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretCeladonApproachItems.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretCeladonGymItems.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretRocketHideoutItems.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        {
-            earlyShop = earlyShop with
-            {
-                Catalog = PretPokemonTowerItems.LoadShopProject(projectRoot, earlyShop.Catalog)
-            };
-        }
-
-        earlyShop = earlyShop with
-        {
-            Catalog = ComposeFuchsiaGymShop(earlyShop.Catalog, fuchsiaGymItems)
-        };
-        {
-            var oldShop = earlyShop.Catalog;
-            earlyShop = earlyShop with
-            {
-                Catalog = SafariShopCatalog.Authenticate(oldShop, oldShop with { Profile = SafariShopCatalog.Profile, Items = oldShop.Items.AddRange(safariItems.Items.Select(i => safariItems.Definition(i.Metadata.Item.Id))) }).Catalog
-            };
-        }
-
-        earlyShop = earlyShop with
-        {
-            Catalog = SilphShopCatalog.Authenticate(earlyShop.Catalog, PretSilphItems.Extend(earlyShop.Catalog, silphItems)).Catalog
-        };
-        {
-            var previous = SilphMachineCatalog.For(machines) ?? throw new InvalidDataException("saffron_gym_teaching_predecessor");
-            machines = SaffronGymMachineCatalog.Authenticate(previous, PretSaffronGymMachines.Extend(machines, saffronGymItems)).Catalog;
-            earlyShop = earlyShop with
-            {
-                Catalog = ComposeSaffronGymShop(earlyShop.Catalog, saffronGym, saffronGymItems)
-            };
-        }
-
-        {
-            var priorMachines = SaffronGymMachineCatalog.For(machines) ?? throw new InvalidDataException("cinnabar_machine_predecessor");
-            machines = CinnabarMachineCatalog.Authenticate(priorMachines, cinnabarOwned, PretCinnabarMachines.Extend(machines, cinnabarItems)).Catalog;
-            var priorShop = SaffronGymShopCatalog.For(earlyShop.Catalog) ?? throw new InvalidDataException("cinnabar_shop_predecessor");
-            earlyShop = earlyShop with
-            {
-                Catalog = CinnabarShopCatalog.Authenticate(priorShop, PretCinnabarItems.Extend(earlyShop.Catalog, cinnabarItems)).Catalog
-            };
-        }
-
-        {
-            var previous = CinnabarShopCatalog.For(earlyShop.Catalog) ?? throw new InvalidDataException("first_sevii_shop_predecessor");
-            earlyShop = earlyShop with
-            {
-                Catalog = FirstSeviiShopCatalog.Authenticate(previous, firstSeviiItems).Catalog
-            };
-        }
-
-        {
-            var predecessor = CinnabarMachineCatalog.For(machines) ?? throw new InvalidDataException("viridian_gym_machine_predecessor");
-            machines = PretViridianGymRules.ExtendMachines(predecessor, projectRoot).Catalog;
-        }
-
-        var victoryRoadPredecessorMachines = machines;
-        {
-            var shopProof = FirstSeviiShopCatalog.For(earlyShop.Catalog) ?? throw new InvalidDataException("victory_road_shop_predecessor");
-            earlyShop = earlyShop with
-            {
-                Catalog = VictoryRoadShopCatalog.Authenticate(shopProof, PretVictoryRoadItems.ExtendShop(shopProof, victoryRoadItems)).Catalog
-            };
-            var machineProof = ViridianGymMachineCatalog.For(machines) ?? throw new InvalidDataException("victory_road_machine_predecessor");
-            machines = VictoryRoadMachineCatalog.Authenticate(machineProof, PretVictoryRoadItems.ExtendMachines(machineProof, victoryRoadItems)).Catalog;
-        }
+        var earlyShop = PretEarlyShop.LoadPresentation(projectRoot, CurrentItemCatalog.Load(projectRoot, sharedItems));
 
         // The importer compiled source syntax, edition branches, menus and fallthrough.
         var compiled = storyRuntime.Compilation;
@@ -923,25 +614,11 @@ public sealed partial class PretCampaignCatalog
 
             if (choices.Count != 3 || !choices.Select(x => x.Index).Order().SequenceEqual(new[] { 0, 1, 2 }) || choices.Select(x => x.BallId).Distinct().Count() != 3)
                 throw new InvalidDataException("Source starter branch declarations invalid.");
-            pokemonContent = pokemonContent with
-            {
-                StarterChoices = choices.OrderBy(x => x.Index).ToImmutableArray()
-            };
+            pokemonContent = pokemonContent with { StarterChoices = choices.OrderBy(x => x.Index).ToImmutableArray() };
         }
 
         var bank = storyRuntime.TextBank.ToBuilder();
         var repel = PretEarlyRepel.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-repel/early-repel.json"), Encoding.UTF8));
-
-        {
-        }
-
-        {
-            pokemonContent = pokemonContent with
-            {
-                AllowSleepStatus = true
-            };
-        }
-
         {
             foreach (var label in magikarp.RequiredCommonScriptLabels)
                 if (compiled.FindProgram(label)is null)
@@ -957,92 +634,45 @@ public sealed partial class PretCampaignCatalog
         ValidateRegionalFlavorComposition(regionalInteriorCompositionMaps, compiled, bank);
         ValidateFuchsiaRouteComposition(fuchsiaRoute, fuchsiaRouteCompositionMaps, regionalInteriorCompositionMaps, fuchsiaRouteCompositionPokemon);
         ValidateFuchsiaGymComposition(fuchsiaGymCompositionMaps, fuchsiaRouteCompositionMaps, fuchsiaGymTrainers, compiled);
-        ValidateFirstSeviiComposition(firstSevii, viridianGymPredecessorMaps, firstSeviiPredecessorMaps, cinnabarOwned, cinnabarOpponents, firstSeviiTrainers, compiled, bank);
-        ValidateViridianGymComposition(viridianGym, victoryRoadPredecessorMaps, viridianGymPredecessorMaps, viridianGymTrainers, compiled, victoryRoadPredecessorMachines, cinnabarOwned);
+        ValidateFirstSeviiComposition(firstSevii, viridianGymPredecessorMaps, firstSeviiPredecessorMaps, gamePokemon, gamePokemon.Opponents, firstSeviiTrainers, compiled, bank);
+        ValidateViridianGymComposition(viridianGym, victoryRoadPredecessorMaps, viridianGymPredecessorMaps, viridianGymTrainers, compiled, machines, gamePokemon);
         {
-            ValidateLeagueRivalComposition(victoryRoadPredecessorMaps, leagueRivalTrainers, compiled, bank, pokemonContent, cinnabarOwned, cinnabarOpponents);
+            ValidateLeagueRivalComposition(victoryRoadPredecessorMaps, leagueRivalTrainers, compiled, bank, pokemonContent, gamePokemon, gamePokemon.Opponents);
         }
 
-        ValidateVictoryRoadComposition(victoryRoad, pokemonLeaguePredecessorMaps, victoryRoadPredecessorMaps, victoryRoadTrainers, cinnabarOwned, compiled);
-        var pokemonLeagueOpponents = PretPokemonLeagueRules.LoadOpponents(projectRoot, PretVictoryRoadOpponents.Load(cinnabarOpponents));
-        ValidatePokemonLeagueComposition(pokemonLeague, seviiRubyPredecessorMaps, pokemonLeaguePredecessorMaps, pokemonLeagueTrainers, pokemonLeagueOpponents, cinnabarOwned, compiled, bank);
-        SeviiRubyOwnedPokemonCatalog seviiRubyOwned;
-        SeviiRubyOpponentPokemonCatalog seviiRubyOpponents;
+        ValidateVictoryRoadComposition(victoryRoad, pokemonLeaguePredecessorMaps, victoryRoadPredecessorMaps, victoryRoadTrainers, gamePokemon, compiled);
+
+        ValidatePokemonLeagueComposition(pokemonLeague, seviiRubyPredecessorMaps, pokemonLeaguePredecessorMaps, pokemonLeagueTrainers, gamePokemon.Opponents, gamePokemon, compiled, bank);
+
         SeviiRubyItemContent seviiRubyItems;
         {
-            seviiRubyOwned = PretSeviiRubyRules.LoadOwned(projectRoot, cinnabarOwned);
-            seviiRubyOpponents = PretSeviiRubyRules.LoadOpponents(pokemonLeagueOpponents, seviiRubyOwned);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = seviiRubyOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(SeviiRubySpeciesNames(oakPokedex, seviiRubyOwned))
-            };
-            seviiRubyItems = PretSeviiRubyItems.Load(seviiRuby, seviiRubyOwned, earlyShop.Catalog, machines, compiled);
-            earlyShop = earlyShop with
-            {
-                Catalog = seviiRubyItems.Shop.Catalog
-            };
-            machines = seviiRubyItems.Machines.Catalog;
-            ValidateSeviiRubyComposition(seviiRuby, fourIslandPredecessorMaps, seviiRubyPredecessorMaps, seviiRubyOwned, seviiRubyOpponents, seviiRubyTrainers, compiled, pokemonContent, seviiRubyItems);
+
+            seviiRubyItems = PretSeviiRubyItems.Load(seviiRuby, gamePokemon, earlyShop.Catalog, machines, compiled, sharedMachines);
+
+            ValidateSeviiRubyComposition(seviiRuby, fourIslandPredecessorMaps, seviiRubyPredecessorMaps, gamePokemon, gamePokemon.Opponents, seviiRubyTrainers, compiled, pokemonContent, seviiRubyItems);
         }
 
-        FourIslandOwnedPokemonCatalog fourIslandOwned;
-        FourIslandOpponentPokemonCatalog fourIslandOpponents;
         FourIslandItemContent fourIslandItems;
         {
-            fourIslandOwned = PretFourIslandRules.LoadOwned(projectRoot, seviiRubyOwned);
-            fourIslandOpponents = PretFourIslandRules.LoadOpponents(seviiRubyOpponents, fourIslandOwned);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = fourIslandOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(FourIslandSpeciesNames(oakPokedex, fourIslandOwned))
-            };
-            fourIslandItems = PretFourIslandItems.Load(fourIsland, fourIslandOwned, earlyShop.Catalog, machines, compiled);
-            earlyShop = earlyShop with
-            {
-                Catalog = fourIslandItems.Shop.Catalog
-            };
-            machines = fourIslandItems.Machines.Catalog;
+
+            fourIslandItems = PretFourIslandItems.Load(fourIsland, gamePokemon, earlyShop.Catalog, machines, compiled);
+
             ValidateFourIslandComposition(sixIslandPredecessorMaps, fourIslandTrainers, compiled);
         }
 
-        SixIslandOwnedPokemonCatalog sixIslandOwned;
-        SixIslandOpponentPokemonCatalog sixIslandOpponents;
         SixIslandItemContent sixIslandItems;
         {
-            sixIslandOwned = PretSixIslandRules.LoadOwned(projectRoot, fourIslandOwned);
-            sixIslandOpponents = PretSixIslandRules.LoadOpponents(fourIslandOpponents, sixIslandOwned);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = sixIslandOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(SixIslandSpeciesNames(oakPokedex, sixIslandOwned))
-            };
-            sixIslandItems = PretSixIslandItems.Load(sixIsland, sixIslandOwned, earlyShop.Catalog, machines, compiled, projectRoot);
-            earlyShop = earlyShop with
-            {
-                Catalog = sixIslandItems.Shop.Catalog
-            };
-            machines = sixIslandItems.Machines.Catalog;
+
+            sixIslandItems = PretSixIslandItems.Load(sixIsland, gamePokemon, earlyShop.Catalog, machines, compiled, projectRoot);
+
             ValidateSixIslandComposition(fiveIslandPredecessorMaps, sixIslandTrainers, compiled);
         }
 
-        FiveIslandOwnedPokemonCatalog fiveIslandOwned;
-        FiveIslandOpponentPokemonCatalog fiveIslandOpponents;
         FiveIslandItemContent fiveIslandItems;
         {
-            fiveIslandOwned = PretFiveIslandRules.LoadOwned(projectRoot, sixIslandOwned);
-            fiveIslandOpponents = PretFiveIslandRules.LoadOpponents(sixIslandOpponents, fiveIslandOwned);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = fiveIslandOwned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(FiveIslandSpeciesNames(oakPokedex, fiveIslandOwned))
-            };
-            fiveIslandItems = PretFiveIslandItems.Load(fiveIsland, fiveIslandOwned, earlyShop.Catalog, machines, compiled, projectRoot);
-            earlyShop = earlyShop with
-            {
-                Catalog = fiveIslandItems.Shop.Catalog
-            };
-            machines = fiveIslandItems.Machines.Catalog;
+
+            fiveIslandItems = PretFiveIslandItems.Load(fiveIsland, gamePokemon, earlyShop.Catalog, machines, compiled, projectRoot);
+
             ValidateFiveIslandComposition(maps, fiveIslandTrainers, compiled, fiveIslandItems, true);
         }
 
@@ -1050,114 +680,60 @@ public sealed partial class PretCampaignCatalog
         ImmutableDictionary<MapId, RoamerMap> celioRoamerMaps;
         {
             celioRoamerMaps = PretCelioMapNumbers.Load(mapNumbers, maps);
-            celioPokemon = PretCelioPokemon.Load(projectRoot, fiveIslandOwned, fiveIslandOpponents, fiveIslandItems.Machines);
-            pokemonContent = pokemonContent with
-            {
-                Catalog = celioPokemon.Owned.Catalog,
-                SpeciesNames = pokemonContent.SpeciesNames.AddRange(CelioOwnedPokemonCatalog.AdditionalSpecies.Select(id => KeyValuePair.Create(celioPokemon.Owned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[celioPokemon.Owned.Catalog.Species[id].SourceSpeciesId].Name)))
-            };
-            machines = celioPokemon.Machines.Catalog;
-            ValidateCelioComposition(maps, compiled, pokemonContent, celioPokemon, fiveIslandOwned, fiveIslandOpponents, fiveIslandItems.Machines);
+            celioPokemon = new(gamePokemon, gamePokemon.Opponents, machines);
+
+            ValidateCelioComposition(maps, compiled, pokemonContent, celioPokemon, gamePokemon, gamePokemon.Opponents, fiveIslandItems.Machines);
         }
 
         // Validate the original Celio composition before extending the sole current game.
         var celioMaps = maps;
         maps = maps.AddRange(ceruleanCave.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendCeruleanCave(mapNumbers, maps, celioRoamerMaps);
-        var ceruleanCavePokemon = PretCeruleanCavePokemon.Load(projectRoot, celioPokemon.Owned, celioPokemon.Opponents, celioPokemon.Machines);
-        pokemonContent = pokemonContent with
-        {
-            Catalog = ceruleanCavePokemon.Owned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.AddRange(CeruleanCaveOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-                KeyValuePair.Create(ceruleanCavePokemon.Owned.Catalog.Species[id].SourceSpeciesId,
-                    oakPokedex.Entries[ceruleanCavePokemon.Owned.Catalog.Species[id].SourceSpeciesId].Name)))
-        };
-        machines = ceruleanCavePokemon.Machines.Catalog;
+        var ceruleanCavePokemon = new CeruleanCavePokemonContent(gamePokemon, gamePokemon.Opponents, machines);
+
         ValidateCeruleanCaveComposition(ceruleanCave, maps, celioMaps, compiled, pokemonContent, ceruleanCavePokemon, celioPokemon);
 
         // The same current game retains original League teams and activates the source rematches after Celio.
         var leagueRematchTrainers = PretLeagueRematchRules.LoadTrainers(projectRoot);
-        var leagueRematchOpponents = PretLeagueRematchRules.LoadOpponents(projectRoot, ceruleanCavePokemon.Opponents);
-        ValidateLeagueRematchComposition(leagueRematchTrainers, leagueRematchOpponents, ceruleanCavePokemon, compiled, bank);
+
+        ValidateLeagueRematchComposition(leagueRematchTrainers, gamePokemon.Opponents, ceruleanCavePokemon, compiled, bank);
 
         maps = maps.AddRange(sevenIsland.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendSevenIsland(mapNumbers, maps, celioRoamerMaps, sevenIsland.NewMaps);
-        var sevenOwned = PretSevenIslandRules.LoadOwned(projectRoot, ceruleanCavePokemon.Owned);
-        var sevenOpponents = PretSevenIslandRules.LoadOpponents(projectRoot, leagueRematchOpponents, sevenOwned);
-        var sevenTrainers = PretSevenIslandRules.LoadTrainers(projectRoot);
-        var sevenMachines = PretSevenIslandRules.LoadMachines(projectRoot, ceruleanCavePokemon.Machines, sevenOwned);
-        var sevenShop = PretSevenIslandRules.LoadShop(projectRoot, fiveIslandItems.Shop);
-        var sevenItems = PretSevenIslandRules.LoadItemsDocument(projectRoot);
-        pokemonContent = pokemonContent with { Catalog = sevenOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.AddRange(SevenIslandOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-                KeyValuePair.Create(sevenOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[sevenOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
-        machines = sevenMachines.Catalog;
-        earlyShop = earlyShop with { Catalog = sevenShop.Catalog };
+
+        var sevenTrainers = PretSevenIslandRules.LoadTrainers(projectRoot, shared: sharedMachines);
+
+        var sevenItems = PretSevenIslandRules.LoadItemsDocument(projectRoot, shared: sharedMachines);
 
         ValidateSevenIslandComposition(sevenIsland, sevenTrainers, sevenItems, compiled);
 
         maps = maps.AddRange(eventIsland.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendEventIslands(mapNumbers, maps, celioRoamerMaps, eventIsland.NewMaps);
-        var eventOwned = PretEventIslandRules.LoadOwned(projectRoot, sevenOwned);
-        var eventOpponents = PretEventIslandRules.LoadOpponents(projectRoot, sevenOpponents, eventOwned);
-        var eventMachines = PretEventIslandRules.LoadMachines(projectRoot, sevenMachines, eventOwned);
-        var eventShop = PretEventIslandRules.LoadShop(projectRoot, sevenShop);
-        pokemonContent = pokemonContent with { Catalog = eventOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.AddRange(EventIslandOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-                KeyValuePair.Create(eventOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[eventOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
-        machines = eventMachines.Catalog;
-        earlyShop = earlyShop with { Catalog = eventShop.Catalog };
+
         maps=maps.AddRange(powerPlant.NewMaps);
         celioRoamerMaps=PretCelioMapNumbers.ExtendPowerPlant(mapNumbers,maps,celioRoamerMaps,powerPlant.NewMaps);
-        var powerPlantOwned=PretPowerPlantRules.LoadOwned(eventOwned);
-        var powerPlantOpponents=PretPowerPlantRules.LoadOpponents(eventOpponents,powerPlantOwned);
-        var powerPlantMachines=PretPowerPlantRules.LoadMachines(projectRoot,eventMachines,powerPlantOwned);
-        var powerPlantShop=PretPowerPlantRules.LoadShop(projectRoot,eventShop);
-        pokemonContent=pokemonContent with {Catalog=powerPlantOwned.Catalog,
-            SpeciesNames=pokemonContent.SpeciesNames.AddRange(PowerPlantOwnedPokemonCatalog.AdditionalSpecies.Select(id=>
-                KeyValuePair.Create(powerPlantOwned.Catalog.Species[id].SourceSpeciesId,oakPokedex.Entries[powerPlantOwned.Catalog.Species[id].SourceSpeciesId].Name)))};
-        machines=powerPlantMachines.Catalog;
-        earlyShop=earlyShop with {Catalog=powerPlantShop.Catalog};
-
 
         maps = maps.AddRange(trainerTower.Maps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendTrainerTower(mapNumbers, maps, celioRoamerMaps, trainerTower.Maps);
         var trainerTowerCatalog = PretTrainerTowerRules.Load(projectRoot);
-        var trainerTowerOpponents = PretTrainerTowerRules.LoadOpponents(projectRoot, powerPlantOpponents);
-        var trainerTowerShop = PretTrainerTowerRules.LoadShop(projectRoot, powerPlantShop);
-        earlyShop = earlyShop with { Catalog = trainerTowerShop.Catalog };
-        ValidateTrainerTowerComposition(trainerTower, compiled, trainerTowerCatalog, trainerTowerShop);
+
+        ValidateTrainerTowerComposition(trainerTower, compiled, trainerTowerCatalog, earlyShop.Catalog);
 
         var dojoPreviousMaps = maps;
         maps = maps.AddRange(fightingDojo.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendFightingDojo(mapNumbers, maps, celioRoamerMaps, fightingDojo.NewMaps);
-        var dojoOwned = PretFightingDojoRules.LoadOwned(projectRoot, powerPlantOwned);
-        var dojoOpponents = PretFightingDojoRules.LoadOpponents(projectRoot, powerPlantOpponents, dojoOwned);
-        var dojoMachines = PretFightingDojoRules.LoadMachines(projectRoot, powerPlantMachines, dojoOwned);
+
         var dojoTrainers = PretFightingDojoRules.LoadTrainers(projectRoot);
-        pokemonContent = pokemonContent with { Catalog = dojoOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.AddRange(FightingDojoOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-                KeyValuePair.Create(dojoOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[dojoOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
-        machines = dojoMachines.Catalog;
 
         ValidateFightingDojoComposition(fightingDojo, maps, dojoPreviousMaps, compiled);
 
         var fossilLabPreviousMaps = maps;
         maps = maps.AddRange(fossilLab.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendFossilLab(mapNumbers, maps, celioRoamerMaps, fossilLab.NewMaps);
-        var fossilOwned = PretFossilLabRules.LoadOwned(projectRoot, dojoOwned);
-        var fossilOpponents = PretFossilLabRules.LoadOpponents(projectRoot, dojoOpponents, fossilOwned);
-        var fossilMachines = PretFossilLabRules.LoadMachines(projectRoot, dojoMachines, fossilOwned);
-        var fossilShop = PretFossilLabRules.LoadShop(projectRoot, trainerTowerShop);
-        earlyShop = earlyShop with { Catalog = fossilShop.Catalog };
-        pokemonContent = pokemonContent with { Catalog = fossilOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.AddRange(FossilLabOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-                KeyValuePair.Create(fossilOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[fossilOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
-        machines = fossilMachines.Catalog;
+
         ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
         maps = maps.AddRange(npcTradeElyssa.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, npcTradeElyssa.NewMaps);
-        earlyShop = earlyShop with { Catalog = npcTradeElyssa.ExtendShop(fossilShop, npcTradeMail).Catalog };
         maps = maps.AddRange(npcTradeHaden.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, npcTradeHaden.NewMaps);
         var npcTradePreviousMaps = maps;
@@ -1168,28 +744,12 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(goodRodService.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, goodRodService.NewMaps);
         ValidateGoodRodComposition(goodRodService, maps, goodRodPreviousMaps, compiled);
-        var tradeOwned = PretNpcTradeOwnedRules.LoadOwned(projectRoot, fossilOwned);
-        var tradeOpponents = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
-        var tradeMachines = PretNpcTradeOwnedRules.LoadMachines(projectRoot, fossilMachines, tradeOwned);
-        pokemonContent = pokemonContent with { Catalog = tradeOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItem(122, oakPokedex.Entries[122].Name).SetItem(124, oakPokedex.Entries[124].Name) };
-        machines = tradeMachines.Catalog;
-        earlyShop=earlyShop with { Catalog=PretSeafoamItems.LoadShop(projectRoot,NpcTradeShopCatalog.For(earlyShop.Catalog)!).Catalog };
+
         var seafoamPreviousMaps = maps;
         maps = maps.AddRange(seafoam.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, seafoam.NewMaps);
-        earlyShop = earlyShop with { Catalog = PretPokeDollItems.LoadShop(projectRoot,
-            SeafoamShopCatalog.For(earlyShop.Catalog) ?? throw new InvalidDataException("poke_doll_predecessor")).Catalog };
         _ = PretPokeDollItems.LoadSourceContract(projectRoot);
-        earlyShop = earlyShop with { Catalog = PretOrdinaryItemSupplement.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
-        earlyShop = earlyShop with { Catalog = PretDepartmentFourthFloor.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
-        earlyShop = earlyShop with { Catalog = PretDepartmentRooftopItems.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
-        var seafoamOwned = PretSeafoamRules.LoadOwned(projectRoot, tradeOwned);
-        var seafoamOpponents = PretSeafoamRules.LoadOpponents(projectRoot, tradeOpponents, seafoamOwned);
-        var seafoamMachines = PretSeafoamRules.LoadMachines(projectRoot, tradeMachines, seafoamOwned);
-        pokemonContent = pokemonContent with { Catalog = seafoamOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItem(144, oakPokedex.Entries[144].Name) };
-        machines = seafoamMachines.Catalog;
+
         ValidateSeafoamComposition(seafoam, maps, seafoamPreviousMaps, compiled);
         var reminderPreviousMaps = maps;
         maps = maps.AddRange(moveReminderHouse.NewMaps);
@@ -1218,72 +778,13 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(superRodService.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, superRodService.NewMaps);
         ValidateSuperRodComposition(superRodService, maps, superRodPreviousMaps, compiled);
-        var superRodOwned = PretSuperRodSpecies.LoadOwned(projectRoot, seafoamOwned);
-        var superRodOpponents = PretSuperRodSpecies.LoadOpponents(projectRoot, seafoamOpponents, superRodOwned);
-        var superRodMachines = PretSuperRodSpecies.LoadMachines(projectRoot, seafoamMachines, superRodOwned);
-        pokemonContent = pokemonContent with { Catalog = superRodOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItem(211, oakPokedex.Entries[211].Name) };
-        var departmentMachines = PretDepartmentStoreMachines.Load(projectRoot, departmentStore, superRodMachines.Catalog);
-        var stoneOwned = PretStoneEvolutionSpecies.LoadOwned(projectRoot, superRodOwned);
-        var stoneOpponents = PretStoneEvolutionSpecies.LoadOpponents(projectRoot, superRodOpponents, stoneOwned);
-        var stoneMachines = PretStoneEvolutionSpecies.LoadMachines(projectRoot, departmentMachines, stoneOwned);
-        pokemonContent = pokemonContent with { Catalog = stoneOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItems(StoneEvolutionOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
-                int number = stoneOwned.Catalog.Species[id].SourceSpeciesId;
-                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
-            })) };
-        machines = PretDepartmentRooftopItems.LoadMachines(projectRoot, stoneMachines.Catalog).Machines;
-        var prizeOwned = PretGameCornerSpecies.LoadOwned(projectRoot, stoneOwned);
-        _ = PretGameCornerSpecies.LoadOpponents(projectRoot, stoneOpponents, prizeOwned);
-        earlyShop = earlyShop with { Catalog = PretGameCornerPrizes.LoadItems(projectRoot, earlyShop.Catalog).Catalog };
-        var vsSeekerItem = vsSeekerPresentation.ItemDefinition.Deserialize<EarlyShopItemDefinition>(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+
+        var vsSeekerItem = vsSeekerPresentation.ItemDefinition.Deserialize<EarlyShopItemDefinition>(sharedItems.CreateJsonOptions())
             ?? throw new InvalidDataException("vs_seeker_item_missing");
-        earlyShop = earlyShop with { Catalog = OrdinaryItemInventoryCatalog.AppendVsSeeker(earlyShop.Catalog, vsSeekerItem).Catalog };
-        earlyShop = earlyShop with { Catalog = mailPresentation.AppendInventory(earlyShop.Catalog).Catalog };
-        machines = PretGameCornerPrizes.LoadMachines(projectRoot, machines, prizeOwned).Catalog;
-        pokemonContent = pokemonContent with { Catalog = prizeOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItems(GameCornerOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
-                int number = prizeOwned.Catalog.Species[id].SourceSpeciesId;
-                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
-            })) };
-        machines = PretFieldFly.LoadMachines(projectRoot, machines).Catalog;
-        var breedingOwned = PretBreedingSpecies.LoadOwned(projectRoot, prizeOwned);
-        _ = PretBreedingSpecies.LoadOpponents(projectRoot, GameCornerOpponentPokemonCatalog.For(prizeOwned)!, breedingOwned);
-        machines = PretBreedingSpecies.LoadMachines(projectRoot, machines, breedingOwned).Catalog;
-        _ = PretBreedingSpecies.LoadMetadata(projectRoot, breedingOwned);
-        pokemonContent = pokemonContent with { Catalog = breedingOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItems(BreedingOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
-                int number = breedingOwned.Catalog.Species[id].SourceSpeciesId;
-                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
-            })) };
-        var ordinaryOwned = PretOrdinaryEvolutionSpecies.LoadOwned(projectRoot, breedingOwned);
-        var ordinaryOpponents = PretOrdinaryEvolutionSpecies.LoadOpponents(projectRoot, BreedingOpponentPokemonCatalog.For(breedingOwned)!, ordinaryOwned);
-        var memorialOpponents = MemorialPillarOpponentPokemonCatalog.Authenticate(ordinaryOpponents);
-        var vsSeekerOpponents = VsSeekerOpponentPokemonCatalog.Authenticate(memorialOpponents.Owned.SharedBattle, memorialOpponents.Catalog);
+
         var memorialTrainers = PretMemorialPillarTrainers.Load(originalTmAcquisition.MemorialTrainers);
-        machines = PretOrdinaryEvolutionSpecies.LoadMachines(projectRoot, machines, ordinaryOwned).Catalog;
-        _ = PretOrdinaryEvolutionSpecies.LoadMetadata(projectRoot, ordinaryOwned);
-        pokemonContent = pokemonContent with { Catalog = ordinaryOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItems(OrdinaryEvolutionOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
-                int number = ordinaryOwned.Catalog.Species[id].SourceSpeciesId;
-                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
-            })) };
-        machines = PretOriginalMachineCatalog.Load(projectRoot, OrdinaryEvolutionMachineCatalog.For(machines)
-            ?? throw new InvalidDataException("original_machine_predecessor")).Catalog;
-        var lostCaveOwned = LostCaveOwnedPokemonCatalog.Authenticate(vsSeekerOpponents);
-        _ = LostCaveSpeciesMetadataCatalog.Authenticate(lostCaveOwned);
-        var lostCaveMachines = LostCaveMachineCatalog.Authenticate(machines, lostCaveOwned);
-        var giftOwned = PretGiftEggSpecies.LoadOwned(projectRoot, lostCaveOwned);
-        _ = PretGiftEggSpecies.LoadMetadata(projectRoot, giftOwned);
-        machines = PretGiftEggSpecies.LoadMachines(projectRoot, lostCaveMachines.Catalog, giftOwned).Catalog;
-        pokemonContent = pokemonContent with { Catalog = giftOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItems(LostCaveOwnedPokemonCatalog.AdditionalSpecies
-                .Concat(GiftEggOwnedPokemonCatalog.AdditionalSpecies).Select(id => {
-                    int number = giftOwned.Catalog.Species[id].SourceSpeciesId;
-                    return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
-                })) };
-        earlyShop = earlyShop with { Catalog = PretLostCaveItems.LoadItems(projectRoot, earlyShop.Catalog).Catalog };
-        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, pokemonContent.Catalog, earlyShop.Catalog, machines);
+
+        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, gamePokemon, earlyShop.Catalog, machines, shared: sharedMachines);
         var capeBrinkPreviousMaps = maps;
         maps = maps.AddRange(capeBrinkTutor.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, capeBrinkTutor.NewMaps);
@@ -1322,10 +823,8 @@ public sealed partial class PretCampaignCatalog
         var moveReminder = PretMoveReminderService.Load(projectRoot, pokemonContent.Catalog);
         var moveTutors = PretMoveTutors.Load(projectRoot, pokemonContent.Catalog);
 
-
-
         // Change this explicit version only when the saved content model changes.
-        const string version = "firered-current-content-v3";
+        const string version = "firered-current-content-v4";
         return new(
             maps: maps,
             scripts: compiled,
@@ -1434,26 +933,20 @@ public sealed partial class PretCampaignCatalog
             surfPokemon: surfPokemon,
             surfArt: surfArt,
             surfEncounters: surfEncounters,
-            surfOwned: surfOwned,
             silph: silph,
             silphPokemon: silphPokemon,
             silphItems: silphItems,
             silphTrainers: silphTrainers,
-            silphOwned: silphOwned,
-            silphOpponents: silphOpponents,
             silphArt: silphArt,
             saffronGym: saffronGym,
             saffronGymTrainers: saffronGymTrainers,
             saffronGymItems: saffronGymItems,
-            saffronGymOpponents: saffronGymOpponents,
             saffronGymPokemon: saffronGymPokemon,
             saffronGymArt: saffronGymArt,
             cinnabar: cinnabar,
             cinnabarPokemon: cinnabarPokemon,
             cinnabarTrainers: cinnabarTrainers,
             cinnabarItems: cinnabarItems,
-            cinnabarOwned: cinnabarOwned,
-            cinnabarOpponents: cinnabarOpponents,
             cinnabarArt: cinnabarArt,
             cinnabarPresentation: cinnabarPresentation,
             firstSevii: firstSevii,
@@ -1468,26 +961,17 @@ public sealed partial class PretCampaignCatalog
             victoryRoadItems: victoryRoadItems,
             pokemonLeague: pokemonLeague,
             pokemonLeagueTrainers: pokemonLeagueTrainers,
-            pokemonLeagueOpponents: pokemonLeagueOpponents,
             nationalDexEnabled: true,
             seviiRuby: seviiRuby,
-            seviiRubyOwned: seviiRubyOwned,
-            seviiRubyOpponents: seviiRubyOpponents,
             seviiRubyTrainers: seviiRubyTrainers,
             seviiRubyItems: seviiRubyItems,
             fourIsland: fourIsland,
-            fourIslandOwned: fourIslandOwned,
-            fourIslandOpponents: fourIslandOpponents,
             fourIslandTrainers: fourIslandTrainers,
             fourIslandItems: fourIslandItems,
             sixIsland: sixIsland,
-            sixIslandOwned: sixIslandOwned,
-            sixIslandOpponents: sixIslandOpponents,
             sixIslandTrainers: sixIslandTrainers,
             sixIslandItems: sixIslandItems,
             fiveIsland: fiveIsland,
-            fiveIslandOwned: fiveIslandOwned,
-            fiveIslandOpponents: fiveIslandOpponents,
             fiveIslandTrainers: fiveIslandTrainers,
             fiveIslandItems: fiveIslandItems,
             celioPokemon: celioPokemon,
@@ -1495,27 +979,16 @@ public sealed partial class PretCampaignCatalog
             ceruleanCave: ceruleanCave,
             ceruleanCavePokemon: ceruleanCavePokemon,
             leagueRematchTrainers: leagueRematchTrainers,
-            leagueRematchOpponents: leagueRematchOpponents,
-            sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
-            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
-            trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition, schoolHouseInteriors: schoolHouseInteriors, lostCave: lostCave, lostCaveTrainers: lostCaveTrainers, trainerFanClub: trainerFanClub) { MailPresentation = mailPresentation, MailComposer = mailComposer.Catalog, TeachyTv = teachyTv, VsSeeker = vsSeeker.Catalog, VsSeekerTexts = vsSeekerPresentation.EncodedTexts, VsSeekerTrainers = vsSeekerTrainers, VsSeekerBattleOccurrences = vsSeekerOccurrences, VsSeekerOpponents = vsSeekerOpponents, FameChecker = fameChecker.Catalog, GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = memorialOpponents };
+            sevenIsland: sevenIsland, sevenTrainers: sevenTrainers, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, powerPlant: powerPlant, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
+            fightingDojo: fightingDojo, dojoTrainers: dojoTrainers, fossilLab: fossilLab, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition, schoolHouseInteriors: schoolHouseInteriors, lostCave: lostCave, lostCaveTrainers: lostCaveTrainers, trainerFanClub: trainerFanClub) { MailPresentation = mailPresentation, MailComposer = mailComposer.Catalog, TeachyTv = teachyTv, VsSeeker = vsSeeker.Catalog, VsSeekerTexts = vsSeekerPresentation.EncodedTexts, VsSeekerTrainers = vsSeekerTrainers, VsSeekerBattleOccurrences = vsSeekerOccurrences, VsSeekerOpponents = gamePokemon.Opponents, FameChecker = fameChecker.Catalog, GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = gamePokemon.Opponents };
     }
 
     private static void ValidateCeruleanCaveComposition(PretCeruleanCaveRegion region,
         ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
         PretStoryCompilation scripts, CampaignPokemonContent pokemon, CeruleanCavePokemonContent cave, CelioPokemonContent celio)
     {
-        if (previous.Count != 254 || maps.Count != 257 || region.NewMaps.Count != 3 ||
-            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
-            region.NewMaps.Any(p => previous.ContainsKey(p.Key) || !ReferenceEquals(p.Value, maps[p.Key])) ||
-            cave.Owned.Catalog.Species.Count != 139 || cave.Opponents.Catalog.Species.Count != 163 ||
-            cave.Machines.Catalog.AdditionalMachines is not { Length: 38 } ||
-            !ReferenceEquals(cave.Owned.Predecessor, celio.Owned) || !ReferenceEquals(cave.Opponents.Predecessor, celio.Opponents) ||
-            !ReferenceEquals(cave.Machines.Predecessor, celio.Machines) || !ReferenceEquals(pokemon.Catalog, cave.Owned.Catalog) ||
-            !ReferenceEquals(cave.Owned.Mechanics, celio.Owned.Mechanics) ||
-            !ReferenceEquals(cave.Owned.Catalog.Moves, celio.Owned.Catalog.Moves) || pokemon.Catalog.Moves.Count != 354)
-            throw new InvalidDataException("cerulean_cave_composition_scope");
+        if (region.NewMaps.Any(pair => previous.ContainsKey(pair.Key) || !maps.ContainsKey(pair.Key)))
+            throw new InvalidDataException("cerulean_cave_map_collision");
         var entrance = region.Contracts.GetProperty("cityEntrance");
         var city = previous[new MapId("map.cerulean-city")];
         var warp = entrance.GetProperty("entranceWarp");
@@ -1528,6 +1001,6 @@ public sealed partial class PretCampaignCatalog
             "CeruleanCave_B1F_EventScript_DefeatedMewtwo", "CeruleanCave_B1F_EventScript_RanFromMewtwo" })
             if (scripts.FindProgram(label) is not { } program || program.Instructions.IsEmpty || program.Instructions.Any(i => i.Op == StoryOp.Unsupported))
                 throw new InvalidDataException("cerulean_cave_story_incomplete:" + label);
-        PokemonFactory.ValidateCatalog(cave.Owned.Catalog);
+        PokemonFactory.ValidateDefinitions(cave.Owned.Catalog);
     }
 }

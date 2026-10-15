@@ -15,7 +15,7 @@ public sealed record PowerPlantPokemonResult(PokemonInstance Pokemon, RngState R
 /// <summary>Source CreateScriptedWildMon and ordinary land generation. Held assignment remains at battle entry.</summary>
 public static class PowerPlantPokemonFactory
 {
-    public static PowerPlantPokemonResult Create(PowerPlantOwnedPokemonCatalog owned, PowerPlantEncounterKind kind,
+    public static PowerPlantPokemonResult Create(GamePokemonCatalog owned, PowerPlantEncounterKind kind,
         uint originalTrainerId, RngState rng)
     {
         ValidateOwned(owned);
@@ -25,13 +25,13 @@ public static class PowerPlantPokemonFactory
         if (!SourceInitialInstance(owned, origin, created.Pokemon)) throw new InvalidOperationException("power_plant_generated_identity");
         return new(created.Pokemon, created.Rng, created.Trace, origin);
     }
-    public static Route1WildPokemonResult GenerateStatic(PowerPlantOwnedPokemonCatalog owned, PowerPlantEncounterKind kind,
+    public static Route1WildPokemonResult GenerateStatic(GamePokemonCatalog owned, PowerPlantEncounterKind kind,
         RngState rng, uint originalTrainerId)
     {
         var made = Create(owned, kind, originalTrainerId, rng);
         return new(made.Pokemon, made.Rng, made.Trace);
     }
-    public static Route1WildPokemonResult GenerateLand(PowerPlantOwnedPokemonCatalog owned, PendingEarlyLandEncounter pending,
+    public static Route1WildPokemonResult GenerateLand(GamePokemonCatalog owned, PendingEarlyLandEncounter pending,
         RngState rng, uint originalTrainerId)
     {
         ValidateOwned(owned); ArgumentNullException.ThrowIfNull(pending);
@@ -39,9 +39,9 @@ public static class PowerPlantPokemonFactory
         var origin = new PowerPlantWildOrigin(candidate.Map, PowerPlantEncounterKind.Land, candidate.Slot);
         return GenerateSourceSlot(owned, origin, candidate.Level, rng, originalTrainerId, candidate.Species);
     }
-    public static Route1WildPokemonResult GenerateSourceSlot(PowerPlantOwnedPokemonCatalog owned, PowerPlantWildOrigin origin,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, PowerPlantWildOrigin origin,
         byte level, RngState rng, uint originalTrainerId) => GenerateSourceSlot(owned, origin, level, rng, originalTrainerId, null);
-    private static Route1WildPokemonResult GenerateSourceSlot(PowerPlantOwnedPokemonCatalog owned, PowerPlantWildOrigin origin,
+    private static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, PowerPlantWildOrigin origin,
         byte level, RngState rng, uint originalTrainerId, SpeciesId? expectedSpecies)
     {
         ValidateOwned(owned);
@@ -53,10 +53,9 @@ public static class PowerPlantPokemonFactory
         if (!SourceInitialInstance(owned, origin, made.Pokemon)) throw new InvalidOperationException("power_plant_generated_identity");
         return made;
     }
-    public static bool SourceInitialInstance(PowerPlantOwnedPokemonCatalog owned, PowerPlantWildOrigin origin, PokemonInstance pokemon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, PowerPlantWildOrigin origin, PokemonInstance pokemon)
     {
-        if (owned is null || !ReferenceEquals(PowerPlantOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !PowerPlantWildBattleContract.Matches(origin, pokemon) || SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null)
+        if (owned is null || !PowerPlantWildBattleContract.Matches(origin, pokemon) || SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null)
             return false;
         var source = owned.Mechanics.Catalog.Species[pokemon.Species];
         return pokemon.Evs == SixStats.Zero && pokemon.CurrentHp == pokemon.Stats.MaxHp && pokemon.Friendship == source.Friendship &&
@@ -71,7 +70,7 @@ public static class PowerPlantPokemonFactory
             ?? throw new ArgumentException("power_plant_held_species");
         return row.Common == row.Rare ? row.Common : roll <= 44 ? "ITEM_NONE" : roll <= 94 ? row.Common : row.Rare;
     }
-    public static PartyPokemon PreserveCaughtMetadata(PowerPlantOwnedPokemonCatalog owned, PowerPlantWildOrigin origin, PartyPokemon caught)
+    public static PartyPokemon PreserveCaughtMetadata(GamePokemonCatalog owned, PowerPlantWildOrigin origin, PartyPokemon caught)
     {
         ValidateOwned(owned); ArgumentNullException.ThrowIfNull(caught);
         if (!PowerPlantWildBattleContract.Matches(origin, caught.Pokemon) ||
@@ -79,9 +78,9 @@ public static class PowerPlantPokemonFactory
             throw new ArgumentException("power_plant_caught_identity");
         return caught with { ModernFatefulEncounter = false };
     }
-    private static void ValidateOwned(PowerPlantOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(PowerPlantOwnedPokemonCatalog.For(owned.Catalog), owned))
+        if (owned is null)
             throw new ArgumentException("power_plant_owned_proof");
     }
 }

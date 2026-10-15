@@ -17,7 +17,7 @@ public sealed class PretSuperRodService
     public static MapId HouseMapId { get; } = new("map.route-12-fishing-house");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PewterMachineItem> Items { get; }
+    public ImmutableArray<MachineItem> Items { get; }
     public ImmutableArray<PretPewterMachineIcon> Icons { get; }
     /// <summary>All 46 ordinary FireRed tables in ordinal map-ID order, with original indexes 5 through 9.</summary>
     public ImmutableArray<OldRodEncounterTable> SuperRodTables { get; }

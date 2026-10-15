@@ -93,7 +93,7 @@ def convert(lock,sources):
  for symbol in sorted({m for r in resolved for p in r['party'] for m in p['moves']}):
   p='src/data/battle_moves.h';m=one(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',p)
   f=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M))
-  moves.append(dict(id=dict(value='pret:'+symbol),sourceMoveId=number('include/constants/moves.h',symbol),pp=int(f['pp']),power=int(f['power']),accuracy=int(f['accuracy']),type=f['type'],effect=f['effect'],target=f['target'],secondaryEffectChance=int(f['secondaryEffectChance']),priority=int(f['priority']),battleEffectImplemented=False,flags=f['flags'].split(' | ') if f['flags']!='0' else [],source=ref(p,symbol,m)))
+  moves.append(dict(value='pret:' + symbol))
   np='src/data/text/move_names.h';nm=one(r'^    \['+symbol+r'\]\s*= _\("([^"]+)"\),$',np)
   moveNames.append(dict(id=dict(value='pret:'+symbol),name=nm[1],source=ref(np,symbol,nm)))
  return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved,moves=moves,moveNames=moveNames,limitations=['The eight initial Celadon Gym teams with 21 original party members; no field or battle activation.','Rematches, double battles and the complete game trainer roster are not enabled.','Source declarations and party construction do not implement field callbacks, Gym progression, trainer portraits or audio.'])

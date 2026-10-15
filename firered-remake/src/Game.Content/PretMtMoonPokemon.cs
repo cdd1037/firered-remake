@@ -45,16 +45,15 @@ public sealed class PretMtMoonPokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretMtMoonPokemon(string directory, MtMoonPokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        Route3PokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        Route3PokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -77,7 +76,7 @@ public sealed class PretMtMoonPokemon
         });
     }
 
-    public static PretMtMoonPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
+    public static PretMtMoonPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null)
     {
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
@@ -99,7 +98,7 @@ public sealed class PretMtMoonPokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -117,8 +116,6 @@ public sealed class PretMtMoonPokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "MtMoon Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "MtMoon sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<Route3PokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -133,8 +130,7 @@ public sealed class PretMtMoonPokemon
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
-                icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                (outputs[icon.TexturePath]).Length > 0, "MtMoon icon identity/pixels differ.");
+                icon.PaletteRgb555.Length == 16 && (outputs[icon.TexturePath]).Length > 0, "MtMoon icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
@@ -158,17 +154,14 @@ public sealed class PretMtMoonPokemon
                 dex.Entries[weight.SourceSpeciesId].WeightHectograms == weight.WeightHectograms && weight.WeightHectograms > 0,
                 "MtMoon weight differs from the authenticated Dex source.");
         }
-        using var scope = JsonDocument.Parse(outputs["scope.json"]);
-        Require(scope.RootElement.GetProperty("trainers").GetArrayLength() == 12 &&
-            !scope.RootElement.GetProperty("effectsEnabledByThisCatalog").GetBoolean(), "MtMoon evidence scope differs.");
-        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary(), scope.RootElement.Clone());
+        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary());
     }
 
-    public static MtMoonPokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
+    public static MtMoonPokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
         string pewterGeneratedJson, string route22GeneratedJson, string route3GeneratedJson, string mtmoonGeneratedJson)
     {
-        var original = PretRoute3Pokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretRoute3Pokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<MtMoonPokemonDocument>(mtmoonGeneratedJson, options);
@@ -229,7 +222,7 @@ public sealed class PretMtMoonPokemon
             species[overlay.Species] = species[overlay.Species] with { Evolutions = [overlay.Evolution] };
         }
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 56 && result.Moves.Count == 156 && names.Count == 56 && moveNames.Count == 156, "Incomplete composed MtMoon Pokemon catalog.");
         Require(doc.DeferredEvolutions.Length == 7, "Missing deferred MtMoon evolutions.");
         foreach (var deferred in doc.DeferredEvolutions)
@@ -241,7 +234,7 @@ public sealed class PretMtMoonPokemon
         var allDeferred = original.DeferredEvolutions.Where(d => !doc.EvolutionOverrides.Any(o => o.Species == d.Species)).Select(d =>
             new MtMoonDeferredEvolution(d.Species, d.Evolution.Method == PokemonEvolutionMethod.Level ? "EVO_LEVEL" : "EVO_ITEM",
                 d.Evolution.Parameter ?? d.Evolution.Level.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                d.Evolution.Target, d.Evolution.Source, d.Executable, d.Reason)).Concat(doc.DeferredEvolutions).ToImmutableArray();
+                d.Evolution.Target, d.Executable, d.Reason)).Concat(doc.DeferredEvolutions).ToImmutableArray();
         return new(result, names.ToImmutable(), moveNames.ToImmutable(), constants.ToImmutable(), encoded, allDeferred);
     }
     public ForestPokemonSprite Sprite(SpeciesId species, string side, bool shiny = false) => Sprites.Single(s => s.SpeciesId == species.Value && s.Side == side && s.PaletteVariant == (shiny ? "shiny" : "normal"));
@@ -266,5 +259,5 @@ public sealed class PretMtMoonPokemon
         return result;
     }
 }
-public sealed record MtMoonDeferredEvolution(SpeciesId Species, string Method, string Parameter, SpeciesId Target, PokemonSourceRef Source, bool Executable, string Reason);
+public sealed record MtMoonDeferredEvolution(SpeciesId Species, string Method, string Parameter, SpeciesId Target, bool Executable, string Reason);
 public sealed record MtMoonEvolutionOverride(SpeciesId Species, PokemonEvolution Evolution);

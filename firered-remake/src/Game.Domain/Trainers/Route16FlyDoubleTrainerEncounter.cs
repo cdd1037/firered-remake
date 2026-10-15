@@ -13,13 +13,12 @@ public static class Route16FlyDoubleTrainerEncounter
     public const string Version = "firered-route16-double-encounter-v1";
     public static TrainerId TrainerId => Route16FlyTrainerPartyFactory.TrainerId;
     public const int SharedTrainerFlag = Route16FlyTrainerPartyFactory.SharedTrainerFlag;
-    public static SourceTwinsEncounterResult Begin(Route16FlyTrainerCatalog trainers, OwnedBattlePokemonCatalog owned, string battleScript,
+    public static SourceTwinsEncounterResult Begin(Route16FlyTrainerCatalog trainers, GamePokemonCatalog owned, string battleScript,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
         bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass)
     {
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
-        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            !OwnedBattlePokemonCatalog.IsRegisteredProfileOrSuccessor(owned.RulesVersion, StoneEvolutionOwnedPokemonCatalog.Profile))
+        if (owned is null)
             return Fail("route16_double_catalog");
         try { Route16FlyTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("route16_double_source"); }
@@ -51,7 +50,7 @@ public static class Route16FlyDoubleTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned.Opponents.RulesVersion, Campaign = owned, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Field = new() { Terrain = terrain }, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
@@ -77,7 +76,7 @@ public static class Route16FlyDoubleTrainerEncounter
     }
 
     public static SourceTwinsAiResult ChooseEnemyActions(Route16FlyTrainerCatalog trainers,
-        OwnedBattlePokemonCatalog owned, TrainerId trainer, SourceBattleFrame frame, long expectedRevision,
+        GamePokemonCatalog owned, TrainerId trainer, SourceBattleFrame frame, long expectedRevision,
         string? knownPlayerAbility = null)
     {
         if (ValidateFrame(trainers, owned, trainer, frame) is { } error) return new(frame, [], [], error);
@@ -87,14 +86,13 @@ public static class Route16FlyDoubleTrainerEncounter
             c.Selection,c.Scores,c.SimulatedDamagePercent,c.AbilityReads)).ToImmutableArray(),result.Trace,result.Fault);
     }
 
-    public static string? ValidateFrame(Route16FlyTrainerCatalog trainers, OwnedBattlePokemonCatalog owned, TrainerId trainer, SourceBattleFrame frame)
+    public static string? ValidateFrame(Route16FlyTrainerCatalog trainers, GamePokemonCatalog owned, TrainerId trainer, SourceBattleFrame frame)
     {
-        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            !OwnedBattlePokemonCatalog.IsRegisteredProfileOrSuccessor(owned.RulesVersion, StoneEvolutionOwnedPokemonCatalog.Profile))
+        if (owned is null)
             return "route16_double_catalog";
         try { Route16FlyTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "route16_double_source"; }
-        if (trainer != TrainerId || frame is null || frame.SourceCampaignRulesVersion != owned.TrainerOpponentProfile ||
+        if (trainer != TrainerId || frame is null || frame.SourceCampaignRulesVersion != owned.Opponents.RulesVersion ||
             frame.Layout != SourceBattleLayout.PresetDoubles || frame.KoReplacementTiming != KoReplacementTiming.EndOfTurn ||
             SourceFourActionTurns.ValidateCapability(owned.Mechanics.Catalog, frame) is { }) return "route16_double_frame";
         if (SourcePokemonValidator.ValidateFrameParties(owned.Mechanics.Catalog, frame) is not null) return "route16_double_pokemon";

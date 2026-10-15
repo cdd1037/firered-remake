@@ -16,17 +16,16 @@ public sealed partial class PretCampaignCatalog
     public PretCinnabarPresentation? CinnabarPresentation{get;}
     public SilphPokemonDocument? CinnabarPokemon{get;}
     public PretCinnabarItemsDocument? CinnabarItems{get;}
-    public CinnabarOwnedPokemonCatalog? CinnabarOwnership{get;}
-    public CinnabarOpponentPokemonCatalog? CinnabarOpponents{get;}
+    public GamePokemonCatalog? CinnabarOwnership{get;}
+    public GameOpponentPokemonCatalog? CinnabarOpponents{get;}
     public CinnabarTrainerCatalog? CinnabarTrainerParties{get;}
     public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
     public bool CinnabarEnabled=>CinnabarRegion is not null;
 
-
     private string? CinnabarSpeciesName(int species)=>CinnabarPokemon?.SpeciesNames.FirstOrDefault(n=>
         CinnabarPokemon.Species.Concat(CinnabarPokemon.OpponentSpecies).Any(s=>s.SourceSpeciesId==species&&s.Id==n.Id))?.Name;
 
-    private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)
     {
         foreach(var row in region.Contracts.GetProperty("itemPickups").EnumerateArray())
         {
@@ -36,7 +35,7 @@ public sealed partial class PretCampaignCatalog
             var assignment=program.Instructions.Single(i=>i.Opcode=="setorcopyvar"&&i.Args[0]=="VAR_0x8000");
             string symbol=assignment.Args[1];var id=new ItemId("pret:"+symbol);
             var ordinary=shop.Items.SingleOrDefault(i=>i.Id==id);
-            var machine=PewterMachineRules.Definition(machines,id)?.Machine.Item;
+            var machine=MachineRules.Definition(machines,id)?.Machine.Item;
             if(ordinary is null&&machine is null)throw new InvalidDataException("cinnabar_pickup_item_missing");
             var map=region.NewMaps[new(row.GetProperty("map").GetString()!)];int local=row.GetProperty("localId").GetInt32();
             string flag=item.GetProperty("flag").GetString()!;

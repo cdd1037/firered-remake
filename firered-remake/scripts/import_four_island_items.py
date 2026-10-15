@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Import Four Island items, source shop/pickups and exact 38x125 teaching. No upstream execution."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  json, re, subprocess
 from pathlib import Path
 from machine_catalog import admission_view, compatibility_additions
@@ -21,11 +22,11 @@ def generate(reference,root):
   i=next(i for i in source_items if i['itemId']==symbol)
   match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
   r=ref('src/data/items.json',symbol,line,line)
-  value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
+  value=shared_item(symbol)
   return dict(item=value,description=i['description_english'].replace('\\n','\n'))
  items=[metadata(s) for s in ['ITEM_NEVER_MELT_ICE','ITEM_HM07']]
  i=items[0]['item'];need(i['holdEffect']=='HOLD_EFFECT_ICE_POWER' and i['holdEffectParam']==10 and i['price']==100 and i['sourceItemId']==212,'NeverMeltIce original source')
- new=[{k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=items[0]['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i)]
+ new=[dict(item=i)|dict(description=items[0]['description'], healHp=0, cureStatus=0, effectBytes=[], useSupport=10)]
  need(items[1]['item']['sourceItemId']==345 and items[1]['item']['pocket']=='POCKET_TM_CASE' and items[1]['item']['importance']==1,'Reusable HM07')
  need(next(i for i in source_items if i['itemId']=='ITEM_HM07')['moveId']=='Waterfall','HM07 move')
  move_constants=source('include/constants/moves.h');need(re.search(r'^#define\s+MOVE_WATERFALL\s+127\b',move_constants,re.M),'Waterfall move id')
@@ -38,7 +39,7 @@ def generate(reference,root):
  need(len(hm['species'])==125, 'Exact admitted HM07 species scope')
  stock_path='data/maps/FourIsland_Mart/scripts.inc';stock_text=source(stock_path);stock=re.search(r'^FourIsland_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)',stock_text,re.M)
  symbols=re.findall(r'\t\.2byte (ITEM_\w+)',stock[1]);need(symbols.pop()=='ITEM_NONE' and len(symbols)==8,'Mart stock')
- shop=dict(id='FourIsland_Mart_Items',items=[dict(value='pret:'+s) for s in symbols],source=ref(stock_path,'FourIsland_Mart_Items',stock_text[:stock.start()].count('\n')+1,stock_text[:stock.end()].count('\n')+1))
+ shop=dict(id='FourIsland_Mart_Items',items=[dict(value='pret:'+s) for s in symbols])
  pickups=[];flags=source('include/constants/flags.h')
  def pickup(map_symbol,event,hidden,local_id,item,quantity):
   flag=event['flag']
@@ -68,11 +69,11 @@ def main():
  p=argparse.ArgumentParser(description=__doc__)
  for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
  p.add_argument('--check',action='store_true');a=p.parse_args();doc,evidence=generate(a.reference,a.dependency)
- files={'content/generated/four-island-items/'+name:(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode() for name,value in [('items.json',doc),('source-input-hashes.json',evidence)]}
+ files={'content/generated/four-island-items/'+name:(json.dumps(value,ensure_ascii=False,indent=2, default=item_json)+'\n').encode() for name,value in [('items.json',doc),('source-input-hashes.json',evidence)]}
  lock=dict(sourceCommit=COMMIT,profile='firered-four-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())])
  for name,data in files.items():
   dest=a.output/name
   if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
   else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
- print(json.dumps(dict(checked=a.check),indent=2))
+ print(json.dumps(dict(checked=a.check),indent=2, default=item_json))
 if __name__=='__main__':main()

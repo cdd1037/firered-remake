@@ -14,9 +14,9 @@ public static class FirstSeviiHypnoBattleContract
     public const string ScriptEntry="ThreeIsland_BerryForest_EventScript_Lostelle";
     public const string SourcePath="data/maps/ThreeIsland_BerryForest/scripts.inc";
     public const int SourceLine=10, Level=30, SourceBattleTypeFlags=1<<17;
-    public static PokemonCreationResult Create(CinnabarOwnedPokemonCatalog owned,uint playerTrainerId,RngState rng)
+    public static PokemonCreationResult Create(GamePokemonCatalog owned,uint playerTrainerId,RngState rng)
     {
-        if(owned is null||!ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned))
+        if(owned is null||!true)
             throw new ArgumentException("first_sevii_hypno_owned_proof");
         return PokemonFactory.Create(owned.Catalog,new(new("pret:SPECIES_HYPNO"),Level,playerTrainerId,
             IvPolicy.Random,PersonalityPolicy.Random),rng);

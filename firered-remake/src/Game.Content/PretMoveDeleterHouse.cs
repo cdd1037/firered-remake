@@ -96,7 +96,7 @@ public sealed class PretMoveDeleterHouse
         ValidateTown(source, dependencyRoot);
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["PARTY_SIZE"] == 6 && constants["MAX_MON_MOVES"] == 4 &&
             constants["YES"] == 1 && constants["MUS_MOVE_DELETED"] == 270,

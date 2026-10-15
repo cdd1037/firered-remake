@@ -106,11 +106,7 @@ def generate(lock, raw):
         for field, prefix in [('effect', 'EFFECT_'), ('type', 'TYPE_'), ('target', 'MOVE_TARGET_')]:
             if not values[field].startswith(prefix) or values[field] not in numbers:
                 raise ValueError('Unsupported move constant: ' + symbol + ':' + field)
-        moves.append(dict(id=ident(symbol), sourceMoveId=move_ids[symbol], pp=int(values['pp']), power=int(values['power']),
-                          type=values['type'], accuracy=int(values['accuracy']), effect=values['effect'],
-                          secondaryEffectChance=int(values['secondaryEffectChance']), target=values['target'],
-                          priority=int(values['priority']), flags=flags, battleEffectImplemented=False,
-                          source=source(path, symbol, match)))
+        moves.append(dict(id=ident(symbol), sourceMoveId=move_ids[symbol], pp=int(values['pp']), power=int(values['power']), type=values['type'], accuracy=int(values['accuracy']), effect=values['effect'], secondaryEffectChance=int(values['secondaryEffectChance']), target=values['target'], priority=int(values['priority']), flags=flags, battleEffectImplemented=False))
         name_path = 'src/data/text/move_names.h'
         name_match = one(name_path, r'^    \[' + symbol + r'\]\s*= _\("([^"\n]+)"\),?$')
         move_names.append(dict(id=ident(symbol), name=name_match[1]))

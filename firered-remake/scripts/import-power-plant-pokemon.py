@@ -2,6 +2,7 @@
 """Import the bounded Power Plant catalog from local raw files or pinned Git objects; --check is byte exact.
 No reference repository code is executed. Includes the Thunder Stone ownership closure.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  json, re
 from pathlib import Path
 import sys
@@ -27,7 +28,7 @@ DEPENDENCIES=(
 from image_io import png as encode_rgba_png
 from item_icon_exports import decode_icon_page
 
-def encoded(v):return (json.dumps(v,separators=(',',':'),ensure_ascii=False)+'\n').encode()
+def encoded(v):return (json.dumps(v,separators=(',',':'),ensure_ascii=False, default=item_json)+'\n').encode()
 def ident(s):return dict(value='pret:'+s)
 def need(v,m):
  if not v:raise ValueError(m)
@@ -188,7 +189,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
 
 
  def encode(value):
-     return (json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
+     return (json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, default=item_json) + '\n').encode()
 
 
  png = encode_rgba_png
@@ -484,12 +485,10 @@ def generate(reference,dependency,raw=None):
  owned+=SPECIES;need(len(owned)==152 and len(opponents|set(SPECIES))==186,'Exact successor counts')
  for s in SPECIES:
   need(not metadata[s]['sourceEvolutions'] and not species[s]['evolutions'],'Terminal added species')
-  for r in [species[s]['source'],species[s]['learnsetSource'],metadata[s]['dexSource'],metadata[s]['learnsetPointerSource']]:
-   read(r['path'])
  edges=[]
  for s,t in [('SPECIES_PIKACHU','SPECIES_RAICHU'),('SPECIES_EEVEE','SPECIES_JOLTEON')]:
   e=[e for e in metadata[s]['sourceEvolutions'] if e['method']=='EVO_ITEM' and e['parameter']=='ITEM_THUNDER_STONE']
-  need(len(e)==1 and e[0]['parameterValue']==96 and e[0]['target']==ident(t),'Exact Thunder Stone edge');edges.append(dict(species=ident(s),sourceEvolution=e[0]));read(e[0]['source']['path'])
+  need(len(e)==1 and e[0]['parameterValue']==96 and e[0]['target']==ident(t),'Exact Thunder Stone edge');edges.append(dict(species=ident(s),sourceEvolution=e[0]))
  wildpath='src/data/wild_encounters.json';wild=json.loads(read(wildpath));entries=[e for g in wild['wild_encounter_groups'] for e in g.get('encounters',[]) if e['map']=='MAP_POWER_PLANT' and e['base_label'].endswith('_FireRed')]
  need(len(entries)==1 and set(entries[0])=={'map','base_label','land_mons'},'Only original FireRed land encounters')
  w=entries[0];weights=next(f['encounter_rates'] for g in wild['wild_encounter_groups'] for f in g.get('fields',[]) if f['type']=='land_mons')
@@ -507,14 +506,14 @@ def generate(reference,dependency,raw=None):
  need('CreateMon(&gEnemyParty[0], species, level, 32, 0, 0, OT_ID_PLAYER_ID, 0);' in read('src/script_pokemon_util.c'),'Source scripted generation')
  held=[]
  for s in sorted({r['species']['value'][5:] for r in land['slots']}|{'SPECIES_ELECTRODE','SPECIES_ZAPDOS'}):
-  fields=metadata[s]['originalFields'];read(metadata[s]['source']['path']) if 'source' in metadata[s] else read(species[s]['source']['path'])
+  fields=metadata[s]
   held.append(dict(species=ident(s),common=fields['itemCommon'],rare=fields['itemRare']))
  need([(r['species']['value'],r['rare']) for r in held if r['rare']!='ITEM_NONE']==[('pret:SPECIES_MAGNETON','ITEM_MAGNET')],'FireRed held-item tables')
  cells=compatibility_additions(dependency, BASE+'catalog.json', 'machines')
  itemtext=read('src/data/items.json');sourceitems=json.loads(itemtext)['items'];constants={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',read('include/constants/items.h'),re.M)}
  def item(symbol):
   i=next(i for i in sourceitems if i['itemId']==symbol);m=one('src/data/items.json',r'"itemId":\s*"'+symbol+r'"');r=ref('src/data/items.json',symbol,m)
-  meta=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constants[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
+  meta=shared_item(symbol)
   description=i['description_english'].replace('\\n','\n')
   if symbol.startswith('ITEM_TM'):
    p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+i['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
@@ -525,7 +524,7 @@ def generate(reference,dependency,raw=None):
   if stone:
    p='src/data/pokemon/item_effects.h';m=one(p,r'^static const u8 sItemEffect_ThunderStone\[6\] = \{\n    \[4\] = ITEM4_EVO_STONE,\n\};');effect=ref(p,'sItemEffect_ThunderStone',m)
    need('#define ITEM4_EVO_STONE         0x80' in read('include/constants/item_effects.h'),'Stone effect byte')
-  items.append({k: meta[k] for k in ['id', 'sourceItemSymbol', 'sourceItemId', 'name', 'price', 'pocket', 'importance', 'type', 'fieldUseFunction', 'battleUsage', 'battleUseFunction', 'holdEffectParam', 'source']} | dict(description=wrapped['description'], healHp=0, cureStatus=0, effectBytes=[0, 0, 0, 0, 128, 0] if stone else [], useSupport=9 if stone else 10, effectSource=effect, sourceMetadata=meta))
+  items.append(dict(item=meta) | dict(description=wrapped['description'], healHp=0, cureStatus=0, effectBytes=[0, 0, 0, 0, 128, 0] if stone else [], useSupport=9 if stone else 10))
  newmachines=machine_definitions(dependency, BASE+'catalog.json')
  flags=read('include/constants/flags.h');ballscripts=read('data/scripts/item_ball_scripts.inc');pickups=[]
  def flagvalue(symbol):
@@ -546,7 +545,7 @@ def generate(reference,dependency,raw=None):
   for _ in range(4):seed=(seed*1103515245+24691)&0xffffffff;draws.append(seed>>16)
   pid=draws[0]|draws[1]<<16;ivs=[draws[2]&31,(draws[2]>>5)&31,(draws[2]>>10)&31,draws[3]&31,(draws[3]>>5)&31,(draws[3]>>10)&31]
   vectors.append(dict(kind=kind,species=ident(s),level=level,initialSeed=initial,finalSeed=seed,rawDraws=draws,personality=pid,nature=pid%25,ivs=ivs,originalTrainerId=0x12345678))
- doc=dict(sourceCommit=COMMIT,profile='firered-power-plant-pokemon-v1',ownedSpeciesCount=152,opponentSpeciesCount=186,itemCount=123,machineCount=41,species=[dict(definition=species[s],metadata=metadata[s]) for s in SPECIES],thunderStoneEvolutions=edges,land=land,heldItems=held,staticEncounters=statics,machines=cells,newMachines=newmachines,items=items,pickups=pickups,generationVectors=vectors,generationOrder='Static: player OT, random PID then IVs, explicit low16/high16 profile; original target-compiler Random32 operand ordering unverified. Ordinary land uses existing nature rejection generation. Legendary Zapdos skips held draw; ordinary land and Electrode consume one held draw at battle entry. No fateful metadata.')
+ doc=dict(sourceCommit=COMMIT,profile='firered-power-plant-pokemon-v1',ownedSpeciesCount=152,opponentSpeciesCount=186,itemCount=123,machineCount=41,species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']),metadata=metadata[s]) for s in SPECIES],thunderStoneEvolutions=edges,land=land,heldItems=held,staticEncounters=statics,machines=cells,newMachines=newmachines,items=items,pickups=pickups,generationVectors=vectors,generationOrder='Static: player OT, random PID then IVs, explicit low16/high16 profile; original target-compiler Random32 operand ordering unverified. Ordinary land uses existing nature rejection generation. Legendary Zapdos skips held draw; ordinary land and Electrode consume one held draw at battle entry. No fateful metadata.')
  slots=',\n            '.join(f'new({r["index"]},new("{r["species"]["value"]}"),{r["minimumLevel"]},{r["maximumLevel"]},{r["weight"]})' for r in land['slots'])
  heldrows=',\n        '.join(f'new(new("{r["species"]["value"]}"),"{r["common"]}","{r["rare"]}")' for r in held)
  code='''using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, string Rare);\n/// <summary>Exact FireRed Power Plant table, generated only from pinned source.</summary>\npublic static class PowerPlantEncounterTables\n{\n'''+f'''    public static MapId Map {{ get; }} = new("map.power-plant");\n    public static EarlyLandEncounterTable Land {{ get; }} = new(Map, EarlyLandEncounterRules.SourceCommit,\n        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", 7,\n        [{slots}]);\n    public static ImmutableArray<PowerPlantHeldItemSource> HeldItems {{ get; }} = [\n        {heldrows}];\n}}\n'''
@@ -562,5 +561,5 @@ def main():
  if a.check:
   for path,b in files.items():need(safe(a.output,path).read_bytes()==b,'Regeneration differs: '+path)
  else:write_files(a.output,files)
- print(json.dumps(dict(checked=a.check,inputs=len(raw),presentation=art['report']),indent=2))
+ print(json.dumps(dict(checked=a.check,inputs=len(raw),presentation=art['report']),indent=2, default=item_json))
 if __name__=='__main__':main()

@@ -42,12 +42,10 @@ public static class LostCaveTrainerPartyFactory
     }
 
     public static TrainerPartyCreationResult Create(LostCaveTrainerCatalog trainers,
-        OwnedBattlePokemonCatalog owned, TrainerId id, RngState rng)
+        GamePokemonCatalog owned, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            OwnedBattlePokemonCatalog.SourceAncestor(owned, LostCaveOwnedPokemonCatalog.For) is null ||
-            !trainers.Trainers.TryGetValue(id, out var trainer) || trainer.Party.Any(p => !owned.AdmitsTrainerOpponent(p.Species, owned.TrainerOpponentProfile)))
+        if (owned is null || !trainers.Trainers.TryGetValue(id, out var trainer) || trainer.Party.Any(p => !owned.Opponents.Catalog.Species.ContainsKey(p.Species)))
             throw new ArgumentException("lost_cave_trainer_opponent_catalog");
         var source = owned.Mechanics;
         if (LostCaveTrainerSource.InheritedIds.Contains(id))

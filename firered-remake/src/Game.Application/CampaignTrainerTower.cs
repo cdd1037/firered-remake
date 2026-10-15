@@ -195,7 +195,7 @@ public sealed partial class CampaignSession
                 var prize=_content.TrainerTowerCatalog!.Course(tower.SelectedCourse).PrizeItem;
                 bool added=false;var inventory=state.Inventory!;
                 if(!tower.CurrentRecord.ReceivedPrize)
-                { var change=EarlyInventoryAddRules.Add(ShopCatalog,ShopInventoryView(inventory),new ItemId("pret:"+prize),1);added=change.Succeeded;if(added)inventory=MergeShopInventory(inventory,change.State); }
+                { var change=EarlyInventoryAddRules.Add(ShopCatalog,inventory,new ItemId("pret:"+prize),1);added=change.Succeeded;if(added)inventory=change.State; }
                 var given=TrainerTowerProgressRules.GiveChallengePrize(tower,prize,added);
                 next=Result(state with{Inventory=inventory,TrainerTower=given.State,TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",ShopCatalog.Items.Single(i=>i.SourceItemSymbol==prize).Name)},(int)given.Result);return true;
             case "ttower_checkfinaltime":var time=TrainerTowerProgressRules.CheckFinalTime(tower);next=Result(state with{TrainerTower=time.State},(int)time.Result);return true;
@@ -253,18 +253,18 @@ public sealed partial class CampaignSession
     {
         if((state.TrainerTowerHistory??[]).Any(h=>h.Id==id))throw new InvalidDataException("trainer_tower_settlement_duplicate");
         var settled=SourceTrainerTowerEncounter.Settle(CanonicalTrainerPokemon,frame,state.Money,currentOwned:_binding.Ownership);
-        var proof=frame.TrainerTowerEncounter!;
-        var course=Enum.Parse<TrainerTowerChallengeKind>(proof.Course);
+        var roster=frame.TrainerTowerEncounter!.Roster;
+        var course=Enum.Parse<TrainerTowerChallengeKind>(roster.Course);
         if(settled.PerformPickup)
         {
             var pickup=VermilionPickupRules.ApplySafariOwned(SafariOrdinaryOwnership!,state.Party,frame.Rng,WildBattleOutcome.Won);
             state=state with{Party=pickup.Party,World=state.World with{Rng=pickup.Rng}};frame=frame with{Rng=pickup.Rng};
             if(frame.Layout==SourceBattleLayout.Singles)frame=SyncSourceTrainerPickup(frame,pickup.Party);
         }
-        var h=new CampaignTrainerTowerHistory(id,course,proof.FloorIndex,proof.TrainerIndex,frame.Party(BattleSide.Opponent).Members[0].Pokemon.Level,frame.Outcome,sent);
+        var h=new CampaignTrainerTowerHistory(id,course,roster.FloorIndex,roster.TrainerIndex,frame.Party(BattleSide.Opponent).Members[0].Pokemon.Level,frame.Outcome,sent);
         state=state with{TrainerTowerHistory=(state.TrainerTowerHistory??[]).Add(h)};
-        var template=_content.TrainerTowerCatalog!.Template(_content.TrainerTowerCatalog.Course(course).Floors[proof.FloorIndex].TemplateSymbol);
-        var lines=(frame.Layout==SourceBattleLayout.PresetDoubles?template.Trainers.Take(2):template.Trainers.Skip(proof.TrainerIndex).Take(1))
+        var template=_content.TrainerTowerCatalog!.Template(_content.TrainerTowerCatalog.Course(course).Floors[roster.FloorIndex].TemplateSymbol);
+        var lines=(frame.Layout==SourceBattleLayout.PresetDoubles?template.Trainers.Take(2):template.Trainers.Skip(roster.TrainerIndex).Take(1))
             .Select(t=>string.Join(" ",(frame.Outcome==WildBattleOutcome.Won?t.SpeechLose:t.SpeechWin).Select(w=>w.Text))).ToImmutableArray();
         if(state.ForestTrainerBattle is {} single)return state with{ForestTrainerBattle=single with{Frame=frame,Stage=CampaignForestTrainerStage.Finished,
             Presentation=single.Presentation with{Frame=frame,Phase=CampaignBattlePhase.Results,Pages=lines.Select(t=>new CampaignWildPage(t)).ToImmutableArray(),PageIndex=0,Events=[],EventIndex=0},TrainerEvents=[],TrainerEventIndex=0}};

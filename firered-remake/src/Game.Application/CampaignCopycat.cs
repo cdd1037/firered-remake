@@ -49,45 +49,15 @@ public sealed partial class CampaignSession
         if (ValidateCampaignInventory(inventory) is {} error) throw new InvalidDataException(error);
         if (!removing)
         {
-            int present = OpeningInventoryRules.Quantity(inventory.BagItems, PokeDollInventoryCatalog.PokeDollId) > 0 ? 1 : 0;
+            int present = OpeningInventoryRules.Quantity(inventory.BagItems, ItemIds.PokeDollId) > 0 ? 1 : 0;
             next = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", present) } };
             return true;
         }
-        var result = EarlyInventoryAddRules.Remove(ShopCatalog, ShopInventoryView(inventory), PokeDollInventoryCatalog.PokeDollId, 1);
+        var result = EarlyInventoryAddRules.Remove(ShopCatalog, inventory, ItemIds.PokeDollId, 1);
         if (!result.Succeeded) throw new InvalidDataException("copycat_success_payment:" + result.Error);
-        next = state with { Inventory = MergeShopInventory(inventory, result.State),
+        next = state with { Inventory = result.State,
             Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 1) } };
         return true;
     }
 
-    // Old source-specific helpers remain responsible for their known item subset. Keep the
-    // authenticated current addition around that boundary without another regional ladder.
-    private bool IsSeafoamSupplementItem(ItemId item) => item == PokeDollInventoryCatalog.PokeDollId ||
-        OrdinaryItemInventoryCatalog.For(ShopCatalog)?.IsAddition(item) == true;
-    private InventoryState SeafoamInventoryView(InventoryState inventory)
-    {
-        if (EarlyShopInventoryRules.Validate(ShopCatalog, inventory) is {} error) throw new InvalidDataException(error);
-        return inventory with { BagItems = inventory.BagItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
-            PcItems = inventory.PcItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
-            KeyItems = inventory.KeyItems?.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
-            Balls = inventory.Balls?.RemoveAll(s => IsSeafoamSupplementItem(s.Item)) };
-    }
-    private InventoryState RestoreSeafoamInventory(InventoryState original, InventoryState changed)
-    {
-        ImmutableArray<InventoryStack> Restore(ImmutableArray<InventoryStack> before, ImmutableArray<InventoryStack> after)
-        {
-            var rest = after.ToDictionary(s => s.Item); var output = ImmutableArray.CreateBuilder<InventoryStack>();
-            foreach (var stack in before)
-                if (IsSeafoamSupplementItem(stack.Item)) output.Add(stack);
-                else if (rest.Remove(stack.Item, out var updated)) output.Add(updated);
-            foreach (var stack in after) if (rest.ContainsKey(stack.Item)) output.Add(stack);
-            return output.ToImmutable();
-        }
-        if (SeafoamShopProof.ValidateInventory(changed) is {} invalid) throw new InvalidDataException(invalid);
-        var result = changed with { BagItems = Restore(original.BagItems, changed.BagItems), PcItems = Restore(original.PcItems, changed.PcItems),
-            KeyItems = original.KeyItems is {} keys ? Restore(keys, changed.KeyItems ?? []) : changed.KeyItems,
-            Balls = original.Balls is {} balls ? Restore(balls, changed.Balls ?? []) : changed.Balls };
-        if (EarlyShopInventoryRules.Validate(ShopCatalog, result) is {} error) throw new InvalidDataException(error);
-        return result;
-    }
 }

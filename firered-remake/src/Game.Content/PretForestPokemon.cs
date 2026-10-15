@@ -19,15 +19,13 @@ public sealed record ForestPokemonCatalogContent(PokemonCatalog Catalog,
     ImmutableDictionary<string, int> Constants);
 public sealed record ForestPokemonPoint(int X, int Y);
 public sealed record ForestPokemonBounds(int X, int Y, int Width, int Height);
-public sealed record ForestPokemonArtSource(string Kind, string Path, string Symbol, string Repository, string Commit, string Url,
-    int? StartLine = null, int? EndLine = null);
 public sealed record ForestPokemonSprite(string SpeciesId, int SourceSpeciesId, string Side, string PaletteVariant, string TexturePath,
     string SourceImagePath, string SourcePalettePath, int Width, int Height, int FrameWidth,
     int FrameHeight, int FrameCount, int SourceFrameIndex, int SourceWidth, int SourceHeight,
     int SourceYOffset, int SourceEnemyElevation, ForestPokemonPoint SingleBattleBaseCenter,
     ForestPokemonPoint SingleBattleCenter, ForestPokemonPoint SingleBattleTopLeft,
     ForestPokemonBounds AlphaBounds, int TransparentIndex, ImmutableArray<int> PaletteRgb555,
-    string PaletteExpansion, bool FlipH, ImmutableArray<ForestPokemonArtSource> SourceRefs);
+    string PaletteExpansion, bool FlipH);
 
 /// <summary>
 /// Authenticated forward forest families plus offline normal/shiny sprites. This content increment
@@ -57,7 +55,7 @@ public sealed class PretForestPokemon
     }
 
     /// <summary>Authenticates all raw, rendered and legacy catalog bytes before exposing content.</summary>
-    public static PretForestPokemon Load(string projectRoot)
+    public static PretForestPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/forest-pokemon");
@@ -78,7 +76,7 @@ public sealed class PretForestPokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(outputs["catalog.json"]));
@@ -92,17 +90,15 @@ public sealed class PretForestPokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "Forest Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "Forest sprite provenance differs.");
         }
         return new(directory, content, sprites, inventory, art.RootElement.Clone());
     }
 
     /// <summary>Pure authenticated composition; Load additionally validates all on-disk source and art files.</summary>
-    public static ForestPokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson)
+    public static ForestPokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson)
     {
-        var original = PretOldManTutorial.LoadContent(route1GeneratedJson, tutorialGeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretOldManTutorial.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<ForestPokemonDocument>(forestGeneratedJson, options);
@@ -136,7 +132,7 @@ names.Add(species[value.Id].SourceSpeciesId, value.Name);
         var constants = doc.Constants.ToImmutableDictionary(c => c.Symbol, c => c.Value, StringComparer.Ordinal);
         Require(constants["EVO_LEVEL"] == 4 && constants["EVO_ITEM"] == 7 && constants["ITEM_THUNDER_STONE"] == 96, "Evolution source constants differ.");
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 22 && names.Count == 22 && moveNames.Count == result.Moves.Count, "Incomplete composed forest Pokemon catalog.");
         return new(result, names.ToImmutable(), moveNames.ToImmutable(), constants);
     }

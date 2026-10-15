@@ -26,7 +26,7 @@ public sealed partial class CampaignSession
             _content.NpcTradeMap(d.TradeId) == state.World.Player.MapId && d.LocalId == actor.SourceLocalId && d.ScriptLabel == actor.ScriptId);
     }
     private bool NpcTradeSource(NpcTradePokemonDefinition definition, StorySource source, params string[] shared) =>
-        source.Path == definition.ScriptSource.Path && source.Symbol == definition.ScriptLabel ||
+        source.Symbol == definition.ScriptLabel ||
         source.Path == NpcTradeSharedSource && shared.Contains(source.Symbol, StringComparer.Ordinal);
 
     private bool NpcTradeWait(CampaignState state, StoryWaitKind kind)

@@ -49,7 +49,7 @@ public sealed class PretPewterPokemon
     }
 
     /// <summary>Authenticates all raw, rendered and legacy catalog bytes before exposing content.</summary>
-    public static PretPewterPokemon Load(string projectRoot)
+    public static PretPewterPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/pewter-pokemon");
@@ -70,7 +70,7 @@ public sealed class PretPewterPokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -85,17 +85,15 @@ public sealed class PretPewterPokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "Pewter Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "Pewter sprite provenance differs.");
         }
         return new(directory, content, sprites, inventory, art.RootElement.Clone());
     }
 
     /// <summary>Pure authenticated composition; Load additionally validates all on-disk source and art files.</summary>
-    public static PewterPokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson, string pewterGeneratedJson)
+    public static PewterPokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson, string pewterGeneratedJson)
     {
-        var original = PretForestPokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretForestPokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<PewterPokemonDocument>(pewterGeneratedJson, options);
@@ -145,7 +143,7 @@ names.Add(species[value.Id].SourceSpeciesId, value.Name);
                 doc.MoveNames.Any(n => n.Id.Value == "pret:" + value.Symbol && n.Name == value.Name), "Encoded name is absent from canonical names.");
         }
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 29 && result.Moves.Count == 84 && names.Count == 29 && moveNames.Count == result.Moves.Count, "Incomplete composed Pewter Pokemon catalog.");
         return new(result, names.ToImmutable(), moveNames.ToImmutable(), constants.ToImmutable(), encoded);
     }

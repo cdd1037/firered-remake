@@ -119,9 +119,6 @@ def block(text, symbol):
 
 def convert( sources):
     text = {p: b.decode() for p, b in sources.items() if not p.endswith('.png')}
-    def ref(path, symbol):
-        return dict(kind='pret', repository='pret/pokefirered', commit=COMMIT, path=path,
-                    symbol=symbol)
     def has(path, pattern):
         require(re.search(pattern, text[path], re.M) is not None, 'Player source binding differs: ' + pattern)
     for name, value in [('MALE', 0), ('FEMALE', 1), ('GENDER_COUNT', 2)]:
@@ -176,17 +173,7 @@ def convert( sources):
             frameLayout='horizontal', sourceFrameIndices=list(range(9)), sourceImagePath=image_path,
             sourcePalettePath=PALETTE_PATH, paletteTag=palette_tag, paletteSlot='PALSLOT_PLAYER', paletteRgb555=words,
             transparentIndex=0, directions=directions, tileCenterAnchor=dict(x=8, y=24),
-            drawOffsetFromTileOrigin=dict(x=0, y=-16), walkFrameDurationSourceFrames=8, sourceTimingHz=60,
-            sourceRefs=[ref(image_path, 'gObjectEventPic_' + symbol), ref(PALETTE_PATH, 'gObjectEventPal_Player'),
-                ref(OBJECT_ROOT + 'object_event_graphics.h', 'gObjectEventPic_' + symbol),
-                ref(OBJECT_ROOT + 'object_event_graphics_info.h', 'gObjectEventGraphicsInfo_' + symbol),
-                ref(OBJECT_ROOT + 'object_event_graphics_info_pointers.h', graphics_id),
-                ref(OBJECT_ROOT + 'object_event_pic_tables.h', 'sPicTable_' + symbol),
-                ref(OBJECT_ROOT + 'object_event_anims.h', 'sAnimTable_RedGreenNormal'),
-                ref('src/event_object_movement.c', 'sObjectEventSpritePalettes'),
-                ref('src/field_player_avatar.c', 'sPlayerAvatarGfxIds'),
-                ref('include/constants/global.h', 'MALE' if gender == 0 else 'FEMALE'),
-                ref('include/constants/event_objects.h', graphics_id), ref('tools/gbagfx/gfx.c', 'UPCONVERT_BIT_DEPTH')]))
+            drawOffsetFromTileOrigin=dict(x=0, y=-16), walkFrameDurationSourceFrames=8, sourceTimingHz=60))
     outputs['player-gender-art.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          paletteExpansion='floor(rgb5 * 255 / 31)', assets=assets,
         limitations=['Standing and ordinary walking only. Running/surfing frames 9-19 are deliberately excluded.',

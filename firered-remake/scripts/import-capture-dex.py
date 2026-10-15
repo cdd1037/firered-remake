@@ -205,10 +205,7 @@ def back_art(lock, sources):
                 singleBattleBaseCenter=base, singleBattleCenter=center,
                 singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32),
                 alphaBounds=dict(x=left, y=top, width=right-left, height=bottom-top), transparentIndex=0,
-                paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False,
-                sourceRefs=[reference(lock, sources, coords_path, 'gMonBackPicCoords[' + symbol + ']', row[0]),
-                            battle.reference(lock, sources, path, image_symbol),
-                            battle.reference(lock, sources, palette_path, pal_symbol)]))
+                paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False))
     outputs['capture-back-art.json'] = canonical(dict(schemaVersion=1, profile=BACK_PROFILE,
         repository='pret/pokefirered', sourceCommit=COMMIT,
         display=display, sprites=sprites, limitations=[

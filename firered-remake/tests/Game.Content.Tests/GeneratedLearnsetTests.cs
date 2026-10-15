@@ -28,16 +28,29 @@ public sealed class GeneratedLearnsetTests
     [TestMethod]
     [DataRow("pokemon/starter-catalog.json", false)]
     [DataRow("route1-pokemon/catalog.json", true)]
-    public void EarlyCatalogsRejectObsoleteProofAndInvalidGameplayRows(string relative, bool route1)
+    public void EarlyCatalogsResolveCanonicalReferencesAndRejectInlineDefinitions(string relative, bool route1)
     {
+        var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);
         var original = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated", relative));
-        PokemonCatalog Load(string json) => route1 ? PretRoute1PokemonCatalog.Load(json) : PretPokemonCatalog.Load(json);
+        PokemonCatalog Load(string json) => route1 ? PretRoute1PokemonCatalog.Load(canonical, json) : PretPokemonCatalog.Load(canonical, json);
         var catalog = Load(original);
         Assert.AreEqual(route1 ? 14 : 9, catalog.Species.Count);
-        foreach (var mutate in InvalidRows())
+        foreach (var species in catalog.Species.Values)
+        {
+            Assert.AreSame(canonical.Catalog.Species[species.Id].BaseStats, species.BaseStats);
+            Assert.IsTrue(canonical.Catalog.Species[species.Id].LevelUpMoves == species.LevelUpMoves);
+        }
+        foreach (var move in catalog.Moves.Values) Assert.AreSame(canonical.Catalog.Moves[move.Id], move);
+        foreach (var mutation in new Action<JsonNode>[] {
+            json => json["species"]![0]!["levelUpMoves"] = new JsonArray(),
+            json => json["species"]![0]!["source"] = new JsonObject(),
+            json => json["species"]![0]!["id"]!["value"] = "pret:SPECIES_UNKNOWN",
+            json => json["species"]![0]!.AsObject().Remove("evolutions"),
+            json => json["moves"]![0]!["pp"] = 99,
+            json => json["moves"]![0]!["value"] = "pret:MOVE_UNKNOWN" })
         {
             var json = JsonNode.Parse(original)!;
-            mutate(json["species"]![0]!["levelUpMoves"]!.AsArray());
+            mutation(json);
             Assert.ThrowsExactly<ContentValidationException>(() => Load(json.ToJsonString()));
         }
     }

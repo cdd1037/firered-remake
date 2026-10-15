@@ -21,10 +21,8 @@ public sealed partial class PretCampaignCatalog
         var result = ImmutableDictionary.CreateBuilder<int, MapId>();
         foreach (var definition in trades.Trades.Definitions.Values)
         {
-            // Retained source actor identity resolves historical stable-ID spelling differences.
-            var candidates = maps.Values.Where(map => map.SourceRef.Path == definition.ActorSource.Path).ToArray();
-            if (candidates.Length != 1) throw new InvalidDataException("npc_trade_source_map_binding");
-            var map = candidates[0];
+            if (!maps.TryGetValue(definition.Map, out var map))
+                throw new InvalidDataException("npc_trade_map_binding");
             if (definition.LocalId < 1 || map.Events.GetProperty("object_events").GetArrayLength() < definition.LocalId ||
                 map.Events.GetProperty("object_events")[definition.LocalId - 1].GetProperty("script").GetString() != definition.ScriptLabel)
                 throw new InvalidDataException("npc_trade_actor_binding");
@@ -34,7 +32,6 @@ public sealed partial class PretCampaignCatalog
     }
     public bool IsNpcTradeStablePosition(MapId map,int x,int y) => !NpcTradeHaden.NewMaps.ContainsKey(map) || NpcTradeHaden.AllowsFootDestination(map,x,y);
     public NpcTradePokemonCatalog NpcTrades => NpcTradeContent.Trades;
-
 
     private static void ValidateNpcTradeComposition(PretNpcTrades trades,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PretStoryCompilation scripts)
     {

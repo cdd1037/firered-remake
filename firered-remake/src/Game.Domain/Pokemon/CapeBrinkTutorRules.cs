@@ -26,8 +26,7 @@ public sealed class CapeBrinkTutorCatalog
     }
     public static CapeBrinkTutorCatalog Authenticate(PokemonCatalog owned)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
-            throw new ArgumentException("cape_brink_source_authentication");
+        PokemonFactory.ValidateCatalog(owned);
         var result = new CapeBrinkTutorCatalog(owned);
         foreach (var tutor in result.Definitions)
             if (!owned.Species.ContainsKey(tutor.Species) || !owned.Moves.TryGetValue(tutor.Move, out var move) ||

@@ -7,15 +7,14 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 namespace Game.Content;
 
-public sealed record PretMtMoonItem(PewterMachineItem Metadata, ImmutableArray<int> EffectBytes,
-    OpeningItemSourceRef? EffectSource, EarlyShopUseSupport UseSupport);
+public sealed record PretMtMoonItem(MachineItem Metadata, ImmutableArray<int> EffectBytes, EarlyShopUseSupport UseSupport);
 public sealed record PretMtMoonPickup(string Map, string Kind, ItemId Item, int Quantity, int? LocalObjectId,
     int X, int Y, int Elevation, string Flag, bool Underfoot, string? Script, OpeningItemSourceRef Source,
     OpeningItemSourceRef? ScriptSource);
 public sealed record PretMtMoonFossil(ItemId Item, string Script, OpeningItemSourceRef Source);
 public sealed record PretMtMoonItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretMtMoonItem> Items, ImmutableArray<PewterAdditionalMachine> Machines,
-    ImmutableArray<PewterMachineCompatibility> Tm39Compatibility, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretMtMoonItem> Items, ImmutableArray<MachineDefinition> Machines,
+    ImmutableArray<MachineCompatibility> Tm39Compatibility, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Fossils, ImmutableArray<string> Limitations);
 
 /// <summary>All reviewed input, generated and icon bytes are authenticated before bounded composition.</summary>
@@ -46,27 +45,12 @@ public static class PretMtMoonItems
         return d;
     }
 
-    public static PretMtMoonItemsDocument LoadProject(string root)
+    public static PretMtMoonItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var d = Load(Utf8.GetString(Read(root,"content/generated/mtmoon-items/mtmoon-items.json")), SharedMachineCatalog.LoadProject(root));
+        var d = Load(Utf8.GetString(Read(root,"content/generated/mtmoon-items/mtmoon-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return d;
     }
 
-    public static EarlyShopCatalog LoadShopProject(string root)
-    {
-        var d = LoadProject(root);
-        var old = PretEarlyShop.Load(Utf8.GetString(Read(root,"content/generated/early-shop/early-shop.json")));
-        var items = d.Items.Take(9).Select(value =>
-        {
-            var i = value.Metadata.Item;
-            return new EarlyShopItemDefinition(i.Id, i.SourceItemSymbol, i.SourceItemId, i.Name, value.Metadata.Description,
-                i.Price, i.Pocket, i.Importance, i.Type, i.FieldUseFunction, i.BattleUsage, i.BattleUseFunction,
-                i.HoldEffectParam, 0, 0, value.EffectBytes, value.UseSupport, i.Source, value.EffectSource) { SourceMetadata = i };
-        });
-        var result = old.Catalog with { Profile = EarlyShopInventoryRules.MtMoonProfile,Items = old.Catalog.Items.AddRange(items) };
-        EarlyShopInventoryRules.ValidateCatalog(result);
-        return result;
-    }
     private static byte[] Read(string root,string path)
     {
         var p = SafeFile(root, path);

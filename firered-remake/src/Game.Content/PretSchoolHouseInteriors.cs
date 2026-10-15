@@ -101,7 +101,7 @@ public sealed class PretSchoolHouseInteriors
         ValidateAnchors(source, dependencyRoot, maps);
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["LOCALID_SCHOOL_WOMAN"] == 1 && constants["LOCALID_SCHOOL_LASS"] == 2 &&
             constants["MULTICHOICE_TRAINER_SCHOOL_WHITEBOARD"] == 15 && constants["FAMECHECKER_OAK"] == 0 &&

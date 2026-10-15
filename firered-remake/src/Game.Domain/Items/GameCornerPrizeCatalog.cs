@@ -17,33 +17,27 @@ public sealed class GameCornerPrizeCatalog
     public const string Map = "map.celadon-city-game-corner-prize-room";
     public PokemonCatalog Pokemon { get; }
     public EarlyShopCatalog Items { get; }
-    public PewterMachineCatalog Machines { get; }
+    public MachineCatalog Machines { get; }
     public ImmutableArray<GameCornerPrizeCounter> Counters { get; }
     public ImmutableArray<GameCornerPrizeDefinition> PokemonPrizes => Counters[0].Prizes;
     public ImmutableArray<GameCornerPrizeDefinition> MachinePrizes => Counters[1].Prizes;
     public ImmutableArray<GameCornerPrizeDefinition> ItemPrizes => Counters[2].Prizes;
-    private GameCornerPrizeCatalog(PokemonCatalog pokemon, EarlyShopCatalog items, PewterMachineCatalog machines,
+    private GameCornerPrizeCatalog(PokemonCatalog pokemon, EarlyShopCatalog items, MachineCatalog machines,
         ImmutableArray<GameCornerPrizeCounter> counters)
     { Pokemon = pokemon; Items = items; Machines = machines; Counters = counters; }
-    public static GameCornerPrizeCatalog Authenticate(PokemonCatalog pokemon, EarlyShopCatalog items, PewterMachineCatalog machines,
+    public static GameCornerPrizeCatalog Authenticate(GamePokemonCatalog campaign, EarlyShopCatalog items, MachineCatalog machines,
         ImmutableArray<GameCornerPrizeCounter> counters)
     {
-        ArgumentNullException.ThrowIfNull(pokemon); ArgumentNullException.ThrowIfNull(items); ArgumentNullException.ThrowIfNull(machines);
-        if (OwnedBattlePokemonCatalog.For(pokemon) is not { } current ||
-            OwnedBattlePokemonCatalog.SourceAncestor(current, GameCornerOwnedPokemonCatalog.For) is not { } owned ||
-            OwnedMachineCatalogBinding.SourceAncestor(machines, GameCornerMachineCatalog.For) is not { } teaching ||
-            !ReferenceEquals(OwnedMachineCatalogBinding.For(machines), current) ||
-            !ReferenceEquals(teaching.Pokemon, owned) || OrdinaryItemInventoryCatalog.For(items) is not { } ordinary ||
-            // The authenticated shared inventory may gain unrelated items. Prize admission
-            // depends on its exact source rewards, not the total number of catalog entries.
-            !OrdinaryItemInventoryCatalog.GameCornerPrizeItems.All(ordinary.IsAddition) ||
+        ArgumentNullException.ThrowIfNull(campaign); ArgumentNullException.ThrowIfNull(items); ArgumentNullException.ThrowIfNull(machines);
+        var pokemon = campaign.Catalog;
+        if (!ItemIds.GameCornerPrizeItems.All(id => items.Items.Any(i => i.Id == id)) ||
             counters.IsDefault || counters.Length != 3 || counters.Any(c => c is null || c.Prizes.IsDefault || c.Prizes.Length != 5))
             throw new ArgumentException("game_corner_prize_owner_or_source");
         foreach (var row in counters[0].Prizes)
             if (!pokemon.Species.TryGetValue(new SpeciesId(row.Reward), out var definition) || definition.SourceSpeciesId != row.SourceRewardId)
                 throw new ArgumentException("game_corner_prize_species");
         foreach (var row in counters[1].Prizes)
-            if (PewterMachineRules.Definition(machines, new ItemId(row.Reward)) is not { } machine ||
+            if (MachineRules.Definition(machines, new ItemId(row.Reward)) is not { } machine ||
                 machine.Machine.Item.SourceItemId != row.SourceRewardId || machine.Move.Value != row.Move)
                 throw new ArgumentException("game_corner_prize_machine");
         foreach (var row in counters[2].Prizes)

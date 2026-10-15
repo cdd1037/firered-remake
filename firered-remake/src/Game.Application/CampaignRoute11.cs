@@ -86,9 +86,9 @@ public sealed partial class CampaignSession
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var error = ValidateCampaignInventory(inventory); if (error is not null) throw new InvalidDataException(error);
         if (effect.Opcode == "checkitemspace")
-        { next = Result(state, PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, Hm05) ? 1 : 0); return true; }
+        { next = Result(state, MachineRules.CanAddMachine(_content.PewterMachines!, inventory, Hm05) ? 1 : 0); return true; }
         if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], Hm05) != 0) throw new InvalidDataException("route11_aide_duplicate_hm05");
-        var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, Hm05);
+        var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, Hm05);
         if (!added.Succeeded) throw new InvalidDataException("route11_aide_reward_failed: " + added.Error);
         next = Result(state with { Inventory = added.State }, 1); return true;
     }

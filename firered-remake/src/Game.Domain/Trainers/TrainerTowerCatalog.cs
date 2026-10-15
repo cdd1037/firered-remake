@@ -51,20 +51,18 @@ public sealed class TrainerTowerCatalog
     }
 
     /// <summary>Original CreateBattleTowerMon: preset PID/OT, fixed IV initialization, then explicit source IV/EV/ability/move overwrite. Zero RNG draws.</summary>
-    public TrainerPartyCreationResult CreateBattle(TrainerTowerOpponentPokemonCatalog opponents,
+    public TrainerPartyCreationResult CreateBattle(GameOpponentPokemonCatalog opponents,
         TrainerTowerChallengeKind course, int floorIndex, int trainerIndex, int maximumPartyLevel, RngState rng)
     {
         ArgumentNullException.ThrowIfNull(opponents);
-        if (!ReferenceEquals(TrainerTowerOpponentPokemonCatalog.For(opponents.Catalog), opponents))
-            throw new ArgumentException("trainer_tower_opponents_authentication");
         var descriptor = DescribeBattle(course, floorIndex, trainerIndex, maximumPartyLevel);
         var party = descriptor.Members.Select(member => {
             var mon = member.Template; var species = opponents.Catalog.Species[mon.Species];
             var made = PokemonFactory.CreateCore(opponents.Catalog,
                 new(mon.Species, maximumPartyLevel, mon.OriginalTrainerId, IvPolicy.Fixed(0), PersonalityPolicy.Fixed(mon.Personality)),
-                rng, opponents.Mechanics);
+                rng, opponents.Mechanics.Data);
             if (made.Rng != rng || !made.Trace.IsEmpty) throw new InvalidOperationException("trainer_tower_creation_rng");
-            var stats = PokemonStatCalculation.Calculate(species, maximumPartyLevel, made.Pokemon.Nature, mon.Ivs, mon.Evs, opponents.Mechanics);
+            var stats = PokemonStatCalculation.Calculate(species, maximumPartyLevel, made.Pokemon.Nature, mon.Ivs, mon.Evs, opponents.Mechanics.Data);
             var moves = mon.Moves.Select((move, index) => {
                 var ppUps = mon.PpBonuses >> (index * 2) & 3; var pp = opponents.Catalog.Moves[move].Pp;
                 var maximumPp = pp + pp * 20 * ppUps / 100;
@@ -76,7 +74,7 @@ public sealed class TrainerTowerCatalog
         }).ToImmutableArray();
         var trainer = Adapter(descriptor);
         var result = new TrainerPartyCreationResult(trainer, party, rng, []);
-        return result with { TowerReceipt = SourceTrainerTowerPartyReceipt.Create(opponents.Mechanics.Catalog,
+        return result with { TowerRoster = TrainerTowerEncounterRoster.Create(opponents.Mechanics.Catalog,
             result, course.ToString(), floorIndex, trainerIndex, descriptor.Format == TrainerTowerBattleFormat.Double) };
     }
     private static TrainerDefinition Adapter(TrainerTowerBattleDescriptor descriptor)

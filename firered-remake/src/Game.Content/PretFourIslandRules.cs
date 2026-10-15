@@ -30,19 +30,5 @@ public static class PretFourIslandRules
             document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         FourIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static FourIslandOwnedPokemonCatalog LoadOwned(SeviiRubyOwnedPokemonCatalog predecessor)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        var species = predecessor.Catalog.Species;
-        foreach (var id in FourIslandOwnedPokemonCatalog.AdditionalSpecies)
-            species = species.Add(id, FourIslandOwnedPokemonCatalog.ExpectedSpecies(predecessor, id));
-        return FourIslandOwnedPokemonCatalog.Authenticate(predecessor, predecessor.Catalog with { Species = species });
-    }
-    public static FourIslandOwnedPokemonCatalog LoadOwned(string root, SeviiRubyOwnedPokemonCatalog predecessor)
-    {
-        return LoadOwned(predecessor);
-    }
-    public static FourIslandOpponentPokemonCatalog LoadOpponents(SeviiRubyOpponentPokemonCatalog predecessor,
-        FourIslandOwnedPokemonCatalog owned) => FourIslandOpponentPokemonCatalog.Authenticate(predecessor, owned);
     public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

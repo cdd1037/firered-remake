@@ -29,7 +29,7 @@ public sealed partial class CampaignSession
             "FLAG_GOT_HELIX_FOSSIL", "FLAG_REVIVED_HELIX", "ShowHelixFossil", "GiveOmanyte", "MULTICHOICE_HELIX"),
         new(2, 358, MtMoonItemRules.DomeFossilId, "ITEM_DOME_FOSSIL", 140, "SPECIES_KABUTO",
             "FLAG_GOT_DOME_FOSSIL", "FLAG_REVIVED_DOME", "ShowDomeFossil", "GiveKabuto", "MULTICHOICE_DOME"),
-        new(3, 354, FossilLabShopCatalog.OldAmberId, "ITEM_OLD_AMBER", 142, "SPECIES_AERODACTYL",
+        new(3, 354, ItemIds.OldAmberId, "ITEM_OLD_AMBER", 142, "SPECIES_AERODACTYL",
             "FLAG_GOT_OLD_AMBER", "FLAG_REVIVED_AMBER", "ShowOldAmber", "GiveAerodactyl", "MULTICHOICE_AMBER")
     ];
 
@@ -40,17 +40,14 @@ public sealed partial class CampaignSession
 
     private static void ValidateFossilLabCatalog(ICampaignCatalog content)
     {
-        var rootPokemon = OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(content.PokemonContent?.Catalog), StoneEvolutionOwnedPokemonCatalog.For)?.Predecessor.Catalog ?? content.PokemonContent?.Catalog;
-        var rootMachines = content.PewterMachines is { } current ? DepartmentStoreMachineStock.BaseCatalog(current) : null;
+
         if (!content.FossilLabEnabled || content.FossilLabOwnership is not { } owned ||
             content.FossilLabOpponents is not { } opponents || content.FossilLabMachines is not { } machines ||
-            !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Predecessor, content.FightingDojoOwnership) ||
-            !ReferenceEquals(owned, ((SuperRodOwnedPokemonCatalog.For(rootPokemon)?.Predecessor ?? SeafoamOwnedPokemonCatalog.For(rootPokemon))?.Predecessor ?? NpcTradeOwnedPokemonCatalog.For(rootPokemon))?.Predecessor) ||
-            !ReferenceEquals(FossilLabOpponentPokemonCatalog.For(owned), opponents) ||
-            !ReferenceEquals(opponents.Predecessor, content.FightingDojoOpponents) ||
-            !ReferenceEquals(((SuperRodMachineCatalog.For(rootMachines)?.Predecessor ?? SeafoamMachineCatalog.For(rootMachines))?.Predecessor ?? NpcTradeMachineCatalog.For(rootMachines))?.Predecessor, machines) ||
-            !ReferenceEquals(machines.Predecessor, content.FightingDojoMachines) || !ReferenceEquals(machines.Pokemon, owned))
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents))
             throw new InvalidDataException("fossil_lab_current_binding");
         // The locked region authenticates numeric IDs 0x4069/0x406A. Current
         // scripts deliberately retain symbolic variable identity, not IDs.
@@ -211,7 +208,7 @@ public sealed partial class CampaignSession
                 if (!a.SequenceEqual(new[] { fossil.ItemSymbol })) throw new InvalidDataException("fossil_lab_remove_source");
                 var inventoryError = ValidateCampaignInventory(inventory);
                 if (inventoryError is not null) throw new InvalidDataException(inventoryError);
-                var removed = EarlyInventoryAddRules.Remove(ShopCatalog, ShopInventoryView(inventory), fossil.Item, 1);
+                var removed = EarlyInventoryAddRules.Remove(ShopCatalog, inventory, fossil.Item, 1);
                 if (!removed.Succeeded) throw new InvalidDataException(removed.Error);
                 // The shop view omits unrelated quest keys. Merge only the
                 // checked fossil consumption, preserving every other pocket.

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Pinned, local-only early Mart extraction. Never executes upstream programs or downloads a ROM."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import base64
 import importlib.util
@@ -99,7 +100,7 @@ def convert(raw, out):
         stock = re.findall(r'\.2byte (ITEM_\w+)', m[1])
         if stock != SYMBOLS[:count] + ['ITEM_NONE']:
             raise ValueError('Mart stock or terminal ITEM_NONE differs')
-        shops.append(dict(id=symbol, items=[dict(value='pret:' + i) for i in stock[:-1]], source=reference(path, symbol, m)))
+        shops.append(dict(id=symbol, items=[dict(value='pret:' + i) for i in stock[:-1]]))
     source_items = json.loads(text('src/data/items.json'), object_pairs_hook=unique)['items']
     items = []
     effect_specs = {'ITEM_POTION': ('Potion', 'ITEM4_HEAL_HP', 4, 'potion', 0),
@@ -128,13 +129,7 @@ def convert(raw, out):
             if symbol == 'ITEM_POTION':
                 effects[6] = heal = int(assignments[1][1])
             effect_source = reference(ep, 'sItemEffect_' + name, em)
-        items.append(dict(id=dict(value='pret:' + symbol), sourceItemSymbol=symbol,
-            sourceItemId=number('include/constants/items.h', symbol), name=i['english'],
-            description=i['description_english'].replace(r'\n', '\n'), price=i['price'], pocket=i['pocket'],
-            importance=i['importance'], type=str(i['type']), fieldUseFunction=i['fieldUseFunc'],
-            battleUsage=i['battleUsage'], battleUseFunction=i['battleUseFunc'], holdEffectParam=i['holdEffectParam'],
-            healHp=heal, cureStatus=cure, effectBytes=effects, useSupport=support,
-            source=reference('src/data/items.json', symbol, item_match), effectSource=effect_source))
+        items.append(inventory_item(shared_item(symbol), i['description_english'].replace(r'\n', '\n'), heal, cure, effects, support))
     for status, expected in [('POISON', 8), ('BURN', 16), ('PARALYSIS', 64)]:
         shift = int(match('include/constants/battle.h', r'^#define STATUS1_' + status + r'\s+\(1 << (\d+)\)')[1])
         if (1 << shift) != expected:
@@ -196,7 +191,7 @@ def convert(raw, out):
             'No shop command/UI, script gating, quest log, ROM parity, audio or native-window acceptance is claimed.',
             'The source AddBagItem rejects an existing stack above 999 instead of splitting it; the inherited one-stack-per-item model preserves that FireRed rule.',
             'Only eight merchandise identities are allowed; a legal state cannot fill the 42 distinct ordinary-item slots in this bounded profile.'])
-    data = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode()
+    data = (json.dumps(document, ensure_ascii=False, indent=2, default=item_json) + '\n').encode()
     manifest = dict(sourceCommit=COMMIT, profile=PROFILE,  inputCount=len(inputs),
          iconCount=len(icons), itemCount=len(items), textCount=len(texts),
         outputs=[dict(path='early-shop.json')] +
@@ -206,7 +201,7 @@ def convert(raw, out):
         target = directory / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
-    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
+    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2, default=item_json) + '\n', encoding='utf-8', newline='\n')
     return manifest
 
 
@@ -218,4 +213,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.repo:
         materialize(args.repo, args.raw)
-    print(json.dumps(convert(args.raw, args.out)))
+    print(json.dumps(convert(args.raw, args.out), default=item_json))

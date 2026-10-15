@@ -120,9 +120,6 @@ def generate(reference, dependency):
                  'src/data/pokemon/species_info.h','src/data/pokemon/level_up_learnsets.h','src/data/pokemon/level_up_learnset_pointers.h',
                  'src/field_specials.c','include/constants/battle.h','asm/macros/event.inc']:
         read(path)
-    for p in [species[s] for s in required]:
-        for source in [p['source'],p['learnsetSource']]:
-            read(source['path'])
     starter_source=one('src/field_specials.c',r'^static const u16 sStarterSpecies\[\] = \{(.*?)^\};')
     need(re.findall(r'SPECIES_\w+',starter_source[1])==['SPECIES_BULBASAUR','SPECIES_SQUIRTLE','SPECIES_CHARMANDER'],'Player starter order differs')
     for value,suffix in [(0,'Charmander'),(1,'Bulbasaur'),(2,'Squirtle')]:
@@ -141,7 +138,7 @@ def generate(reference, dependency):
           'Source trainer names (TERRY for champion) determine personality; display rival name does not replace this source construction.'])
     outputs={'trainers.json':dict(sourceCommit=COMMIT,profile=PROFILE,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs),
         'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-pokemon-league-opponents-v1',
-            ownedSpeciesAdded=[],opponentSpecies=[species[s] for s in missing]),'rules.json':rules,
+            ownedSpeciesAdded=[],opponentSpecies=[dict(id=species[s]['id'],evolutions=species[s]['evolutions']) for s in missing]),'rules.json':rules,
         'source-input-hashes.json':dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],predecessorInputs=dependencies)}
     return outputs,raw
 

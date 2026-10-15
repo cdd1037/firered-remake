@@ -83,28 +83,11 @@ def reference(lock, sources, path, symbol, needle=None):
 
 
 def convert(lock, sources):
-    def ref(path, symbol, needle=None):
-        return reference(lock, sources, path, symbol, needle)
-    runtime = [
-        ('src/script_menu.c', 'ScriptMenu_ShowPokemonPic',
-         '    spriteId = CreateMonSprite_PicBox(species, 8 * x + 40, 8 * y + 40, FALSE);'),
-        ('src/script_menu.c', 'CreateWindowFromRect',
-         '    struct WindowTemplate template = SetWindowTemplateFields(0, left + 1, top + 1, width, height, 15, 0x038);'),
-        ('src/field_effect.c', 'CreateMonSprite_PicBox',
-         '    u16 spriteId = CreateMonPicSprite_HandleDeoxys(species, 0, 0x8000, TRUE, x, y, 0, gMonPaletteTable[species].tag);'),
-        ('src/data.c', 'sAnim_MonPic_0',
-         'static const union AnimCmd sAnim_MonPic_0[] =\n{\n    ANIMCMD_FRAME(0, 0),\n    ANIMCMD_END,\n};'),
-        ('include/constants/pokemon.h', 'SHINY_ODDS', '#define SHINY_ODDS 8 // Actual probability is SHINY_ODDS/65536'),
-        ('include/pokemon.h', 'GET_SHINY_VALUE', '#define GET_SHINY_VALUE(otId, personality) (HIHALF(otId) ^ LOHALF(otId) ^ HIHALF(personality) ^ LOHALF(personality))'),
-        ('tools/gbagfx/gfx.c', 'DOWNCONVERT_BIT_DEPTH', '#define DOWNCONVERT_BIT_DEPTH(x) ((x) / 8)'),
-        ('tools/gbagfx/gfx.c', 'UPCONVERT_BIT_DEPTH', '#define UPCONVERT_BIT_DEPTH(x) (((x) * 255) / 31)'),
-    ]
     display = dict(command='showmonpic', tileSize=8, interiorWidth=64, interiorHeight=64,
                    windowWidthTiles=8, windowHeightTiles=8, windowInsetTiles=1,
                    centerOffsetPixels={'x': 40, 'y': 40}, imageTopLeftOffsetPixels={'x': 8, 'y': 8},
                    applyBattleFrontPicYOffset=False, otId=0, personality=32768, shiny=False,
-                   textureFilter='nearest', flipH=False, frameIndex=0,
-                   sourceRefs=[ref(*row) for row in runtime])
+                   textureFilter='nearest', flipH=False, frameIndex=0)
     sprites, outputs = [], {}
     for name, sid in NAMES:
         stem, symbol = name.lower(), 'SPECIES_' + name.upper()
@@ -112,18 +95,6 @@ def convert(lock, sources):
         species_text = sources['include/constants/species.h'].decode()
         if not re.search(r'^#define ' + symbol + r'\s+' + str(sid) + r'\s*$', species_text, re.M):
             raise ValueError('Source species ID differs')
-        front_symbol, pal_symbol = 'gMonFrontPic_' + name, 'gMonPalette_' + name
-        refs = [
-            ref(image_path, front_symbol), ref(palette_path, pal_symbol),
-            ref('src/data/graphics/pokemon.h', front_symbol,
-                f'const u32 {front_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/front.4bpp.lz");'),
-            ref('src/data/graphics/pokemon.h', pal_symbol,
-                f'const u32 {pal_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/normal.gbapal.lz");'),
-            ref('src/data/pokemon_graphics/front_pic_table.h', 'gMonFrontPicTable',
-                f'    SPECIES_SPRITE({name.upper()}, {front_symbol}),'),
-            ref('src/data/pokemon_graphics/palette_table.h', 'gMonPaletteTable',
-                f'    SPECIES_PAL({name.upper()}, {pal_symbol}),'),
-        ]
         indices = indexed_png(sources[image_path])
         colors, words = palette(sources[palette_path])
         rgba = rgba_pixels(indices, colors)
@@ -140,7 +111,7 @@ def convert(lock, sources):
                             frames=[{'index': 0, 'x': 0, 'y': 0, 'width': 64, 'height': 64}],
                             alphaBounds={'x': left, 'y': top, 'width': right-left, 'height': bottom-top},
                             transparentIndex=0, paletteVariant='normal', paletteRgb555=words,
-                            paletteExpansion='floor(rgb5 * 255 / 31)', sourceRefs=refs))
+                            paletteExpansion='floor(rgb5 * 255 / 31)'))
     catalog = dict(schemaVersion=1, profile=inputs.PROFILE, repository=inputs.REPOSITORY,
                    sourceCommit=inputs.COMMIT,
                    display=display, sprites=sprites,

@@ -19,9 +19,17 @@ public sealed record PretEarlyShopDocument(int SchemaVersion, ImmutableArray<Pre
 public static class PretEarlyShop
 {
 
-    public static PretEarlyShopDocument Load(string json)
+    public static PretEarlyShopDocument LoadPresentation(string root, EarlyShopCatalog catalog)
     {
-        var options = ContentJson.CreateOptions();
+        using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "content/generated/early-shop/early-shop.json")));
+        var icons = ContentJson.ParseStrict<ImmutableArray<PretEarlyShopIcon>>(json.RootElement.GetProperty("icons").GetRawText(), ContentJson.CreateOptions());
+        foreach (var icon in icons) ValidateIcon(icon);
+        return new(1, [], catalog, icons, [], []);
+    }
+
+    public static PretEarlyShopDocument Load(string json, SharedItemCatalog items)
+    {
+        var options = items.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
         var document = ContentJson.ParseStrict<PretEarlyShopDocument>(json, options);
         if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||

@@ -14,8 +14,7 @@ public sealed class MoveDeleterCatalog
 
     public static MoveDeleterCatalog Authenticate(PokemonCatalog owned, ImmutableDictionary<string, string> texts)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
-            throw new ArgumentException("move_deleter_source_authentication");
+        PokemonFactory.ValidateCatalog(owned);
         foreach (string symbol in new[] { "gText_ChoosePokemon", "gText_PokeSum_PageName_KnownMoves",
             "gText_PokeSum_Controls_PickDelete", "gFameCheckerText_Cancel" })
         {
@@ -36,7 +35,6 @@ public static class MoveDeleterRules
     /// <summary>Original script refuses eggs and the last move. Fainting, status, HM moves and OT do not bar deletion.</summary>
     public static string? ValidateSelection(MoveDeleterCatalog catalog, PartyPokemon mon)
     {
-        if (OwnedBattlePokemonCatalog.For(catalog.Pokemon) is null) return "move_deleter_pokemon_catalog";
         if (mon.IsEgg) return "move_deleter_egg";
         // A zero-move or otherwise malformed state is not a normal script refusal; reject the invalid state.
         if (PokemonStateValidator.Validate(catalog.Pokemon, mon.Pokemon) is { } error) return error;

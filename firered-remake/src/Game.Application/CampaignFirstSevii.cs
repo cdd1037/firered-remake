@@ -104,7 +104,7 @@ public sealed partial class CampaignSession
                 bool first=origin==8&&destination==1&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ONE_ISLAND_HARBOR")==1;
                 bool returning=origin==1&&destination==8&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F")==3;
                 bool ordinary=RainbowIslandAvailable(origin)&&RainbowIslandAvailable(destination)&&origin!=destination&&
-                    (OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],FirstSeviiShopCatalog.TriPassId)==1||
+                    (OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],ItemIds.TriPassId)==1||
                         _content.SeviiRubyEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
                     (origin<4&&destination<4||_content.FourIslandEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
                     (origin!=0&&destination!=0||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")>=4);
@@ -120,7 +120,7 @@ public sealed partial class CampaignSession
         // Exact original Berry Forest escape-warp: its map allows Escape Rope.
         if(effect.Opcode=="setescapewarp"&&effect.Source.Path=="data/maps/ThreeIsland_BerryForest/scripts.inc"&&
             effect.Source.Symbol=="ThreeIsland_BerryForest_OnTransition"&&a.SequenceEqual(new[]{"MAP_THREE_ISLAND_BOND_BRIDGE","12","6"}))
-        {next=state with{EscapeDestination=FirstSeviiEscapeRopeRules.ForestDestination};return true;}
+        {next=state with{EscapeDestination=EscapeRopeRules.ForestDestination};return true;}
         bool billDepartureWarp=effect.Source.Path=="data/maps/CinnabarIsland_PokemonCenter_1F/scripts.inc"&&
             a.SequenceEqual(new[]{"MAP_CINNABAR_ISLAND","14","11"});
         if(effect.Opcode=="warp"&&(own||billDepartureWarp))

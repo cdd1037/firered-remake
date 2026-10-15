@@ -42,8 +42,10 @@ public static class SourceBattleKernel
             !frame.Slots.IsDefault && frame.Slots.Any(c => c?.Body is { } body && !PokemonShape(body.Pokemon)))
             return "source_kernel_nested_pokemon_shape";
         if (SourceBattleIdentityRules.Validate(frame) is { } shape) return shape;
+        if (frame.Campaign is { } campaign && !ReferenceEquals(campaign.Mechanics.Catalog, catalog))
+            return "source_campaign_mechanics_mismatch";
         if (SourceTrainerTowerEncounter.Validate(catalog, frame) is { } towerError) return towerError;
-        if (frame.SourceMechanicsRulesVersion == Version && SourceMechanicsCatalog.For(catalog) is null)
+        if (frame.SourceMechanicsRulesVersion == Version && catalog?.MechanicsData is null)
             return "source_kernel_authenticated_catalog_required";
         if (SourcePokemonValidator.ValidateFrameParties(catalog, frame) is not null)
             return "source_kernel_party_pokemon";

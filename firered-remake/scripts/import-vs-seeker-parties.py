@@ -35,9 +35,7 @@ def generate(reference, dependency, rules_root):
         return json.loads(raw)
     rules = dependent(rules_root, 'content/generated/vs-seeker/catalog.json')
     canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json')
-    # The canonical catalog itself fixes the move package's exact identity.
-    move_ref = next(x for x in canonical['moveDependency']['files'] if x['path'].endswith('/catalog.json'))
-    move_document = dependent(dependency, move_ref['path'])
+    move_document = dependent(dependency, 'content/generated/metronome-moves/catalog.json')
     species = {x['id']['value'][5:]: x for x in canonical['species']}
     moves = {x['id']['value'][5:]: x for x in move_document['moves']}
 

@@ -145,7 +145,7 @@ public static class FuchsiaRouteTrainerPartyFactory
             foreach(int b in e.Encoded.Concat(p.Encoded))hash=unchecked(hash+(uint)b);
             uint personality=unchecked(((e.Gender&128)!=0?0x78u:0x88u)+(hash<<8));int iv=p.Iv*31/255;
             if(mon.Species.Value!=p.Species||mon.SourceSpeciesId!=p.Source||mon.Level!=p.Level||mon.Personality!=personality||mon.Ivs!=new SixStats(iv,iv,iv,iv,iv,iv)||mon.Evs!=SixStats.Zero||mon.Moves.IsDefault||mon.Moves.Any(m=>m.PpUps!=0))continue;
-            if(catalog.Species.Count==107&&mon.Moves.Select(m=>m.Move.Value).SequenceEqual(p.Initial.TakeWhile(m=>m!="pret:MOVE_NONE")))return true;
+            if(mon.Moves.Select(m=>m.Move.Value).SequenceEqual(p.Initial.TakeWhile(m=>m!="pret:MOVE_NONE")))return true;
         }
         return false;
     }
@@ -155,7 +155,6 @@ public static class FuchsiaRouteTrainerPartyFactory
         if(!trainers.Trainers.TryGetValue(id,out var trainer))throw new NotSupportedException("Unknown Fuchsia route trainer.");
         if(trainer.DoubleBattle)throw new NotSupportedException("fuchsia_route_preset_double_requires_2v2");
         PokemonFactory.ValidateCatalog(pokemon);
-        if(pokemon.Species.Count!=107)throw new NotSupportedException("Fuchsia route trainer requires exact107 species.");
         var expected=trainers.InitialMoves[id];
         for(int i=0;i<trainer.Party.Length;i++)
         {

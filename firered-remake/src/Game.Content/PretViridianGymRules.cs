@@ -8,7 +8,6 @@ namespace Game.Content;
 
 public sealed record ViridianGymTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
     ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles, JsonElement ResolvedMoves);
-public sealed record ViridianGymMachineDocument(string SourceCommit, string Profile, PewterAdditionalMachine Machine);
 
 /// <summary>Hash-locked rules from pinned Git blobs; loads no new species or move metadata.</summary>
 public static class PretViridianGymRules
@@ -16,7 +15,7 @@ public static class PretViridianGymRules
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/viridian-gym-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
+        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
             ?? throw new InvalidDataException("Missing Viridian Gym source document.");
     }
     public static ViridianGymTrainerDocument LoadDocument(string root)
@@ -33,19 +32,5 @@ public static class PretViridianGymRules
             document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         ViridianGymTrainerPartyFactory.ValidateCatalog(result);
         return result;
-    }
-    public static ViridianGymMachineDocument LoadMachines(string root)
-    {
-        var document = Read<ViridianGymMachineDocument>(root,"machines.json");
-        if (            document.Machine?.Machine?.Item?.Id != ViridianGymMachineCatalog.Tm26Id)
-            throw new InvalidDataException("Viridian Gym machine scope differs.");
-        return document;
-    }
-    public static ViridianGymMachineCatalog ExtendMachines(CinnabarMachineCatalog predecessor, string root)
-    {
-        var source = LoadMachines(root);
-        return ViridianGymMachineCatalog.Authenticate(predecessor, predecessor.Catalog with {
-            Profile = ViridianGymMachineCatalog.Profile,AdditionalMachines = predecessor.Catalog.AdditionalMachines!.Value.Add(source.Machine)
-        });
     }
 }

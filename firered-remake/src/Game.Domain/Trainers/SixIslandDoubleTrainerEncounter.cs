@@ -14,21 +14,18 @@ public static class SixIslandDoubleTrainerEncounter
     public static TrainerId TrainerId { get; } = new("pret:TRAINER_TWINS_MIU_MIA");
     public const int SharedTrainerFlag = 0x500 + 580;
     public const int VictoryMoney = 1200;
-    public static SourceTwinsEncounterResult Begin(SixIslandTrainerCatalog trainers, SixIslandOpponentPokemonCatalog opponents, string battleScript,
+    public static SourceTwinsEncounterResult Begin(SixIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, string battleScript,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
-        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass, OwnedBattlePokemonCatalog? successorOwned = null)
+        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass)
     {
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
-        if (opponents is null || !ReferenceEquals(SixIslandOpponentPokemonCatalog.For(opponents.Catalog), opponents))
+        if (opponents is null)
             return Fail("six_island_double_catalog");
         try { SixIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("six_island_double_source"); }
         if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Trainer != TrainerId || battle.Mode != 4)
             return Fail("six_island_double_script");
-        OwnedBattlePokemonCatalog predecessorOwned = opponents.Owned;
-        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(predecessorOwned,successorOwned))
-            return Fail("source_trainer_successor_owned");
-        var owned = successorOwned ?? predecessorOwned;
+        var owned = opponents.Owned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
         if (!Enum.IsDefined(terrain)) return Fail("six_island_double_terrain");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("six_island_double_rng");
@@ -55,7 +52,7 @@ public static class SixIslandDoubleTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? SixIslandOpponentPokemonCatalog.Profile : successorOwned.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = opponents.RulesVersion, Campaign = owned, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Field = new() { Terrain = terrain }, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
@@ -81,7 +78,7 @@ public static class SixIslandDoubleTrainerEncounter
     }
 
     public static SourceTwinsAiResult ChooseEnemyActions(SixIslandTrainerCatalog trainers,
-        SixIslandOpponentPokemonCatalog opponents, SourceBattleFrame frame, long expectedRevision,
+        GameOpponentPokemonCatalog opponents, SourceBattleFrame frame, long expectedRevision,
         string? knownPlayerAbility = null)
     {
         if (ValidateFrame(trainers, opponents, frame) is { } error) return new(frame, [], [], error);
@@ -91,18 +88,15 @@ public static class SixIslandDoubleTrainerEncounter
             c.Selection,c.Scores,c.SimulatedDamagePercent,c.AbilityReads)).ToImmutableArray(),result.Trace,result.Fault);
     }
 
-    public static string? ValidateFrame(SixIslandTrainerCatalog trainers, SixIslandOpponentPokemonCatalog opponents, SourceBattleFrame frame)
+    public static string? ValidateFrame(SixIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, SourceBattleFrame frame)
     {
-        if (opponents is null || !ReferenceEquals(SixIslandOpponentPokemonCatalog.For(opponents.Catalog), opponents))
+        if (opponents is null)
             return "six_island_double_catalog";
         try { SixIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "six_island_double_source"; }
         if (frame is null ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "six_island_double_frame";
-        if (frame.SourceCampaignRulesVersion != SixIslandOpponentPokemonCatalog.Profile &&
-            (OwnedBattlePokemonCatalog.ForMechanics(opponents.Mechanics.Catalog, frame.SourceCampaignRulesVersion) is not { } current ||
-             frame.SourceCampaignRulesVersion != current.TrainerOpponentProfile ||
-             !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(opponents.Owned, current))) return "source_double_successor_owned";
+        if (frame.Campaign is null || frame.SourceCampaignRulesVersion != opponents.RulesVersion) return "source_double_campaign_context";
         if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "six_island_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = SixIslandTrainerPartyFactory.Expected[TrainerId];

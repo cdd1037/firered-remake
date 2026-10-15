@@ -126,16 +126,6 @@ def read_sources(lock, raw, repository=None):
     return sources
 
 
-def reference(lock, sources, path, symbol, needle=None):
-    entry = next(e for e in lock['files'] if e['path'] == path)
-    result = dict(path=path, symbol=symbol)
-    if needle is not None:
-        source = sources[path].decode('utf-8')
-        if source.count(needle) != 1:
-            raise ValueError('Expected one source anchor: ' + symbol)
-        result.update(startLine=source.count('\n', 0, source.index(needle)) + 1,
-                      endLine=source.count('\n', 0, source.index(needle) + len(needle)) + 1)
-    return result
 
 
 def render_tilemap(tiles, data, width, height, palettes, base_tile=0):
@@ -227,7 +217,7 @@ def convert(lock, sources):
         rgba = pixels.rgba(indices, colors)
         png_path = f'icons/{stem}.png'
         outputs[png_path] = pixels.png(32, 32, rgba)
-        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, texturePath=png_path, width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2, paletteIndex=palette_index, paletteVariant='shared-normal-shiny', transparentIndex=0, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in colors], sourceRefs=[reference(lock, sources, image_path, 'gMonIcon_' + name), reference(lock, sources, palette_path, 'gMonIconPalettes[' + str(palette_index) + ']'), reference(lock, sources, ip, 'gMonIconPaletteIndices[' + symbol + ']', palette_match[0]), reference(lock, sources, gp, 'CreateMonIconSprite', 'template.paletteTag = PALTAG_MON_ICON_0 + gMonIconPaletteIndices[species];'), reference(lock, sources, gp, 'TryLoadMonIconTiles', 'CpuCopy32(GetMonIconTiles(species, TRUE), (void *)(OBJ_VRAM0) + offset * 32, 0x200);')]))
+        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, texturePath=png_path, width=32, height=32, sourceFrameIndex=0, sourceFrameCount=2, paletteIndex=palette_index, paletteVariant='shared-normal-shiny', transparentIndex=0, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in colors]))
     def add(identifier,w,h,rgba,x=0,y=0):
         if len(rgba)!=w*h*4: raise ValueError('Asset size differs')
         png_path = identifier + '.png'
@@ -287,13 +277,7 @@ def convert(lock, sources):
         speciesNameText=dict(x=6,y=102),genderAndLevelText=dict(x=10,y=116),heldItemText=dict(x=6,y=132),
         boxTitleCenterY=28,boxArrowCenters=[dict(x=92,y=28),dict(x=228,y=28)],
         normalShinyIconsIdentical=True,iconAnimationImplemented=False,scrollingPhase=0,
-        paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',
-        sourceRefs=[reference(lock,sources,gp,'InitBoxMonSprites','gStorage->boxMonsSprites[count] = CreateMonIconSprite(species, personality, 8 * (3 * j) + 100, 8 * (3 * i) + 44, 2, 19 - j);'),
-                    reference(lock,sources,gp,'DrawWallpaper','CopyRectToBgTilemapBufferRect(2, tilemap, 0, 0, 20, 18, x, 2, 20, 18, 17, offset << 8, paletteNum);'),
-                    reference(lock,sources,tp,'InitPalettesAndSprites'),reference(lock,sources,tp,'InitSupplementalTilemaps'),
-                    reference(lock,sources,gp,'GetBoxTitleBaseX','return DISPLAY_WIDTH - 64 - GetStringWidth(FONT_NORMAL_COPY_1, string, 0) / 2;'),
-                    reference(lock,sources,tp,'PrintDisplayMonInfo'),
-                    reference(lock,sources,'src/pokemon_storage_system_data.c','displayMonTexts')])
+        paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)')
     outputs['storage-art.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
         icons=icons,assets=assets,display=display,
         limitations=['Only the first default forest wallpaper is converted; other box wallpapers are not implemented.',

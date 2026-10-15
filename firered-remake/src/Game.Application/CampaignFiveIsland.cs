@@ -25,10 +25,9 @@ public sealed partial class CampaignSession
         }
         if (!content.SixIslandEnabled || content.FiveIslandOwnership is not {} owned ||
             content.FiveIslandOpponents is not {} opponents || content.FiveIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned.Predecessor, content.SixIslandOwnership) || !ReferenceEquals(content.CelioOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SixIslandOpponents) ||
-            CelioFiveMachines(content) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            content.SevenIslandShop?.Predecessor is null)
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.UpGradeId))
             throw new InvalidDataException("five_island_source_profile_missing");
         FiveIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }

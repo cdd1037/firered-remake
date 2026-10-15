@@ -12,9 +12,7 @@ public sealed record OldManTutorialInput(string Path);
 public sealed record OldManTutorialAsset(string Path, int Width, int Height);
 public sealed record OldManTutorialText(string Symbol, string Text, PokemonSourceRef Source);
 public sealed record OldManThrowFrame(int Frame, int Ticks);
-public sealed record OldManTeachyTv(int SourceItemId, string Name, int Price, string HoldEffect,
-    int HoldEffectParam, string Description, int Importance, int Registrability, string Pocket,
-    string Type, string FieldUseFunc, int BattleUsage, string BattleUseFunc, int SecondaryId, PokemonSourceRef Source);
+public sealed record OldManTeachyTv(ItemId Item, string Description);
 public sealed record OldManTutorialDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<OldManTutorialInput> Inputs, ImmutableArray<string> Limitations,
     ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
@@ -34,11 +32,11 @@ public static class PretOldManTutorial
     public const string Profile = "firered-old-man-tutorial-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
-    public static PretOldManTutorialContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson)
+    public static PretOldManTutorialContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson)
     {
         // Authenticate before composing. No caller-supplied manifest can legitimize changed source values.
-        var original = PretRoute1PokemonCatalog.LoadContent(route1GeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretRoute1PokemonCatalog.LoadContent(canonical, route1GeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         var doc = ContentJson.ParseStrict<OldManTutorialDocument>(tutorialGeneratedJson, options);
         if (doc.SchemaVersion != 1 || doc.Species.Length != 3 || doc.SpeciesNames.Length != 3 ||
@@ -62,7 +60,7 @@ public static class PretOldManTutorial
             moveNames[value.Id] = value.Name;
         }
         var catalog = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(catalog);
+        PokemonFactory.ValidateDefinitions(catalog);
         if (catalog.Species.Count != 17 || catalog.Species[new("pret:SPECIES_WEEDLE")].SourceSpeciesId != 13 ||
             catalog.Species[new("pret:SPECIES_KAKUNA")].SourceSpeciesId != 14 ||
             catalog.Species[new("pret:SPECIES_BEEDRILL")].SourceSpeciesId != 15)

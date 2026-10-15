@@ -36,12 +36,12 @@ def generate(root):
   if learn.start()<=m.start()<learn.end():level_moves.append(dict(level=int(m[1]),move=ident(m[2])));required.add(m[2])
  assert [(m['level'],m['move']['value'][10:]) for m in level_moves]==[(1,'TACKLE'),(1,'TAIL_WHIP'),(1,'HELPING_HAND'),(8,'SAND_ATTACK'),(16,'GROWL'),(23,'QUICK_ATTACK'),(30,'BITE'),(36,'BATON_PASS'),(42,'TAKE_DOWN')]
  stat_source=('HP','Attack','Defense','Speed','SpAttack','SpDefense');stat_names=('hp','attack','defense','speed','specialAttack','specialDefense')
- species=dict(id=ident(symbol),sourceSpeciesId=constant('include/constants/species.h',symbol)['value'],baseStats={k:int(fields['base'+s]) for k,s in zip(stat_names,stat_source)},type1='TYPE_NORMAL',type2='TYPE_NORMAL',catchRate=int(fields['catchRate']),experienceYield=int(fields['expYield']),evYield={k:int(fields['evYield_'+s]) for k,s in zip(stat_names,stat_source)},growthRate='mediumFast',genderRatio=31,ability1='ABILITY_RUN_AWAY',ability2='ABILITY_NONE',friendship=int(fields['friendship']),levelUpMoves=level_moves,evolutions=[],source=source,learnsetSource=ref(path,pointer,learn))
+ species=dict(id=ident(symbol), sourceSpeciesId=constant('include/constants/species.h', symbol)['value'], baseStats={k: int(fields['base' + s]) for k, s in zip(stat_names, stat_source)}, type1='TYPE_NORMAL', type2='TYPE_NORMAL', catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_names, stat_source)}, growthRate='mediumFast', genderRatio=31, ability1='ABILITY_RUN_AWAY', ability2='ABILITY_NONE', friendship=int(fields['friendship']), levelUpMoves=level_moves, evolutions=[])
  definitions=[]
  for symbol in sorted(required):
   f,r=block('src/data/battle_moves.h',symbol)
-  definitions.append(dict(id=ident(symbol),sourceMoveId=constant('include/constants/moves.h',symbol)['value'],pp=int(f['pp']),power=int(f['power']),type=f['type'],accuracy=int(f['accuracy']),effect=f['effect'],secondaryEffectChance=int(f['secondaryEffectChance']),target=f['target'],priority=int(f['priority']),flags=[] if f['flags']=='0' else f['flags'].split(' | '),battleEffectImplemented=False,source=r))
- moves=[m for m in definitions if m['id']['value'][5:] in NEW_MOVES]
+  definitions.append(ident(symbol))
+ moves=[m for m in definitions if m['value'][5:] in NEW_MOVES]
  names=[name('src/data/text/species_names.h','SPECIES_EEVEE')];move_names=[name('src/data/text/move_names.h',s) for s in NEW_MOVES]
  encoding=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'));encoded=[]
  for n in names+move_names:
@@ -50,14 +50,14 @@ def generate(root):
  path='src/data/pokemon/evolution.h';ev=one(path,r'^    \[SPECIES_EEVEE\]\s*= (.*?\}\}),');deferred=[]
  for method,param,target in re.findall(r'\{(EVO_\w+), (\w+), (SPECIES_\w+)\}',ev[1]):
   reason='Target and stone-use services are outside this gift profile.' if method=='EVO_ITEM' else 'FireRed has no RTC; src/pokemon.c explicitly disables day/night friendship evolution.'
-  deferred.append(dict(species=ident('SPECIES_EEVEE'),method=method,parameter=param,target=ident(target),source=ref(path,'SPECIES_EEVEE',ev),executable=False,reason=reason))
+  deferred.append(dict(species=ident('SPECIES_EEVEE'), method=method, parameter=param, target=ident(target), executable=False, reason=reason))
  assert len(deferred)==5
  gate=one('src/pokemon.c',r'            // FR/LG removed the time of day evolutions due to having no RTC\..*?            case EVO_LEVEL:')
  assert '/*' in gate[0] and gate[0].count('targetSpecies =')==2
  constants=[constant('include/constants/species.h',s) for s in ('SPECIES_EEVEE','SPECIES_JOLTEON','SPECIES_VAPOREON','SPECIES_FLAREON','SPECIES_ESPEON','SPECIES_UMBREON')]+[constant('include/constants/moves.h',s) for s in sorted(required)]+[constant('include/constants/abilities.h','ABILITY_RUN_AWAY')]+[constant('include/constants/items.h',s) for s in ('ITEM_THUNDER_STONE','ITEM_WATER_STONE','ITEM_FIRE_STONE')]
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],species=[species],moves=moves,speciesNames=names,moveNames=move_names,constants=constants,encodedNames=encoded,deferredEvolutions=deferred,requiredMoves=[ident(s) for s in sorted(required)],naturalLevelLimit=None,limitations=['All nine natural learnset entries and all five evolution rows are retained as source metadata.','Baton Pass at level36 and Take Down at level42 remain unsupported battle effects; the current profile requires an explicit decline without replacing moves or spending their PP.','The three Kanto stone evolutions require later species and item-service admission.','Espeon and Umbreon day/night evolution is disabled in FireRed source, regardless of friendship or National Dex.'])
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],species=[dict(id=species['id'], evolutions=species['evolutions'])],moves=moves,speciesNames=names,moveNames=move_names,constants=constants,encodedNames=encoded,deferredEvolutions=deferred,requiredMoves=[ident(s) for s in sorted(required)],naturalLevelLimit=None,limitations=['All nine natural learnset entries and all five evolution rows are retained as source metadata.','Baton Pass at level36 and Take Down at level42 remain unsupported battle effects; the current profile requires an explicit decline without replacing moves or spending their PP.','The three Kanto stone evolutions require later species and item-service admission.','Espeon and Umbreon day/night evolution is disabled in FireRed source, regardless of friendship or National Dex.'])
  tm_path='src/data/pokemon/tmhm_learnsets.h';tm=one(tm_path,r'^    \[SPECIES_EEVEE\]\s*= TMHM_LEARNSET\((.*?)\),');machine_symbols=re.findall(r'TMHM\((\w+)\)',tm[1])
- machine=dict(species='pret:SPECIES_EEVEE',sourceSpeciesId=133,machineSymbols=machine_symbols,source=ref(tm_path,'SPECIES_EEVEE',tm))
+ machine=dict(species='pret:SPECIES_EEVEE',sourceSpeciesId=133,machineSymbols=machine_symbols)
  fixtures=[]
  for level in (1,8,16,23,25,30,36,42,100):
   learned=[]

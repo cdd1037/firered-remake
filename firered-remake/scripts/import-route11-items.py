@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Authenticated Route11 item declarations, exact ship pickups, icons and berry pocket semantics, from pinned Git blobs or cache. No upstream execution."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -8,7 +9,7 @@ from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-route11-items-v1'
-def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2)+'\n').encode()
+def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2, default=item_json)+'\n').encode()
 def pairs(rows):
  d={}
  for k,v in rows:
@@ -101,11 +102,11 @@ def convert(lock,data):
   symbol='ITEM_'+name;chosen=[i for i in all_items if i['itemId']==symbol]
   if len(chosen)!=1:raise ValueError('Nonunique item')
   i=chosen[0];p='src/data/items.json';m=match(p,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}');source=ref(p,symbol,m)
-  definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constant('include/constants/items.h',symbol),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
+  definition=shared_item(symbol)
   declaration=i['description_english'].replace('\\n','\n');effect_bytes,effect_source=effect(effects[name]) if name in effects else ([],None)
   if name in effects:
    p='src/data/pokemon/item_effects.h';em=match(p,r'^    \['+symbol+r' - ITEM_POTION\][ \t]*= sItemEffect_'+effects[name]+',');rules.append(ref(p,symbol+' effect binding',em))
-  defs.append(dict(metadata=dict(item=definition,description=declaration),effectBytes=effect_bytes,effectSource=effect_source))
+  defs.append(dict(metadata=dict(item=definition,description=declaration), effectBytes=effect_bytes))
   p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);symbols=m.groups();paths=[]
   for sym in symbols:
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
@@ -156,4 +157,4 @@ def run(raw,out,repo=None,lock_path=None):
   target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
  return dict(inputCount=len(data),outputCount=len(outputs))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route11-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/route11-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/route11-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/route11-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True, default=item_json))

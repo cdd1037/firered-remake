@@ -41,7 +41,7 @@ public static class CeruleanTrainerActionAi
         }
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("cerulean_switch_rng_algorithm");
         if (input.LastHitBy is { } lastSide && !Enum.IsDefined(lastSide)) return Fault("cerulean_switch_last_hit_by");
-        var last = input.LastLandedMove is null || input.LastLandedMove.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || slots?.Doubles != true && input.LastLandedMove.Value.Value == "pret:MOVE_STRUGGLE" ? null :
+        var last = input.LastLandedMove is null || input.LastLandedMove.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || (slots?.Doubles != true && input.LastLandedMove.Value.Value == "pret:MOVE_STRUGGLE") ? null :
             catalog.Moves.GetValueOrDefault(input.LastLandedMove.Value);
         if (input.LastLandedMove is { } lastId && lastId.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" or "pret:MOVE_STRUGGLE") &&
             (last is null || !(slots is not null ? SourceMoveDefinitionRules.IsValid(last) : rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, last) : route11Rules ? Route11BattleScope.ValidDefinition(last) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(last) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(last) : vermilionRules ? VermilionBattleScope.ValidDefinition(last) : billRules ? BillBattleScope.ValidDefinition(last) : CeruleanBattleScope.ValidDefinition(last)))) return Fault("cerulean_switch_last_move");

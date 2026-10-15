@@ -124,19 +124,7 @@ public sealed class FieldItemTests
         Assert.IsTrue(session.State.RareCandy is null or { Stage: CampaignRareCandyStage.LearnMove }, label + ": finite candy pages");
     }
 
-    private void ProofRejected(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership, string label)
-    {
-        try
-        {
-            RareCandyRules.Apply(content, ownership, Supply(fixture, ("RARE_CANDY", 2)).Party[0], "MAPSEC_ONE_ISLAND");
-        }
-        catch (ArgumentException ex)when (ex.Message.Contains("rare_candy_owned_catalog_identity", StringComparison.Ordinal))
-        {
-            return;
-        }
 
-        throw new InvalidDataException(label + ": unauthenticated identity accepted");
-    }
 
     [TestMethod]
     [DataRow("REPEL", 100)]
@@ -210,7 +198,7 @@ public sealed class FieldItemTests
         Reject(candy, "candy move slot guard", new("field_rare_candy", Text: Item("RARE_CANDY").Value, MoveSlot: 0), "field_rare_candy_context_invalid");
         Reject(candy, "candy party index guard", new("field_rare_candy", Text: Item("RARE_CANDY").Value, PartyIndex: 6), "item_party_index_invalid");
         Accepted(candy, "candy current source admission", new("field_rare_candy", Text: Item("RARE_CANDY").Value));
-        Assert.IsTrue(OwnedBattlePokemonCatalog.For(catalog.PokemonContent!.Catalog)is not null, "candy uses the current owned catalog registry");
+        Assert.IsTrue(catalog.PokemonContent!.Pokemon.Catalog.Species.ContainsKey(lead.Pokemon.Species), "candy species is in the explicit owned roster");
         Assert.IsTrue(Count(candy.State, "RARE_CANDY") == 1 && candy.State.Party[0].Pokemon.Level == lead.Pokemon.Level + 1, "current candy raises the prepared original member exactly once");
         Same(candyStart.Party[0].Pokemon.Moves, candy.State.Party[0].Pokemon.Moves, "candy preserves existing PP and moves");
         Same(candyStart.Party[0], candy.State.Party[0] with { Pokemon = candyStart.Party[0].Pokemon }, "candy preserves full owned identity");
@@ -222,12 +210,16 @@ public sealed class FieldItemTests
     }
 
     [TestMethod]
-    public void RareCandyProofIdentity()
+    public void RareCandyEquivalentDefinitionsAndAdmission()
     {
-        var candyStart = Supply(fixture, ("RARE_CANDY", 2));
-        var ownership = OwnedBattlePokemonCatalog.For(catalog.PokemonContent!.Catalog)!;
-        ProofRejected(catalog.PokemonContent with { Catalog = catalog.PokemonContent!.Catalog with { } }, ownership, "candy rejects reconstructed current catalog identity");
-        ProofRejected(catalog.PokemonContent, OwnedBattlePokemonCatalog.For(catalog.FiveIslandOwnership!.Catalog)!, "candy rejects wrong predecessor proof");
+        var context = catalog.PokemonContent!;
+        var owner = context.Pokemon;
+        var copy = GamePokemonCatalog.Create(owner.Mechanics, owner.Catalog with { }, owner.Opponents.Catalog with { }, owner.TrainerTowerOpponents.Catalog with { });
+        var member = Supply(fixture, ("RARE_CANDY", 2)).Party[0];
+        Same(RareCandyRules.Apply(context, owner, member, "MAPSEC_ONE_ISLAND"),
+            RareCandyRules.Apply(context with { Pokemon = copy }, copy, member, "MAPSEC_ONE_ISLAND"), "equivalent definitions preserve candy result");
+        var unadmitted = member with { Pokemon = member.Pokemon with { Species = new("pret:SPECIES_MEW"), SourceSpeciesId = 151 } };
+        Assert.Throws<ArgumentException>(() => RareCandyRules.Apply(context, owner, unadmitted, "MAPSEC_ONE_ISLAND"));
     }
 
     [TestMethod]
@@ -342,7 +334,7 @@ public sealed class FieldItemTests
         Reject(machine, "machine negative replacement", new("machine_teach", Text: Item("TM03").Value, MoveSlot: -2), "machine_invalid_slot");
         Reject(machine, "machine HM protection", new("machine_teach", Text: Item("TM03").Value, MoveSlot: 0), "machine_cannot_forget_hm");
         Accepted(machine, "machine exact TM03 teach", new("machine_teach", Text: Item("TM03").Value, MoveSlot: 1));
-        Assert.IsTrue(OpeningInventoryRules.Quantity(machine.State.Inventory!.Machines!.Value, Item("TM03")) == 0 && OpeningInventoryRules.Quantity(machine.State.Inventory.Machines.Value, PewterMachineRules.Tm39Id) == 1 && machine.State.Party[0].Pokemon.Moves[1].Move.Value == "pret:MOVE_WATER_PULSE", "explicit TM03 consumes precise item and replaces selected move");
+        Assert.IsTrue(OpeningInventoryRules.Quantity(machine.State.Inventory!.Machines!.Value, Item("TM03")) == 0 && OpeningInventoryRules.Quantity(machine.State.Inventory.Machines.Value, MachineRules.Tm39Id) == 1 && machine.State.Party[0].Pokemon.Moves[1].Move.Value == "pret:MOVE_WATER_PULSE", "explicit TM03 consumes precise item and replaces selected move");
         Same(checkpoint.State.Inventory!.KeyItems, machine.State.Inventory.KeyItems, "machine keeps every key item");
         Assert.IsTrue(machine.State.Party[0].InstanceId == machineStart.Party[0].InstanceId, "machine preserves owned identity");
         Assert.IsTrue(machine.State.ItemMenu?.MessageSymbol == "gText_PkmnLearnedMove3" && machine.State.ItemMenu.ReturnView == "machines", "machine result uses existing UI return");

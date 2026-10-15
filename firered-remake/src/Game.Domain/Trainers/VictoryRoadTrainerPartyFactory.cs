@@ -52,18 +52,10 @@ public static class VictoryRoadTrainerPartyFactory
         return expected.BasePrize;
     }
     /// <summary>Preserves the existing Cinnabar-scoped Ray/Tyra construction and predecessor callers.</summary>
-    public static TrainerPartyCreationResult Create(VictoryRoadTrainerCatalog trainers, CinnabarOpponentPokemonCatalog opponents,
+    public static TrainerPartyCreationResult Create(VictoryRoadTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
-        if (opponents is null || !ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents))
-            throw new NotSupportedException("victory_road_trainer_catalog");
-        return CreateCore(trainers, opponents.Catalog, opponents.Mechanics, id, rng);
-    }
-
-    public static TrainerPartyCreationResult Create(VictoryRoadTrainerCatalog trainers, VictoryRoadOpponentPokemonCatalog opponents,
-        TrainerId id, RngState rng)
-    {
-        if (opponents is null || !ReferenceEquals(VictoryRoadOpponentPokemonCatalog.For(opponents.Catalog), opponents))
+        if (opponents is null)
             throw new NotSupportedException("victory_road_trainer_catalog");
         return CreateCore(trainers, opponents.Catalog, opponents.Mechanics, id, rng);
     }

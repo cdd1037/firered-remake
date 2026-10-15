@@ -15,25 +15,19 @@ public static class PretPokeDollItems
     {
         return File.ReadAllBytes(Path.Combine(root, relative));
     }
-    public static NpcTradeItemsDocument LoadDocument(string root)
+    public static NpcTradeItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
             var doc = JsonSerializer.Deserialize<NpcTradeItemsDocument>(Read(root,Base + "items.json"),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+            (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions())
             ?? throw new InvalidDataException("poke_doll_item_document_missing");
             if (            doc.PreviousItemCount != 128 || doc.ItemCount != 129 || doc.Additions.IsDefault || doc.Additions.Length != 1 ||
-            doc.Additions[0].Id != PokeDollInventoryCatalog.PokeDollId ||
+            doc.Additions[0].Id != ItemIds.PokeDollId ||
             doc.ShopsAdded.IsDefault || !doc.ShopsAdded.IsEmpty || doc.Icons.IsDefault || doc.Icons.Length != 1 ||
-            doc.Icons[0].Item != PokeDollInventoryCatalog.PokeDollId || doc.Icons[0].Width != 24 || doc.Icons[0].Height != 24)
+            doc.Icons[0].Item != ItemIds.PokeDollId || doc.Icons[0].Width != 24 || doc.Icons[0].Height != 24)
             throw new InvalidDataException("poke_doll_item_scope");
         return doc;
     }
-    public static PokeDollInventoryCatalog LoadShop(string root, SeafoamShopCatalog predecessor)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        var doc = LoadDocument(root);
-        return PokeDollInventoryCatalog.Authenticate(predecessor, predecessor.Catalog with {
-                Profile = PokeDollInventoryCatalog.Profile,Items = predecessor.Catalog.Items.AddRange(doc.Additions) });
-    }
+
     public static JsonElement LoadSourceContract(string root) =>
             JsonSerializer.Deserialize<JsonElement>(Read(root,Base + "source-contract.json"));
 }

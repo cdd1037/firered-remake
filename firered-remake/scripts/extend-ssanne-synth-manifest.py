@@ -10,8 +10,6 @@ import subprocess
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REFERENCE = ROOT.parent / "audio-reference-build/pokefirered"
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-SOURCE_FILE_COUNT = 120
-INPUT_FILE_COUNT = 15
 NEW_MUSIC = {"MUS_SS_ANNE", "MUS_SURF"}
 NEW_FIELD_EFFECTS = {"SE_SS_ANNE_HORN"}
 NEW_MOVE_EFFECTS = {"SE_M_" + name for name in (
@@ -112,9 +110,9 @@ def verified_recipe(root=ROOT, reference=REFERENCE):
     region = json.loads(inputs["content/generated/ssanne-region/ssanne-catalog.json"])
     script_blocks = json.loads(read(root, "scripts/ssanne-synth.lock.json"))["scriptBlocks"]
     pokemon = json.loads(inputs["content/generated/ssanne-pokemon/catalog.json"])
-    scope = json.loads(inputs["content/generated/ssanne-pokemon/scope.json"])
+    trainers = json.loads(inputs["content/generated/ssanne-trainers/trainers.json"])
     supplement = json.loads(inputs["content/generated/ssanne-pokemon/supplement.json"])
-    if len(region["maps"]) != 26 or {s["sourceSpeciesId"] for s in pokemon["species"]} != {58, 72, 77}:
+    if len(region["maps"]) != 26 or {s["id"]["value"] for s in pokemon["species"]} != {"pret:SPECIES_GROWLITHE", "pret:SPECIES_TENTACOOL", "pret:SPECIES_PONYTA"}:
         raise ValueError("bounded region/species inventory differs")
     field = {json.loads(source["data/maps/" + m["sourceName"] + "/map.json"])["music"] for m in region["maps"]}
     for block in script_blocks:
@@ -132,8 +130,9 @@ def verified_recipe(root=ROOT, reference=REFERENCE):
         raise ValueError("source departure horn repertoire differs")
     # Full learnsets contain metadata for later unsupported moves. This is the bounded
     # ship trainer roster plus the three admitted machines, not blanket move admission.
-    moves = {m.removeprefix("MOVE_") for m in scope["requiredTrainerMoves"] + scope["teachingMoves"]}
-    catalog_moves = {m["id"]["value"].removeprefix("pret:MOVE_") for m in pokemon["moves"]}
+    moves = {m.removeprefix("MOVE_") for t in trainers["resolvedMoves"] for mon in t["party"] for m in mon["moves"] if m != "MOVE_NONE"}
+    moves.update(("CUT", "BRICK_BREAK", "REST"))
+    catalog_moves = {m["value"].removeprefix("pret:MOVE_") for m in pokemon["moves"]}
     if len(moves) != 46 or not NEW_MOVES <= moves <= catalog_moves:
         raise ValueError("bounded source move inventory differs")
     closure = source_sound_effects(source["data/battle_anim_scripts.s"].decode(), sorted(moves))

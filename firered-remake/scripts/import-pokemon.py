@@ -69,8 +69,8 @@ def convert(lock, raw_sources):
         em=list(re.finditer(r'^    \['+symbol+r'\]\s*= \{\{EVO_LEVEL, (\d+), (SPECIES_\w+)\}\},$',sources[ep],re.M))
         mentions=re.findall(r'^    \['+symbol+r'\]',sources[ep],re.M)
         if len(em)!=len(mentions) or len(em)>1:raise ValueError('Unsupported evolution method')
-        for e in em:evs.append(dict(level=number(e[1]),target=ident(e[2]),source=ref(ep,symbol,e.start(),e.end())))
-        species.append(dict(id=ident(symbol),sourceSpeciesId=sid,baseStats=base,type1=types[0],type2=types[1],catchRate=number(f['catchRate']),experienceYield=number(f['expYield']),evYield=yields,growthRate='mediumSlow',genderRatio=ratio,ability1=abilities[0],ability2=abilities[1],friendship=number(f['friendship']),levelUpMoves=entries,evolutions=evs,source=sref,learnsetSource=ref(lp,pointer,lm.start(),lm.end())))
+        for e in em:evs.append(dict(level=number(e[1]), target=ident(e[2])))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=sid, baseStats=base, type1=types[0], type2=types[1], catchRate=number(f['catchRate']), experienceYield=number(f['expYield']), evYield=yields, growthRate='mediumSlow', genderRatio=ratio, ability1=abilities[0], ability2=abilities[1], friendship=number(f['friendship']), levelUpMoves=entries, evolutions=evs))
     moves=[]
     for symbol in sorted(move_symbols):
         f,sref=block('src/data/battle_moves.h',symbol)
@@ -79,9 +79,9 @@ def convert(lock, raw_sources):
         if not re.fullmatch(r'-?\d+',f['priority']):raise ValueError('Unexpected priority expression')
         flags=[] if f['flags']=='0' else f['flags'].split(' | ')
         if any(not re.fullmatch(r'FLAG_\w+',v) for v in flags):raise ValueError('Unexpected move flags')
-        moves.append(dict(id=ident(symbol),sourceMoveId=constant('include/constants/moves.h',symbol),pp=number(f['pp']),power=number(f['power']),type=f['type'],accuracy=number(f['accuracy']),effect=f['effect'],secondaryEffectChance=number(f['secondaryEffectChance']),target=f['target'],priority=priority,flags=flags,battleEffectImplemented=False,source=sref))
+        moves.append(ident(symbol))
     limits=['Only nine starter-family species and their level-up moves are imported.','Move effects, abilities in battle, evolution execution, battle experience awards, and PP Ups are not implemented by this profile.','No TM/HM, egg, tutor, wild, trainer-party, nickname, met-location or original-save encoding profile is enabled.']
-    doc=dict(schemaVersion=1,profile='firered-starter-instances-v1',sourceCommit=lock['commit'],inputs=lock['files'],limitations=limits,species=species,moves=moves)
+    doc=dict(schemaVersion=1, profile='firered-starter-instances-v1', sourceCommit=lock['commit'], limitations=limits, species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves)
     manifest = dict(schemaVersion=1, repository=lock['repository'], commit=lock['commit'],
         inputs=lock['files'], outputs=[dict(path='content/generated/pokemon/starter-catalog.json')],
         counts=dict(species=len(species), moves=len(moves), levelUpEntries=sum(len(s['levelUpMoves']) for s in species)),

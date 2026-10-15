@@ -33,12 +33,10 @@ public static class Route16FlyTrainerPartyFactory
     }
 
     public static TrainerPartyCreationResult Create(Route16FlyTrainerCatalog trainers,
-        OwnedBattlePokemonCatalog owned, RngState rng)
+        GamePokemonCatalog owned, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            !OwnedBattlePokemonCatalog.IsRegisteredProfileOrSuccessor(owned.RulesVersion, StoneEvolutionOwnedPokemonCatalog.Profile) ||
-            trainers.Trainers[TrainerId].Party.Any(p => !owned.AdmitsTrainerOpponent(p.Species, owned.TrainerOpponentProfile)))
+        if (owned is null || trainers.Trainers[TrainerId].Party.Any(p => !owned.Opponents.Catalog.Species.ContainsKey(p.Species)))
             throw new ArgumentException("route16_double_owned_catalog");
         // The shared generator mints the same private source-party receipt used by ordinary trainers.
         return TrainerPartyFactory.CreateValidated(trainers.Trainers[TrainerId], owned.Mechanics.Catalog, rng, owned.Mechanics);

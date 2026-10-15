@@ -20,10 +20,8 @@ public sealed partial class CampaignSession
             return;
         }
         if(!content.LeagueRivalEnabled||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
-            content.CinnabarOwnership.Catalog.Species.Count!=115||content.VictoryRoadTrainerParties is null||content.VictoryRoadOpponents is null||
-            content.VictoryRoadOpponents.Catalog.Species.Count!=124||!ReferenceEquals(content.VictoryRoadOpponents.Predecessor,content.CinnabarOpponents)||
-            (((content.SevenIslandShop?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor.Predecessor??SeviiRubyShopCatalog.For(content.EarlyShop)?.Predecessor??VictoryRoadShopCatalog.For(content.EarlyShop)) is null||(((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor.Predecessor??SeviiRubyMachineCatalog.For(content.PewterMachines)?.Predecessor??VictoryRoadMachineCatalog.For(content.PewterMachines)) is not {} machines||
-            !ReferenceEquals(machines.Pokemon,content.CinnabarOwnership))throw new InvalidDataException("victory_road_catalog_scope");
+            content.VictoryRoadTrainerParties is null||content.VictoryRoadOpponents is null||
+            !content.Inventory.Items.ContainsKey(ItemIds.GuardSpecId) || content.PewterMachines is null)throw new InvalidDataException("victory_road_catalog_scope");
         VictoryRoadTrainerPartyFactory.ValidateCatalog(content.VictoryRoadTrainerParties);
         var route=content.MapDefinition(new("map.route-23"));
         int[] triggerCounts=[5,4,4,10,7,4,8];

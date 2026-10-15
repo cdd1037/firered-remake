@@ -71,14 +71,12 @@ public static class SourceTwinsTrainerEncounter
 
     public static SourceTwinsEncounterResult Begin(PokemonCatalog catalog, SourceTwinsTrainerDefinition definition,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
-        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, OwnedBattlePokemonCatalog? successorOwned = null)
+        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, GamePokemonCatalog? successorOwned = null)
     {
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
         if (ValidateDefinition(definition) is { } error) return Fail(error);
-        if (SourceMechanicsCatalog.For(catalog) is not { } proof) return Fail("source_twins_catalog_proof");
-        if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog), successorOwned) ||
-            !ReferenceEquals(successorOwned.Mechanics, proof) ||
-            !ReferenceEquals(OwnedBattlePokemonCatalog.ForMechanics(catalog, successorOwned.TrainerOpponentProfile), successorOwned)))
+        if (catalog?.MechanicsData is null) return Fail("source_twins_catalog_proof");
+        if (successorOwned is not null && !ReferenceEquals(successorOwned.Mechanics.Catalog, catalog))
             return Fail("source_twins_successor_owned");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("source_twins_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("source_twins_player_party");
@@ -101,11 +99,11 @@ public static class SourceTwinsTrainerEncounter
                 var draw = Gen3Rng.Next(generationRng, $"twins.entry.ai-setup.slot-{slot}", 16);
                 generationRng = draw.State; setupTrace.Add(draw.Trace);
             }
-            var generated = TrainerPartyFactory.CreateValidated(definition.Trainer, catalog, generationRng, proof);
+            var generated = TrainerPartyFactory.CreateValidated(definition.Trainer, catalog, generationRng, SourceMechanicsCatalog.FromDefinitions(catalog));
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned?.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned?.Opponents.RulesVersion, Campaign = successorOwned, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;

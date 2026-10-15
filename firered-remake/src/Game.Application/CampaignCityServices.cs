@@ -14,11 +14,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId SuperRodId=new("pret:ITEM_SUPER_ROD");
     private const string BikeShopSource="data/maps/CeruleanCity_BikeShop/scripts.inc";
     private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId||id==GoodRodId||id==SuperRodId||id==GameCornerCoinSource.CoinCase;
-    private InventoryState WithoutCityServiceItems(InventoryState inventory)
-    {
-        inventory=WithoutSafariKeyItems(WithoutRegionalTea(inventory));
-        return !_content.CityServicesEnabled?inventory:inventory with{KeyItems=inventory.KeyItems is {} keys?keys.Where(s=>!IsCityServiceItem(s.Item)).ToImmutableArray():null};
-    }
+
 
     private string? ValidateCityServiceInventory(InventoryState inventory)
     {

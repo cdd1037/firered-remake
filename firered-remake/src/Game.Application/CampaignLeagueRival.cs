@@ -27,8 +27,7 @@ public sealed partial class CampaignSession
             return;
         }
         if(!content.ViridianGymEnabled||content.LeagueRivalTrainerParties is null||content.CinnabarOwnership is null||
-            content.CinnabarOpponents is null||!ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned)||
-            content.CinnabarOwnership.Catalog.Species.Count!=115)
+            content.CinnabarOpponents is null||!ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))
             throw new InvalidDataException("league_rival_source_profile_missing");
         LeagueRivalTrainerPartyFactory.ValidateCatalog(content.LeagueRivalTrainerParties);
         var map=content.MapDefinition(LeagueRivalMap);

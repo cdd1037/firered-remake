@@ -69,7 +69,7 @@ public sealed class PretVermilionGymRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/vermilion-gym-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));

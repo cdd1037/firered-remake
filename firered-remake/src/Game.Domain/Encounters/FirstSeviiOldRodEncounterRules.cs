@@ -20,21 +20,21 @@ public static class FirstSeviiOldRodEncounterRules
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) ||
         MapsWithoutFishingMons.Contains(map) || OldRodEncounterRules.MapsWithoutFishingMons.Contains(map);
 
-    public static OldRodFishingResult Start(CinnabarOwnedPokemonCatalog pokemon, OldRodCastContext context,
+    public static OldRodFishingResult Start(GamePokemonCatalog pokemon, OldRodCastContext context,
         RngState rng, bool cancelBeforeCast = false)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.StartCore(context, rng, cancelBeforeCast, cinnabarRules: true, firstSeviiRules: true);
     }
 
-    public static OldRodFishingResult Advance(CinnabarOwnedPokemonCatalog pokemon, OldRodFishingState state,
+    public static OldRodFishingResult Advance(GamePokemonCatalog pokemon, OldRodFishingState state,
         OldRodFrameInput input, RngState rng)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.AdvanceCore(state, input, rng, cinnabarRules: true, firstSeviiRules: true);
     }
 
-    public static void ValidateState(CinnabarOwnedPokemonCatalog pokemon, OldRodFishingState state)
+    public static void ValidateState(GamePokemonCatalog pokemon, OldRodFishingState state)
     {
         ValidatePokemon(pokemon);
         OldRodFishingRules.ValidateStateCore(state, cinnabarRules: true, firstSeviiRules: true);
@@ -60,7 +60,7 @@ public static class FirstSeviiOldRodEncounterRules
             throw new ArgumentException("first_sevii_old_rod_candidate_source");
     }
 
-    public static OldRodEncounterResult GenerateCandidate(CinnabarOwnedPokemonCatalog pokemon,
+    public static OldRodEncounterResult GenerateCandidate(GamePokemonCatalog pokemon,
         OldRodEncounterTable table, OldRodFishingState fishing, RngState rng)
     {
         ValidateTable(table);
@@ -70,7 +70,7 @@ public static class FirstSeviiOldRodEncounterRules
         return OldRodEncounterRules.GenerateCandidateCore(table, rng);
     }
 
-    public static OldRodPokemonResult GeneratePokemon(CinnabarOwnedPokemonCatalog pokemon,
+    public static OldRodPokemonResult GeneratePokemon(GamePokemonCatalog pokemon,
         OldRodEncounterCandidate candidate, RngState rng, uint playerTrainerId)
     {
         ValidatePokemon(pokemon);
@@ -81,10 +81,8 @@ public static class FirstSeviiOldRodEncounterRules
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 
-    private static void ValidatePokemon(CinnabarOwnedPokemonCatalog pokemon)
+    private static void ValidatePokemon(GamePokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
-        if (!ReferenceEquals(CinnabarOwnedPokemonCatalog.For(pokemon.Catalog), pokemon))
-            throw new ArgumentException("first_sevii_old_rod_owned_proof");
     }
 }

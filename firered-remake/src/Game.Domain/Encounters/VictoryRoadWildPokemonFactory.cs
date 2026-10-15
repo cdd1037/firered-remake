@@ -12,7 +12,7 @@ namespace Game.Domain.Encounters;
 public static class VictoryRoadWildPokemonFactory
 {
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = VictoryRoadWildSource.Species.Select(s=>s.Species).ToImmutableArray();
-    public static EarlyLandWildPokemonResult Generate(CinnabarOwnedPokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -30,7 +30,7 @@ public static class VictoryRoadWildPokemonFactory
             pending.Candidate.Level,rng,playerTrainerId);
         return new(result.Pokemon,result.GlobalRng,result.RandomTrace);
     }
-    public static Route1WildPokemonResult GenerateSourceSlot(CinnabarOwnedPokemonCatalog owned, VictoryRoadWildOrigin origin,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, VictoryRoadWildOrigin origin,
         byte level, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -46,9 +46,9 @@ public static class VictoryRoadWildPokemonFactory
         if (!SourceInitialInstance(owned,origin,result.Pokemon)) throw new InvalidOperationException("victory_road_wild_generated_identity");
         return result;
     }
-    public static bool SourceInitialInstance(CinnabarOwnedPokemonCatalog owned, VictoryRoadWildOrigin origin, PokemonInstance mon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, VictoryRoadWildOrigin origin, PokemonInstance mon)
     {
-        if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned) || mon is null ||
+        if (owned is null || mon is null ||
             !VictoryRoadWildBattleContract.Matches(origin,mon) || !owned.Catalog.Species.TryGetValue(mon.Species,out var species)) return false;
         var dependency=VictoryRoadWildSource.Species.Single(s=>s.Species==mon.Species);
         var moves=VictoryRoadWildSource.InitialMoves.Single(s=>s.Species==mon.Species && s.Level==mon.Level).Moves;
@@ -73,9 +73,9 @@ public static class VictoryRoadWildPokemonFactory
         var draw=Gen3Rng.Next(rng,"wild-battle.held-item",100);
         return new(HeldItem(species,draw.Trace.Result),draw.State,[draw.Trace]);
     }
-    private static void ValidateOwned(CinnabarOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned) || owned.Catalog.Species.Count!=115)
+        if (owned is null)
             throw new ArgumentException("victory_road_wild_owned_proof");
     }
 }

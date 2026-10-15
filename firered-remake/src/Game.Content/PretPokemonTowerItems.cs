@@ -48,15 +48,15 @@ public static class PretPokemonTowerItems
     private const string Stem = "pokemon-tower-items";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static void Require(bool condition, string message) => PretCeladonApproachSource.Require(condition, message);
-    public static PretPokemonTowerItemsDocument Load(string json)
+    public static PretPokemonTowerItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
+        var options = machines.CreateJsonOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretPokemonTowerItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 5 && document.Icons.Length == 5 &&
             !document.Limitations.IsDefaultOrEmpty, "Pokemon Tower item scope differs.");
         foreach (var item in document.Items)
         {
-            PokemonTowerItemRules.ValidateSourceItem(item.Metadata, item.EffectBytes, item.EffectSource);
+            PokemonTowerItemRules.ValidateSourceItem(item.Metadata, item.EffectBytes);
         }
         Require(document.Items.Select(i => i.Metadata.Item.Id).Distinct().Count() == 5, "Duplicate Pokemon Tower source items.");
         foreach (var icon in document.Icons)
@@ -68,19 +68,14 @@ public static class PretPokemonTowerItems
         Require(document.Icons.Select(i => i.Item).Distinct().Count() == 5, "Duplicate Pokemon Tower icons.");
         return document;
     }
-    public static PretPokemonTowerItemsDocument LoadProject(string root)
+    public static PretPokemonTowerItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
         var outputs = PretCeladonApproachSource.Outputs(root,Stem);
-        var document = Load(Utf8.GetString(outputs["pokemon-tower-items.json"]));
+        var document = Load(Utf8.GetString(outputs["pokemon-tower-items.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
     /// <summary>Preserves all prior 56 entries and all five stocks. Metadata validation is explicit; generic inventory admission is separate.</summary>
-    public static EarlyShopCatalog LoadShopProject(string root, EarlyShopCatalog inherited)
-    {
-        RocketHideoutItemRules.ValidateShop(inherited); var document = LoadProject(root);
-        var result = inherited with { Profile = Profile,Items = inherited.Items.AddRange(document.Items.Select(PretSsAnneItems.Definition)) };
-        PokemonTowerItemRules.ValidateShop(result); return result;
-    }
+
     public static EarlyShopItemDefinition? Definition(PretPokemonTowerItemsDocument document, ItemId id)
     {
         var source = document.Items.SingleOrDefault(i => i.Metadata.Item.Id == id);
@@ -114,9 +109,9 @@ public static class PretPokemonTowerItems
         }
         return document;
     }
-    public static PretPokemonTowerItemContractsDocument LoadContractsProject(string root)
+    public static PretPokemonTowerItemContractsDocument LoadContractsProject(string root, SharedMachineCatalog? shared = null)
     {
-        var items = LoadProject(root);
+        var items = LoadProject(root, shared);
         var bytes = PretCeladonApproachSource.Read(root,"content/generated/" + Stem + "/pokemon-tower-item-contracts.json");
         var document = ContentJson.ParseStrict<PretPokemonTowerItemContractsDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
         Require(document.SchemaVersion == 1 &&

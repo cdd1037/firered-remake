@@ -391,7 +391,7 @@ public static class SourceBattleEventHooks
             value is SourceOpponentRewardCompletedEvent completed && !DefeatKey(frame, completed.Defeated))
             return "source_event_reward_identity";
         if (value is Game.Domain.Trainers.SourceTrainerStartedEvent started && (
-            started.Trainer != (frame.TrainerEncounter?.Inventory.Trainer ?? frame.TrainerTowerEncounter?.Receipt?.Trainer.Id) ||
+            started.Trainer != (frame.TrainerEncounter?.Inventory.Trainer ?? frame.TrainerTowerEncounter?.Roster?.Trainer.Id) ||
             started.OpponentCount != frame.Party(BattleSide.Opponent).Members.Length))
             return "source_event_trainer_start_identity";
         var selectedTrainer = value switch { SourceTrainerOpponentSelectedEvent selected => selected.Incoming,

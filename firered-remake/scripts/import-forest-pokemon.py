@@ -100,29 +100,20 @@ def metadata(lock, sources):
             level = re.fullmatch(r'\{\{EVO_LEVEL,\s+(\d+), (SPECIES_\w+)\}\}', m[1])
             item = re.fullmatch(r'\{\{EVO_ITEM, (ITEM_\w+), (SPECIES_\w+)\}\}', m[1])
             if level:
-                evolution = dict(level=int(level[1]), target=ident(level[2]), source=ref(evolution_path, symbol, m))
+                evolution = dict(level=int(level[1]), target=ident(level[2]))
             elif item and symbol == 'SPECIES_PIKACHU' and (item[1], item[2]) == ('ITEM_THUNDER_STONE', 'SPECIES_RAICHU'):
-                evolution = dict(level=0, target=ident(item[2]), source=ref(evolution_path, symbol, m),
-                                 method='item', parameter=item[1])
+                evolution = dict(level=0, target=ident(item[2]), method='item', parameter=item[1])
             else:
                 raise ValueError('Unsupported evolution declaration: ' + m[1])
             if evolution['target']['value'] not in {'pret:SPECIES_' + n.upper() for n in NEW_SPECIES}:
                 raise ValueError('Unimported forward evolution target')
             evolutions.append(evolution)
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate='mediumFast',
-            genderRatio=127, ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate='mediumFast', genderRatio=127, ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     for path, symbol in [('include/constants/pokemon.h', 'EVO_LEVEL'), ('include/constants/pokemon.h', 'EVO_ITEM'),
@@ -130,7 +121,7 @@ def metadata(lock, sources):
         m = constant(path, symbol)
         constants.append(dict(symbol=symbol, value=int(m[1]), source=ref(path, symbol, m)))
     return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'],
-        species=species, moves=moves, speciesNames=names, moveNames=move_names, constants=constants,
+        species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=names, moveNames=move_names, constants=constants,
         itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False,
         limitations=['Adds only Caterpie/Metapod/Butterfree and Pikachu/Raichu to the authenticated original seventeen species.',
                      'Complete forward evolution metadata is retained; no level/item evolution executor, Thunder Stone use or battle effects are implemented.',

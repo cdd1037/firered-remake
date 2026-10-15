@@ -48,7 +48,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
         self.assertEqual(22388, result['compatibilityValues'])
 
     def test_regional_reference_roundtrip_preserves_order(self):
-        self.assertEqual(47, len(self.results))
+        self.assertEqual(46, len(self.results))
         for path, compact, expected_compact, expanded, _ in self.results:
             self.assertEqual(compact, expected_compact, path)
             inherited = 'pret:ITEM_TM39' if path in IMPORT.TM39_DOCUMENTS else None
@@ -149,7 +149,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
                 for child in value:
                     visit(child)
             elif isinstance(value, dict):
-                if 'description' in value and isinstance(value.get('item'), dict) and 'sourceItemSymbol' in value['item']:
+                if 'description' in value and isinstance(value.get('item'), str) and set(value) == {'item', 'description'}:
                     count += 1
                     self.assertEqual({'item', 'description'}, set(value))
                 for child in value.values():
@@ -172,10 +172,13 @@ class SharedMachineCatalogImport(unittest.TestCase):
             bad['machines'][0]['machine'][field] = 'retired proof'
             with self.assertRaisesRegex(ValueError, 'Unexpected machine item fields'):
                 IMPORT.Catalog(bad)
-        pewter = dict((path, compact) for path, compact, _, _, _ in self.results)[
-            'content/generated/pewter-machines/pewter-machines.json']['catalog']
-        self.assertEqual({'item': 'pret:ITEM_TM39'}, pewter['tm39'])
-        self.assertEqual('pret:ITEM_TM_CASE', pewter['tmCase']['item']['id']['value'])
+        current = self.document['current']
+        self.assertEqual('pret:ITEM_TM39', current['order'][0]['value'])
+        self.assertEqual('pret:ITEM_TM_CASE', current['tmCase']['item'])
+        self.assertEqual(57, len(current['order']))
+        self.assertEqual(58, current['machineSlots'])
+        pewter = IMPORT.read_json(ROOT / 'content/generated/pewter-machines/pewter-machines.json')
+        self.assertNotIn('catalog', pewter)
 
     def test_conflicting_compatibility_is_rejected_instead_of_deduplicated(self):
         item, species = 'pret:ITEM_TM39', 'pret:SPECIES_BULBASAUR'
@@ -230,7 +233,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
         sys.path.insert(0, str(ROOT / 'scripts'))
         import machine_catalog
         recipe = IMPORT.read_json(ROOT / 'scripts/import-config/machine-admissions.json')
-        self.assertEqual(47, len(recipe['files']))
+        self.assertEqual(46, len(recipe['files']))
         count = 0
         for relative, groups in recipe['files'].items():
             document = IMPORT.read_json(ROOT / relative)
@@ -241,7 +244,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
                         actual = actual[int(part)] if isinstance(actual, list) else actual[part]
                     self.assertEqual(actual, machine_catalog.admission_view(ROOT, relative, view['pointer']))
                     count += 1
-        self.assertEqual(1193, count)
+        self.assertEqual(1192, count)
 
     def test_duplicate_catalog_keys_and_duplicate_json_members_fail(self):
         bad = copy.deepcopy(self.document)

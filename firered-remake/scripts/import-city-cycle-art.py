@@ -180,17 +180,7 @@ def convert( sources):
             frameLayout='horizontal', sourceFrameIndices=list(range(9)), sourceImagePath=image_path,
             sourcePalettePath=PALETTE_PATH, paletteTag=palette_tag, paletteSlot='PALSLOT_PLAYER', paletteRgb555=words,
             transparentIndex=0, directions=directions, tileCenterAnchor=dict(x=16, y=24),
-            drawOffsetFromTileOrigin=dict(x=-8, y=-16), walkFrameDurationSourceFrames=4, sourceTimingHz=60,
-            sourceRefs=[ref(image_path, 'gObjectEventPic_' + symbol), ref(PALETTE_PATH, 'gObjectEventPal_Player'),
-                ref(OBJECT_ROOT + 'object_event_graphics.h', 'gObjectEventPic_' + symbol),
-                ref(OBJECT_ROOT + 'object_event_graphics_info.h', 'gObjectEventGraphicsInfo_' + symbol),
-                ref(OBJECT_ROOT + 'object_event_graphics_info_pointers.h', graphics_id),
-                ref(OBJECT_ROOT + 'object_event_pic_tables.h', 'sPicTable_' + symbol),
-                ref(OBJECT_ROOT + 'object_event_anims.h', 'sAnimTable_Standard'),
-                ref('src/event_object_movement.c', 'sObjectEventSpritePalettes'),
-                ref('src/field_player_avatar.c', 'sPlayerAvatarGfxIds'),
-                ref('include/constants/global.h', 'MALE' if gender == 0 else 'FEMALE'),
-                ref('include/constants/event_objects.h', graphics_id), ref('tools/gbagfx/gfx.c', 'UPCONVERT_BIT_DEPTH')]))
+            drawOffsetFromTileOrigin=dict(x=-8, y=-16), walkFrameDurationSourceFrames=4, sourceTimingHz=60))
     outputs['city-cycle-art.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          paletteExpansion='floor(rgb5 * 255 / 31)', assets=assets,
         limitations=['Original Red/Green Bicycle art and normal land-cycling source contracts only.',
@@ -282,7 +272,7 @@ def fishing_art(sources, ref):
         require('gObjectEventPic_'+symbol+'[] = INCBIN_U16("'+image.replace('.png','.4bpp')+'")' in text[OBJECT_ROOT+'object_event_graphics.h'],'Fishing image binding differs')
         indices=indexed_png(sources[image],384);rgba=bytes(c for i in indices for c in (*colors[i],0 if i==0 else 255));filename='fish-'+('male' if gender==0 else 'female')+'.png';png=rgba_png(rgba,384);outputs[filename]=png
         assets.append(dict(gender=gender,graphicsId=gfx,sourceGraphicsId=gfx_id,texturePath=filename,width=384,height=32,frameWidth=32,frameHeight=32,frameCount=12,
-            drawOffsetFromTileOrigin=dict(x=-8,y=-16),sourceRefs=[ref(image,'gObjectEventPic_'+symbol),ref(PALETTE_PATH,'gObjectEventPal_Player'),ref(OBJECT_ROOT+'object_event_graphics_info.h','gObjectEventGraphicsInfo_'+symbol),ref(OBJECT_ROOT+'object_event_pic_tables.h','sPicTable_'+symbol)]))
+            drawOffsetFromTileOrigin=dict(x=-8,y=-16)))
     texts={}
     for symbol in ['gText_PokemonOnHook','gText_NotEvenANibble','gText_ItGotAway']:
         matches=re.findall(r'^const u8 '+symbol+r'\[\] = _\("(.*?)"\);$',text['src/strings.c'],re.M);require(len(matches)==1,'Fishing text identity differs');texts[symbol]=matches[0]

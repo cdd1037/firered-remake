@@ -6,10 +6,8 @@ using Game.Domain.Pokemon;
 public partial class SynthSourceAudioPlayer
 {
     /// <summary>Bind one missing source cue after ordinary current audio has loaded. No sample pack is changed.</summary>
-    public void RegisterGameCornerCues(GameCornerOwnedPokemonCatalog owned, string root, string? inheritedRoot = null)
+    public void RegisterGameCornerCues(GamePokemonCatalog owned, string root, string? inheritedRoot = null)
     {
-        if (!ReferenceEquals(GameCornerOwnedPokemonCatalog.For(owned.Catalog), owned))
-            throw new InvalidDataException("Game Corner audio requires the authenticated owned catalog.");
         var art = PretGameCornerPresentation.Load(root, inheritedRoot);
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };

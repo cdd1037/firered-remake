@@ -45,16 +45,15 @@ public sealed class PretRockTunnelPokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretRockTunnelPokemon(string directory, RockTunnelPokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        RockTunnelPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        RockTunnelPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -77,7 +76,7 @@ public sealed class PretRockTunnelPokemon
         });
     }
 
-    public static PretRockTunnelPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
+    public static PretRockTunnelPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null)
     {
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
@@ -99,7 +98,7 @@ public sealed class PretRockTunnelPokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -123,8 +122,6 @@ public sealed class PretRockTunnelPokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "RockTunnel Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "RockTunnel sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<RockTunnelPokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -139,8 +136,7 @@ public sealed class PretRockTunnelPokemon
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
-                icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                (outputs[icon.TexturePath]).Length > 0, "RockTunnel icon identity/pixels differ.");
+                icon.PaletteRgb555.Length == 16 && (outputs[icon.TexturePath]).Length > 0, "RockTunnel icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
@@ -164,26 +160,14 @@ public sealed class PretRockTunnelPokemon
                 dex.Entries[weight.SourceSpeciesId].WeightHectograms == weight.WeightHectograms && weight.WeightHectograms > 0,
                 "RockTunnel weight differs from the authenticated Dex source.");
         }
-        using var scope = JsonDocument.Parse(outputs["scope.json"]);
-        Require(scope.RootElement.GetProperty("trainers").GetArrayLength() == 30 &&
-            !scope.RootElement.GetProperty("effectsEnabledByThisCatalog").GetBoolean(), "RockTunnel evidence scope differs.");
-        Require(scope.RootElement.GetProperty("naturalLevelLimit").ValueKind == JsonValueKind.Null &&
-            scope.RootElement.GetProperty("requiredTrainerMoves").GetArrayLength() == 59 &&
-            scope.RootElement.GetProperty("sourceDefinitions").GetArrayLength() == 117 &&
-            scope.RootElement.GetProperty("teachingMoves").EnumerateArray().Select(x => x.GetString()).SequenceEqual(new[] { "MOVE_AERIAL_ACE" }),
-            "RockTunnel source dependency or uncapped battle scope differs.");
-        var closure = scope.RootElement.GetProperty("naturalRouteClosure");
-        Require(closure.GetProperty("coverageLevel").GetInt32() == 35 && closure.GetProperty("ownedSpecies").GetArrayLength() == 57 &&
-            !closure.GetProperty("evolutionBackfill").GetBoolean() && !closure.GetProperty("moveReminderIncluded").GetBoolean() &&
-            scope.RootElement.GetProperty("requiredBattleMoves").GetArrayLength() == 126, "RockTunnel natural source move closure differs.");
-        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary(), scope.RootElement.Clone());
+        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary());
     }
 
-    public static RockTunnelPokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
+    public static RockTunnelPokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
         string pewterGeneratedJson, string route22GeneratedJson, string route3GeneratedJson, string mtmoonGeneratedJson, string ceruleanGeneratedJson, string billGeneratedJson, string vermilionGeneratedJson, string ssanneGeneratedJson, string route11GeneratedJson, string rocktunnelGeneratedJson)
     {
-        var original = PretRoute11Pokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson, ssanneGeneratedJson, route11GeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretRoute11Pokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson, ssanneGeneratedJson, route11GeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<RockTunnelPokemonDocument>(rocktunnelGeneratedJson, options);
@@ -257,13 +241,13 @@ public sealed class PretRockTunnelPokemon
         {
             Require(expectedOverlays.Remove((overlay.Species.Value, overlay.Evolution.Level, overlay.Evolution.Target.Value)) &&
                 overlay.Evolution.Method == PokemonEvolutionMethod.Level && overlay.Evolution.Parameter is null &&
-                species[overlay.Species].Evolutions.IsEmpty && overlay.Evolution.Source.Symbol == overlay.Species.Value[5..],
+                species[overlay.Species].Evolutions.IsEmpty,
                 "RockTunnel source level evolution overlay differs.");
             species[overlay.Species] = species[overlay.Species] with { Evolutions = [overlay.Evolution] };
         }
         Require(expectedOverlays.Count == 0, "Missing RockTunnel evolution overlays.");
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 93 && result.Moves.Count == 217 && names.Count == 93 && moveNames.Count == 217, "Incomplete composed RockTunnel Pokemon catalog.");
         Require(doc.DeferredEvolutions.Length == 3, "Missing RockTunnel deferred evolution metadata.");
         var expectedDeferred = new HashSet<(string Species, string Method, string Parameter, string Target)>

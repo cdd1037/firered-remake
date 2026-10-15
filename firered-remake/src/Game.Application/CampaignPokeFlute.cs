@@ -33,7 +33,7 @@ public sealed partial class CampaignSession
             state.FlashEffect is not null || state.CutEffect is not null || state.Repel is not null ||
             state.Pc is not null || state.TownMap is not null || state.FieldEffectArguments is not null)
             return No("field_poke_flute_context_invalid");
-        var use = PokeFluteRules.UseField(ShopCatalog, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party, snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
+        var use = PokeFluteRules.UseField(ShopCatalog, _content.PokemonContent!, state.Inventory!, state.Party, snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
         if (!use.Succeeded) return No(use.Error!);
         // Resolve all required pages before any status is committed.
         _ = _content.TextPages(PokeFluteRules.FieldNoEffectMessage);

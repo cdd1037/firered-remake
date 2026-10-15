@@ -13,40 +13,40 @@ public sealed record VermilionGymTrainerDocument(int SchemaVersion, string Profi
 /// <summary>Hash-locked source tables and initial battle scripts, independent from all earlier catalogs.</summary>
 public static class PretVermilionGymTrainers
 {
-    public static VermilionGymTrainerCatalog Load(string root)
+    public static VermilionGymTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
     {
         byte[] Read(string path)
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-gym-trainers/trainers.json")),ContentJson.CreateOptions());
+        var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-gym-trainers/trainers.json")),canonical.ReferenceOptions());
                 if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("VermilionGym trainer document identity differs.");
         var catalog=new VermilionGymTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         VermilionGymTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
     }
-    public static PokemonCatalog ExtendPokemon(string root, PokemonCatalog previous, bool route11Rules=false, bool rockTunnelRules=false, bool celadonApproachRules=false)
+    public static PokemonCatalog ExtendPokemon(PretCanonicalPokemonCatalog canonical, string root, PokemonCatalog previous, bool route11Rules=false, bool rockTunnelRules=false, bool celadonApproachRules=false)
     {
-        _ = Load(root);
-        PokemonFactory.ValidateCatalog(previous);
+        _ = Load(canonical, root);
+        PokemonFactory.ValidateDefinitions(previous);
         if(previous.Species.Count != (celadonApproachRules?94:rockTunnelRules?93:route11Rules?79:73)) throw new InvalidDataException("Gym requires the exact selected regional species scope.");
-        var doc=ReadDocument(root);
+        var doc=ReadDocument(canonical, root);
         var moves=previous.Moves;
         foreach(var move in doc.Moves)
         {
-                    if(moves.TryGetValue(move.Id,out var existing) && (existing with { Flags=move.Flags,Source=move.Source } != move || !existing.Flags.SequenceEqual(move.Flags)))
+                    if(moves.TryGetValue(move.Id,out var existing) && (existing with { Flags=move.Flags } != move || !existing.Flags.SequenceEqual(move.Flags)))
                 throw new InvalidDataException("Gym move conflicts with authenticated predecessor.");
             moves=moves.SetItem(move.Id,move);
         }
-        var result=previous with { Moves=moves }; PokemonFactory.ValidateCatalog(result); return result;
+        var result=previous with { Moves=moves }; PokemonFactory.ValidateDefinitions(result); return result;
     }
-    public static ImmutableDictionary<MoveId,string> LoadMoveNames(string root)
+    public static ImmutableDictionary<MoveId,string> LoadMoveNames(PretCanonicalPokemonCatalog canonical, string root)
     {
-        _=Load(root); return ReadDocument(root).MoveNames.ToImmutableDictionary(m=>m.Id,m=>m.Name);
+        _=Load(canonical, root); return ReadDocument(canonical, root).MoveNames.ToImmutableDictionary(m=>m.Id,m=>m.Name);
     }
-    private static VermilionGymTrainerDocument ReadDocument(string root)
+    private static VermilionGymTrainerDocument ReadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
         var bytes=File.ReadAllBytes(SafeFile(root,"content/generated/vermilion-gym-trainers/trainers.json"));
-        return ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(bytes),ContentJson.CreateOptions());
+        return ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(bytes),canonical.ReferenceOptions());
     }
     private static string SafeFile(string root,string relative)
     {

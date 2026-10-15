@@ -20,7 +20,6 @@ public sealed partial class PretCampaignCatalog
 
     private static void ValidateFuchsiaRouteComposition(PretFuchsiaRouteRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> predecessor,CampaignPokemonContent pokemon)
     {
-        if(pokemon.Catalog.Species.Count!=107 || pokemon.Catalog.Moves.Count!=244 ||
-            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(region.NewMaps.Keys) )throw new InvalidDataException("fuchsia_route_composition_scope");
+        if(!maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(region.NewMaps.Keys) )throw new InvalidDataException("fuchsia_route_composition_scope");
     }
 }

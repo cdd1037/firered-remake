@@ -52,7 +52,7 @@ public static class SourceTrainerEncounterEntry
         SourceTrainerEntryPreparation setup, TrainerPartyCreationResult created,
         ImmutableArray<WildBattleCombatant> playerParty, int playerIndex,
         ForestTrainerBattleStyle style = ForestTrainerBattleStyle.Shift,
-        WildBattleTerrain terrain = WildBattleTerrain.Plain, OwnedBattlePokemonCatalog? owned = null,
+        WildBattleTerrain terrain = WildBattleTerrain.Plain, GamePokemonCatalog? owned = null,
         SourceFourRewardState? rewards = null)
     {
         SourceTrainerEncounterEntryResult Fail(string code) => new(null, setup?.InitialRng ?? new RngState(0), [], [], code);
@@ -76,7 +76,7 @@ public static class SourceTrainerEncounterEntry
         }
         if (owned is not null && (!ReferenceEquals(owned.Mechanics.Catalog, catalog) ||
             SourceBattleAdmission.ValidateOwnedEntry(owned, playerParty, playerIndex) is { } ||
-            created.Party.Any(m => !owned.AdmitsTrainerOpponent(m.Pokemon.Species, owned.TrainerOpponentProfile))))
+            created.Party.Any(m => !owned.Opponents.Catalog.Species.ContainsKey(m.Pokemon.Species))))
             return Fail("source_trainer_entry_campaign_admission");
         try
         {
@@ -84,7 +84,7 @@ public static class SourceTrainerEncounterEntry
             var enemies = created.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.Singles, KoReplacementTiming = KoReplacementTiming.SourceImmediate,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.TrainerOpponentProfile,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.Opponents.RulesVersion, Campaign = owned,
                 BattleKind = WildBattleCalledBattleKind.Trainer, TrainerEncounter = context.Context,
                 Rng = created.Rng, SourceAbsentMask = 12, TurnStartAbsentMask = 12,
                 Field = new() { Terrain = terrain }, Rewards = rewards ?? new(),

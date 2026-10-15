@@ -55,35 +55,34 @@ public static class EarlyShopRules
         ArgumentNullException.ThrowIfNull(stock); stock.Validate();
         string? error = ValidateMachineShop(catalog, stock.Machines, inventory, money);
         if (error is not null) return new(false, 0, 0, error);
-        var definition = PewterMachineRules.Definition(stock.Machines, item);
+        var definition = MachineRules.Definition(stock.Machines, item);
         if (definition is null || !stock.Items.Contains(item)) return new(false, 0, 0, "shop_item_not_stocked");
         int count = OpeningInventoryRules.Quantity(inventory.Machines ?? [], item);
         int remaining = count == 0 && (inventory.Machines?.Length ?? 0) >= stock.Machines.MachineSlots
             ? 0 : stock.Machines.MaximumStack - count;
-        if (OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], PewterMachineRules.TmCaseId) == 0 &&
+        if (OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], MachineRules.TmCaseId) == 0 &&
             (inventory.KeyItems?.Length ?? 0) >= stock.Machines.KeyItemSlots) remaining = 0;
         return QuoteBuyValidated(catalog, money, definition.Machine.Item.Price, remaining);
     }
 
-    public static EarlyShopQuote QuoteSell(EarlyShopCatalog catalog, PewterMachineCatalog machines,
+    public static EarlyShopQuote QuoteSell(EarlyShopCatalog catalog, MachineCatalog machines,
         InventoryState inventory, int money, ItemId item)
     {
         string? error = ValidateMachineShop(catalog, machines, inventory, money);
         if (error is not null) return new(false, 0, 0, error);
-        var definition = PewterMachineRules.Definition(machines, item)?.Machine.Item;
+        var definition = MachineRules.Definition(machines, item)?.Machine.Item;
         if (definition is null || definition.Price <= 0 || !definition.CanSell)
             return new(false, 0, 0, "shop_item_not_sellable");
         int maximum = Math.Min(catalog.MaximumTransactionQuantity, OpeningInventoryRules.Quantity(inventory.Machines ?? [], item));
         return new(true, maximum, definition.Price / 2, null) { MaximumExecutableQuantity = maximum };
     }
 
-    private static string? ValidateMachineShop(EarlyShopCatalog catalog, PewterMachineCatalog machines,
+    private static string? ValidateMachineShop(EarlyShopCatalog catalog, MachineCatalog machines,
         InventoryState inventory, int money)
     {
         // The caller validates the full campaign inventory. This service validates the
         // machine/CASE pockets it owns and preserves every unrelated pocket verbatim.
-        EarlyShopInventoryRules.ValidateCatalog(catalog);
-        string? error = PewterMachineRules.Validate(machines, inventory);
+        string? error = EarlyShopInventoryRules.Validate(catalog, inventory) ?? MachineRules.Validate(machines, inventory);
         if (error is not null) return error;
         if (inventory.Limits != catalog.Limits) return "inventory_limits";
         return money < 0 || money > catalog.MaximumMoney ? "shop_money_invalid" : null;
@@ -122,7 +121,7 @@ public static class EarlyShopRules
         ArgumentNullException.ThrowIfNull(inventory);
         var quote = QuoteBuy(catalog, inventory, money, stock, item);
         return BuyQuoted(catalog, inventory, money, quantity, quote,
-            () => PewterMachineRules.AddMachine(stock.Machines, inventory, item, quantity));
+            () => MachineRules.AddMachine(stock.Machines, inventory, item, quantity));
     }
 
     private static EarlyShopTransactionResult BuyQuoted(EarlyShopCatalog catalog, InventoryState inventory, int money,
@@ -163,7 +162,7 @@ public static class EarlyShopRules
     }
 
     /// <summary>All priced, authenticated TMs can be sold from any shop; HMs have no sale price.</summary>
-    public static EarlyShopTransactionResult Sell(EarlyShopCatalog catalog, PewterMachineCatalog machines,
+    public static EarlyShopTransactionResult Sell(EarlyShopCatalog catalog, MachineCatalog machines,
         InventoryState inventory, int money, ItemId item, int quantity)
     {
         ArgumentNullException.ThrowIfNull(inventory);

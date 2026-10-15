@@ -56,7 +56,7 @@ def convert(lock, sources):
         assets.append(dict(id=name, width=width, height=height))
     pp = codec.palette(sources['graphics/interface/text_pp.pal'])
     catalog = dict(schemaVersion=1, profile='firered-ui-corrections-v1', sourceCommit=COMMIT,
-         sourceRefs=lock['files'], assets=assets,
+          assets=assets,
         ppColors=[dict(foreground=pp[i * 2], shadow=pp[i * 2 + 1]) for i in range(4)],
         menuSeparatorColor=pal[9], sourceCursorTiles=[1, 2],
         scope='Settled selection cursor, PP palette and PC submenu background only. No animation, timing, audio or game-state changes.')

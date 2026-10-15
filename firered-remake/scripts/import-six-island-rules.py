@@ -98,10 +98,6 @@ def generate(reference, dependency):
     species = {s['id']['value'][5:]:s for s in canonical['species']}
     metadata = {s['id']['value'][5:]:s for s in canonical['metadata']}
     edges = []
-    for name in additions+opponent_additions+['SPECIES_GLOOM']:
-        original = species[name]
-        for sr in [original['source'],original['learnsetSource'],metadata[name]['learnsetPointerSource'],metadata[name]['dexSource']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
-            read(sr['path'])
     for name,method,parameter,target in [('SPECIES_SENTRET','EVO_LEVEL',15,'SPECIES_FURRET'),('SPECIES_NATU','EVO_LEVEL',25,'SPECIES_XATU'),('SPECIES_GLOOM','EVO_ITEM',93,'SPECIES_BELLOSSOM')]:
         matches=[e for e in metadata[name]['sourceEvolutions'] if e['method']==method and e['parameterValue']==parameter and e['target']['value']=='pret:'+target]
         need(len(matches)==1,'Evolution edge: '+name)

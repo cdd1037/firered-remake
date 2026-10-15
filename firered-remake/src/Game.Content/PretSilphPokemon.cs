@@ -31,20 +31,17 @@ public sealed class PretSilphPokemon
         Constants = doc.Species.Concat(doc.OpponentSpecies).ToImmutableDictionary(s => s.Id.Value[5..], s => s.SourceSpeciesId, StringComparer.Ordinal);
         EncodedNames = doc.EncodedNames.ToImmutableDictionary(n => n.Symbol, StringComparer.Ordinal);
     }
-    public static PretSilphPokemon Load(PokemonCatalog previous, string root, string? dependencyProjectRoot = null)
+    public static PretSilphPokemon Load(PretCanonicalPokemonCatalog canonical, PokemonCatalog catalog, string root)
     {
-        PokemonFactory.ValidateCatalog(previous);
-        SilphSourcePackage.Need(previous.Species.Count == 112 && previous.Moves.Count == 354,
-            "Silph requires the authenticated112-species Surf predecessor.");
-        var (d, source) = LoadSource(root, dependencyProjectRoot);
-        var result = previous with { Species = previous.Species.Add(d.Species[0].Id, d.Species[0]) };
-        SilphSourcePackage.Need(result.Species.Count == 113 && d.OpponentSpecies.All(s => !result.Species.ContainsKey(s.Id)), "Silph ownership boundary differs.");
-        return new(result, d, source);
+        var (document, source) = LoadSource(canonical, root, null);
+        SilphSourcePackage.Need(document.Species.All(species => catalog.Species.ContainsKey(species.Id)),
+            "Silph presentation references are not admitted.");
+        return new(catalog, document, source);
     }
-    public static SilphPokemonDocument LoadDocument(string root, string? dependencyProjectRoot = null) => LoadSource(root, dependencyProjectRoot).Document;
-    private static (SilphPokemonDocument Document, SilphSourcePackage Source) LoadSource(string root, string? dependencyProjectRoot)
+    public static SilphPokemonDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root, string? dependencyProjectRoot = null) => LoadSource(canonical, root, dependencyProjectRoot).Document;
+    private static (SilphPokemonDocument Document, SilphSourcePackage Source) LoadSource(PretCanonicalPokemonCatalog canonical, string root, string? dependencyProjectRoot)
     {
-        var source = SilphSourcePackage.Catalogs(root); var d = source.Parse<SilphPokemonDocument>("pokemon.json");
+        var source = SilphSourcePackage.Catalogs(root); var d = source.Parse<SilphPokemonDocument>("pokemon.json", canonical);
         SilphSourcePackage.Need(d.SchemaVersion == 1 &&
             d.Species.Select(s => s.SourceSpeciesId).SequenceEqual([131]) && d.OpponentSpecies.Select(s => s.SourceSpeciesId).SequenceEqual([65,122]) &&
             d.SpeciesNames.Length == 3 && d.EncodedNames.Length == 3 && d.Machines.Length == 3 && d.HeldItems.Length == 3 &&

@@ -88,10 +88,12 @@ public static class SourceFourRewards
     {
         if (catalog is null || frame is null) return "source_four_reward_input";
         if (SourceBattleIdentityRules.Validate(frame) is { } error) return error;
+        if (frame.Campaign is { } campaign && !ReferenceEquals(campaign.Mechanics.Catalog, catalog))
+            return "source_campaign_mechanics_mismatch";
         if (frame.FourTurn is not { Phase: SourceFourActionPhase.RewardsPending } cursor ||
             continuation != new SourceTurnContinuation(frame.Revision, frame.EventSequence, frame.NextAction, cursor.Phase))
             return "source_four_reward_stale_continuation";
-        if (SourceMechanicsCatalog.For(catalog) is null || frame.Rewards?.Context is null)
+        if (catalog?.MechanicsData is null || frame.Rewards?.Context is null)
             return "source_four_reward_context_required";
         if (frame.Rewards.Pending is { } pending)
         {
@@ -151,9 +153,9 @@ public static class SourceFourRewards
                 .Select(i => new PartyMemberKey(BattleSide.Player, i)).ToImmutableArray();
             // Recalculation after a learning pause reads current permanent state. Earlier recipients
             // are skipped, and remain in the source living denominators even after reaching level100.
-            var calculation = SourceVictoryRewards.Calculate(SourceMechanicsCatalog.For(catalog)!, next.Party(BattleSide.Player),
+            var calculation = SourceVictoryRewards.Calculate(SourceMechanicsCatalog.FromDefinitions(catalog), next.Party(BattleSide.Player),
                 rewards.Metadata, new(defeat.Occupant, next.Get(defeat.Occupant.Slot).Body!, participants), rewards.Context!,
-                OwnedBattlePokemonCatalog.ForMechanics(catalog, next.SourceCampaignRulesVersion));
+                next.Campaign);
             foreach (var recipient in calculation.Members.Where(m => m.Key.Index >= fromIndex))
             {
                 Project(recipient.Key, recipient.Reward.Pokemon);

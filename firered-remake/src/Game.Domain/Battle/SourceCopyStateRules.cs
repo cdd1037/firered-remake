@@ -18,7 +18,7 @@ internal static class SourceCopyStateRules
     }
     internal static string? Validate(PokemonCatalog catalog, WildBattleCombatant body, SourceBattleFrame? frame = null, BattleSide side = BattleSide.Player)
     {
-        var tower = frame?.TrainerTowerEncounter?.Receipt;
+        var tower = frame?.TrainerTowerEncounter?.Roster;
         var originalTower = side == BattleSide.Opponent ? tower : null;
         if (ValidateShape(body) is { } shape) return shape;
         if (WildBattleTransformationRules.Validate(catalog, body, enabled: true, originalTower, tower) is { } live) return "source_copy_live_" + live;

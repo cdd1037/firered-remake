@@ -15,10 +15,4 @@ public static class PretCeladonApproachMachines
         PretCeladonApproachSource.Require(d.Machines.All(m => m.Compatibility.Length == 94), "Celadon machine membership differs.");
         return d;
     }
-    public static PewterMachineCatalog LoadCatalogProject(string root)
-    {
-        var d=LoadProject(root);var old=PretPewterMachines.LoadProject(root);
-        var result=old with{Profile=Profile,Compatibility=d.Machines[0].Compatibility,AdditionalMachines=d.Machines.Skip(1).ToImmutableArray()};
-        PewterMachineRules.ValidateCatalog(result);return result;
-    }
 }

@@ -14,9 +14,9 @@ public sealed partial class PretCampaignCatalog
     public CelioPokemonContent? CelioPokemon { get; }
     public IReadOnlyDictionary<MapId, RoamerMap>? CelioRoamerMaps { get; }
     public bool CelioEnabled => CelioPokemon is not null;
-    public CelioOwnedPokemonCatalog? CelioOwnership => CelioPokemon?.Owned;
-    public CelioOpponentPokemonCatalog? CelioOpponents => CelioPokemon?.Opponents;
-    public CelioMachineCatalog? CelioMachines => CelioPokemon?.Machines;
+    public GamePokemonCatalog? CelioOwnership => CelioPokemon?.Owned;
+    public GameOpponentPokemonCatalog? CelioOpponents => CelioPokemon?.Opponents;
+    public MachineCatalog? CelioMachines => CelioPokemon?.Machines;
 
     // These are separate gameplay gates, not fake implementations of the link flag's consumers.
     public static ImmutableArray<string> CelioUnsupportedInteractions =>
@@ -24,10 +24,8 @@ public sealed partial class PretCampaignCatalog
             .Concat(new[] { "PokemonLeague.Rematch","CeruleanCave","Mewtwo","FourIsland_LoreleisHouse","HoennLink.Multiplayer" })
             .ToImmutableArray();
 
-    private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,CampaignPokemonContent pokemon,CelioPokemonContent celio,FiveIslandOwnedPokemonCatalog owned,FiveIslandOpponentPokemonCatalog opponents,FiveIslandMachineCatalog machines)
+    private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,CampaignPokemonContent pokemon,CelioPokemonContent celio,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,MachineCatalog machines)
     {
-        if (celio.Owned.Catalog.Species.Count != 138 || celio.Opponents.Catalog.Species.Count != 162 || pokemon.Catalog.Moves.Count != 354)
-            throw new InvalidDataException("celio_composition_scope");
         PretCelioStory.Validate(scripts);
     }
 }

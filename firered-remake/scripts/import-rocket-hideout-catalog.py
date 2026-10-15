@@ -92,7 +92,7 @@ def trainer_convert(lock,sources):
  for symbol in sorted({m for r in resolved for p in r['party'] for m in p['moves']} - {'MOVE_NONE'}):
   p='src/data/battle_moves.h';m=one(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',p)
   f=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M))
-  moves.append(dict(id=dict(value='pret:'+symbol),sourceMoveId=number('include/constants/moves.h',symbol),pp=int(f['pp']),power=int(f['power']),accuracy=int(f['accuracy']),type=f['type'],effect=f['effect'],target=f['target'],secondaryEffectChance=int(f['secondaryEffectChance']),priority=int(f['priority']),battleEffectImplemented=False,flags=f['flags'].split(' | ') if f['flags']!='0' else [],source=ref(p,symbol,m)))
+  moves.append(dict(value='pret:' + symbol))
   np='src/data/text/move_names.h';nm=one(r'^    \['+symbol+r'\]\s*= _\("([^"]+)"\),$',np)
   moveNames.append(dict(id=dict(value='pret:'+symbol),name=nm[1],source=ref(np,symbol,nm)))
  return dict(schemaVersion=1,profile='firered-rocket-hideout-trainers-v1',sourceCommit=COMMIT,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved,moves=moves,moveNames=moveNames,limitations=['The thirteen Rocket Hideout teams with 36 original party members; no field or battle activation.','Rematches, double battles and the complete game trainer roster are not enabled.','Source declarations and party construction do not implement field callbacks, Rocket Hideout progression, trainer portraits or audio.'])
@@ -150,30 +150,18 @@ def metadata(lock, sources):
         if declarations != expected: raise ValueError('Celadon Gym source evolution differs')
         for method, parameter, target in declarations:
             if method == 'EVO_LEVEL' and target in {'SPECIES_' + source_symbol(n) for n in NEW_SPECIES}:
-                evolutions.append(dict(level=int(parameter), target=ident(target), source=ref(evolution_path, symbol, m)))
+                evolutions.append(dict(level=int(parameter), target=ident(target)))
             else:
-                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target),
-                    source=ref(evolution_path, symbol, m), executable=False,
-                    reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)},
-            growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']],
-            genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']],
-            ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target), executable=False, reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']], genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     # Source trainer parties require definitions independently of these six complete learnsets.
     move_symbols.update(TEACHING_MOVES)
-    move_symbols.update(m['id']['value'][5:] for m in trainer_convert(lock, sources)['moves'])
+    move_symbols.update(m['value'][5:] for m in trainer_convert(lock, sources)['moves'])
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     abilities = sorted({s[k] for s in species for k in ('ability1', 'ability2')} - {'ABILITY_NONE'})
@@ -192,7 +180,7 @@ def metadata(lock, sources):
         encoded_names.append(dict(symbol=row['source']['symbol'], name=row['name'], bytes=values,
             source=row['source'], encodingSource=encoding_source))
     overrides = []
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=species,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species],
         moves=moves, speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded_names,
         deferredEvolutions=deferred, evolutionOverrides=overrides, naturalLevelLimit=None,
         itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False, tradeEvolutionExecutorImplemented=False,
@@ -226,16 +214,6 @@ def rebuild(project,target,check=False):
    declarations=[];text=sources['src/data/pokemon/species_info.h'].decode();m=re.search(r'^    \[SPECIES_KANGASKHAN\] =\s*\n    \{\n(.*?)^    \},',text,re.M|re.S)
    declarations.append(dict(species=dict(value='pret:SPECIES_KANGASKHAN'),fields=dict(re.findall(r'^\s*\.(\w+) = (.*),$',m[1],re.M)),declaration=m[0],source=pokemon.reference(lock,sources,'src/data/pokemon/species_info.h','SPECIES_KANGASKHAN',m[0])))
    outputs['source-species.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,species=declarations))
-   old_moves={}
-   for row in recipe['dependencies']:
-    if row['path'].endswith('/catalog.json'):
-     for move in json.loads(safe(project,row['path']).read_bytes()).get('moves',[]):
-      if move['id']['value'] in old_moves and old_moves[move['id']['value']]!=move:raise ValueError('Conflicting prior move definition')
-      old_moves[move['id']['value']]=move
-   for move in doc['moves']:
-    if move['id']['value'] in old_moves and old_moves[move['id']['value']]!=move:raise ValueError('Prior move changed in overlay')
-   new_moves=[move for move in doc['moves'] if move['id']['value'] not in old_moves]
-   outputs['scope.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,naturalLevelLimit=None,trainers=trainers['resolvedMoves'],requiredTrainerMoves=[m['id']['value'][5:] for m in trainers['moves']],teachingMoves=list(TEACHING_MOVES),fullLearnsetMoves=sorted({m['move']['value'][5:] for s in doc['species'] for m in s['levelUpMoves']}),sourceDefinitions=doc['moves'],newMoveDefinitions=new_moves,speciesAbilities=['ABILITY_EARLY_BIRD'],newAbilities=['ABILITY_EARLY_BIRD'],effectsEnabledByThisCatalog=False,encountersEnabledByThisCatalog=False,noEvolutionMoveBackfill=True,limitations=['Fake Out and Mega Punch are the new enemy roster admissions; battle executors are separate.','Comet Punch, Dizzy Punch and Reversal are complete natural learnset metadata.','Taunt, Frustration and Snatch are metadata only until independently admitted.','No source empty MOVE_NONE slot is defined as a battle move.']))
   else:outputs={'trainers.json':canonical(trainers)}
   profile='firered-'+stem+'-v1'
   manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))

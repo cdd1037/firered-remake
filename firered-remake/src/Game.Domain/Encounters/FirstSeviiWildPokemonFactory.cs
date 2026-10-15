@@ -7,10 +7,10 @@ public static class FirstSeviiWildPokemonFactory
 {
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = [
         new("pret:SPECIES_DROWZEE"),new("pret:SPECIES_EXEGGCUTE"),new("pret:SPECIES_GLOOM"),new("pret:SPECIES_GOLDEEN"),new("pret:SPECIES_GOLDUCK"),new("pret:SPECIES_GYARADOS"),new("pret:SPECIES_HORSEA"),new("pret:SPECIES_HYPNO"),new("pret:SPECIES_MAGIKARP"),new("pret:SPECIES_MEOWTH"),new("pret:SPECIES_ODDISH"),new("pret:SPECIES_PERSIAN"),new("pret:SPECIES_PIDGEOTTO"),new("pret:SPECIES_PIDGEY"),new("pret:SPECIES_POLIWAG"),new("pret:SPECIES_PSYDUCK"),new("pret:SPECIES_SEADRA"),new("pret:SPECIES_SEAKING"),new("pret:SPECIES_SHELLDER"),new("pret:SPECIES_TENTACOOL"),new("pret:SPECIES_TENTACRUEL"),new("pret:SPECIES_VENOMOTH"),new("pret:SPECIES_VENONAT")];
-    public static EarlyLandWildPokemonResult Generate(CinnabarOwnedPokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
-        if(owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned) ||
+        if(owned is null ||
             encounter.RulesVersion!=EarlyLandEncounterRules.FirstSeviiRulesVersion || !FirstSeviiEncounterTables.Land.Any(t=>t.Map==table.Map))
             throw new ArgumentException("first_sevii_wild_profile");
         EarlyLandEncounterRules.ValidateState(encounter,table);

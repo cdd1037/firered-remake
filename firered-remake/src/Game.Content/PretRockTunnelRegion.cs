@@ -19,16 +19,6 @@ public sealed class PretRockTunnelRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public JsonElement Dependencies { get; }
-    /// <summary>Declarative source metadata only; this class registers no executable handlers.</summary>
-    public JsonElement Trainers => Dependencies.GetProperty("trainers");
-    public JsonElement Aides => Dependencies.GetProperty("aides");
-    public JsonElement Darkness => Dependencies.GetProperty("darkness");
-    public JsonElement EscapeRope => Dependencies.GetProperty("escapeRope");
-    public JsonElement Center => Dependencies.GetProperty("center");
-    public JsonElement CutTrees => Dependencies.GetProperty("cutTrees");
-    public JsonElement Items => Dependencies.GetProperty("items");
-    public JsonElement Pickups => Dependencies.GetProperty("pickups");
     public ImmutableArray<MapId> ReusedMapIds => [new("map.cerulean-city")];
 
     public JsonElement Catalog { get; }
@@ -36,13 +26,12 @@ public sealed class PretRockTunnelRegion
     public JsonElement ExternalCeruleanEvents { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
-    public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretRockTunnelRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalCeruleanEvents)
+        ImmutableArray<PretWorldSourceFile> files, JsonElement catalog, JsonElement npcSources, JsonElement externalCeruleanEvents)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; SourceFiles = files; Catalog = catalog;
         NpcSources = npcSources; ExternalCeruleanEvents = externalCeruleanEvents;
     }
 
@@ -84,7 +73,7 @@ public sealed class PretRockTunnelRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/rocktunnel-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -132,20 +121,10 @@ public sealed class PretRockTunnelRegion
         Require(constants["FLAG_SYS_FLASH_ACTIVE"] == 0x806 && constants["FLAG_BADGE01_GET"] == 0x820 &&
             constants["REQUIRED_OWNED_MONS"] == 20 && constants["LOCALID_ROUTE9_CUT_TREE"] == 10,
             "RockTunnel field requirements differ.");
-        using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        Require(!dependencies.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 30 &&
-            dependencies.RootElement.GetProperty("pickups").GetArrayLength() == 15 &&
-            dependencies.RootElement.GetProperty("aides").GetArrayLength() == 1 &&
-            dependencies.RootElement.GetProperty("cutTrees").GetArrayLength() == 6 &&
-            dependencies.RootElement.GetProperty("rockSmashObstacles").GetArrayLength() == 15 &&
-            dependencies.RootElement.GetProperty("darkness").GetProperty("maps").GetArrayLength() == 2 &&
-            dependencies.RootElement.GetProperty("darkness").GetProperty("maps").EnumerateArray().All(x => x.GetProperty("requiresFlash").GetBoolean() && x.GetProperty("allowEscaping").GetBoolean()),
-            "RockTunnel dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/CeruleanCity/map.json"));
         return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+            inventory, catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

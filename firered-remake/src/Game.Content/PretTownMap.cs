@@ -31,10 +31,10 @@ public sealed class PretTownMap
     public JsonElement TownMap { get; }
 
     private PretTownMap(string directory, ImmutableArray<PretWorldSourceFile> files, JsonElement document,
-        ImmutableDictionary<string,byte[]> payloads)
+        ImmutableDictionary<string,byte[]> payloads, SharedItemCatalog items)
     {
         GeneratedDirectory=directory;SourceFiles=files;TownMap=document;outputs=payloads;
-        var options=ContentJson.CreateOptions();
+        var options=items.CreateJsonOptions();
         T Parse<T>(string property)=>ContentJson.ParseStrict<T>(document.GetProperty(property).GetRawText(),options);
         Assets=Parse<ImmutableArray<TownMapAsset>>("assets"); Layout=Parse<TownMapLayout>("layout");
         Item=Parse<QuestItemDefinition>("itemDefinition");ItemDescription=document.GetProperty("itemDescription").GetString()!;
@@ -45,7 +45,7 @@ public sealed class PretTownMap
     }
 
     /// <summary>Authenticates reviewed lock, all raw Git blobs and every output before exposing content.</summary>
-    public static PretTownMap Load(string projectRoot)
+    public static PretTownMap Load(string projectRoot, SharedItemCatalog? items = null)
     {
             var project=Path.GetFullPath(projectRoot);        var generated=Path.Combine(project,"content/generated/town-map");
         byte[] Pinned(string root, string relative)
@@ -73,7 +73,7 @@ public sealed class PretTownMap
         using var document=JsonDocument.Parse(payloads["town-map.json"]);var d=document.RootElement;
                 Require(d.GetProperty("schemaVersion").GetInt32()==1 ,
             "Town Map document profile differs.");
-        var result=new PretTownMap(generated,inventory,d.Clone(),payloads.ToImmutable());
+        var result=new PretTownMap(generated,inventory,d.Clone(),payloads.ToImmutable(), items ?? SharedItemCatalog.LoadProject(projectRoot));
         result.Validate();return result;
     }
 
@@ -97,8 +97,6 @@ public sealed class PretTownMap
             Item.Pocket=="POCKET_KEY_ITEMS" && Item.Type=="ITEM_TYPE_BAG_MENU" && Item.HoldEffect=="HOLD_EFFECT_NONE" &&
             Item.HoldEffectParam==0 && Item.FieldUseFunction=="FieldUseFunc_TownMap" && Item.BattleUsage==0 &&
             Item.BattleUseFunction=="NULL" && Item.SecondaryId==0 && !Item.CanToss && !Item.CanSell && !Item.CanGive &&
-            Item.Source.Path=="src/data/items.json" && Item.Source.Symbol=="ITEM_TOWN_MAP" && Item.Source.StartLine>0 &&
-                    Item.Source.EndLine>=Item.Source.StartLine &&
             Asset(ItemIconAssetId).Width==24 && Asset(ItemIconAssetId).Height==24 && !string.IsNullOrWhiteSpace(ItemDescription),
             "Town Map Bag item profile differs.");
         foreach(var source in Positions)

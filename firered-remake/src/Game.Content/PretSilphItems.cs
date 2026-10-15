@@ -11,7 +11,7 @@ public sealed record PretSilphItemsDocument(int SchemaVersion, string Profile, s
 }
 public sealed record SilphMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<PewterAdditionalMachine> NewMachines, ImmutableArray<string> Limitations);
+    ImmutableArray<MachineDefinition> NewMachines, ImmutableArray<string> Limitations);
 public static class PretSilphItems
 {
     public const string Profile = "firered-silph-items-v1";
@@ -27,7 +27,7 @@ public static class PretSilphItems
             "Silph exact23 item scope differs.");
         foreach (var item in d.Items)
         {
-            var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && item.EffectSource is null && i.CanGive == (i.Importance == 0) && i.CanToss == (i.Importance == 0) && i.CanSell == (i.Price != 0),
+            var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && i.CanGive == (i.Importance == 0) && i.CanToss == (i.Importance == 0) && i.CanSell == (i.Price != 0),
                 "Silph key/item declaration differs.");
         }
         var machines = source.Parse<SilphMachinesDocument>("machines.json");
@@ -47,34 +47,10 @@ public static class PretSilphItems
         return item.Metadata.Item.Id == MasterBallId || item.Metadata.Item.Id == UltraBallId ? definition with { UseSupport = EarlyShopUseSupport.SeparateCapture } : definition;
     }
     public static EarlyShopItemDefinition Definition(PretSilphItemsDocument d, ItemId id) => Definition(d.Items.Single(i => i.Metadata.Item.Id == id));
-    public static EarlyShopCatalog Extend(EarlyShopCatalog previous, PretSilphItemsDocument items)
-    {
-        var ids = previous.Items.Select(i => i.Id).ToHashSet();
-        return previous with { Profile = "firered-silph-inventory-v1",Items = previous.Items.AddRange(items.Items.Where(i => !ids.Contains(i.Metadata.Item.Id)).Select(Definition)) };
-    }
+
 }
 public static class PretSilphMachines
 {
     public const string Profile = "firered-silph-teaching-v1";
     public static SilphMachinesDocument LoadProject(string root) => PretSilphItems.LoadProject(root).Machines;
-    public static PewterMachineCatalog Extend(SurfMachineCatalog previous, PretSilphPokemon pokemon, PretSilphItemsDocument items) => Extend(previous.Catalog, pokemon, items);
-    public static PewterMachineCatalog Extend(PewterMachineCatalog previous, PretSilphPokemon pokemon, PretSilphItemsDocument items)
-    {
-        var source = items.Machines;
-        SilphSourcePackage.Need(pokemon.Catalog.Species.Count == 113 && previous.Compatibility.Length == 112 && previous.AdditionalMachines?.Length == 23 &&
-            new[] { previous.Tm39.Item.Id }.Concat(previous.AdditionalMachines!.Value.Select(m => m.Machine.Item.Id)).SequenceEqual(source.InheritedItemIds), "Silph machine predecessor scope differs.");
-        ImmutableArray<PewterMachineCompatibility> Rows(ItemId id, ImmutableArray<PewterMachineCompatibility> old)
-        {
-            var added = source.Additions.Single(a => a.Item == id).Compatibility; var row = pokemon.Document.Machines.Single(m => m.Species.Value == "pret:SPECIES_LAPRAS");
-            SilphSourcePackage.Need(added[0].CanLearn == row.MachineSymbols.Any(s => s.StartsWith(id.Value[10..] + "_", StringComparison.Ordinal)), "Silph Lapras machine compatibility differs.");
-            return old.AddRange(added);
-        }
-        var newMachines = source.NewMachines.Select(m =>
-        {
-            SilphSourcePackage.Need(m.Compatibility.Select(c => c.Species).ToHashSet().SetEquals(pokemon.Catalog.Species.Keys), "Silph machine source113 ownership differs.");
-            // New matrices retain their authenticated source order; only inherited rows append Lapras.
-            return m;
-        });
-        return previous with { Profile = Profile,Compatibility = Rows(previous.Tm39.Item.Id, previous.Compatibility),AdditionalMachines = previous.AdditionalMachines!.Value.Select(m => m with { Compatibility = Rows(m.Machine.Item.Id, m.Compatibility) }).Concat(newMachines).ToImmutableArray() };
-    }
 }

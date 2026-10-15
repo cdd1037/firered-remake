@@ -47,13 +47,11 @@ public static class MemorialPillarTrainerPartyFactory
     }
 
     public static TrainerPartyCreationResult Create(MemorialPillarTrainerCatalog trainers,
-        MemorialPillarOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
+        GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(opponents.Owned), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer) || trainer.Party.Any(p =>
-                !opponents.Owned.SharedBattle.AdmitsTrainerOpponent(p.Species, MemorialPillarOpponentPokemonCatalog.Profile)))
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer) || trainer.Party.Any(p =>
+                !opponents.Catalog.Species.ContainsKey(p.Species)))
             throw new ArgumentException("memorial_pillar_trainer_opponent_catalog");
         return TrainerPartyFactory.CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);
     }

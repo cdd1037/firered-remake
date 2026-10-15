@@ -314,9 +314,17 @@ public sealed partial class CampaignSession
     }
     private CampaignSession(ICampaignCatalog content,CampaignState state,long revision,CampaignCatalogBinding binding)
     {
-        _content=content;_binding=binding;var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
+        _content=content;_binding=binding;state=BindBattleContext(state);var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
+    // Runtime catalog context is deliberately not persisted; restoration supplies the current
+    // explicit admission policy without changing battle state, RNG or transcript data.
+    private CampaignState BindBattleContext(CampaignState state) => state with
+    {
+        WildBattle = state.WildBattle is { } wild ? wild with { Frame = wild.Frame with { Campaign = _binding.Ownership } } : null,
+        ForestTrainerBattle = state.ForestTrainerBattle is { } trainer ? trainer with { Frame = trainer.Frame with { Campaign = _binding.Ownership } } : null,
+        DoubleBattle = state.DoubleBattle is { } doubles ? doubles with { Frame = doubles.Frame with { Campaign = _binding.Ownership } } : null
+    };
     // Restoration never chooses a historical composition.
     public static CampaignSession Restore(ICampaignCatalog content,CampaignState state,long revision)=>RestoreCurrent(content,state,revision);
     public static CampaignSession CreateCurrent(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindCurrentCatalog(content));

@@ -10,11 +10,13 @@ public sealed record SourceBattleItemDocument(string SourceCommit, ImmutableArra
 public static class SourceBattleItemCatalogLoader
 {
     public const string RelativePath = "content/generated/source-battle-items/catalog.json";
-    public static SourceBattleItemCatalog LoadAuthenticated(string projectRoot)
+    public static SourceBattleItemCatalog LoadAuthenticated(string projectRoot) =>
+        LoadAuthenticated(projectRoot, SharedItemCatalog.LoadProject(projectRoot));
+
+    public static SourceBattleItemCatalog LoadAuthenticated(string projectRoot, SharedItemCatalog items)
     {
         byte[] bytes = File.ReadAllBytes(Path.Combine(projectRoot, RelativePath));
-        var document = JsonSerializer.Deserialize<SourceBattleItemDocument>(bytes, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow })
+        var document = JsonSerializer.Deserialize<SourceBattleItemDocument>(bytes, items.CreateJsonOptions())
             ?? throw new InvalidDataException("source_item_document_missing");
         return SourceBattleItemCatalog.Authenticate(document.SourceCommit, document.Items);
     }

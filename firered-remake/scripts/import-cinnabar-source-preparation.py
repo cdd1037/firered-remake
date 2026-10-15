@@ -236,7 +236,7 @@ def declarations(src, worlds, doc):
             moves=[v.strip() for v in r[4].split(',')] if custom else natural
             if custom and len(moves)!=4:raise ValueError('Wrong custom move count')
             members.append(dict(species=sp,level=level,sourceIv=iv,heldItem='ITEM_NONE',
-                customMoves=custom,resolvedMoves=moves,learnsetSource=species[sp]['learnsetSource']))
+                customMoves=custom,resolvedMoves=moves))
         trainers.append(dict(trainer=symbol,fields=fields,party=members,sourceRef=ref(path,symbol,m),
             partySource=ref(pp,party_symbol,pm),battleAdmission=False))
     symbols={w['events']['id'] for w in worlds}|{'MAP_PALLET_TOWN'}
@@ -283,7 +283,7 @@ def declarations(src, worlds, doc):
         trainers=trainers,battleOccurrences=occurrences,wildEncounters=encounters,encounterSlotTables=slot_tables,
         wildSource=src.ref('src/data/wild_encounters.json','Selected FireRed encounter tables'),
         wildSpecies=wild_species,trainerSpecies=trainer_species,preNationalDexLevelEvolutionSpecies=sorted(evolution_species),
-        pokemon=selected,pokemonMetadata=[metadata[s] for s in sorted(wanted)],
+        pokemon=[dict(id=s['id'],evolutions=s['evolutions']) for s in selected],pokemonMetadata=[metadata[s] for s in sorted(wanted)],
         abilities=sorted({s[k] for s in selected for k in ('ability1','ability2')} - {'ABILITY_NONE'}),
         trainerMoves=move_rows,fullNaturalMoveClosure=sorted({m['move']['value'][5:] for s in selected for m in s['levelUpMoves']}),
         itemDeclarations=item_rows,itemSource=src.ref('src/data/items.json','Selected items'),

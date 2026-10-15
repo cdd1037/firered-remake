@@ -39,10 +39,10 @@ public static class PokemonTowerTrainerPartyFactory
     public static bool IsRival(TrainerId id) => id.Value is "pret:TRAINER_RIVAL_POKEMON_TOWER_SQUIRTLE" or "pret:TRAINER_RIVAL_POKEMON_TOWER_BULBASAUR" or "pret:TRAINER_RIVAL_POKEMON_TOWER_CHARMANDER";
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(PokemonTowerTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool fuchsiaRules = false)
+    public static TrainerPartyCreationResult Create(PokemonTowerTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (fuchsiaRules ? 107 : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 102 ? 102 : 101) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (!trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("PokemonTower requires the exact one-hundred-and-one-species catalog and one initial source PokemonTower team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

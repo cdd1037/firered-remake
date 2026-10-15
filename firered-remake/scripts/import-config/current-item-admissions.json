@@ -1,0 +1,725 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "items": [
+    {
+      "item": "pret:ITEM_POKE_BALL",
+      "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_POTION",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_ANTIDOTE",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_PARALYZE_HEAL",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_AWAKENING",
+      "useSupport": "deferredSleep",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_BURN_HEAL",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_ESCAPE_ROPE",
+      "useSupport": "deferredEscape"
+    },
+    {
+      "item": "pret:ITEM_REPEL",
+      "useSupport": "deferredRepel"
+    },
+    {
+      "item": "pret:ITEM_REVIVE",
+      "useSupport": "fieldRevive",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_ETHER",
+      "useSupport": "fieldEther",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_RARE_CANDY",
+      "useSupport": "deferredRareCandy",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_MOON_STONE",
+      "useSupport": "separateEvolution",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_TINY_MUSHROOM",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_BIG_MUSHROOM",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_STAR_PIECE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_HELIX_FOSSIL",
+      "useSupport": "fossil"
+    },
+    {
+      "item": "pret:ITEM_DOME_FOSSIL",
+      "useSupport": "fossil"
+    },
+    {
+      "item": "pret:ITEM_SUPER_POTION",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_NUGGET",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_FAME_CHECKER",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SS_TICKET",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_STARDUST",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_X_ATTACK",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_GREAT_BALL",
+      "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_HYPER_POTION",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_LAVA_COOKIE",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_CHERI_BERRY",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_CHESTO_BERRY",
+      "useSupport": "deferredSleep",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_PECHA_BERRY",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_BERRY_POUCH",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_X_DEFEND",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_ASPEAR_BERRY",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_MAX_ETHER",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_PERSIM_BERRY",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_NANAB_BERRY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_EVERSTONE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_PEARL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_HARD_STONE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SUPER_REPEL",
+      "useSupport": "deferredRepel"
+    },
+    {
+      "item": "pret:ITEM_RAWST_BERRY",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_LUM_BERRY",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_LEPPA_BERRY",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_WEPEAR_BERRY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_PP_UP",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_ICE_HEAL",
+      "useSupport": "statusCure",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_TM19",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_LIFT_KEY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SILPH_SCOPE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_BLACK_GLASSES",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_X_SPEED",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_CALCIUM",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_NET_BALL",
+      "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_NEST_BALL",
+      "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_TM12",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM21",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM49",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_ELIXIR",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_CLEANSE_TAG",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_X_ACCURACY",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_SOOTHE_BELL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_POKE_FLUTE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_TM06",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_HM03",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_HM04",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_GOLD_TEETH",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_TM11",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM47",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM32",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_MAX_POTION",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_FULL_RESTORE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_LEAF_STONE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_PROTEIN",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_QUICK_CLAW",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MAX_REVIVE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_CARD_KEY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MASTER_BALL",
+      "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_ULTRA_BALL",
+      "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_TM01",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM08",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM41",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_FULL_HEAL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_HP_UP",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_X_SPECIAL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_CARBOS",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_IRON",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_ZINC",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MAX_REPEL",
+      "useSupport": "deferredRepel"
+    },
+    {
+      "item": "pret:ITEM_SECRET_KEY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_FRESH_WATER",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_SODA_POP",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_MAX_ELIXIR",
+      "useSupport": "fieldRestoreAllPp",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_ORAN_BERRY",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_IAPAPA_BERRY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_RAZZ_BERRY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_BLUK_BERRY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_PINAP_BERRY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_METEORITE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_TRI_PASS",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_GUARD_SPEC",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_SITRUS_BERRY",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_RUBY",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_RAINBOW_PASS",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_DIRE_HIT",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_FIRE_STONE",
+      "useSupport": "separateEvolution",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_NEVER_MELT_ICE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SUN_STONE",
+      "useSupport": "separateEvolution"
+    },
+    {
+      "item": "pret:ITEM_DRAGON_SCALE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_DREAM_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_BIG_PEARL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_UP_GRADE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SAPPHIRE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_KINGS_ROCK",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_LUCKY_PUNCH",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_HEART_SCALE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MYSTIC_TICKET",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_AURORA_TICKET",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SACRED_ASH",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_ITEMFINDER",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MACHO_BRACE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_LEFTOVERS",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_THUNDER_STONE",
+      "useSupport": "separateEvolution",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_TM17",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM25",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_METAL_COAT",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_OLD_AMBER",
+      "useSupport": "fossil"
+    },
+    {
+      "item": "pret:ITEM_STICK",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_FAB_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_WATER_STONE",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_POKE_DOLL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_PP_MAX",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_RETRO_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_LEMONADE",
+      "useSupport": "potion",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_SMOKE_BALL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MIRACLE_SEED",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_CHARCOAL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MYSTIC_WATER",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_YELLOW_FLUTE",
+      "useSupport": "noFieldUse",
+      "effects": true
+    },
+    {
+      "item": "pret:ITEM_VS_SEEKER",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_ORANGE_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_HARBOR_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_GLITTER_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_MECH_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_WOOD_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_WAVE_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_BEAD_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SHADOW_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_TROPIC_MAIL",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SILK_SCARF",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_SEA_INCENSE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_LAX_INCENSE",
+      "useSupport": "noFieldUse"
+    },
+    {
+      "item": "pret:ITEM_LUXURY_BALL",
+      "useSupport": "separateCapture"
+    }
+  ],
+  "shops": [
+    {
+      "id": "ViridianCity_Mart_Items",
+      "path": "data/maps/ViridianCity_Mart/scripts.inc"
+    },
+    {
+      "id": "PewterCity_Mart_Items",
+      "path": "data/maps/PewterCity_Mart/scripts.inc"
+    },
+    {
+      "id": "CeruleanCity_Mart_Items",
+      "path": "data/maps/CeruleanCity_Mart/scripts.inc"
+    },
+    {
+      "id": "VermilionCity_Mart_Items",
+      "path": "data/maps/VermilionCity_Mart/scripts.inc"
+    },
+    {
+      "id": "LavenderTown_Mart_Items",
+      "path": "data/maps/LavenderTown_Mart/scripts.inc"
+    },
+    {
+      "id": "SaffronCity_Mart_Items",
+      "path": "data/maps/SaffronCity_Mart/scripts.inc"
+    },
+    {
+      "id": "CinnabarIsland_Mart_Items",
+      "path": "data/maps/CinnabarIsland_Mart/scripts.inc"
+    },
+    {
+      "id": "TwoIsland_Items_ShopInitial",
+      "path": "data/maps/TwoIsland/scripts.inc"
+    },
+    {
+      "id": "TwoIsland_Items_ShopExpanded1",
+      "path": "data/maps/TwoIsland/scripts.inc"
+    },
+    {
+      "id": "ThreeIsland_Mart_Items",
+      "path": "data/maps/ThreeIsland_Mart/scripts.inc"
+    },
+    {
+      "id": "FourIsland_Mart_Items",
+      "path": "data/maps/FourIsland_Mart/scripts.inc"
+    },
+    {
+      "id": "SixIsland_Mart_Items",
+      "path": "data/maps/SixIsland_Mart/scripts.inc"
+    },
+    {
+      "id": "SevenIsland_Mart_Items",
+      "path": "data/maps/SevenIsland_Mart/scripts.inc"
+    },
+    {
+      "id": "TrainerTower_Lobby_Mart_Items",
+      "path": "data/maps/TrainerTower_Lobby/scripts.inc"
+    }
+  ]
+}

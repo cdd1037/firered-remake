@@ -15,5 +15,4 @@ public sealed partial class PretCampaignCatalog
         return new(result.National!.Seen, result.National.Caught, result.NationalComplete!.Value);
     }
 
-
 }

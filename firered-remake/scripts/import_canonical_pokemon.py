@@ -156,8 +156,7 @@ def extract(lock, src, moves):
             method, parameter, target = match.groups()
             require(method in constants and target in species_ids, 'Unknown evolution method/target')
             parameter_value = items[parameter] if parameter.startswith('ITEM_') else number(parameter)
-            entries.append(dict(method=method, sourceMethodId=constants[method], parameter=parameter,
-                                parameterValue=parameter_value, target=ident(target), source=src.ref(EVOLUTION, em[1], em.start(2) + 1 + match.start(), em.start(2) + 1 + match.end())))
+            entries.append(dict(method=method, sourceMethodId=constants[method], parameter=parameter, parameterValue=parameter_value, target=ident(target)))
             pos = match.end()
         require(entries and re.fullmatch(r'[\s,]*', raw[pos:]) is not None, 'Missing/unparsed evolution row')
         evolutions[em[1]] = entries
@@ -167,7 +166,7 @@ def extract(lock, src, moves):
         'types', 'catchRate', 'expYield', 'itemCommon', 'itemRare', 'genderRatio', 'eggCycles',
         'friendship', 'growthRate', 'eggGroups', 'abilities', 'safariZoneFleeRate', 'bodyColor', 'noFlip'}
     for symbol, sid in sorted(species_ids.items(), key=lambda x: x[1]):
-        f, source = src.block(SPECIES_INFO, symbol)
+        f, _ = src.block(SPECIES_INFO, symbol)
         require(set(f) == expected_fields, 'Species fields differ: ' + symbol)
         gender = f['genderRatio']
         if gender.startswith('PERCENT_FEMALE('):
@@ -198,53 +197,20 @@ def extract(lock, src, moves):
                 entries.append(dict(level=level, move=ident(move)))
         require(end_seen and entries and [e['level'] for e in entries] == sorted(e['level'] for e in entries), 'Unterminated/empty/unordered learnset')
         dex_symbol = symbol.replace('SPECIES_', 'NATIONAL_DEX_', 1)
-        dex, dex_source = src.block(POKEDEX, dex_symbol)
+        dex, _ = src.block(POKEDEX, dex_symbol)
         require(1 <= dex_ids[dex_symbol] <= 386, 'Noncanonical national dex identity')
-        species.append(dict(id=ident(symbol), sourceSpeciesId=sid,
-            baseStats={k: number(f['base' + suffix]) for k, suffix in STATS}, type1=types[0], type2=types[1],
-            catchRate=number(f['catchRate']), experienceYield=number(f['expYield']),
-            evYield={k: number(f['evYield_' + suffix]) for k, suffix in STATS}, growthRate=GROWTH[f['growthRate']],
-            genderRatio=ratio, ability1=slots[0], ability2=slots[1], friendship=number(f['friendship']),
-            levelUpMoves=entries, evolutions=[], source=source,
-            learnsetSource=src.ref(LEARNSETS, pointer, lm.start(), lm.end())))
-        metadata.append(dict(id=ident(symbol), nationalDexNumber=dex_ids[dex_symbol],
-            heightDecimeters=number(dex['height']), weightHectograms=number(dex['weight']),
-            originalFields=f, sourceEvolutions=evolutions.get(symbol, []),
-            dexSource=dex_source, learnsetPointerSource=src.ref(POINTERS, symbol, pm.start(), pm.end())))
-    ability_rows = []
-    for symbol, value in sorted(official.items(), key=lambda x: x[1]):
-        cm = one(r'^#define ' + symbol + r'\s+\d+\s*$', src.text['include/constants/abilities.h'])
-        donors = []
-        for s in species:
-            slots = [i for i, a in enumerate((s['ability1'], s['ability2'])) if a == symbol]
-            if slots:
-                donors.append(dict(species=s['id'], sourceSpeciesId=s['sourceSpeciesId'], slots=slots))
-        require(donors, 'Official ability has no canonical donor: ' + symbol)
-        ability_rows.append(dict(symbol=symbol, sourceAbilityId=value, donors=donors,
-            source=src.ref('include/constants/abilities.h', symbol, cm.start(), cm.end())))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=sid, baseStats={k: number(f['base' + suffix]) for k, suffix in STATS}, type1=types[0], type2=types[1], catchRate=number(f['catchRate']), experienceYield=number(f['expYield']), evYield={k: number(f['evYield_' + suffix]) for k, suffix in STATS}, growthRate=GROWTH[f['growthRate']], genderRatio=ratio, ability1=slots[0], ability2=slots[1], friendship=number(f['friendship']), levelUpMoves=entries, evolutions=[]))
+        require(f['noFlip'] in ('FALSE', 'TRUE'), 'Invalid noFlip value')
+        metadata.append(dict(id=ident(symbol), nationalDexNumber=dex_ids[dex_symbol], heightDecimeters=number(dex['height']), weightHectograms=number(dex['weight']), sourceEvolutions=evolutions.get(symbol, []), eggGroups=list(pair(f['eggGroups'], 'EGG_GROUP_')), eggCycles=number(f['eggCycles']), itemCommon=f['itemCommon'], itemRare=f['itemRare'], safariZoneFleeRate=number(f['safariZoneFleeRate']), bodyColor=f['bodyColor'], noFlip=f['noFlip'] == 'TRUE'))
+    ability_rows = [dict(symbol=symbol, sourceAbilityId=value)
+                    for symbol, value in sorted(official.items(), key=lambda row: row[1])]
     deoxys = one(r'#if defined\(FIRERED\)\n// Attack forme\nstatic const u16 sDeoxysBaseStats\[\] = \s*\n\{(.*?)\n\};', src.text[POKEMON])
     deoxys_fields = dict(re.findall(r'^    \[(STAT_\w+)\]\s*= (\d+),$', deoxys[1], re.M))
     stat_keys = ['STAT_HP', 'STAT_ATK', 'STAT_DEF', 'STAT_SPEED', 'STAT_SPATK', 'STAT_SPDEF']
     require(set(deoxys_fields) == set(stat_keys), 'Deoxys form stat fields differ')
-    form = dict(species=ident('SPECIES_DEOXYS'), scope='firered-ordinary-non-link-stat-read',
-                baseStats={k: number(deoxys_fields[stat]) for (k, _), stat in zip(STATS, stat_keys)},
-                source=src.ref(POKEMON, 'sDeoxysBaseStats', deoxys.start(), deoxys.end()),
-                ruleSource=src.function('GetDeoxysStat'))
-    functions = ['CreateMon', 'CreateBoxMon', 'CalculateMonStats', 'GiveMoveToBoxMon',
-                 'GiveBoxMonInitialMoveset', 'GetGenderFromSpeciesAndPersonality', 'GetNature', 'GetDeoxysStat']
-    contract = dict(profile='firered-canonical-generation-source-v1', levelMinimum=1, levelMaximum=100,
-        personalityDrawOrder=['low16', 'high16'], randomIvDrawOrder=['hp-attack-defense', 'speed-specialAttack-specialDefense'],
-        abilitySelection='second source ability absent: slot 0; otherwise personality bit 0',
-        initialMoves='source order through level; skip already-known; append until four; then FIFO replace oldest',
-        maximumHpOneSpecies=ident('SPECIES_SHEDINJA'),
-        evolutionProjection='All source evolution triples are preserved in metadata.sourceEvolutions; typed Evolutions is intentionally empty. No evolution execution is admitted.',
-        references=[src.function(name) for name in functions], formStatOverrides=[form])
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        gameEdition='FIRERED', romRevision=0, inputs=lock['files'],
-        moveDependency=dict(profile='firered-metronome-metadata-v1', sourceCommit=COMMIT,
-            files=[dict(path=p) for p in MOVE_FILES]),
-        exclusions=['SPECIES_NONE', 'SPECIES_OLD_UNOWN_*', 'SPECIES_EGG', 'alternate Unown form IDs', 'ABILITY_NONE', 'ABILITY_CACOPHONY'],
-        species=species, metadata=metadata, abilities=ability_rows, generationContract=contract)
+    form = dict(species=ident('SPECIES_DEOXYS'), scope='firered-ordinary-non-link-stat-read', baseStats={k: number(deoxys_fields[stat]) for (k, _), stat in zip(STATS, stat_keys)})
+    contract = dict(maximumHpOneSpecies=ident('SPECIES_SHEDINJA'), formStatOverrides=[form])
+    return dict(schemaVersion=1, species=species, metadata=metadata, abilities=ability_rows, generationContract=contract)
 
 def build(root, source_root, move_root):
     lock, sources, moves = authenticate(root, source_root, move_root)
@@ -253,8 +219,7 @@ def build(root, source_root, move_root):
     counts = dict(species=len(doc['species']), officialAbilities=len(doc['abilities']), moves=354,
         levelUpEntries=sum(len(s['levelUpMoves']) for s in doc['species']),
         sourceEvolutionEntries=sum(len(m['sourceEvolutions']) for m in doc['metadata']),
-        sourceEvolutionMethods=len({e['method'] for m in doc['metadata'] for e in m['sourceEvolutions']}),
-        abilityDonorSlots=sum(len(d['slots']) for a in doc['abilities'] for d in a['donors']))
+        sourceEvolutionMethods=len({e['method'] for m in doc['metadata'] for e in m['sourceEvolutions']}))
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          inputCount=len(lock['files']), counts=counts,
         outputs=[dict(path='catalog.json')],

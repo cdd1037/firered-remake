@@ -65,7 +65,7 @@ public sealed partial class PretSaffronGymRegion
             "Saffron Gym source map collection differs.");
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "Silph target warp index differs.");
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         var contracts = source.Document("contracts.json");
         Need(contracts.GetProperty("pads").GetArrayLength() == 30 && contracts.GetProperty("entries").GetArrayLength() == 3 &&

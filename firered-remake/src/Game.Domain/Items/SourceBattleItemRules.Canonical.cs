@@ -15,7 +15,7 @@ internal static partial class SourceBattleItemRules
         var actual = frame.Party(BattleSide.Player).Members;
         if (party.IsDefaultOrEmpty || party.Length != actual.Length) return "source_item_party_context";
         var identities = new HashSet<long>();
-        var ownership = OwnedBattlePokemonCatalog.ForMechanics(mechanics.Catalog, frame.SourceCampaignRulesVersion);
+        var ownership = frame.Campaign;
         for (int i = 0; i < party.Length; i++)
         {
             var owned = party[i]; var member = actual[i];

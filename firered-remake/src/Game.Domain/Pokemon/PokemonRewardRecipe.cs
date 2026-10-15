@@ -36,7 +36,7 @@ internal static class PokemonRewardRecipe
 
     internal static PokemonRewardResult Calculate(PokemonCatalog catalog, PokemonInstance participantAfterBattle,
         PokemonSpeciesDefinition defeated, int defeatedLevel, int aliveParticipants, int aliveExpShareHolders,
-        PokemonRewardModifiers modifiers, bool rejectLevelEvolution = false, SourceMechanicsCatalog? mechanics = null)
+        PokemonRewardModifiers modifiers, bool rejectLevelEvolution = false)
     {
         var before = participantAfterBattle;
         // Cmd_getexp rejects level 100 before MonGainEVs, and checks living HP for both EXP/EVs.
@@ -78,7 +78,7 @@ internal static class PokemonRewardRecipe
         };
         for (int level = before.Level + 1; level <= finalLevel; level++)
         {
-            var stats = PokemonStatCalculation.Calculate(species, level, pokemon.Nature, pokemon.Ivs, evs, mechanics);
+            var stats = PokemonStatCalculation.Calculate(species, level, pokemon.Nature, pokemon.Ivs, evs, catalog.MechanicsData);
             int hp = pokemon.CurrentHp + stats.MaxHp - pokemon.Stats.MaxHp;
             events.Add(new WildRewardLevelEvent(pokemon.Level, level, pokemon.Stats, stats, pokemon.CurrentHp, hp));
             int increment = pokemon.Friendship < 100 ? 5 : pokemon.Friendship < 200 ? 3 : 2;

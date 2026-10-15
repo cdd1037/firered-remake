@@ -13,9 +13,9 @@ public sealed partial class PretCampaignCatalog
 {
     public PretSeafoamRegion SeafoamRegion { get; }
     public bool SeafoamEnabled => SeafoamRegion is not null;
-    public SeafoamOwnedPokemonCatalog SeafoamOwnership { get; }
-    public SeafoamOpponentPokemonCatalog SeafoamOpponents { get; }
-    public SeafoamMachineCatalog SeafoamMachines { get; }
+    public GamePokemonCatalog SeafoamOwnership { get; }
+    public GameOpponentPokemonCatalog SeafoamOpponents { get; }
+    public MachineCatalog SeafoamMachines { get; }
     public SeafoamTrainerCatalog SeafoamTrainers { get; }
     public SeafoamWaterEncounterCatalog SeafoamWaterEncounters { get; }
     public IFieldMap SeafoamMap(MapId map,bool stoppedCurrent) => SeafoamRegion.SeafoamMap(map, stoppedCurrent);

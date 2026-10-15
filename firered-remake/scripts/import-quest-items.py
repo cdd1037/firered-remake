@@ -3,6 +3,7 @@
 
 No upstream programs, ROMs, network requests or asset publication are involved.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
 import pathlib
@@ -142,15 +143,8 @@ def import_catalog(raw, out):
         if source_id != (349 if parcel else 4):
             raise ValueError('Unsupported source item ID')
         rules.append(id_ref)
-        match = one('src/data/items.json', r'^    \{\n      "english": ' + re.escape(json.dumps(item['english'])) + r',.*?^    \}')
-        items.append(dict(id={'value': 'pret:' + symbol}, sourceItemSymbol=symbol, sourceItemId=source_id,
-                          name=item['english'], price=item['price'], importance=item['importance'],
-                          registrability=item['registrability'], pocket=item['pocket'], type=str(item['type']),
-                          holdEffect=item['holdEffect'], holdEffectParam=item['holdEffectParam'],
-                          fieldUseFunction=item['fieldUseFunc'], battleUsage=item['battleUsage'],
-                          battleUseFunction=item['battleUseFunc'], secondaryId=item['secondaryId'],
-                          canToss=not parcel, canSell=item['price'] != 0, canGive=item['importance'] == 0,
-                          source=reference('src/data/items.json', symbol, match)))
+        match = one('src/data/items.json', r'^    \{\n      "english": ' + re.escape(json.dumps(item['english'], default=item_json)) + r',.*?^    \}')
+        items.append(shared_item(symbol))
 
     for path, symbol, pattern in [
         ('data/maps/ViridianCity_Mart/scripts.inc', 'ViridianCity_Mart_EventScript_ParcelScene',
@@ -174,12 +168,12 @@ def import_catalog(raw, out):
                         'Null additional pockets preserve older JSON; an empty supported pocket and absent pocket both hold zero items.',
                         'With one supported item in each pocket, distinct-slot exhaustion cannot arise in a valid current-profile save. Over-capacity or unknown stacks are rejected.',
                         'These local source rules do not prove ROM execution parity, original UI or audio.'], catalog=catalog)
-    data = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+    data = (json.dumps(document, ensure_ascii=False, indent=2, default=item_json) + '\n').encode('utf-8')
     manifest = dict(sourceCommit=COMMIT, profile=PROFILE, itemCount=2, inputCount=len(inputs))
     out.mkdir(parents=True, exist_ok=True)
     (out / 'quest-items.json').write_bytes(data)
-    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
-    print(json.dumps(manifest))
+    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2, default=item_json) + '\n', encoding='utf-8', newline='\n')
+    print(json.dumps(manifest, default=item_json))
     return manifest
 
 

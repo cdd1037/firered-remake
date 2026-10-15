@@ -95,19 +95,10 @@ def metadata(lock, sources):
             if declaration is None: raise ValueError('Unsupported evolution declaration')
             method, parameter, target = declaration.groups()
             if method == 'EVO_LEVEL' and int(parameter) <= 25 and target in {'SPECIES_' + source_symbol(n) for n in NEW_SPECIES}:
-                evolutions.append(dict(level=int(parameter), target=ident(target), source=ref(evolution_path, symbol, m)))
+                evolutions.append(dict(level=int(parameter), target=ident(target)))
             else:
-                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target),
-                    source=ref(evolution_path, symbol, m), executable=False,
-                    reason='Trade or unavailable item evolution, or level above natural limit25; source metadata only'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)},
-            growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']],
-            genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']],
-            ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target), executable=False, reason='Trade or unavailable item evolution, or level above natural limit25; source metadata only'))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']], genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     # Trainer custom moves and local TM03/TM28 require definitions independently of learnsets.
     move_symbols.update(TEACHING_MOVES)
@@ -115,10 +106,7 @@ def metadata(lock, sources):
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     abilities = sorted({s[k] for s in species for k in ('ability1', 'ability2')} - {'ABILITY_NONE'})
@@ -138,7 +126,7 @@ def metadata(lock, sources):
             values.append(int(m[1], 16))
         encoded_names.append(dict(symbol=row['source']['symbol'], name=row['name'], bytes=values,
             source=row['source'], encodingSource=encoding_source))
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=species,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species],
         moves=moves, speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded_names,
         deferredEvolutions=deferred, evolutionOverrides=[], naturalLevelLimit=25,
         itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False, tradeEvolutionExecutorImplemented=False,
@@ -186,18 +174,6 @@ def trainer_parties(lock, sources):
     return trainers
 
 
-def scope(lock, sources):
-    doc=metadata(lock,sources)
-    trainers=trainer_parties(lock,sources)
-    actual={m for t in trainers for mon in t['party'] for m in mon['moves']}
-    early={m['move']['value'][5:] for s in doc['species'] for m in s['levelUpMoves'] if m['level']<=25}
-    return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,naturalLevelLimit=25,trainers=trainers,
-        requiredTrainerMoves=sorted(actual),teachingMoves=list(TEACHING_MOVES),nearStageLearnsetMoves=sorted(early),
-        sourceDefinitions=[m for m in doc['moves'] if m['id']['value'][5:] in actual|early|set(TEACHING_MOVES)],
-        newAbilities=sorted({s[k] for s in doc['species'] for k in ('ability1','ability2')} - {'ABILITY_NONE'}),
-        noEvolutionMoveBackfill=True,effectsEnabledByThisCatalog=False,encountersEnabledByThisCatalog=False,
-        exclusions=['New wild encounters, fishing and surfing', 'Post-Cerulean regions', 'Water Stone and trade evolution',
-            'Natural level above25', 'Move metadata does not enable battle execution'])
 
 
 def supplement(lock, sources):
@@ -215,7 +191,6 @@ def convert(lock, sources):
     outputs = art(lock, sources)
     outputs['catalog.json'] = canonical(metadata(lock, sources))
     outputs.update(supplement(lock, sources))
-    outputs['scope.json'] = canonical(scope(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
 
         inputCount=len(lock['files']), addedSpeciesCount=9, composedSpeciesCount=65,

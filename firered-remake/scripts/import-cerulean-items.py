@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Bounded Cerulean Mart and Super Potion from authenticated local Git blobs or cache. No upstream execution."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _path_sys
 from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
@@ -14,7 +15,7 @@ from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-cerulean-items-v1'
-def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2)+'\n').encode()
+def encoded(v): return (json.dumps(v,ensure_ascii=False,indent=2, default=item_json)+'\n').encode()
 def pairs(rows):
  d={}
  for k,v in rows:
@@ -68,7 +69,7 @@ def convert(lock,data):
  i=chosen[0];m=match(p,r'^    \{\n      "english": "SUPER POTION",.*?^    \}')
  source=ref(p,symbol,m)
  cp='include/constants/items.h';cm=match(cp,r'^#define ITEM_SUPER_POTION[ \t]+(\d+)[ \t]*$');rules.append(ref(cp,symbol,cm))
- definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=int(cm[1]),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
+ definition=shared_item(symbol)
  if (definition['sourceItemId'],definition['price'],definition['holdEffectParam'])!=(22,700,50):raise ValueError('Super Potion values differ')
  declaration=i['description_english'].replace('\\n','\n')
  p='include/constants/item_effects.h';m=match(p,r'^#define ITEM4_HEAL_HP[ \t]+(0x[0-9A-Fa-f]+|\d+)[ \t]*(?://[^\n]*)?$');flag=int(m[1],0);rules.append(ref(p,'ITEM4_HEAL_HP',m))
@@ -83,10 +84,10 @@ def convert(lock,data):
   seen.add(index);effect[index]=flag if part[2]=='ITEM4_HEAL_HP' else int(part[2])
  if effect!=[0,0,0,0,4,0,50]:raise ValueError('Super Potion healing bytes differ')
  m=match(p,r'^    \[ITEM_SUPER_POTION - ITEM_POTION\][ \t]*= sItemEffect_SuperPotion,');rules.append(ref(p,'ITEM_SUPER_POTION effect binding',m))
- item=dict(metadata=dict(item=definition,description=declaration),effectBytes=effect,effectSource=effect_source,useSupport='potion')
+ item=dict(metadata=dict(item=definition,description=declaration), effectBytes=effect, useSupport='potion')
  p='data/maps/CeruleanCity_Mart/scripts.inc';m=match(p,r'^CeruleanCity_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)');stock=re.findall(r'\.2byte (ITEM_\w+)',m[1]);expected=['ITEM_'+n for n in 'POKE_BALL SUPER_POTION POTION ANTIDOTE PARALYZE_HEAL AWAKENING BURN_HEAL ESCAPE_ROPE REPEL NONE'.split()]
  if stock!=expected:raise ValueError('Cerulean source stock/order/terminator differs')
- shop=dict(id='CeruleanCity_Mart_Items',items=[ident(x) for x in stock[:-1]],source=ref(p,'CeruleanCity_Mart_Items',m))
+ shop=dict(id='CeruleanCity_Mart_Items',items=[ident(x) for x in stock[:-1]])
  m=match(p,r'^CeruleanCity_Mart_EventScript_Clerk::\n(.*?)(?=^\t\.align)')
  if '\tpokemart CeruleanCity_Mart_Items\n' not in m[1]:raise ValueError('Cerulean clerk binding differs')
  rules.append(ref(p,'CeruleanCity_Mart_EventScript_Clerk',m))
@@ -130,4 +131,4 @@ def run(raw,out,repo=None,lock_path=None):
   target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
  return dict(inputCount=len(data),outputCount=len(outputs))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/cerulean-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/cerulean-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/cerulean-items');p.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/cerulean-items.lock.json');a=p.parse_args();print(json.dumps(run(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True, default=item_json))

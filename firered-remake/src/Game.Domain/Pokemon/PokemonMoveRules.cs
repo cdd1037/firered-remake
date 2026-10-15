@@ -10,9 +10,8 @@ public static class PokemonMoveRules
 
     /// <summary>The gift profile keeps every source move as metadata while deferring learning of unimplemented battle effects.</summary>
     public static bool IsLearningSupported(PokemonCatalog catalog, MoveId move) =>
-        (OwnedBattlePokemonCatalog.For(catalog) is not null)
-            ? catalog.Moves.TryGetValue(move, out var sourceMove) && Game.Domain.WildBattle.WildBattleRules.IsCalledMoveEffectSupported(sourceMove)
-            : catalog.Species.Count == 107 ? Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.FuchsiaRulesVersion) : catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
+        catalog.Moves.TryGetValue(move, out var sourceMove) &&
+        Game.Domain.WildBattle.WildBattleRules.IsCalledMoveEffectSupported(sourceMove);
 
     /// <summary>CreateBoxMon learns in source order and automatically forgets the oldest move.
     /// Day Care later uses the same source automatic-learning primitive.</summary>
@@ -95,7 +94,7 @@ public static class PokemonMoveRules
         if (moves.IsDefault || moves.Length > 4) throw new ArgumentException("Use a compact set of zero through four moves.");
         // Preserve the historical zero-bonus guard. Only authenticated source learning admits
         // existing PP bonuses; NewSlot still clears a newly learned/replaced move to zero.
-        bool canonical = SourceMechanicsCatalog.For(catalog) is not null || (OwnedBattlePokemonCatalog.For(catalog) is not null);
+        bool canonical = catalog.MechanicsData is not null;
         var seen = new HashSet<MoveId>();
         foreach (var slot in moves)
         {

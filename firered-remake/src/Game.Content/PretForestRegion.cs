@@ -62,7 +62,7 @@ public sealed class PretForestRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/forest-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));

@@ -2,6 +2,7 @@
 """Import the three source event species, 117 TM/HM cells and six inventory definitions.
 Only reads pinned Git blobs. Never builds or executes reference code. --check is byte-exact.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  json, re, subprocess
 from pathlib import Path
 from machine_catalog import compatibility_additions
@@ -31,11 +32,7 @@ def generate(reference,dependency):
     form=canonical['generationContract']['formStatOverrides'][0]
     need(form['species']==ident('SPECIES_DEOXYS') and form['baseStats']==dict(hp=50,attack=180,defense=20,speed=150,specialAttack=180,specialDefense=20),'FireRed Attack forme')
     for s in SPECIES:
-        for r in [species[s]['source'],species[s]['learnsetSource'],metadata[s]['dexSource'],metadata[s]['learnsetPointerSource']]:
-            read(r['path'])
         need(species[s]['ability1']=='ABILITY_PRESSURE' and species[s]['ability2']=='ABILITY_NONE' and metadata[s]['sourceEvolutions']==[],'Terminal Pressure event species')
-    for r in [form['source'],form['ruleSource']]:
-        read(r['path'])
     need(species['SPECIES_DEOXYS']['sourceSpeciesId']==410 and metadata['SPECIES_DEOXYS']['nationalDexNumber']==386,'Internal ID versus national dex')
     encounters=[]
     for s,kind,mapname,level in [('SPECIES_HO_OH','hoOh','NavelRock_Summit',70),('SPECIES_LUGIA','lugia','NavelRock_Base',70),('SPECIES_DEOXYS','deoxys','BirthIsland_Exterior',30)]:
@@ -50,25 +47,25 @@ def generate(reference,dependency):
     constants={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',read('include/constants/items.h'),re.M)}
     for symbol in ['ITEM_MYSTIC_TICKET','ITEM_AURORA_TICKET','ITEM_SACRED_ASH','ITEM_ITEMFINDER','ITEM_MACHO_BRACE','ITEM_LEFTOVERS']:
         i=next(i for i in source_items if i['itemId']==symbol);m=one('src/data/items.json',r'"itemId":\s*"'+symbol+r'"');r=ref('src/data/items.json',symbol,m)
-        meta=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constants[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
-        items.append({k:meta[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=i['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=meta))
+        meta=shared_item(symbol)
+        items.append(dict(item=meta)|dict(description=i['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10))
     vectors=[]
     for s,level,seed in [('SPECIES_HO_OH',70,42),('SPECIES_LUGIA',70,0x12345678),('SPECIES_DEOXYS',30,0xDEADBEEF)]:
         start=seed;draws=[]
         for _ in range(4):seed=(seed*1103515245+24691)&0xffffffff;draws.append(seed>>16)
         pid=draws[0]|draws[1]<<16;ivs=[draws[2]&31,(draws[2]>>5)&31,(draws[2]>>10)&31,draws[3]&31,(draws[3]>>5)&31,(draws[3]>>10)&31]
         vectors.append(dict(species=ident(s),level=level,initialSeed=start,finalSeed=seed,rawDraws=draws,personality=pid,nature=pid%25,ivs=ivs,originalTrainerId=0x12345678))
-    doc=dict(sourceCommit=COMMIT,profile='firered-event-island-species-v1',ownedSpeciesCount=149,opponentSpeciesCount=183,species=[dict(definition=species[s],metadata=metadata[s]) for s in SPECIES],formOverride=form,encounters=encounters,machines=cells,items=items,generationVectors=vectors,generationOrder='Explicit low16 then high16 profile; original target-compiler Random32 evaluation order remains unverified.',inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
+    doc=dict(sourceCommit=COMMIT,profile='firered-event-island-species-v1',ownedSpeciesCount=149,opponentSpeciesCount=183,species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']),metadata=metadata[s]) for s in SPECIES],formOverride=form,encounters=encounters,machines=cells,items=items,generationVectors=vectors,generationOrder='Explicit low16 then high16 profile; original target-compiler Random32 evaluation order remains unverified.',inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     return doc,raw
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args()
-    d,raw=generate(a.reference,a.dependency_root);files={'content/generated/event-island-species/catalog.json':(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode()}
+    d,raw=generate(a.reference,a.dependency_root);files={'content/generated/event-island-species/catalog.json':(json.dumps(d,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()}
     for path,data in raw.items():files['content/raw/pokefirered/037335f4/'+path]=data
     lock=dict(sourceCommit=COMMIT,profile=d['profile'],files=[dict(path=k) for k,v in sorted(files.items())])
     for path,b in files.items():
         dest=a.output/path
         if a.check:need(dest.read_bytes()==b,'Regeneration differs: '+path)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
-    print(json.dumps(dict(checked=a.check,inputs=len(raw)),indent=2))
+    print(json.dumps(dict(checked=a.check,inputs=len(raw)),indent=2, default=item_json))
 if __name__=='__main__':main()

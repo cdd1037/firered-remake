@@ -44,13 +44,5 @@ public static class PretLeagueRematchRules
         return result;
     }
 
-    public static LeagueRematchOpponentPokemonCatalog LoadOpponents(string root, CeruleanCaveOpponentPokemonCatalog predecessor)
-    {
-        var document = Read<LeagueRematchOpponentDocument>(root,"pokemon.json");
-        if (            document.OwnedSpeciesAdded.IsDefault || !document.OwnedSpeciesAdded.IsEmpty)
-            throw new InvalidDataException("Pokemon League opponent projection differs.");
-        return LeagueRematchOpponentPokemonCatalog.Authenticate(predecessor, document.OpponentSpecies);
-    }
-
     public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

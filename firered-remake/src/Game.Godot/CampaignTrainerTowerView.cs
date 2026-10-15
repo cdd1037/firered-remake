@@ -100,8 +100,8 @@ public partial class CampaignView
         get
         {
             if (VisibleTrainerTowerFrame?.TrainerTowerEncounter is not {} tower) return null;
-            var course = _catalog.TrainerTowerCatalog.Course(Enum.Parse<TrainerTowerChallengeKind>(tower.Course));
-            return _catalog.TrainerTowerCatalog.Template(course.Floors[tower.FloorIndex].TemplateSymbol).Trainers[tower.TrainerIndex];
+            var course = _catalog.TrainerTowerCatalog.Course(Enum.Parse<TrainerTowerChallengeKind>(tower.Roster.Course));
+            return _catalog.TrainerTowerCatalog.Template(course.Floors[tower.Roster.FloorIndex].TemplateSymbol).Trainers[tower.Roster.TrainerIndex];
         }
     }
     private string? TrainerTowerTrainerText(string field) => VisibleTrainerTowerTrainer is {} trainer
@@ -127,9 +127,9 @@ public partial class CampaignView
     private string? TrainerTowerBattleSpeech(int opponentIndex)
     {
         if (VisibleTrainerTowerFrame is not {} frame || frame.TrainerTowerEncounter is not {} tower) return null;
-        var course = _catalog.TrainerTowerCatalog.Course(Enum.Parse<TrainerTowerChallengeKind>(tower.Course));
-        var template = _catalog.TrainerTowerCatalog.Template(course.Floors[tower.FloorIndex].TemplateSymbol);
-        var trainer = template.Trainers[tower.TrainerIndex + (frame.Layout == SourceBattleLayout.PresetDoubles ? opponentIndex : 0)];
+        var course = _catalog.TrainerTowerCatalog.Course(Enum.Parse<TrainerTowerChallengeKind>(tower.Roster.Course));
+        var template = _catalog.TrainerTowerCatalog.Template(course.Floors[tower.Roster.FloorIndex].TemplateSymbol);
+        var trainer = template.Trainers[tower.Roster.TrainerIndex + (frame.Layout == SourceBattleLayout.PresetDoubles ? opponentIndex : 0)];
         return FormatTrainerTowerSpeech(frame.Outcome == Game.Domain.WildBattle.WildBattleOutcome.Won ? trainer.SpeechLose : trainer.SpeechWin);
     }
     private string? PresentedFieldText => _trainerTowerSpeechPages.Length > 0

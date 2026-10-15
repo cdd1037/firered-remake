@@ -19,8 +19,7 @@ public sealed partial class CampaignSession
         ["map.route-8-west-entrance"] = "Route8_WestEntrance"
     }.ToImmutableDictionary(StringComparer.Ordinal);
 
-    private InventoryState WithoutRegionalTea(InventoryState inventory) => !_content.RegionalServicesEnabled ? inventory :
-        inventory with { KeyItems = inventory.KeyItems is { } keys ? keys.Where(s => s.Item != TeaId).ToImmutableArray() : null };
+
 
     private string? ValidateRegionalTeaInventory(InventoryState inventory)
     {

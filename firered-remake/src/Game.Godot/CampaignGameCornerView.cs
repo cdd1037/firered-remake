@@ -10,9 +10,8 @@ public partial class CampaignView
 
     private void LoadGameCornerPresentation()
     {
-        if (OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog), GameCornerOwnedPokemonCatalog.For) is not { } owned) return;
-        if (!_session.IsCurrentGame || _stoneEvolutionArt is null ||
-            !ReferenceEquals(StoneEvolutionOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
+        if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
+        if (!_session.IsCurrentGame || _stoneEvolutionArt is null)
             throw new InvalidDataException("Game Corner presentation requires its authenticated Stone Evolution predecessor.");
         var art = PretGameCornerPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)

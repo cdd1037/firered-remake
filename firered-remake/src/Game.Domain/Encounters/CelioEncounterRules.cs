@@ -14,61 +14,20 @@ internal sealed record CelioRoamerEncounterGate(RoamerState State, RoamerMap Pla
 /// authenticated Celio catalog select the new overloads; historical Five APIs are unchanged.</summary>
 public static class CelioEncounterRules
 {
-    internal static CelioRoamerEncounterGate Validate(CelioOwnedPokemonCatalog owned,
+    internal static CelioRoamerEncounterGate Validate(GamePokemonCatalog owned,
         ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
-        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
+        RoamerMap playerMap, bool extendedRepel)
     {
-        if (owned is null || !ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Catalog), owned))
-            throw new ArgumentException("celio_encounter_catalog");
-        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
-    }
-
-    internal static CelioRoamerEncounterGate Validate(CeruleanCaveOwnedPokemonCatalog owned,
-        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
-        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
-    {
-        CeruleanCaveWildPokemonFactory.ValidateOwned(owned);
-        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
-    }
-
-    internal static CelioRoamerEncounterGate Validate(SevenIslandOwnedPokemonCatalog owned,
-        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
-        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
-    {
-        SevenIslandWildPokemonFactory.ValidateOwned(owned);
-        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
-    }
-
-    internal static CelioRoamerEncounterGate Validate(EventIslandOwnedPokemonCatalog owned,
-        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
-        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
-    {
-        if (owned is null || !ReferenceEquals(EventIslandOwnedPokemonCatalog.For(owned.Catalog), owned))
-            throw new ArgumentException("event_island_encounter_catalog");
-        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
-    }
-
-    internal static CelioRoamerEncounterGate Validate(PowerPlantOwnedPokemonCatalog owned,
-        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
-        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop, OwnedBattlePokemonCatalog? currentOwned = null)
-    {
-        if (owned is null || !ReferenceEquals(PowerPlantOwnedPokemonCatalog.For(owned.Catalog), owned))
-            throw new ArgumentException("power_plant_encounter_catalog");
-        var current = OwnedBattlePokemonCatalog.ResolveCurrent(owned.SharedBattle, currentOwned);
-        return ValidateParty(current.Catalog, current.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
-    }
-
-    private static CelioRoamerEncounterGate ValidateParty(PokemonCatalog catalog, SourceMechanicsCatalog mechanics,
-        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
-        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
-    {
-        if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
-        else SaffronGymRepelRules.ValidateSteps(saffronShop, repelSteps);
+        ArgumentNullException.ThrowIfNull(owned);
+        var catalog = owned.Catalog;
+        var mechanics = owned.Mechanics;
+        if (!extendedRepel) EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
+        else RepelRules.ValidateSteps(repelSteps);
         SourceRoamerRules.Validate(roamer);
         if (playerMap.Group is < 0 or > 255 || playerMap.Number is < 0 or > 255)
             throw new ArgumentOutOfRangeException(nameof(playerMap));
         if (party.IsDefaultOrEmpty || party.Length > 6 || party.Any(member => member is null ||
-            (member.IsEgg ? SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, new(member.Pokemon, member.HeldItem, member.Status, true), OwnedBattlePokemonCatalog.For(catalog)) : PokemonStateValidator.Validate(catalog, member.Pokemon)) is not null ||
+            (member.IsEgg ? SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, new(member.Pokemon, member.HeldItem, member.Status, true), owned) : PokemonStateValidator.Validate(catalog, member.Pokemon)) is not null ||
             !SourceBattleAdmission.SupportsHeldItem(mechanics.Catalog, member.HeldItem)))
             throw new ArgumentException("celio_encounter_party");
         return new(roamer, playerMap, party.Select(member =>

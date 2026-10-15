@@ -56,10 +56,6 @@ def generate(reference, dependency):
             inputs[path] = dict(path=path, localPath=local, shared=shared is not None)
             raw[path] = data
         return raw[path].decode()
-    for row in definitions:
-        definition, metadata = row['definition'], row['metadata']
-        for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [e['source'] for e in metadata['sourceEvolutions']]:
-            read(sr['path'])
     cells = compatibility_additions(dependency, BASE + 'machines.json')
     need(len(cells) == 51, 'Exactly 51 admitted machines')
     old_owned = list(admission_species(dependency, 'content/generated/game-corner-prizes/machines.json', '/additions/0'))
@@ -81,8 +77,8 @@ def generate(reference, dependency):
     need(len(all_moves) == 58, 'Original 50 TM and eight HM order')
     rows = []
     for species in owned:
-        original = metadata_by_id[species]['originalFields']
-        rows.append(dict(breeding=dict(species=dict(value=species),eggGroup1=groups[original['eggGroups'].split(',')[0].strip().strip('{} ').strip()],eggGroup2=groups[original['eggGroups'].split(',')[1].strip().strip('{} ').strip()],eggCycles=int(original['eggCycles'])),
+        original = metadata_by_id[species]
+        rows.append(dict(breeding=dict(species=dict(value=species),eggGroup1=groups[original['eggGroups'][0]],eggGroup2=groups[original['eggGroups'][1]],eggCycles=int(original['eggCycles'])),
             baseEggSpecies=dict(value=base_species(species)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(species[13:],[])]))
     read('src/daycare.c');read('src/pokemon.c')
     evolution_rows=[dict(species=r['definition']['id'], **e) for r in definitions for e in r['metadata']['sourceEvolutions']]

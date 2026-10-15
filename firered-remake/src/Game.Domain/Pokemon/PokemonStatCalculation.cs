@@ -2,11 +2,11 @@ using Game.Domain.Rules;
 
 namespace Game.Domain.Pokemon;
 
-/// <summary>The shared permanent-instance calculation; legacy calls retain their original inputs.</summary>
+/// <summary>Permanent statistics calculated from explicit immutable mechanics data.</summary>
 internal static class PokemonStatCalculation
 {
     internal static BattleStats Calculate(PokemonSpeciesDefinition species, int level, Nature nature,
-        SixStats ivs, SixStats evs, SourceMechanicsCatalog? mechanics = null)
+        SixStats ivs, SixStats evs, PokemonMechanicsData? mechanics = null)
     {
         var b = mechanics?.FormStatOverrides.FirstOrDefault(f => f.Species == species.Id)?.BaseStats ?? species.BaseStats;
         int Other(int basis, int iv, int ev, Stat stat) => StatRules.CalculateOther(basis, iv, ev, level, nature, stat);

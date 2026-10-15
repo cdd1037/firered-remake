@@ -2,6 +2,7 @@
 """Import exact Victory Road rules from pinned Git blobs, without running upstream code.
 Use REFERENCE DEPENDENCY REGION OUTPUT [--check]. All source inputs and artifacts are locked.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
 import re
@@ -171,7 +172,7 @@ def generate(reference, dependency, region):
         held=re.search(r'\.itemCommon = (ITEM_\w+),\n\s*\.itemRare = (ITEM_\w+),',source[1])
         need(held,'Missing held slots')
         wild_dependencies.append(dict(species=identity(symbol),sourceSpeciesId=p['sourceSpeciesId'],ability1=p['ability1'],ability2=p['ability2'],
-            itemCommon=held[1],itemRare=held[2],source=ref(source_path,symbol,source),learnsetSource=p['learnsetSource']))
+            itemCommon=held[1],itemRare=held[2],source=ref(source_path,symbol,source)))
     wild_doc=dict(sourceCommit=COMMIT,profile='firered-victory-road-wild-v1',land=land,water=water,fishing=fishing,
         initialMoves=initial,species=wild_dependencies,ownedSpeciesAdded=[],
         limitations=['Good Rod and Super Rod acquisition/use are not provided by this region rules package. Their exact source slots are retained.',
@@ -198,11 +199,7 @@ def generate(reference, dependency, region):
         item=next(i for i in source_items if i['itemId']==symbol)
         m=one(item_path,r'^    \{\n(?:(?!^    \}).)*?"itemId": "'+symbol+r'"(?:(?!^    \}).)*?^    \}')
         item_ref=ref(item_path,symbol,m)
-        definition=dict(id=identity(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],
-            price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),
-            holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],
-            battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,
-            canGive=item['importance']==0,source=item_ref)
+        definition=shared_item(symbol)
         description=item['description_english'].replace('\\n','\n')
         if 'moveId' in item:
             path='src/move_descriptions.c'; desc_symbol='gMoveDescription_'+item['moveId']
@@ -238,7 +235,7 @@ def main():
     for name in ['reference','dependency','region','output']:p.add_argument(name,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args()
     outputs,raw=generate(a.reference,a.dependency,a.region)
-    files={f'content/generated/victory-road-rules/{name}':(json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode() for name,value in outputs.items()}
+    files={f'content/generated/victory-road-rules/{name}':(json.dumps(value,indent=2,ensure_ascii=False, default=item_json)+'\n').encode() for name,value in outputs.items()}
     files.update({'content/raw/pokefirered/037335f4/'+name:data for name,data in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-victory-road-rules-v1',
         files=[dict(path=k) for k,v in sorted(files.items())])
@@ -248,5 +245,5 @@ def main():
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     print(json.dumps(dict(checked=a.check,trainers=12,members=45,battleOccurrences=13,wildSpecies=19,wildSpeciesLevelPairs=122,
         ownedSpeciesAdded=0,pickups=18,itemTypes=16,newMachines=4,machineCompatibilityCells=460,
-        sourceInputs=len(raw),files=len(files),bytes=sum(map(len,files.values()))),indent=2))
+        sourceInputs=len(raw),files=len(files),bytes=sum(map(len,files.values()))),indent=2, default=item_json))
 if __name__=='__main__':main()

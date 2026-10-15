@@ -78,12 +78,9 @@ def section(text, signature):
 
 def convert(lock,sources):
     by_path = {e['path']:e for e in lock['files']}
-    refs = []
     def source(path,symbol,needle):
         text=sources[path].decode()
         if text.count(needle)!=1: raise ValueError('Missing or ambiguous source binding: '+symbol)
-        start=text[:text.index(needle)].count('\n')+1
-        refs.append(dict(path=path,symbol=symbol,startLine=start,endLine=start+needle.count('\n')))
     def block(path,signature,symbol):
         value=section(sources[path].decode(),signature);source(path,symbol,value);return value
     def require(text,needle):
@@ -138,8 +135,10 @@ def convert(lock,sources):
     source('src/data/item_icon_table.h','gItemIconTable[ITEM_TEACHY_TV]','[ITEM_TEACHY_TV]      = {gItemIcon_TeachyTV, gItemIconPalette_TeachyTV},')
     tutorial_bytes=(ROOT/'content/generated/old-man-tutorial/catalog.json').read_bytes()
     tutorial=json.loads(tutorial_bytes,object_pairs_hook=pairs); tv=tutorial['teachyTv']
+    from item_catalog import item_definition
+    tv_item=item_definition('ITEM_TEACHY_TV')
     items=json.loads(sources['src/data/items.json'],object_pairs_hook=pairs)['items']; item=next(i for i in items if i['itemId']=='ITEM_TEACHY_TV')
-    if (item['english'],item['description_english'].replace(r'\n','\n'),item['fieldUseFunc'])!=(tv['name'],tv['description'],tv['fieldUseFunc']):raise ValueError('Teachy TV differs from tutorial content')
+    if (item['english'],item['description_english'].replace(r'\n','\n'),item['fieldUseFunc'])!=(tv_item['name'],tv['description'],tv_item['fieldUseFunction']):raise ValueError('Teachy TV differs from tutorial content')
     outputs={};assets=[]
     def add(id,image_path,palette_path,fw,fh,count,palette_kind='jasc-pal',patch=None):
         w,h,indices,png_palette=codec.indexed_png(sources[image_path])
@@ -163,14 +162,14 @@ def convert(lock,sources):
     add('teachy-tv-icon','graphics/items/icons/teachy_tv.png','graphics/items/icon_palettes/teachy_tv.pal',24,24,1)
     add('poke-ball','graphics/interface/ball/poke.png','graphics/interface/ball/poke.png',16,16,3,'png-plte','graphics/interface/ball_open.png')
     doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],
-        assets=assets,teachyTv=dict(id='pret:ITEM_TEACHY_TV',sourceSymbol='ITEM_TEACHY_TV',name=tv['name'],description=tv['description'],icon='teachy-tv-icon',fieldUseFunction=tv['fieldUseFunc']),
+        assets=assets,teachyTv=dict(id='pret:ITEM_TEACHY_TV',sourceSymbol='ITEM_TEACHY_TV',name=tv_item['name'],description=tv['description'],icon='teachy-tv-icon',fieldUseFunction=tv_item['fieldUseFunction']),
         paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',oldManThrowFrames=throw_frames,ballAnimations=ball_animations,
         layout=dict(trainerCenterX=80,trainerCenterY=80,trainerSlideOffsetX=240,trainerSlidePixelsPerTick=-2,
             weedleCenterX=176,weedleCenterY=57,weedleSourceWidth=40,weedleSourceHeight=32,weedleSourceYOffset=17,
             ballStartX=60,ballStartY=91,ballTargetX=176,ballTargetY=24),
         ballTiming=dict(releaseTrainerCommandIndex=1,arcTicks=34,arcAmplitude=-40,hitDelayTicks=10,shrinkDuration=28,
             fallAmplitude=40,bounceCount=4,firstShakeDelayTicks=31,betweenShakeDelayTicks=31,successShakeCount=3,
-            clickTicks=40,paletteRestoreTicks=60,caughtIntroTicks=95,removeMonsterTicks=315),sourceRefs=refs,
+            clickTicks=40,paletteRestoreTicks=60,caughtIntroTicks=95,removeMonsterTicks=315),
         limitations=['Metadata describes original source callbacks; it does not implement their per-tick state machine or prove frame equivalence.',
             'Pokeball runtime frame 2 is replaced with ball_open.png exactly as LoadBallGfx does; its palette is the real colored poke.png PLTE.',
             'Old Man, Weedle and Teachy TV use separate JASC palettes; embedded PNG palettes are not used for these assets.',

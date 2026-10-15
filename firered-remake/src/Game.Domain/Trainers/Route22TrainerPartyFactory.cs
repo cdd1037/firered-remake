@@ -32,18 +32,11 @@ public static class Route22TrainerPartyFactory
     };
 
     public static TrainerPartyCreationResult Create(Route22TrainerCatalog trainers, PokemonCatalog pokemon,
-        TrainerId trainerId, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
+        TrainerId trainerId, RngState rng)
     {
-        towerRules |= fuchsiaRules;
-        rocketHideoutRules |= towerRules;
-        celadonGymRules |= rocketHideoutRules;
-        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != (towerRules && !fuchsiaRules) || (pokemon.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
-        rockTunnelRules |= celadonGymRules;
-        route11Rules |= rockTunnelRules;
-        vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
+
         ValidateCatalog(trainers);
         PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) throw new NotSupportedException("The versioned early-rival Pokemon catalog is required.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer))
             throw new NotSupportedException("Only the three Route22 early rivals are supported.");
         foreach (var member in trainer.Party)

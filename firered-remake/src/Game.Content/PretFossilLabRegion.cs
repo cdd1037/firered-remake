@@ -80,7 +80,7 @@ public sealed class PretFossilLabRegion
             "Cinnabar fossil lab map/warp collection differs.");
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["HELIX_FOSSIL"] == 1 && constants["DOME_FOSSIL"] == 2 && constants["OLD_AMBER"] == 3 &&
             constants["VAR_MAP_SCENE_CINNABAR_ISLAND_POKEMON_LAB_EXPERIMENT_ROOM_WHICH_FOSSIL"] == 0x4069 &&

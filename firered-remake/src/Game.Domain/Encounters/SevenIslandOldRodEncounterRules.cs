@@ -20,21 +20,21 @@ public static class SevenIslandOldRodEncounterRules
         new("map.seven-island-tanoby-ruins-scufib-chamber"), new("map.seven-island-tanoby-ruins-rixy-chamber"),
         new("map.seven-island-tanoby-ruins-viapois-chamber")];
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) || MapsWithoutFishingMons.Contains(map) || CeruleanCaveOldRodEncounterRules.IsAdmittedMap(map);
-    public static OldRodFishingResult Start(SevenIslandOwnedPokemonCatalog pokemon, OldRodCastContext context,
+    public static OldRodFishingResult Start(GamePokemonCatalog pokemon, OldRodCastContext context,
         RngState rng, bool cancelBeforeCast = false)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.StartCore(context, rng, cancelBeforeCast, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true, seviiRubyRules: true, fourIslandRules: true, sixIslandRules: true, fiveIslandRules: true, ceruleanCaveRules: true, sevenIslandRules: true);
     }
 
-    public static OldRodFishingResult Advance(SevenIslandOwnedPokemonCatalog pokemon, OldRodFishingState state,
+    public static OldRodFishingResult Advance(GamePokemonCatalog pokemon, OldRodFishingState state,
         OldRodFrameInput input, RngState rng)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.AdvanceCore(state, input, rng, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true, seviiRubyRules: true, fourIslandRules: true, sixIslandRules: true, fiveIslandRules: true, ceruleanCaveRules: true, sevenIslandRules: true);
     }
 
-    public static void ValidateState(SevenIslandOwnedPokemonCatalog pokemon, OldRodFishingState state)
+    public static void ValidateState(GamePokemonCatalog pokemon, OldRodFishingState state)
     {
         ValidatePokemon(pokemon);
         OldRodFishingRules.ValidateStateCore(state, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true, seviiRubyRules: true, fourIslandRules: true, sixIslandRules: true, fiveIslandRules: true, ceruleanCaveRules: true, sevenIslandRules: true);
@@ -56,7 +56,7 @@ public static class SevenIslandOldRodEncounterRules
         if (candidate.Species != slot.Species || candidate.Level < slot.MinimumLevel || candidate.Level > slot.MaximumLevel)
             throw new ArgumentException("seven_island_old_rod_candidate_source");
     }
-    public static OldRodEncounterResult GenerateCandidate(SevenIslandOwnedPokemonCatalog pokemon,
+    public static OldRodEncounterResult GenerateCandidate(GamePokemonCatalog pokemon,
         OldRodEncounterTable table, OldRodFishingState fishing, RngState rng)
     {
         ValidateTable(table);
@@ -66,7 +66,7 @@ public static class SevenIslandOldRodEncounterRules
         return OldRodEncounterRules.GenerateCandidateCore(table, rng);
     }
 
-    public static OldRodPokemonResult GeneratePokemon(SevenIslandOwnedPokemonCatalog pokemon,
+    public static OldRodPokemonResult GeneratePokemon(GamePokemonCatalog pokemon,
         OldRodEncounterCandidate candidate, RngState rng, uint playerTrainerId)
     {
         ValidatePokemon(pokemon);
@@ -77,10 +77,8 @@ public static class SevenIslandOldRodEncounterRules
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 
-    private static void ValidatePokemon(SevenIslandOwnedPokemonCatalog pokemon)
+    private static void ValidatePokemon(GamePokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
-        if (!ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(pokemon.Catalog), pokemon))
-            throw new ArgumentException("seven_island_old_rod_owned_proof");
     }
 }

@@ -6,7 +6,7 @@ namespace Game.Content;
 
 public static class PretRocketHideoutMachines
 {
-    public const string Profile = RocketHideoutMachineRules.Profile;
+    public const string Profile = "firered-rocket-hideout-teaching-v1";
     public static PretRockTunnelMachinesDocument LoadProject(string root, string? dependencyProjectRoot = null)
     {
         var items = PretRocketHideoutItems.LoadProject(root);
@@ -17,11 +17,5 @@ public static class PretRocketHideoutMachines
         PretCeladonApproachSource.Require(document.Inputs.SequenceEqual(items.Inputs) ,"Rocket Hideout machine/item provenance differs.");
         PretCeladonApproachSource.Require(document.Machines.All(m => m.Compatibility.Length == 99), "Machine membership differs.");
         return document;
-    }
-    public static PewterMachineCatalog LoadCatalogProject(string root, string? dependencyProjectRoot = null)
-    {
-        var document = LoadProject(root,dependencyProjectRoot); var prior = PretPewterMachines.LoadProject(dependencyProjectRoot ?? root);
-        var result = prior with { Profile = Profile,Compatibility = document.Machines[0].Compatibility,AdditionalMachines = document.Machines.Skip(1).ToImmutableArray() };
-        RocketHideoutMachineRules.ValidateCatalog(result); return result;
     }
 }

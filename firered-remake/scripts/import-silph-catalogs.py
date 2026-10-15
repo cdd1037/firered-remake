@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Regenerate Silph source metadata from immutable pret Git blobs, without upstream execution."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 from pathlib import Path
 import argparse, collections,  json, os, re, struct, subprocess, sys
 import machine_catalog as shared_machines
@@ -10,7 +11,7 @@ PROFILE='firered-silph-catalogs-v1'
 CORE=[f'SilphCo_{i}F' for i in range(1,12)]+['SilphCo_Elevator']
 SCRIPT_PATHS=tuple('data/maps/'+n+'/scripts.inc' for n in CORE)
 TRAINERS=()
-def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2, default=item_json)+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -124,7 +125,7 @@ def trainer_convert(lock,sources):
  for symbol in sorted({m for r in resolved for p in r['party'] for m in p['moves']} - {'MOVE_NONE'}):
   p='src/data/battle_moves.h';m=one(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',p)
   f=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M))
-  moves.append(dict(id=dict(value='pret:'+symbol),sourceMoveId=number('include/constants/moves.h',symbol),pp=int(f['pp']),power=int(f['power']),accuracy=int(f['accuracy']),type=f['type'],effect=f['effect'],target=f['target'],secondaryEffectChance=int(f['secondaryEffectChance']),priority=int(f['priority']),battleEffectImplemented=False,flags=f['flags'].split(' | ') if f['flags']!='0' else [],source=ref(p,symbol,m)))
+  moves.append(dict(value='pret:' + symbol))
   np='src/data/text/move_names.h';nm=one(r'^    \['+symbol+r'\]\s*= _\("([^"]+)"\),$',np)
   moveNames.append(dict(id=dict(value='pret:'+symbol),name=nm[1],source=ref(np,symbol,nm)))
  return dict(schemaVersion=1,profile='firered-silph-trainers-v1',sourceCommit=COMMIT,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved,moves=moves,moveNames=moveNames,limitations=['The34 Silph trainer variants with101 original party members; no field or battle activation.','Rematches, double battles and the complete game trainer roster are not enabled.','Source declarations and party construction do not implement field callbacks, Silph progression, trainer portraits or audio.'])
@@ -156,19 +157,19 @@ def metadata(src,dependency):
   names.append(dict(id=s['id'],name=name,source=r))
   codes=[int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in name+'$']
   encoded.append(dict(symbol=symbol,name=name,bytes=codes,source=r,encodingSource=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'))))
-  p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');need(not re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]),'Unhandled machine syntax');machines.append(dict(species=s['id'],machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1]),source=ref(p,symbol,m)))
-  meta=next(m for m in proof['metadata'] if m['id']==s['id']);held.append(dict(species=s['id'],common=meta['originalFields']['itemCommon'],rare=meta['originalFields']['itemRare'],source=s['source']));evolutions.append(dict(species=s['id'],sourceEvolutions=meta['sourceEvolutions']))
- pokemon=dict(schemaVersion=1,profile='firered-silph-pokemon-v1',sourceCommit=COMMIT,species=selected[:1],opponentSpecies=selected[1:],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(m['move'],sort_keys=True) for s in selected for m in s['levelUpMoves']}),limitations=['Only Lapras is added to the112 owned predecessor; Alakazam and Mr. Mime are opponent-only.','Full natural source moves are retained; metadata does not admit battles, gifts, evolution or teaching.'])
+  p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');need(not re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]),'Unhandled machine syntax');machines.append(dict(species=s['id'],machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1])))
+  meta=next(m for m in proof['metadata'] if m['id']==s['id']);held.append(dict(species=s['id'],common=meta['itemCommon'],rare=meta['itemRare']));evolutions.append(dict(species=s['id'],sourceEvolutions=meta['sourceEvolutions']))
+ pokemon=dict(schemaVersion=1,profile='firered-silph-pokemon-v1',sourceCommit=COMMIT,species=[dict(id=row['id'],evolutions=row['evolutions']) for row in selected[:1]],opponentSpecies=[dict(id=row['id'],evolutions=row['evolutions']) for row in selected[1:]],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(m['move'],sort_keys=True, default=item_json) for s in selected for m in s['levelUpMoves']}),limitations=['Only Lapras is added to the112 owned predecessor; Alakazam and Mr. Mime are opponent-only.','Full natural source moves are retained; metadata does not admit battles, gifts, evolution or teaching.'])
  pokemon['requiredMoves']=[json.loads(m) for m in pokemon['requiredMoves']]
  catalog = shared_machines.load_catalog(dependency)
  sourceitems=json.loads(text['src/data/items.json'])['items'];items=[];new=shared_machines.machine_definitions(dependency, 'content/generated/silph-catalogs/machines.json')
  for short in ITEMS:
   symbol='ITEM_'+short;item=next(i for i in sourceitems if i['itemId']==symbol);p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}');r=ref(p,symbol,m)
-  definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=r)
+  definition=shared_item(symbol)
   declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration
   if short.startswith('TM'):
    p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
-  wrapped=dict(item=definition,description=description);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
+  wrapped=dict(item=definition,description=description);items.append(dict(metadata=wrapped, effectBytes=[]))
  itemdoc=dict(schemaVersion=1,profile='firered-silph-items-v1',sourceCommit=COMMIT,items=items,limitations=['23 original item definitions cover17 visible and12 hidden source pickups plus President Master Ball; metadata creates no rewards.','Inherited item objects must remain unchanged; only missing identities may extend the shop.'])
  machinedoc=dict(schemaVersion=1,profile='firered-silph-machines-v1',sourceCommit=COMMIT,inheritedItemIds=[ident('ITEM_'+x) for x in MACHINES],additions=shared_machines.compatibility_additions(dependency, 'content/generated/silph-catalogs/machines.json'),newMachines=new,limitations=['All24 inherited112-species matrices retain identity and append Lapras; TM01/TM08/TM41 add exact113 cells each.'])
  return pokemon,itemdoc,machinedoc
@@ -192,5 +193,5 @@ def main():
   p=safe(a.project_root,rel)
   if a.check:need(p.read_bytes()==b,'Regeneration differs: '+rel)
   else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
- print(json.dumps(dict(trainers=len(TRAINERS),members=101,sourceFiles=len(src.entries),items=len(items['items']),machines=len(MACHINES)+len(machines['newMachines']),outputs=manifest['outputs'])))
+ print(json.dumps(dict(trainers=len(TRAINERS),members=101,sourceFiles=len(src.entries),items=len(items['items']),machines=len(MACHINES)+len(machines['newMachines']),outputs=manifest['outputs']), default=item_json))
 if __name__=='__main__':main()

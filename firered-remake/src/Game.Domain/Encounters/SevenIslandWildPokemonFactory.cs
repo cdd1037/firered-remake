@@ -16,7 +16,7 @@ public static class SevenIslandWildPokemonFactory
         .Concat(SevenIslandEncounterTables.OldRod.SelectMany(t => t.Slots).Select(s => s.Species))
         .Distinct().ToImmutableArray();
 
-    public static EarlyLandWildPokemonResult Generate(SevenIslandOwnedPokemonCatalog owned,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned,
         EarlyLandEncounterTable table, EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -30,7 +30,7 @@ public static class SevenIslandWildPokemonFactory
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 
-    public static Route1WildPokemonResult GenerateSourceSlot(SevenIslandOwnedPokemonCatalog owned,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned,
         SevenIslandWildOrigin origin, byte level, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -46,11 +46,10 @@ public static class SevenIslandWildPokemonFactory
         return result;
     }
 
-    public static bool SourceInitialInstance(SevenIslandOwnedPokemonCatalog owned,
+    public static bool SourceInitialInstance(GamePokemonCatalog owned,
         SevenIslandWildOrigin origin, PokemonInstance pokemon)
     {
-        if (owned is null || !ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            pokemon is null || !SevenIslandWildBattleContract.Matches(origin, pokemon) ||
+        if (owned is null || pokemon is null || !SevenIslandWildBattleContract.Matches(origin, pokemon) ||
             !owned.Catalog.Species.TryGetValue(pokemon.Species, out var species)) return false;
         // Mechanics is the independently authenticated complete source; ownership authenticates inherited identity.
         var source = owned.Mechanics.Catalog.Species[pokemon.Species];
@@ -79,11 +78,9 @@ public static class SevenIslandWildPokemonFactory
         return new(HeldItem(species, draw.Trace.Result), draw.State, [draw.Trace]);
     }
 
-    internal static void ValidateOwned(SevenIslandOwnedPokemonCatalog owned)
+    internal static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor) ||
-            owned.Catalog.Species.Count != 146)
+        if (owned is null)
             throw new ArgumentException("seven_island_owned_proof");
     }
 }

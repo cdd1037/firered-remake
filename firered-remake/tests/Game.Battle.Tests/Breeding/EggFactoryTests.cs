@@ -17,10 +17,10 @@ namespace FireRed.Tests.Battle.Breeding;
 public sealed class EggFactoryTests
 {
     private global::Game.Domain.Pokemon.CampaignPokemonContent baseline = default !;
-    private global::Game.Domain.Pokemon.GiftEggOwnedPokemonCatalog final = default !;
-    private global::Game.Domain.Pokemon.OrdinaryEvolutionOwnedPokemonCatalog ordinary = default !;
-    private global::Game.Domain.Pokemon.BreedingOwnedPokemonCatalog owned = default !;
-    private global::Game.Domain.Pokemon.BreedingSpeciesMetadataCatalog metadata = default !;
+    private global::Game.Domain.Pokemon.GamePokemonCatalog final = default !;
+    private global::Game.Domain.Pokemon.GamePokemonCatalog ordinary = default !;
+    private global::Game.Domain.Pokemon.GamePokemonCatalog owned = default !;
+    private global::Game.Domain.Pokemon.PokemonBreedingData metadata = default !;
     private global::Game.Domain.Pokemon.CampaignPokemonContent content = default !;
     private global::Game.Domain.Pokemon.SourceEggTrainer trainer = default !;
     private long nextId = default !;
@@ -34,15 +34,11 @@ public sealed class EggFactoryTests
     public void SetUp()
     {
         baseline = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root)).PokemonContent!;
-        final = GiftEggOwnedPokemonCatalog.For(baseline.Catalog)!;
-        ordinary = OrdinaryEvolutionOwnedPokemonCatalog.For(final.Predecessor.Predecessor.Owned.Catalog)!;
-        owned = ordinary.Predecessor;
-        metadata = BreedingSpeciesMetadataCatalog.For(owned.Catalog)!;
-        content = baseline with
-        {
-            Catalog = owned.Catalog,
-            SpeciesNames = baseline.SpeciesNames.Where(pair => owned.Catalog.Species.Values.Any(s => s.SourceSpeciesId == pair.Key)).ToImmutableSortedDictionary()
-        };
+        final = baseline.Pokemon;
+        ordinary = final;
+        owned = final;
+        metadata = owned.Catalog.BreedingData!;
+        content = baseline;
         trainer = new SourceEggTrainer(0x12345678, "RED", 0);
         nextId = 1;
         female = Make();
@@ -105,7 +101,7 @@ public sealed class EggFactoryTests
     public void ReceiptAndValidation()
     {
         Assert.IsTrue(Environment.Version.Major == 10, "actual runtime10");
-        Assert.IsTrue(content.Catalog.Species.Count == 182 && metadata.AllMachineMoves.Length == 58, "authenticated182 and all58 inheritance machines");
+        Assert.IsTrue(content.Catalog.Species.Count == 189 && metadata.AllMachineMoves.Length == 58, "current189 and all58 inheritance machines");
         Assert.IsTrue(PokemonStateValidator.ValidatePartyCollection(content, [], 1)is null, "authenticated content names and owner");
         Assert.IsTrue(received.Trace.Length == 9 && received.Rng.Cursor == 9, "receipt exactly9 draws");
         Assert.IsTrue((egg.Pokemon.Personality & 0xffff) == 123 && egg.Pokemon.Personality >> 16 == received.Trace[0].Raw, "stored pending low and fresh high PID");
@@ -142,8 +138,8 @@ public sealed class EggFactoryTests
         var withdraw = PokemonStorageRules.Withdraw(content, deposit.Party, deposit.Storage, 0, 0);
         Assert.IsTrue(withdraw.Succeeded && withdraw.Party[1].InstanceId == egg.InstanceId && withdraw.Party[1].IsEgg, "PC withdrawal keeps egg and identity");
         Assert.IsTrue(!PokemonStorageRules.Deposit(content, [guard, egg], PokemonStorageState.Empty, 0, 0).Succeeded, "egg does not count as last usable party member");
-        Assert.IsTrue(Route5DayCareRules.Deposit(content, owned.SharedBattle, Route5DayCareState.Empty, [guard, egg], PokemonStorageState.Empty, SourceMailState.Empty, 1).Error == "daycare_egg", "shared daycare egg deposit refused");
-        Assert.IsTrue(Route5DayCareRules.Validate(content, owned.SharedBattle, new(new(egg, 0)), [guard], PokemonStorageState.Empty, SourceMailState.Empty) == "daycare_egg", "forged daycare egg resident refused");
+        Assert.IsTrue(Route5DayCareRules.Deposit(content, owned, Route5DayCareState.Empty, [guard, egg], PokemonStorageState.Empty, SourceMailState.Empty, 1).Error == "daycare_egg", "shared daycare egg deposit refused");
+        Assert.IsTrue(Route5DayCareRules.Validate(content, owned, new(new(egg, 0)), [guard], PokemonStorageState.Empty, SourceMailState.Empty) == "daycare_egg", "forged daycare egg resident refused");
         Assert.IsTrue(JsonSerializer.Serialize(LabBattleRewards.Heal(content.Catalog, egg)) == JsonSerializer.Serialize(egg), "shared healing retains egg cycle and stat basis");
     }
 
@@ -205,7 +201,9 @@ public sealed class EggFactoryTests
         Throws(() => SourceEggRules.Receive(content, metadata, parents, nextId, trainer, "MAPSEC_FOUR_ISLAND", 4, new(0, ulong.MaxValue - 8)), "receipt whole RNG budget preflight");
         Throws(() => SourceEggRules.Hatch(content, egg, trainer, "MAPSEC_FOUR_ISLAND", new(0, ulong.MaxValue - 1)), "hatch whole RNG budget preflight");
         Throws(() => SourceEggRules.CreateNormalHatchShards(new(0, ulong.MaxValue - 18)), "shards whole RNG budget preflight");
-        Throws(() => SourceEggRules.Receive(content with { Catalog = content.Catalog with { } }, metadata, parents, nextId, trainer, "MAPSEC_FOUR_ISLAND", 4, new(0)), "copied catalog cannot authorize egg");
+        var copiedGame = GamePokemonCatalog.Create(owned.Mechanics, owned.Catalog with { }, owned.Opponents.Catalog with { }, owned.TrainerTowerOpponents.Catalog with { });
+        var copied = SourceEggRules.Receive(content with { Pokemon = copiedGame }, metadata, parents, nextId, trainer, "MAPSEC_FOUR_ISLAND", 4, new(0));
+        Assert.AreEqual(JsonSerializer.Serialize(received.Egg.Pokemon), JsonSerializer.Serialize(copied.Egg.Pokemon), "equivalent immutable catalog preserves egg generation");
     }
 
     [TestMethod]
@@ -263,12 +261,12 @@ public sealed class EggFactoryTests
         {
             IsEgg = true
         }, new(fighter.Pokemon)];
-        var battle = SourceWildBattlePolicy.StartOwned(owned.SharedBattle, entryParty, 1, new(enemy), new(99));
+        var battle = SourceWildBattlePolicy.StartOwned(owned, entryParty, 1, new(enemy), new(99));
         Assert.IsTrue(battle.Succeeded, "carried egg ordinary wild entry: " + battle.Fault);
         var frame = battle.State!;
         var mechanics = owned.Mechanics;
         Assert.IsTrue(frame.Get(new(0)).Member!.Value.Index == 1 && frame.Party(BattleSide.Player).Members[0].IsEgg && SourceFourActionTurns.ValidateCapability(mechanics.Catalog, frame)is null, "leading egg preserves party indices and valid reserve");
-        Assert.IsTrue(!SourceWildBattlePolicy.StartOwned(owned.SharedBattle, entryParty, 0, new(enemy), new(99)).Succeeded && !SourceWildBattlePolicy.StartOwned(owned.SharedBattle, [new(egg.Pokemon), new(fighter.Pokemon)], 1, new(enemy), new(99)).Succeeded, "egg active and omitted flag both rejected");
+        Assert.IsTrue(!SourceWildBattlePolicy.StartOwned(owned, entryParty, 0, new(enemy), new(99)).Succeeded && !SourceWildBattlePolicy.StartOwned(owned, [new(egg.Pokemon), new(fighter.Pokemon)], 1, new(enemy), new(99)).Succeeded, "egg active and omitted flag both rejected");
         Assert.IsTrue(!SourceFourActionTurns.BeginActions(mechanics.Catalog, frame, frame.Revision, [new(frame.Get(new(0)).Occupant!.Value, SourceActionKind.Switch, Incoming: new(BattleSide.Player, 0)), new(frame.Get(new(1)).Occupant!.Value, SourceActionKind.Move, 0, new(0))]).Succeeded, "egg cannot be selected for battle switch");
         var items = SourceBattleItemCatalogLoader.LoadAuthenticated(TestAssets.Root);
         var potion = new ItemId("pret:ITEM_POTION");
@@ -300,7 +298,7 @@ public sealed class EggFactoryTests
         Assert.IsTrue(turn.State.FourTurn?.Phase == SourceFourActionPhase.RewardsPending, "actual KO reaches shared EXP boundary");
         var defeatedCell = turn.State.Get(new(1));
         var defeat = new SourceRewardDefeat(defeatedCell.Occupant!.Value, defeatedCell.Body!, [new(BattleSide.Player, 0), new(BattleSide.Player, 1)]);
-        var calculated = SourceVictoryRewards.Calculate(mechanics, turn.State.Party(BattleSide.Player), facts, defeat, rewardContext, owned.SharedBattle);
+        var calculated = SourceVictoryRewards.Calculate(mechanics, turn.State.Party(BattleSide.Player), facts, defeat, rewardContext, owned);
         var only = SourceVictoryRewards.Calculate(mechanics, new(BattleSide.Player, [turn.State.Party(BattleSide.Player).Members[1]]), [facts[1] with { Key = new(BattleSide.Player, 0) }], defeat with { Participants = [new(BattleSide.Player, 0)] }, rewardContext);
         Assert.IsTrue(calculated.Members.Length == 1 && calculated.Members[0].Key.Index == 1 && JsonSerializer.Serialize(calculated.Members[0].Reward) == JsonSerializer.Serialize(only.Members[0].Reward), "eggs excluded from EXP recipients and participant denominator");
         var pending = turn.State;

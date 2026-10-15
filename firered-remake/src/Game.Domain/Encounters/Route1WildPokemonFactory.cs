@@ -27,7 +27,7 @@ public static class Route1WildPokemonFactory
         PokemonFactory.ValidateCatalog(catalog);
         // Later authenticated catalogs retain the complete Route 1 families.
         // Route1EncounterRules still restricts the pending species/table.
-        if (catalog.Species.Count is not (14 or 17 or 22 or 29 or 32) || !catalog.Species.ContainsKey(pending.Candidate.Species))
+        if (!catalog.Species.ContainsKey(pending.Candidate.Species))
             throw new NotSupportedException("The complete Route 1 Pokemon catalog is required.");
         if (globalRng.AlgorithmId != Gen3Rng.AlgorithmId)
             throw new NotSupportedException("Unknown global RNG algorithm.");

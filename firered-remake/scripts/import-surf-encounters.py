@@ -21,7 +21,7 @@ def build(root):
  held=[];path='src/data/pokemon/species_info.h';text=raw[path].decode()
  for name in sorted(species):
   m=re.search(r'^    \['+name+r'\] =\s*\n    \{\n(.*?)^    \},',text,re.M|re.S);meta.require(m is not None,'Held species missing');f=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M))
-  held.append(dict(species={'value':'pret:'+name},common=f['itemCommon'],rare=f['itemRare'],source=dict(path=path,symbol=name,startLine=text.count('\n',0,m.start())+1,endLine=text.count('\n',0,m.end())+1)))
+  held.append(dict(species={'value':'pret:'+name},common=f['itemCommon'],rare=f['itemRare']))
  meta.require(all(r['common']==r['rare']=='ITEM_NONE' for r in held),'Expected source empty held slots differ')
  doc=dict(schemaVersion=1,profile='firered-surf-encounters-v1',sourceCommit=meta.COMMIT,tables=tables,heldItems=held,heldItemDrawBound=100,limitations=['Exactly17 already imported mainland maps and4 Safari maps; no route boundary is opened.','Five-slot water data is distinct from land and fishing. Dratini/Dragonair remain deferred.','Use the shared ordinary generation kernel and existing battle engines; active Safari decides Safari battle dispatch.'])
  return meta.canonical(doc)

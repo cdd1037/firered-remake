@@ -2,6 +2,7 @@
 """Import authenticated, bounded Kanto Town Map from immutable local pret Git objects.
 No ROM, network, upstream script execution, Fly or invented Sevii unlocks.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _path_sys
 from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
@@ -80,7 +81,7 @@ pixels=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(pixels)
 from image_io import png as encode_rgba_png
 
 def canonical(value):
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, default=item_json) + '\n').encode('utf-8')
 
 
 def unique_pairs(values):
@@ -336,12 +337,7 @@ def convert(sources):
     if item_match is None:raise ValueError('Town Map item source block missing')
     item_ref=dict(path='src/data/items.json',symbol='ITEM_TOWN_MAP',startLine=item_text.count('\n',0,item_match.start())+1,
         endLine=item_text.count('\n',0,item_match.end())+1)
-    item_definition=dict(id=dict(value='pret:ITEM_TOWN_MAP'),sourceItemSymbol=item['itemId'],sourceItemId=source_item_id,
-        name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],
-        pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],
-        fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],
-        secondaryId=item['secondaryId'],canToss=item['pocket']!='POCKET_KEY_ITEMS',canSell=item['price']!=0,
-        canGive=item['importance']==0,source=item_ref)
+    item_definition=shared_item(item['itemId'])
     item_description=item['description_english'].replace(r'\n','\n')
     if '\\' in item_description or '{' in item_description:raise ValueError('Unsupported Town Map description control')
     gift=dict(itemId='ITEM_TOWN_MAP',sourceItemId=source_item_id,pocket=item['pocket'],registrable=True,
@@ -359,15 +355,13 @@ def convert(sources):
          textPaletteRgb=top_pal,uiTexts=ui_texts,mapTextColor=color_id('TEXT_COLOR_WHITE'),
          textShadowColor=color_id('TEXT_COLOR_DARK_GRAY'),dungeonVisitedTextColor=color_id('TEXT_COLOR_LIGHT_GREEN'),
          dungeonUnvisitedTextColor=color_id('TEXT_DYNAMIC_COLOR_1'),nameWindowDarkeningCoefficient=6)
-    refs=[]
     for symbol in ('BufferRegionMapBg','TintMapEdgesPalette','GetPlayerPositionOnRegionMap',
                    'GetPlayerPositionOnRegionMap_HandleOverrides','CreateDungeonIcons','DisplayCurrentMapName','DisplayCurrentDungeonName'):
         match=re.search(r'^static [^;\n]+ '+symbol+r'\([^;\n]*\)\n\{',code,re.M)
         if match is None:raise ValueError('Missing source symbol '+symbol)
-        refs.append(dict(path='src/region_map.c',symbol=symbol,startLine=code.count('\n',0,match.start())+1))
     outputs['town-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
         assets=assets,layout=layout,cells=cells,icons=icons,
-        positions=positions,gift=gift,itemDefinition=item_definition,itemDescription=item_description,switchAvailable=False,sourceRefs=refs,sections=[by_id[s] for s in sorted(section_ids)],
+        positions=positions,gift=gift,itemDefinition=item_definition,itemDescription=item_description,switchAvailable=False,sections=[by_id[s] for s in sorted(section_ids)],
         limitations=['Kanto viewing, cursor, names and return only; Fly, region switch and dungeon preview are not implemented.',
           'Static completed normal-mode source art; rolling open/close animation and native frame timing remain unverified.',
           'Name-window GPU darkening is a separate presentation effect; it is not baked into the static map.',
@@ -406,6 +400,6 @@ def main():
     parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/town-map')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/import-config/town-map.json')
-    args=parser.parse_args();print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock),sort_keys=True))
+    args=parser.parse_args();print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock),sort_keys=True, default=item_json))
 
 if __name__=='__main__':main()

@@ -121,7 +121,7 @@ public sealed partial class CampaignSession
         // machines. Capacity is checked against the real pocket before that projection.
         if (OpeningInventoryRules.Quantity(keys, VsSeekerItem) != 0 || keys.Length >= ShopCatalog.QuestLimits.KeyItemSlots)
         { next = Result(0); return true; }
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         var result = effect.Opcode == "additem" ? EarlyInventoryAddRules.Add(ShopCatalog, view, VsSeekerItem, 1)
             : EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, VsSeekerItem, 1);
         if (!result.Succeeded && result.Error is not ("inventory_stack_full" or "inventory_destination_full")) throw new InvalidDataException(result.Error);

@@ -6,7 +6,7 @@ namespace Game.Domain.Pokemon;
 
 /// <summary>An actual-use proposal, never a party-menu-only compatibility indication.</summary>
 public sealed record ItemEvolutionEligibility(long InstanceId, SpeciesId PreviousSpecies, SpeciesId TargetSpecies,
-    int Level, string Item, PokemonSourceRef Source)
+    int Level, string Item)
 {
     public bool CanCancel => false;
 }
@@ -43,21 +43,21 @@ public static class ItemEvolutionRules
     /// battle or level gain. Everstone prevents actual use even though the party menu can show a
     /// compatible target. The caller must own one separate bag item and consume it only on success.
     /// </summary>
-    public static ItemEvolutionEligibility? Eligibility(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static ItemEvolutionEligibility? Eligibility(CampaignPokemonContent content, GamePokemonCatalog ownership,
         PartyPokemon owned, string item = MoonStone)
     {
         Validate(content, ownership, owned, item);
         if (owned.HeldItem == "ITEM_EVERSTONE") return null;
         var evolution = SourceEvolution(content, ownership, owned.Pokemon.Species, item);
         return evolution is null ? null : new(owned.InstanceId, owned.Pokemon.Species, evolution.Target,
-            owned.Pokemon.Level, item, evolution.Source);
+            owned.Pokemon.Level, item);
     }
 
     /// <summary>
     /// EVO_MODE_ITEM_CHECK, for the source party-menu compatibility label only. This ignores an
     /// Everstone; always call Eligibility again before actual use. Eggs remain unsupported.
     /// </summary>
-    public static SpeciesId? PartyMenuTarget(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static SpeciesId? PartyMenuTarget(CampaignPokemonContent content, GamePokemonCatalog ownership,
         PartyPokemon owned, string item = MoonStone)
     {
         Validate(content, ownership, owned, item);
@@ -70,7 +70,7 @@ public static class ItemEvolutionRules
     /// held items are preserved; they are never the bag stone being consumed. Retain PendingMoves
     /// for explicit move decisions, including Body Slam/Thrash only at exactly level 22.
     /// </summary>
-    public static ItemEvolutionResult Apply(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership, PartyPokemon owned,
+    public static ItemEvolutionResult Apply(CampaignPokemonContent content, GamePokemonCatalog ownership, PartyPokemon owned,
         ItemEvolutionEligibility eligibility)
     {
         ArgumentNullException.ThrowIfNull(eligibility);
@@ -87,7 +87,7 @@ public static class ItemEvolutionRules
     /// Only the six source stones and targets admitted by the exact owned catalog are eligible.
     /// The full source table retains branches omitted from earlier regional catalog projections.</summary>
     public static SourceMechanicsEvolution? SourceEvolution(CampaignPokemonContent content,
-        OwnedBattlePokemonCatalog ownership, SpeciesId species, string item)
+        GamePokemonCatalog ownership, SpeciesId species, string item)
     {
         ValidateCatalog(content, ownership, item);
         if (!content.Catalog.Species.ContainsKey(species))
@@ -98,19 +98,19 @@ public static class ItemEvolutionRules
             e.ParameterValue == sourceItem && content.Catalog.Species.ContainsKey(e.Target));
     }
 
-    private static void Validate(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    private static void Validate(CampaignPokemonContent content, GamePokemonCatalog ownership,
         PartyPokemon owned, string item)
     {
         ValidateCatalog(content, ownership, item);
         LevelEvolutionRules.Validate(content, owned);
     }
 
-    private static void ValidateCatalog(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership, string item)
+    private static void ValidateCatalog(CampaignPokemonContent content, GamePokemonCatalog ownership, string item)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(ownership);
         if (!ReferenceEquals(ownership.Catalog, content.Catalog) ||
-            !ReferenceEquals(OwnedBattlePokemonCatalog.For(content.Catalog), ownership))
+            !ReferenceEquals(content.Pokemon, ownership))
             throw new ArgumentException("item_evolution_owned_catalog_identity", nameof(ownership));
         if (SourceItemId(item) is null)
             throw new NotSupportedException("Only the six original evolution stones have an item-use evolution method.");

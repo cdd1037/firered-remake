@@ -81,7 +81,7 @@ public sealed class PretSnorlaxRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/snorlax-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));

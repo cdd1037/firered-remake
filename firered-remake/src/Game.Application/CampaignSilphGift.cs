@@ -99,12 +99,12 @@ public sealed partial class CampaignSession
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var error = ValidateCampaignInventory(inventory);
         if (error is not null) throw new InvalidDataException(error);
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         var result = effect.Opcode == "additem" ? EarlyInventoryAddRules.Add(ShopCatalog, view, SilphMasterBallId, 1) :
             EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, SilphMasterBallId, 1);
         if (!result.Succeeded && result.Error is not ("inventory_stack_full" or "inventory_destination_full"))
             throw new InvalidDataException(result.Error);
-        next = state with { Inventory = result.Succeeded && effect.Opcode == "additem" ? MergeShopInventory(inventory, result.State) : inventory,
+        next = state with { Inventory = result.Succeeded && effect.Opcode == "additem" ? result.State : inventory,
             Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", result.Succeeded ? 1 : 0) } };
         return true;
     }

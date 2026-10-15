@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Authenticated city gift and exchange source; two new maps and a reused Cerulean Bike Shop."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _constant_sys
 from pathlib import Path as _ConstantPath
 _constant_scripts = str(_ConstantPath(__file__).resolve().parent)
@@ -196,11 +197,7 @@ def item_inventory(src, constants, stage):
         source=ref('src/data/items.json',symbol)
         secondary=original['secondaryId']
         if isinstance(secondary,str): secondary=constants['values'][secondary]['value']
-        item=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=constants['values'][symbol]['value'],
-            name=original['english'],price=original['price'],importance=original['importance'],registrability=original['registrability'],
-            pocket=original['pocket'],type=str(original['type']),holdEffect=original['holdEffect'],holdEffectParam=original['holdEffectParam'],
-            fieldUseFunction=original['fieldUseFunc'],battleUsage=original['battleUsage'],battleUseFunction=original['battleUseFunc'],
-            secondaryId=secondary,canToss=original['importance']==0,canSell=original['price']!=0,canGive=original['importance']==0,source=source)
+        item=shared_item(symbol)
         desc=original['description_english'].replace('\\n','\n')
         items.append(dict(item=item,description=desc))
         p='src/data/item_icon_table.h';match=re.search(r'^    \['+symbol+r'\]\s*=\s*\{(\w+), (\w+)\},',src.text(p),re.M)
@@ -311,7 +308,7 @@ def import_catalog(raw,out,lock_path=None):
             dest=out/p.relative_to(stage)
             if p.is_dir():dest.mkdir(parents=True,exist_ok=True)
             else:dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dest)
-    print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'},sort_keys=True));return manifest
+    print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'},sort_keys=True, default=item_json));return manifest
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)

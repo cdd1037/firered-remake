@@ -2,6 +2,7 @@
 """Rebuild private Celadon Gym catalog additions from pinned local Git blobs or checked raw cache.
 Uses authenticated existing project image codecs; never executes source repository programs.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _path_sys
 from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
@@ -27,7 +28,7 @@ TEACHING_MOVES=('MOVE_GIGA_DRAIN',)
 TRAINERS=('TRAINER_LASS_KAY','TRAINER_BEAUTY_BRIDGET','TRAINER_PICNICKER_TINA','TRAINER_BEAUTY_TAMIA','TRAINER_BEAUTY_LORI','TRAINER_LASS_LISA','TRAINER_COOLTRAINER_MARY','TRAINER_LEADER_ERIKA')
 def source_symbol(name):return name.upper()
 def source_stem(name):return name.lower()
-def canonical(data):return (json.dumps(data,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
+def canonical(data):return (json.dumps(data,sort_keys=True,separators=(',',':'),ensure_ascii=False, default=item_json)+'\n').encode()
 
 
 def read_json(path):return json.loads(safe(path).read_bytes(),object_pairs_hook=unique_pairs)
@@ -110,19 +111,10 @@ def metadata(lock, sources):
         if declarations != expected: raise ValueError('Celadon Gym source evolution differs')
         for method, parameter, target in declarations:
             if method == 'EVO_LEVEL' and target in {'SPECIES_' + source_symbol(n) for n in NEW_SPECIES}:
-                evolutions.append(dict(level=int(parameter), target=ident(target), source=ref(evolution_path, symbol, m)))
+                evolutions.append(dict(level=int(parameter), target=ident(target)))
             else:
-                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target),
-                    source=ref(evolution_path, symbol, m), executable=False,
-                    reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)},
-            growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']],
-            genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']],
-            ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target), executable=False, reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']], genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     # Source trainer parties require definitions independently of these six complete learnsets.
     move_symbols.update(TEACHING_MOVES)
@@ -130,10 +122,7 @@ def metadata(lock, sources):
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     abilities = sorted({s[k] for s in species for k in ('ability1', 'ability2')} - {'ABILITY_NONE'})
@@ -156,8 +145,8 @@ def metadata(lock, sources):
     for symbol, target in [('SPECIES_GLOOM', 'SPECIES_VILEPLUME'), ('SPECIES_WEEPINBELL', 'SPECIES_VICTREEBEL')]:
         m = one(r'^    \[' + symbol + r'\]\s*= (\{\{.*?\}\}),$', text[evolution_path])
         if ('EVO_ITEM, ITEM_LEAF_STONE, ' + target) not in m[1]: raise ValueError('Leaf Stone source target differs')
-        overrides.append(dict(species=ident(symbol), evolution=dict(level=0, target=ident(target), method='item', parameter='ITEM_LEAF_STONE', source=ref(evolution_path, symbol, m))))
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=species,
+        overrides.append(dict(species=ident(symbol), evolution=dict(level=0, target=ident(target), method='item', parameter='ITEM_LEAF_STONE')))
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species],
         moves=moves, speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded_names,
         deferredEvolutions=deferred, evolutionOverrides=overrides, naturalLevelLimit=None,
         itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False, tradeEvolutionExecutorImplemented=False,
@@ -183,7 +172,7 @@ def item_outputs(lock,sources,project):
     symbols=[species[5:] for species in admission_species(project,target,'/machines/0')]
     i=next(x for x in json.loads(text['src/data/items.json'])['items'] if x['itemId']=='ITEM_TM19');path='src/data/items.json'
     m=match(path,r'^    \{\n      "english": "TM19",.*?^    \}');source=ref(path,'ITEM_TM19',m)
-    definition=dict(id=ident('ITEM_TM19'),sourceItemSymbol='ITEM_TM19',sourceItemId=constant('include/constants/items.h','ITEM_TM19'),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
+    definition=shared_item('ITEM_TM19')
     path='src/move_descriptions.c';m=match(path,r'^const u8 gMoveDescription_GigaDrain\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
     wrapped=dict(item=definition,description=json.loads(m[1]))
     path='src/data/party_menu.h';m=match(path,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);rules.append(ref(path,'sTMHMMoves',m))
@@ -199,7 +188,7 @@ def item_outputs(lock,sources,project):
     icon=dict(item=ident('ITEM_TM19'),width=w,height=h,pngPath='item_tm19.png',source=ref(image,icon_symbols[0]),paletteSource=ref(palette,icon_symbols[1]),bindingSource=binding)
     for path,symbol,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('data/maps/CeladonCity_Gym/scripts.inc','CeladonCity_Gym_EventScript_GiveTM19',r'^CeladonCity_Gym_EventScript_GiveTM19::.*?^\tend$')]:rules.append(ref(path,symbol,match(path,pattern)))
     limitations=['Exactly one TM19 item extends the unchanged 45-item predecessor; all five shop stocks remain unchanged.','Fifteen original machines have exactly 98 source compatibility rows; inherited14x94 records are identical.','TM19 is source Giga Drain, consumed once after successful teaching. No Leaf Stone or department-store stock is introduced.','Catalog metadata alone does not activate rewards, battle effects, field moves or application profiles.']
-    return {'celadon-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],items=[dict(metadata=wrapped,effectBytes=[],effectSource=None)],icons=[icon],limitations=limitations)),
+    return {'celadon-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],items=[dict(metadata=wrapped, effectBytes=[])],icons=[icon],limitations=limitations)),
       'celadon-gym-machines.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],machines=values,icons=[icon],limitations=limitations)),'item_tm19.png':image_png}
 
 
@@ -226,14 +215,6 @@ def pokemon_outputs(lock,sources,project):
         symbol='SPECIES_'+name.upper();m=re.search(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',text,re.M|re.S)
         declarations.append(dict(species={'value':'pret:'+symbol},fields={r[1]:r[2] for r in re.finditer(r'^\s*\.(\w+) = (.*),$',m[1],re.M)},declaration=m[0],source=pokemon.reference(lock,sources,'src/data/pokemon/species_info.h',symbol,m[0])))
     outputs['source-species.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,species=declarations))
-    trainers=trainer_parties(lock,sources);actual=sorted({m for t in trainers for mon in t['party'] for m in mon['moves']})
-    existing=set();existing_abilities=set()
-    for row in read_json(ROOT/'scripts/celadon-gym-catalog.recipe.json')['dependencies']:
-        if row['path'].endswith('/catalog.json'):
-            old=read_json(project/row['path']);existing.update(m['id']['value'] for m in old.get('moves',[]));existing_abilities.update(s[k] for s in old.get('species',[]) for k in ('ability1','ability2'))
-    new=[m for m in catalog['moves'] if m['id']['value'] not in existing]
-    if {m['id']['value'] for m in new}!={'pret:MOVE_BARRAGE','pret:MOVE_INGRAIN','pret:MOVE_MEGA_DRAIN','pret:MOVE_TICKLE','pret:MOVE_UPROAR'} or len(actual)!=17:raise ValueError('Gym move closure differs')
-    outputs['scope.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,naturalLevelLimit=None,trainers=trainers,requiredTrainerMoves=actual,teachingMoves=list(TEACHING_MOVES),fullLearnsetMoves=sorted({m['move']['value'][5:] for s in catalog['species'] for m in s['levelUpMoves']}),sourceDefinitions=catalog['moves'],newMoveDefinitions=new,speciesAbilities=['ABILITY_CHLOROPHYLL'],newAbilities=[],effectsEnabledByThisCatalog=False,encountersEnabledByThisCatalog=False,noEvolutionMoveBackfill=True,limitations=['Only Giga Drain and Ingrain need new admission for the exact Gym teams.','Barrage, Mega Drain, Uproar and Tickle are complete metadata but remain unavailable until independently implemented.','Previous natural ownership routes and growth remain unchanged; none of the four additions is newly catchable here.']))
     return outputs
 
 def materialize(project,target,repo=None,check=False):
@@ -269,4 +250,4 @@ def materialize(project,target,repo=None,check=False):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--project-root',type=pathlib.Path,default=ROOT);parser.add_argument('--target-root',type=pathlib.Path,default=ROOT);parser.add_argument('--reference-repo',type=pathlib.Path);parser.add_argument('--check',action='store_true');args=parser.parse_args()
-    print(json.dumps(materialize(args.project_root,args.target_root,args.reference_repo,args.check),sort_keys=True))
+    print(json.dumps(materialize(args.project_root,args.target_root,args.reference_repo,args.check),sort_keys=True, default=item_json))

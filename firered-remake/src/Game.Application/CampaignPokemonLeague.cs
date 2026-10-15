@@ -101,17 +101,13 @@ public sealed partial class CampaignSession
             if(content.PokemonLeagueTrainerParties is not null||content.PokemonLeagueOpponents is not null||content.LeagueRematchEnabled||content.LeagueRematchTrainerParties is not null||content.LeagueRematchOpponents is not null)throw new InvalidDataException("pokemon_league_profile_missing");
             return;
         }
-        if(!content.VictoryRoadEnabled||content.PokemonLeagueTrainerParties is null||content.PokemonLeagueOpponents is null||content.PokemonLeagueMartStock is null||
-            !ReferenceEquals(content.PokemonLeagueOpponents.Predecessor,content.VictoryRoadOpponents)||
-            content.PokemonLeagueOpponents.Catalog.Species.Count!=133||content.PokemonLeagueOpponents.Owned.Catalog.Species.Count!=115)
+        if(!content.VictoryRoadEnabled||content.PokemonLeagueTrainerParties is null||content.PokemonLeagueOpponents is null||content.PokemonLeagueMartStock is null)
             throw new InvalidDataException("pokemon_league_catalog_scope");
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(content.PokemonLeagueTrainerParties);
         content.PokemonLeagueMartStock.Validate(content.EarlyShop!);
         if(content.LeagueRematchEnabled)
         {
-            if(content.LeagueRematchTrainerParties is null||content.LeagueRematchOpponents is null||!content.CeruleanCaveEnabled||
-                !ReferenceEquals(content.LeagueRematchOpponents.Predecessor,content.CeruleanCaveOpponents)||
-                content.LeagueRematchOpponents.Catalog.Species.Count!=168||content.LeagueRematchOpponents.Owned.Catalog.Species.Count!=139)
+            if(content.LeagueRematchTrainerParties is null||content.LeagueRematchOpponents is null||!content.CeruleanCaveEnabled)
                 throw new InvalidDataException("pokemon_league_rematch_catalog_scope");
             LeagueRematchTrainerPartyFactory.ValidateCatalog(content.LeagueRematchTrainerParties);
         }

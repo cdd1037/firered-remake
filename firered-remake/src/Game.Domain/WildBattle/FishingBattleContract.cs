@@ -28,10 +28,9 @@ public static class FishingBattleContract
     public static bool Matches(FishingEncounterOrigin? origin, PokemonInstance? pokemon) =>
         pokemon is not null && SourceSlot(origin) is not null && pokemon.Species == origin!.Species && pokemon.Level == origin.Level;
 
-    public static bool SourceInitialInstance(OwnedBattlePokemonCatalog? owned, FishingEncounterOrigin? origin, PokemonInstance? pokemon)
+    public static bool SourceInitialInstance(GamePokemonCatalog? owned, FishingEncounterOrigin? origin, PokemonInstance? pokemon)
     {
-        if (owned is null || pokemon is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) ||
-            !owned.Catalog.Species.ContainsKey(pokemon.Species) || !Matches(origin, pokemon) ||
+        if (owned is null || pokemon is null || !owned.Catalog.Species.ContainsKey(pokemon.Species) || !Matches(origin, pokemon) ||
             SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null) return false;
         var source = owned.Mechanics.Catalog.Species[pokemon.Species];
         return pokemon.Evs == SixStats.Zero && pokemon.CurrentHp == pokemon.Stats.MaxHp && pokemon.Friendship == source.Friendship &&

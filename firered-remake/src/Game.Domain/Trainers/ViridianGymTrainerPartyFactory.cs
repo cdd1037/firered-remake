@@ -47,12 +47,11 @@ public static class ViridianGymTrainerPartyFactory
         if (!Expected.TryGetValue(id, out var expected)) throw new NotSupportedException("viridian_gym_trainer_id");
         return expected.BasePrize;
     }
-    public static TrainerPartyCreationResult Create(ViridianGymTrainerCatalog trainers, CinnabarOpponentPokemonCatalog opponents,
+    public static TrainerPartyCreationResult Create(ViridianGymTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("viridian_gym_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("viridian_gym_trainer_catalog");
         var source = opponents.Mechanics;
         var expected = Expected[id];
         bool customMoves = (trainer.PartyFlags & 1) != 0;

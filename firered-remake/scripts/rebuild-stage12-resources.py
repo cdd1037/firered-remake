@@ -94,9 +94,12 @@ STEPS = [('import-npc-trade-elyssa.py',
 # Machine producers emit direct shared references. Compile the one raw source
 # catalog first; the final pass only validates/canonicalizes those same compact
 # views and never expands a predecessor catalog.
-STEPS = [('import-machine-catalog.py', ['--project-root', '{project}', '--references-only'])] + STEPS + [
+STEPS = [('import-item-catalog.py', ['--project-root', '{project}'])] + [('import-machine-catalog.py', ['--project-root', '{project}', '--references-only'])] + STEPS + [
     ('import-machine-catalog.py', ['--project-root', '{project}', '--references-only']),
     ('import-machine-catalog.py', ['--project-root', '{project}', '--references-only', '--check']),
+    ('import-current-items.py', ['--project-root', '{project}']),
+    ('source-battle-items/import.py', ['--project-root', '{project}']),
+    ('import-game-pokemon.py', ['--root', '{project}']),
 ]
 
 def main():

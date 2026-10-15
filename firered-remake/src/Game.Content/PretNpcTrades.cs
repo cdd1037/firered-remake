@@ -45,9 +45,9 @@ public sealed class PretNpcTrades
         return new(map.Id, map.Width, map.Height,
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
-    public static PretNpcTrades Load(string projectRoot, SourceMechanicsCatalog mechanics)
+    public static PretNpcTrades Load(string projectRoot, PokemonCatalog pokemon)
     {
-        ArgumentNullException.ThrowIfNull(mechanics);
+        ArgumentNullException.ThrowIfNull(pokemon);
         var source = new SilphSourcePackage(projectRoot,"npc-trades");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
@@ -59,10 +59,10 @@ public sealed class PretNpcTrades
             contracts.GetProperty("construction").GetProperty("metLocationValue").GetInt32() == 254 &&
             contracts.GetProperty("construction").GetProperty("discardedRandomIvDraws").GetInt32() == 2,
             "NPC trade construction/runtime boundary differs.");
-        var definitions = source.Document("trades.json").EnumerateArray().Select(row => Definition(source, row)).ToImmutableArray();
+        var definitions = source.Document("trades.json").EnumerateArray().Select(Definition).ToImmutableArray();
         NpcTradePokemonCatalog trades;
-        try { trades = NpcTradePokemonCatalog.Authenticate(mechanics, definitions); }
-        catch (ArgumentException e) { throw new InvalidDataException("NPC trade semantic authentication failed.", e); }
+        try { trades = NpcTradePokemonCatalog.Create(pokemon, definitions); }
+        catch (ArgumentException e) { throw new InvalidDataException("NPC trade definitions are invalid.", e); }
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
@@ -86,16 +86,10 @@ public sealed class PretNpcTrades
             constants["PARTY_SIZE"] == 6, "Original trade IDs/cancel constant differ.");
         return new(source, trades, maps.ToImmutable(), constants);
     }
-    private static NpcTradePokemonDefinition Definition(SilphSourcePackage source, JsonElement row)
+    private static NpcTradePokemonDefinition Definition(JsonElement row)
     {
         string S(string p) => row.GetProperty(p).GetString()!;
         int I(string p) => row.GetProperty(p).GetInt32();
-        PokemonSourceRef Ref(string p)
-        {
-            var r = row.GetProperty(p);
-            var result = new PokemonSourceRef(r.GetProperty("path").GetString()!,r.GetProperty("symbol").GetString()!,                r.GetProperty("startLine").GetInt32(),r.GetProperty("endLine").GetInt32());
-return result;
-        }
         var ivs = row.GetProperty("ivs"); var conditions = row.GetProperty("contestConditions");
         return new(I("tradeId"), new(S("requestedSpecies")), new(S("receivedSpecies")), S("nickname"), row.GetProperty("personality").GetUInt32(),
             new(ivs.GetProperty("hp").GetInt32(), ivs.GetProperty("attack").GetInt32(), ivs.GetProperty("defense").GetInt32(),
@@ -103,7 +97,7 @@ return result;
             row.GetProperty("originalTrainerId").GetUInt32(), S("originalTrainerName"), I("originalTrainerGender"), I("abilitySlot"), S("heldItem"), I("mail"),
             new(conditions.GetProperty("cool").GetInt32(), conditions.GetProperty("beauty").GetInt32(), conditions.GetProperty("cute").GetInt32(),
                 conditions.GetProperty("smart").GetInt32(), conditions.GetProperty("tough").GetInt32(), conditions.GetProperty("sheen").GetInt32()),
-            S("tradeSymbol"), new(S("map")), I("localId"), S("scriptLabel"), S("completionFlag"), Ref("source"), Ref("actorSource"), Ref("scriptSource"), row.GetProperty("usesInlineSequence").GetBoolean());
+            S("tradeSymbol"), new(S("map")), I("localId"), S("scriptLabel"), S("completionFlag"), row.GetProperty("usesInlineSequence").GetBoolean());
     }
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);
 }

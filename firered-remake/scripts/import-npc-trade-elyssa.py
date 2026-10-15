@@ -4,6 +4,7 @@
 Uses reviewed local readers/renderers; pinned upstream Git blobs are inert data.
 Shared NPC trade scripts, species, actors and player textures remain inherited.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import importlib.util
 import json
@@ -25,7 +26,7 @@ CITY_PATH = 'content/generated/vermilion-region/vermilion-city/runtime-map.json'
 NPC_REUSE = {'OBJ_EVENT_GFX_LITTLE_GIRL', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':'), default=item_json) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -52,14 +53,9 @@ def stick(src, codec, stage):
     need(re.search(r'^#define ITEM_STICK\s+225\s*$', src.text('include/constants/items.h'), re.M), 'Stick source number differs')
     need(re.search(r'^#define HOLD_EFFECT_STICK\s+66\s*$', src.text('include/constants/hold_effects.h'), re.M), 'Stick held effect number differs')
     identity = dict(value='pret:ITEM_STICK')
-    metadata = dict(id=identity, sourceItemSymbol=symbol, sourceItemId=225, name='STICK', price=200,
-        importance=0, registrability=0, pocket=row['pocket'], type=row['type'], holdEffect=row['holdEffect'], holdEffectParam=0,
-        fieldUseFunction=row['fieldUseFunc'], battleUsage=0, battleUseFunction='NULL', secondaryId=0,
-        canToss=True, canSell=True, canGive=True, source=ref)
-    item = {k: metadata[k] for k in ('id', 'sourceItemSymbol', 'sourceItemId', 'name', 'price', 'pocket',
-        'importance', 'type', 'fieldUseFunction', 'battleUsage', 'battleUseFunction', 'holdEffectParam', 'source')}
-    item.update(description=row['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0,
-        effectBytes=[], useSupport=10, effectSource=None, sourceMetadata=metadata)
+    metadata = shared_item(symbol)
+    item = dict(item=metadata)
+    item.update(description=row['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
     binding = re.search(r'^    \[ITEM_STICK\]\s*= \{(\w+), (\w+)\},', src.text('src/data/item_icon_table.h'), re.M)
     need(binding is not None, 'Stick icon binding missing')
     graphics = src.text('src/data/graphics/items.h'); paths = []
@@ -155,7 +151,7 @@ def main():
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: '+str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
         print(json.dumps(dict(
-            inputCount=len(src.entries), outputCount=len(outputs), mapCount=1, itemCount=1, check=args.check), indent=2))
+            inputCount=len(src.entries), outputCount=len(outputs), mapCount=1, itemCount=1, check=args.check), indent=2, default=item_json))
 
 
 if __name__ == '__main__': main()

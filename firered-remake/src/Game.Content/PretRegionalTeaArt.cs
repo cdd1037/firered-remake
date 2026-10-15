@@ -19,7 +19,7 @@ public sealed class PretRegionalTeaArt
     private PretRegionalTeaArt(RegionalTeaArtDocument document, byte[] png) { Document = document; _png = png; }
     public byte[] ReadPng() => [.. _png];
 
-    public static PretRegionalTeaArt Load(string projectRoot, PewterMachineItem tea)
+    public static PretRegionalTeaArt Load(string projectRoot, MachineItem tea)
     {
         var root = Path.GetFullPath(projectRoot);
         var document = ContentJson.ParseStrict<RegionalTeaArtDocument>(Encoding.UTF8.GetString(

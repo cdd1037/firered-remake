@@ -10,7 +10,7 @@ public partial class CampaignView
 
     private void LoadStoneEvolutionPresentation()
     {
-        if (OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog), StoneEvolutionOwnedPokemonCatalog.For) is not { } owned) return;
+        if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
         if (!_session.IsCurrentGame || _qwilfishArt is null)
             throw new InvalidDataException("Stone evolution presentation requires the current Qwilfish predecessor.");
         var art = PretStoneEvolutionPresentation.Load(_root);

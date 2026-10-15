@@ -4,6 +4,7 @@
 Bounded nine-word content, not an Easy Chat composer. Upstream blobs are inert
 data. No map, trade definition, inventory ancestry, or runtime state is changed.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import importlib.util
 import json
@@ -22,7 +23,7 @@ SHOP_PROFILE = 'firered-npc-trade-inventory-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':'), default=item_json) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -121,14 +122,9 @@ def item(src, codec, stage):
         battleUsage=0, battleUseFunc='NULL', secondaryId=10), 'Original Fab Mail metadata differs')
     _, ref = capture(src, path, r'^    \{\n      "english": "FAB MAIL",.*?^    \}', symbol)
     identity = dict(value='pret:' + symbol)
-    metadata = dict(id=identity, sourceItemSymbol=symbol, sourceItemId=131, name=row['english'], price=row['price'],
-        importance=0, registrability=0, pocket=row['pocket'], type=row['type'], holdEffect=row['holdEffect'], holdEffectParam=0,
-        fieldUseFunction=row['fieldUseFunc'], battleUsage=0, battleUseFunction='NULL', secondaryId=row['secondaryId'],
-        canToss=True, canSell=True, canGive=True, source=ref)
-    value = {k: metadata[k] for k in ('id', 'sourceItemSymbol', 'sourceItemId', 'name', 'price', 'pocket', 'importance',
-        'type', 'fieldUseFunction', 'battleUsage', 'battleUseFunction', 'holdEffectParam', 'source')}
-    value.update(description=unescape(row['description_english']), healHp=0, cureStatus=0, effectBytes=[], useSupport=10,
-        effectSource=None, sourceMetadata=metadata)
+    metadata = shared_item(symbol)
+    value = dict(item=metadata)
+    value.update(description=unescape(row['description_english']), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
     m, binding_ref = capture(src, 'src/data/item_icon_table.h', r'^    \[ITEM_FAB_MAIL\]\s*= \{(\w+), (\w+)\},', symbol)
     paths = []
     for binding in m.groups():
@@ -279,7 +275,7 @@ def main():
             if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: '+str(path))
             else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
         print(json.dumps(dict(
-            inputCount=len(src.entries), outputCount=len(outputs), mailWords=dontae['words'], textLines=layout['lines'], check=args.check), indent=2))
+            inputCount=len(src.entries), outputCount=len(outputs), mailWords=dontae['words'], textLines=layout['lines'], check=args.check), indent=2, default=item_json))
 
 
 if __name__ == '__main__': main()

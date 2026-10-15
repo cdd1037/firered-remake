@@ -36,7 +36,7 @@ public sealed partial class CampaignSession
                     throw new InvalidDataException("mtmoon_fossil_reward_context_invalid");
                 var keys=inventory.KeyItems??[];
                 if(keys.Any(k=>k.Item==MtMoonItemRules.HelixFossilId||k.Item==MtMoonItemRules.DomeFossilId)||keys.Length>=ShopCatalog.QuestLimits.KeyItemSlots)throw new InvalidDataException("mtmoon_fossil_capacity_or_duplicate");
-                var check=EarlyInventoryAddRules.Add(ShopCatalog,ShopInventoryView(inventory),fossil.Id,1);
+                var check=EarlyInventoryAddRules.Add(ShopCatalog,inventory,fossil.Id,1);
                 if(!check.Succeeded)throw new InvalidDataException(check.Error);
                 next=state with{Inventory=inventory with{KeyItems=keys.Add(new(fossil.Id,1))},Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",1)}};return true;
             }

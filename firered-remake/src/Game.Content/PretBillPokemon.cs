@@ -44,16 +44,15 @@ public sealed class PretBillPokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretBillPokemon(string directory, BillPokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        Route3PokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        Route3PokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -76,7 +75,7 @@ public sealed class PretBillPokemon
         });
     }
 
-    public static PretBillPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
+    public static PretBillPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null)
     {
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
@@ -98,7 +97,7 @@ public sealed class PretBillPokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -118,8 +117,6 @@ public sealed class PretBillPokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "Bill Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "Bill sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<Route3PokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -159,17 +156,14 @@ public sealed class PretBillPokemon
                 dex.Entries[weight.SourceSpeciesId].WeightHectograms == weight.WeightHectograms && weight.WeightHectograms > 0,
                 "Bill weight differs from the authenticated Dex source.");
         }
-        using var scope = JsonDocument.Parse(outputs["scope.json"]);
-        Require(scope.RootElement.GetProperty("trainers").GetArrayLength() == 19 &&
-            !scope.RootElement.GetProperty("effectsEnabledByThisCatalog").GetBoolean(), "Bill evidence scope differs.");
-        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary(), scope.RootElement.Clone());
+        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary());
     }
 
-    public static BillPokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
+    public static BillPokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
         string pewterGeneratedJson, string route22GeneratedJson, string route3GeneratedJson, string mtmoonGeneratedJson, string ceruleanGeneratedJson, string billGeneratedJson)
     {
-        var original = PretCeruleanPokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretCeruleanPokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<BillPokemonDocument>(billGeneratedJson, options);
@@ -224,12 +218,12 @@ public sealed class PretBillPokemon
             var overlay = doc.EvolutionOverrides.Single(o => o.Species.Value == "pret:SPECIES_" + from);
             Require(overlay.Evolution.Target.Value == "pret:SPECIES_" + to && overlay.Evolution.Level == 21 &&
                 overlay.Evolution.Method == PokemonEvolutionMethod.Level && overlay.Evolution.Parameter is null &&
-                species[overlay.Species].Evolutions.IsEmpty && overlay.Evolution.Source.Symbol == "SPECIES_" + from,
+                species[overlay.Species].Evolutions.IsEmpty,
                 "Bill level evolution overlay differs.");
             species[overlay.Species] = species[overlay.Species] with { Evolutions = [overlay.Evolution] };
         }
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 68 && result.Moves.Count == 188 && names.Count == 68 && moveNames.Count == 188, "Incomplete composed Bill Pokemon catalog.");
         Require(doc.DeferredEvolutions.Length == 5, "Missing deferred Bill evolutions.");
         foreach (var deferred in doc.DeferredEvolutions)

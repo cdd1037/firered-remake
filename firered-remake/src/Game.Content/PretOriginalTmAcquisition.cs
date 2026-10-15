@@ -127,9 +127,9 @@ public sealed class PretOriginalTmAcquisition
             return BindPickup(p, item.SourceItemId, item.Name, item.Pocket);
         }).ToImmutableArray();
 
-    public ImmutableArray<FieldPickupDefinition> MachineBallPickups(PewterMachineCatalog machines) =>
+    public ImmutableArray<FieldPickupDefinition> MachineBallPickups(MachineCatalog machines) =>
         _pickups.Machines.Select(p => {
-            var item = (PewterMachineRules.Definition(machines, new ItemId("pret:" + p.ItemSymbol))
+            var item = (MachineRules.Definition(machines, new ItemId("pret:" + p.ItemSymbol))
                 ?? throw new InvalidDataException("Required original machine is not admitted: " + p.ItemSymbol)).Machine.Item;
             Need(item.Pocket == "POCKET_TM_CASE", "Original machine pocket differs.");
             return BindPickup(p, item.SourceItemId, item.Name, item.Pocket);

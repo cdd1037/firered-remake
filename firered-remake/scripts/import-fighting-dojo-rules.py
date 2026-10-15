@@ -108,8 +108,6 @@ def generate(reference, dependency):
     for name in additions:
         original=species[name];meta=metadata[name]
         need(not original['evolutions'] and not meta['sourceEvolutions'],'Terminal source species')
-        for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]:
-            read(sr['path'])
     battles=[];actors=[];mapping=json.loads(read('data/maps/SaffronCity_Dojo/map.json'));path='data/maps/SaffronCity_Dojo/scripts.inc'
     for local_id,actor in enumerate(mapping['object_events'],1):
         if actor.get('trainer_type')!='TRAINER_TYPE_NORMAL':continue
@@ -151,7 +149,7 @@ def generate(reference, dependency):
             cases.append(dict(trainer=team['trainer'],initialSeed=initial,finalSeed=seed,draws=len(raw_draws),rawDraws=raw_draws,originalTrainerIds=ots))
     docs={
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-owned-pokemon-v1',previousOwnedSpeciesCount=152,ownedSpeciesCount=154,previousOpponentSpeciesCount=186,opponentSpeciesCount=186,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=[],species=[dict(definition=species[s],metadata=metadata[s]) for s in additions]),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-owned-pokemon-v1',previousOwnedSpeciesCount=152,ownedSpeciesCount=154,previousOpponentSpeciesCount=186,opponentSpeciesCount=186,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=[],species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']),metadata=metadata[s]) for s in additions]),
       'rules.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-rules-v1',identities=identities,generationCases=cases,trainerActors=actors,gifts=[dict(species=identity(s),sourceSpeciesId=species[s]['sourceSpeciesId'],level=25,moves=natural_moves(s,25),localId=6+i,hideFlag='FLAG_HIDE_DOJO_'+s[8:]+'_BALL',hideFlagId=0x60+i) for i,s in enumerate(additions)],choiceFlag='FLAG_GOT_HITMON_FROM_DOJO',choiceFlagId=0x278),
       'machines.json':dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-teaching-v1',previousSpeciesCount=152,speciesCount=154,machineCount=41,additions=cells,itemsAdded=[]),
     }

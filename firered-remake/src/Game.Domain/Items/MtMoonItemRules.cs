@@ -21,31 +21,5 @@ public static class MtMoonItemRules
         new("HELIX_FOSSIL",357,"HELIX FOSSIL",0,EarlyShopUseSupport.Fossil,"OakStopsYou",0,0,[]),
         new("DOME_FOSSIL",358,"DOME FOSSIL",0,EarlyShopUseSupport.Fossil,"OakStopsYou",0,0,[])
     ];
-    public static void ValidateShop(EarlyShopCatalog catalog)
-    {
-        ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.Profile != EarlyShopInventoryRules.MtMoonProfile || catalog.Items.IsDefault || catalog.Items.Length != 17)
-            throw new NotSupportedException("Only the pinned MtMoon shop additions are supported.");
-        EarlyShopInventoryRules.ValidateCatalog(catalog with { Profile = EarlyShopInventoryRules.Profile, Items = catalog.Items.Take(8).ToImmutableArray() });
-        for (int n = 0; n < Additions.Length; n++)
-        {
-            var e = Additions[n]; var i = catalog.Items[n + 8]; var m = i?.SourceMetadata;
-            bool key = e.Use == EarlyShopUseSupport.Fossil, party = e.Effects.Length > 0;
-            string symbol = "ITEM_" + e.Symbol;
-            if (i is null || m is null || i.Id != new ItemId("pret:" + symbol) || i.SourceItemSymbol != symbol ||
-                i.SourceItemId != e.Id || i.Name != e.Name || i.Price != e.Price || i.Importance != (key ? 1 : 0) ||
-                i.Pocket != (key ? "POCKET_KEY_ITEMS" : "POCKET_ITEMS") || string.IsNullOrWhiteSpace(i.Description) ||
-                i.Type != (party ? "ITEM_TYPE_PARTY_MENU" : "ITEM_TYPE_BAG_MENU") || i.FieldUseFunction != "FieldUseFunc_" + e.Field ||
-                i.BattleUsage != e.Battle || i.BattleUseFunction != (e.Battle == 0 ? "NULL" : "BattleUseFunc_" + e.Field) ||
-                i.HoldEffectParam != e.Param || i.HealHp != 0 || i.CureStatus != 0 || i.UseSupport != e.Use ||
-                i.EffectBytes.IsDefault || !i.EffectBytes.SequenceEqual(e.Effects) || i.Source is null ||
-                (party ? i.EffectSource is null : i.EffectSource is not null) ||
-                m.Id != i.Id || m.SourceItemSymbol != symbol || m.SourceItemId != e.Id || m.Name != e.Name ||
-                m.Price != i.Price || m.Importance != i.Importance || m.Pocket != i.Pocket || m.Type != i.Type ||
-                m.FieldUseFunction != i.FieldUseFunction || m.BattleUsage != i.BattleUsage || m.BattleUseFunction != i.BattleUseFunction ||
-                m.HoldEffect != "HOLD_EFFECT_NONE" || m.HoldEffectParam != e.Param || m.Registrability != 0 ||
-                m.SecondaryId != 0 || m.CanGive != !key || m.CanToss != !key || m.CanSell != (e.Price > 0) || m.Source != i.Source)
-                throw new NotSupportedException("Unsupported MtMoon item metadata: " + symbol);
-        }
-    }
+
 }

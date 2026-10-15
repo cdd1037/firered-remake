@@ -18,12 +18,8 @@ public static class SourceFieldEvolutionRules
         return catalog.SourceCommit == PokemonFactory.SourceCommit &&
             definition is { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
                 FieldUseFunction: "FieldUseFunc_EvoItem", BattleUsage: 0, BattleUseFunction: "NULL" } &&
-            definition.Source is { Path: "src/data/items.json" } &&
             ItemEvolutionRules.SourceItemId(definition.SourceItemSymbol) is { } number &&
             item.Value == "pret:" + definition.SourceItemSymbol && definition.SourceItemId == number &&
-            definition.Source.Symbol == definition.SourceItemSymbol &&
-            (definition.EffectBytes.IsEmpty ? definition.EffectSource is null :
-                definition.EffectBytes.SequenceEqual(new[] { 0, 0, 0, 0, 128, 0 }) &&
-                definition.EffectSource is { Path: "src/data/pokemon/item_effects.h" });
+            (definition.EffectBytes.IsEmpty || definition.EffectBytes.SequenceEqual(new[] { 0, 0, 0, 0, 128, 0 }));
     }
 }

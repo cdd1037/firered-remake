@@ -16,7 +16,7 @@ public sealed record SixStats(int Hp, int Attack, int Defense, int Speed, int Sp
 public sealed record PokemonSourceRef(string Path, string Symbol, int StartLine, int EndLine);
 public sealed record PokemonLevelUpMove(int Level, MoveId Move);
 public enum PokemonEvolutionMethod { Level = 0, Item = 1, Trade = 2, TradeItem = 3, Friendship = 4, LevelAttackGreaterDefense = 5, LevelAttackEqualDefense = 6, LevelAttackLessDefense = 7 }
-public sealed record PokemonEvolution(int Level, SpeciesId Target, PokemonSourceRef Source)
+public sealed record PokemonEvolution(int Level, SpeciesId Target)
 {
     // Missing fields retain the exact legacy level-evolution serialization.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -27,16 +27,21 @@ public sealed record PokemonEvolution(int Level, SpeciesId Target, PokemonSource
 public sealed record PokemonSpeciesDefinition(SpeciesId Id, int SourceSpeciesId, SixStats BaseStats,
     string Type1, string Type2, int CatchRate, int ExperienceYield, SixStats EvYield,
     GrowthRate GrowthRate, int GenderRatio, string Ability1, string Ability2, int Friendship,
-    ImmutableArray<PokemonLevelUpMove> LevelUpMoves, ImmutableArray<PokemonEvolution> Evolutions,
-    PokemonSourceRef Source, PokemonSourceRef LearnsetSource);
+    ImmutableArray<PokemonLevelUpMove> LevelUpMoves, ImmutableArray<PokemonEvolution> Evolutions);
 
 /// <summary>Reference move data only. BattleEffectImplemented is deliberately false for this profile.</summary>
 public sealed record PokemonMoveDefinition(MoveId Id, int SourceMoveId, int Pp, int Power, string Type,
     int Accuracy, string Effect, int SecondaryEffectChance, string Target, int Priority,
-    ImmutableArray<string> Flags, bool BattleEffectImplemented, PokemonSourceRef Source);
+    ImmutableArray<string> Flags, bool BattleEffectImplemented);
 public sealed record PokemonCatalog(string SourceCommit,
     ImmutableDictionary<SpeciesId, PokemonSpeciesDefinition> Species,
-    ImmutableDictionary<MoveId, PokemonMoveDefinition> Moves);
+    ImmutableDictionary<MoveId, PokemonMoveDefinition> Moves)
+{
+    public PokemonMechanicsData? MechanicsData { get; init; }
+    public Game.Domain.Items.SourceBattleItemCatalog? BattleItems { get; init; }
+    public PokemonBreedingData? BreedingData { get; init; }
+    public ImmutableDictionary<int, NpcTradePokemonDefinition> NpcTrades { get; init; } = ImmutableDictionary<int, NpcTradePokemonDefinition>.Empty;
+}
 
 public enum IvMode { Random, Fixed }
 public sealed record IvPolicy(IvMode Mode, int FixedValue = 0)

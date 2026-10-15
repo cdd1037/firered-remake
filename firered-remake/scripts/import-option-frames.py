@@ -185,7 +185,7 @@ def convert(lock, sources):
                    fixedWindows=['ordinary-dialogue', 'signpost', 'save-statistics', 'option-menu-secondary-panel'])
     catalog = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                     display=display, assets=assets,
-                   sourceRefs=lock['files'], limitations=[
+                    limitations=[
                        'Static window tiles only; no option-menu layout, animation, font or timing implementation.',
                        'Battle-message crop uses only fixed palette 0 and is identical for all frame options.',
                        'No blanket theme override: caller chooses only source-proven user-frame windows.'])

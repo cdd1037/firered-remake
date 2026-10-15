@@ -15,9 +15,9 @@ public partial class CampaignView
     private ImmutableArray<string> _machinePages = [];
     private bool MachineActive => _catalog.PewterMachines is not null && _session.State.ItemMenu is { Origin: "bag" } menu
         && (menu.View == "machines" || menu.View == "message" && menu.ReturnView == "machines");
-    private ItemId _machineSelected = PewterMachineRules.Tm39Id;
+    private ItemId _machineSelected = MachineRules.Tm39Id;
     private InventoryStack[] MachineStacks => (_session.State.Inventory!.Machines ?? []).OrderBy(s => s.Item.Value, StringComparer.Ordinal).ToArray();
-    private PewterAdditionalMachine MachineDefinition => PewterMachineRules.Definition(_catalog.PewterMachines!, _machineSelected)
+    private MachineDefinition MachineDefinition => MachineRules.Definition(_catalog.PewterMachines!, _machineSelected)
         ?? throw new InvalidDataException("Selected machine is not in this profile.");
     private string MachineMoveName => MoveName(MachineDefinition.Move);
     private int MachineQuantity => OpeningInventoryRules.Quantity(_session.State.Inventory!.Machines ?? [], _machineSelected);
@@ -32,30 +32,23 @@ public partial class CampaignView
         if (_catalog.PewterMachines is not { } catalog) return;
         var machine = PretPewterMachines.LoadDocument(System.IO.File.ReadAllText(System.IO.Path.Combine(_root,
             "content/generated/pewter-machines/pewter-machines.json")), SharedMachineCatalog.LoadProject(_root));
-        // Catalog admission belongs to the current rules; these shared pixels depend only on
-        // the exact inherited TM39/CASE source definitions, not the regional profile name.
-        PewterMachineRules.ValidateCatalog(catalog);
-        if (machine.Catalog.Profile != PewterMachineRules.Profile ||
-            Game.Application.CanonicalJson.Hash(machine.Catalog.TmCase) != Game.Application.CanonicalJson.Hash(catalog.TmCase) ||
-            Game.Application.CanonicalJson.Hash(machine.Catalog.Tm39) != Game.Application.CanonicalJson.Hash(catalog.Tm39))
-            throw new InvalidDataException("Machine presentation source definitions differ.");
         string firstIcon = document.Items[0].Icon;
         var position = document.Assets.Single(x => x.Id == firstIcon);
         foreach (var icon in machine.Icons)
         {
-            string id = icon.Item == PewterMachineRules.TmCaseId ? MachineCaseIcon : MachineIcon;
+            string id = icon.Item == MachineRules.TmCaseId ? MachineCaseIcon : MachineIcon;
             
             _questPocketTextures.Add(id, ItemTexture("pewter-machines", icon));
             document = document with { Assets = document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,                position.X,position.Y)) };
         }
-        var item = machine.Catalog.TmCase;
+        var item = catalog.TmCase;
         document = document with { Items = document.Items.Add(new(item.Item.Id.Value, item.Item.SourceItemSymbol,
             item.Item.Name, item.Description, MachineCaseIcon, item.Item.FieldUseFunction)) };
     }
 
     private void LoadDepartmentMachineIcon()
     {
-        if (DepartmentStoreMachineStock.For(_catalog.PewterMachines) is null) return;
+        if (_catalog.PewterMachines is not { } machines || MachineRules.Definition(machines, DepartmentStoreMachineStock.Tm15Id) is null) return;
         if (!_earlyItemIcons.TryGetValue(PretDepartmentStoreMachines.ReusedTm15Icon, out var normalIcon))
             throw new InvalidDataException("department_machine_normal_icon_missing");
         _earlyItemIcons.Add(DepartmentStoreMachineStock.Tm15Id, normalIcon);
@@ -65,11 +58,11 @@ public partial class CampaignView
     {
         bool active = MachineActive;
         if (active && !_machineWasActive)
-        { _machineMode = "list"; _machineSelected = MachineStacks.FirstOrDefault()?.Item ?? PewterMachineRules.Tm39Id; _machineCursor = 0; _machineParty = 0; _machineSlot = -1; _machinePages = []; _machinePage = 0; }
+        { _machineMode = "list"; _machineSelected = MachineStacks.FirstOrDefault()?.Item ?? MachineRules.Tm39Id; _machineCursor = 0; _machineParty = 0; _machineSlot = -1; _machinePages = []; _machinePage = 0; }
         if (!active && _machineWasActive && _session.State.ItemMenu is { Origin: "bag", View: "bag" })
         {
             _questPocket = 1;
-            _questPocketCursor = Math.Max(0, Enumerable.Range(0, QuestPocketStacks.Length).FirstOrDefault(i => QuestPocketStacks[i].Item == PewterMachineRules.TmCaseId, 0));
+            _questPocketCursor = Math.Max(0, Enumerable.Range(0, QuestPocketStacks.Length).FirstOrDefault(i => QuestPocketStacks[i].Item == MachineRules.TmCaseId, 0));
         }
         _machineWasActive = active;
     }
@@ -213,12 +206,12 @@ public partial class CampaignView
             if (count > 0)
             {
                 DrawTexture(_questPocketTextures[MachineIcon], new(8, 40));
-                SourceText(_sourceNormal, new(48, 40), _catalog.PewterMachines!.Tm39.Item.Name + " " + MachineMoveName);
+                SourceText(_sourceNormal, new(48, 40), MachineDefinition.Machine.Item.Name + " " + MachineMoveName);
                 SourceText(_sourceSmall, new(184, 57), _itemSkin.FormatText("gText_TimesStrVar1", MachineQuantity.ToString()));
             }
             SourceText(_sourceNormal, new(48, 40 + count * 32), MachineText("gText_Close"));
             SourceText(_sourceNormal, new(36, 40 + Math.Min(_machineCursor, count) * 32), _itemSkin.Text("gText_SelectorArrow2"));
-            if (_machineCursor < count) ItemLines(_sourceSmall, new(16, 92), _catalog.PewterMachines!.Tm39.Description, 13);
+            if (_machineCursor < count) ItemLines(_sourceSmall, new(16, 92), MachineDefinition.Machine.Description, 13);
             else ItemLines(_sourceNormal, new(16, 112), MachineText("gText_TMCaseWillBePutAway"));
         }
         else if (mode == "actions")

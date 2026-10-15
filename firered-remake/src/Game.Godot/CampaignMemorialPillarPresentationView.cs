@@ -12,17 +12,14 @@ public partial class CampaignView
     private void LoadMemorialPillarPresentation()
     {
         if (_catalog.MemorialPillarOpponents is not { } opponents) return;
-        if (!_session.IsCurrentGame || _ordinaryEvolutionArt is null ||
-            !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !ReferenceEquals(OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog),
-                OrdinaryEvolutionOwnedPokemonCatalog.For), opponents.Owned))
-            throw new InvalidDataException("Memorial Pillar presentation requires authenticated current opponents and owned predecessor.");
+        if (!_session.IsCurrentGame || _ordinaryEvolutionArt is null)
+            throw new InvalidDataException("Memorial Pillar presentation requires current game assets.");
         var art = PretMemorialPillarPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)
         {
             var id = new Game.Domain.Ids.SpeciesId("pret:SPECIES_" + entry.Name);
             if (!opponents.Catalog.Species.TryGetValue(id, out var species) || species.SourceSpeciesId != entry.SourceSpeciesId ||
-                opponents.Owned.Catalog.Species.ContainsKey(id) || _pokedexMenu is null ||
+                _pokedexMenu is null ||
                 entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Memorial Pillar opponent species or seen-Dex binding differs.");
         }

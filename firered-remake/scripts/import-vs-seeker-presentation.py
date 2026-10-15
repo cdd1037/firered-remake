@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Bounded local source extraction. No upstream execution, ROM, network or PCM files."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, os, re, struct, subprocess
 from pathlib import Path
 from PIL import Image
@@ -9,7 +10,7 @@ BASE='content/generated/vs-seeker-presentation/'
 PROFILE='firered-vs-seeker-presentation-v1'
 def need(ok,message):
     if not ok: raise ValueError(message)
-def encoded(value): return (json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
+def encoded(value): return (json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False, default=item_json)+'\n').encode()
 def generate(reference,dependency):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
     env.update(GIT_NO_REPLACE_OBJECTS='1',GIT_OPTIONAL_LOCKS='0',GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL=os.devnull)
@@ -69,9 +70,9 @@ def generate(reference,dependency):
     itempath='src/data/items.json';item=next(x for x in json.loads(text(itempath))['items'] if x['itemId']=='ITEM_VS_SEEKER')
     itemblock=block(itempath,r'^    \{\n      "english": "VS SEEKER",.*?^    \}');src=ref(itempath,'ITEM_VS_SEEKER',itemblock)
     itemid=int(block('include/constants/items.h',r'^#define ITEM_VS_SEEKER\s+(\d+)\s*$')[1]);need(itemid==362 and item['importance']==item['registrability']==1 and item['pocket']=='POCKET_KEY_ITEMS','Original key item identity')
-    metadata=dict(id=dict(value='pret:ITEM_VS_SEEKER'),sourceItemSymbol='ITEM_VS_SEEKER',sourceItemId=itemid,name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=False,canSell=False,canGive=False,source=src)
-    definition={k:metadata[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
-    definition.update(description=item['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=metadata)
+    metadata=shared_item('ITEM_VS_SEEKER')
+    definition=dict(item=metadata)
+    definition.update(description=item['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
     icons=text('src/data/item_icon_table.h');itemgraphics=text('src/data/graphics/items.h')
     need('[ITEM_VS_SEEKER]      = {gItemIcon_VSSeeker, gItemIconPalette_VSSeeker}' in icons,'Item source icon binding')
     for fragment in ['gItemIcon_VSSeeker[] = INCBIN_U32("graphics/items/icons/vs_seeker.4bpp.lz")','gItemIconPalette_VSSeeker[] = INCBIN_U32("graphics/items/icon_palettes/vs_seeker.gbapal.lz")']: need(fragment in itemgraphics,'Item source pixels binding')
@@ -117,4 +118,4 @@ if __name__=='__main__':
         target=a.output/path
         if a.check:need(target.read_bytes()==data,'Exact regeneration '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(passed=True,checked=a.check,files=len(files),assets=len(manifest['assets']),newTextures=6,sourceFiles=len(lock['sourceFiles']),manifestBytes=len(files[BASE+'manifest.json']),cues=manifest['audioCues'],jumpYOffsets=manifest['timing']['jumpYOffsets'],swimXOffsets=manifest['timing']['swimXOffsets'])))
+    print(json.dumps(dict(passed=True,checked=a.check,files=len(files),assets=len(manifest['assets']),newTextures=6,sourceFiles=len(lock['sourceFiles']),manifestBytes=len(files[BASE+'manifest.json']),cues=manifest['audioCues'],jumpYOffsets=manifest['timing']['jumpYOffsets'],swimXOffsets=manifest['timing']['swimXOffsets']), default=item_json))

@@ -14,29 +14,24 @@ public static class PretCeladonGymItems
     public const string Profile=CeladonGymItemRules.Profile;
     private static readonly UTF8Encoding Utf8=new(false,true);
     private static void Require(bool condition,string message)=>PretCeladonApproachSource.Require(condition,message);
-    public static PretCeladonGymItemsDocument Load(string json)
+    public static PretCeladonGymItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options=ContentJson.CreateOptions();options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
+        var options=machines.CreateJsonOptions();options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var document=ContentJson.ParseStrict<PretCeladonGymItemsDocument>(json,options);
         Require(document.SchemaVersion==1&&document.Items.Length==1&&document.Icons.Length==1&&!document.Limitations.IsDefaultOrEmpty,"Celadon Gym item scope differs.");
         var item=document.Items.Single();CeladonGymItemRules.ValidateMachine(item.Metadata);
-        Require(item.EffectBytes.IsEmpty&&item.EffectSource is null,"TM19 has unexpected effect bytes.");
+        Require(item.EffectBytes.IsEmpty,"TM19 has unexpected effect bytes.");
         var icon=document.Icons.Single();Require(icon.Item==CeladonGymItemRules.Tm19Id&&icon.Region is not null,"TM19 icon identity differs.");
 PretPewterMachines.ValidateIcon(icon);
         return document;
     }
-    public static PretCeladonGymItemsDocument LoadProject(string root)
+    public static PretCeladonGymItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
         var outputs=PretCeladonApproachSource.Outputs(root,"celadon-gym-items");
-        var document=Load(Utf8.GetString(outputs["celadon-gym-items.json"]));
+        var document=Load(Utf8.GetString(outputs["celadon-gym-items.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
 return document;
     }
-    public static EarlyShopCatalog LoadShopProject(string root,EarlyShopCatalog inherited)
-    {
-        LavenderItemRules.ValidateShop(inherited);var document=LoadProject(root);
-        var result=inherited with{Profile=Profile,Items=inherited.Items.Add(Definition(document,CeladonGymItemRules.Tm19Id)!)};
-        CeladonGymItemRules.ValidateShop(result);return result;
-    }
+
     public static EarlyShopItemDefinition? Definition(PretCeladonGymItemsDocument document,ItemId id)
     {
         var item=document.Items.SingleOrDefault(i=>i.Metadata.Item.Id==id);

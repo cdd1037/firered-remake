@@ -14,16 +14,16 @@ public sealed record PretCinnabarItemsDocument(int SchemaVersion, string Profile
 
 public sealed record CinnabarMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<PewterAdditionalMachine> NewMachines, ImmutableArray<string> Limitations);
+    ImmutableArray<MachineDefinition> NewMachines, ImmutableArray<string> Limitations);
 
 /// <summary>Independent pinned declarations. All ordinary pickups except Secret Key already exist in Saffron.</summary>
 public static class PretCinnabarItems
 {
     public const string Profile = "firered-cinnabar-items-v1";
-    public static ItemId SecretKeyId => CinnabarShopCatalog.SecretKeyId;
-    public static ItemId Tm14Id => CinnabarMachineCatalog.Tm14Id;
-    public static ItemId Tm22Id => CinnabarMachineCatalog.Tm22Id;
-    public static ItemId Tm38Id => CinnabarMachineCatalog.Tm38Id;
+    public static ItemId SecretKeyId => ItemIds.SecretKeyId;
+    public static ItemId Tm14Id => new("pret:ITEM_TM14");
+    public static ItemId Tm22Id => new("pret:ITEM_TM22");
+    public static ItemId Tm38Id => new("pret:ITEM_TM38");
 
     public static PretCinnabarItemsDocument LoadProject(string root)
     {
@@ -35,7 +35,7 @@ public static class PretCinnabarItems
             "Cinnabar item declaration scope differs.");
         foreach (var item in items.Items)
         {
-            SilphSourcePackage.Need(item.EffectBytes.IsEmpty && item.EffectSource is null, "Cinnabar item effect scope differs.");
+            SilphSourcePackage.Need(item.EffectBytes.IsEmpty, "Cinnabar item effect scope differs.");
         }
         var machines = source.Parse<CinnabarMachinesDocument>("machines.json");
         SilphSourcePackage.Need(machines.SchemaVersion == 1 && machines.InheritedItemIds.Length == 28 &&
@@ -63,30 +63,10 @@ public static class PretCinnabarItems
 
     public static EarlyShopStock MartStock(PretCinnabarItemsDocument document) => document.Mart;
 
-    public static EarlyShopCatalog Extend(EarlyShopCatalog previous, PretCinnabarItemsDocument items)
-    {
-        SaffronGymShopCatalog.ValidateCatalog(previous);
-        return previous with { Profile = CinnabarShopCatalog.Profile,Items = previous.Items.Add(Definition(items, SecretKeyId)),Shops = previous.Shops.Add(items.Mart) };
-    }
 }
 
 public static class PretCinnabarMachines
 {
-    public const string Profile = CinnabarMachineCatalog.Profile;
+    public const string Profile = "firered-cinnabar-teaching-v1";
     public static CinnabarMachinesDocument LoadProject(string root) => PretCinnabarItems.LoadProject(root).Machines;
-    public static PewterMachineCatalog Extend(PewterMachineCatalog previous, PretCinnabarItemsDocument items)
-    {
-        var proof = SaffronGymMachineCatalog.For(previous) ?? throw new InvalidDataException("Cinnabar machine predecessor is unauthenticated.");
-        var source = items.Machines;
-        SilphSourcePackage.Need(previous.Compatibility.Length == 113 && previous.AdditionalMachines?.Length == 27 &&
-            new[] { previous.Tm39.Item.Id }.Concat(previous.AdditionalMachines!.Value.Select(m => m.Machine.Item.Id)).SequenceEqual(source.InheritedItemIds),
-            "Cinnabar machine predecessor scope differs.");
-        var expected = proof.Pokemon.Catalog.Species.Keys.Concat(Game.Domain.Pokemon.CinnabarOwnedPokemonCatalog.AdditionalSpecies).ToHashSet();
-        foreach (var machine in source.NewMachines)
-            SilphSourcePackage.Need(machine.Compatibility.Select(c => c.Species).ToHashSet().SetEquals(expected), "Cinnabar source matrix ownership differs.");
-        ImmutableArray<PewterMachineCompatibility> Rows(ItemId id, ImmutableArray<PewterMachineCompatibility> before) =>
-            before.AddRange(source.Additions.Single(a => a.Item == id).Compatibility);
-        return previous with { Profile = Profile,Compatibility = Rows(previous.Tm39.Item.Id, previous.Compatibility),AdditionalMachines = previous.AdditionalMachines!.Value.Select(m => m with { Compatibility = Rows(m.Machine.Item.Id, m.Compatibility) })
-                .Concat(source.NewMachines).ToImmutableArray() };
-    }
 }

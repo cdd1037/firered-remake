@@ -19,7 +19,7 @@ public sealed class StoneEvolutionTests
     private global::Game.Application.CampaignState original = default !;
     private long generation = default !;
     private global::Game.Domain.Pokemon.CampaignPokemonContent content = default !;
-    private global::Game.Domain.Pokemon.OwnedBattlePokemonCatalog ownership = default !;
+    private global::Game.Domain.Pokemon.GamePokemonCatalog ownership = default !;
     private global::Game.Application.CampaignSession inspector = default !;
     private int commands = default !;
     [TestInitialize]
@@ -31,7 +31,7 @@ public sealed class StoneEvolutionTests
         original = checkpoint.State;
         generation = checkpoint.Generation;
         content = catalog.PokemonContent!;
-        ownership = OwnedBattlePokemonCatalog.For(content.Catalog)!;
+        ownership = content.Pokemon;
         inspector = CampaignSession.CreateCurrent(catalog);
         commands = 0;
     }
@@ -214,12 +214,15 @@ public sealed class StoneEvolutionTests
         Assert.IsTrue(nidResult.PendingMoves.Any(m => m.Move.Value == "pret:MOVE_THRASH") && nidResult.Pokemon.Pokemon.Stats.MaxHp - nidResult.Pokemon.Pokemon.CurrentHp == 9, "Nidoking exact level22 Thrash decision and HP deficit");
         Refuses(() => ItemEvolutionRules.Apply(content, ownership, nidorino with { InstanceId = 92 }, nidProposal), "stale different-member proposal refused");
         Refuses(() => ItemEvolutionRules.Apply(content, ownership, nidorino, nidProposal with { TargetSpecies = new("pret:SPECIES_CLEFABLE") }), "forged target refused");
-        Refuses(() => ItemEvolutionRules.Eligibility(content with { Catalog = content.Catalog with { } }, ownership, nidorino), "cloned owned catalog refused");
-        Refuses(() => ItemEvolutionRules.Eligibility(content, OwnedBattlePokemonCatalog.For(catalog.SixIslandOwnership!.Catalog)!, nidorino), "mismatched authenticated predecessor proof refused");
-        Refuses(() => ItemEvolutionRules.Eligibility(content with { Catalog = catalog.CelioOpponents!.Catalog }, ownership, nidorino), "opponent catalog cannot borrow ownership");
+        var copy = GamePokemonCatalog.Create(ownership.Mechanics, ownership.Catalog with { }, ownership.Opponents.Catalog with { }, ownership.TrainerTowerOpponents.Catalog with { });
+        Assert.AreEqual(nidProposal, ItemEvolutionRules.Eligibility(content with { Pokemon = copy }, copy, nidorino), "equivalent definitions preserve proposal");
+        Refuses(() => ItemEvolutionRules.Eligibility(content, ownership, nidorino with { Pokemon = nidorino.Pokemon with { Species = new("pret:SPECIES_SUNKERN"), SourceSpeciesId = 191 } }), "opponent-only species cannot borrow ownership");
         Refuses(() => ItemEvolutionRules.Eligibility(content, ownership, nidorino, "ITEM_KINGS_ROCK"), "trade evolution item refused");
         Refuses(() => ItemEvolutionRules.SourceEvolution(content, ownership, new("pret:SPECIES_SUNKERN"), ItemEvolutionRules.SunStone), "trainer-only Sunkern cannot use source edge as ownership");
-        Assert.IsTrue(SixIslandItemEvolutionRules.SourceEdge(catalog.SixIslandOwnership!)is not null, "original Six source proof retained");
+        var edge = SixIslandItemEvolutionRules.EvolutionEdge(catalog.SixIslandOwnership!);
+        Assert.AreEqual("EVO_ITEM", edge.Method);
+        Assert.AreEqual("ITEM_SUN_STONE", edge.Parameter);
+        Assert.AreEqual("pret:SPECIES_BELLOSSOM", edge.Target.Value);
     }
 
     [TestMethod]

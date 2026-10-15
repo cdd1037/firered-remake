@@ -15,7 +15,7 @@ public sealed record EventIslandPokemonResult(PokemonInstance Pokemon, RngState 
 /// Uses the existing explicit low16/high16 generation profile; target-compiler ordering is not claimed.</summary>
 public static class EventIslandPokemonFactory
 {
-    public static EventIslandPokemonResult Create(EventIslandOwnedPokemonCatalog owned, EventIslandEncounterKind kind,
+    public static EventIslandPokemonResult Create(GamePokemonCatalog owned, EventIslandEncounterKind kind,
         uint originalTrainerId, RngState rng)
     {
         ValidateOwned(owned);
@@ -25,16 +25,15 @@ public static class EventIslandPokemonFactory
         if (!SourceInitialInstance(owned, origin, created.Pokemon)) throw new InvalidOperationException("event_island_generated_identity");
         return new(created.Pokemon, created.Rng, created.Trace, origin);
     }
-    public static Route1WildPokemonResult Generate(EventIslandOwnedPokemonCatalog owned, EventIslandEncounterKind kind,
+    public static Route1WildPokemonResult Generate(GamePokemonCatalog owned, EventIslandEncounterKind kind,
         RngState rng, uint originalTrainerId)
     {
         var made = Create(owned, kind, originalTrainerId, rng);
         return new(made.Pokemon, made.Rng, made.Trace);
     }
-    public static bool SourceInitialInstance(EventIslandOwnedPokemonCatalog owned, EventIslandWildOrigin origin, PokemonInstance pokemon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, EventIslandWildOrigin origin, PokemonInstance pokemon)
     {
-        if (owned is null || !ReferenceEquals(EventIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !EventIslandWildBattleContract.Matches(origin, pokemon) || SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null)
+        if (owned is null || !EventIslandWildBattleContract.Matches(origin, pokemon) || SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null)
             return false;
         var source = owned.Mechanics.Catalog.Species[pokemon.Species];
         return pokemon.Evs == SixStats.Zero && pokemon.CurrentHp == pokemon.Stats.MaxHp && pokemon.Friendship == source.Friendship &&
@@ -42,7 +41,7 @@ public static class EventIslandPokemonFactory
             pokemon.Moves.SequenceEqual(PokemonMoveRules.InitialMovesCore(owned.Mechanics.Catalog, source, pokemon.Level));
     }
     /// <summary>Apply event provenance to the actual caught party member. Never regenerates PID, IVs, HP, PP, OT or status.</summary>
-    public static PartyPokemon PreserveCaughtMetadata(EventIslandOwnedPokemonCatalog owned, EventIslandWildOrigin origin, PartyPokemon caught)
+    public static PartyPokemon PreserveCaughtMetadata(GamePokemonCatalog owned, EventIslandWildOrigin origin, PartyPokemon caught)
     {
         ValidateOwned(owned); ArgumentNullException.ThrowIfNull(caught);
         if (!EventIslandWildBattleContract.Matches(origin, caught.Pokemon) ||
@@ -50,9 +49,9 @@ public static class EventIslandPokemonFactory
             throw new ArgumentException("event_island_caught_identity");
         return caught with { ModernFatefulEncounter = origin.ModernFatefulEncounter };
     }
-    private static void ValidateOwned(EventIslandOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(EventIslandOwnedPokemonCatalog.For(owned.Catalog), owned))
+        if (owned is null)
             throw new ArgumentException("event_island_owned_proof");
     }
 }

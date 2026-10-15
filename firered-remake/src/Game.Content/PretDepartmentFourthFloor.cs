@@ -15,24 +15,19 @@ public static class PretDepartmentFourthFloor
         var bytes = File.ReadAllBytes(Path.Combine(root, relative));
         return bytes;
     }
-    public static NpcTradeItemsDocument LoadDocument(string root)
+    public static NpcTradeItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
         var doc = JsonSerializer.Deserialize<NpcTradeItemsDocument>(Read(root,Base + "items.json"),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+            (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions())
             ?? throw new InvalidDataException("department_fourth_floor_document_missing");
         if (            doc.Additions.IsDefault || doc.Additions.Length != 1 ||
-            doc.Additions[0].Id != OrdinaryItemInventoryCatalog.RetroMailId ||
+            doc.Additions[0].Id != ItemIds.RetroMailId ||
             doc.ShopsAdded.IsDefault || !doc.ShopsAdded.IsEmpty || doc.Icons.IsDefault || doc.Icons.Length != 1 ||
-            doc.Icons[0].Item != OrdinaryItemInventoryCatalog.RetroMailId || doc.Icons[0].Width != 24 || doc.Icons[0].Height != 24)
+            doc.Icons[0].Item != ItemIds.RetroMailId || doc.Icons[0].Width != 24 || doc.Icons[0].Height != 24)
             throw new InvalidDataException("department_fourth_floor_scope");
         return doc;
     }
-    public static OrdinaryItemInventoryCatalog LoadShop(string root, EarlyShopCatalog predecessor)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        var doc = LoadDocument(root);
-        return OrdinaryItemInventoryCatalog.AppendRetroMail(predecessor, doc.Additions);
-    }
+
     public static JsonElement LoadSourceContract(string root) =>
         JsonSerializer.Deserialize<JsonElement>(Read(root,Base + "source-contract.json"));
 }

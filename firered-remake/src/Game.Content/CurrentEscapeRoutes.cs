@@ -1,0 +1,63 @@
+using System.Collections.Immutable;
+using Game.Domain.Ids;
+using Game.Domain.Items;
+using Game.Domain.World;
+
+namespace Game.Content;
+
+internal static class CurrentEscapeRoutes
+{
+    public static EscapeRopePolicy Create(IEnumerable<MapId> mapIds)
+    {
+        var maps = mapIds.ToHashSet();
+        var exits = ImmutableDictionary.CreateBuilder<MapId, ImmutableArray<EscapeRopeDestination>>();
+        var entrances = ImmutableArray.CreateBuilder<EscapeRopeEntrance>();
+        EscapeRopeDestination Exit(string map, int x, int y) => new(new("map." + map), x, y);
+        void Dungeon(string[] names, params EscapeRopeDestination[] destinations)
+        {
+            foreach (string name in names)
+            {
+                var id = new MapId("map." + name);
+                if (maps.Contains(id)) exits.Add(id, destinations.Where(d => maps.Contains(d.MapId)).ToImmutableArray());
+            }
+        }
+        void Entrance(string from, string to, int x, int y, Direction facing = Direction.North)
+        {
+            var source = new MapId("map." + from); var destination = new MapId("map." + to);
+            if (maps.Contains(source) && maps.Contains(destination))
+                entrances.Add(new(new(source, x, y, 3, facing), destination, new(source, x, y + (facing == Direction.South ? 0 : 1))));
+        }
+        Dungeon(["mt-moon-1f", "mt-moon-b1f", "mt-moon-b2f"], Exit("route-4", 19, 6), Exit("route-4", 32, 6));
+        Entrance("route-4", "mt-moon-1f", 19, 5); Entrance("route-4", "mt-moon-b1f", 32, 5);
+        Dungeon(["viridian-forest"], Exit("route-2", 5, 13), Exit("route-2", 6, 13), Exit("route-2", 5, 52), Exit("route-2", 6, 52));
+        foreach (int x in new[] {5, 6})
+        {
+            Entrance("route-2", "route-2-forest-south-gate", x, 51);
+            Entrance("route-2", "route-2-forest-north-gate", x, 13, Direction.South);
+        }
+        Dungeon(["digletts-cave-south-entrance", "digletts-cave-b1f", "digletts-cave-north-entrance"], Exit("route-11", 6, 8), Exit("route-2", 17, 12));
+        Entrance("route-11", "digletts-cave-south-entrance", 6, 7); Entrance("route-2", "digletts-cave-north-entrance", 17, 11);
+        Dungeon(["rock-tunnel-1f", "rock-tunnel-b1f"], Exit("route-10", 8, 20), Exit("route-10", 8, 58));
+        Entrance("route-10", "rock-tunnel-1f", 8, 19); Entrance("route-10", "rock-tunnel-1f", 8, 57);
+        Dungeon(Enumerable.Range(1, 7).Select(n => $"pokemon-tower-{n}f").ToArray(), Exit("lavender-town", 18, 7));
+        Entrance("lavender-town", "pokemon-tower-1f", 18, 6);
+        Dungeon(Enumerable.Range(1, 11).Select(n => $"silph-co-{n}f").ToArray(), Exit("saffron-city", 33, 31));
+        Entrance("saffron-city", "silph-co-1f", 33, 30);
+        Dungeon(["pokemon-mansion-1f", "pokemon-mansion-2f", "pokemon-mansion-3f", "pokemon-mansion-b1f"], Exit("cinnabar-island", 8, 4));
+        Entrance("cinnabar-island", "pokemon-mansion-1f", 8, 3);
+        Dungeon(["three-island-berry-forest"], EscapeRopeRules.ForestDestination);
+        Dungeon(["victory-road-1f", "victory-road-2f", "victory-road-3f"], Exit("route-23", 5, 29), Exit("route-23", 18, 29));
+        Entrance("route-23", "victory-road-1f", 5, 28); Entrance("route-23", "victory-road-2f", 18, 28);
+        Dungeon(["mt-ember-ruby-path-1f", "mt-ember-ruby-path-b1f", "mt-ember-ruby-path-b2f", "mt-ember-ruby-path-b3f", "mt-ember-ruby-path-b4f", "mt-ember-ruby-path-b5f", "mt-ember-ruby-path-b1f-stairs", "mt-ember-ruby-path-b2f-stairs"], Exit("mt-ember-exterior", 42, 40));
+        Entrance("mt-ember-exterior", "mt-ember-ruby-path-1f", 42, 39);
+        Dungeon(["four-island-icefall-cave-entrance", "four-island-icefall-cave-1f", "four-island-icefall-cave-b1f", "four-island-icefall-cave-back"], Exit("four-island", 38, 13));
+        Entrance("four-island", "four-island-icefall-cave-entrance", 38, 12);
+        Dungeon(DottedHoleSource.Maps.Keys.Select(m => m.Value[4..]).ToArray(), Exit("six-island-ruin-valley", 24, 25));
+        Entrance("six-island-ruin-valley", DottedHoleSource.FirstFloor.Value[4..], 24, 24);
+        Dungeon(["five-island-rocket-warehouse"], Exit("five-island-meadow", 12, 22));
+        Entrance("five-island-meadow", "five-island-rocket-warehouse", 12, 21);
+        Dungeon(["power-plant"], Exit("route-10", 7, 41), Exit("route-10", 2, 38));
+        Entrance("route-10", "power-plant", 7, 40); Entrance("route-10", "power-plant", 2, 37, Direction.East);
+        return new(exits.ToImmutable(), entrances.ToImmutable());
+    }
+}

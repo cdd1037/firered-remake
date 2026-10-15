@@ -139,7 +139,7 @@ public sealed class PretTrainerTowerRegion
         Need(layouts.Count == 27 && layouts.Keys.Select(k => k.Map).Distinct().Count() == 11, "Tower map/layout count differs.");
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         return new(source, layouts.ToImmutable());
     }
     private static SilphSourcePackage Source(string root) => new(root,"trainer-tower-region");

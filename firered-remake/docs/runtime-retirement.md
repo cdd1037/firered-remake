@@ -1,6 +1,6 @@
 # Current runtime retirement
 
-The maintained game is `firered-current-campaign-v1`. This slice deletes
+The maintained game is `firered-current-campaign-v2`. This slice deletes
 historical runtime selection; unsupported saves fail explicitly. The original
 runtime-retirement slice left Domain battle executors, source catalog factories
 and trainer wiring unchanged. Their later canonical cutover and retirement are

@@ -7,16 +7,7 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    private static EarlyShopCatalog VermilionShop(EarlyShopCatalog prior,PretVermilionRegion region)
-    {
-        var source=region.Mart.GetProperty("sourceRef");
-        var stock=region.Mart.GetProperty("items").EnumerateArray().Select(x=>x.GetString()!).ToArray();
-        if(stock.Length!=8||stock[^1]!="ITEM_NONE"||!stock[..^1].Select(x=>new ItemId("pret:"+x)).SequenceEqual(VermilionItemRules.Stock))
-            throw new InvalidDataException("vermilion_mart_source_stock_differs");
-        var result=prior with{Profile=VermilionItemRules.Profile,Shops=prior.Shops.Add(new(VermilionItemRules.Mart,VermilionItemRules.Stock,
-            new(source.GetProperty("path").GetString()!,source.GetProperty("symbol").GetString()!,source.GetProperty("line").GetInt32(),32)))};
-        EarlyShopInventoryRules.ValidateCatalog(result);return result;
-    }
+
     private static ImmutableDictionary<MapId,EarlyLandEncounterTable> VermilionEncounterTables(PretForestRegion forest,PretRoute22Region? route22,PretRoute3Region? route3,PretMtMoonRegion? moon,PretBillRegion? bill,PretVermilionRegion? vermilion)
     {
         var tables=BillEncounterTables(forest,route22,route3,moon,bill);

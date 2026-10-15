@@ -96,19 +96,10 @@ def metadata(lock, sources):
         if declarations != expected_evolution[symbol]: raise ValueError('Unexpected RockTunnel evolution')
         for method, parameter, target in declarations:
             if method == 'EVO_LEVEL' and target in {'SPECIES_' + source_symbol(n) for n in NEW_SPECIES}:
-                evolutions.append(dict(level=int(parameter), target=ident(target), source=ref(evolution_path, symbol, m)))
+                evolutions.append(dict(level=int(parameter), target=ident(target)))
             else:
-                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target),
-                    source=ref(evolution_path, symbol, m), executable=False,
-                    reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)},
-            growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']],
-            genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']],
-            ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+                deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target), executable=False, reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']], genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     # Source trainer parties require definitions independently of these six complete learnsets.
     move_symbols.update(TEACHING_MOVES)
@@ -116,10 +107,7 @@ def metadata(lock, sources):
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     abilities = sorted({s[k] for s in species for k in ('ability1', 'ability2')} - {'ABILITY_NONE'})
@@ -143,8 +131,8 @@ def metadata(lock, sources):
     overrides = []
     for symbol, level, target in [('SPECIES_DROWZEE', 26, 'SPECIES_HYPNO'), ('SPECIES_GOLDEEN', 33, 'SPECIES_SEAKING'), ('SPECIES_HORSEA', 32, 'SPECIES_SEADRA'), ('SPECIES_KOFFING', 35, 'SPECIES_WEEZING'), ('SPECIES_MACHOP', 28, 'SPECIES_MACHOKE'), ('SPECIES_MANKEY', 28, 'SPECIES_PRIMEAPE'), ('SPECIES_TENTACOOL', 30, 'SPECIES_TENTACRUEL'), ('SPECIES_VOLTORB', 30, 'SPECIES_ELECTRODE')]:
         m = one(r'^    \[' + symbol + r'\]\s*= \{\{EVO_LEVEL, ' + str(level) + ', ' + target + r'\}\},$', text[evolution_path])
-        overrides.append(dict(species=ident(symbol), evolution=dict(level=level, target=ident(target), source=ref(evolution_path, symbol, m))))
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=species,
+        overrides.append(dict(species=ident(symbol), evolution=dict(level=level, target=ident(target))))
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species],
         moves=moves, speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded_names,
         deferredEvolutions=deferred, evolutionOverrides=overrides, naturalLevelLimit=None,
         itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False, tradeEvolutionExecutorImplemented=False,
@@ -192,83 +180,8 @@ def trainer_parties(lock, sources):
     return trainers
 
 
-def natural_closure(sources):
-    """Actual FireRed ownership through35, retaining delayed evolution and never backfilling evolved moves."""
-    names = ('Route1', 'Route2', 'ViridianForest', 'Route22', 'Route3', 'Route4', 'MtMoon1F', 'MtMoonB1F',
-             'MtMoonB2F', 'Route24', 'Route25', 'Route5', 'Route6', 'Route11', 'DiglettsCaveB1F',
-             'Route9', 'Route10', 'RockTunnel1F', 'RockTunnelB1F')
-    entry = {'SPECIES_' + n: 5 for n in ('BULBASAUR', 'CHARMANDER', 'SQUIRTLE', 'MAGIKARP')}
-    doc = json.loads(sources['src/data/wild_encounters.json'], object_pairs_hook=unique_pairs)
-    tables = [e for group in doc['wild_encounter_groups'] for e in group.get('encounters', [])
-              if e['base_label'] in {'s' + n + '_FireRed' for n in names}]
-    if len(tables) != len(names): raise ValueError('Natural route source table set differs')
-    for table in tables:
-        for mon in table['land_mons']['mons']:
-            entry[mon['species']] = min(entry.get(mon['species'], 100), mon['min_level'])
-    evolution = sources['src/data/pokemon/evolution.h'].decode()
-    own = dict(entry)
-    while True:
-        previous = dict(own)
-        for species, level in previous.items():
-            block = re.search(r'^    \[' + species + r'\].*$', evolution, re.M)
-            block = block[0] if block else ''
-            for threshold, target in re.findall(r'EVO_LEVEL, (\d+), (SPECIES_\w+)', block):
-                minimum = max(level, int(threshold))
-                if minimum <= 35: own[target] = min(own.get(target, 100), minimum)
-            for target in re.findall(r'EVO_ITEM, ITEM_MOON_STONE, (SPECIES_\w+)', block):
-                own[target] = min(own.get(target, 100), level)
-        if previous == own: break
-    learn = sources['src/data/pokemon/level_up_learnsets.h'].decode()
-    pointers = sources['src/data/pokemon/level_up_learnset_pointers.h'].decode()
-    rows, required = [], set()
-    for species, minimum in sorted(own.items()):
-        pointer = re.search(r'^    \[' + species + r'\] = (\w+),$', pointers, re.M)[1]
-        block = re.search(r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};', learn, re.M | re.S)
-        learnset = [(int(m[1]), m[2]) for m in learn_rows(learn, block)]
-        moves = {move for level, move in learnset if minimum <= level <= 35}
-        initial = []
-        if species in entry:
-            for level, move in learnset:
-                if level <= minimum and move not in initial: initial = (initial + [move])[-4:]
-            moves.update(initial)
-        required.update(moves)
-        rows.append(dict(species=species, earliestLevel=minimum, directlyObtainable=species in entry,
-                         minimumLevelInitialMoves=initial, moves=sorted(moves)))
-    return dict(coverageLevel=35, sourceMaps=list(names), ownedSpecies=rows, requiredMoves=sorted(required),
-                delayedEvolutionIncluded=True, evolutionBackfill=False, moveReminderIncluded=False,
-                ownershipMethods=['FireRed land encounters', 'starter gift', 'Magikarp gift/Old Rod', 'Moon Stone'])
 
 
-def scope(lock, sources):
-    doc=metadata(lock,sources)
-    trainers=trainer_parties(lock,sources)
-    actual={m for t in trainers for mon in t['party'] for m in mon['moves']}
-    script = sources['data/scripts/trainers.inc'].decode()
-    mapped = []
-    for name in ('Route9', 'Route10', 'RockTunnel_1F', 'RockTunnel_B1F'):
-        route = json.loads(sources['data/maps/' + name + '/map.json'], object_pairs_hook=unique_pairs)
-        script = sources['data/scripts/trainers.inc'].decode() + '\n' + sources['data/maps/' + name + '/scripts.inc'].decode()
-        for event in route['object_events']:
-            if event['trainer_type'] != 'TRAINER_TYPE_NORMAL': continue
-            blocks = list(re.finditer(r'^' + re.escape(event['script']) + r'::\n(.*?)(?=^\w+::|\Z)', script, re.M | re.S))
-            if len(blocks) != 1: raise ValueError('Missing initial source trainer script')
-            mapped.extend(re.findall(r'trainerbattle_single (TRAINER_\w+)', blocks[0][1]))
-    if tuple(mapped) != TRAINERS: raise ValueError('RockTunnel trainer source map binding differs')
-    legacy = [json.loads(safe(ROOT,path).read_bytes(), object_pairs_hook=unique_pairs) for path in LEGACY_CATALOGS]
-    existing_abilities = {s[k] for c in legacy for s in c['species'] for k in ('ability1','ability2')}
-    existing_moves = {m['id']['value'] for c in legacy for m in c['moves']}
-    species_abilities = {s[k] for s in doc['species'] for k in ('ability1','ability2')} - {'ABILITY_NONE'}
-    natural = natural_closure(sources)
-    return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,naturalLevelLimit=None,trainers=trainers,
-        requiredTrainerMoves=sorted(actual),teachingMoves=list(TEACHING_MOVES),naturalRouteClosure=natural,
-        requiredBattleMoves=sorted(set(natural['requiredMoves']) | actual | set(TEACHING_MOVES)),
-        fullLearnsetMoves=sorted({m['move']['value'][5:] for s in doc['species'] for m in s['levelUpMoves']}),
-        sourceDefinitions=doc['moves'],
-        speciesAbilities=sorted(species_abilities),newAbilities=sorted(species_abilities-existing_abilities),
-        newMoveDefinitions=[m for m in doc['moves'] if m['id']['value'] not in existing_moves],
-        noEvolutionMoveBackfill=True,effectsEnabledByThisCatalog=False,encountersEnabledByThisCatalog=False,
-        exclusions=['Fishing and surfing', 'Unimported evolution targets',
-            'Unimplemented move effects; no blanket battle level cap', 'Move metadata does not enable battle execution'])
 
 
 def supplement(lock, sources):
@@ -289,7 +202,6 @@ def convert(lock, sources):
     outputs = art(lock, sources)
     outputs['catalog.json'] = canonical(metadata(lock, sources))
     outputs.update(supplement(lock, sources))
-    outputs['scope.json'] = canonical(scope(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
 
         inputCount=len(lock['files']), addedSpeciesCount=14, composedSpeciesCount=93,

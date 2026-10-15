@@ -39,48 +39,18 @@ public sealed class PretEeveePokemon
         EncodedNames = document.EncodedNames.ToImmutableDictionary(n => n.Symbol, StringComparer.Ordinal);
     }
 
-    /// <summary>Composes102/240 campaign or102/239 standalone into103/241 or103/240; keeps inherited objects.</summary>
-    public static PretEeveePokemon Load(PokemonCatalog baseCatalog, string projectRoot, string? dependencyProjectRoot = null)
+    /// <summary>Resolve regional presentation against the current admitted catalog.</summary>
+    public static PretEeveePokemon Load(PretCanonicalPokemonCatalog canonical, PokemonCatalog catalog, string projectRoot)
     {
-        PokemonFactory.ValidateCatalog(baseCatalog);
-        Require(baseCatalog.Species.Count == 102 &&
-            baseCatalog.Moves.Count is 239 or 240, "Eevee predecessor scope differs.");
-        var project = Path.GetFullPath(projectRoot);
-        // All new source bytes are self-contained; dependencyProjectRoot is retained for composition API consistency.
-        var bytes = PretCeladonApproachSource.Read(project,CatalogRelativePath);
-        var options = ContentJson.CreateOptions();
-        options.Converters.Add(new ExactEnumConverter<GrowthRate>());
-        options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
-        var doc = ContentJson.ParseStrict<EeveePokemonDocument>(Utf8.GetString(bytes), options);
-        Require(doc.SchemaVersion == 1 && doc.DeferredEvolutions.Length == 5 && doc.RequiredMoves.Length == 9 &&
-            doc.NaturalLevelLimit is null && !doc.Limitations.IsDefaultOrEmpty, "Eevee document scope differs.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        
-        foreach (var input in doc.Inputs)
-        {
-            files.Add(new(input.Path));
-        }
-        var s = doc.Species.Single();
-        Require(Game.Domain.WildBattle.EeveeBattleScope.IsEeveeDefinition(s), "Eevee source species identity differs.");
-        var expectedEvolutions = new[] { ("EVO_ITEM","ITEM_THUNDER_STONE","JOLTEON"),("EVO_ITEM","ITEM_WATER_STONE","VAPOREON"),("EVO_ITEM","ITEM_FIRE_STONE","FLAREON"),("EVO_FRIENDSHIP_DAY","0","ESPEON"),("EVO_FRIENDSHIP_NIGHT","0","UMBREON") };
-        Require(doc.DeferredEvolutions.Select(e => (e.Method,e.Parameter,e.Target.Value)).SequenceEqual(
-            expectedEvolutions.Select(e => (e.Item1,e.Item2,"pret:SPECIES_"+e.Item3))) &&
-            doc.DeferredEvolutions.All(e => e.Species==s.Id && !e.Executable && !string.IsNullOrWhiteSpace(e.Reason)),
-            "Eevee deferred source evolution rows differ.");
-        var species = baseCatalog.Species.Add(s.Id,s); var moves = baseCatalog.Moves.ToBuilder();
-        Require(doc.Moves.Select(m => m.SourceMoveId).ToHashSet().SetEquals(new[] {226}), "Eevee new move identities differ.");
-        foreach (var m in doc.Moves) { Require(!m.BattleEffectImplemented, "Metadata cannot admit effects."); moves.Add(m.Id,m); }
-        Require(doc.RequiredMoves.Distinct().Count() == 9 && doc.RequiredMoves.All(moves.ContainsKey), "Eevee move closure differs.");
-        foreach (var n in doc.EncodedNames)
-        {
-            Require(n.Bytes.Length == n.Name.Length + 1 && n.Bytes[^1] == 255 && n.Bytes.Take(n.Bytes.Length-1).All(b => b is >=0 and <255),
-                "Eevee encoded name differs.");
-        }
-        var catalog = new PokemonCatalog(SourceCommit,species,moves.ToImmutable());
-        Require(catalog.Species.Count == 103 && catalog.Moves.Count == baseCatalog.Moves.Count + 1 , "Eevee inherited records differ.");
-        // The battle/domain increment owns the exact103-species factory admission.
-        PokemonFactory.ValidateCatalog(catalog);
-        return new(catalog,doc,files.ToImmutable());
+        var doc = SafariSource.Parse<EeveePokemonDocument>(SafariSource.Read(projectRoot, CatalogRelativePath), canonical: canonical);
+        SafariSource.Require(doc.SchemaVersion == 1 && !doc.Species.IsDefaultOrEmpty &&
+            doc.Species.All(species => catalog.Species.ContainsKey(species.Id)) &&
+            doc.RequiredMoves.All(catalog.Moves.ContainsKey), "Eevee presentation references are not admitted.");
+        foreach (var name in doc.EncodedNames)
+            SafariSource.Require(!name.Bytes.IsDefaultOrEmpty && name.Bytes[^1] == 255,
+                "Eevee encoded name is unterminated.");
+        var files = doc.Inputs.Select(input => new PretWorldSourceFile(input.Path)).ToImmutableArray();
+        return new(catalog, doc, files);
     }
     private static void Require(bool value,string message) { if (!value) throw new InvalidDataException(message); }
 }

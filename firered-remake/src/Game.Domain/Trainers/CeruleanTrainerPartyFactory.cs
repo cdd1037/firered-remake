@@ -23,17 +23,11 @@ public static class CeruleanTrainerPartyFactory
         "pret:SPECIES_SQUIRTLE" => SupportedTrainers[5], _ => throw new NotSupportedException("Unknown original starter.") };
 
     public static TrainerPartyCreationResult Create(CeruleanTrainerCatalog trainers, PokemonCatalog pokemon,
-        TrainerId trainerId, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
+        TrainerId trainerId, RngState rng)
     {
-        towerRules |= fuchsiaRules;
-        rocketHideoutRules |= towerRules;
-        celadonGymRules |= rocketHideoutRules;
-        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != (towerRules && !fuchsiaRules) || (pokemon.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
-        rockTunnelRules |= celadonGymRules;
-        route11Rules |= rockTunnelRules;
-        vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
+
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || !trainers.Trainers.TryGetValue(trainerId, out var trainer))
+        if (!trainers.Trainers.TryGetValue(trainerId, out var trainer))
             throw new NotSupportedException("Cerulean requires its complete sixty-five-species catalog and a source trainer.");
         foreach (var member in trainer.Party)
         {

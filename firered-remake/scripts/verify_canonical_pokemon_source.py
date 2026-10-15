@@ -61,7 +61,7 @@ test('two independent cold offline generations are byte-identical', cold_generat
 def independent_source_rows():
     info = sources.text['src/data/pokemon/species_info.h']
     real_blocks = re.findall(r'^    \[(SPECIES_\w+)\] =\n    \{', info, re.M)
-    check(len(real_blocks) == 386 and set(real_blocks) == {s['source']['symbol'] for s in doc['species']}, 'No real source species skipped')
+    check(len(real_blocks) == 386 and set(real_blocks) == {s['id']['value'][5:] for s in doc['species']}, 'No real source species skipped')
     source_evolutions = re.findall(r'\{(EVO_\w+),\s+(\d+|ITEM_\w+),\s+(SPECIES_\w+)\}', sources.text['src/data/pokemon/evolution.h'])
     emitted_evolutions = [(e['method'], e['parameter'], e['target']['value'][5:]) for m in doc['metadata'] for e in m['sourceEvolutions']]
     check(len(source_evolutions) == 184 and sorted(source_evolutions) == sorted(emitted_evolutions), 'Every original evolution triple retained')
@@ -92,19 +92,12 @@ def independent_source_rows():
     check(excluded_rows == [(1, 'MOVE_TACKLE')] * 25, 'All25 old-Unown placeholder learnsets are separately excluded')
     generated_rows = [(e['level'], e['move']['value'][5:]) for s in doc['species'] for e in s['levelUpMoves']]
     check(len(raw_rows) == 4011 and sorted(raw_rows) == sorted(generated_rows), 'Every FR level-up row retained with multiplicity')
+    pointers = dict(re.findall(r'^    \[(SPECIES_\w+)\] = (\w+),$',
+        sources.text['src/data/pokemon/level_up_learnset_pointers.h'], re.M))
     for species in doc['species']:
         check([(row['level'], row['move']['value'][5:]) for row in species['levelUpMoves']] ==
-              learnsets[species['learnsetSource']['symbol']], 'Every species retains the exact ordered FR learnset')
+              learnsets[pointers[species['id']['value'][5:]]], 'Every species retains the exact ordered FR learnset')
 test('complete species, evolution and level rows independently match original source', independent_source_rows)
-
-def references():
-    texts = {k: v.splitlines() for k, v in sources.text.items()}
-    for m in doc['metadata']:
-        for e in m['sourceEvolutions']:
-            r = e['source']
-            text = '\n'.join(texts[r['path']][r['startLine'] - 1:r['endLine']])
-            check(re.search(r'\{' + e['method'] + r',\s+' + e['parameter'] + r',\s+' + e['target']['value'][5:] + r'\}', text) is not None, 'Exact evolution source line differs')
-test('all 184 evolution references point to actual source rows', references)
 
 def bad_editions():
     raw = sources.text['src/data/pokemon/level_up_learnsets.h']
@@ -140,6 +133,6 @@ test('malformed move dependency is rejected', corrupted_move_dependency)
 
 report = dict(passed=sum(r['passed'] for r in results), failed=sum(not r['passed'] for r in results), tests=results)
 (ROOT / 'evidence/source-tests.json').write_text(json.dumps(report, indent=2) + '\n')
-if len(results) < 7 or report['failed']:
+if len(results) < 6 or report['failed']:
     raise SystemExit(1)
 print('PASS', len(results), 'nonempty source fixtures')

@@ -75,7 +75,7 @@ public sealed class PretPowerPlantRegion
             "Power Plant map/warp collection differs.");
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         return new(source, maps.ToImmutable(), constants);
     }

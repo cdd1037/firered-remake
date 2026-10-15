@@ -100,10 +100,9 @@ def metadata(lock, sources):
             level = re.fullmatch(r'\{\{EVO_LEVEL,\s+(\d+), (SPECIES_\w+)\}\}', m[1])
             item = re.fullmatch(r'\{\{EVO_ITEM, (ITEM_\w+), (SPECIES_\w+)\}\}', m[1])
             if level:
-                evolution = dict(level=int(level[1]), target=ident(level[2]), source=ref(evolution_path, symbol, m))
+                evolution = dict(level=int(level[1]), target=ident(level[2]))
             elif item:
-                evolution = dict(level=0, target=ident(item[2]), source=ref(evolution_path, symbol, m),
-                                 method='item', parameter=item[1])
+                evolution = dict(level=0, target=ident(item[2]), method='item', parameter=item[1])
             else:
                 raise ValueError('Unsupported evolution declaration: ' + m[1])
             if level and evolution['level'] <= 20:
@@ -114,20 +113,12 @@ def metadata(lock, sources):
                 deferred.append(dict(species=ident(symbol), evolution=evolution, executable=False,
                     reason='Moon Stone evolution is deferred; no item executor or target imported' if item else
                            'Target lies above current natural level 20 boundary'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']],
-            genderRatio={'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']], genderRatio={'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     for path, symbol in [('include/constants/pokemon.h', 'EVO_LEVEL'), ('include/constants/pokemon.h', 'EVO_ITEM'),
@@ -149,7 +140,7 @@ def metadata(lock, sources):
         encoded_names.append(dict(symbol=row['source']['symbol'], name=row['name'], bytes=values,
                                   source=row['source'], encodingSource=encoding_source))
     return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'],
-        species=species, moves=moves, speciesNames=names, moveNames=move_names, constants=constants,
+        species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=names, moveNames=move_names, constants=constants,
         encodedNames=encoded_names, deferredEvolutions=deferred, itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False,
         tradeEvolutionExecutorImplemented=False,
         limitations=['Adds eight exact Route3 and pre-MtMoon-center species over the unchanged 32-species Route22 catalog.',
@@ -177,68 +168,12 @@ def supplement(lock, sources):
         natural_level_limit=20, cry_source_newline=False)
 
 
-def scope(lock, sources):
-    """Trace the bounded additions to actual FireRed slots, initial trainers and gift.
-
-    These are requirements/evidence only. Encounter reachability and execution are
-    validated by the separately existing region/application profile.
-    """
-    reference = lambda path, symbol, needle=None: pokemon.reference(lock, sources, path, symbol, needle)
-    wild = json.loads(sources['src/data/wild_encounters.json'], object_pairs_hook=unique_pairs)
-    encounters = [e for g in wild['wild_encounter_groups'] for e in g.get('encounters', [])]
-    lands = []
-    for map_name in ('Route3', 'Route4'):
-        entry = next(e for e in encounters if e['base_label'] == 's' + map_name + '_FireRed')
-        lands.append(dict(map=entry['map'], table=entry['base_label'], landMons=entry['land_mons'],
-            enabledByThisCatalog=False, currentRegion=map_name == 'Route3',
-            reason='Route3 grass; actual collision/reachability belongs to the region profile' if map_name == 'Route3' else
-                   'Route4 eastern grass lies beyond MtMoon; catalog availability does not open it',
-            source=reference('src/data/wild_encounters.json', entry['base_label'])))
-    trainer_text = sources['src/data/trainers.h'].decode()
-    parties_text = sources['src/data/trainer_parties.h'].decode()
-    scripts_text = sources['data/scripts/trainers.inc'].decode()
-    trainers = []
-    for map_name in ('Route3', 'Route4'):
-        map_path = f'data/maps/{map_name}/map.json'
-        map_data = json.loads(sources[map_path], object_pairs_hook=unique_pairs)
-        for event in map_data['object_events']:
-            if event.get('trainer_type') != 'TRAINER_TYPE_NORMAL':
-                continue
-            script = event['script']
-            match = re.search(r'^' + script + r'::\n\ttrainerbattle_single (TRAINER_\w+),[^\n]*', scripts_text, re.M)
-            if match is None:
-                raise ValueError('Missing initial road trainer')
-            trainer = match[1]
-            record = re.search(r'^    \[' + trainer + r'\] = \{\n(.*?)^    \},', trainer_text, re.M | re.S)
-            party = re.search(r'\.party = NO_ITEM_DEFAULT_MOVES\((\w+)\)', record[1])[1]
-            party_match = re.search(r'^static const struct TrainerMonNoItemDefaultMoves ' + party + r'\[\] = \{\n(.*?)^\};', parties_text, re.M | re.S)
-            rows = re.findall(r'    \{\n        \.iv = (\d+),\n        \.lvl = (\d+),\n        \.species = (SPECIES_\w+),\n    \},', party_match[1])
-            if not rows or party_match[1] != ''.join(f'    {{\n        .iv = {iv},\n        .lvl = {level},\n        .species = {species},\n    }},\n' for iv, level, species in rows):
-                raise ValueError('Unsupported road trainer party shape')
-            trainers.append(dict(trainer=trainer, script=script, map='MAP_' + map_name.upper(),
-                currentRegion=map_name == 'Route3', party=[dict(iv=int(iv), level=int(level), species=species) for iv, level, species in rows],
-                scriptSource=reference('data/scripts/trainers.inc', script, match[0]),
-                partySource=reference('src/data/trainer_parties.h', party, party_match[0]),
-                trainerSource=reference('src/data/trainers.h', trainer, record[0])))
-    gift_path = 'data/maps/Route4_PokemonCenter_1F/scripts.inc'
-    gift_text = sources[gift_path].decode()
-    required = ('.equ MAGIKARP_PRICE, 500', '\tgivemon SPECIES_MAGIKARP, 5', '\tsetflag FLAG_BOUGHT_MAGIKARP')
-    if any(gift_text.count(line) != 1 for line in required):
-        raise ValueError('Magikarp seller source differs')
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, landTables=lands,
-        roadTrainers=trainers, gift=dict(species='SPECIES_MAGIKARP', level=5, price=500,
-            flag='FLAG_BOUGHT_MAGIKARP', partyAndPcDelivery=True, payOnlyAfterSuccessfulDelivery=True,
-            source=reference(gift_path, 'Route4_PokemonCenter_1F_EventScript_TryBuyMagikarp')),
-        exclusions=['Route4 eastern grass and Lass Crissy until MtMoon traversal', 'Surf and fishing',
-                    'Rematches', 'MtMoon fossils and encounters', 'Moon Stone and trade evolution',
-                    'Natural growth above level20'], effectsEnabledByThisCatalog=False)
 
 
 def convert(lock, sources):
     outputs = art(lock, sources)
     outputs['catalog.json'] = canonical(metadata(lock, sources))
     outputs.update(supplement(lock, sources))
-    outputs['scope.json'] = canonical(scope(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
 
         inputCount=len(lock['files']), addedSpeciesCount=8, composedSpeciesCount=40,

@@ -16,7 +16,7 @@ public static class FourIslandDayCareRules
     public static int GetScriptState(FourIslandDayCareState state) =>
         state.HasPendingEgg ? 1 : state.Count == 0 ? 0 : state.Count + 1;
 
-    public static string? Validate(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static string? Validate(CampaignPokemonContent content, GamePokemonCatalog ownership,
         FourIslandDayCareState? state, Route5DayCareState route5, ImmutableArray<PartyPokemon> party,
         PokemonStorageState storage, SourceMailState mail, long? nextInstanceId = null)
     {
@@ -34,7 +34,7 @@ public static class FourIslandDayCareRules
         return null;
     }
 
-    public static FourIslandDayCareResult Deposit(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static FourIslandDayCareResult Deposit(CampaignPokemonContent content, GamePokemonCatalog ownership,
         FourIslandDayCareState state, Route5DayCareState route5, ImmutableArray<PartyPokemon> party,
         PokemonStorageState storage, SourceMailState mail, int partyIndex)
     {
@@ -51,14 +51,14 @@ public static class FourIslandDayCareRules
         return new(updated, result.Party, result.Mail, true, null, LearnedMoves: result.LearnedMoves);
     }
 
-    public static SourceDayCareQuote Quote(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static SourceDayCareQuote Quote(CampaignPokemonContent content, GamePokemonCatalog ownership,
         FourIslandDayCareState state, int slot)
     {
         if (ValidateShape(state) is { } error) throw new ArgumentException(error);
         return Route5DayCareRules.Quote(content, ownership, new(Select(state, slot)));
     }
 
-    public static FourIslandDayCareResult Withdraw(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static FourIslandDayCareResult Withdraw(CampaignPokemonContent content, GamePokemonCatalog ownership,
         FourIslandDayCareState state, Route5DayCareState route5, ImmutableArray<PartyPokemon> party,
         PokemonStorageState storage, SourceMailState mail, int slot, int money)
     {

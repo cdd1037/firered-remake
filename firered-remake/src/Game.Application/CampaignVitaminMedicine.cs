@@ -20,7 +20,7 @@ public sealed partial class CampaignSession
         if (ValidateCampaignInventory(state.Inventory) is { } inventoryError) return No(inventoryError);
         var item = new ItemId(command.Text);
         var result = SourceFieldVitaminRules.Use(ShopCatalog, _content.PokemonContent!,
-            ShopInventoryView(state.Inventory), target, item,
+            state.Inventory, target, item,
             _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
         if (!result.Succeeded)
         {
@@ -45,7 +45,7 @@ public sealed partial class CampaignSession
         string statName = string.Join("\n", _content.TextPages(statSymbol));
         return new(CommandStatus.Accepted, state with
         {
-            Inventory = MergeShopInventory(state.Inventory, result.Inventory),
+            Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", result.Pokemon.Nickname)
                 .SetItem("STR_VAR_2", statName),

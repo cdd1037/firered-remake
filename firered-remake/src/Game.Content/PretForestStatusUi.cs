@@ -6,7 +6,6 @@ namespace Game.Content;
 
 public sealed record ForestStatusUiPoint(int X, int Y);
 public sealed record ForestStatusUiInput(string Path, string SourceUrl);
-public sealed record ForestStatusUiSourceRef(string Path, string Symbol, int StartLine, int EndLine, string Url);
 public sealed record ForestStatusUiAsset(string Id, string TexturePath, int Width, int Height, int X, int Y, string Context,
     string Status, int SourceTile, string SourceImagePath, string SourcePalettePath,
     ImmutableArray<int> PaletteRgb555, int TransparentIndex);
@@ -18,7 +17,7 @@ public sealed record ForestStatusUiTerrain(string MapId, string ComparisonMapId,
     int TerrainId, string Condition, bool SameAsRoute1TallGrass, string TexturePath);
 public sealed record ForestStatusUiDocument(int SchemaVersion, string Profile, string Repository, string SourceCommit,
     ImmutableArray<ForestStatusUiInput> Inputs, ImmutableArray<ForestStatusUiAsset> Assets,
-    ImmutableArray<ForestStatusUiSourceRef> SourceRefs, ForestStatusUiDisplay Display,
+    ForestStatusUiDisplay Display,
     ForestStatusUiTerrain Terrain, ImmutableArray<string> Limitations);
 
 /// <summary>Loads status textures and their display layout.</summary>
@@ -82,7 +81,6 @@ public static class PretForestStatusUi
 
     /// <summary>Generated PNG bytes for the rendering layer.</summary>
 
-
     private static void ValidateAsset(ForestStatusUiAsset asset)
     {
         Require(asset is not null && Expected.TryGetValue(asset.Id, out var e)
@@ -92,8 +90,6 @@ public static class PretForestStatusUi
             && asset.PaletteRgb555.Length == 16 && asset.PaletteRgb555.All(c => c is >= 0 and <= 32767),
             "Forest status asset layout is invalid.");
     }
-
-
 
     private static byte[] ReadPinned(string root,string path)
     {

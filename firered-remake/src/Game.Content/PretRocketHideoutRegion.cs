@@ -34,12 +34,6 @@ public sealed class PretRocketHideoutRegion
     public JsonElement ExternalCeladonEvents { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
-    public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
-    // Rich inspection metadata is authenticated when requested, never preloaded with map cells.
-    public JsonElement Dependencies => ReadDocument("dependencies.json");
-    public JsonElement Trainers => Dependencies.GetProperty("trainers");
-    public JsonElement Pickups => Dependencies.GetProperty("pickups");
-    public JsonElement Items => Dependencies.GetProperty("items");
 
     public JsonElement NpcSources => ReadDocument("npc-source.json");
     public JsonElement SpinRoutes => ReadDocument("spin-routes.json");
@@ -141,14 +135,14 @@ public sealed class PretRocketHideoutRegion
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty;
         var byPath = files.ToDictionary(f=>f.Path,StringComparer.Ordinal);
-            
+
         var metadata = new PretWorldMetadata("pret/pokefirered",PretWorldMap.SourceCommit,"Local authenticated source data.","Source contracts; executable progression is registered by Application.",Profile);
         var spec = Document("runtime.json"); var maps=ImmutableDictionary.CreateBuilder<MapId,PretWorldMap>();
         foreach(var s in spec.GetProperty("maps").EnumerateArray())
         {
             var id=new MapId(s.GetProperty("stableId").GetString()!);var compact=runtime.Maps[id];
                 Need(                compact.SourceRef.Symbol==s.GetProperty("sourceMapSymbol").GetString() && MapIdFromSourceSymbol(compact.SourceRef.Symbol)==id,"Rocket map identity differs.");
-                
+
             var relative=s.GetProperty("directory").GetString()!;
             maps.Add(id,PretWorldMap.FromRuntime(compact,metadata,PretRuntimeMapValidation.SafeFile(directory,relative),
                 PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"),MapIdFromSourceSymbol));

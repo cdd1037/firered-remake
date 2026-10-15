@@ -18,9 +18,9 @@ public static class PretSsAnneItems
     public const string Profile = "firered-ssanne-items-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretSsAnneItemsDocument Load(string json)
+    public static PretSsAnneItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions();
+        var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretSsAnneItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 14 && document.Icons.Length == 15 &&
@@ -48,25 +48,13 @@ public static class PretSsAnneItems
         return document;
     }
 
-    public static PretSsAnneItemsDocument LoadProject(string root)
+    public static PretSsAnneItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/ssanne-items/ssanne-items.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/ssanne-items/ssanne-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
 
     /// <summary>Appends only ship additions to the authenticated four-Mart Vermilion catalog.</summary>
-    public static EarlyShopCatalog LoadShopProject(string root, EarlyShopCatalog vermilionShop)
-    {
-        VermilionItemRules.ValidateShop(vermilionShop);
-        var document = LoadProject(root);
-        string[] added = ["STARDUST", "X_ATTACK", "GREAT_BALL", "HYPER_POTION", "LAVA_COOKIE", "CHERI_BERRY", "CHESTO_BERRY", "PECHA_BERRY", "BERRY_POUCH"];
-        var result = vermilionShop with
-        {
-            Profile = SsAnneItemRules.Profile,Items = vermilionShop.Items.AddRange(added.Select(s => Definition(document, new ItemId("pret:ITEM_" + s))!))
-        };
-        EarlyShopInventoryRules.ValidateCatalog(result);
-        return result;
-    }
 
     public static EarlyShopItemDefinition? Definition(PretSsAnneItemsDocument document, ItemId id)
     {
@@ -87,10 +75,7 @@ public static class PretSsAnneItems
         };
         int heal = use == EarlyShopUseSupport.Potion ? item.HoldEffectParam : 0;
         uint cure = item.SourceItemSymbol == "ITEM_CHERI_BERRY" ? 64u : item.SourceItemSymbol == "ITEM_PECHA_BERRY" ? 8u : 0u;
-        return new(item.Id, item.SourceItemSymbol, item.SourceItemId, item.Name, value.Metadata.Description,
-            item.Price, item.Pocket, item.Importance, item.Type, item.FieldUseFunction, item.BattleUsage,
-            item.BattleUseFunction, item.HoldEffectParam, heal, cure, value.EffectBytes, use,
-            item.Source, value.EffectSource) { SourceMetadata = item };
+        return new(item, value.Metadata.Description, heal, cure, value.EffectBytes, use);
     }
     private static byte[] Read(string root,string path)
     {

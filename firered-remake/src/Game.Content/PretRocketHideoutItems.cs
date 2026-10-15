@@ -20,14 +20,14 @@ public static class PretRocketHideoutItems
     public const string Profile = RocketHideoutItemRules.Profile;
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static void Require(bool condition, string message) => PretCeladonApproachSource.Require(condition,message);
-    public static PretRocketHideoutItemsDocument Load(string json)
+    public static PretRocketHideoutItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
+        var options = machines.CreateJsonOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var document = ContentJson.ParseStrict<PretRocketHideoutItemsDocument>(json,options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 10 && document.Icons.Length == 10 && !document.Limitations.IsDefaultOrEmpty,"Rocket Hideout item scope differs.");
         foreach (var item in document.Items)
         {
-            RocketHideoutItemRules.ValidateSourceItem(item.Metadata,item.EffectBytes,item.EffectSource);
+            RocketHideoutItemRules.ValidateSourceItem(item.Metadata,item.EffectBytes);
         }
         Require(document.Items.Select(i => i.Metadata.Item.Id).Distinct().Count() == 10,"Duplicate Rocket Hideout source items.");
         foreach (var icon in document.Icons)
@@ -38,18 +38,13 @@ PretPewterMachines.ValidateIcon(icon);
         Require(document.Icons.Select(i => i.Item).Distinct().Count() == 10,"Duplicate Rocket Hideout icons.");
         return document;
     }
-    public static PretRocketHideoutItemsDocument LoadProject(string root)
+    public static PretRocketHideoutItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
         var outputs = PretCeladonApproachSource.Outputs(root,"rocket-hideout-items");
-        var document = Load(Utf8.GetString(outputs["rocket-hideout-items.json"]));
+        var document = Load(Utf8.GetString(outputs["rocket-hideout-items.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
-    public static EarlyShopCatalog LoadShopProject(string root, EarlyShopCatalog inherited)
-    {
-        CeladonGymItemRules.ValidateShop(inherited); var document = LoadProject(root);
-        var result = inherited with { Profile = Profile,Items = inherited.Items.AddRange(document.Items.Select(Definition)) };
-        RocketHideoutItemRules.ValidateShop(result); return result;
-    }
+
     private static EarlyShopItemDefinition Definition(PretBillSourceItem item)
     {
         var result = PretSsAnneItems.Definition(item);

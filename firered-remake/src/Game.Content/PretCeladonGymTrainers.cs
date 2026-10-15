@@ -15,9 +15,9 @@ public static class PretCeladonGymTrainers
     public const string SourceCommit="037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string Profile="firered-celadon-gym-trainers-v1";
     public const int TrainerCount=8,PartyMemberCount=21,RequiredMoveCount=17;
-    public static CeladonGymTrainerDocument LoadDocument(string root)
+    public static CeladonGymTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
-        var d=ContentJson.ParseStrict<CeladonGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/celadon-gym-trainers/trainers.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<CeladonGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/celadon-gym-trainers/trainers.json")),canonical.ReferenceOptions());
         Require(d.SchemaVersion==1&&!d.CompleteSourceRoster&&
             d.Trainers.Select(x=>x.Id).Distinct().Count()==8&&d.Trainers.Sum(x=>x.Party.Length)==21&&d.ResolvedMoves.GetArrayLength()==8&&!d.Limitations.IsDefaultOrEmpty,"Celadon Gym document scope differs.");
         string[] names=["LASS_KAY","BEAUTY_BRIDGET","PICNICKER_TINA","BEAUTY_TAMIA","BEAUTY_LORI","LASS_LISA","COOLTRAINER_MARY","LEADER_ERIKA"];
@@ -39,8 +39,8 @@ var resolved=d.ResolvedMoves[i];
         }
         return d;
     }
-    public static CeladonGymTrainerCatalog Load(string root)
-    {var d=LoadDocument(root);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
+    public static CeladonGymTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
+    {var d=LoadDocument(canonical, root);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
     private static void Require(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
     private static byte[] Read(string root,string relative)
     {

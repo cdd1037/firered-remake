@@ -33,15 +33,15 @@ def main():
         for row in document['species']:
             inherited_species[row['id']['value']] = row
         for row in document['moves']:
-            key = row['id']['value']
+            key = row['value']
             if key in inherited_moves:
                 assert inherited_moves[key] == row, key
             inherited_moves[key] = row
     assert len(inherited_species) == 99 and len(inherited_moves) == 230
-    added_moves = {m['id']['value']: m for m in catalog['moves']}
+    added_moves = {m['value']: m for m in catalog['moves']}
     assert len(added_moves) == 5 and not added_moves.keys() & inherited_moves.keys()
     for definition in fixture['requiredMoveDefinitions']:
-        key = definition['id']['value']
+        key = definition['value']
         assert (added_moves.get(key) or inherited_moves[key]) == definition, key
     expected = {
         ('pret:SPECIES_GASTLY', 13): ['HYPNOSIS', 'LICK', 'SPITE', 'CURSE'],
@@ -55,8 +55,10 @@ def main():
     assert len(indexed) == 20
     for key, moves in expected.items():
         assert indexed[key] == ['pret:MOVE_' + m for m in moves], key
-    assert [s['sourceSpeciesId'] for s in catalog['species']] == [92, 93]
-    assert [len(s['levelUpMoves']) for s in catalog['species']] == [11, 13]
+    canonical_species = {s['id']['value']: s for s in json.loads((args.dependency_project_root / 'content/generated/canonical-pokemon/catalog.json').read_bytes())['species']}
+    species = [canonical_species[s['id']['value']] for s in catalog['species']]
+    assert [s['sourceSpeciesId'] for s in species] == [92, 93]
+    assert [len(s['levelUpMoves']) for s in species] == [11, 13]
     evolution = catalog['species'][0]['evolutions'][0]
     assert evolution['level'] == 25 and evolution['target']['value'] == 'pret:SPECIES_HAUNTER'
     assert catalog['species'][1]['evolutions'] == []

@@ -35,10 +35,9 @@ public sealed partial class CampaignSession
         }
         if (!content.FourIslandEnabled || content.SixIslandOwnership is not {} owned ||
             content.SixIslandOpponents is not {} opponents || content.SixIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned.Predecessor, content.FourIslandOwnership) || !ReferenceEquals(content.FiveIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FourIslandOpponents) ||
-            (CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            (content.SevenIslandShop?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop)) is null)
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.SunStoneId))
             throw new InvalidDataException("six_island_source_profile_missing");
         SixIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }

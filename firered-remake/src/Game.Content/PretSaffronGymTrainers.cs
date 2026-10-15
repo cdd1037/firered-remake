@@ -15,9 +15,9 @@ public static class PretSaffronGymTrainers
 {
     public const string Profile = "firered-saffron-gym-trainers-v1";
     public const int TrainerCount = 8,PartyMemberCount = 20;
-    public static SaffronGymTrainerDocument LoadDocument(string root)
+    public static SaffronGymTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
-        var source = SaffronGymSource.Catalogs(root); var d = source.Parse<SaffronGymTrainerDocument>("trainers.json");
+        var source = SaffronGymSource.Catalogs(root); var d = source.Parse<SaffronGymTrainerDocument>("trainers.json", canonical);
         SilphSourcePackage.Need(d.SchemaVersion == 1 && !d.CompleteSourceRoster &&
             d.Trainers.Length == TrainerCount && d.Battles.Length == TrainerCount && d.Trainers.Select(t => t.Id).Distinct().Count() == TrainerCount &&
             d.Trainers.Sum(t => t.Party.Length) == PartyMemberCount && d.ResolvedMoves.GetArrayLength() == TrainerCount && !d.Limitations.IsDefaultOrEmpty,
@@ -44,6 +44,6 @@ public static class PretSaffronGymTrainers
         foreach (var m in d.Moves) { SilphSourcePackage.Need(!m.BattleEffectImplemented, "Metadata cannot enable battle effects."); }
         return d;
     }
-    public static SaffronGymTrainerCatalogContent Load(string root)
-    { var d = LoadDocument(root); return new(d.SourceCommit, d.Profile, false, d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles.ToImmutableDictionary(b => b.Trainer)); }
+    public static SaffronGymTrainerCatalogContent Load(PretCanonicalPokemonCatalog canonical, string root)
+    { var d = LoadDocument(canonical, root); return new(d.SourceCommit, d.Profile, false, d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles.ToImmutableDictionary(b => b.Trainer)); }
 }

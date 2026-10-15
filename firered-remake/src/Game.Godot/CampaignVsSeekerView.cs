@@ -59,7 +59,7 @@ public partial class CampaignView
         _questPocketTextures.Add(icon.Id, SceneTextures.FromImage(image));
         document = document with
         {
-            Items = document.Items.Add(new("pret:ITEM_VS_SEEKER", "ITEM_VS_SEEKER", item.GetProperty("name").GetString()!,
+            Items = document.Items.Add(new("pret:ITEM_VS_SEEKER", "ITEM_VS_SEEKER", SharedMachineCatalog.LoadProject(_root).Items.Definition(new("pret:ITEM_VS_SEEKER")).Name,
                 item.GetProperty("description").GetString()!, icon.Id, "FieldUseFunc_VsSeeker")),
             Assets = document.Assets.Add(new(icon.Id,icon.Path,24,24,position.X,position.Y))
         };

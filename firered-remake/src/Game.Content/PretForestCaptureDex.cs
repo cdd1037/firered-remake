@@ -64,7 +64,7 @@ public static class PretForestCaptureDex
         var original = LoadLegacy(project);
         Require(JsonSerializer.Serialize(document.Layout) == JsonSerializer.Serialize(original.Layout),
             "Forest capture dex changed the legacy layout.");
-        var family = PretForestPokemon.Load(project);
+        var family = PretForestPokemon.Load(PretCanonicalPokemonCatalog.Load(project, project), project);
         foreach (var entry in document.Entries.Values)
         {
             Require(family.SpeciesNames[entry.SourceSpeciesId] == entry.Name && entry.NationalNumber == entry.SourceSpeciesId,

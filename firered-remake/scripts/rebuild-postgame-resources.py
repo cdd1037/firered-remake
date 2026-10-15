@@ -22,9 +22,11 @@ steps.extend([
  ("roamer-contract",["scripts/import-roamer-lifecycle-contract.py","--reference-root",str(ref)])])
 # Shared source compilation plus final compact-byte validation. Individual
 # regional producers already emit shared references; no expansion bridge exists.
-steps = [("shared-machine-source", ["scripts/import-machine-catalog.py", "--project-root", str(root), "--references-only"])] + steps + [
+steps = [("shared-item-source", ["scripts/import-item-catalog.py", "--project-root", str(root)])] + [("shared-machine-source", ["scripts/import-machine-catalog.py", "--project-root", str(root), "--references-only"])] + steps + [
  ("shared-machine-views", ["scripts/import-machine-catalog.py", "--project-root", str(root), "--references-only"]),
- ("shared-machine-check", ["scripts/import-machine-catalog.py", "--project-root", str(root), "--references-only", "--check"]) ]
+ ("shared-machine-check", ["scripts/import-machine-catalog.py", "--project-root", str(root), "--references-only", "--check"]),
+ ("current-items", ["scripts/import-current-items.py", "--project-root", str(root)]),
+ ("source-battle-items", ["scripts/source-battle-items/import.py", "--project-root", str(root)]) ]
 before={str(f.relative_to(root)):hashlib.sha256(f.read_bytes()).hexdigest() for f in (root/'src').rglob('*') if f.is_file() and f.suffix in ('.cs','.csproj') and not set(f.parts)&{'bin','obj','.godot'}}
 results=[]
 for label,args in steps:

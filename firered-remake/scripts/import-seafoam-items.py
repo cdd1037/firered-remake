@@ -2,6 +2,7 @@
 """Import original Water Stone as a held/storage item; evolution use remains explicitly unimplemented.
 REFERENCE DEPENDENCY OUTPUT [--check]. Reads pinned Git blobs only, never upstream scripts.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,io,json,re,subprocess
 from pathlib import Path
 from PIL import Image
@@ -21,7 +22,7 @@ DEPENDENCIES=(
 )
 def need(v,m):
  if not v:raise ValueError(m)
-def encoded(v):return (json.dumps(v,indent=2,ensure_ascii=False)+'\n').encode()
+def encoded(v):return (json.dumps(v,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()
 def generate(reference,dependency):
  inputs={};raw={};texts={}
  def read(p):
@@ -42,11 +43,11 @@ def generate(reference,dependency):
  need(int(one('include/constants/items.h',r'^#define ITEM_WATER_STONE\s+(\d+)\s*$')[1])==97,'Water Stone97')
  need(item['price']==2100 and item['pocket']=='POCKET_ITEMS' and item['importance']==0 and item['type']=='ITEM_TYPE_PARTY_MENU' and item['fieldUseFunc']=='FieldUseFunc_EvoItem' and item['holdEffect']=='HOLD_EFFECT_NONE','Original item semantics')
  source=ref(p,symbol,m);ident={'value':'pret:'+symbol}
- metadata=dict(id=ident,sourceItemSymbol=symbol,sourceItemId=97,name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=True,canSell=True,canGive=True,source=source)
+ metadata=shared_item(symbol)
  effect_path='src/data/pokemon/item_effects.h';effect=one(effect_path,r'^static const u8 sItemEffect_WaterStone\[6\] = \{\n    \[4\] = ITEM4_EVO_STONE,\n\};')
  need('#define ITEM4_EVO_STONE         0x80' in text('include/constants/item_effects.h'),'Original evolution effect byte')
- addition={k:metadata[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
- addition.update(description=item['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0, effectBytes=[0, 0, 0, 0, 128, 0], useSupport=10, effectSource=ref(effect_path, 'sItemEffect_WaterStone', effect), sourceMetadata=metadata)
+ addition=dict(item=metadata)
+ addition.update(description=item['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0, effectBytes=[0, 0, 0, 0, 128, 0], useSupport=10)
  icon_path='src/data/item_icon_table.h';binding=one(icon_path,r'^    \[ITEM_WATER_STONE\]\s*= \{gItemIcon_WaterStone, gItemIconPalette_WaterStone\},$');graphics='src/data/graphics/items.h'
  image='graphics/items/icons/water_stone.png';palette='graphics/items/icon_palettes/water_stone.pal'
  need('gItemIcon_WaterStone[] = INCBIN_U32("graphics/items/icons/water_stone.4bpp.lz")' in text(graphics) and 'gItemIconPalette_WaterStone[] = INCBIN_U32("graphics/items/icon_palettes/water_stone.gbapal.lz")' in text(graphics),'Original icon binding')
@@ -69,5 +70,5 @@ def main():
   target=a.output/p
   if a.check:need(target.read_bytes()==b,'Regeneration differs: '+p)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
- print(json.dumps(dict(checked=a.check,itemCount=128),indent=2))
+ print(json.dumps(dict(checked=a.check,itemCount=128),indent=2, default=item_json))
 if __name__=='__main__':main()

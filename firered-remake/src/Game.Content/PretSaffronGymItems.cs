@@ -14,9 +14,9 @@ public sealed record PretSaffronGymItemsDocument(int SchemaVersion, string Profi
 }
 public sealed record SaffronGymMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<PewterAdditionalMachine> NewMachines, ImmutableArray<string> Limitations)
+    ImmutableArray<MachineDefinition> NewMachines, ImmutableArray<string> Limitations)
 {
-    [JsonIgnore] public ImmutableArray<PewterAdditionalMachine> Machines => NewMachines;
+    [JsonIgnore] public ImmutableArray<MachineDefinition> Machines => NewMachines;
 }
 
 /// <summary>Source TM04 and MAX_REPEL metadata. Application grants and field use remain separate.</summary>
@@ -33,7 +33,7 @@ public static class PretSaffronGymItems
             !d.Limitations.IsDefaultOrEmpty, "Saffron Gym item scope differs.");
         foreach (var item in d.Items)
         {
-            var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && item.EffectSource is null && i.Importance == 0 && i.Registrability == 0 &&
+            var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && i.Importance == 0 && i.Registrability == 0 &&
                 i.HoldEffect == "HOLD_EFFECT_NONE" && i.BattleUsage == 0 && i.BattleUseFunction == "NULL" && i.SecondaryId == 0 &&
                 i.CanGive && i.CanToss && i.CanSell, "Saffron Gym item declaration differs.");
         }
@@ -65,28 +65,13 @@ PretPewterMachines.ValidateIcon(icon);
     public static EarlyShopStock MartStock(PretSaffronGymRegion region)
     {
         return new("SaffronCity_Mart_Items",
-            region.Contracts.GetProperty("martStock").EnumerateArray().Select(item => new ItemId("pret:" + item.GetString()!)).ToImmutableArray(),
-            new("data/maps/SaffronCity_Mart/scripts.inc", "SaffronCity_Mart_Items", 24, 31));
+            region.Contracts.GetProperty("martStock").EnumerateArray().Select(item => new ItemId("pret:" + item.GetString()!)).ToImmutableArray());
     }
     /// <summary>Exactly one ordinary item, retaining all predecessor objects by reference. Caller authenticates successor shop proof.</summary>
-    public static EarlyShopCatalog Extend(EarlyShopCatalog previous, PretSaffronGymItemsDocument items)
-    {
-        SilphShopCatalog.ValidateCatalog(previous);
-        SilphSourcePackage.Need(previous.Items.All(i => i.Id != MaxRepelId), "Max Repel already exists in predecessor.");
-        return previous with { Profile = "firered-saffron-gym-inventory-v1",Items = previous.Items.Add(Definition(items, MaxRepelId)) };
-    }
+
 }
 public static class PretSaffronGymMachines
 {
     public const string Profile = "firered-saffron-gym-teaching-v1";
     public static SaffronGymMachinesDocument LoadProject(string root) => PretSaffronGymItems.LoadProject(root).Machines;
-    public static PewterMachineCatalog Extend(PewterMachineCatalog previous, PretSaffronGymItemsDocument items)
-    {
-        var proof = SilphMachineCatalog.For(previous) ?? throw new InvalidDataException("Saffron Gym machine predecessor is unauthenticated.");
-        var source = items.Machines;
-        SilphSourcePackage.Need(previous.Compatibility.Length == 113 && previous.AdditionalMachines?.Length == 26 &&
-            new[] { previous.Tm39.Item.Id }.Concat(previous.AdditionalMachines!.Value.Select(m => m.Machine.Item.Id)).SequenceEqual(source.InheritedItemIds) &&
-            source.NewMachines[0].Compatibility.Select(c => c.Species).ToHashSet().SetEquals(proof.Pokemon.Catalog.Species.Keys), "Saffron Gym machine predecessor differs.");
-        return previous with { Profile = Profile,AdditionalMachines = previous.AdditionalMachines!.Value.Add(source.NewMachines.Single()) };
-    }
 }

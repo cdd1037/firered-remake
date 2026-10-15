@@ -2,6 +2,7 @@
 """Import one original Poke Doll; retain complete 4F source shelf as evidence only.
 REFERENCE DEPENDENCY OUTPUT [--check]. Reads pinned Git blobs, never upstream programs.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -22,7 +23,7 @@ DEPENDENCIES = (
 )
 def need(value, message):
     if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
+def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False, default=item_json) + '\n').encode()
 def generate(reference, dependency):
     inputs, raw, cache = {}, {}, {}
     def read(path):
@@ -51,9 +52,9 @@ def generate(reference, dependency):
     item_id = int(one('include/constants/items.h', r'^#define ITEM_POKE_DOLL\s+(\d+)\s*$')[1])
     need(item_id == 80 and item['price'] == 1000 and item['pocket'] == 'POCKET_ITEMS' and item['importance'] == 0 and item['type'] == 'ITEM_TYPE_BAG_MENU' and item['fieldUseFunc'] == 'FieldUseFunc_OakStopsYou' and item['battleUsage'] == 2 and item['battleUseFunc'] == 'BattleUseFunc_PokeDoll' and item['holdEffect'] == 'HOLD_EFFECT_NONE', 'Original Doll semantics')
     src = source(path, symbol, block); ident = dict(value='pret:'+symbol)
-    metadata = dict(id=ident, sourceItemSymbol=symbol, sourceItemId=item_id, name=item['english'], price=item['price'], importance=item['importance'], registrability=item['registrability'], pocket=item['pocket'], type=item['type'], holdEffect=item['holdEffect'], holdEffectParam=item['holdEffectParam'], fieldUseFunction=item['fieldUseFunc'], battleUsage=item['battleUsage'], battleUseFunction=item['battleUseFunc'], secondaryId=item['secondaryId'], canToss=True, canSell=True, canGive=True, source=src)
-    addition = {key:metadata[key] for key in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
-    addition.update(description=item['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10, effectSource=None, sourceMetadata=metadata)
+    metadata = shared_item(symbol)
+    addition = dict(item=metadata)
+    addition.update(description=item['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
     use = 'src/item_use.c'
     battle = one(use, r'^void BattleUseFunc_PokeDoll\(u8 taskId\)\n\{.*?^\}')
     need('if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))' in battle[0] and 'RemoveUsedItem();' in battle[0] and 'else\n        PrintNotTheTimeToUseThat(taskId, 0);' in battle[0], 'Trainer refusal before consumption')
@@ -95,5 +96,5 @@ def main():
         target=args.output/path
         if args.check: need(target.read_bytes()==data,'Regeneration differs: '+path)
         else: target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check,itemCount=129),indent=2))
+    print(json.dumps(dict(checked=args.check,itemCount=129),indent=2, default=item_json))
 if __name__ == '__main__': main()

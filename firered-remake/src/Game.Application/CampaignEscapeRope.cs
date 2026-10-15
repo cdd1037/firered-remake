@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
         if (state.EscapeRope is not null) return "save_event_active";
         if (!_content.MtMoonEnabled)
             return state.EscapeDestination is null ? null : "save_escape_rope_profile_missing";
-        return _content.FiveIslandEnabled?FiveIslandEscapeRopeRules.ValidateDestination(state.EscapeDestination):_content.SixIslandEnabled?SixIslandEscapeRopeRules.ValidateDestination(state.EscapeDestination):_content.FourIslandEnabled?FourIslandEscapeRopeRules.ValidateDestination(state.EscapeDestination):_content.SeviiRubyEnabled?SeviiRubyEscapeRopeRules.ValidateDestination(state.EscapeDestination):_content.VictoryRoadEnabled?VictoryRoadEscapeRopeRules.ValidateDestination(state.EscapeDestination):_content.FirstSeviiEnabled?FirstSeviiEscapeRopeRules.ValidateDestination(state.EscapeDestination):_content.CinnabarEnabled?CinnabarEscapeRopeRules.ValidateDestination(state.EscapeDestination):EscapeRopeRules.ValidateDestination(state.EscapeDestination,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled);
+        return _content.EscapeRoutes.ValidateDestination(state.EscapeDestination);
     }
 
     private CampaignState RecordEscapeWarp(CampaignState before, CampaignState moved, Direction direction)
@@ -26,8 +26,8 @@ public sealed partial class CampaignSession
             var (dx, dy) = Delta(direction);
             p = p with { X = p.X + dx, Y = p.Y + dy };
         }
-        return moved with { EscapeDestination = _content.FiveIslandEnabled?FiveIslandEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):_content.SixIslandEnabled?SixIslandEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):_content.FourIslandEnabled?FourIslandEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):_content.SeviiRubyEnabled?SeviiRubyEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):_content.VictoryRoadEnabled?VictoryRoadEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):_content.FirstSeviiEnabled?FirstSeviiEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):_content.CinnabarEnabled?CinnabarEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):EscapeRopeRules.RecordWarp(before.EscapeDestination,
-            p with { Facing = direction }, moved.World.Player.MapId,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled) };
+        return moved with { EscapeDestination = _content.EscapeRoutes.RecordWarp(before.EscapeDestination,
+            p with { Facing = direction }, moved.World.Player.MapId) };
     }
 
     private Decision<CampaignState> UseFieldEscapeRope(CampaignState state, CampaignCommand command)
@@ -37,8 +37,8 @@ public sealed partial class CampaignSession
             command.Text != EscapeRopeRules.Item.Value || command.Quantity != 1 || command.MoveSlot != -1)
             return No("field_escape_rope_context_invalid");
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
-        var use = _content.FiveIslandEnabled?FiveIslandEscapeRopeRules.Use(FiveIslandShopProof,SevenIslandPredecessorInventory(ShopInventoryView(state.Inventory!)),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):_content.SixIslandEnabled?SixIslandEscapeRopeRules.Use(SixIslandShopCatalog.For(ShopCatalog)!,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):_content.FourIslandEnabled?FourIslandEscapeRopeRules.Use(FourIslandShopCatalog.For(ShopCatalog)!,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):_content.SeviiRubyEnabled?SeviiRubyEscapeRopeRules.Use(SeviiRubyShopCatalog.For(ShopCatalog)!,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):_content.VictoryRoadEnabled?VictoryRoadEscapeRopeRules.Use(VictoryRoadShopProof,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):_content.FirstSeviiEnabled?FirstSeviiEscapeRopeRules.Use(FirstSeviiShopProof,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):_content.CinnabarEnabled?CinnabarEscapeRopeRules.Use(CinnabarShopProof,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):EscapeRopeRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
-            state.World.Player.MapId, state.EscapeDestination, PotionUseContext.Field,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled);
+        var use = EscapeRopeRules.Use(_content.Inventory, _content.EscapeRoutes, state.Inventory!,
+            state.World.Player.MapId, state.EscapeDestination, PotionUseContext.Field);
         if (!use.Succeeded) return No(use.Error!);
         var arrival = use.Arrival!;
         if (!_content.Maps.TryGetValue(arrival.MapId, out var map) ||
@@ -50,7 +50,7 @@ public sealed partial class CampaignSession
         // locked continuation, not a second use and not a cancellable inventory choice.
         return new(CommandStatus.Accepted, state with
         {
-            Inventory = MergeShopInventory(state.Inventory!, PowerPlantShopProof.RestoreFromPredecessor(ShopInventoryView(state.Inventory!),EventIslandShopProof.RestoreFromPredecessor(PowerPlantPredecessorInventory(ShopInventoryView(state.Inventory!)),SevenIslandShopProof.RestoreFromPredecessor(EventIslandPredecessorInventory(ShopInventoryView(state.Inventory!)),use.Inventory)))),
+            Inventory = use.Inventory,
             EscapeRope = new(arrival),
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", "ESCAPE ROPE"),
             ItemMenu = menu with { View = "message", MessageSymbol = "gText_PlayerUsedVar2", ReturnView = "bag" }

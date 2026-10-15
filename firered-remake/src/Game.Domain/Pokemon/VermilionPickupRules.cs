@@ -32,11 +32,7 @@ public static class VermilionPickupRules
             throw new NotSupportedException("Pickup requires the complete explicitly selected catalog.");
         return ApplyCore(catalog, party, rng, outcome);
     }
-    public static VermilionPickupResult ApplySafariOwned(SafariOwnedPokemonCatalog owned,
-        ImmutableArray<PartyPokemon> party, RngState rng, WildBattleOutcome outcome) =>
-        ApplySafariOwned((OwnedBattlePokemonCatalog)owned, party, rng, outcome);
-
-    public static VermilionPickupResult ApplySafariOwned(OwnedBattlePokemonCatalog owned,
+    public static VermilionPickupResult ApplySafariOwned(GamePokemonCatalog owned,
         ImmutableArray<PartyPokemon> party, RngState rng, WildBattleOutcome outcome)
     {
         ArgumentNullException.ThrowIfNull(owned);
@@ -50,7 +46,7 @@ public static class VermilionPickupRules
         if(!Enum.IsDefined(outcome) || outcome==WildBattleOutcome.Ongoing)throw new ArgumentException("Pickup requires a terminal outcome.");
         if(rng.AlgorithmId!=Gen3Rng.AlgorithmId)throw new NotSupportedException("Unknown Pickup RNG.");
         foreach(var p in party)
-            if((p.IsEgg ? OwnedBattlePokemonCatalog.For(catalog) is {} owned ? SourcePokemonValidator.ValidatePartyMember(owned.Mechanics.Catalog, new(p.Pokemon,p.HeldItem,p.Status,true),owned) : "pokemon_egg_catalog" : PokemonStateValidator.Validate(catalog,p.Pokemon)) is not null || string.IsNullOrEmpty(p.HeldItem) || p.InstanceId<=0)
+            if((p.IsEgg ? PokemonStateValidator.ValidateEggInstance(catalog,p.Pokemon) : PokemonStateValidator.Validate(catalog,p.Pokemon)) is not null || string.IsNullOrEmpty(p.HeldItem) || p.InstanceId<=0)
                 throw new ArgumentException("Invalid Pickup party member.");
         if(outcome!=WildBattleOutcome.Won)return new(party,rng,[],[]);
         var trace=ImmutableArray.CreateBuilder<RandomTrace>();var awards=ImmutableArray.CreateBuilder<VermilionPickupAward>();

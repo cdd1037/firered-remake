@@ -28,14 +28,14 @@ source's party-menu table and item aliases both include HM08/Dive; the four
 pre-existing Gastly/Haunter/Snorlax/Eevee extension cells for HM08 are retained.
 No new acquisition, teachable inventory item, or field action is enabled.
 
-The 47 regional resource documents retain their ordered views through two
+The 46 remaining regional machine resource documents retain their ordered views through two
 machine-specific shapes:
 
 - Full machine view: `{ "item": "pret:ITEM_TM39", "species": ["pret:SPECIES_…"] }`
 - Compatibility cell: `{ "item": "pret:ITEM_TM39", "species": "pret:SPECIES_…" }`
 
 The initial Pewter `catalog.tm39` uses `{ "item": "pret:ITEM_TM39" }`.
-`catalog.tmCase` is unchanged. These are typed machine references, not a generic
+`catalog.tmCase` resolves the shared item definition. These are typed machine references, not a generic
 resource reference or runtime JSON transformation mechanism.
 
 ## Rebuild and verification
@@ -58,20 +58,20 @@ menu map the same 58 machines. It does not run upstream programs, read a referen
 Git checkout, or read older region outputs to build the shared catalog.
 
 The small `scripts/import-config/machine-catalog.json` recipe retains existing
-presentation decisions: source-span styles, item rather than move descriptions
-for HM06/HM07/TM36, and literal declaration-text escapes for those three plus
-TM17/TM25. Text values and all gameplay fields are still derived from raw input.
+presentation decisions: item rather than move descriptions for
+HM06/HM07/TM36 and the existing description wrapping. It also retains the 57
+UI-facing machine IDs in current game order. Text values and all gameplay fields are still derived from raw input.
 These choices preserve current behavior; this cleanup does not silently correct
 presentation quirks.
 
 Current regional importers use `scripts/machine_catalog.py` directly. Their
 independent ordered admission selections live in
-`scripts/import-config/machine-admissions.json`: 55 target rosters cover 47
-resource files. The recipe contains membership only, never copies of definitions
+`scripts/import-config/machine-admissions.json`: The current selection covers 46 resource files after retiring the Pewter
+presentation package’s former gameplay catalog. The recipe contains membership only, never copies of definitions
 or compatibility values, and never names a predecessor catalog.
 
-Both current rebuild drivers compile the shared source catalog first and finish
-with a reference-only validation/canonicalization step. They reject an importer
+Both current rebuild drivers compile the shared source catalog first and run
+a reference-only validation/canonicalization step before the final item views. They reject an importer
 that emits legacy full definitions or compatibility cells. There is no expansion
 bridge. `--check` never writes runtime files. The source compiler also defaults
 to rejecting expanded input; the explicit flag makes the pipeline contract
@@ -119,3 +119,15 @@ plus the catalog totaled 1,136,971 bytes (767,705 + 369,266). Removing only the
 `evidence/shared-machine-catalog-20261015/compatibility-source-removal.json`
 records the before/after catalog hashes and exact proof-independent parity. All
 47 regional JSON files are byte-for-byte unchanged by this latter removal.
+
+## Current game composition
+
+`SharedMachineCatalog.LoadCurrent(GamePokemonCatalog)` builds one direct
+`MachineCatalog` with 57 ordered definitions and the current 189 owned species.
+The shared generated `current` selection contains the ordered machine IDs, TM
+Case reference/presentation, and real pocket limits. It contains no predecessor
+profiles. Definition validation runs once during loading. Compatibility is a
+species lookup; its rows use canonical source-species order rather than seven
+historical construction orders. An external migration comparison verified all
+10,773 current eligibility values and numeric species IDs, every machine's
+business fields/description/move/PP, the UI-facing order, TM Case and limits.

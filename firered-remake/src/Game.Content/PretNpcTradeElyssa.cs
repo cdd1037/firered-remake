@@ -48,12 +48,7 @@ public sealed class PretNpcTradeElyssa
         return new(map.Id, map.Width, map.Height,
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
-    public NpcTradeShopCatalog ExtendShop(FossilLabShopCatalog predecessor, PretNpcTradeMail mail)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor); ArgumentNullException.ThrowIfNull(mail);
-        return NpcTradeShopCatalog.Authenticate(predecessor, predecessor.Catalog with {
-            Profile = NpcTradeShopCatalog.Profile,Items = predecessor.Catalog.Items.AddRange(Items.Additions).AddRange(mail.Items.Additions) });
-    }
+
     public static PretNpcTradeElyssa Load(string projectRoot)
     {
         var source = new SilphSourcePackage(projectRoot,"npc-trade-elyssa");
@@ -80,12 +75,12 @@ public sealed class PretNpcTradeElyssa
             "Original Elyssa actor/exit cohort differs.");
         var items = source.Parse<NpcTradeItemsDocument>("items.json");
         Need(            items.PreviousItemCount == 125 && items.ItemCount == 126 && items.Additions.Length == 1 &&
-            items.Additions[0].Id == NpcTradeShopCatalog.StickId &&
+            items.Additions[0].Id == ItemIds.StickId &&
             items.ShopsAdded.IsEmpty && items.Icons.Length == 1, "Elyssa Stick inventory scope differs.");
-        Need(items.Additions[0].SourceMetadata is { HoldEffect: "HOLD_EFFECT_STICK", CanGive: true, CanSell: true, CanToss: true },
+        Need(items.Additions[0].Item is { HoldEffect: "HOLD_EFFECT_STICK", CanGive: true, CanSell: true, CanToss: true },
             "Original Stick held metadata differs.");
         var icon = items.Icons[0];
-        Need(icon.Item == NpcTradeShopCatalog.StickId && icon.Width == 24 && icon.Height == 24 &&
+        Need(icon.Item == ItemIds.StickId && icon.Width == 24 && icon.Height == 24 &&
             (source.Read(icon.TexturePath)).Length > 0, "Original Stick icon differs.");
         return new(source, map, items);
     }

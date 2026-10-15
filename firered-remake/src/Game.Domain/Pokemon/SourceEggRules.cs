@@ -24,7 +24,7 @@ public static class SourceEggRules
     /// <summary>Call only after the party-capacity/confirmation transaction has succeeded.
     /// Uses the stored ushort PID low half; leaves residents and pending state untouched.</summary>
     public static SourceEggCreationResult Receive(CampaignPokemonContent content,
-        BreedingSpeciesMetadataCatalog metadata, FourIslandDayCareState daycare, long nextInstanceId,
+        PokemonBreedingData metadata, FourIslandDayCareState daycare, long nextInstanceId,
         SourceEggTrainer trainer, string metLocation, int metGame, RngState rng)
     {
         ValidateContent(content, metadata);
@@ -141,7 +141,7 @@ public static class SourceEggRules
         var created = PokemonFactory.Create(content.Catalog, new(old.Species, HatchLevel, trainer.TrainerId,
             IvPolicy.Random, PersonalityPolicy.Fixed(old.Personality)), rng);
         var stats = PokemonStatCalculation.Calculate(content.Catalog.Species[old.Species], HatchLevel,
-            old.Nature, old.Ivs, SixStats.Zero);
+            old.Nature, old.Ivs, SixStats.Zero, content.Catalog.MechanicsData);
         var moves = old.Moves.Select(m => new PokemonMoveSlot(m.Move, content.Catalog.Moves[m.Move].Pp,
             content.Catalog.Moves[m.Move].Pp)).ToImmutableArray();
         var pokemon = created.Pokemon with { Ivs = old.Ivs, Stats = stats, CurrentHp = stats.MaxHp, Moves = moves, Friendship = 120 };
@@ -168,12 +168,11 @@ public static class SourceEggRules
     }
 
     private static SpeciesId Species(string symbol) => new("pret:SPECIES_" + symbol);
-    private static void ValidateContent(CampaignPokemonContent content, BreedingSpeciesMetadataCatalog metadata)
+    private static void ValidateContent(CampaignPokemonContent content, PokemonBreedingData metadata)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(metadata);
-        if (!ReferenceEquals(content.Catalog, metadata.Catalog) ||
-            !ReferenceEquals(BreedingSpeciesMetadataCatalog.For(content.Catalog), metadata))
+        if (!ReferenceEquals(content.Catalog.BreedingData, metadata))
             throw new ArgumentException("egg_content_identity");
         if (PokemonStateValidator.ValidatePartyCollection(content, [], 1) is { } error) throw new ArgumentException(error);
     }

@@ -15,8 +15,8 @@ public sealed partial class CampaignSession
     private const string FourDayCareMan = "FourIsland_EventScript_DaycareMan";
     private const string PendingDayCareEggFlag = "FLAG_PENDING_DAYCARE_EGG";
 
-    private BreedingSpeciesMetadataCatalog BreedingMetadata => _content.BreedingMetadata is {} metadata &&
-        ReferenceEquals(metadata, BreedingSpeciesMetadataCatalog.For(_content.PokemonContent!.Catalog))
+    private PokemonBreedingData BreedingMetadata => _content.BreedingMetadata is {} metadata &&
+        ReferenceEquals(metadata, _content.PokemonContent!.Catalog.BreedingData)
         ? metadata : throw new InvalidDataException("daycare_breeding_metadata_identity");
     private static FourIslandDayCareState FourDayCare(CampaignState state) => state.FourIslandDayCare ?? FourIslandDayCareState.Empty;
     private SourceDayCareResident FourDayCareResident(CampaignState state, int slot) =>

@@ -67,10 +67,6 @@ def reference(lock, sources, path, symbol, needle):
     source = sources[path].decode()
     if source.count(needle) != 1:
         raise ValueError('Missing/ambiguous source semantics: ' + symbol)
-    first = source.count('\n', 0, source.index(needle)) + 1
-    last = first + needle.count('\n')
-    entry = next(e for e in lock['files'] if e['path'] == path)
-    return dict(path=path, symbol=symbol, startLine=first, endLine=last,  url=entry['sourceUrl'] + f'#L{first}-L{last}')
 
 
 def semantics(lock, sources):
@@ -108,11 +104,12 @@ def semantics(lock, sources):
              f'$(BATTLETERRAINGFXDIR)/{folder}/terrain.4bpp: %.4bpp: %.png\n\t$(GFX) $< $@ -num_tiles {count} -Wnum_tiles'),
         ])
     ui.require(sources['tools/gbagfx/convert_png.c'].decode(), '% (1 << destBitDepth)')
-    return [reference(lock, sources, *check) for check in checks]
+    for check in checks:
+        reference(lock, sources, *check)
 
 
 def convert(lock, sources):
-    refs = semantics(lock, sources)
+    semantics(lock, sources)
     outputs, assets, variants = {}, [], []
     for variant, terrain_id, folder, palette_path, tile_count, sheet_height, behaviors in VARIANTS:
         prefix = f'graphics/battle_terrain/{folder}/terrain.'
@@ -144,7 +141,7 @@ def convert(lock, sources):
                      sourceMapWidth=512, sourceMapHeight=256, sourceTileDepth=4, paletteBanks=[2, 3, 4],
                      paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', sourceOrigin=[0, 0], textureFilter='nearest',
                      groundBasesIncluded=True, additionalGroundBaseTexturesRequired=False),
-        variants=variants, assets=assets, sourceRefs=refs, inputs=lock['files'], limitations=[
+        variants=variants, assets=assets,  inputs=lock['files'], limitations=[
             'Settled Sand/Plain/Building singles BG3 only; no entry animation, fades or emulator-frame comparison.',
             'Selector uses current player behavior, not fishing target water: 0 Plain; 23 or 33 Sand.',
             'Only ten explicit outdoor maps plus SSAnne_Exterior are admitted; other behaviors/maps remain unhandled.',

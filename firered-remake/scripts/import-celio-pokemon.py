@@ -56,11 +56,9 @@ def generate(reference, dependency, raw=None):
     species_rows, level50 = [], []
     for name in ADDITIONS:
         original, meta = species[name], metadata[name]
-        for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']]:
-            read(sr['path'])
         info = one('src/data/pokemon/species_info.h', r'^    \[' + name + r'\] =\n    \{\n(.*?)^    \},')
         fields = dict(re.findall(r'^        \.(\w+) = (.*),$', info[1], re.M))
-        need(fields == meta['originalFields'], 'Complete source fields: ' + name)
+
         for source_key, key in [('baseHP','hp'),('baseAttack','attack'),('baseDefense','defense'),('baseSpeed','speed'),('baseSpAttack','specialAttack'),('baseSpDefense','specialDefense')]:
             need(original['baseStats'][key] == int(fields[source_key]), 'Base stats: ' + name)
         need(fields['abilities'] == '{ABILITY_PRESSURE, ABILITY_NONE}' and original['ability1'] == 'ABILITY_PRESSURE' and original['ability2'] == 'ABILITY_NONE', 'Pressure identity')
@@ -78,16 +76,15 @@ def generate(reference, dependency, raw=None):
             if move not in initial: initial = (initial + [move])[-4:]
         need(len(initial) == 4, 'Four level-50 moves')
         level50.append(dict(species=original['id'], level=50, moves=[dict(value=m) for m in initial]))
-        species_rows.append(dict(definition=original, metadata=meta))
+        species_rows.append(dict(definition=dict(id=original['id'],evolutions=original['evolutions']), metadata=meta))
     ability = next(a for a in canonical['abilities'] if a['symbol'] == 'ABILITY_PRESSURE')
-    read(ability['source']['path'])
     # Includes the initialization declaration establishing why these three species are admitted.
     roamer = read('src/roamer.c')
     for name in ADDITIONS: need('a = ' + name + ';' in roamer, 'Original roamer selection: ' + name)
     pokemon = dict(sourceCommit=COMMIT,  profile='firered-celio-owned-pokemon-v1',
         previousOwnedSpeciesCount=len(owned), ownedSpeciesCount=len(owned | added_ids), previousOpponentSpeciesCount=len(opponents), opponentSpeciesCount=len(opponents | added_ids),
         speciesAdded=ADDITIONS, trainerSpeciesAdded=[], species=species_rows, level50Moves=level50,
-        pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId'], source=ability['source']),
+        pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId']),
         limitation='Catalog authentication alone does not admit roaming encounters, lifecycle, battle AI, capture, presentation or save migration.')
     machines = dict(sourceCommit=COMMIT, profile='firered-celio-teaching-v1', previousSpeciesCount=len(owned), speciesCount=len(owned | added_ids),
         machineCount=len(cells), additions=cells,  itemsAdded=[])

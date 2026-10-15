@@ -1,248 +1,66 @@
-# Current Content composition
+# Current content composition
 
-`PretCampaignCatalog.LoadCurrent(string projectRoot)` is the sole public catalog
-factory. It directly builds the fixed current resource set in `PretCurrentGame.cs`.
-The generic `Load` API, its 60 booleans and 24 alternate roots, and all 22 regional
-public profile wrappers are removed. The private constructor requires typed
-resource inputs without feature booleans or optional defaults.
+`PretCampaignCatalog.LoadCurrent(projectRoot)` builds the game from
+`content/generated`. Import tools read original sources; the running game does
+not parse pret C/ASM or require the raw checkout.
 
-This removes historical runtime composition choices. It retains the typed source
-schemas, authentic factories, story validation, canonical hashes and regional
-owned/opponent/shop/machine predecessor proofs used by current content. Those
-proofs are not independently selectable game profiles. The large private typed
-constructor remains a possible structural improvement; this change introduces no
-untyped resource table or new admission shortcut.
+## Business data
 
-## Current consumers and boundaries
+- `PretCanonicalPokemonCatalog` owns shared species, moves, abilities and form
+  mechanics. Regional resources reference these definitions instead of copying
+  full tables.
+- `GamePokemonCatalog` explicitly defines the supported campaign rosters:
+  189 owned species, 212 ordinary opponent species and 204 Trainer Tower species.
+  Availability and supported evolution edges are separate from canonical data;
+  having a canonical definition does not make a species obtainable.
+- `SharedItemCatalog` supplies common item definitions. The current shop data
+  defines 151 items and 14 stocks. `InventoryCatalog` also admits the actual
+  quest/service items and machines and validates quantities and pocket rules.
+- `MachineCatalog` contains the 50 TMs and seven usable HMs in their established
+  display order. Compatibility is a species lookup, with no regional catalog
+  ancestry. HM08 compatibility data does not make HM08 teachable.
+- Breeding, NPC trades, held-item effects and battle mechanics are explicit
+  immutable data. They are not recovered through object-identity registries.
 
-Godot `CampaignView` and Tooling `CurrentCheckpointConversion` already call
-`LoadCurrent`. `PretCampaignCatalog.cs` retains current field/story access, and
-its Old Rod composition and source-symbol resolver use the fixed current path.
-The 22 regional files lose their obsolete loader declarations while retaining
-required typed resource construction.
+## Runtime responsibilities
 
-Current session construction, strict saves and the narrow offline converter keep
-the [current rules boundary](current-game-composition.md). Unsupported historical
-rules IDs fail explicitly; active battles remain invalid player saves. Historical
-test source that calls removed loaders is archived evidence, not justification
-for restoring public profile selection. Current test consumers must use
-`LoadCurrent` and obtain any required authenticated typed predecessor from it.
+Resources are validated when loaded. Transactions validate the player's current
+state, supported operations, quantities, capacity and atomic changes. Source
+file paths, line numbers, historical table sizes and predecessor construction
+order are not gameplay authority.
 
-## Candidate evidence and integration status
+The presentation layer reads textures, atlas regions and cues, and uses current
+business definitions for names and descriptions. Source import information
+belongs in the tools, not in a duplicate runtime gameplay catalog.
 
-The isolated candidate was based on `2ea82db105c2bc61d445230f17c7132e39684681`.
-Its Content, Application dependencies and focused current-test build passed with
-zero warnings/errors under SDK 10.0.401 and actual runtime 10.0.12. The candidate
-patch SHA256 is `98c5f2dba995d45eb0decf9d75a5ab06da1ca479f18f077fa6d8fe1e70d17cff`.
-The [candidate report](../evidence/current-content-specialization-20261013/REPORT.md)
-and [verification summary](../evidence/current-content-specialization-20261013/verification-summary.json)
-retain exact scope and reproduction commands.
+## Current migration status
 
-- 67 retained current checks passed against the immutable `a52074b` baseline,
-  including New Game, strict save/Continue, old-rules and authenticated-capability
-  refusal, and selected checkpoints at generations 47785 and 47819. Original
-  checkpoint bytes remained unchanged.
-- All 22 complete characterization fields matched before/after, covering 254 maps,
-  cells/borders/events/warps, scripts/text, catalog and encounter data, pickups,
-  machine/shop/mart data, New Game payload and five object-identity checks.
-- All 322 harvested `MAP_*` source-symbol cases matched their prior resolution or
-  refusal. Reflection found only the public `LoadCurrent(string)` factory.
-- Independent static review found no blocker and confirmed the original current
-  order of 156 hash contributions, 36 map mutations, 38 validators and 258 retained
-  factory/validation calls. Removed alternatives were unreachable from current
-  composition. Diff/apply checks and evidence JSON/XML parsing also passed.
+The October 15 consolidation passes the full solution build and all 2,606
+maintained tests. Comparisons with the previous verified revision preserve all
+three species rosters, moves, breeding data, current items and stocks, and the
+57 machine definitions and compatibility values. The converted v4 checkpoint
+loads from a generated-only resource root in Godot 4.7.2; map rendering,
+movement, the field menu, Bag, Key Items and TM CASE (including all seven HMs)
+have been checked graphically.
+Audio used the Dummy driver in this check; this is not an audio-device test.
 
-The Content fingerprint remains
-`abe2347f42398636fa1a38c7fb4514f4375f69dfe17e4c3af640962b9b6736a0`;
-the New Game hash remains
-`2b95e8e91e6146384a6b136f92ec9cf9a4d20b789de67ef902d92c1d12eac340`.
+Game completeness is tracked separately in [the scope audit](full-scope-audit.md).
+Data consolidation does not mean all optional content or dedicated move
+animations are finished.
 
-Those results belong to the isolated candidate. After Application cutover
-`870f3fb`, the combined tree with Content specialization and Domain retirement
-also passed its 16-project normal build with zero warnings/errors in 57.52
-seconds, default current contracts, 67 real-checkpoint checks, the 53-check
-ordinary-wild Application smoke and 524-check trainer Application suite. See
-[combined build evidence](../evidence/refactor-final-20261013/build.log) and
-[the complete refactor status](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).
+## Saved checkpoints
 
-The subsequent current field encounter/fishing/item cleanup and Moon/Sun Stone
-closure are complete in [the final bounded result](project-refactor-plan.md#2026-10-13-final-bounded-refactor-result); sole-loader retirement is not a claim that every
-historical branch is gone. No historical full solution or regional route was
-replayed, and no resource importer was run for this Content change. Native visual
-and physical audio acceptance are outside this slice.
+The current content version is `firered-current-content-v4`; campaign rules remain
+`firered-current-campaign-v2`. Normal Continue does not accept older content schemas.
+Use `dotnet run --project src/Game.Tooling -- convert-current-checkpoint SOURCE NEW_DESTINATION`
+for an explicit offline conversion. For v3 checkpoints this removes only the obsolete
+NPC-trade catalog fingerprint, retaining trade identity, received level and all gameplay
+state. The original file is retained and the converted state must pass current validation.
 
-## Cerulean Cave successor, 2026-10-13
+## Remaining cleanup boundary
 
-The single current composition now appends the authenticated Cave maps and Mewtwo
-proofs: 257 maps, 139 owned species, 163 opponent species and 244 field pickups.
-Its fingerprint is
-`8ad0e9c765ae8b9f50977c171ed975e2aa55810032eeddb0806ac8077a857713`.
-The preceding fingerprint above remains historical refactor evidence. The
-expanded current contract passed 102 checks without rewriting that baseline or
-the named original checkpoint payloads. Current field items passed their 396-check
-contract against the explicitly converted checkpoint. See [composition test
-scope](current-composition-test-scope.md) and [Cave acceptance](cerulean-cave-implementation.md).
-
-## Upgraded League successor, 2026-10-13
-
-The sole current composition now includes all seven authenticated upgraded
-trainer teams and five new opponent-only species. Counts are 257 maps,139 owned,
-168 opponents,244 pickups; the previous Cave proof remains an authenticated
-predecessor. The current fingerprint is
-`ec57b1b5a50c8e9f49dd6ef5d1090a03888dc9915ff0880afa0f658aca42ec96`.
-The final133 current-composition checks passed, including unchanged seeded New Game
-payload, independent deterministic loading, strict Continue and malformed
-rematch binding rejection. No historical baseline was rewritten. The source
-flag selects upgraded parties within the one current trainer registry and
-shared execution path; there is no new selectable regional runtime profile.
-See [rematch acceptance](league-rematch-campaign.md).
-
-## Power Plant implementation checkpoint, 2026-10-13
-
-The sole current composition appends the original Power Plant without changing
-Route 10: 300 maps, 152 owned species, 186 opponent species, 354 moves,
-123 items, 41 machines and 264 field pickups. The two Electrode item-ball objects
-remain scripted battles. Zapdos, ordinary walking encounters and Thunder Stone
-use the shared current execution and ownership services. A single authenticated
-regional pickup reader now covers both the existing Cave and Power Plant source
-contracts; it preserves each predecessor's source counts and checks.
-
-This is a recoverable implementation checkpoint. The original map/resource suite
-passed 1,992 checks, catalog/policy passed 457 plus the 460-check rerun that
-adds actual indoor walking→pending→generation→shared battle→completion, and the combined Godot project
-built without warnings or errors. The original-pixel comparisons and 23-check
-audio/loader probe are independent source/PCM evidence. The Application run05 has now completed 1,141 public commands from the
-disclosed Route 10 shoreline setup, including Surf, Pokémaniac Mark, all seven
-pickups, both Electrode outcomes and one existing Ultra Ball capturing Zapdos
-into the PC at generation51140. The resulting strict save is valid; a separate
-process Continue and the new production view batch remain pending at this
-checkpoint. Lower-layer passes are not substitutes for those checks. Native pixels and physical audio remain
-unverified. See [Power Plant scope](power-plant-campaign.md).
-
-The follow-up Power Plant closure has now passed independent process Continue
-at51140, all four separate static-outcome probes (84 public commands), and
-81 production-headless checks/four Draws. The sole startup repair makes the
-Seven Island asset loader inspect its own authenticated predecessor rather
-than the expanded current species count. The exact source and claim limits
-remain in [Power Plant acceptance](power-plant-campaign.md#final-bounded-acceptance-2026-10-13).
-
-## Trainer Tower implementation, 2026-10-13
-
-Current composition adds eleven original map IDs with 27 format-selected layouts:
-311 maps, 152 owned species, 204 enemy species and 124 items. Source-only recovery
-uses four pinned Tower importers. Factory/Domain and loader checks pass; the
-initial real lobby entry is saved at 51141. Full four-course application and
-presentation acceptance remain pending. See [current Tower scope](trainer-tower-campaign.md).
-
-
-## Fossil laboratory successor, 2026-10-13
-
-The single current composition adds the original Entrance and Experiment Room after Dojo: 314 maps, 158 owned species and 190 ordinary opponents (Tower roster204 separately). Two source level40 evolution edges and164 compatibility cells extend the existing41 machines. No predecessor runtime is revived. Content fingerprint `67397acae6d36ea1b7beeaa98c7bc57c6a17b6abc3de141ebf8a9bd530838ed2`. Public route and strict receipt boundaries are documented in [fossil lab acceptance](fossil-lab-campaign.md).
-
-
-## Old Amber successor, 2026-10-13
-
-The same fossil package now adds Aerodactyl to159 owned species and item354 to125 inventory definitions; maps314 and ordinary opponents190 are unchanged. The separate Tower roster remains204. All41 machine rows retain identity, with205 fossil cells. The original Museum map/actor scripts are reused. Content fingerprint `86e36a116df5b2bf16abfa6b918f29c8862da35d551886d51c11a62d0b92fda2`. Museum acquisition and the second fossil receipt are covered by the [Old Amber route](old-amber-campaign.md).
-
-
-## Shared teaching-service rooms, 2026-10-14
-
-The sole current composition now includes the original Two Island Move Reminder
-house and Fuchsia Move Deleter house, for329 maps. Both reuse the authenticated
-single-room composition validator; map merging preserves predecessor objects,
-original reciprocal warps, and source actor/script identity. The final owned
-catalog binds deletion after resource loading. The shared teaching surface
-supports both services without adding a regional runtime profile. The current
-content fingerprint is `4ce9d194223a381fb2e8378a909e33ec2a2845a6a3d3845aacdb7020650d9697`.
-See [Reminder](move-reminder-flow.md) and [Deleter](move-deleter-flow.md) for their
-separate current-flow, strict-save and headless presentation evidence and limits.
-
-
-The first existing-map tutor increment keeps329 maps and162 owned species,
-and admits original indices1/5/11/13 through one generated actor-binding table
-and shared executor. The final authenticated source lock expands to16 files;
-its cohort fingerprint is `ac6087eb18d240b0d2574ddf3ea2ef8561ebdb71f678f35b38556d6f93a45e57`.
-The prior room fingerprint above identifies the separate Deleter proof cohort.
-Three real-party lessons and stable Continue are documented in
-[original tutor integration](original-move-tutors.md).
-
-
-The next eight existing-map tutors extend that same table to12 definitions and13
-actor bindings, including the Swords Dance clone, with25 locked source files.
-No new map/species or executor is added. Current fingerprint:
-`c1bba10c05d1f911bdc27144fd5c03dfd26b9d3f4e306f4dfc7467eaae2f08ea`.
-The real party completed seven lessons and Soft-Boiled refusal/cancel, then strict
-Continue at56301; controlled Chansey success belongs to the separate candidate.
-See [the current tutor cohort](original-move-tutors.md#eight-additional-existing-map-tutors-2026-10-14).
-
-
-The next increment adds original FourIsland_House1 and the Cinnabar ResearchRoom,
-for331 maps and14 original tutor definitions. Both use the same teaching-house
-map validator, authenticated current map/npc presentation resolver, and shared
-source tutor callback. The29-file tutor lock yields15 bindings. Existing-map
-objects and item/species catalogs retain identity. Actual entry/exit, two lessons,
-ordinary dialogue and independent Continue at56391 are recorded in
-[the two-room report](original-tutor-rooms.md#current-integration-2026-10-14).
-
-Current two-room fingerprint:
-`d830061eaac3ad4ab2135031fad341726dcc3d8a9905eccac003b9568202ac9d`.
-The production headless room/menu integration passed44 checks/four Draws with
-unchanged DLLs and no save mutations; native pixels/audio remain outside scope.
-
-
-## Copycat successor, 2026-10-14
-
-Current composition has333 maps,162 owned species,129 ordinary items and all15
-original one-time tutor definitions. Copycat's two floors retain original
-warps/actors/signs/hidden Nugget. The authenticated Poke Doll successor preserves
-128 inherited item objects. The4F shop explicitly exposes only its original
-¥1000 Doll row; other source merchandise remains unavailable. The31-file tutor
-lock produces16 actor bindings including the Swords Dance clone.
-
-Current fingerprint:
-`49d8ea075c1026a754266ae16fe3cfcd95ca1669b4fa54bb5cb3b82f7024ff5e`.
-The actual purchase/teaching terminal56575 and independent Continue, plus stable
-102-check/eight-Draw production headless probe, passed within the distinct
-[Copycat verification cohorts](copycat-mimic-campaign.md).
-
-
-## Super Rod integrated checkpoint, 2026-10-14
-
-Current composition is334 maps,163 owned species and192 ordinary opponents.
-The one-species Qwilfish successor preserves all162 inherited species objects,
-354 moves and41 existing machine rows, adding only the original Qwilfish cells.
-Current fingerprint is `0a58645c0a68412b01c6784e913fac5176256699ab2811027268f5c46a17c6de`.
-LoadCurrent/CreateCurrent and exact Copycat56575 payload admission passed after
-normal Godot compilation. The build03 original house/fishing/capture/record/return
-chain passed165 checks/1,279 commands, terminating at57854 with independent Continue.
-The narrow production headless view passed90 checks/eight Draw calls. Build04 then
-consolidated the affected static door admission, preserving all41 decisions, and
-strictly restored the same final payload in a new process; the long route was not rerun.
-See [the separate evidence boundaries](super-rod-campaign.md).
-
-## Cape Brink accepted bounded checkpoint, 2026-10-14
-
-The current source composition adds Cape Brink and its house:336 maps,163 owned
-species,192 ordinary opponents,18 shared tutor definitions,130 ordinary items
-and40 loaded original Super Rod tables. Land/Surf/Old/Good tables preserve all
-13 source species. PP Max is a source-authenticated ordinary-item supplement
-with original icon and pickup/storage support; its field use remains unavailable.
-Normal build01 and strict envelope-only admission of SuperRod57854 passed.
-Actual source travel/teaching/return passed335 checks/165 commands to58019;
-strict independent Continue and213-check/eight-Draw headless view passed.
-The route uses build01; the fixed pointer view and fresh Continue use build02.
-[Implementation and evidence boundaries](cape-brink-campaign.md) retain this distinction.
-Fingerprint: `db86a57b6bfc2ab4d9e103f15b0c906ed4a76fcac7781401c60e38774cb96c97`.
-
-
-## Celadon 2F machine-stock accepted boundary, 2026-10-14
-
-The composition retains336 maps/163 owned species/192 ordinary opponents/130
-ordinary items/18 tutors and extends the existing machine catalog from41 to42.
-Original TM15 metadata and163 compatibility cells complete the six-item2F shelf;
-shared buy/sell transactions and metadata serve ordinary and machine pockets.
-No new art, maps or raw copies are added. Normal Godot build01 passed; the
-Application candidate's six purchases and independent Continue passed to58063.
-The20-check HM metadata correction and normal-main59-check/13-Draw view passed;
-original input was retained and no native pixels/audio are claimed. [Scope and source contract](department-machine-shop.md).
-Fingerprint: `ed0943c380d91af6e4572d53574698d64914f485e7d52ff038d3ef8d63657d16`.
+Some legacy battle helpers still contain regional species-count branches and
+historical names. This consolidation removes their catalog-owner registries;
+it does not yet rewrite every older damage/AI helper. Immutable resource-read
+and JSON serializer-options caches are retained for their actual reuse benefit.
+They are not used as proof that a game object is authorized.

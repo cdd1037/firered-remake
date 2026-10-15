@@ -76,7 +76,7 @@ public sealed class PretRoute22Pokemon
     }
 
     /// <summary>Authenticates content bytes. Campaign omits optional source cry WAV copies while retaining their pinned provenance identities.</summary>
-    public static PretRoute22Pokemon Load(string projectRoot, bool includeSourceCryWaves = true, PretPokedexMenu? pokedexMenu = null)
+    public static PretRoute22Pokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, bool includeSourceCryWaves = true, PretPokedexMenu? pokedexMenu = null)
     {
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
@@ -99,7 +99,7 @@ public sealed class PretRoute22Pokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -115,8 +115,6 @@ public sealed class PretRoute22Pokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "Route22 Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "Route22 sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<Route22PokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -131,8 +129,7 @@ public sealed class PretRoute22Pokemon
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
-                icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                (outputs[icon.TexturePath]).Length > 0, "Route22 icon identity/pixels differ.");
+                icon.PaletteRgb555.Length == 16 && (outputs[icon.TexturePath]).Length > 0, "Route22 icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
@@ -156,10 +153,10 @@ public sealed class PretRoute22Pokemon
     }
 
     /// <summary>Pure authenticated composition; Load additionally validates all on-disk source and art files.</summary>
-    public static Route22PokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson, string pewterGeneratedJson, string route22GeneratedJson)
+    public static Route22PokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson, string pewterGeneratedJson, string route22GeneratedJson)
     {
-        var original = PretPewterPokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretPewterPokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<Route22PokemonDocument>(route22GeneratedJson, options);
@@ -209,7 +206,7 @@ names.Add(species[value.Id].SourceSpeciesId, value.Name);
                 doc.MoveNames.Any(n => n.Id.Value == "pret:" + value.Symbol && n.Name == value.Name), "Encoded name is absent from canonical names.");
         }
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 32 && result.Moves.Count == 94 && names.Count == 32 && moveNames.Count == result.Moves.Count, "Incomplete composed Route22 Pokemon catalog.");
         Require(doc.DeferredEvolutions.Length == 1, "Missing deferred Mankey evolution reference.");
         var deferred = doc.DeferredEvolutions[0];

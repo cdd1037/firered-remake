@@ -8,43 +8,12 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    // The expanded profile is opt-in. Legacy rules retain their strict validators; adapters
-    // validate the full inventory before narrowing and merge only the named changed stack.
     private string? ValidateCampaignInventory(InventoryState? inventory)
     {
-        if(inventory is null)return "inventory_missing";
-        var safariError=ValidateSafariInventory(inventory);if(safariError is not null)return safariError;
-        var teaError=ValidateRegionalTeaInventory(inventory);if(teaError is not null)return teaError;
-        var cityError=ValidateCityServiceInventory(inventory);if(cityError is not null)return cityError;
-        if(_content.PewterMachines is {} machines){var error=PewterMachineRules.Validate(machines,inventory);if(error is not null)return error;}
-        else if(inventory.Machines is not null)return "inventory_machine_profile_missing";
-        if (_content.SsAnneEnabled) { var full=EarlyShopInventoryRules.Validate(_content.EarlyShop!,PewterMachineRules.WithoutMachines(inventory) with { KeyItems=inventory.KeyItems is {} all?all.Where(s=>s.Item!=PewterMachineRules.TmCaseId&&s.Item!=QuestItemRules.TownMapId&&(!_content.CityServicesEnabled||!IsCityServiceItem(s.Item))&&(!_content.RegionalServicesEnabled||s.Item!=TeaId)&&(!_content.SafariEnabled||s.Item!=GoldTeeth)).ToImmutableArray():null }); if(full is not null)return full; }
-        else if (inventory.Berries is not null) return "inventory_berry_profile_missing";
-        if(_content.QuestItems is {} quests){var error=ValidateQuestInventory(quests,inventory);if(error is not null)return error;}
-        var view=ShopInventoryView(inventory);
-        return _content.EarlyShop is {} shop?EarlyShopInventoryRules.Validate(shop,view):OpeningInventoryRules.Validate(Items,view);
-    }
-    private InventoryState ShopInventoryView(InventoryState inventory)
-    {
-        var view=WithoutCityServiceItems(_content.PewterMachines is not null?PewterMachineRules.WithoutMachines(inventory):inventory);
-        // The historical shop catalog owns ordinary merchandise, not this new Key Item.
-        // Validate the expanded quest pocket before narrowing; every shop/medicine merge
-        // preserves the original Key Items pocket and therefore never drops Town Map.
-        if(!_content.TownMapEnabled)return view;
-        var error=ValidateQuestInventory(_content.QuestItems!,inventory);
-        if(error is not null)throw new InvalidDataException(error);
-        return view with{KeyItems=view.KeyItems is {} keys?keys.Where(s=>s.Item!=QuestItemRules.TownMapId).ToImmutableArray():null};
-    }
-    private static InventoryState MergeShopInventory(InventoryState original,InventoryState changed)
-    {
-        var keys=original.KeyItems;
-        if((changed.KeyItems??[]).Any(s=>s.Item==SsAnneItemRules.BerryPouchId)&&!(keys??[]).Any(s=>s.Item==SsAnneItemRules.BerryPouchId))
-            keys=(keys??[]).Add(new(SsAnneItemRules.BerryPouchId,1));
-        if((changed.KeyItems??[]).Any(s=>s.Item==SilphShopCatalog.CardKeyId)&&!(keys??[]).Any(s=>s.Item==SilphShopCatalog.CardKeyId))
-            keys=(keys??[]).Add(new(SilphShopCatalog.CardKeyId,1));
-        if((changed.KeyItems??[]).Any(s=>s.Item.Value=="pret:ITEM_SECRET_KEY")&&!(keys??[]).Any(s=>s.Item.Value=="pret:ITEM_SECRET_KEY"))
-            keys=(keys??[]).Add(new(new("pret:ITEM_SECRET_KEY"),1));
-        return original with{BagItems=changed.BagItems,PcItems=changed.PcItems,Balls=changed.Balls,Berries=changed.Berries,KeyItems=keys};
+        var error = _content.Inventory.Validate(inventory);
+        if (error is not null) return error;
+        // The TM Case and machine stack rules are gameplay constraints, not region provenance.
+        return _content.PewterMachines is {} machines ? MachineRules.Validate(machines, inventory!) : null;
     }
     private InventoryState PotionView(InventoryState inventory)
     {
@@ -96,17 +65,17 @@ public sealed partial class CampaignSession
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");
         var item = new ItemId(command.Text);
         var result = _content.PresetDoubleItems is {} sourceHpItems && SourceFieldHpMedicineRules.Supports(shop, sourceHpItems, item)
-            ? SourceFieldHpMedicineRules.Use(shop, sourceHpItems, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item)
+            ? SourceFieldHpMedicineRules.Use(shop, sourceHpItems, _content.PokemonContent!, state.Inventory!, state.Party[command.PartyIndex], item)
             : _content.PresetDoubleItems is {} sourceItems && SourceFieldStatusCureRules.Supports(shop, sourceItems, item)
-            ? SourceFieldStatusCureRules.Use(shop, sourceItems, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item)
-            : EarlyShopMedicineRules.Use(shop, Items, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item, PotionUseContext.Field);
+            ? SourceFieldStatusCureRules.Use(shop, sourceItems, _content.PokemonContent!, state.Inventory!, state.Party[command.PartyIndex], item)
+            : EarlyShopMedicineRules.Use(shop, Items, _content.PokemonContent!, state.Inventory!, state.Party[command.PartyIndex], item, PotionUseContext.Field);
         if (!result.Succeeded)
         {
             if (result.Error is "medicine_no_effect" or "potion_no_effect") return new(CommandStatus.Accepted, state with { ItemMenu = menu with { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = menu.View } });
             return No(result.Error!);
         }
         // Status cure returns directly to the Bag. HP restoration retains the existing source text.
-        return new(CommandStatus.Accepted, state with { Inventory = MergeShopInventory(state.Inventory!,result.Inventory), Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
+        return new(CommandStatus.Accepted, state with { Inventory = result.Inventory, Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             TextBuffers = result.HpRestored > 0 ? state.TextBuffers.SetItem("STR_VAR_1", result.Pokemon.Nickname).SetItem("STR_VAR_2", result.HpRestored.ToString(System.Globalization.CultureInfo.InvariantCulture)) : state.TextBuffers,
             ItemMenu = result.HpRestored > 0 ? menu with { View = "message", MessageSymbol = "gText_PkmnHPRestoredByVar2", ReturnView = menu.View } : menu });
     }

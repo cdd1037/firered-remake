@@ -81,11 +81,8 @@ def import_offers(src, reader):
             flags = re.findall(r'setflag (FLAG_DID_\w+_TRADE)', block[2])
             need(len(flags) == 1 and f'goto_if_set {flags[0]},' in block[2], 'Trade one-time guard differs')
             local, actor = actors[0]
-            bindings[found[1]] = dict(tradeSymbol=found[1], map='map.' + reader.directory(name), localId=local,
-                scriptLabel=block[1], completionFlag=flags[0], usesInlineSequence='special DoInGameTradeScene' in block[2],
-                actorSource=source_ref(src, f'data/maps/{name}/map.json', block[1], 1, len(src.text(f'data/maps/{name}/map.json').splitlines())),
-                scriptSource=source_ref(src, script_path, block[1], script[:block.start()].count('\n')+1,
-                    script[:block.end()].count('\n')+1))
+            bindings[found[1]] = dict(tradeSymbol=found[1], map=('map.cerulean-city-house-3' if name == 'CeruleanCity_House3' else 'map.' + reader.directory(name)), localId=local,
+                scriptLabel=block[1], completionFlag=flags[0], usesInlineSequence='special DoInGameTradeScene' in block[2])
     offers, numeric_records = [], []
     required = {'nickname','species','ivs','abilityNum','otId','conditions','personality','heldItem','mailNum','otName','otGender','sheen','requestedSpecies'}
     for match in re.finditer(r'\[(INGAME_TRADE_\w+)\]\s*=\s*\{(.*?)^    \}', selected, re.M | re.S):
@@ -103,7 +100,7 @@ def import_offers(src, reader):
             originalTrainerId=number('otId'), originalTrainerName=string('otName'), originalTrainerGender=0 if fields['otGender']=='MALE' else 1,
             abilitySlot=number('abilityNum'), heldItem=fields['heldItem'], mail=number('mailNum'),
             contestConditions=dict(zip(['cool','beauty','cute','smart','tough','sheen'], conditions+[number('sheen')])),
-            source=source_ref(src,path,symbol,selected[:match.start()].count('\n')+1,selected[:match.end()].count('\n')+1), **bindings[symbol])
+            **bindings[symbol])
         offers.append(data)
         numeric_records.append(dict(tradeId=ids[symbol], receivedSpecies=species[fields['species']], requestedSpecies=species[fields['requestedSpecies']], heldItem=items[fields['heldItem']]))
     need([o['tradeId'] for o in offers] == list(range(9)) and len(bindings) == 9, 'Nine original trade definitions required')

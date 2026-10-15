@@ -23,17 +23,16 @@ public static class CelioRoamerBattleContract
 
     /// <summary>Restore fixed PID and all six stored IVs, zero EVs and fresh level-50 moves/PP.
     /// This operation has no RNG argument and consumes no random values.</summary>
-    public static WildBattleCombatant Restore(CelioOwnedPokemonCatalog owned, RoamerIndividual individual, uint originalTrainerId)
+    public static WildBattleCombatant Restore(GamePokemonCatalog owned, RoamerIndividual individual, uint originalTrainerId)
     {
         ArgumentNullException.ThrowIfNull(owned);
-        if (!ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Catalog), owned)) throw new ArgumentException("celio_roamer_catalog");
         var restored = SourceRoamerRules.RestoreEncounter(individual);
         var mon = SourcePokemonFactory.Create(owned.Mechanics, new(new SpeciesId(individual.Species), individual.Level,
             originalTrainerId, IvPolicy.Fixed(0), PersonalityPolicy.Fixed(individual.Personality)), new RngState(0)).Pokemon;
         var iv = restored.Ivs;
         var ivs = new SixStats(iv[0], iv[1], iv[2], iv[3], iv[4], iv[5]);
         var stats = PokemonStatCalculation.Calculate(owned.Catalog.Species[mon.Species], mon.Level, mon.Nature,
-            ivs, SixStats.Zero, owned.Mechanics);
+            ivs, SixStats.Zero, owned.Catalog.MechanicsData);
         if (stats.MaxHp != restored.MaximumHp) throw new ArgumentException("celio_roamer_max_hp");
         return new(mon with { Ivs = ivs, Stats = stats, CurrentHp = individual.CurrentHp }, Status: individual.Status);
     }

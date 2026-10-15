@@ -15,24 +15,19 @@ public static class PretOrdinaryItemSupplement
     {
         return File.ReadAllBytes(Path.Combine(root, relative));
     }
-    public static NpcTradeItemsDocument LoadDocument(string root)
+    public static NpcTradeItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
     {
             var doc = JsonSerializer.Deserialize<NpcTradeItemsDocument>(Read(root,Base + "items.json"),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+            (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions())
             ?? throw new InvalidDataException("ordinary_item_document_missing");
             if (            doc.PreviousItemCount != 129 || doc.ItemCount != 130 || doc.Additions.IsDefault || doc.Additions.Length != 1 ||
-            doc.Additions[0].Id != OrdinaryItemInventoryCatalog.PpMaxId ||
+            doc.Additions[0].Id != ItemIds.PpMaxId ||
             doc.ShopsAdded.IsDefault || !doc.ShopsAdded.IsEmpty || doc.Icons.IsDefault || doc.Icons.Length != 1 ||
-            doc.Icons[0].Item != OrdinaryItemInventoryCatalog.PpMaxId || doc.Icons[0].Width != 24 || doc.Icons[0].Height != 24)
+            doc.Icons[0].Item != ItemIds.PpMaxId || doc.Icons[0].Width != 24 || doc.Icons[0].Height != 24)
             throw new InvalidDataException("ordinary_item_scope");
         return doc;
     }
-    public static OrdinaryItemInventoryCatalog LoadShop(string root, EarlyShopCatalog predecessor)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        var doc = LoadDocument(root);
-        return OrdinaryItemInventoryCatalog.Authenticate(predecessor, doc.Additions);
-    }
+
     public static JsonElement LoadSourceContract(string root) =>
             JsonSerializer.Deserialize<JsonElement>(Read(root,Base + "source-contract.json"));
 }

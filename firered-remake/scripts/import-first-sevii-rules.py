@@ -1,4 +1,5 @@
 """Test fixture conversion from source preparation; does not execute upstream code."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _constant_sys
 from pathlib import Path as _ConstantPath
 _constant_scripts = str(_ConstantPath(__file__).resolve().parent)
@@ -21,7 +22,7 @@ canonical=json.loads((_ConstantPath(__file__).resolve().parents[1]/'content/gene
 decl=prep.declarations(source,script_index,worlds,canonical)
 prep.item_declarations(source,script_index,worlds,decl)
 # Preserve the deterministic field ordering of the previous importer handoff.
-decl=json.loads(json.dumps(decl,sort_keys=True))
+decl=json.loads(json.dumps(decl,sort_keys=True, default=item_json))
 def write(name,content):
  target=out/name
  if check:assert target.read_text()==content,'Regeneration differs: '+str(target)
@@ -73,7 +74,7 @@ for d in decl['battleOccurrences']:
 assert len(trainers)==10 and sum(len(t['party']) for t in trainers)==21 and len(battles)==11
 out.mkdir(parents=True,exist_ok=True)
 document=dict(sourceCommit=COMMIT,profile='firered-first-sevii-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved)
-write('trainers.json',json.dumps(document,indent=2)+'\n')
+write('trainers.json',json.dumps(document,indent=2, default=item_json)+'\n')
 print('Converted10 trainers/21 members/11 admitted source occurrences')
 contracts=json.loads((preparation/'contracts.json').read_text()); constants=read_values(Path(__file__).resolve().parents[1] / 'content/generated')
 items=[]; additions=[]; stocks=[];pickups=[]
@@ -81,7 +82,7 @@ for item in decl['itemDeclarations']:
  symbol=item['itemId'];p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}')
  assert json.loads(m[0])==item
  r=ref(p,symbol,m)
- metadata=dict(id=identity(symbol),sourceItemSymbol=symbol,sourceItemId=num('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=r)
+ metadata=shared_item(symbol)
  description=item['description_english'].replace('\\n','\n')
  items.append(dict(item=metadata,description=description))
  if symbol in ['ITEM_ORAN_BERRY','ITEM_BLUK_BERRY','ITEM_FRESH_WATER','ITEM_SODA_POP','ITEM_MAX_ELIXIR','ITEM_RAZZ_BERRY','ITEM_PINAP_BERRY','ITEM_METEORITE','ITEM_TRI_PASS','ITEM_IAPAPA_BERRY']:
@@ -102,10 +103,10 @@ for item in decl['itemDeclarations']:
    effect_bytes=[0,0,0,0,hp_flag,0,heal_hp];effect_source=ref(ep,effect_symbol,em)
    assert item['fieldUseFunc']=='FieldUseFunc_Medicine' and item['holdEffectParam']==heal_hp and item['battleUsage']==1
   else:assert item['fieldUseFunc']=='FieldUseFunc_OakStopsYou' and item['battleUsage']==0
-  additions.append(dict(id=metadata['id'],sourceItemSymbol=symbol,sourceItemId=metadata['sourceItemId'],name=item['english'],description=description,price=item['price'],pocket=item['pocket'],importance=item['importance'],type=str(item['type']),fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],holdEffectParam=item['holdEffectParam'],healHp=heal_hp,cureStatus=0,effectBytes=effect_bytes,useSupport=use_support,source=r,effectSource=effect_source,sourceMetadata=metadata))
+  additions.append(inventory_item(shared_item(symbol), description, heal_hp, 0, effect_bytes, use_support))
 for stock in decl['shopStocks']:
  p=stock['sourceRef']['path']; m=one(p,r'^'+stock['label']+r'::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)');ss=re.findall(r'\.2byte (ITEM_\w+)',m[1]);assert ss==stock['items']+['ITEM_NONE']
- stocks.append(dict(id=stock['label'],items=[identity(s) for s in stock['items']],source=ref(p,stock['label'],m)))
+ stocks.append(dict(id=stock['label'],items=[identity(s) for s in stock['items']]))
 lookup={i['item']['sourceItemSymbol']:i['item'] for i in items}
 for hidden,key in [(False,'itemPickups'),(True,'hiddenItems')]:
  for i in contracts[key]:
@@ -119,7 +120,7 @@ for map in ['MAP_THREE_ISLAND_BOND_BRIDGE','MAP_THREE_ISLAND_BERRY_FOREST']:
   group=re.search(r'\.'+k+r' = \{(.*?)\}',m[1],re.S);tokens=re.findall(r'HIDDEN_ID\((FLAG_\w+)\)|\b(NO_ITEM)\b',group[1]);assert len(tokens)==8;groups[k]=[a if a else None for a,b in tokens]
  renew.append(dict(mapSymbol=map,**groups,source=ref(p,'sRenewableHiddenItems',m)))
 itemsdoc=dict(sourceCommit=COMMIT,profile='firered-first-sevii-items-v1',items=items,additions=additions,shops=stocks,pickups=pickups,renewableGroups=renew,renewableStepThreshold=1500)
-write('items.json',json.dumps(itemsdoc,indent=2,ensure_ascii=False)+'\n')
+write('items.json',json.dumps(itemsdoc,indent=2,ensure_ascii=False, default=item_json)+'\n')
 print('Converted34 items/10 additions/3 stocks/5 visible/17 hidden; renewable source metadata retained')
 
 for source_file in ['src/data/wild_encounters.json','src/data/pokemon/species_info.h','src/data/pokemon/level_up_learnsets.h','src/battle_setup.c']:
@@ -127,4 +128,4 @@ for source_file in ['src/data/wild_encounters.json','src/data/pokemon/species_in
 encounters=dict(sourceCommit=COMMIT,
  admitted=[t for t in decl['wildEncounters'] if t['map']!='MAP_THREE_ISLAND_PORT'],scriptedHypno=decl['scriptedHypno'],
  excludedPortReason='Dunsparce grass lies on the disconnected eastern port side; the connecting tunnel requires National Dex.')
-write('encounters.json',json.dumps(encounters,indent=2)+'\n')
+write('encounters.json',json.dumps(encounters,indent=2, default=item_json)+'\n')

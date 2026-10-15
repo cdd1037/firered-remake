@@ -116,12 +116,12 @@ public sealed partial class CampaignSession
             if (invalid is not null) throw new InvalidDataException(invalid);
             var machines = _content.PewterMachines ?? throw new InvalidDataException("machines_missing");
             if (effect.Opcode == "checkitemspace")
-                result = PewterMachineRules.CanAddMachine(machines, inventory, BillRocketMachine) ? 1 : 0;
+                result = MachineRules.CanAddMachine(machines, inventory, BillRocketMachine) ? 1 : 0;
             else
             {
                 if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], BillRocketMachine) != 0)
                     throw new InvalidDataException("bill_rocket_tm_duplicate");
-                var added = PewterMachineRules.AddMachine(machines, inventory, BillRocketMachine);
+                var added = MachineRules.AddMachine(machines, inventory, BillRocketMachine);
                 if (!added.Succeeded) throw new InvalidDataException("bill_rocket_tm_add_after_space_check: " + added.Error);
                 next = state with { Inventory = added.State };
                 result = 1;

@@ -82,7 +82,7 @@ public sealed partial class CampaignSession
         string? symbol = service.ItemSymbols.SingleOrDefault(s => _content.TryConstant(s, out int value) && value == sourceId);
         if (symbol is null) throw new InvalidDataException("field_item_service_item_not_declared");
         var itemId = new ItemId("pret:" + symbol);
-        var machine = _content.PewterMachines is { } machines ? PewterMachineRules.Definition(machines, itemId) : null;
+        var machine = _content.PewterMachines is { } machines ? MachineRules.Definition(machines, itemId) : null;
         var ordinary = machine is null ? ShopCatalog.Items.SingleOrDefault(i => i.Id == itemId) : null;
         if (machine is null && ordinary is null) throw new InvalidDataException("field_item_service_item_not_supported");
         int actualSourceId = machine?.Machine.Item.SourceItemId ?? ordinary!.SourceItemId;
@@ -109,16 +109,16 @@ public sealed partial class CampaignSession
         InventoryTransactionResult transaction;
         if (machine is not null)
         {
-            transaction = check ? new(inventory, PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, itemId, quantity), null) :
-                remove ? PewterMachineRules.RemoveMachine(_content.PewterMachines!, inventory, itemId, quantity) :
-                PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, itemId, quantity);
+            transaction = check ? new(inventory, MachineRules.CanAddMachine(_content.PewterMachines!, inventory, itemId, quantity), null) :
+                remove ? MachineRules.RemoveMachine(_content.PewterMachines!, inventory, itemId, quantity) :
+                MachineRules.AddMachine(_content.PewterMachines!, inventory, itemId, quantity);
         }
         else
         {
-            var view = ShopInventoryView(inventory);
+            var view = inventory;
             transaction = check ? EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, itemId, quantity) :
                 remove ? EarlyInventoryAddRules.Remove(ShopCatalog, view, itemId, quantity) : EarlyInventoryAddRules.Add(ShopCatalog, view, itemId, quantity);
-            if (transaction.Succeeded && !check) transaction = transaction with { State = MergeShopInventory(inventory, transaction.State) };
+            if (transaction.Succeeded && !check) transaction = transaction with { State = transaction.State };
         }
         if (!transaction.Succeeded && transaction.Error is not (null or "inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full" or "inventory_insufficient_quantity"))
             throw new InvalidDataException(transaction.Error);

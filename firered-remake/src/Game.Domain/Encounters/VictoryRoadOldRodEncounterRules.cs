@@ -16,21 +16,21 @@ public static class VictoryRoadOldRodEncounterRules
     public static ImmutableArray<MapId> MapsWithoutFishingMons { get; } = [new("map.victory-road-1f"), new("map.victory-road-2f"), new("map.victory-road-3f"), new("map.indigo-plateau-exterior")];
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t=>t.Map==map) || MapsWithoutFishingMons.Contains(map) || FirstSeviiOldRodEncounterRules.IsAdmittedMap(map);
 
-    public static OldRodFishingResult Start(CinnabarOwnedPokemonCatalog pokemon, OldRodCastContext context,
+    public static OldRodFishingResult Start(GamePokemonCatalog pokemon, OldRodCastContext context,
         RngState rng, bool cancelBeforeCast = false)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.StartCore(context, rng, cancelBeforeCast, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true);
     }
 
-    public static OldRodFishingResult Advance(CinnabarOwnedPokemonCatalog pokemon, OldRodFishingState state,
+    public static OldRodFishingResult Advance(GamePokemonCatalog pokemon, OldRodFishingState state,
         OldRodFrameInput input, RngState rng)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.AdvanceCore(state, input, rng, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true);
     }
 
-    public static void ValidateState(CinnabarOwnedPokemonCatalog pokemon, OldRodFishingState state)
+    public static void ValidateState(GamePokemonCatalog pokemon, OldRodFishingState state)
     {
         ValidatePokemon(pokemon);
         OldRodFishingRules.ValidateStateCore(state, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true);
@@ -56,7 +56,7 @@ public static class VictoryRoadOldRodEncounterRules
             throw new ArgumentException("victory_road_old_rod_candidate_source");
     }
 
-    public static OldRodEncounterResult GenerateCandidate(CinnabarOwnedPokemonCatalog pokemon,
+    public static OldRodEncounterResult GenerateCandidate(GamePokemonCatalog pokemon,
         OldRodEncounterTable table, OldRodFishingState fishing, RngState rng)
     {
         ValidateTable(table);
@@ -66,7 +66,7 @@ public static class VictoryRoadOldRodEncounterRules
         return OldRodEncounterRules.GenerateCandidateCore(table, rng);
     }
 
-    public static OldRodPokemonResult GeneratePokemon(CinnabarOwnedPokemonCatalog pokemon,
+    public static OldRodPokemonResult GeneratePokemon(GamePokemonCatalog pokemon,
         OldRodEncounterCandidate candidate, RngState rng, uint playerTrainerId)
     {
         ValidatePokemon(pokemon);
@@ -77,10 +77,8 @@ public static class VictoryRoadOldRodEncounterRules
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 
-    private static void ValidatePokemon(CinnabarOwnedPokemonCatalog pokemon)
+    private static void ValidatePokemon(GamePokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
-        if (!ReferenceEquals(CinnabarOwnedPokemonCatalog.For(pokemon.Catalog), pokemon))
-            throw new ArgumentException("victory_road_old_rod_owned_proof");
     }
 }

@@ -6,8 +6,8 @@ namespace Game.Content;
 
 public static partial class PretFiveIslandItems
 {
-    public static FiveIslandItemContent Load(PretFiveIslandRegion region, FiveIslandOwnedPokemonCatalog pokemon,
-        EarlyShopCatalog previousShop, PewterMachineCatalog previousMachines, PretStoryCompilation scripts, string? itemRoot = null)
+    public static FiveIslandItemContent Load(PretFiveIslandRegion region, GamePokemonCatalog pokemon,
+        EarlyShopCatalog previousShop, MachineCatalog previousMachines, PretStoryCompilation scripts, string? itemRoot = null)
     {
         var root = Path.GetFullPath(Path.Combine(region.GeneratedDirectory, "../../.."));
         var document = LoadDocument(itemRoot ?? root);

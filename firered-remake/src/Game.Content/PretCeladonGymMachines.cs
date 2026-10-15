@@ -5,7 +5,7 @@ namespace Game.Content;
 
 public static class PretCeladonGymMachines
 {
-    public const string Profile=CeladonGymMachineRules.Profile;
+    public const string Profile = "firered-celadon-gym-teaching-v1";
     public static PretRockTunnelMachinesDocument LoadProject(string root,string? dependencyProjectRoot=null)
     {
         var items=PretCeladonGymItems.LoadProject(root);
@@ -16,11 +16,5 @@ public static class PretCeladonGymMachines
         PretCeladonApproachSource.Require(document.Inputs.SequenceEqual(items.Inputs)&&System.Text.Json.JsonSerializer.Serialize(document.Icons)==System.Text.Json.JsonSerializer.Serialize(items.Icons),"Celadon Gym machine/item provenance differs.");
         PretCeladonApproachSource.Require(document.Machines.All(m => m.Compatibility.Length == 98), "Machine membership differs.");
         return document;
-    }
-    public static PewterMachineCatalog LoadCatalogProject(string root,string? dependencyProjectRoot=null)
-    {
-        var document=LoadProject(root,dependencyProjectRoot);var prior=PretPewterMachines.LoadProject(dependencyProjectRoot??root);
-        var result=prior with{Profile=Profile,Compatibility=document.Machines[0].Compatibility,AdditionalMachines=document.Machines.Skip(1).ToImmutableArray()};
-        CeladonGymMachineRules.ValidateCatalog(result);return result;
     }
 }

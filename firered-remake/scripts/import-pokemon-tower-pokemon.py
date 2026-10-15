@@ -81,29 +81,19 @@ def generate(project):
         evolutions = []
         if short == 'GASTLY':
             assert evolution.groups() == ('EVO_LEVEL', '25', 'SPECIES_HAUNTER')
-            evolutions.append(dict(level=25, target=ident(evolution[3]), source=ref(evo_path, symbol, evolution)))
+            evolutions.append(dict(level=25, target=ident(evolution[3])))
         else:
             assert evolution.groups() == ('EVO_TRADE', '0', 'SPECIES_GENGAR')
-            deferred.append(dict(species=ident(symbol), method=evolution[1], parameter=evolution[2], target=ident(evolution[3]),
-                                 source=ref(evo_path, symbol, evolution), executable=False,
-                                 reason='Gengar is excluded; trade evolution and communication are not implemented.'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=constant('include/constants/species.h', symbol)['value'],
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_names, stat_source)}, type1='TYPE_GHOST', type2='TYPE_POISON',
-            catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_names, stat_source)}, growthRate='mediumSlow',
-            genderRatio=127, ability1='ABILITY_LEVITATE', ability2='ABILITY_NONE', friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(path, pointer, learn)))
+            deferred.append(dict(species=ident(symbol), method=evolution[1], parameter=evolution[2], target=ident(evolution[3]), executable=False, reason='Gengar is excluded; trade evolution and communication are not implemented.'))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=constant('include/constants/species.h', symbol)['value'], baseStats={k: int(fields['base' + s]) for k, s in zip(stat_names, stat_source)}, type1='TYPE_GHOST', type2='TYPE_POISON', catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_names, stat_source)}, growthRate='mediumSlow', genderRatio=127, ability1='ABILITY_LEVITATE', ability2='ABILITY_NONE', friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
-        held.append(dict(species=symbol, common=fields['itemCommon'], rare=fields['itemRare'], source=source))
+        held.append(dict(species=symbol, common=fields['itemCommon'], rare=fields['itemRare']))
 
     move_definitions = []
     for symbol in sorted(required):
         f, source = block('src/data/battle_moves.h', symbol)
-        move_definitions.append(dict(id=ident(symbol), sourceMoveId=constant('include/constants/moves.h', symbol)['value'],
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
-    moves = [m for m in move_definitions if m['id']['value'][5:] in NEW_MOVES]
+        move_definitions.append(ident(symbol))
+    moves = [m for m in move_definitions if m['value'][5:] in NEW_MOVES]
     move_names = [name('src/data/text/move_names.h', s) for s in NEW_MOVES]
     encoding = ref('charmap.txt', 'English name encoding, gender glyphs, spaces and EOS', one('charmap.txt', r'\A.*\Z'))
     encoded = []
@@ -116,12 +106,7 @@ def generate(project):
     symbols += [('include/constants/abilities.h', 'ABILITY_LEVITATE')]
     symbols += [('include/constants/items.h', s) for s in ('ITEM_CLEANSE_TAG', 'ITEM_SOOTHE_BELL', 'ITEM_SPELL_TAG', 'ITEM_THICK_CLUB')]
     constants = [constant(p, s) for p, s in symbols]
-    doc = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=entries, species=species, moves=moves,
-               speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded,
-               deferredEvolutions=deferred, requiredMoves=[ident(s) for s in sorted(required)], naturalLevelLimit=None,
-               limitations=['Only Gastly and Haunter are added. Gengar remains excluded and Haunter trade evolution is non-executable.',
-                            'All original level-up moves are preserved without a level cap. Metadata does not admit battle effects.',
-                            'This overlay reuses authenticated Rocket source bytes and does not import artwork, audio, maps or presentation.'])
+    doc = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=entries, species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded, deferredEvolutions=deferred, requiredMoves=[ident(s) for s in sorted(required)], naturalLevelLimit=None, limitations=['Only Gastly and Haunter are added. Gengar remains excluded and Haunter trade evolution is non-executable.', 'All original level-up moves are preserved without a level cap. Metadata does not admit battle effects.', 'This overlay reuses authenticated Rocket source bytes and does not import artwork, audio, maps or presentation.'])
     fixtures = []
     for s in species:
         for level in (13, 16, 20, 21, 23, 25, 30, 48, 64, 100):

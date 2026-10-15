@@ -86,11 +86,11 @@ public sealed partial class CampaignSession
         {
             if((a.Length>1?GymValue(state,a[1]):1)!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))throw new InvalidDataException("surge_tm_reward_context");
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            if(effect.Opcode=="checkitemspace")result=PewterMachineRules.CanAddMachine(_content.PewterMachines!,inventory,SurgeMachine)?1:0;
+            if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(_content.PewterMachines!,inventory,SurgeMachine)?1:0;
             else
             {
                 if(state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM34_FROM_SURGE"))throw new InvalidDataException("surge_tm_already_received");
-                var added=PewterMachineRules.AddMachine(_content.PewterMachines!,inventory,SurgeMachine);next=state with{Inventory=added.State};result=added.Succeeded?1:0;
+                var added=MachineRules.AddMachine(_content.PewterMachines!,inventory,SurgeMachine);next=state with{Inventory=added.State};result=added.Succeeded?1:0;
             }
         }
         next=next with{Script=next.Script with{Variables=next.Script.Variables.SetItem("VAR_RESULT",result)}};return true;

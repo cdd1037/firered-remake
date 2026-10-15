@@ -11,10 +11,11 @@ public static class SnorlaxBattleContract
     public const int AiSetupDrawCount = 4;
     public const int HeldItemDrawCount = 1;
     public static string WildHeldItem(int roll) => roll is >= 0 and < 100 ? "ITEM_CHESTO_BERRY" : throw new ArgumentOutOfRangeException(nameof(roll));
-    public static PokemonCreationResult Create(PokemonCatalog catalog, uint originalTrainerId, RngState rng, bool fuchsiaRules = false)
+    public static PokemonCreationResult Create(GamePokemonCatalog game, uint originalTrainerId, RngState rng)
     {
-        PokemonFactory.ValidateCatalog(catalog);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (fuchsiaRules ? 107 : 102)) throw new NotSupportedException("snorlax_catalog_required");
+        ArgumentNullException.ThrowIfNull(game);
+        var catalog = game.Catalog;
+        if (!catalog.Species.ContainsKey(new("pret:SPECIES_SNORLAX"))) throw new ArgumentException("scripted_species_not_admitted");
         return PokemonFactory.Create(catalog, new(new("pret:SPECIES_SNORLAX"),30,originalTrainerId,IvPolicy.Random,PersonalityPolicy.Random),rng);
     }
     public static bool SourceInitialInstance(PokemonInstance mon) => mon.SourceSpeciesId == 143 && mon.Level == 30 &&

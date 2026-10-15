@@ -99,8 +99,6 @@ def generate(reference, dependency):
     edges = []
     for name in additions:
         original = species[name]
-        for source in [original['source'], original['learnsetSource'], metadata[name]['learnsetPointerSource']]:
-            read(source['path'])
         raw_edges = metadata[name]['sourceEvolutions']
         expected = {'SPECIES_SEEL':(34,'SPECIES_DEWGONG'),'SPECIES_WOOPER':(20,'SPECIES_QUAGSIRE'),'SPECIES_SWINUB':(33,'SPECIES_PILOSWINE')}.get(name)
         if expected:

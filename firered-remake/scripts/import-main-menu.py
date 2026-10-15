@@ -282,11 +282,9 @@ def convert(lock, data):
         'PrintDexCount':['FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE','IsNationalPokedexEnabled()','GetNationalPokedexCount(FLAG_GET_CAUGHT)','GetKantoPokedexCount(FLAG_GET_CAUGHT)'],
         'PrintBadgeCount':['flagId < FLAG_BADGE01_GET + 8','STR_CONV_MODE_LEADING_ZEROS, 1'],
         'LoadUserFrameToBg':['optionsWindowFrameType)->tiles, 0x120, 0x1B1','BG_PLTT_ID(2)']}
-    rules_refs=[]
     for fn,needles in guarded.items():
         block,ref=s.block(path,fn,True)
         if any(needle not in block for needle in needles): raise ValueError('Unsupported main-menu source semantics: '+fn)
-        rules_refs.append(ref)
     for path2,fn,needles in [
         ('src/start_menu.c','SaveDialogCB_AskSaveHandleInput',['gSaveFileStatus != SAVE_STATUS_EMPTY && gSaveFileStatus != SAVE_STATUS_INVALID','!gDifferentSaveFile']),
         ('src/start_menu.c','SaveDialogCB_PrintAskOverwriteText',['gDifferentSaveFile == TRUE','gText_DifferentGameFile','gText_AlreadySaveFile_WouldLikeToOverwrite']),
@@ -296,7 +294,6 @@ def convert(lock, data):
         ('src/save.c','GetSaveValidStatus',['slot1Status == SAVE_STATUS_OK','slot2Status == SAVE_STATUS_OK','return SAVE_STATUS_ERROR;','return SAVE_STATUS_INVALID;'])]:
         block,ref=s.block(path2,fn,True)
         if any(needle not in block for needle in needles): raise ValueError('Unsupported main-menu save semantics: '+fn)
-        rules_refs.append(ref)
     for needle in ['u8 playerName[PLAYER_NAME_LENGTH + 1];','u8 playerGender; // MALE, FEMALE','u16 playTimeHours;','u8 playTimeMinutes;']:
         if needle not in s.texts['include/global.h']: raise ValueError('Save profile contract differs')
     darken=set(int(x) for x in re.findall(r'SetGpuReg\(REG_OFFSET_BLDY, (\d+)\);',s.texts[path]) if int(x))
@@ -317,8 +314,7 @@ def convert(lock, data):
         playerNameLength=s.constant('PLAYER_NAME_LENGTH'),playerNameBufferLength=s.constant('PLAYER_NAME_LENGTH')+1,
         playerNameTerminator=s.constant('EOS'),playerGenderSymbols=['MALE','FEMALE'],playTimeHoursDigits=3,playTimeMinutesDigits=2,
         pokedexVisibleFlag='FLAG_SYS_POKEDEX_GET',pokedexCountKind='FLAG_GET_CAUGHT',badgeStartFlag='FLAG_BADGE01_GET',badgeCount=8,
-        frameTileBase=draw_calls[0]['tileId'],framePaletteBank=draw_calls[0]['paletteNum'],frameDrawCalls=draw_calls,
-        sourceRefs=[*rules_refs,frameref,cursorref])
+        frameTileBase=draw_calls[0]['tileId'],framePaletteBank=draw_calls[0]['paletteNum'],frameDrawCalls=draw_calls)
     catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,windows=windows,backgrounds=backgrounds,textColors=colors,
         palettes=palettes,genderColors=gender_colors,textPlacements=placements,texts=texts,selectionRegions=regions,
         saveStatuses=statuses,constants=s.constants,rules=rules,limitations=[

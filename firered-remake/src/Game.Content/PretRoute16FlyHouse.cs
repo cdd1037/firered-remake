@@ -114,9 +114,9 @@ public sealed class PretRoute16FlyHouse
         ValidateTopology(source.Document("contracts.json"), house, retained);
         var npcs = source.Document("npc-source.json").GetProperty("graphics");
         Need(npcs.GetArrayLength() == 3, "Fly house actor textures differ.");
-         
+
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["ITEM_HM02"] == 340 && constants["FLAG_GOT_HM02"] == 0x238, "Original HM02 gift constants differ.");
         var trainers = SafariSource.Parse<PretRoute16FlyTrainerDocument>(source.Read("trainers.json"));

@@ -13,8 +13,7 @@ public sealed record PlayerGenderArtAsset(int Gender, string GenderSymbol, strin
     ImmutableArray<int> SourceFrameIndices, string SourceImagePath, string SourcePalettePath,
     string PaletteTag, string PaletteSlot, ImmutableArray<int> PaletteRgb555, int TransparentIndex,
     ImmutableDictionary<string, PlayerGenderArtDirection> Directions, PlayerGenderArtPoint TileCenterAnchor,
-    PlayerGenderArtPoint DrawOffsetFromTileOrigin, int WalkFrameDurationSourceFrames, int SourceTimingHz,
-    ImmutableArray<PlayerGenderArtSourceRef> SourceRefs);
+    PlayerGenderArtPoint DrawOffsetFromTileOrigin, int WalkFrameDurationSourceFrames, int SourceTimingHz);
 public sealed record PlayerGenderArtDocument(int SchemaVersion, string Profile, string SourceCommit, string PaletteExpansion,
     ImmutableArray<PlayerGenderArtAsset> Assets, ImmutableArray<string> Limitations);
 
@@ -65,8 +64,6 @@ public sealed class PretPlayerGenderArt
         foreach (var asset in document.Assets)
         {
             ValidateAsset(asset);
-            foreach (var source in asset.SourceRefs)
-                Require(source.Kind == "pret" , "Player art provenance differs.");
             var bytes = outputs[asset.TexturePath];
             textures.Add(asset.Gender, bytes);
         }
@@ -81,7 +78,6 @@ public sealed class PretPlayerGenderArt
 
     /// <summary>Fresh authenticated PNG bytes; subsequent caller or disk mutations cannot alter this snapshot.</summary>
     public byte[] ReadTexture(int gender) { ValidateGender(gender); return [.. textures[gender]]; }
-
 
     /// <summary>Convenience one-shot load for canonical gender 0 or 1; prefer one Load for repeated rendering.</summary>
     public static byte[] ReadTexture(string projectRoot, int gender)
@@ -109,7 +105,7 @@ public sealed class PretPlayerGenderArt
             && a.PaletteSlot == "PALSLOT_PLAYER" && a.PaletteRgb555.Length == 16 && a.PaletteRgb555.All(w => w is >= 0 and <= 32767)
             && a.TransparentIndex == 0 && a.TileCenterAnchor == new PlayerGenderArtPoint(8, 24)
             && a.DrawOffsetFromTileOrigin == new PlayerGenderArtPoint(0, -16) && a.WalkFrameDurationSourceFrames == 8
-            && a.SourceTimingHz == 60 && a.SourceRefs.Length == 12 && a.Directions.Count == 4, "Player sprite metadata differs.");
+            && a.SourceTimingHz == 60 && a.Directions.Count == 4, "Player sprite metadata differs.");
         foreach (var (direction, stand, walk) in new (string, int, int[])[]
         { ("south", 0, [3, 0, 4, 0]),("north", 1, [5, 1, 6, 1]),("west", 2, [7, 2, 8, 2]),("east", 2, [7, 2, 8, 2]) })
             Require(a.Directions.TryGetValue(direction, out var d) && d.Stand == stand && d.FlipH == (direction == "east")
@@ -122,10 +118,6 @@ public sealed class PretPlayerGenderArt
 var bytes = File.ReadAllBytes(path);
 return bytes;
     }
-
-
-
-
 
     private static string SafeFile(string root, string relative)
     {

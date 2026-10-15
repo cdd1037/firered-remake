@@ -46,13 +46,13 @@ public static class SourceMailComposerRules
 
     public static string? CheckGive(EarlyShopCatalog shop, InventoryState inventory, SourceMailState state,
         ImmutableArray<PartyPokemon> party, int partyIndex, ushort itemId, bool replaceConfirmed = false,
-        PewterMachineCatalog? machines = null) =>
+        MachineCatalog? machines = null) =>
         PrepareInventory(shop, inventory, state, party, partyIndex, itemId, replaceConfirmed, machines).Error;
 
     public static SourceMailInventoryResult Give(EarlyShopCatalog shop, SourceEasyChatCatalog catalog,
         SourceEasyChatSelection selection, InventoryState inventory, SourceMailState state, ImmutableArray<PartyPokemon> party,
         int partyIndex, ushort itemId, ImmutableArray<ushort> words, SourceMailAuthor author, bool replaceConfirmed = false,
-        PewterMachineCatalog? machines = null)
+        MachineCatalog? machines = null)
     {
         SourceMailInventoryResult No(string error) => new(state, party, inventory, false, error);
         var prepared = PrepareInventory(shop, inventory, state, party, partyIndex, itemId, replaceConfirmed, machines);
@@ -78,7 +78,7 @@ public static class SourceMailComposerRules
 
     private static InventoryTransactionResult PrepareInventory(EarlyShopCatalog shop, InventoryState inventory,
         SourceMailState state, ImmutableArray<PartyPokemon> party, int partyIndex, ushort itemId, bool replaceConfirmed,
-        PewterMachineCatalog? machines)
+        MachineCatalog? machines)
     {
         InventoryTransactionResult No(string error) => new(inventory, false, error);
         if (SourceMailRules.Validate(state, party) is { } invalid) return No(invalid);
@@ -89,11 +89,10 @@ public static class SourceMailComposerRules
         if (pokemon.Mail != SourceMailState.NoMail) return No("mail_target_holding_mail");
         if (pokemon.HeldItem != "ITEM_NONE" && !replaceConfirmed) return No("mail_replace_confirmation_required");
         if (state.Attached.All(m => m is not null)) return No("mail_attached_full");
-        if (machines is not null && PewterMachineRules.Validate(machines, inventory) is { } machineError) return No(machineError);
-        var ordinary = machines is null ? inventory : PewterMachineRules.WithoutMachines(inventory);
-        var removed = EarlyInventoryAddRules.Remove(shop, ordinary, new ItemId("pret:" + symbol), 1);
+        if (machines is not null && MachineRules.Validate(machines, inventory) is { } machineError) return No(machineError);
+        var removed = EarlyInventoryAddRules.Remove(shop, inventory, new ItemId("pret:" + symbol), 1);
         if (!removed.Succeeded) return No(removed.Error!);
-        // Mail always belongs to POCKET_ITEMS. Keep the existing independently owned TM/CASE fields.
+        // Removing stationery changes only its bag stack.
         var changed = inventory with { BagItems = removed.State.BagItems };
         if (pokemon.HeldItem == "ITEM_NONE") return new(changed, true, null);
         // Remove the new stationery first: its last stack may free the slot for the old held item.

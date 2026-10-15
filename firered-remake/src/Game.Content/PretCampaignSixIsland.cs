@@ -15,13 +15,12 @@ public sealed partial class PretCampaignCatalog
 {
     public const string SixIslandContentProfile = "firered-six-island-campaign-v1";
     public PretSixIslandRegion? SixIslandRegion { get; }
-    public SixIslandOwnedPokemonCatalog? SixIslandOwnership { get; }
-    public SixIslandOpponentPokemonCatalog? SixIslandOpponents { get; }
+    public GamePokemonCatalog? SixIslandOwnership { get; }
+    public GameOpponentPokemonCatalog? SixIslandOpponents { get; }
     public SixIslandTrainerCatalog? SixIslandTrainers { get; }
     public SixIslandTrainerCatalog? SixIslandTrainerParties => SixIslandTrainers;
     public SixIslandItemContent? SixIslandItems { get; }
-    public SixIslandShopCatalog? SixIslandShop => SixIslandItems?.Shop;
-    public SixIslandMachineCatalog? SixIslandMachines => SixIslandItems?.Machines;
+    public MachineCatalog? SixIslandMachines => SixIslandItems?.Machines;
     public SixIslandWaterEncounterCatalog? SixIslandWaterEncounters { get; }
     public bool SixIslandEnabled => SixIslandRegion is not null;
 
@@ -30,20 +29,12 @@ public sealed partial class PretCampaignCatalog
         ["SixIsland_House", "SixIsland_WaterPath_House1", "SixIsland_WaterPath_House2", "SixIsland_PokemonCenter_2F",
          "SixIsland_GreenPath", "FiveIsland", "SevenIsland", "DreamMail.ComposeAttachSend", "VsSeeker.Rematch"];
 
-
-
     private static void ValidateSixIslandAnchors(PretSixIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
         if (region.NewMaps.Keys.Any(maps.ContainsKey))
             throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
-    private static IEnumerable<KeyValuePair<int, string>> SixIslandSpeciesNames(PretPokedexMenu pokedex,SixIslandOwnedPokemonCatalog owned) =>
-        SixIslandOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-        {
-            int sourceId = owned.Catalog.Species[id].SourceSpeciesId;
-            return KeyValuePair.Create(sourceId, pokedex.Entries[sourceId].Name);
-        });
 
     private static void ValidateSixIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, SixIslandTrainerCatalog trainers, PretStoryCompilation scripts)
     {

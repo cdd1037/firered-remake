@@ -44,26 +44,6 @@ def protect(target,project,allowed_stem,kind):
      if k==kind and p.name==allowed_stem:continue
      if target.resolve().is_relative_to(p.resolve()) or p.resolve().is_relative_to(target.resolve()):raise ValueError('Existing profile overlap')
 
-def extract_dependencies(src,scripts,world):
- blocks={b['label']:b for b in scripts['blocks']}
- def block(label):return blocks[label]
- gym=world['events'];city=src.json('data/maps/CeladonCity/map.json')
- cut=[dict(map=gym['id'],localId=i,object=o) for i,o in enumerate(gym['object_events'],1) if o['graphics_id']=='OBJ_EVENT_GFX_CUT_TREE']
- citytrees=[dict(map=city['id'],localId=i,object=o) for i,o in enumerate(city['object_events'],1) if o.get('script')=='EventScript_CutTree']
- trainers=[]
- for i,o in enumerate(gym['object_events'],1):
-  b=blocks.get(o['script']);lines='\n'.join(x['text'] for x in b['lines']) if b else ''
-  m=re.search(r'trainerbattle_single (TRAINER_\w+)',lines)
-  if m:trainers.append(dict(localId=i,trainer=m[1],object=o,battleScript=b))
- required=dict(badge='FLAG_BADGE02_GET',partyMove='MOVE_CUT',fieldEffect='FLDEFF_USE_CUT_ON_TREE',temporaryFlags=['FLAG_TEMP_12','FLAG_TEMP_13','FLAG_TEMP_14'])
- return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,completeGame=False,trainers=trainers,cutTrees=cut,outdoorCutTrees=citytrees,cutPrerequisites=required,
-  cutScript=block('EventScript_CutTree'),cutEffectScript=block('EventScript_FldEffCut'),cutCompletion=block('EventScript_CutTreeDown'),
-  erikaVictory=block('CeladonCity_Gym_EventScript_DefeatedErika'),gymTrainerFlags=block('EventScript_SetCeladonGymTrainers'),
-  tm19Reward=block('CeladonCity_Gym_EventScript_GiveTM19'),tm19NoRoom=block('CeladonCity_Gym_EventScript_NoRoomForTM19'),
-  entry=dict(sourceMap=city['id'],sourceWarpId=6,source=city['warp_events'][6],destinationMap=gym['id'],destinationWarpId=1,destination=gym['warp_events'][1]),
-  badgeRewards=dict(flags=['FLAG_DEFEATED_ERIKA','FLAG_BADGE04_GET'],clearedFlag='FLAG_HIDE_FAME_CHECKER_ERIKA_JOURNALS',obedienceLevel=50,fieldPermission='MOVE_STRENGTH',tm='ITEM_TM19',tmFlag='FLAG_GOT_TM19_FROM_ERIKA'),
-  sourceAudio=sorted({gym['music'],'MUS_ENCOUNTER_GYM_LEADER'}),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),
-  status='Source preparation only; map, battle, save and reward integration are not enabled.')
 
 def run(project,raw,out,reference=None):
  project,raw,out=map(pathlib.Path,(project,raw,out));protect(raw,project,'celadon-gym-region','raw');protect(out,project,'celadon-gym-region','generated')
@@ -79,7 +59,7 @@ def run(project,raw,out,reference=None):
   scripts=inventory.script_inventory(src,worlds);constants=shared.constants_inventory(src,worlds,scripts)
   npcs=shared.npc_inventory(src,worlds,stage/'npc');connections,warps=shared.connections_and_warps(src,worlds)
   catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,maps=[dict(sourceName=MAPS[0][0],stableId=MAPS[0][1],directory=MAPS[0][2],sourceMapSymbol=world['events']['id'])],connections=connections,warps=warps)
-  for p,doc in package_documents(out.parent, constants, {'celadon-gym-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':extract_dependencies(src,scripts,world)}).items():safe(stage,p).write_bytes(canonical(doc))
+  for p,doc in package_documents(out.parent, constants, {'celadon-gym-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs}).items():safe(stage,p).write_bytes(canonical(doc))
   rich=safe(stage,'celadon-city-gym/runtime-map.json').read_bytes();safe(stage,'celadon-city-gym/runtime-map.json').write_bytes(converter.encode(converter.normalize_runtime(json.loads(rich))))
   outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
   manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=1,cellCount=260,borderCellCount=4,warpCount=len(warps),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
@@ -89,6 +69,7 @@ def run(project,raw,out,reference=None):
    if p.is_file():safe(out,p.relative_to(stage).as_posix())
   for p in sorted(stage.rglob('*')):
    if p.is_file():q=safe(out,p.relative_to(stage).as_posix());q.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,q)
+ safe(out,'dependencies.json').unlink(missing_ok=True)
  return {k:v for k,v in manifest.items() if k!='outputs'}
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/celadon-gym-region');a=p.parse_args();print(json.dumps(run(a.project_root,a.raw,a.out,a.reference_repo),sort_keys=True))

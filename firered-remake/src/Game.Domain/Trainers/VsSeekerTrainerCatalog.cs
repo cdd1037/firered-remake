@@ -51,8 +51,7 @@ public static class VsSeekerTrainerPartyFactory
         SourceMechanicsCatalog source, TrainerId id, RngState rng)
     {
         ArgumentNullException.ThrowIfNull(trainers); ArgumentNullException.ThrowIfNull(source);
-        if (!ReferenceEquals(SourceMechanicsCatalog.For(source.Catalog), source) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new ArgumentException("vs_seeker_trainer_catalog");
+        if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new ArgumentException("vs_seeker_trainer_catalog");
         var expected = trainers.ResolvedMoves[id];
         for (int i = 0; i < trainer.Party.Length; i++)
         {

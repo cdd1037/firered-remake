@@ -28,8 +28,7 @@ public sealed record PokeDollShopStock : AuthenticatedShopStock
     public override void Validate(EarlyShopCatalog catalog)
     {
         EarlyShopInventoryRules.ValidateCatalog(catalog);
-        PokeDollInventoryCatalog.ValidateCatalog(OrdinaryItemInventoryCatalog.BaseCatalog(catalog));
-        if (OrdinaryItemInventoryCatalog.For(catalog)?.IsAddition(OrdinaryItemInventoryCatalog.RetroMailId) != true)
+        if (!catalog.Items.Any(i => i.Id == ItemIds.RetroMailId))
             throw new NotSupportedException("fourth_floor_retro_mail_not_admitted");
         foreach (var entry in Entries)
         {

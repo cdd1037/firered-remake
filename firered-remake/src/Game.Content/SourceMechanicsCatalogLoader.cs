@@ -11,18 +11,23 @@ public static class SourceMechanicsCatalogLoader
     public static SourceMechanicsCatalog LoadAuthenticated(string catalogRoot, string moveProjectRoot)
     {
         var content = PretCanonicalPokemonCatalog.Load(catalogRoot, moveProjectRoot);
-        var mechanics = SourceMechanicsCatalog.Authenticate(content.Catalog,
+        return LoadAuthenticated(content, catalogRoot);
+    }
+
+    public static SourceMechanicsCatalog LoadAuthenticated(PretCanonicalPokemonCatalog content, string catalogRoot)
+        => LoadAuthenticated(content, catalogRoot, SharedItemCatalog.LoadProject(catalogRoot));
+
+    public static SourceMechanicsCatalog LoadAuthenticated(PretCanonicalPokemonCatalog content, string catalogRoot, SharedItemCatalog items)
+    {
+        var mechanics = SourceMechanicsCatalog.Create(content.Catalog,
             content.Metadata.Values.Select(m => new SourceSpeciesMechanics(m.Id, m.WeightHectograms,
                 m.SourceEvolutions.Select(e => new SourceMechanicsEvolution(e.Method, e.SourceMethodId,
-                    e.Parameter, e.ParameterValue, e.Target, e.Source)).ToImmutableArray())).ToImmutableArray(),
+                    e.Parameter, e.ParameterValue, e.Target)).ToImmutableArray())).ToImmutableArray(),
             content.Abilities.Values.Select(a => new SourceAbilityIdentity(a.Symbol, a.SourceAbilityId)).ToImmutableArray(),
             content.GenerationContract.MaximumHpOneSpecies,
             content.GenerationContract.FormStatOverrides.Select(f => new SourceFormStatOverride(f.Species,
-                f.Scope, f.BaseStats, f.Source, f.RuleSource)).ToImmutableArray());
-        // Historical source snapshots without this optional pack retain their bounded admission.
-        // Existing packs are parsed normally; malformed definitions report a loading error.
-        if (File.Exists(Path.Combine(catalogRoot, SourceBattleItemCatalogLoader.RelativePath)))
-            SourceHeldItemCatalog.Bind(mechanics, SourceBattleItemCatalogLoader.LoadAuthenticated(catalogRoot));
-        return mechanics;
+                f.Scope, f.BaseStats)).ToImmutableArray());
+        return SourceMechanicsCatalog.FromDefinitions(mechanics.Catalog with {
+            BattleItems = SourceBattleItemCatalogLoader.LoadAuthenticated(catalogRoot, items) });
     }
 }

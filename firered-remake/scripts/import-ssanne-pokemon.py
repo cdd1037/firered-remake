@@ -22,7 +22,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-ssanne-pokemon-v1'
 TEACHING_MOVES = ('MOVE_CUT', 'MOVE_BRICK_BREAK', 'MOVE_REST')
-REGION_DEPENDENCY = 'content/generated/ssanne-region/dependencies.json'
 NEW_SPECIES = ('Growlithe', 'Ponyta', 'Tentacool')
 ART_SPECIES = tuple(zip(NEW_SPECIES, (58, 77, 72)))
 TRAINERS = ('TRAINER_FISHERMAN_BARNY', 'TRAINER_FISHERMAN_DALE', 'TRAINER_GENTLEMAN_ARTHUR', 'TRAINER_GENTLEMAN_BROOKS', 'TRAINER_GENTLEMAN_LAMAR', 'TRAINER_GENTLEMAN_THOMAS', 'TRAINER_LASS_ANN', 'TRAINER_LASS_DAWN', 'TRAINER_RIVAL_SS_ANNE_BULBASAUR', 'TRAINER_RIVAL_SS_ANNE_CHARMANDER', 'TRAINER_RIVAL_SS_ANNE_SQUIRTLE', 'TRAINER_SAILOR_DUNCAN', 'TRAINER_SAILOR_DYLAN', 'TRAINER_SAILOR_EDMOND', 'TRAINER_SAILOR_HUEY', 'TRAINER_SAILOR_LEONARD', 'TRAINER_SAILOR_PHILLIP', 'TRAINER_SAILOR_TREVOR', 'TRAINER_YOUNGSTER_TYLER')
@@ -101,17 +100,8 @@ def metadata(lock, sources):
             'SPECIES_TENTACOOL': ('EVO_LEVEL', '30', 'SPECIES_TENTACRUEL')}
         if declarations != [expected_evolution[symbol]]: raise ValueError('Unexpected S.S. Anne evolution')
         for method, parameter, target in declarations:
-            deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target),
-                source=ref(evolution_path, symbol, m), executable=False,
-                reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)},
-            growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']],
-            genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']],
-            ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+            deferred.append(dict(species=ident(symbol), method=method, parameter=parameter, target=ident(target), executable=False, reason='Evolution target is not imported in this profile; retained source metadata, not a battle level cap.'))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow', 'GROWTH_FAST': 'fast', 'GROWTH_SLOW': 'slow'}[fields['growthRate']], genderRatio={'PERCENT_FEMALE(25)': 63, 'PERCENT_FEMALE(50)': 127, 'PERCENT_FEMALE(75)': 191, 'MON_MALE': 0, 'MON_FEMALE': 254, 'MON_GENDERLESS': 255}[fields['genderRatio']], ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     # Source trainer parties require definitions independently of these three complete learnsets.
     move_symbols.update(TEACHING_MOVES)
@@ -119,10 +109,7 @@ def metadata(lock, sources):
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     abilities = sorted({s[k] for s in species for k in ('ability1', 'ability2')} - {'ABILITY_NONE'})
@@ -144,7 +131,7 @@ def metadata(lock, sources):
             source=row['source'], encodingSource=encoding_source))
     evolution_path = 'src/data/pokemon/evolution.h'
     overrides = []
-    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=species,
+    return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species],
         moves=moves, speciesNames=names, moveNames=move_names, constants=constants, encodedNames=encoded_names,
         deferredEvolutions=deferred, evolutionOverrides=overrides, naturalLevelLimit=None,
         itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False, tradeEvolutionExecutorImplemented=False,
@@ -192,35 +179,6 @@ def trainer_parties(lock, sources):
     return trainers
 
 
-def scope(lock, sources):
-    doc=metadata(lock,sources)
-    trainers=trainer_parties(lock,sources)
-    actual={m for t in trainers for mon in t['party'] for m in mon['moves']}
-    dependency_bytes = safe(ROOT, REGION_DEPENDENCY).read_bytes()
-    dependency = json.loads(dependency_bytes, object_pairs_hook=unique_pairs)
-    by_symbol = {t['symbol']: t for t in dependency['trainers']}
-    if set(by_symbol) != set(TRAINERS): raise ValueError('S.S. Anne trainer dependency set differs')
-    for trainer in trainers:
-        original = by_symbol[trainer['trainer']]
-        if trainer['sourceTrainerId'] != original['sourceTrainerId'] or trainer['partyFormat'] != original['partyFormat']:
-            raise ValueError('S.S. Anne trainer identity differs from authenticated region')
-        expected = [dict(iv=m['sourceIv'], level=m['level'], species=m['species'], moves=m['moves'],
-            sourceMoveSlots=m['moves'] + ['MOVE_NONE'] * (4-len(m['moves']))) for m in original['members']]
-        if trainer['party'] != expected: raise ValueError('S.S. Anne source party differs from authenticated region')
-    legacy = [json.loads(safe(ROOT,path).read_bytes(), object_pairs_hook=unique_pairs) for path in LEGACY_CATALOGS]
-    existing_abilities = {s[k] for c in legacy for s in c['species'] for k in ('ability1','ability2')}
-    existing_moves = {m['id']['value'] for c in legacy for m in c['moves']}
-    species_abilities = {s[k] for s in doc['species'] for k in ('ability1','ability2')} - {'ABILITY_NONE'}
-    return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,naturalLevelLimit=None,trainers=trainers,
-        regionDependency=dict(path=REGION_DEPENDENCY),
-        requiredTrainerMoves=sorted(actual),teachingMoves=list(TEACHING_MOVES),
-        fullLearnsetMoves=sorted({m['move']['value'][5:] for s in doc['species'] for m in s['levelUpMoves']}),
-        sourceDefinitions=doc['moves'],
-        speciesAbilities=sorted(species_abilities),newAbilities=sorted(species_abilities-existing_abilities),
-        newMoveDefinitions=[m for m in doc['moves'] if m['id']['value'] not in existing_moves],
-        noEvolutionMoveBackfill=True,effectsEnabledByThisCatalog=False,encountersEnabledByThisCatalog=False,
-        exclusions=['Fishing and surfing', 'Unimported evolution targets',
-            'Unimplemented move effects; no blanket battle level cap', 'Move metadata does not enable battle execution'])
 
 
 def supplement(lock, sources):
@@ -241,7 +199,6 @@ def convert(lock, sources):
     outputs = art(lock, sources)
     outputs['catalog.json'] = canonical(metadata(lock, sources))
     outputs.update(supplement(lock, sources))
-    outputs['scope.json'] = canonical(scope(lock, sources))
     outputs['manifest.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
 
         inputCount=len(lock['files']), addedSpeciesCount=3, composedSpeciesCount=73,

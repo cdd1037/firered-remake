@@ -46,13 +46,12 @@ public static class PokemonStateValidator
         return ValidateOwned(content!.Catalog, owned, content.AllowSleepStatus, content.AllowFreezeStatus, content.AllowToxicStatus);
     }
 
-    internal static string? ValidateOwnedForBattle(OwnedBattlePokemonCatalog ownership, PartyPokemon? owned)
+    internal static string? ValidateOwnedForBattle(GamePokemonCatalog ownership, PartyPokemon? owned)
     {
-        if (!ReferenceEquals(OwnedBattlePokemonCatalog.For(ownership.Catalog), ownership)) return "pokemon_catalog_invalid";
         return ValidateOwned(ownership.Catalog, owned, true, true, true);
     }
 
-    private static string? ValidateOwned(PokemonCatalog catalog, PartyPokemon? owned,
+    internal static string? ValidateOwned(PokemonCatalog catalog, PartyPokemon? owned,
         bool allowSleep, bool allowFreeze, bool allowToxic)
     {
         if (owned is null) return "party_pokemon_missing";
@@ -136,20 +135,20 @@ public static class PokemonStateValidator
         return null;
     }
 
-    internal static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics = null) =>
-        ValidateInstanceCore(catalog, p, mechanics, null);
+    internal static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p, PokemonMechanicsData? mechanics = null) =>
+        ValidateInstanceCore(catalog, p, mechanics ?? catalog.MechanicsData, null);
 
     // No raw override flag is accepted: this path requires the exact authenticated source enemy.
     internal static string? ValidateTrainerTowerInstance(PokemonCatalog catalog, PokemonInstance? p,
-        Game.Domain.Battle.SourceTrainerTowerPartyReceipt proof) =>
-        !ReferenceEquals(proof.Mechanics.Catalog, catalog) || !proof.MatchesIdentity(p)
-            ? "pokemon_trainer_tower_identity" : ValidateInstanceCore(catalog, p, proof.Mechanics, p!.AbilitySlot);
+        Game.Domain.Battle.TrainerTowerEncounterRoster proof) =>
+        catalog.MechanicsData is null || !proof.MatchesIdentity(p)
+            ? "pokemon_trainer_tower_identity" : ValidateInstanceCore(catalog, p, catalog.MechanicsData, p!.AbilitySlot);
 
     internal static string? ValidateEggInstance(PokemonCatalog catalog, PokemonInstance? p,
-        SourceMechanicsCatalog? mechanics = null)
+        PokemonMechanicsData? mechanics = null)
     {
         if (p is null) return "pokemon_missing";
-        if (BreedingSpeciesMetadataCatalog.For(catalog) is not { } metadata ||
+        if (catalog.BreedingData is not { } metadata ||
             !metadata.Species.TryGetValue(p.Species, out var row)) return "pokemon_egg_catalog";
         // Bound this path to offspring of supported breedable parents (and source incense
         // fallback), rather than admitting arbitrary evolved or legendary egg instances.
@@ -165,10 +164,10 @@ public static class PokemonStateValidator
             p.Stats is null || p.CurrentHp != p.Stats.MaxHp ||
             p.Moves.IsDefaultOrEmpty || p.Moves.Any(m => m is null || m.PpUps != 0 || m.CurrentPp != m.MaximumPp))
             return "pokemon_egg_state";
-        return ValidateInstanceCore(catalog, p, mechanics, null, isEgg: true);
+        return ValidateInstanceCore(catalog, p, mechanics ?? catalog.MechanicsData, null, isEgg: true);
     }
 
-    private static string? ValidateInstanceCore(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics,
+    private static string? ValidateInstanceCore(PokemonCatalog catalog, PokemonInstance? p, PokemonMechanicsData? mechanics,
         int? sourceAbilitySlot, bool isEgg = false)
     {
         if (p is null) return "pokemon_missing";
@@ -241,11 +240,7 @@ public static class PokemonStateValidator
         if (content is null) return "pokemon_content_missing";
         var error = ValidateCatalog(content.Catalog);
         if (error is not null) return error;
-        if (content.NicknameCharacters is null || content.NicknameCharacters.Length != NicknameAlphabet.Length ||
-            !content.NicknameCharacters.ToHashSet().SetEquals(NicknameAlphabet)) return "pokemon_nickname_alphabet";
-        if (content.SpeciesNames is null || content.SpeciesNames.Count != content.Catalog.Species.Count ||
-            content.Catalog.Species.Values.Any(s => !content.SpeciesNames.TryGetValue(s.SourceSpeciesId, out var name) || !ValidName(name, 10)))
-            return "pokemon_species_names";
+        if (content.NicknameCharacters is null || content.SpeciesNames is null) return "pokemon_content_invalid";
         return null;
     }
 

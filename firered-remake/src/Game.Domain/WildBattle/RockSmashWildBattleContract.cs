@@ -19,7 +19,7 @@ public static class RockSmashWildBattleContract
     public const string Version = "firered-rock-smash-wild-entry-v1";
     public static bool Matches(RockSmashWildOrigin? origin, PokemonInstance? pokemon) =>
         FieldRockSmashCatalog.LoadedSource is { } catalog && Matches(catalog, origin, pokemon);
-    public static bool SourceInitialInstance(OwnedBattlePokemonCatalog? owned, RockSmashWildOrigin? origin, PokemonInstance? pokemon) =>
+    public static bool SourceInitialInstance(GamePokemonCatalog? owned, RockSmashWildOrigin? origin, PokemonInstance? pokemon) =>
         FieldRockSmashCatalog.LoadedSource is { } catalog && SourceInitialInstance(owned, catalog, origin, pokemon);
     public static string HeldItem(RockSmashWildOrigin origin, int roll) => HeldItem(
         FieldRockSmashCatalog.LoadedSource ?? throw new InvalidOperationException("rock_smash_source_not_loaded"), origin, roll);
@@ -33,7 +33,7 @@ public static class RockSmashWildBattleContract
         pokemon is not null && SourceSlot(catalog, origin) is { } slot && pokemon.Species == slot.Species &&
         pokemon.Level >= slot.MinimumLevel && pokemon.Level <= slot.MaximumLevel;
 
-    public static Route1WildPokemonResult Generate(OwnedBattlePokemonCatalog owned, FieldRockSmashCatalog catalog,
+    public static Route1WildPokemonResult Generate(GamePokemonCatalog owned, FieldRockSmashCatalog catalog,
         RockSmashWildOrigin origin, byte level, RngState rng, uint trainerId)
     {
         if (!ValidOwned(owned) || SourceSlot(catalog, origin) is not { } slot || level < slot.MinimumLevel || level > slot.MaximumLevel ||
@@ -47,7 +47,7 @@ public static class RockSmashWildBattleContract
         return made;
     }
 
-    public static bool SourceInitialInstance(OwnedBattlePokemonCatalog? owned, FieldRockSmashCatalog catalog,
+    public static bool SourceInitialInstance(GamePokemonCatalog? owned, FieldRockSmashCatalog catalog,
         RockSmashWildOrigin? origin, PokemonInstance? pokemon)
     {
         if (!ValidOwned(owned) || pokemon is null || !Matches(catalog, origin, pokemon) ||
@@ -78,7 +78,6 @@ public static class RockSmashWildBattleContract
         var draw = Gen3Rng.Next(rng, "wild-battle.held-item", 100);
         return new(HeldItem(catalog, origin, draw.Trace.Result), draw.State, [draw.Trace]);
     }
-    private static bool ValidOwned(OwnedBattlePokemonCatalog? owned) => owned is not null &&
-        ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) &&
-        OwnedBattlePokemonCatalog.SourceRoot(owned) is not null && owned.Catalog.Moves.Count == 354;
+    private static bool ValidOwned(GamePokemonCatalog? owned) => owned is not null &&
+        owned is not null && owned.Catalog.Moves.Count == 354;
 }

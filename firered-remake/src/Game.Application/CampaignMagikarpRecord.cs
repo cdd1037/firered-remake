@@ -208,9 +208,9 @@ public sealed partial class CampaignSession
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
         // Add calls the shared CheckSpace first; original giveitem has no separate checkitemspace.
-        var result = EarlyInventoryAddRules.Add(ShopCatalog, ShopInventoryView(inventory), item.Id, 1);
+        var result = EarlyInventoryAddRules.Add(ShopCatalog, inventory, item.Id, 1);
         if (!result.Succeeded && result.Error is not ("inventory_destination_full" or "inventory_stack_full")) throw new InvalidDataException(result.Error);
-        next = state with { Inventory = result.Succeeded ? MergeShopInventory(inventory, result.State) : inventory,
+        next = state with { Inventory = result.Succeeded ? result.State : inventory,
             MagikarpRecord = selected with { GiftAttempted = true },
             Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", result.Succeeded ? 1 : 0) } };
         return true;

@@ -4,6 +4,7 @@
 Only hash-pinned local source/map/icon codecs execute. Upstream Git blobs remain inert.
 Safari tables and unloaded Kanto maps remain source-only; no runtime admission occurs here.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import sys as _constant_sys
 from pathlib import Path as _ConstantPath
 _constant_scripts = str(_ConstantPath(__file__).resolve().parent)
@@ -41,7 +42,7 @@ SOURCE_ONLY_SYMBOLS = ('MAP_ROUTE19','MAP_ROUTE20','MAP_SAFARI_ZONE_CENTER','MAP
  'MAP_SAFARI_ZONE_NORTH','MAP_SAFARI_ZONE_WEST','MAP_SEAFOAM_ISLANDS_B3F','MAP_SEAFOAM_ISLANDS_B4F')
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':'), default=item_json) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
@@ -90,10 +91,7 @@ def item_inventory(src, constants, stage, dep):
         return dict(path=path,symbol=symbol,startLine=1 if match is None else text.count('\n',0,match.start())+1,
                     endLine=max(1,text.count('\n')) if match is None else text.count('\n',0,match.end())+1)
     source=ref(p,symbol);secondary=original['secondaryId'];secondary=constants['values'][secondary]['value'] if isinstance(secondary,str) else secondary
-    item=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=constants['values'][symbol]['value'],name=original['english'],
-      price=original['price'],importance=original['importance'],registrability=original['registrability'],pocket=original['pocket'],type=str(original['type']),
-      holdEffect=original['holdEffect'],holdEffectParam=original['holdEffectParam'],fieldUseFunction=original['fieldUseFunc'],battleUsage=original['battleUsage'],
-      battleUseFunction=original['battleUseFunc'],secondaryId=secondary,canToss=original['importance']==0,canSell=original['price']!=0,canGive=original['importance']==0,source=source)
+    item=shared_item(symbol)
     need(item['sourceItemId']==263 and secondary==1 and item['fieldUseFunction']=='FieldUseFunc_Rod' and item['pocket']=='POCKET_KEY_ITEMS', 'Good Rod item identity differs')
     desc=original['description_english'].replace('\\n','\n');p='src/data/item_icon_table.h';match=re.search(r'^    \['+symbol+r'\]\s*=\s*\{(\w+), (\w+)\},',src.text(p),re.M)
     need(match is not None,'Missing Good Rod icon');binding=ref(p,symbol,match);paths=[]
@@ -247,5 +245,5 @@ def main():
         if not a.check:
             for path,data in writes:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
         print(json.dumps(dict(
-             inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),ordinaryTables=22,sourceOnlyTables=8,check=a.check),indent=2))
+             inputCount=len(src.entries),outputCount=len(outputs),scriptBlockCount=len(scripts['blocks']),ordinaryTables=22,sourceOnlyTables=8,check=a.check),indent=2, default=item_json))
 if __name__=='__main__':main()

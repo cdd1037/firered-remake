@@ -111,13 +111,11 @@ def load_codec(root=ROOT):
 def convert(lock, sources, support_root=ROOT):
     if set(sources) != PATHS: raise ValueError('Incomplete Route11 art source data')
     codec = load_codec(support_root)
-    refs = []; entries = {e['path']: e for e in lock['files']}
+
     def require(path, symbol, needle):
         source = sources[path].decode()
         if source.count(needle) != 1: raise ValueError('Missing/ambiguous source semantics: ' + symbol)
-        start = source.count('\n', 0, source.index(needle)) + 1; end = start + needle.count('\n')
-        refs.append(dict(path=path, symbol=symbol, startLine=start, endLine=end,
-                          url=entries[path]['sourceUrl'] + f'#L{start}-L{end}'))
+
     for path, symbol, needle in SOURCE_REQUIREMENTS: require(path, symbol, needle)
     p = 'src/data/trainer_graphics/front_pic_tables.h'
     coords = re.findall(r'\{\.size = (\d+), \.y_offset = (\d+)\}', sources[p].decode().split('const struct CompressedSpriteSheet')[0])
@@ -154,7 +152,7 @@ def convert(lock, sources, support_root=ROOT):
     add('party-freeze', bytes(indices[y * w + 96 + x] for y in range(8) for x in range(32)),
         codec.colors(rgb), 32, 8, 0, 0, 12, image, image, 'status')
     document = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-         gameVersion='FIRERED', revision=0, rawRoot=RAW,  inputs=lock['files'], assets=assets, sourceRefs=refs,
+         gameVersion='FIRERED', revision=0, rawRoot=RAW,  inputs=lock['files'], assets=assets,
         partyStatusTopLeft=[dict(x=x, y=y) for x, y in [(40, 48), (128, 23), (128, 47), (128, 71), (128, 95), (128, 119)]],
         limitations=['Only static GAMER portrait and single-battle/party freeze indicators; no game-rule changes.',
             'Original indexed pixels; nearest filtering, transparent index zero, RGB555 expansion.',

@@ -19,7 +19,7 @@ public sealed partial class PretCampaignCatalog
     public PretEeveeArt? EeveeArt { get; }
     public bool RegionalServicesEnabled => RegionalGiftContract is not null && RegionalServiceMaps is not null;
     /// <summary>Kept outside CityServiceItems: Tea uses its own effect handler.</summary>
-    public PewterMachineItem? TeaItem => RegionalGiftContract?.TeaItem;
+    public MachineItem? TeaItem => RegionalGiftContract?.TeaItem;
     public ImmutableArray<MtMoonDeferredEvolution> EeveeDeferredEvolutions => EeveePokemon?.DeferredEvolutions ?? [];
     public static ImmutableArray<MapId> RegionalServiceMapIds { get; } =
     [
@@ -52,12 +52,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-
-
     private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region,PretRegionalGiftContract gift,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> predecessorMaps,CampaignPokemonContent pokemon,CampaignPokemonContent predecessorPokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {
-        if (pokemon.Catalog.Species.Count != 103 || pokemon.Catalog.Moves.Count != 241 ||
-            !maps.Keys.Except(predecessorMaps.Keys).ToHashSet().SetEquals(RegionalServiceMapIds) )
+        if (!maps.Keys.Except(predecessorMaps.Keys).ToHashSet().SetEquals(RegionalServiceMapIds) )
             throw new InvalidDataException("regional_services_composition_scope");
         region.ValidateReusedMaps(maps);
         foreach (var id in RegionalServiceMapIds)

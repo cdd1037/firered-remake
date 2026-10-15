@@ -11,13 +11,11 @@ public sealed partial class CampaignSession
     {
         if (!content.EventIslandsEnabled || content.EventIslandField is not { } field ||
             content.EventIslandOwnership is not { } owned || content.EventIslandOpponents is not { } opponents ||
-            content.EventIslandMachines is not { } machines || content.EventIslandShop is not { } shop ||
-            !ReferenceEquals(EventIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned, content.PowerPlantOwnership?.Predecessor) || !ReferenceEquals(owned.Predecessor, content.SevenIslandOwnership) ||
-            !ReferenceEquals(EventIslandOpponentPokemonCatalog.For(owned), opponents) || !ReferenceEquals(opponents.Predecessor, content.SevenIslandOpponents) ||
-            !ReferenceEquals(EventIslandMachineCatalog.For(machines.Catalog), machines) || !ReferenceEquals(machines.Pokemon, owned) ||
-            !ReferenceEquals(machines.Predecessor, content.SevenIslandMachines) || !ReferenceEquals(EventIslandShopCatalog.For(shop.Catalog), shop) ||
-            !ReferenceEquals(shop.Predecessor, content.SevenIslandShop) || owned.Catalog.Species.Count != 149 || opponents.Catalog.Species.Count != 183)
+            content.EventIslandMachines is not { } machines || content.EarlyShop is not { } shop ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            !shop.Items.All(i => content.Inventory.Items.ContainsKey(i.Id)) )
             throw new InvalidDataException("event_island_current_binding");
         foreach (var kind in Enum.GetValues<Game.Domain.WildBattle.EventIslandEncounterKind>())
         {

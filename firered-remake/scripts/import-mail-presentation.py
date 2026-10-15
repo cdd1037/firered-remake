@@ -4,6 +4,7 @@
 Only pinned Git blobs are read; no source program is executed. Existing raw
 inputs and identical Fab/icon outputs are referenced in place, never copied.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import importlib.util
 import json
@@ -30,7 +31,7 @@ from image_io import png as encode_rgba_png
 
 def need(ok, message):
     if not ok: raise ValueError(message)
-def encoded(value): return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode()
+def encoded(value): return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, default=item_json)+'\n').encode()
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink resource rejected: '+str(path))
 def module(path, name):
     safe(path)
@@ -102,12 +103,9 @@ def generate(reference, dependency):
         item=next(i for i in itemrows if i['itemId']==symbol)
         need(item['type']=='ITEM_TYPE_MAIL' and item['price']==50 and item['secondaryId']==index and item['holdEffect']=='HOLD_EFFECT_NONE', 'Mail inventory metadata differs')
         _,itemref=capture('src/data/items.json',r'^    \{\n      "english": "'+item['english']+r'",.*?^    \}',symbol)
-        meta=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=item_id,name=item['english'],price=50,
-            importance=0,registrability=0,pocket='POCKET_ITEMS',type='ITEM_TYPE_MAIL',holdEffect='HOLD_EFFECT_NONE',holdEffectParam=0,
-            fieldUseFunction='FieldUseFunc_Mail',battleUsage=0,battleUseFunction='NULL',secondaryId=index,
-            canToss=True,canSell=True,canGive=True,source=itemref)
-        definition={k:meta[k] for k in ('id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source')}
-        definition.update(description=item['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=meta)
+        meta=shared_item(symbol)
+        definition=dict(item=meta)
+        definition.update(description=item['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
         items.append(definition)
         binding,_=capture('src/data/item_icon_table.h',r'^    \['+symbol+r'\]\s*= \{(\w+), (\w+)\},',symbol)
         ipaths=[]
@@ -192,7 +190,7 @@ def generate(reference, dependency):
         texts.append(dict(symbol=symbol,text=m[1].replace('\\n','\n'),source=ref))
     document=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,assets=assets,stationery=stationery,items=items,
         texts=texts,
-        sourceRefs=[gfxref,layoutref,rowref,gendref],iconRules=dict(unownOffset=30000,unownForms=28,unownSpecies=201,unownB=413,maxSpecies=411,frame=0),
+        iconRules=dict(unownOffset=30000,unownForms=28,unownSpecies=201,unownB=413,maxSpecies=411,frame=0),
         easyChat=dict(fieldColumns=2,fieldRows=5,lastRowColumns=1,fieldX=41,fieldY=2,fieldAdvance=17,blankAdvance=advance,lineHeight=16,
             groupTextX=[18,102],wordTextX=[32,136],pickerTextY=90,pickerRows=4,footerTextX=[32,119,196],footerTextY=90,
             alphabetColumnOffsets=[0,12,24,56,68,80,92],textRgb=textpal[2],shadowRgb=textpal[3],blankRgb=textpal[4],specialGlyphs=specials),
@@ -229,5 +227,5 @@ def main():
     print(json.dumps(dict(check=args.check,
 
         stationeryCount=len(doc['stationery']),assetCount=len(doc['assets']),newRawFiles=len(raw),newRawBytes=sum(map(len,raw.values())),
-        reusedRawFiles=sum(x['shared'] for x in locked['inputs']),outputCount=len(outputs),outputBytes=sum(map(len,outputs.values()))),indent=2))
+        reusedRawFiles=sum(x['shared'] for x in locked['inputs']),outputCount=len(outputs),outputBytes=sum(map(len,outputs.values()))),indent=2, default=item_json))
 if __name__=='__main__':main()

@@ -83,7 +83,7 @@ public static class WildBattleTransformationRules
     }
 
     internal static string? Validate(PokemonCatalog? catalog, WildBattleCombatant mon, bool enabled,
-        SourceTrainerTowerPartyReceipt? originalTower = null, SourceTrainerTowerPartyReceipt? donorTower = null)
+        TrainerTowerEncounterRoster? originalTower = null, TrainerTowerEncounterRoster? donorTower = null)
     {
         if (mon.Transform is not { } transform) return SourcePokemonValidator.ValidateForBattle(catalog, mon.Pokemon, originalTower);
         if (!enabled) return "transform_profile";

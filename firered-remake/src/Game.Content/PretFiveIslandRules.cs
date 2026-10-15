@@ -30,20 +30,6 @@ public static class PretFiveIslandRules
             document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         FiveIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static FiveIslandOwnedPokemonCatalog LoadOwned(SixIslandOwnedPokemonCatalog predecessor)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        var species = predecessor.Catalog.Species;
-        foreach (var id in FiveIslandOwnedPokemonCatalog.AdditionalSpecies)
-            species = species.Add(id, FiveIslandOwnedPokemonCatalog.ExpectedSpecies(predecessor, id));
-        return FiveIslandOwnedPokemonCatalog.Authenticate(predecessor, predecessor.Catalog with { Species = species });
-    }
-    public static FiveIslandOwnedPokemonCatalog LoadOwned(string root, SixIslandOwnedPokemonCatalog predecessor)
-    {
-        return LoadOwned(predecessor);
-    }
-    public static FiveIslandOpponentPokemonCatalog LoadOpponents(SixIslandOpponentPokemonCatalog predecessor,
-        FiveIslandOwnedPokemonCatalog owned) => FiveIslandOpponentPokemonCatalog.Authenticate(predecessor, owned);
     public static JsonElement LoadEncounterDeclarations(string root) => Read<JsonElement>(root,"encounters.json");
     public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

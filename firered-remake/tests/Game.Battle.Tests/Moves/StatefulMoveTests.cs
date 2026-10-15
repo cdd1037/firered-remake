@@ -500,8 +500,12 @@ public sealed class StatefulMoveTests
 
         var mutated = catalog with
         {
-            Moves = catalog.Moves.SetItem(Id("MINIMIZE"), catalog.Moves[Id("MINIMIZE")] with { Accuracy = 1 })
+            MechanicsData = catalog.MechanicsData! with { MaximumHpOneSpecies = f.Parties[0].Members[0].Pokemon.Species }
         };
-        Rejected(f, SourceFourActionTurns.BeginActions(mutated, f, f.Revision, Choices(f)), "unauthenticated recipe");
+        Rejected(f, SourceFourActionTurns.BeginActions(mutated, f, f.Revision, Choices(f)), "changed HP mechanics conflicts with actual party stats");
+        var direct = SourceFourActionTurns.BeginActions(catalog, f, f.Revision, Choices(f));
+        var copied = SourceFourActionTurns.BeginActions(catalog with { MechanicsData = catalog.MechanicsData! with { } }, f, f.Revision, Choices(f));
+        Assert.IsTrue(direct.Succeeded && copied.Succeeded, "equivalent mechanics values remain usable");
+        Assert.AreEqual(Json(direct), Json(copied), "equivalent mechanics preserve state, events and RNG");
     }
 }

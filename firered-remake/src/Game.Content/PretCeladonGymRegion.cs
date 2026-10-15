@@ -14,24 +14,18 @@ public sealed class PretCeladonGymRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public JsonElement Dependencies { get; }
-    /// <summary>Declarative source metadata only; this class registers no executable handlers.</summary>
-    public JsonElement Trainers => Dependencies.GetProperty("trainers");
-    public JsonElement CutTrees => Dependencies.GetProperty("cutTrees");
-    public JsonElement BadgeRewards => Dependencies.GetProperty("badgeRewards");
 
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalCeladonEvents { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
-    public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretCeladonGymRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalCeladonEvents)
+        ImmutableArray<PretWorldSourceFile> files, JsonElement catalog, JsonElement npcSources, JsonElement externalCeladonEvents)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; SourceFiles = files; Catalog = catalog;
         NpcSources = npcSources; ExternalCeladonEvents = externalCeladonEvents;
     }
 
@@ -59,7 +53,7 @@ public sealed class PretCeladonGymRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/celadon-gym-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             return File.ReadAllBytes(SafeFile(root, path));
@@ -69,7 +63,7 @@ public sealed class PretCeladonGymRegion
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Celadon Gym manifest identity differs.");
-        
+
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
@@ -110,14 +104,6 @@ public sealed class PretCeladonGymRegion
             constants["FLAG_BADGE04_GET"] == 0x823 && constants["FLAG_DEFEATED_ERIKA"] == 0x4B3 &&
             constants["FLAG_GOT_TM19_FROM_ERIKA"] == 0x293 && constants["ITEM_TM19"] == 307,
             "Celadon Gym badge/Cut/reward constants differ.");
-        using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        var dependency = dependencies.RootElement;
-        Require(dependency.GetProperty("schemaVersion").GetInt32() == 1 && !dependency.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependency.GetProperty("trainers").GetArrayLength() == 8 && dependency.GetProperty("cutTrees").GetArrayLength() == 3 &&
-            dependency.GetProperty("badgeRewards").GetProperty("tm").GetString() == "ITEM_TM19" &&
-            dependency.GetProperty("entry").GetProperty("sourceWarpId").GetInt32() == 6 &&
-            dependency.GetProperty("entry").GetProperty("destinationWarpId").GetInt32() == 1,
-            "Celadon Gym dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/CeladonCity/map.json"));
         Require(npcSources.RootElement.GetProperty("schemaVersion").GetInt32() == 1 &&
@@ -125,17 +111,11 @@ public sealed class PretCeladonGymRegion
         var gymEvents = maps[new MapId("map.celadon-city-gym")].Events;
         var cityEntry = cityEvents.RootElement.GetProperty("warp_events")[6];
         Require(cityEntry.GetProperty("dest_map").GetString() == "MAP_CELADON_CITY_GYM" && cityEntry.GetProperty("dest_warp_id").GetString() == "1" &&
-            JsonElement.DeepEquals(cityEntry, dependency.GetProperty("entry").GetProperty("source")) &&
-            JsonElement.DeepEquals(gymEvents.GetProperty("warp_events")[1], dependency.GetProperty("entry").GetProperty("destination")),
+            gymEvents.GetProperty("warp_events")[1].GetProperty("dest_map").GetString() == "MAP_CELADON_CITY" &&
+            gymEvents.GetProperty("warp_events")[1].GetProperty("dest_warp_id").GetString() == "6",
             "Celadon Gym city entry differs from original source.");
-        foreach (var tree in dependency.GetProperty("cutTrees").EnumerateArray())
-            Require(JsonElement.DeepEquals(tree.GetProperty("object"), gymEvents.GetProperty("object_events")[tree.GetProperty("localId").GetInt32() - 1]),
-                "Celadon Gym Cut object differs from source.");
-        foreach (var trainer in dependency.GetProperty("trainers").EnumerateArray())
-            Require(JsonElement.DeepEquals(trainer.GetProperty("object"), gymEvents.GetProperty("object_events")[trainer.GetProperty("localId").GetInt32() - 1]),
-                "Celadon Gym trainer object differs from source.");
         return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+            inventory, catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

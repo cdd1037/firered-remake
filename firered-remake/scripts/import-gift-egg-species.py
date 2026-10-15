@@ -52,8 +52,6 @@ def generate(reference,dependency):
   sid='pret:SPECIES_'+name;definition=definitions[sid];meta=metas[sid]
   need(definition['sourceSpeciesId']==meta['nationalDexNumber']==number and definition['evolutions']==[],'Canonical target')
   source_definitions.append(dict(definition=definition,metadata=meta))
-  refs=[definition['source'],definition['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[e['source'] for e in meta['sourceEvolutions']]
-  for sr in refs:read(sr['path'])
   for edge in meta['sourceEvolutions']:evolutions.append(dict(species=dict(value=sid),**edge))
  need(len(evolutions)==1 and evolutions[0]['method']=='EVO_FRIENDSHIP' and evolutions[0]['parameterValue']==0 and evolutions[0]['target']['value']=='pret:SPECIES_TOGETIC','Exact friendship edge')
  cells=compatibility_additions(dependency,BASE+'machines.json');need(len(cells)==57,'Exact admitted machines')
@@ -66,8 +64,8 @@ def generate(reference,dependency):
    species=parent
   return species
  for name,*_ in IDENTITIES:
-  sid='pret:SPECIES_'+name;original=metas[sid]['originalFields']
-  group_ids=[groups[g.strip('{} ')] for g in original['eggGroups'].split(',')]
+  sid='pret:SPECIES_'+name;original=metas[sid]
+  group_ids=[groups[g] for g in original['eggGroups']]
   rows.append(dict(breeding=dict(species=dict(value=sid),eggGroup1=group_ids[0],eggGroup2=group_ids[1],eggCycles=int(original['eggCycles'])),baseEggSpecies=dict(value=base_species(sid)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(name,[])]))
  read('src/data/pokemon/tutor_learnsets.h');read('src/pokemon.c')
  for path in ['src/daycare.c','src/field_specials.c','src/script_pokemon_util.c','src/data/region_map/region_map_sections.constants.json.txt']:read(path)

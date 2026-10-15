@@ -10,9 +10,8 @@ public partial class CampaignView
 
     private void LoadOrdinaryEvolutionPresentation()
     {
-        if (OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog), OrdinaryEvolutionOwnedPokemonCatalog.For) is not { } owned) return;
-        if (!_session.IsCurrentGame || _breedingArt is null ||
-            !ReferenceEquals(BreedingOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
+        if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
+        if (!_session.IsCurrentGame || _breedingArt is null)
             throw new InvalidDataException("Ordinary evolution presentation requires its authenticated Breeding predecessor.");
         var art = PretOrdinaryEvolutionPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)

@@ -6,11 +6,8 @@ using Game.Domain.Pokemon;
 public partial class SynthSourceAudioPlayer
 {
     /// <summary>Verify four existing original normal cries after all predecessor cues are loaded. No new cue or sample is added.</summary>
-    public void VerifyOrdinaryEvolutionPresentationCues(OrdinaryEvolutionOwnedPokemonCatalog owned, string root, string? inheritedRoot = null)
+    public void VerifyOrdinaryEvolutionPresentationCues(GamePokemonCatalog owned, string root, string? inheritedRoot = null)
     {
-        if (!ReferenceEquals(OrdinaryEvolutionOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(BreedingOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
-            throw new InvalidDataException("Ordinary evolution audio requires its authenticated owned catalog and Breeding predecessor.");
         var art = PretOrdinaryEvolutionPresentation.Load(root, inheritedRoot);
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };

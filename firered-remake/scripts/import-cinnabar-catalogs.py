@@ -27,14 +27,13 @@ def main():
     def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=src.text(path).count('\n',0,m.start())+1,endLine=src.text(path).count('\n',0,m.end())+1)
     names=[];encoded=[];machines=[];held=[];evolutions=[]
     for s in selected:
-        for r in [s['source'],s['learnsetSource']]:src.read(r['path'])
         symbol=s['id']['value'][5:];np='src/data/text/species_names.h';m=one(np,r'^    \['+symbol+r'\]\s*= _\("([^"\n]+)"\),$');name=m[1];r=ref(np,symbol,m)
         names.append(dict(id=s['id'],name=name,source=r))
         codes=[int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in name+'$']
         encoded.append(dict(symbol=symbol,name=name,bytes=codes,source=r,encodingSource=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'))))
-        tp='src/data/pokemon/tmhm_learnsets.h';tm=one(tp,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');machines.append(dict(species=s['id'],machineSymbols=re.findall(r'TMHM\((\w+)\)',tm[1]),source=ref(tp,symbol,tm)))
-        meta=next(x for x in proof['metadata'] if x['id']==s['id']);held.append(dict(species=s['id'],common=meta['originalFields']['itemCommon'],rare=meta['originalFields']['itemRare'],source=s['source']));evolutions.append(dict(species=s['id'],sourceEvolutions=meta['sourceEvolutions']))
-    pokemon=dict(schemaVersion=1,profile='firered-cinnabar-pokemon-v1',sourceCommit=region.COMMIT,species=selected[:2],opponentSpecies=selected[2:],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(x['move'],sort_keys=True) for s in selected for x in s['levelUpMoves']}),limitations=['Krabby/Kingler are candidate ownership additions; the four other species are opponents only.','Source metadata does not grant campaign admission, field progression, battle execution or presentation.'])
+        tp='src/data/pokemon/tmhm_learnsets.h';tm=one(tp,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');machines.append(dict(species=s['id'],machineSymbols=re.findall(r'TMHM\((\w+)\)',tm[1])))
+        meta=next(x for x in proof['metadata'] if x['id']==s['id']);held.append(dict(species=s['id'],common=meta['itemCommon'],rare=meta['itemRare']));evolutions.append(dict(species=s['id'],sourceEvolutions=meta['sourceEvolutions']))
+    pokemon=dict(schemaVersion=1,profile='firered-cinnabar-pokemon-v1',sourceCommit=region.COMMIT,species=[dict(id=s['id'],evolutions=s['evolutions']) for s in selected[:2]],opponentSpecies=[dict(id=s['id'],evolutions=s['evolutions']) for s in selected[2:]],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(x['move'],sort_keys=True) for s in selected for x in s['levelUpMoves']}),limitations=['Krabby/Kingler are candidate ownership additions; the four other species are opponents only.','Source metadata does not grant campaign admission, field progression, battle execution or presentation.'])
     pokemon['requiredMoves']=[json.loads(x) for x in pokemon['requiredMoves']]
     with tempfile.TemporaryDirectory(prefix='cinnabar-catalog-stage-') as temporary:
         tmp=Path(temporary);sp=tmp/'source'

@@ -14,7 +14,7 @@ public static class CurrentGameProfile
     public const string RulesVersion = "firered-current-campaign-v2";
 }
 
-internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog Pokemon, OwnedBattlePokemonCatalog Ownership);
+internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog Pokemon, GamePokemonCatalog Ownership);
 
 public sealed partial class CampaignSession
 {
@@ -23,46 +23,11 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var battle = OwnedBattlePokemonCatalog.For(content.PokemonContent!.Catalog)
-            ?? throw new InvalidDataException("current_owned_battle_proof_missing");
-        var ordinary = OwnedBattlePokemonCatalog.SourceAncestor(battle, OrdinaryEvolutionOwnedPokemonCatalog.For)
-            ?? throw new InvalidDataException("current_ordinary_evolution_owned_proof_missing");
-        var owned = ordinary.Predecessor;
-        var ordinaryOpponents = OrdinaryEvolutionOpponentPokemonCatalog.For(ordinary);
-        var memorial = content.MemorialPillarOpponents;
-        if (content.MemorialPillarTrainers is not { } memorialTrainers || memorial is null ||
-            !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(memorial.Catalog), memorial) ||
-            !ReferenceEquals(memorial.Predecessor, ordinaryOpponents) || !ReferenceEquals(memorial.Owned, ordinary) ||
-            !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(ordinary), memorial))
-            throw new InvalidDataException("current_memorial_pillar_trainer_proof_missing");
-        MemorialPillarTrainerPartyFactory.ValidateCatalog(memorialTrainers);
-        var opponents = ordinaryOpponents?.Predecessor;
-        var prize = owned.Predecessor;
-        var prizeOpponents = opponents?.Predecessor;
-        var stone = prize.Predecessor;
-        var stoneOpponents = prizeOpponents?.Predecessor;
-        if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics, ordinary.Mechanics) ||
-            ordinaryOpponents is null || !ReferenceEquals(ordinaryOpponents.Owned, ordinary) ||
-            !ReferenceEquals(stone.Predecessor, content.SuperRodOwnership) ||
-            !ReferenceEquals(stone.Predecessor.Predecessor, content.SeafoamOwnership) ||
-            !ReferenceEquals(stone.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOwnership) || opponents is null ||
-            !ReferenceEquals(opponents.Owned, owned) || prizeOpponents is null || !ReferenceEquals(prizeOpponents.Owned, prize) ||
-            BreedingSpeciesMetadataCatalog.For(ordinary.Catalog) is null || stoneOpponents is null || !ReferenceEquals(stoneOpponents.Owned, stone) || !ReferenceEquals(stoneOpponents.Predecessor, content.SuperRodOpponents) ||
-            !ReferenceEquals(stoneOpponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
-            !ReferenceEquals(stoneOpponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
-            throw new InvalidDataException("current_battle_catalog_identity");
-        if (content.VsSeeker is not null && (content.VsSeekerOpponents is not {} vs ||
-            !ReferenceEquals(vs.Owned, ordinary.SharedBattle) || !ReferenceEquals(vs.Predecessor, memorial.Catalog)))
-            throw new InvalidDataException("current_vs_seeker_opponent_identity");
-        if (content.LostCaveEnabled)
-        {
-            if (GiftEggOwnedPokemonCatalog.For(battle.Catalog) is not {} gift ||
-                !ReferenceEquals(gift.Predecessor.Predecessor, content.VsSeekerOpponents) ||
-                !ReferenceEquals(gift.SharedBattle, battle) || content.LostCaveTrainers is not {} trainers ||
-                !ReferenceEquals(trainers.InheritedTrainers, content.VsSeekerTrainers))
-                throw new InvalidDataException("current_lost_cave_owned_identity");
-            LostCaveTrainerPartyFactory.ValidateCatalog(trainers);
-        }
+        var battle = content.PokemonContent!.Pokemon;
+        if (content.MemorialPillarTrainers is { } memorialTrainers)
+            MemorialPillarTrainerPartyFactory.ValidateCatalog(memorialTrainers);
+        if (content.LostCaveEnabled && content.LostCaveTrainers is { } lostCaveTrainers)
+            LostCaveTrainerPartyFactory.ValidateCatalog(lostCaveTrainers);
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, battle.Catalog, battle);
     }
 
@@ -89,8 +54,8 @@ public sealed partial class CampaignSession
             content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled && content.Route5DayCareEnabled && content.FourIslandDayCareEnabled && content.TrainerFanClubEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
-        if (content.BreedingMetadata is not {} metadata || !ReferenceEquals(metadata, BreedingSpeciesMetadataCatalog.For(content.PokemonContent?.Catalog))) throw new InvalidDataException("current_breeding_metadata_missing");
-        if(content.NpcTrades is null||!ReferenceEquals(NpcTradePokemonCatalog.For(content.PokemonContent?.Catalog),content.NpcTrades))throw new InvalidDataException("current_npc_trade_proof_missing");
+        if (content.BreedingMetadata is not {} metadata || !ReferenceEquals(metadata, content.PokemonContent?.Catalog.BreedingData)) throw new InvalidDataException("current_breeding_metadata_missing");
+        if(content.NpcTrades is null||!content.NpcTrades.Definitions.OrderBy(p=>p.Key).SequenceEqual(content.PokemonContent!.Catalog.NpcTrades.OrderBy(p=>p.Key)))throw new InvalidDataException("current_npc_trade_proof_missing");
         if (content.Route16FlyTrainers is {} route16) Route16FlyTrainerPartyFactory.ValidateCatalog(route16);
         ValidateSeafoamEncounterCatalog(content);ValidateOldAmberCatalog(content);ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
         if(content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
@@ -110,18 +75,14 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
         if (content.GameCornerPrizes is not {} prizes || !ReferenceEquals(prizes.Pokemon, content.PokemonContent?.Catalog) ||
-            !ReferenceEquals(prizes.Items, content.EarlyShop) || !ReferenceEquals(prizes.Machines, content.PewterMachines))
+            !prizes.Items.Items.SequenceEqual(content.EarlyShop!.Items) || !ReferenceEquals(prizes.Machines, content.PewterMachines))
             throw new InvalidDataException("current_prize_catalog_identity");
-        if (!content.SuperRodEnabled || content.PewterMachines is not { } machines ||
-            DepartmentStoreMachineStock.For(machines) is not { } machineStock ||
-            StoneEvolutionMachineCatalog.For(DepartmentStoreMachineStock.RooftopBaseCatalog(machines)) is not { } currentMachines ||
-            !ReferenceEquals(currentMachines.Pokemon, OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(content.PokemonContent?.Catalog), GameCornerOwnedPokemonCatalog.For)?.Predecessor) ||
-            !ReferenceEquals(currentMachines.Pokemon.Predecessor, content.SuperRodOwnership) ||
-            !ReferenceEquals(SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines))?.Pokemon, content.SuperRodOwnership))
-            throw new InvalidDataException("current_machine_proof_missing");
-        machineStock.Validate();
-        var baseShop = OrdinaryItemInventoryCatalog.BaseCatalog(content.EarlyShop!);
-        if((PokeDollInventoryCatalog.For(baseShop)?.Predecessor ?? SeafoamShopCatalog.For(baseShop)) is not {} currentShop || !ReferenceEquals(currentShop.Predecessor.Predecessor, content.FossilLabShop))throw new InvalidDataException("current_shop_proof_missing");
+        if (!content.SuperRodEnabled || content.PewterMachines is not { } machines)
+            throw new InvalidDataException("current_machine_catalog_missing");
+        MachineRules.ValidateCatalog(machines);
+        new DepartmentStoreMachineStock(machines).Validate();
+        EarlyShopInventoryRules.ValidateCatalog(content.EarlyShop!);
+        if (content.EarlyShop!.Inventory is null) throw new InvalidDataException("current_inventory_scope_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
         if(content.FieldPickups.IsDefaultOrEmpty||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");
     }

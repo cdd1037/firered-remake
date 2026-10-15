@@ -73,7 +73,7 @@ public sealed class PretRoute3Region
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/route3-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -145,4 +145,3 @@ public sealed class PretRoute3Region
         return result;
     }
 }
-

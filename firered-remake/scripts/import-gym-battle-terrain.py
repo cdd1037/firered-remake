@@ -57,11 +57,6 @@ def reference(lock, sources, path, symbol, needle):
     source = sources[path].decode()
     if source.count(needle) != 1:
         raise ValueError('Missing/ambiguous source semantics: ' + symbol)
-    first = source.count('\n', 0, source.index(needle)) + 1
-    last = first + needle.count('\n')
-    entry = next(e for e in lock['files'] if e['path'] == path)
-    return dict(path=path, symbol=symbol, startLine=first, endLine=last,
-                url=entry['sourceUrl'] + f'#L{first}-L{last}')
 
 
 def semantics(lock, sources):
@@ -94,11 +89,12 @@ def semantics(lock, sources):
         checks.append(('src/battle_bg.c', f'sBattleTerrainTable[BATTLE_TERRAIN_{name.upper()}]',
                        f'    [BATTLE_TERRAIN_{name.upper()}] =\n    {{\n        .tileset = sBattleTerrainTiles_Building,\n        .tilemap = sBattleTerrainTilemap_Building,\n        .entryTileset = sBattleTerrainAnimTiles_Building,\n        .entryTilemap = sBattleTerrainAnimTilemap_Building,\n        .palette = sBattleTerrainPalette_{name}\n    }},'))
     ui.require(sources['tools/gbagfx/convert_png.c'].decode(), '% (1 << destBitDepth)')
-    return [reference(lock, sources, *check) for check in checks]
+    for check in checks:
+        reference(lock, sources, *check)
 
 
 def convert(lock, sources):
-    refs = semantics(lock, sources)
+    semantics(lock, sources)
     source_png = sources[TERRAIN + 'terrain.png']
     width, height, _, _ = ui.indexed_png(source_png)
     if (width, height) != (64, 80):
@@ -141,7 +137,7 @@ def convert(lock, sources):
                        paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', sourceOrigin=[0, 0],
                        textureFilter='nearest', drawBefore=['battler sprites', 'healthboxes', 'menus'],
                        groundBasesIncluded=True, additionalGroundBaseTexturesRequired=False),
-                   variants=variants, assets=assets, sourceRefs=refs, inputs=lock['files'], limitations=[
+                   variants=variants, assets=assets,  inputs=lock['files'], limitations=[
                        'Settled Gym/Leader singles background only; no entry animation or palette fades.',
                        'Current application selection is bounded to Pewter and Cerulean Gyms; additional gyms are not inferred.',
                        'BG3 already contains both ground bases; do not draw duplicate bases.',

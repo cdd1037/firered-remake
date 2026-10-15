@@ -2,6 +2,7 @@
 """Import bounded Coin Case / ordinary Game Corner coins; reuse maps and source bytes.
 REFERENCE DEPENDENCY OUTPUT [--check]. Never executes the reference repository.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse, base64,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -25,7 +26,7 @@ SHARED = {path: 'content/raw/pokefirered/037335f4/'+path for paths in [
 
 def need(value, message):
     if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False)+'\n').encode()
+def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False, default=item_json)+'\n').encode()
 
 def generate(reference, dependency):
     inputs, cache, raw = {}, {}, {}
@@ -61,11 +62,7 @@ def generate(reference, dependency):
     path='src/data/items.json'; original=next(i for i in json.loads(text(path))['items'] if i['itemId']=='ITEM_COIN_CASE')
     match=one(path,r'^    \{\n      "english": "COIN CASE",.*?^    \}')
     ref=source(path,'ITEM_COIN_CASE',match)
-    item=dict(id=dict(value='pret:ITEM_COIN_CASE'),sourceItemSymbol='ITEM_COIN_CASE',sourceItemId=260,
-        name=original['english'],price=original['price'],importance=original['importance'],registrability=original['registrability'],
-        pocket=original['pocket'],type=str(original['type']),holdEffect=original['holdEffect'],holdEffectParam=original['holdEffectParam'],
-        fieldUseFunction=original['fieldUseFunc'],battleUsage=original['battleUsage'],battleUseFunction=original['battleUseFunc'],
-        secondaryId=original['secondaryId'],canToss=original['importance']==0,canSell=original['price']!=0,canGive=original['importance']==0,source=ref)
+    item=shared_item('ITEM_COIN_CASE')
     need(item['importance']==1 and item['registrability']==0 and item['price']==0 and item['pocket']=='POCKET_KEY_ITEMS' and
         item['fieldUseFunction']=='FieldUseFunc_CoinCase' and item['secondaryId']==0 and item['battleUsage']==0,'Coin Case semantics')
     desc=original['description_english'].replace('\\n','\n')
@@ -146,4 +143,4 @@ if __name__=='__main__':
         else:
             need(not target.is_symlink(),'Refuse symlink output: '+path)
             target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check,services=len(facts['services']),scriptBlocks=len(facts['scripts'])),indent=2))
+    print(json.dumps(dict(checked=args.check,services=len(facts['services']),scriptBlocks=len(facts['scripts'])),indent=2, default=item_json))

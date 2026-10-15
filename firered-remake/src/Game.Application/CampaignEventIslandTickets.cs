@@ -34,7 +34,7 @@ public sealed partial class CampaignSession
         // The shop view excludes unrelated key items, but the source capacity
         // test counts the complete Bag pocket, including Town Map and TM Case.
         if (index < 0 && keys.Length >= ShopCatalog.QuestLimits.KeyItemSlots) return inventory;
-        var result = EarlyInventoryAddRules.Add(ShopCatalog, ShopInventoryView(inventory), ticket, 1);
+        var result = EarlyInventoryAddRules.Add(ShopCatalog, inventory, ticket, 1);
         // Both AddBagItem return values are intentionally ignored by the source:
         // failure leaves the Bag unchanged and still sets the following flags.
         if (!result.Succeeded) return inventory;

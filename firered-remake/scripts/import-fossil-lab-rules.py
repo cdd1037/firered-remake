@@ -4,6 +4,7 @@
 Usage: REFERENCE DEPENDENCY OUTPUT [--check]. Never executes upstream code or
 rewrites the canonical catalog. Generation writes only this package and lock.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
 import re
@@ -72,12 +73,6 @@ def generate(reference, dependency):
         definition, meta = species[name], metadata[name]
         need(definition["sourceSpeciesId"] == 138 + index and not definition["evolutions"],
              "Canonical fossil identity and metadata-only evolution")
-        references = [definition["source"], definition["learnsetSource"], meta["learnsetPointerSource"], meta["dexSource"]]
-        references += [e["source"] for e in meta["sourceEvolutions"]]
-        for source in references:
-            read(source["path"])
-            need(1 <= source["startLine"] <= source["endLine"] <= len(texts[source["path"]].splitlines()),
-                 "Canonical source span: " + name)
         need(number("include/constants/species.h", name) == 138 + index, "Source species number")
         if index in (0, 2):
             raw_edge = meta["sourceEvolutions"]
@@ -86,7 +81,7 @@ def generate(reference, dependency):
             need((edge["method"], edge["sourceMethodId"], edge["parameter"], edge["parameterValue"], edge["target"]) ==
                  ("EVO_LEVEL", 4, "40", 40, identity(SPECIES[index + 1])), "Exact source level-40 edge")
             match = one("src/data/pokemon/evolution.h", r"^    \[" + name + r"\][ \t]+= \{\{EVO_LEVEL, 40, " + SPECIES[index + 1] + r"\}\},$")
-            need(ref("src/data/pokemon/evolution.h", name, match) == edge["source"], "Evolution source span identity")
+
             edges.append(dict(species=identity(name), **edge))
         else:
             need(not meta["sourceEvolutions"], "Terminal fossil species")
@@ -134,15 +129,9 @@ def generate(reference, dependency):
          fieldUseFunc="FieldUseFunc_OakStopsYou", battleUsage=0, battleUseFunc="NULL", secondaryId=0),
          "Exact Old Amber source definition")
     need(number("include/constants/items.h", item_symbol) == 354, "Old Amber source number")
-    item_metadata = dict(id=identity(item_symbol), sourceItemSymbol=item_symbol, sourceItemId=354,
-        name=item_definition["english"], price=0, importance=1, registrability=0, pocket="POCKET_KEY_ITEMS",
-        type="ITEM_TYPE_BAG_MENU", holdEffect="HOLD_EFFECT_NONE", holdEffectParam=0,
-        fieldUseFunction="FieldUseFunc_OakStopsYou", battleUsage=0, battleUseFunction="NULL", secondaryId=0,
-        canToss=False, canSell=False, canGive=False, source=item_ref)
-    amber_item = {k: item_metadata[k] for k in ("id", "sourceItemSymbol", "sourceItemId", "name", "price", "pocket",
-        "importance", "type", "fieldUseFunction", "battleUsage", "battleUseFunction", "holdEffectParam", "source")}
-    amber_item.update(description=item_definition["description_english"].replace("\\n", "\n"),
-        healHp=0, cureStatus=0, effectBytes=[], useSupport=11, effectSource=None, sourceMetadata=item_metadata)
+    item_metadata = shared_item(item_symbol)
+    amber_item = dict(item=item_metadata)
+    amber_item.update(description=item_definition["description_english"].replace("\\n", "\n"), healHp=0, cureStatus=0, effectBytes=[], useSupport=11)
 
     exp_path = "src/data/pokemon/experience_tables.h"
     need("#define EXP_SLOW(n)((5 * CUBE(n)) / 4)" in read(exp_path) and "EXP_SLOW(5)" in read(exp_path),
@@ -195,7 +184,7 @@ def generate(reference, dependency):
                               previousOwnedSpeciesCount=154,
                              ownedSpeciesCount=159, previousOpponentSpeciesCount=186, opponentSpeciesCount=190,
                              ownedSpeciesAdded=list(SPECIES), opponentSpeciesAdded=list(SPECIES[:4]), trainerOnlySpeciesAdded=[],
-                             species=[dict(definition=species[s], metadata=metadata[s]) for s in SPECIES], evolutions=edges),
+                             species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']), metadata=metadata[s]) for s in SPECIES], evolutions=edges),
         "machines.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-teaching-v1", previousSpeciesCount=154,
                               speciesCount=159, machineCount=41, additions=machine_rows,
                                itemsAdded=[]),
@@ -221,13 +210,13 @@ def main():
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     docs, raw = generate(args.reference, args.dependency)
-    files = {"content/generated/fossil-lab-rules/" + name: (json.dumps(doc, indent=2, ensure_ascii=False) + "\n").encode()
+    files = {"content/generated/fossil-lab-rules/" + name: (json.dumps(doc, indent=2, ensure_ascii=False, default=item_json) + "\n").encode()
              for name, doc in docs.items()}
     files.update({"content/raw/pokefirered/037335f4/" + name: data for name, data in raw.items()})
     lock = dict(sourceCommit=COMMIT,  profile="firered-fossil-lab-rules-v1",
 
                 files=[dict(path=path) for path, data in sorted(files.items())])
-    files["scripts/fossil-lab-rules.lock.json"] = (json.dumps(lock, indent=2) + "\n").encode()
+    files["scripts/fossil-lab-rules.lock.json"] = (json.dumps(lock, indent=2, default=item_json) + "\n").encode()
     for path, data in files.items():
         destination = args.output / path
         if args.check:
@@ -236,7 +225,7 @@ def main():
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
     print(json.dumps(dict(checked=args.check, owned=159, opponents=190, evolutionEdges=2, machines=41,
-                         newCells=205, items=125, creationVectors=len(docs["rules.json"]["generationCases"])), indent=2))
+                         newCells=205, items=125, creationVectors=len(docs["rules.json"]["generationCases"])), indent=2, default=item_json))
 
 
 if __name__ == "__main__":

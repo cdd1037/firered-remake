@@ -6,6 +6,7 @@ _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
 
+from item_catalog import item_json
 import argparse,base64,importlib.util,json,pathlib,re,subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 import machine_catalog as shared_machines
@@ -13,7 +14,7 @@ import machine_catalog as shared_machines
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-fuchsia-gym-items-v1'
-def canonical(d):return (json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
+def canonical(d):return (json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False,default=item_json)+'\n').encode()
 def safe(root,rel):
  if pathlib.PurePosixPath(rel).is_absolute() or '\\' in rel or ':' in rel or any(x in ('','.','..') for x in rel.split('/')):raise ValueError('Unsafe path')
  p=pathlib.Path(root).absolute()/rel
@@ -44,7 +45,7 @@ def item_outputs(lock,sources,project):
     icon=dict(item=ident('ITEM_TM06'),width=w,height=h,pngPath='item_tm06.png',source=ref(image,icon_symbols[0]),paletteSource=ref(palette,icon_symbols[1]),bindingSource=binding)
     for path,symbol,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('data/maps/FuchsiaCity_Gym/scripts.inc','FuchsiaCity_Gym_EventScript_GiveTM06',r'^FuchsiaCity_Gym_EventScript_GiveTM06::.*?^\tend$')]:rules.append(ref(path,symbol,match(path,pattern)))
     limitations=['Exactly one source TM06/Toxic reward item with its original 24x24 icon and 107 source compatibility rows.','Metadata does not enable the reward, teaching, battle effects, field permissions or a campaign profile.']
-    return {'fuchsia-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-fuchsia-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],items=[dict(metadata=wrapped,effectBytes=[],effectSource=None)],icons=[icon],limitations=limitations)),
+    return {'fuchsia-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-fuchsia-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],items=[dict(metadata=wrapped,effectBytes=[])],icons=[icon],limitations=limitations)),
       'fuchsia-gym-machines.json':canonical(dict(schemaVersion=1,profile='firered-fuchsia-gym-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],machines=values,icons=[icon],limitations=limitations)),'item_tm06.png':png}
 
 def run(root,reference=None,check=False):

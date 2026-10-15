@@ -1,3 +1,4 @@
+using Game.Domain.Items;
 using Game.Domain;
 using Game.Domain.Encounters;
 using Game.Domain.Events;
@@ -37,16 +38,12 @@ public sealed partial class CampaignSession
     {
         if (!content.PowerPlantEnabled || content.PowerPlantOwnership is not { } owned ||
             content.PowerPlantOpponents is not { } opponents || content.PowerPlantMachines is not { } machines ||
-            content.PowerPlantShop is not { } shop ||
-            !ReferenceEquals(PowerPlantOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Predecessor, content.EventIslandOwnership) ||
-            !ReferenceEquals(owned, content.FightingDojoOwnership?.Predecessor) ||
-            !ReferenceEquals(PowerPlantOpponentPokemonCatalog.For(owned), opponents) ||
-            !ReferenceEquals(opponents.Predecessor, content.EventIslandOpponents) ||
-            !ReferenceEquals(Game.Domain.Items.PowerPlantMachineCatalog.For(machines.Catalog), machines) ||
-            !ReferenceEquals(machines.Predecessor, content.EventIslandMachines) || !ReferenceEquals(machines.Pokemon, owned) ||
-            !ReferenceEquals(content.FossilLabShop?.Predecessor.Predecessor, shop) ||
-            !ReferenceEquals(shop.Predecessor, content.EventIslandShop)) throw new InvalidDataException("power_plant_current_binding");
+            !content.Inventory.Items.ContainsKey(ItemIds.ThunderStoneId) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents)) throw new InvalidDataException("power_plant_current_binding");
         var pickups = content.FieldPickups.Where(p => p.MapSymbol == "MAP_POWER_PLANT").ToArray();
         if (pickups.Length != 7 || pickups.Count(p => p.Hidden) != 2 ||
             !pickups.Where(p => !p.Hidden).Select(p => p.ItemSymbol).Order().SequenceEqual(new[] { "ITEM_MAX_POTION", "ITEM_TM17", "ITEM_TM25", "ITEM_THUNDER_STONE", "ITEM_ELIXIR" }.Order()) ||

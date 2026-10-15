@@ -100,12 +100,11 @@ def metadata(lock, sources):
             trade = re.fullmatch(r'\{\{EVO_TRADE, 0, (SPECIES_\w+)\}\}', m[1])
             trade_item = re.fullmatch(r'\{\{EVO_TRADE_ITEM, (ITEM_\w+), (SPECIES_\w+)\}\}', m[1])
             if level:
-                evolution = dict(level=int(level[1]), target=ident(level[2]), source=ref(evolution_path, symbol, m))
+                evolution = dict(level=int(level[1]), target=ident(level[2]))
             elif trade and symbol == 'SPECIES_GRAVELER' and trade[1] == 'SPECIES_GOLEM':
-                evolution = dict(level=0, target=ident(trade[1]), source=ref(evolution_path, symbol, m), method='trade')
+                evolution = dict(level=0, target=ident(trade[1]), method='trade')
             elif trade_item and symbol == 'SPECIES_ONIX' and (trade_item[1], trade_item[2]) == ('ITEM_METAL_COAT', 'SPECIES_STEELIX'):
-                evolution = dict(level=0, target=ident(trade_item[2]), source=ref(evolution_path, symbol, m),
-                                 method='tradeItem', parameter=trade_item[1])
+                evolution = dict(level=0, target=ident(trade_item[2]), method='tradeItem', parameter=trade_item[1])
             else:
                 raise ValueError('Unsupported evolution declaration: ' + m[1])
             if symbol == 'SPECIES_MANKEY':
@@ -116,20 +115,12 @@ def metadata(lock, sources):
                 if evolution['target']['value'] not in {'pret:SPECIES_' + n.upper() for n in NEW_SPECIES}:
                     raise ValueError('Unimported forward evolution target')
                 evolutions.append(evolution)
-        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-            baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)},
-            type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']),
-            evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow'}[fields['growthRate']],
-            genderRatio=127, ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']),
-            levelUpMoves=moves, evolutions=evolutions, source=source, learnsetSource=ref(learnpath, pointer, learn)))
+        species.append(dict(id=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol), baseStats={k: int(fields['base' + s]) for k, s in zip(stat_keys, stat_fields)}, type1=types[1], type2=types[2], catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_keys, stat_fields)}, growthRate={'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_MEDIUM_SLOW': 'mediumSlow'}[fields['growthRate']], genderRatio=127, ability1=abilities[1], ability2=abilities[2], friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-            pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']), effect=f['effect'],
-            secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'], priority=int(f['priority']),
-            flags=[] if f['flags'] == '0' else f['flags'].split(' | '), battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     constants = []
     for path, symbol in [('include/constants/pokemon.h', 'EVO_LEVEL'),
@@ -149,7 +140,7 @@ def metadata(lock, sources):
         encoded_names.append(dict(symbol=row['source']['symbol'], name=row['name'], bytes=values,
                                   source=row['source'], encodingSource=encoding_source))
     return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'],
-        species=species, moves=moves, speciesNames=names, moveNames=move_names, constants=constants,
+        species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=names, moveNames=move_names, constants=constants,
         encodedNames=encoded_names, deferredEvolutions=deferred, itemEvolutionExecutorImplemented=False, levelEvolutionExecutorImplemented=False,
         tradeEvolutionExecutorImplemented=False,
         limitations=['Adds Spearow, Fearow and Mankey over the unchanged twenty-nine species.',

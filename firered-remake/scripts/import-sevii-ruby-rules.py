@@ -143,10 +143,6 @@ def generate(reference, dependency, region):
     # Reuse those records and only disclose the two newly reachable level evolution edges.
     additions=['SPECIES_RAPIDASH','SPECIES_SLUGMA','SPECIES_MAGCARGO']
     metadata={m['id']['value'][5:]:m for m in declarations['pokemonMetadata']}
-    for name in additions+['SPECIES_PONYTA']:
-        need(next(s for s in declarations['pokemon'] if s['id']['value']=='pret:'+name)==species[name], 'Region canonical species')
-        for source in [species[name]['source'],species[name]['learnsetSource']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
-            read(source['path'])
     edges=[]
     for name,level,target in [('SPECIES_PONYTA',40,'SPECIES_RAPIDASH'),('SPECIES_SLUGMA',38,'SPECIES_MAGCARGO')]:
         e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']['value']=='pret:'+target,'Evolution edge')

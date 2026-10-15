@@ -61,8 +61,8 @@ public sealed partial class PretPokemonTowerRegion
         JsonElement Document(string path) { using var d = JsonDocument.Parse(ReadOutput(path)); return d.RootElement.Clone(); }
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty;
-        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal); 
-            
+        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
+
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, "Local authenticated source data.",
             "Source contracts only; executable progression must be registered by Application.", Profile);
         var spec = Document("runtime.json"); var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();

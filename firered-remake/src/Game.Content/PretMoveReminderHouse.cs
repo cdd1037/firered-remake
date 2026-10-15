@@ -90,7 +90,7 @@ public sealed class PretMoveReminderHouse
         ValidateTown(source, dependencyRoot);
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["CHECKED_MUSHROOMS"] == 1 && constants["HAS_BIG_MUSHROOM"] == 2 &&
             constants["HAS_TINY_MUSHROOMS"] == 3 && constants["HAS_BOTH_MUSHROOMS"] == 4 &&

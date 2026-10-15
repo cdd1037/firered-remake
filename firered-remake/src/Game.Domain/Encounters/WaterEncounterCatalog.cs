@@ -1,29 +1,37 @@
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Encounters;
 
-/// <summary>Exact21-table source proof. A copied record does not inherit table authentication.</summary>
+/// <summary>Immutable map encounter definitions loaded at the content boundary.</summary>
 public sealed class WaterEncounterCatalog
 {
-    private static readonly ConditionalWeakTable<WaterEncounterTable, WaterEncounterCatalog> Authenticated = new();
     public ImmutableDictionary<MapId, WaterEncounterTable> Tables { get; }
     private WaterEncounterCatalog(ImmutableArray<WaterEncounterTable> tables) => Tables = tables.ToImmutableDictionary(t => t.Map);
     public static WaterEncounterCatalog Authenticate(ImmutableArray<WaterEncounterTable> tables)
     {
-        if (tables.IsDefault || tables.Length != 21 || tables.Any(t => t is null || t.Slots.IsDefault || t.Slots.Length != 5 ||
-            t.RawEncounterRate is < 1 or > 100 ||
-            t.Slots.Any(s => s is null || s.MinimumLevel is < 1 or > 100 || s.MaximumLevel < s.MinimumLevel ||
-                s.MaximumLevel > 100 || s.Weight <= 0 || string.IsNullOrWhiteSpace(s.Species.Value)) ||
-            !t.Slots.Select(s => s.Index).SequenceEqual(Enumerable.Range(0, 5))))
+        if (tables.IsDefaultOrEmpty || tables.Any(t => !IsValidDefinition(t)) ||
+            tables.Select(t => t.Map).Distinct().Count() != tables.Length)
             throw new ArgumentException("water_catalog_scope");
-        // Each proof receives independent roots; caller-side records and clones stay unauthenticated.
-        var proof = new WaterEncounterCatalog(tables.Select(t => t with { }).ToImmutableArray());
-        foreach (var table in proof.Tables.Values) Authenticated.Add(table, proof);
-        return proof;
+        return new(tables);
     }
-    public static bool IsAuthenticated(WaterEncounterTable? table) => table is not null && Authenticated.TryGetValue(table,out _);
+    public static bool IsValidDefinition(WaterEncounterTable? table) => table is not null &&
+        !string.IsNullOrWhiteSpace(table.Map.Value) && table.RawEncounterRate is >= 1 and <= 100 &&
+        !table.Slots.IsDefault && table.Slots.Length == 5 &&
+        table.Slots.All(s => s is not null) &&
+        table.Slots.Select(s => s.Index).SequenceEqual(Enumerable.Range(0, 5)) &&
+        table.Slots.Select(s => s.Weight).SequenceEqual(WaterEncounterRules.SlotWeights) &&
+        table.Slots.All(s => s is not null && s.MinimumLevel is >= 1 and <= 100 &&
+            s.MaximumLevel >= s.MinimumLevel && s.MaximumLevel <= 100 && !string.IsNullOrWhiteSpace(s.Species.Value));
+    public static bool SameDefinition(WaterEncounterTable? actual, WaterEncounterTable expected) =>
+        actual is not null && actual.Map == expected.Map && actual.RawEncounterRate == expected.RawEncounterRate &&
+        !actual.Slots.IsDefault && actual.Slots.SequenceEqual(expected.Slots);
     public static void ValidateTable(WaterEncounterTable table)
-    { if (!IsAuthenticated(table)) throw new ArgumentException("water_table_admission"); }
+    { if (!IsValidDefinition(table)) throw new ArgumentException("water_table_definition"); }
+    public static void ValidateAdmission(IReadOnlyDictionary<MapId, WaterEncounterTable> tables, WaterEncounterTable table)
+    {
+        ArgumentNullException.ThrowIfNull(tables);
+        if (table is null || !tables.TryGetValue(table.Map, out var expected) || !SameDefinition(table, expected))
+            throw new ArgumentException("water_table_admission");
+    }
 }

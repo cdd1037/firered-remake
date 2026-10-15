@@ -6,7 +6,7 @@ namespace Game.Domain.Pokemon;
 
 /// <summary>A one-shot proposal for one party member after its battle rewards and move decisions.</summary>
 public sealed record LevelEvolutionEligibility(long InstanceId, SpeciesId PreviousSpecies, SpeciesId TargetSpecies,
-    int Level, int LevelBeforeBattle, PokemonSourceRef Source);
+    int Level, int LevelBeforeBattle);
 public enum LevelEvolutionOutcome { Evolved, Cancelled }
 public sealed record LevelEvolutionLearnedMove(int Level, MoveId Move, int Slot);
 public sealed record LevelEvolutionPendingMove(int Level, MoveId Move);
@@ -43,7 +43,7 @@ public static class LevelEvolutionRules
         var evolution = content.Catalog.Species[afterRewards.Pokemon.Species].Evolutions.LastOrDefault(e =>
             SourceLevelEvolutionProjection.Qualifies(e, afterRewards.Pokemon));
         return evolution is null ? null : new(afterRewards.InstanceId, afterRewards.Pokemon.Species,
-            evolution.Target, afterRewards.Pokemon.Level, levelBeforeBattle, evolution.Source);
+            evolution.Target, afterRewards.Pokemon.Level, levelBeforeBattle);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public static class LevelEvolutionRules
         var previous = content.Catalog.Species[before.Species];
         // Source changes species without changing the stored ability bit. These bounded families
         // keep compatible ability slots and growth curves, unlike an arbitrary species replacement.
-        bool authenticatedOwned = OwnedBattlePokemonCatalog.For(content.Catalog) is not null;
+        bool authenticatedOwned = content.Pokemon.Catalog.Species.ContainsKey(targetSpecies);
         bool sourceExtendedFamily = authenticatedOwned && (
             previous.Evolutions.Any(e => e.Target == targetSpecies && SourceLevelEvolutionProjection.IsNormalMethod(e.Method)) ||
             (before.Species.Value, targetSpecies.Value) is
@@ -179,7 +179,7 @@ public static class LevelEvolutionRules
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         // Only Everstone has a prevent-evolution hold effect in this bounded static item profile.
         // In particular, Enigma Berry can obtain that effect from save data not represented here.
-        bool staticHeldItem = OwnedBattlePokemonCatalog.For(content.Catalog) is { } ownership
+        bool staticHeldItem = content.Pokemon is { } ownership
             ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(ownership.Mechanics.Catalog, owned.HeldItem)
             : content.Catalog.Species.Count switch
         {

@@ -15,7 +15,7 @@ public static class UnownWildPokemonFactory
     public static Route1WildPokemonResult GenerateSourceSlot(SourceMechanicsCatalog mechanics,
         MapId chamber, int sourceSlotIndex, byte level, RngState globalRng, uint playerTrainerId)
     {
-        if (mechanics is null || !ReferenceEquals(SourceMechanicsCatalog.For(mechanics.Catalog), mechanics))
+        if (mechanics is null)
             throw new ArgumentException("unown_source_mechanics", nameof(mechanics));
         int form = UnownFormRules.SourceSlotForm(chamber, sourceSlotIndex);
         if (level != 25) throw new ArgumentOutOfRangeException(nameof(level), "unown_source_level");
@@ -47,7 +47,7 @@ public static class UnownWildPokemonFactory
         // Authenticated complete mechanics allows the same shared creation/IV/stat/move owners.
         var created = PokemonFactory.CreateCore(mechanics.Catalog,
             new(UnownFormRules.Species, level, playerTrainerId, IvPolicy.Random,
-                PersonalityPolicy.Fixed(personality)), globalRng, mechanics);
+                PersonalityPolicy.Fixed(personality)), globalRng, mechanics.Data);
         if (created.Trace.Length != 2) throw new InvalidOperationException("unown_fixed_pid_iv_contract");
         trace.AddRange(created.Trace.Select(draw => draw with { Purpose = "wild." + draw.Purpose["pokemon.".Length..] }));
         return new(created.Pokemon, created.Rng, trace.ToImmutable());

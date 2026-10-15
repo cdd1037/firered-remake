@@ -22,7 +22,7 @@ public sealed class CampaignCompositionTests
     public void NewGameContinuesAndAcceptsMovement()
     {
         var session = CampaignSession.CreateCurrent(catalog, new(0x11223344));
-        Assert.IsTrue(catalog.ContentVersion == "firered-current-content-v3", "explicit content compatibility version");
+        Assert.IsTrue(catalog.ContentVersion == "firered-current-content-v4", "explicit content compatibility version");
         Assert.IsTrue(catalog.Maps.ContainsKey(new("map.saffron-city")) && catalog.Maps.ContainsKey(PretLostCaveRegion.EntranceMapId), "expanded regions loaded");
         Assert.IsTrue(catalog.PokemonContent!.Catalog.Moves.Count == 354, "all move definitions loaded");
         Assert.IsTrue(session.ValidatePlayerSave(session.State)is null, "new game is saveable");

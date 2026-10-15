@@ -15,8 +15,8 @@ public sealed partial class PretCampaignCatalog
     public PretSilphPokemon? SilphPokemon { get; }
     public PretSilphItemsDocument? SilphItems { get; }
     public SilphTrainerCatalogContent? SilphTrainers { get; }
-    public SilphOwnedPokemonCatalog? SilphOwnership { get; }
-    public SilphOpponentPokemonCatalog? SilphOpponents { get; }
+    public GamePokemonCatalog? SilphOwnership { get; }
+    public GameOpponentPokemonCatalog? SilphOpponents { get; }
     public PretSilphArt? SilphArt { get; }
     public bool SilphEnabled=>SilphRegion is not null;
     SilphTrainerCatalog? ICampaignCatalog.SilphTrainerParties=>SilphTrainers is {} t?new(t.SourceCommit,t.Profile,t.CompleteSourceRoster,t.Trainers,t.Battles):null;
@@ -31,15 +31,13 @@ public sealed partial class PretCampaignCatalog
         ??CinnabarSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
 
-
-
-    private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)
     {
         foreach(var row in region.Contracts.GetProperty("pickups").EnumerateArray())
         {
             string symbol=row.GetProperty("item").GetString()!;var id=new ItemId("pret:"+symbol);
             var ordinary=shop.Items.SingleOrDefault(i=>i.Id==id);
-            var source=PewterMachineRules.Definition(machines,id)?.Machine.Item??items.Items.Single(i=>i.Metadata.Item.Id==id).Metadata.Item;
+            var source=MachineRules.Definition(machines,id)?.Machine.Item??items.Items.Single(i=>i.Metadata.Item.Id==id).Metadata.Item;
             var map=region.NewMaps[new(row.GetProperty("map").GetString()!)];
             int local=row.GetProperty("localId").GetInt32(),x=row.GetProperty("x").GetInt32(),y=row.GetProperty("y").GetInt32();
             var actor=map.Events.GetProperty("object_events")[local-1];

@@ -7,7 +7,7 @@ public sealed record PokemonContestConditions(int Cool, int Beauty, int Cute, in
 
 /// <summary>Immutable constructor provenance. Campaign ownership still requires its acquisition
 /// receipt; possessing or deserializing this value alone does not prove ownership.</summary>
-public sealed record NpcTradePokemonOrigin(int TradeId, string CatalogFingerprint, int ReceivedLevel);
+public sealed record NpcTradePokemonOrigin(int TradeId, int ReceivedLevel);
 
 /// <summary>Authenticates fixed trade identities against the actual source/owned catalog.
 /// Mutable battle state, moves, friendship, held items and nicknames are deliberately separate.</summary>
@@ -26,7 +26,7 @@ public static class NpcTradePokemonOriginRules
         if (ValidateInstance(catalog, owned.Pokemon, out _) is { } error) return error;
         if (owned.Pokemon.NpcTradeOrigin is not { } origin)
             return owned.MetLocation == MetLocation ? "party_npc_trade_origin_missing" : null;
-        var definition = NpcTradePokemonCatalog.For(catalog)!.Definitions[origin.TradeId];
+        var definition = catalog.NpcTrades[origin.TradeId];
         if (owned.OriginalTrainerName != definition.OriginalTrainerName ||
             owned.OriginalTrainerGender != definition.OriginalTrainerGender)
             return "party_npc_trade_original_trainer";
@@ -40,16 +40,15 @@ public static class NpcTradePokemonOriginRules
     {
         abilitySlot = null;
         if (pokemon.NpcTradeOrigin is not { } origin) return null;
-        var trades = NpcTradePokemonCatalog.For(catalog);
-        if (trades is null || origin.CatalogFingerprint != NpcTradePokemonCatalog.SemanticSha256 ||
-            !trades.IsEnabled(origin.TradeId) || !trades.Definitions.TryGetValue(origin.TradeId, out var definition))
+        var trades = catalog.NpcTrades;
+        if (catalog.MechanicsData is null || origin.TradeId is < 0 or > 8 || !trades.TryGetValue(origin.TradeId, out var definition))
             return "pokemon_npc_trade_origin";
         if (origin.ReceivedLevel is < 1 or > 100 || origin.ReceivedLevel > pokemon.Level)
             return "pokemon_npc_trade_received_level";
         if (pokemon.Personality != definition.Personality || pokemon.OriginalTrainerId != definition.OriginalTrainerId ||
             pokemon.Ivs != definition.Ivs || pokemon.ContestConditions != definition.ContestConditions)
             return "pokemon_npc_trade_identity";
-        if (!IsReachableSpecies(trades.Mechanics, definition.ReceivedSpecies,
+        if (!IsReachableSpecies(catalog.MechanicsData!, definition.ReceivedSpecies,
                 origin.ReceivedLevel, pokemon.Species, pokemon.Level))
             return "pokemon_npc_trade_species";
         if (!catalog.Species.TryGetValue(pokemon.Species, out var species) ||
@@ -67,13 +66,13 @@ public static class NpcTradePokemonOriginRules
     {
         if (pokemon.NpcTradeOrigin is not { } origin) return metLocation != MetLocation;
         return ValidateInstance(catalog, pokemon, out _) is null &&
-            originalTrainerName == NpcTradePokemonCatalog.For(catalog)!.Definitions[origin.TradeId].OriginalTrainerName &&
+            originalTrainerName == catalog.NpcTrades[origin.TradeId].OriginalTrainerName &&
             metLocation == MetLocation && ball == "ITEM_POKE_BALL";
     }
 
     // This only admits possible ancestry; Application proves the actual chronological evolution
     // receipts. A level evolution requires a gained level even when received above its threshold.
-    private static bool IsReachableSpecies(SourceMechanicsCatalog mechanics, SpeciesId receivedSpecies,
+    private static bool IsReachableSpecies(PokemonMechanicsData mechanics, SpeciesId receivedSpecies,
         int receivedLevel, SpeciesId currentSpecies, int currentLevel)
     {
         var earliest = new Dictionary<SpeciesId, int> { [receivedSpecies] = receivedLevel };

@@ -12,7 +12,7 @@ public sealed class PretGameCornerCoins
     public const string Profile = "firered-game-corner-coins-v1";
     public const string ScriptPath = "data/maps/CeladonCity_GameCorner/scripts.inc";
     public const string RestaurantScriptPath = "data/maps/CeladonCity_Restaurant/scripts.inc";
-    public ImmutableArray<PewterMachineItem> Items { get; }
+    public ImmutableArray<MachineItem> Items { get; }
     public ImmutableArray<PretPewterMachineIcon> Icons { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public JsonElement Contract { get; }
@@ -35,10 +35,10 @@ public sealed class PretGameCornerCoins
         return bytes;
     }
 
-    public static PretGameCornerCoins Load(string root, string? dependencyRoot = null)
+    public static PretGameCornerCoins Load(string root, string? dependencyRoot = null, SharedMachineCatalog? shared = null)
     {
         using var facts = JsonDocument.Parse(Read(root, Base + "source-contract.json"));
-        var items = ContentJson.ParseStrict<PretCityServiceItemsDocument>(Encoding.UTF8.GetString(Read(root,Base + "items.json")), ContentJson.CreateOptions());
+        var items = ContentJson.ParseStrict<PretCityServiceItemsDocument>(Encoding.UTF8.GetString(Read(root,Base + "items.json")), (shared ?? SharedMachineCatalog.LoadProject(dependencyRoot ?? root)).CreateJsonOptions());
         Need(items.SchemaVersion == 1 &&
             items.Items.Length == 1 && items.Icons.Length == 1, "item_scope");
         var item = items.Items[0].Item; var icon = items.Icons[0];

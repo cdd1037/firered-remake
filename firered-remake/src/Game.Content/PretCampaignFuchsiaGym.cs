@@ -10,7 +10,6 @@ public sealed partial class PretCampaignCatalog
 {
     // Regional composition for the Fuchsia Gym.
     public const string FuchsiaGymContentProfile = "firered-fuchsia-gym-source-content-v1";
-    public const string FuchsiaGymMachineContentProfile = FuchsiaGymMachineRules.Profile;
     public const string FuchsiaGymShopContentProfile = FuchsiaGymItemRules.Profile;
 
     public PretFuchsiaGymRegion? FuchsiaGymRegion { get; }
@@ -24,45 +23,6 @@ public sealed partial class PretCampaignCatalog
     public bool FuchsiaGymEnabled => FuchsiaGymRegion is not null;
     public PokemonMoveDefinition? FuchsiaGymToxic => FuchsiaGymEnabled
         ? PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")] : null;
-
-
-
-    private static PokemonCatalog FuchsiaGymPokemon(PokemonCatalog predecessor,FuchsiaGymTrainerDocument trainers,PretMetronomeMoveCatalog source)
-    {
-        PokemonFactory.ValidateCatalog(predecessor);
-        if (predecessor.Moves.ContainsKey(new("pret:MOVE_TOXIC")) || predecessor.Moves.Values.Any(m => !source.MatchesSource(m)) ||
-            trainers.Moves.Any(m => !source.MatchesSource(m)))
-            throw new InvalidDataException("fuchsia_gym_pokemon_predecessor_or_source");
-        // The source turn kernel may call any imported move. Extend metadata only:
-        // preserve every species/learnset and existing move object unchanged.
-        var result = source.Extend(predecessor);
-        PokemonFactory.ValidateCatalog(result);
-        if (trainers.Moves.Any(m => !result.Moves.ContainsKey(m.Id)) ||
-            trainers.Trainers.SelectMany(t => t.Party).Any(p => !result.Species.ContainsKey(p.Species)))
-            throw new InvalidDataException("fuchsia_gym_trainer_metadata_closure");
-        return result;
-    }
-
-    private static PewterMachineCatalog ComposeFuchsiaGymMachines(PewterMachineCatalog predecessor,PretRockTunnelMachinesDocument document)
-    {
-        FuchsiaMachineRules.ValidateCatalog(predecessor);
-        var machine = document.Machines.Single();
-        if (machine.Machine.Item.Id != PretFuchsiaGymItems.Tm06Id ||
-            predecessor.AdditionalMachines!.Value.Any(m => m.Machine.Item.Id == machine.Machine.Item.Id))
-            throw new InvalidDataException("fuchsia_gym_machine_predecessor");
-        var result=predecessor with { Profile = FuchsiaGymMachineRules.Profile,AdditionalMachines = predecessor.AdditionalMachines.Value.Add(machine) };
-        FuchsiaGymMachineRules.ValidateCatalog(result);
-        return result;
-    }
-
-    private static EarlyShopCatalog ComposeFuchsiaGymShop(EarlyShopCatalog predecessor,PretFuchsiaGymItemsDocument document)
-    {
-        var item = PretFuchsiaGymItems.Definition(document);
-        if (predecessor.Items.Any(i => i.Id == item.Id)) throw new InvalidDataException("fuchsia_gym_shop_item_conflict");
-        var result=predecessor with { Profile = FuchsiaGymItemRules.Profile,Items = predecessor.Items.Add(item) };
-        FuchsiaGymItemRules.ValidateShop(result);
-        return result;
-    }
 
     private static void ValidateFuchsiaGymComposition(ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> predecessorMaps, FuchsiaGymTrainerDocument trainers, PretStoryCompilation scripts)
     {

@@ -14,6 +14,11 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task CompactUiJson() => Run("test-compact-ui-json.py");
     [TestMethod]
+    public Task ItemCatalog() => Run("test-item-catalog-import.py");
+
+    [TestMethod]
+    public Task CurrentItems() => Run("test-current-items-import.py");
+    [TestMethod]
     public async Task MachineCatalog()
     {
         await Run("test-machine-catalog-import.py");

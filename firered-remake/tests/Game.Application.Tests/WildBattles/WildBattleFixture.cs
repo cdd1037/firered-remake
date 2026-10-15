@@ -27,7 +27,7 @@ public abstract class WildBattleFixture
     private protected global::Game.Content.PretCampaignCatalog content = default !;
     private protected global::Game.Application.CampaignSession validator = default !;
     private protected global::Game.Application.LoadedSave<global::Game.Application.CampaignState> checkpoint = default !;
-    private protected global::Game.Domain.Pokemon.OwnedBattlePokemonCatalog ownership = default !;
+    private protected global::Game.Domain.Pokemon.GamePokemonCatalog ownership = default !;
     private protected global::Game.Domain.Pokemon.SourceMechanicsCatalog mechanics = default !;
     private protected global::Game.Domain.Pokemon.PokemonCatalog catalog = default !;
     private protected int commands = default !;
@@ -37,7 +37,7 @@ public abstract class WildBattleFixture
         content = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
         validator = CampaignSession.CreateCurrent(content);
         checkpoint = SaveCodec.Decode<CampaignState>(File.ReadAllBytes(TestAssets.Checkpoint), validator.RulesVersion, content.ContentVersion, validate: validator.ValidatePlayerSave);
-        ownership = OwnedBattlePokemonCatalog.For(content.PokemonContent!.Catalog)!;
+        ownership = content.PokemonContent!.Pokemon;
         mechanics = ownership.Mechanics;
         catalog = mechanics.Catalog;
         commands = 0;

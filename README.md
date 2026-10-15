@@ -4,7 +4,7 @@
 
 - `firered-remake/`：游戏工程。维护解决方案 `FireRed.Current.slnx`；Godot 工程 `src/Game.Godot/project.godot`。
 - `firered-audio-player/`：自定义合成器源码、开发工具和必要资源。主游戏继续使用合成音频。
-- `checkpoints/`：保留的代表存档与说明。当前 `current-composition-20261015/continued-checkpoint.json` 为 generation 57604；不会自动覆盖用户存档槽。
+- `checkpoints/`：保留的代表存档与说明。当前 `current-catalogs-v4-20261015/continued-checkpoint.json` 为 generation 57604；不会自动覆盖用户存档槽。
 
 ## 开发和运行
 
@@ -22,10 +22,10 @@
 
 ## 验证和已知限制
 
-- 当前游戏可从仅含 generated 的独立资源根加载，新游戏、存档、Continue、移动及 generation 57604 存档验证通过；原存档 payload、RNG、generation 保持。
+- 当前游戏可从仅含 generated 的独立资源根加载，新游戏、存档、Continue、移动及 generation 57604 存档验证通过；v4 显式离线转换仅删除六处旧 NPC 交换来源指纹，玩法值、RNG、generation 保持，原 v3 存档保留。
 - 原生 Godot 窗口检查覆盖代表存档所在地图、NPC、菜单、背包、TM Case 和选项框图集，并检查正常窗口关闭。音频使用 Dummy，未进行真实扬声器听感验收。
 - 未重放整条历史路线。早期自然路线并未据此补写为通关；当前代表档延续此前已披露的受控联盟通关分支，详情保留在 checkpoints 说明中。
-- 部分 Domain 类型仍保留原作来源/所有权证明字段与历史命名；后续需要成组精简，不能误删命令、存档和玩法实际使用的标识。故事 IR 已将共享来源路径提到程序级，逐指令仅保留行号和必要例外；运行时重建相同语义。
+- 物种、物品、机器和当前准入已统一为明确目录；旧所有权注册表与背包投影链已退休。部分战斗辅助代码仍有历史数量分支，表现数据仍有重复来源信息；这些剩余项尚未宣称完成。故事 IR 已将共享来源路径提到程序级，逐指令仅保留行号和必要例外；运行时重建相同语义。
 - 各原作导入入口的成熟度不一；本轮完成当前维护的导入检查和指定再生成检查，不等于每个旧开发入口都完成全量冷重建。
 
 在外层目录初始化 Git 即可。`.gitignore` 将素材、存档与缓存排除，只纳入作者源码、配置和工具。资源由普通工程 ZIP 携带，不应使用 `git add -f` 强制加入 Git。

@@ -16,16 +16,14 @@ public sealed partial class PretCampaignCatalog
     public PretSafariEncounters? SafariEncounters { get; }
     public bool SafariEnabled => SafariRegion is not null;
 
-
-
-    private static IEnumerable<FieldPickupDefinition> SafariPickupDefinitions(PretSafariRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretSafariItems items,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> SafariPickupDefinitions(PretSafariRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretSafariItems items,PretStoryCompilation scripts)
     {
         foreach (var row in region.Contracts.GetProperty("pickups").EnumerateArray())
         {
             string symbol = row.GetProperty("item").GetString()!;
             var id = new ItemId("pret:" + symbol);
             var ordinary = shop.Items.SingleOrDefault(i => i.Id == id);
-            var source = PewterMachineRules.Definition(machines, id)?.Machine.Item ??
+            var source = MachineRules.Definition(machines, id)?.Machine.Item ??
                 items.Items.SingleOrDefault(i => i.Metadata.Item.Id == id)?.Metadata.Item;
             int number = ordinary?.SourceItemId ?? source?.SourceItemId ?? throw new InvalidDataException("safari_pickup_item_missing: " + symbol);
             string name = ordinary?.Name ?? source!.Name,pocket = ordinary?.Pocket ?? source!.Pocket;

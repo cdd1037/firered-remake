@@ -16,7 +16,7 @@ public static class EarlyLandWildPokemonFactory
     public const string RulesVersion = "firered-early-kanto-wild-generation-v1";
 
     /// <summary>Current source-table admission shares ordinary generation without a regional ownership subclass.</summary>
-    public static EarlyLandWildPokemonResult Generate(OwnedBattlePokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState globalRng, uint playerTrainerId)
     {
         EarlyLandEncounterRules.ValidateState(encounter, table);
@@ -26,38 +26,6 @@ public static class EarlyLandWildPokemonFactory
         var result = Game.Domain.WildBattle.SourceTableWildBattleContract.Generate(owned,
             new(candidate.Map, Game.Domain.WildBattle.SourceTableEncounterKind.Land, candidate.Slot),
             candidate.Level, globalRng, playerTrainerId);
-        return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
-    }
-
-    public static EarlyLandWildPokemonResult Generate(PokemonCatalog catalog, EarlyLandEncounterTable table,
-        EarlyLandEncounterState encounter, RngState globalRng, uint playerTrainerId, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool pokemonTowerRules = false, bool snorlaxRules = false, bool fuchsiaRules = false, bool safariRules = false)
-    {
-        if (safariRules && (!SafariOwnedPokemonCatalog.IsAuthenticated(catalog) || fuchsiaRules))
-            throw new NotSupportedException("The exact authenticated Safari ownership catalog is required.");
-        if (!safariRules && catalog.Species.Count == 110)
-            throw new NotSupportedException("Explicit Safari generation profile required.");
-        if(!safariRules && (catalog.Species.Count==107)!=fuchsiaRules)throw new NotSupportedException("Explicit Fuchsia catalog profile required.");
-        if (!safariRules && !fuchsiaRules && (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax catalog profile required.");
-        pokemonTowerRules |= snorlaxRules;
-        rocketHideoutRules |= pokemonTowerRules;
-        celadonGymRules |= rocketHideoutRules;
-        EarlyLandEncounterRules.ValidateState(encounter, table);
-        var pending = encounter.Pending ?? throw new InvalidOperationException("A verified pending early land candidate is required.");
-        PokemonFactory.ValidateCatalog(catalog);
-        bool catalogAdmitted = safariRules ? SafariOwnedPokemonCatalog.IsAuthenticated(catalog) && encounter.RulesVersion == EarlyLandEncounterRules.SafariRulesVersion : fuchsiaRules ? catalog.Species.Count==107 && encounter.RulesVersion==EarlyLandEncounterRules.FuchsiaRulesVersion : snorlaxRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102 && encounter.RulesVersion == EarlyLandEncounterRules.SnorlaxRulesVersion : pokemonTowerRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 101 && encounter.RulesVersion == EarlyLandEncounterRules.PokemonTowerRulesVersion : rocketHideoutRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99 && encounter.RulesVersion == EarlyLandEncounterRules.RocketHideoutRulesVersion : celadonGymRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98 && encounter.RulesVersion == EarlyLandEncounterRules.CeladonGymRulesVersion : celadonApproachRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 94 && encounter.RulesVersion == EarlyLandEncounterRules.CeladonApproachRulesVersion : rockTunnelRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 93 && encounter.RulesVersion == EarlyLandEncounterRules.RockTunnelRulesVersion : route11Rules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 79 && encounter.RulesVersion == EarlyLandEncounterRules.Route11RulesVersion : ssAnneRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 73 && encounter.RulesVersion == EarlyLandEncounterRules.SsAnneRulesVersion : vermilionRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 70 && encounter.RulesVersion == EarlyLandEncounterRules.VermilionRulesVersion : billRules ? Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 68 && encounter.RulesVersion == EarlyLandEncounterRules.BillRulesVersion : ceruleanRules
-            ? catalog.Species.Count == 65 && encounter.RulesVersion == EarlyLandEncounterRules.MtMoonRulesVersion
-            : encounter.RulesVersion == EarlyLandEncounterRules.MtMoonRulesVersion
-            ? catalog.Species.Count == 56
-            : encounter.RulesVersion == EarlyLandEncounterRules.Route3RulesVersion
-            ? catalog.Species.Count == 40
-            : catalog.Species.Count is 22 or 29 or 32 &&
-                (encounter.RulesVersion != EarlyLandEncounterRules.Route22RulesVersion || catalog.Species.Count == 32);
-        if (!catalogAdmitted || !catalog.Species.ContainsKey(pending.Candidate.Species))
-            throw new NotSupportedException("An authenticated catalog matching the walking profile is required (Route 22: 32; Route 3: 40; MtMoon: 56 species).");
-        if (globalRng.AlgorithmId != Gen3Rng.AlgorithmId)
-            throw new NotSupportedException("Unknown global RNG algorithm.");
-        var result = Route1WildPokemonFactory.GenerateOrdinary(catalog, pending.Candidate.Species,
-            pending.Candidate.Level, globalRng, playerTrainerId);
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 

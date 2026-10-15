@@ -143,69 +143,6 @@ def reused_maps(src):
         outputs=outputs)]
 
 
-def dependency_inventory(src, worlds, scripts, constants, connections, warps):
-    rows={b['label']:b for b in scripts['blocks']}
-    def block(label,*tokens):
-        b=rows[label];text='\n'.join(r['text'] for r in b['lines'])
-        if any(t not in text for t in tokens):raise ValueError('Regional script contract differs: '+label)
-        return dict(label=label,sourceRef=b['sourceRef'],sourceText=text)
-    events=[w['events'] for w in worlds]
-    trainers=[];pickups=[];cut=[]
-    for m in events:
-        for i,e in enumerate(m['object_events'],1):
-            label=e.get('script','');b=rows.get(label)
-            if e['graphics_id']=='OBJ_EVENT_GFX_CUT_TREE':
-                cut.append(dict(map=m['id'],localId=i,declaration=e,sourceRef=src.ref('data/maps/'+m['name']+'/map.json',m['id'])))
-            if b:
-                text='\n'.join(r['text'] for r in b['lines'])
-                found=re.search(r'finditem (ITEM_\w+)(?:, (\d+))?',text)
-                if found:pickups.append(dict(map=m['id'],localId=i,kind='visible',item=found[1],quantity=int(found[2] or '1'),declaration=e,sourceRef=b['sourceRef']))
-                trainer=re.search(r'(trainerbattle_single|trainerbattle_double) (TRAINER_\w+)',text)
-                if trainer:
-                    symbol=trainer[2];decl=declaration(src,'src/data/trainers.h',symbol,r'^    \['+symbol+r'\]\s*=\s*\{.*?^    \},')
-                    party=re.search(r'\.party = (\w+)\((\w+)\)',decl['sourceText'])
-                    if party is None:raise ValueError('Trainer party format missing')
-                    trainers.append(dict(map=m['id'],localId=i,trainer=symbol,trainerId=constants['values'][symbol]['value'],actor=e,script=block(label),declaration=decl,
-                        party=declaration(src,'src/data/trainer_parties.h',party[2],r'^static const struct \w+ '+party[2]+r'\[\] = \{.*?^\};'),partyFormat=party[1],
-                        battleCommand=trainer[1],availability='regionalFootRoute',runtimeStatus='requiresDoubleBattleIntegration' if trainer[1]=='trainerbattle_double' else 'sourceOnly'))
-        for i,e in enumerate(m['bg_events']):
-            if e.get('type')=='hidden_item':pickups.append(dict(map=m['id'],eventIndex=i,kind='hidden',item=e['item'],quantity=e['quantity'],declaration=e,sourceRef=src.ref('data/maps/'+m['name']+'/map.json',m['id'])))
-    mart_block=block('LavenderTown_Mart_Items')
-    stock=re.findall(r'\.2byte (ITEM_\w+)',mart_block['sourceText'])
-    if stock[-1]!='ITEM_NONE' or len(stock)!=10:raise ValueError('Lavender Mart stock differs')
-    stock=stock[:-1]
-    items=[dict(symbol=s,declaration=next(i for i in src.json('src/data/items.json')['items'] if i['itemId']==s),sourceRef=src.ref('src/data/items.json',s)) for s in sorted({p['item'] for p in pickups}|set(stock))]
-    table=src.json('src/data/wild_encounters.json')
-    encounter_rows=[e for g in table['wild_encounter_groups'] for e in g['encounters'] if e['map'] in ('MAP_ROUTE8','MAP_ROUTE7','MAP_CELADON_CITY') and e['base_label'].endswith('_FireRed')]
-    centers=[]
-    for name,heal_id in [('LavenderTown','HEAL_LOCATION_LAVENDER_TOWN'),('CeladonCity','HEAL_LOCATION_CELADON_CITY')]:
-        heal=next(h for h in src.json('src/data/heal_locations.json')['heal_locations'] if h['id']==heal_id)
-        centers.append(dict(map=name+'_PokemonCenter_1F',transition=block(name+'_PokemonCenter_1F_OnTransition','setrespawn '+heal_id),
-            nurse=block(name+'_PokemonCenter_1F_EventScript_Nurse','call EventScript_PkmnCenterNurse'),healLocation=heal,sourceRef=src.ref('src/data/heal_locations.json',heal_id)))
-    guards=[]
-    for name,direction in [('Route8_WestEntrance','right'),('Route7_EastEntrance','left')]:
-        m=src.json('data/maps/'+name+'/map.json')
-        guards.append(dict(map=m['id'],triggers=m['coord_events'],requiredFlag='FLAG_GOT_TEA',sceneVariable='VAR_MAP_SCENE_ROUTE5_ROUTE6_ROUTE7_ROUTE8_GATES',
-            script=block(name+'_EventScript_GuardTrigger','goto_if_set FLAG_GOT_TEA',name+'_Text_ThirstyOnGuardDuty'),
-            deniedMovement=block(name+'_Movement_BlockPlayerEntry','walk_'+direction),teaBranch=block(name+'_EventScript_GiveTea','removeitem ITEM_TEA'),
-            opened=block(name+'_EventScript_GuardDrinkTea','setvar VAR_MAP_SCENE_ROUTE5_ROUTE6_ROUTE7_ROUTE8_GATES, 1'),runtimeStatus='denyUntilTeaAndSaffronIntegration'))
-    fuji=src.json('data/maps/LavenderTown_VolunteerPokemonHouse/map.json')
-    fuji_index,fuji_actor=next((i,e) for i,e in enumerate(fuji['object_events'],1) if e['script']=='LavenderTown_VolunteerPokemonHouse_EventScript_MrFuji')
-    return dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,trainers=trainers,pickups=pickups,items=items,cutTrees=cut,
-        cutScript=block('EventScript_CutTree'),reusedLavenderEvents=src.json('data/maps/LavenderTown/map.json'),
-        encounters=dict(sourceRef=src.ref('src/data/wild_encounters.json','gWildMonHeaders'),gameVersion='FIRERED',fields=table['wild_encounter_groups'][0]['fields'],tables=encounter_rows),
-        centers=centers,mart=dict(map='MAP_LAVENDER_TOWN_MART',clerk=block('LavenderTown_Mart_EventScript_Clerk'),stock=stock,stockSource=mart_block),guards=guards,
-        volunteerHouse=dict(mrFujiLocalId=fuji_index,mrFujiActor=fuji_actor,rescueFlag='FLAG_RESCUED_MR_FUJI',giftFlag='FLAG_GOT_POKE_FLUTE',
-            flute=block('LavenderTown_VolunteerPokemonHouse_EventScript_MrFuji'),runtimeStatus='preRescueDialogueOnly'),
-        celadonArrival=block('CeladonCity_OnTransition','setworldmapflag FLAG_WORLD_MAP_CELADON_CITY'),
-        undergroundVisit=block('UndergroundPath_EastWestTunnel_OnTransition','setworldmapflag FLAG_WORLD_MAP_UNDERGROUND_PATH_EAST_WEST_TUNNEL'),
-        externalConnections=[c for c in connections if c['runtimeStatus']=='externalBoundary'],externalWarps=[w for w in warps if w['runtimeStatus'].startswith('external')],
-        blockedMaps=sorted(({w['destinationMap'] for w in warps if w['runtimeStatus'].startswith('external')}|{c['map'] for c in connections if c['runtimeStatus']=='externalBoundary'})-{'MAP_LAVENDER_TOWN'}),sourceAudio=sorted({m['music'] for m in events}),
-        unsupported=dict(opcodes=[x['opcode'] for x in scripts['commands']],specials=[x['symbol'] for x in scripts['specials']],runtimeIntegration=False,
-            notes=['Source closure does not enable rematches, double battles, multiplayer services or Move Tutors.',
-                   'Volunteer house keeps pre-rescue dialogue and hidden Mr Fuji; the Poke Flute gift needs Tower rescue integration.',
-                   'Name Rater, Pokemon Tower, Saffron, Route16 and Celadon non-Center interiors remain external boundaries.']))
-
 def regional_warps(src,worlds):
     normal=[]
     for world in worlds:
@@ -236,10 +173,10 @@ def import_catalog(raw,out,lock_path=None):
         stage=pathlib.Path(temp);worlds=[import_map(src,name,stable,stage/directory) for name,stable,directory in MAPS]
         overlap=dict(events=src.json('data/maps/LavenderTown/map.json'))
         connections,warps=regional_warps(src,worlds);scripts=script_inventory(src,worlds);constants=constants_inventory(src,worlds+[overlap],scripts)
-        npcs=npc_inventory(src,worlds,stage/'npc');dependencies=dependency_inventory(src,worlds,scripts,constants,connections,warps)
+        npcs=npc_inventory(src,worlds,stage/'npc')
         catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],reusedMaps=reused,connections=connections,warps=warps)
-        for filename,doc in package_documents(out.parent, constants, {'celadon-approach-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies}).items():(stage/filename).write_bytes(canonical(doc).encode())
+        for filename,doc in package_documents(out.parent, constants, {'celadon-approach-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs}).items():(stage/filename).write_bytes(canonical(doc).encode())
 
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(worlds),reusedMapCount=len(reused),cellCount=sum(len(w['cells']) for w in worlds),borderCellCount=sum(len(w['borderCells']) for w in worlds),warpCount=len(warps),connectionCount=len(connections),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=len(scripts['unresolvedLabelReferences']),outputs=outputs)
@@ -250,6 +187,9 @@ def import_catalog(raw,out,lock_path=None):
             dest=out/p.relative_to(stage)
             if p.is_dir():dest.mkdir(parents=True,exist_ok=True)
             else:dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dest)
+    retired=out/'dependencies.json'
+    require_safe_target(out,retired)
+    retired.unlink(missing_ok=True)
     print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'},sort_keys=True));return manifest
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/celadon-approach-region');parser.add_argument('--reference-root',type=pathlib.Path,required=True);parser.add_argument('--materialize',action='store_true');args=parser.parse_args()

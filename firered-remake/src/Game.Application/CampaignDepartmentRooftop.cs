@@ -94,7 +94,7 @@ public sealed partial class CampaignSession
             else
             {
                 if (state.Script.Variables.GetValueOrDefault("VAR_RESULT") != 1 ||
-                    !EarlyInventoryAddRules.CheckSpace(ShopCatalog, ShopInventoryView(state.Inventory!), new("pret:" + RoofDrinks[index]), 1).Succeeded)
+                    !EarlyInventoryAddRules.CheckSpace(ShopCatalog, state.Inventory!, new("pret:" + RoofDrinks[index]), 1).Succeeded)
                     throw new InvalidDataException("department_rooftop_payment_capacity");
                 next = DebitSourceMoney(state, RoofPrices[index]);
             }
@@ -130,7 +130,7 @@ public sealed partial class CampaignSession
         {
             if (args[0] is not ("STR_VAR_1" or "STR_VAR_2") || args.Length != (effect.Opcode == "bufferitemnameplural" ? 3 : 2) ||
                 args.Length == 3 && DepartmentValue(state, args[2]) != 1) throw new InvalidDataException("department_rooftop_buffer");
-            string name = drink >= 0 ? ShopCatalog.Items.Single(i => i.Id == id).Name : PewterMachineRules.Definition(_content.PewterMachines!, id)!.Machine.Item.Name;
+            string name = drink >= 0 ? ShopCatalog.Items.Single(i => i.Id == id).Name : MachineRules.Definition(_content.PewterMachines!, id)!.Machine.Item.Name;
             next = state with { TextBuffers = state.TextBuffers.SetItem(args[0], name) }; return true;
         }
         int result;
@@ -141,17 +141,17 @@ public sealed partial class CampaignSession
             if (effect.Opcode == "checkitem") result = OpeningInventoryRules.Quantity(inventory.BagItems, id) > 0 ? 1 : 0;
             else if (reward >= 0)
             {
-                if (effect.Opcode == "checkitemspace") result = PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, id) ? 1 : 0;
+                if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.PewterMachines!, inventory, id) ? 1 : 0;
                 else
                 {
-                    var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, id);
+                    var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, id);
                     if (!added.Succeeded) throw new InvalidDataException("department_rooftop_reward_add:" + added.Error);
                     next = state with { Inventory = added.State }; result = 1;
                 }
             }
             else
             {
-                var view = ShopInventoryView(inventory);
+                var view = inventory;
                 var changed = effect.Opcode switch
                 {
                     "checkitemspace" => EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, id, 1),
@@ -161,7 +161,7 @@ public sealed partial class CampaignSession
                 };
                 if (!changed.Succeeded && (effect.Opcode != "checkitemspace" || changed.Error is not ("inventory_stack_full" or "inventory_destination_full")))
                     throw new InvalidDataException("department_rooftop_inventory:" + changed.Error);
-                next = state with { Inventory = MergeShopInventory(inventory, changed.State) }; result = changed.Succeeded ? 1 : 0;
+                next = state with { Inventory = changed.State }; result = changed.Succeeded ? 1 : 0;
             }
         }
         next = next with { Script = next.Script with { Variables = next.Script.Variables.SetItem("VAR_RESULT", result) } };

@@ -213,71 +213,6 @@ def reused_maps(src):
         outputs=outputs)]
 
 
-def dependency_inventory(src, worlds, scripts, constants, connections, warps):
-    rows={b['label']:b for b in scripts['blocks']}
-    def block(label,*tokens):
-        b=rows[label];text='\n'.join(r['text'] for r in b['lines'])
-        if any(t not in text for t in tokens):raise ValueError('Regional script contract differs: '+label)
-        return dict(label=label,sourceRef=b['sourceRef'],sourceText=text)
-    events=[w['events'] for w in worlds]
-    trainers=[];pickups=[];cut=[];rocks=[]
-    for m in events:
-        for i,e in enumerate(m['object_events'],1):
-            label=e.get('script','');b=rows.get(label)
-            if e['graphics_id']=='OBJ_EVENT_GFX_CUT_TREE':
-                cut.append(dict(map=m['id'],localId=i,declaration=e,sourceRef=src.ref('data/maps/'+m['name']+'/map.json',m['id'])))
-            if e['graphics_id']=='OBJ_EVENT_GFX_ROCK_SMASH_ROCK':
-                rocks.append(dict(map=m['id'],localId=i,declaration=e,sourceRef=src.ref('data/maps/'+m['name']+'/map.json',m['id']),runtimeStatus='unsupportedUntilRockSmash'))
-            if b:
-                text='\n'.join(r['text'] for r in b['lines'])
-                found=re.search(r'finditem (ITEM_\w+)(?:, (\d+))?',text)
-                if found:pickups.append(dict(map=m['id'],localId=i,kind='visible',item=found[1],quantity=int(found[2] or '1'),declaration=e,sourceRef=b['sourceRef']))
-                trainer=re.search(r'trainerbattle_single (TRAINER_\w+)',text)
-                if trainer:
-                    symbol=trainer[1];decl=declaration(src,'src/data/trainers.h',symbol,r'^    \['+symbol+r'\]\s*=\s*\{.*?^    \},')
-                    party=re.search(r'\.party = (\w+)\((\w+)\)',decl['sourceText'])
-                    if party is None:raise ValueError('Trainer party format missing')
-                    trainers.append(dict(map=m['id'],localId=i,trainer=symbol,trainerId=constants['values'][symbol]['value'],actor=e,script=block(label),declaration=decl,
-                        party=declaration(src,'src/data/trainer_parties.h',party[2],r'^static const struct \w+ '+party[2]+r'\[\] = \{.*?^\};'),partyFormat=party[1],
-                        availability='requiresSurfPowerPlantBranch' if symbol=='TRAINER_POKEMANIAC_MARK' else 'regionalFootRoute',runtimeStatus='sourceOnly'))
-        for i,e in enumerate(m['bg_events']):
-            if e.get('type')=='hidden_item':pickups.append(dict(map=m['id'],eventIndex=i,kind='hidden',item=e['item'],quantity=e['quantity'],declaration=e,sourceRef=src.ref('data/maps/'+m['name']+'/map.json',m['id'])))
-    cerulean=src.json('data/maps/CeruleanCity/map.json')
-    for i,e in enumerate(cerulean['object_events'],1):
-        if e.get('target_map')=='MAP_ROUTE9':
-            cut.append(dict(map=cerulean['id'],localId=i,declaration=e,sourceRef=src.ref('data/maps/CeruleanCity/map.json',cerulean['id'])))
-    map_name='Route10_PokemonCenter_1F';m=src.json('data/maps/'+map_name+'/map.json');label=map_name+'_EventScript_Aide'
-    i,e=next((i,e) for i,e in enumerate(m['object_events'],1) if e.get('script')==label)
-    aides=[dict(map=m['id'],localId=i,actor=e,item='ITEM_EVERSTONE',flag='FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE',requiredCaughtKanto=20,countVariable='VAR_0x8006',countMode=0,
-        sourceAlias='REQUIRED_OWNED_MONS',script=block(label,'setvar VAR_0x8004, 0','specialvar VAR_RESULT, GetPokedexCount','goto_if_lt VAR_0x8006, REQUIRED_OWNED_MONS',
-            'checkitemspace ITEM_EVERSTONE','giveitem_msg','setflag FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE'),
-        countSource=declaration(src,'src/prof_pc.c','GetPokedexCount'),decline=block('Aide_EventScript_DeclineCheckMons'),
-        insufficient=block('Aide_EventScript_HaventCaughtEnough'),noRoom=block('Aide_EventScript_NoRoomForItem'),oneTime=True,capacityBeforeGrant=True,runtimeStatus='requiresApplicationIntegration')]
-    items=[dict(symbol=s,declaration=next(i for i in src.json('src/data/items.json')['items'] if i['itemId']==s),sourceRef=src.ref('src/data/items.json',s)) for s in sorted({p['item'] for p in pickups}|{'ITEM_EVERSTONE'})]
-    table=src.json('src/data/wild_encounters.json')
-    encounter_rows=[e for g in table['wild_encounter_groups'] for e in g['encounters'] if e['map'] in ('MAP_ROUTE9','MAP_ROUTE10','MAP_ROCK_TUNNEL_1F','MAP_ROCK_TUNNEL_B1F') and e['base_label'].endswith('_FireRed')]
-    dark=[dict(map=m['id'],requiresFlash=m['requires_flash'],allowEscaping=m['allow_escaping'],sourceRef=src.ref('data/maps/'+m['name']+'/map.json',m['id'])) for m in events if m['id'].startswith('MAP_ROCK_TUNNEL')]
-    if len(dark)!=2 or not all(m['requiresFlash'] and m['allowEscaping'] for m in dark):raise ValueError('Original cave permissions differ')
-    heal=next(h for h in src.json('src/data/heal_locations.json')['heal_locations'] if h['id']=='HEAL_LOCATION_ROUTE10')
-    return dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,trainers=trainers,pickups=pickups,items=items,aides=aides,
-        cutTrees=cut,cutScript=block('EventScript_CutTree'),rockSmashObstacles=rocks,reusedCeruleanEvents=cerulean,
-        encounters=dict(sourceRef=src.ref('src/data/wild_encounters.json','gWildMonHeaders'),gameVersion='FIRERED',fields=table['wild_encounter_groups'][0]['fields'],tables=encounter_rows),
-        caveVisit=block('RockTunnel_1F_OnTransition','setworldmapflag FLAG_WORLD_MAP_ROCK_TUNNEL_1F'),
-        lavenderArrival=block('LavenderTown_OnTransition','setworldmapflag FLAG_WORLD_MAP_LAVENDER_TOWN','setvar VAR_MAP_SCENE_S_S_ANNE_2F_CORRIDOR, 1','setflag FLAG_HIDE_SS_ANNE_RIVAL'),
-        center=dict(transition=block('Route10_PokemonCenter_1F_OnTransition','setrespawn HEAL_LOCATION_ROUTE10'),healLocation=heal,sourceRef=src.ref('src/data/heal_locations.json','HEAL_LOCATION_ROUTE10')),
-        darkness=dict(maps=dark,setup=declaration(src,'src/fldeff_flash.c','SetUpFieldMove_Flash'),effect=declaration(src,'src/fldeff_flash.c','FldEff_UseFlash'),
-            defaultLevel=declaration(src,'src/overworld.c','SetDefaultFlashLevel'),mapEntry=declaration(src,'src/overworld.c','LoadMapFromWarp'),badgeCheck=declaration(src,'src/party_menu.c','CursorCB_FieldMove'),radiusTable=declaration(src,'src/field_screen_effect.c','sFlashLevelToRadius',r'^static const u16 sFlashLevelToRadius\[\] = \{[^\n]+;'),script=block('EventScript_FldEffFlash'),flag='FLAG_SYS_FLASH_ACTIVE',badge='FLAG_BADGE01_GET',runtimeStatus='requiresApplicationAndPresentationIntegration'),
-        escapeRope=dict(allowed=declaration(src,'src/item_use.c','CanUseEscapeRopeOnCurrMap'),updateWarp=declaration(src,'src/overworld.c','UpdateEscapeWarp'),
-            destination=declaration(src,'src/overworld.c','SetWarpDestinationToEscapeWarp'),entrances=[dict(routeWarpId=0,caveWarpId=0,outsideX=8,outsideY=20),dict(routeWarpId=1,caveWarpId=5,outsideX=8,outsideY=58)],
-            contract='Capture the last outdoors-to-interior entrance; preserve it between cave floors. Source UpdateEscapeWarp applies the facing-direction south-step adjustment.',runtimeStatus='requiresApplicationIntegration'),
-        externalConnections=[c for c in connections if c['runtimeStatus']=='externalBoundary'],externalWarps=[w for w in warps if w['runtimeStatus'].startswith('external')],
-        blockedMaps=sorted(({w['destinationMap'] for w in warps if w['runtimeStatus'].startswith('external')}|{c['map'] for c in connections if c['runtimeStatus']=='externalBoundary'})-{'MAP_CERULEAN_CITY'}),sourceAudio=sorted({m['music'] for m in events}),
-        unsupported=dict(opcodes=[x['opcode'] for x in scripts['commands']],specials=[x['symbol'] for x in scripts['specials']],runtimeIntegration=False,
-            notes=['Source closure does not enable rematches, multiplayer services, Rock Smash or Move Tutors.',
-                   'Route10 Power Plant water branch and Mark are preserved source content; reachable foot-route scope is separate.',
-                   'Lavender interiors, Pokemon Tower, Route8/12 and Power Plant remain explicit unavailable boundaries.']))
-
-
 def regional_warps(src, worlds):
     # Multiplayer rooms return through a saved dynamic warp, not a fabricated reciprocal warp.
     normal = []
@@ -303,8 +238,6 @@ def regional_warps(src, worlds):
     return connections, sorted(warps, key=lambda w: (w['sourceMap'], w['sourceWarpId']))
 
 
-
-
 def import_catalog(raw,out,lock_path=None):
     raw,out=pathlib.Path(raw),pathlib.Path(out);require_safe_target(out,out)
     protect_project_paths(raw,out)
@@ -318,11 +251,11 @@ def import_catalog(raw,out,lock_path=None):
         stage=pathlib.Path(temp);worlds=[import_map(src,name,stable,stage/directory) for name,stable,directory in MAPS]
         overlap=dict(events=src.json('data/maps/CeruleanCity/map.json'))
         connections,warps=regional_warps(src,worlds);scripts=script_inventory(src,worlds);constants=constants_inventory(src,worlds+[overlap],scripts)
-        npcs=npc_inventory(src,worlds,stage/'npc');dependencies=dependency_inventory(src,worlds,scripts,constants,connections,warps)
+        npcs=npc_inventory(src,worlds,stage/'npc')
         catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],
             reusedMaps=reused,connections=connections,warps=warps)
-        for filename,doc in package_documents(out.parent, constants, {'rocktunnel-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies}).items():
+        for filename,doc in package_documents(out.parent, constants, {'rocktunnel-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs}).items():
             (stage/filename).write_bytes(canonical(doc).encode())
 
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
@@ -337,6 +270,9 @@ def import_catalog(raw,out,lock_path=None):
             dest=out/p.relative_to(stage)
             if p.is_dir():dest.mkdir(parents=True,exist_ok=True)
             else:dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dest)
+    retired=out/'dependencies.json'
+    require_safe_target(out,retired)
+    retired.unlink(missing_ok=True)
     print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'},sort_keys=True));return manifest
 
 

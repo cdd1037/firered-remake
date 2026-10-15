@@ -35,13 +35,11 @@ public sealed partial class CampaignSession
         if (!content.FightingDojoEnabled || content.FightingDojoOwnership is not { } owned ||
             content.FightingDojoOpponents is not { } opponents || content.FightingDojoMachines is not { } machines ||
             content.FightingDojoTrainers is not { } trainers ||
-            !ReferenceEquals(FightingDojoOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Predecessor, content.PowerPlantOwnership) ||
-            !ReferenceEquals(owned, content.FossilLabOwnership?.Predecessor) ||
-            !ReferenceEquals(FightingDojoOpponentPokemonCatalog.For(owned), opponents) ||
-            !ReferenceEquals(opponents.Predecessor, content.PowerPlantOpponents) ||
-            !ReferenceEquals(FightingDojoMachineCatalog.For(machines.Catalog), machines) ||
-            !ReferenceEquals(machines.Predecessor, content.PowerPlantMachines) || !ReferenceEquals(machines.Pokemon, owned))
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents))
             throw new InvalidDataException("fighting_dojo_current_binding");
         FightingDojoTrainerPartyFactory.ValidateCatalog(trainers);
     }

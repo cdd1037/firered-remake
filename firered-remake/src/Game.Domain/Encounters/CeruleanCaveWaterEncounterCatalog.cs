@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Encounters;
@@ -7,7 +6,6 @@ namespace Game.Domain.Encounters;
 /// <summary>Two exact cave Surf tables extend the current35 without relabelling any predecessor proof.</summary>
 public sealed class CeruleanCaveWaterEncounterCatalog
 {
-    private static readonly ConditionalWeakTable<WaterEncounterTable, CeruleanCaveWaterEncounterCatalog> Proofs = new();
     public FiveIslandWaterEncounterCatalog Predecessor { get; }
     public ImmutableDictionary<MapId, WaterEncounterTable> Tables { get; }
     private CeruleanCaveWaterEncounterCatalog(FiveIslandWaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> additions)
@@ -23,19 +21,19 @@ public sealed class CeruleanCaveWaterEncounterCatalog
             throw new ArgumentException("cerulean_cave_water_scope");
         // FiveIsland's private constructor authenticates its inherited tables; validate its own exact identities too.
         if (FiveIslandWaterEncounterCatalog.SourceAdditions.Any(t => !predecessor.Tables.TryGetValue(t.Map, out var actual) ||
-            !FiveIslandWaterEncounterCatalog.IsAuthenticated(actual)))
+            !FiveIslandWaterEncounterCatalog.MatchesDefinition(actual)))
             throw new ArgumentException("cerulean_cave_water_predecessor");
         foreach (var actual in additions)
         {
             var expected = SourceAdditions.SingleOrDefault(t => t.Map == actual.Map);
             if (expected is null || actual.Slots.IsDefault || !actual.Slots.SequenceEqual(expected.Slots) ||
-                actual with { Slots = expected.Slots } != expected)
+                !WaterEncounterCatalog.SameDefinition(actual, expected))
                 throw new ArgumentException("cerulean_cave_water_source");
         }
         var copies = additions.Select(t => t with { }).ToImmutableArray();
         var proof = new CeruleanCaveWaterEncounterCatalog(predecessor, copies);
-        foreach (var table in copies) Proofs.Add(table, proof);
         return proof;
     }
-    public static bool IsAuthenticated(WaterEncounterTable? table) => table is not null && Proofs.TryGetValue(table, out _);
+    public static bool MatchesDefinition(WaterEncounterTable? table) =>
+        table is not null && SourceAdditions.Any(expected => WaterEncounterCatalog.SameDefinition(table, expected));
 }

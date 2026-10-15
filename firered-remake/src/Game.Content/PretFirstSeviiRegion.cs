@@ -23,7 +23,7 @@ public sealed partial class PretFirstSeviiRegion
     private PretFirstSeviiRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants; 
+        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
         InitializeField(source);

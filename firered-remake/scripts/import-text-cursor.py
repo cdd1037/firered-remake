@@ -129,7 +129,7 @@ def convert(lock, sources):
         sourceXSequence=sequence, atlasFrameSequence=[0, 1, 2, 1], cursorDelay=delay,
         presentationTicksPerFrame=delay + 1, destination='TextPrinterTemplate.currentX/currentY',
         destinationOffset=[0, 0], transparentPaletteIndex=0, paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)',
-        assets=assets, sourceRefs=lock['files'], limitations=[
+        assets=assets,  limitations=[
             'Presentation ticks choose the visual phase; this does not implement source text-printer/60fps timing.',
             'Caller redraws the text-window background before each draw; no persistent source window buffer.',
             'Only field/Oak red arrow and ordinary battle alternate arrow palettes are supported.',

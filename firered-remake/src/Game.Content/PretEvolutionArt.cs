@@ -79,8 +79,6 @@ public sealed class PretEvolutionArt
                 sprite.SingleBattleCenter.Y == sprite.SingleBattleBaseCenter.Y + sprite.SourceYOffset - sprite.SourceEnemyElevation &&
                 sprite.SingleBattleTopLeft.X == sprite.SingleBattleCenter.X - 32 &&
                 sprite.SingleBattleTopLeft.Y == sprite.SingleBattleCenter.Y - 32, "Evolution art placement differs.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "Evolution art provenance differs.");
         }
         return new(directory, sprites, inventory, a.Clone(), outputs.ToImmutable());
     }

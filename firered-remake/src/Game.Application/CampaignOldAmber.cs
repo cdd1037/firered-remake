@@ -45,7 +45,7 @@ public sealed partial class CampaignSession
     {
         bool acquired = state.Script.Flags.GetValueOrDefault(OldAmberAcquired);
         bool hidden = state.Script.Flags.GetValueOrDefault(OldAmberHidden);
-        int quantity = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], FossilLabShopCatalog.OldAmberId);
+        int quantity = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], ItemIds.OldAmberId);
         if (!_content.FossilLabEnabled) return acquired || hidden || quantity != 0 ? "save_old_amber_profile_missing" : null;
         if (acquired != hidden || quantity + DepositedOrRevivedFossils(state, 3) != (acquired ? 1 : 0))
             return "save_old_amber_conservation";
@@ -70,7 +70,7 @@ public sealed partial class CampaignSession
         {
             if (!InOldAmberScript(state) || !effect.Args.SequenceEqual(new[] { OldAmberObject }) ||
                 !state.Script.Flags.GetValueOrDefault(OldAmberAcquired) || state.Script.Flags.GetValueOrDefault(OldAmberHidden) ||
-                OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], FossilLabShopCatalog.OldAmberId) != 0 ||
+                OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], ItemIds.OldAmberId) != 0 ||
                 !state.Actors.TryGetValue(OldAmberObject, out var amber) || !amber.Active || amber.SourceLocalId != 4 || amber.HideFlag != OldAmberHidden)
                 throw new InvalidDataException("old_amber_remove_context");
             // Preserve the shared removeobject implementation and its hide flag.
@@ -86,7 +86,7 @@ public sealed partial class CampaignSession
         if (a.Length < (buffer ? 2 : 1) || Value(a[buffer ? 1 : 0]) != 354) return false;
         if (!InOldAmberScript(state) || !rewardSource && effect.Source.Path is not ("data/scripts/obtain_item.inc" or "data/event_scripts.s"))
             throw new InvalidDataException("old_amber_item_context");
-        var item = ShopCatalog.Items.Single(i => i.Id == FossilLabShopCatalog.OldAmberId);
+        var item = ShopCatalog.Items.Single(i => i.Id == ItemIds.OldAmberId);
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var keys = inventory.KeyItems ?? [];
         int quantity = OpeningInventoryRules.Quantity(keys, item.Id);
@@ -113,7 +113,7 @@ public sealed partial class CampaignSession
             quantity != 0 || acquired != adding || hidden != adding || DepositedOrRevivedFossils(state, 3) != 0)
             throw new InvalidDataException("old_amber_reward_context");
         if (ValidateCampaignInventory(inventory) is { } invalid) throw new InvalidDataException(invalid);
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         // The narrowed view omits unrelated quest keys; capacity counts all keys.
         var result = keys.Length >= ShopCatalog.QuestLimits.KeyItemSlots
             ? new InventoryTransactionResult(view, false, "inventory_destination_full")

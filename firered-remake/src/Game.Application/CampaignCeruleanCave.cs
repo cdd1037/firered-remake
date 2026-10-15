@@ -29,12 +29,10 @@ public sealed partial class CampaignSession
     {
         if(!content.CeruleanCaveEnabled||content.CeruleanCaveOwnership is not{} owned||
             content.CeruleanCaveOpponents is not{} opponents||content.CeruleanCaveMachines is not{} machines||
-            !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog),owned)||
-            !ReferenceEquals(owned.Predecessor,content.CelioOwnership)||!ReferenceEquals(content.SevenIslandOwnership?.Predecessor,owned)||
-            !ReferenceEquals(CeruleanCaveOpponentPokemonCatalog.For(owned),opponents)||
-            !ReferenceEquals(opponents.Predecessor,content.CelioOpponents)||
-            !ReferenceEquals(CeruleanCaveMachineCatalog.For(machines.Catalog),machines)||
-            !ReferenceEquals(machines.Pokemon,owned)||!ReferenceEquals(machines.Predecessor,content.CelioMachines))
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon)||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon)||!ReferenceEquals(owned, content.PokemonContent?.Pokemon)||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents)||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents))
             throw new InvalidDataException("cerulean_cave_source_binding");
         var program=content.FindProgram(MewtwoScript);
         if(program?.Instructions.Count(i=>i.Opcode=="setwildbattle"&&i.Op==StoryOp.Special&&

@@ -2,6 +2,7 @@
 """Import the four missing Lost Cave/Selphy inventory definitions and source icons.
 REFERENCE DEPENDENCY OUTPUT [--check]. Reads pinned Git blobs; never executes upstream code.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -23,7 +24,7 @@ SHARED = {
 
 def need(value, message):
     if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
+def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False, default=item_json) + '\n').encode()
 
 def generate(reference, dependency):
     inputs, raw, cache, generated = {}, {}, {}, {}
@@ -50,12 +51,7 @@ def generate(reference, dependency):
         block = one('src/data/items.json', r'^    \{\n      "english": "' + re.escape(item['english']) + r'",.*?^    \}')
         number = int(one('include/constants/items.h', r'^#define ' + symbol + r'\s+(\d+)\s*$')[1])
         ref = source('src/data/items.json', symbol, block)
-        meta = dict(id=dict(value='pret:' + symbol), sourceItemSymbol=symbol, sourceItemId=number,
-                    name=item['english'], price=item['price'], importance=item['importance'], registrability=item['registrability'],
-                    pocket=item['pocket'], type=str(item['type']), holdEffect=item['holdEffect'], holdEffectParam=item['holdEffectParam'],
-                    fieldUseFunction=item['fieldUseFunc'], battleUsage=item['battleUsage'], battleUseFunction=item['battleUseFunc'],
-                    secondaryId=item['secondaryId'], canToss=item['importance'] == 0, canSell=item['price'] != 0,
-                    canGive=item['importance'] == 0, source=ref)
+        meta = shared_item(symbol)
         return item, meta
     additions, icons = [], []
     for symbol, effect, parameter, price in [
@@ -68,10 +64,8 @@ def generate(reference, dependency):
              item['pocket'] == ('POCKET_POKE_BALLS' if ball else 'POCKET_ITEMS') and
              item['fieldUseFunc'] == ('NULL' if ball else 'FieldUseFunc_OakStopsYou') and
              item['battleUsage'] == (2 if ball else 0) and item['battleUseFunc'] == ('BattleUseFunc_PokeBallEtc' if ball else 'NULL'), 'Source item semantics')
-        addition = {key: meta[key] for key in ['id', 'sourceItemSymbol', 'sourceItemId', 'name', 'price', 'pocket', 'importance',
-                    'type', 'fieldUseFunction', 'battleUsage', 'battleUseFunction', 'holdEffectParam', 'source']}
-        addition.update(description=item['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0,
-                        effectBytes=[], useSupport=0 if ball else 10, effectSource=None, sourceMetadata=meta)
+        addition = dict(item=meta)
+        addition.update(description=item['description_english'].replace('\\n', '\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=0 if ball else 10)
         additions.append(addition)
         icon_path = 'src/data/item_icon_table.h'
         binding = one(icon_path, r'^    \[' + symbol + r'\]\s*= \{(\w+), (\w+)\},$')
@@ -100,7 +94,7 @@ def generate(reference, dependency):
     coverage = []
     for symbol in dict.fromkeys(pickups + rewards):
         item, meta = metadata(symbol)
-        coverage.append(dict(item=meta['id'], sourceMetadata=meta, description=item['description_english'].replace('\\n', '\n'), added=symbol in SYMBOLS))
+        coverage.append(dict(item=meta['id'], description=item['description_english'].replace('\\n', '\n'), added=symbol in SYMBOLS))
     items = dict(sourceCommit=COMMIT, profile=PROFILE, previousItemCount=147, itemCount=151, additions=additions,
                   shopsAdded=[], icons=icons)
     facts = dict(sourceCommit=COMMIT,  pickupItemSymbols=pickups, rewardItemSymbols=rewards,
@@ -121,4 +115,4 @@ if __name__ == '__main__':
         target = args.output / path
         if args.check: need(target.read_bytes() == data, 'Regeneration differs: ' + path)
         else: target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check, itemCount=items['itemCount']), indent=2))
+    print(json.dumps(dict(checked=args.check, itemCount=items['itemCount']), indent=2, default=item_json))

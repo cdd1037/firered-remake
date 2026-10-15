@@ -12,7 +12,7 @@ namespace Game.Domain.Encounters;
 public static class SeviiRubyWildPokemonFactory
 {
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = SeviiRubyWildSource.Species.Select(s=>s.Species).ToImmutableArray();
-    public static EarlyLandWildPokemonResult Generate(SeviiRubyOwnedPokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -30,7 +30,7 @@ public static class SeviiRubyWildPokemonFactory
             pending.Candidate.Level,rng,playerTrainerId);
         return new(result.Pokemon,result.GlobalRng,result.RandomTrace);
     }
-    public static Route1WildPokemonResult GenerateSourceSlot(SeviiRubyOwnedPokemonCatalog owned, SeviiRubyWildOrigin origin,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, SeviiRubyWildOrigin origin,
         byte level, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -46,9 +46,9 @@ public static class SeviiRubyWildPokemonFactory
         if (!SourceInitialInstance(owned,origin,result.Pokemon)) throw new InvalidOperationException("sevii_ruby_wild_generated_identity");
         return result;
     }
-    public static bool SourceInitialInstance(SeviiRubyOwnedPokemonCatalog owned, SeviiRubyWildOrigin origin, PokemonInstance mon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, SeviiRubyWildOrigin origin, PokemonInstance mon)
     {
-        if (owned is null || !ReferenceEquals(SeviiRubyOwnedPokemonCatalog.For(owned.Catalog),owned) || mon is null ||
+        if (owned is null || mon is null ||
             !SeviiRubyWildBattleContract.Matches(origin,mon) || !owned.Catalog.Species.TryGetValue(mon.Species,out var species)) return false;
         var dependency=SeviiRubyWildSource.Species.Single(s=>s.Species==mon.Species);
         var moves=SeviiRubyWildSource.InitialMoves.Single(s=>s.Species==mon.Species && s.Level==mon.Level).Moves;
@@ -73,9 +73,9 @@ public static class SeviiRubyWildPokemonFactory
         var draw=Gen3Rng.Next(rng,"wild-battle.held-item",100);
         return new(HeldItem(species,draw.Trace.Result),draw.State,[draw.Trace]);
     }
-    private static void ValidateOwned(SeviiRubyOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(SeviiRubyOwnedPokemonCatalog.For(owned.Catalog),owned) || owned.Catalog.Species.Count!=118)
+        if (owned is null)
             throw new ArgumentException("sevii_ruby_wild_owned_proof");
     }
 }

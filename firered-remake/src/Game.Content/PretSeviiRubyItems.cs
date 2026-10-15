@@ -10,35 +10,26 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record SeviiRubyMachineRows(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility);
-public sealed record SeviiRubyItemsDocument(string SourceCommit, string Profile, ImmutableArray<PewterMachineItem> Items,
-    ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<SeviiRubyMachineRows> MachineAdditions, PewterAdditionalMachine Hm06);
-public sealed record SeviiRubyItemContent(ImmutableArray<PewterMachineItem> Items, ImmutableArray<FieldPickupDefinition> Pickups,
-    SeviiRubyShopCatalog Shop, SeviiRubyMachineCatalog Machines);
+public sealed record SeviiRubyMachineRows(ItemId Item, ImmutableArray<MachineCompatibility> Compatibility);
+public sealed record SeviiRubyItemsDocument(string SourceCommit, string Profile, ImmutableArray<MachineItem> Items,
+    ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<SeviiRubyMachineRows> MachineAdditions, MachineDefinition Hm06);
+public sealed record SeviiRubyItemContent(ImmutableArray<MachineItem> Items, ImmutableArray<FieldPickupDefinition> Pickups,
+    MachineCatalog Machines);
 
 /// <summary>Authenticated Ruby keys/HM06 and eight ordinary pickups. The Ruby object executes its original bespoke script.</summary>
 public static class PretSeviiRubyItems
 {
-    public static SeviiRubyItemContent Load(PretSeviiRubyRegion region, SeviiRubyOwnedPokemonCatalog pokemon,
-        EarlyShopCatalog previousShop, PewterMachineCatalog previousMachines, PretStoryCompilation scripts)
+    public static SeviiRubyItemContent Load(PretSeviiRubyRegion region, GamePokemonCatalog pokemon,
+        EarlyShopCatalog previousShop, MachineCatalog previousMachines, PretStoryCompilation scripts, SharedMachineCatalog? shared = null)
     {
         var path = Path.Combine(Path.GetDirectoryName(region.GeneratedDirectory)!, "sevii-ruby-items", "items.json");
         var bytes = File.ReadAllBytes(path);
         var document = JsonSerializer.Deserialize<SeviiRubyItemsDocument>(bytes,
-            SharedMachineCatalog.Options(Path.GetFullPath(Path.Combine(region.GeneratedDirectory, "../../..")), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
+            (shared ?? SharedMachineCatalog.LoadProject(Path.GetFullPath(Path.Combine(region.GeneratedDirectory, "../../..")))).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("sevii_ruby_items_missing");
         if (            document.Items.Length != 5 || document.Additions.Length != 4 || document.MachineAdditions.Length != 36)
             throw new InvalidDataException("sevii_ruby_items_scope");
-        var shopProof = VictoryRoadShopCatalog.For(previousShop) ?? throw new InvalidDataException("sevii_ruby_items_shop_predecessor");
-        var shop = SeviiRubyShopCatalog.Authenticate(shopProof, previousShop with {
-            Profile = SeviiRubyShopCatalog.Profile,Items = previousShop.Items.AddRange(document.Additions) });
-        var machineProof = VictoryRoadMachineCatalog.For(previousMachines) ?? throw new InvalidDataException("sevii_ruby_items_machine_predecessor");
-        var additions = document.MachineAdditions.ToDictionary(m => m.Item);
-        var machines = SeviiRubyMachineCatalog.Authenticate(machineProof, pokemon, previousMachines with {
-            Profile = SeviiRubyMachineCatalog.Profile,Compatibility = previousMachines.Compatibility.AddRange(additions[previousMachines.Tm39.Item.Id].Compatibility),AdditionalMachines = previousMachines.AdditionalMachines!.Value.Select(m => m with {
-                Compatibility = m.Compatibility.AddRange(additions[m.Machine.Item.Id].Compatibility)
-            }).Append(document.Hm06).ToImmutableArray() });
-        return new(document.Items, Pickups(region, shop.Catalog, scripts), shop, machines);
+        return new(document.Items, Pickups(region, previousShop, scripts), previousMachines);
     }
 
     private static ImmutableArray<FieldPickupDefinition> Pickups(PretSeviiRubyRegion region, EarlyShopCatalog shop, PretStoryCompilation scripts)

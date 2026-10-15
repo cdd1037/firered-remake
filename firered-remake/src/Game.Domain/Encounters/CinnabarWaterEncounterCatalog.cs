@@ -1,12 +1,10 @@
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using Game.Domain.Ids;
 namespace Game.Domain.Encounters;
 
-/// <summary>Three exact water-table additions over Surf21; no historical table proof is relabelled.</summary>
+/// <summary>Validated regional water encounter definitions.</summary>
 public sealed class CinnabarWaterEncounterCatalog
 {
-    private static readonly ConditionalWeakTable<WaterEncounterTable,CinnabarWaterEncounterCatalog> Proofs = new();
     public WaterEncounterCatalog Predecessor { get; }
     public ImmutableDictionary<MapId,WaterEncounterTable> Tables { get; }
     private CinnabarWaterEncounterCatalog(WaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> added)
@@ -19,19 +17,19 @@ public sealed class CinnabarWaterEncounterCatalog
     public static CinnabarWaterEncounterCatalog Authenticate(WaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> additions)
     {
         ArgumentNullException.ThrowIfNull(predecessor);
-        if (predecessor.Tables.Count != 21 || predecessor.Tables.Values.Any(t => !WaterEncounterCatalog.IsAuthenticated(t)) ||
+        if (predecessor.Tables.Count != 21 || predecessor.Tables.Values.Any(t => !WaterEncounterCatalog.IsValidDefinition(t)) ||
             additions.IsDefault || additions.Length != 3 || additions.Any(t => t is null) || additions.Select(t => t.Map).Distinct().Count() != 3)
             throw new ArgumentException("cinnabar_water_scope");
         foreach (var actual in additions)
         {
             var expected = SourceAdditions.SingleOrDefault(t => t.Map == actual.Map);
             if (expected is null || actual.Slots.IsDefault || !actual.Slots.SequenceEqual(expected.Slots) ||
-                actual with { Slots = expected.Slots } != expected) throw new ArgumentException("cinnabar_water_source");
+                !WaterEncounterCatalog.SameDefinition(actual, expected)) throw new ArgumentException("cinnabar_water_source");
         }
         var copies = additions.Select(t => t with { }).ToImmutableArray();
         var proof = new CinnabarWaterEncounterCatalog(predecessor,copies);
-        foreach (var table in copies) Proofs.Add(table,proof);
         return proof;
     }
-    public static bool IsAuthenticated(WaterEncounterTable? table) => table is not null && Proofs.TryGetValue(table,out _);
+    public static bool MatchesDefinition(WaterEncounterTable? table) =>
+        table is not null && SourceAdditions.Any(expected => WaterEncounterCatalog.SameDefinition(table, expected));
 }

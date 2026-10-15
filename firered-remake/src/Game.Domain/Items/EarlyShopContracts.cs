@@ -7,19 +7,31 @@ namespace Game.Domain.Items;
 
 /// <summary>Availability is data. Only Potion and the three represented status cures execute here.</summary>
 public enum EarlyShopUseSupport { SeparateCapture, Potion, StatusCure, DeferredSleep, DeferredEscape, DeferredRepel, FieldRevive, FieldEther, DeferredRareCandy, SeparateEvolution, NoFieldUse, Fossil, FieldRestoreAllPp }
-public sealed record EarlyShopItemDefinition(ItemId Id, string SourceItemSymbol, int SourceItemId,
-    string Name, string Description, int Price, string Pocket, int Importance, string Type,
-    string FieldUseFunction, int BattleUsage, string BattleUseFunction, int HoldEffectParam,
-    int HealHp, uint CureStatus, ImmutableArray<int> EffectBytes, EarlyShopUseSupport UseSupport,
-    OpeningItemSourceRef Source, OpeningItemSourceRef? EffectSource)
+/// <summary>One business item definition with the field-use capability admitted by this inventory view.</summary>
+public sealed record EarlyShopItemDefinition(QuestItemDefinition Item, string Description,
+    int HealHp, uint CureStatus, ImmutableArray<int> EffectBytes, EarlyShopUseSupport UseSupport)
 {
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public QuestItemDefinition? SourceMetadata { get; init; }
+    [JsonIgnore] public ItemId Id => Item.Id;
+    [JsonIgnore] public string SourceItemSymbol => Item.SourceItemSymbol;
+    [JsonIgnore] public int SourceItemId => Item.SourceItemId;
+    [JsonIgnore] public string Name => Item.Name;
+    [JsonIgnore] public int Price => Item.Price;
+    [JsonIgnore] public string Pocket => Item.Pocket;
+    [JsonIgnore] public int Importance => Item.Importance;
+    [JsonIgnore] public string Type => Item.Type;
+    [JsonIgnore] public string FieldUseFunction => Item.FieldUseFunction;
+    [JsonIgnore] public int BattleUsage => Item.BattleUsage;
+    [JsonIgnore] public string BattleUseFunction => Item.BattleUseFunction;
+    [JsonIgnore] public int HoldEffectParam => Item.HoldEffectParam;
 }
-public sealed record EarlyShopStock(string Id, ImmutableArray<ItemId> Items, OpeningItemSourceRef Source);
+public sealed record EarlyShopStock(string Id, ImmutableArray<ItemId> Items);
 public sealed record EarlyShopCatalog(string SourceCommit, string Profile, bool CompleteItemCatalog,
     InventoryLimits Limits, QuestInventoryLimits QuestLimits, int MaximumTransactionQuantity, int MaximumMoney,
-    ImmutableArray<EarlyShopItemDefinition> Items, ImmutableArray<EarlyShopStock> Shops);
+    ImmutableArray<EarlyShopItemDefinition> Items, ImmutableArray<EarlyShopStock> Shops)
+{
+    [JsonIgnore]
+    public InventoryCatalog? Inventory { get; init; }
+}
 /// <summary>MaximumQuantity matches the source quantity picker (funds/99 for buying).
 /// Capacity is checked at commit; MaximumExecutableQuantity additionally exposes that limit.</summary>
 public sealed record EarlyShopQuote(bool Succeeded, int MaximumQuantity, int UnitPrice, string? Error)

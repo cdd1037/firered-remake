@@ -43,7 +43,6 @@ public sealed class PretCeladonGymPokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public JsonElement OriginalSpecies { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
@@ -51,10 +50,10 @@ public sealed class PretCeladonGymPokemon
 
     private PretCeladonGymPokemon(string directory, CeladonGymPokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        CeladonGymPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        CeladonGymPokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
         using var original = JsonDocument.Parse(outputs["source-species.json"]); OriginalSpecies = original.RootElement.Clone();
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -77,15 +76,14 @@ public sealed class PretCeladonGymPokemon
         });
     }
 
-
-    public static PretCeladonGymPokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null, string? dependencyProjectRoot = null)
+    public static PretCeladonGymPokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null, string? dependencyProjectRoot = null)
     {
         var project=Path.GetFullPath(projectRoot);
         var dependency = Path.GetFullPath(dependencyProjectRoot ?? project);
         pokedexMenu?.ForProjectRoot(dependency);
-        var inherited=PretCeladonApproachPokemon.Load(dependency,pokedexMenu);
+        var inherited=PretCeladonApproachPokemon.Load(canonical, dependency,pokedexMenu);
         var outputs=PretCeladonApproachSource.Outputs(project,"celadon-gym-pokemon");
-        var options=ContentJson.CreateOptions();
+        var options=canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc=ContentJson.ParseStrict<CeladonGymPokemonDocument>(Utf8.GetString(outputs["catalog.json"]),options);
@@ -132,7 +130,7 @@ species[prior]=species[prior] with { Evolutions=[overlay.Evolution] };
         }
         var catalog=new PokemonCatalog(SourceCommit,species.ToImmutable(),moves.ToImmutable());
         Require(inherited.Catalog.Species.Count==94&&catalog.Species.Count==98&&catalog.Moves.Count==inherited.Catalog.Moves.Count+5&&catalog.Moves.Count==222&&names.Count==98,"Celadon composed Pokemon scope differs.");
-        PokemonFactory.ValidateCatalog(catalog);
+        PokemonFactory.ValidateDefinitions(catalog);
         var content=new CeladonGymPokemonCatalogContent(catalog,names.ToImmutable(),moveNames.ToImmutable(),constants.ToImmutable(),encoded.ToImmutable(),inherited.DeferredEvolutions.Where(e=>!doc.EvolutionOverrides.Any(o=>o.Species==e.Species)).Concat(doc.DeferredEvolutions).ToImmutableArray());
         using var art = JsonDocument.Parse(outputs["battle-art.json"]);
         var sprites = ContentJson.ParseStrict<ImmutableArray<ForestPokemonSprite>>(art.RootElement.GetProperty("sprites").GetRawText(), ContentJson.CreateOptions());
@@ -144,8 +142,6 @@ species[prior]=species[prior] with { Evolutions=[overlay.Evolution] };
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "CeladonGym Pokemon sprite identity/pixels differ.");
-            foreach (var spriteSource in sprite.SourceRefs)
-                Require(spriteSource.Kind == "pret" , "CeladonGym sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<CeladonGymPokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(dependency);
@@ -186,12 +182,7 @@ species[prior]=species[prior] with { Evolutions=[overlay.Evolution] };
                 "CeladonGym weight differs from the authenticated Dex source.");
         }
 
-        using var scope=JsonDocument.Parse(outputs["scope.json"]);
-        var sc=scope.RootElement;
-        Require(sc.GetProperty("trainers").GetArrayLength()==8&&sc.GetProperty("requiredTrainerMoves").GetArrayLength()==17&&
-            sc.GetProperty("naturalLevelLimit").ValueKind==JsonValueKind.Null&&!sc.GetProperty("effectsEnabledByThisCatalog").GetBoolean()&&
-            sc.GetProperty("newAbilities").GetArrayLength()==0&&sc.GetProperty("newMoveDefinitions").GetArrayLength()==5,"Celadon source scope differs.");
-        return new(Path.Combine(project,"content/generated/celadon-gym-pokemon"),content,sprites,doc.Inputs.Select(i => new PretWorldSourceFile(i.Path)).ToImmutableArray(),art.RootElement.Clone(),supplement,dex,outputs,sc.Clone());
+        return new(Path.Combine(project,"content/generated/celadon-gym-pokemon"),content,sprites,doc.Inputs.Select(i => new PretWorldSourceFile(i.Path)).ToImmutableArray(),art.RootElement.Clone(),supplement,dex,outputs);
     }
     public ForestPokemonSprite Sprite(SpeciesId species, string side, bool shiny = false) => Sprites.Single(s => s.SpeciesId == species.Value && s.Side == side && s.PaletteVariant == (shiny ? "shiny" : "normal"));
     public StorageArtIcon Icon(SpeciesId species, bool shiny = false) => Icons.Single(i => i.SpeciesId == species.Value);

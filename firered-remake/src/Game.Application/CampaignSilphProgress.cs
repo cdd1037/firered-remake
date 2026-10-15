@@ -11,7 +11,7 @@ public sealed partial class CampaignSession
         bool flag(string key)=>state.Script.Flags.GetValueOrDefault(key);
         if(!_content.SilphEnabled)return rival!=0||boss!=0||flag("FLAG_HIDE_SILPH_ROCKETS")||flag("FLAG_HIDE_SILPH_RIVAL")||flag("FLAG_HIDE_SAFFRON_ROCKETS")?"save_silph_progress_profile_missing":null;
         if(rival is <0 or >1||boss is <0 or >1)return "save_silph_scene_range";
-        if(Game.Domain.Items.OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],Game.Domain.Items.SilphShopCatalog.CardKeyId)
+        if(Game.Domain.Items.OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],Game.Domain.Items.ItemIds.CardKeyId)
             !=(flag("FLAG_HIDE_SILPH_CO_5F_CARD_KEY")?1:0))return "save_silph_card_key_receipt";
         var history=state.ForestTrainerHistory??[];
         var rivals=history.Where(h=>IsSilphRival(new(h.TrainerId))&&h.Outcome==WildBattleOutcome.Won).ToArray();

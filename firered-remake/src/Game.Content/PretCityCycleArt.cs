@@ -5,8 +5,7 @@ using System.Text.Json;
 namespace Game.Content;
 
 public sealed record PretFishingArtAsset(int Gender, string GraphicsId, int SourceGraphicsId, string TexturePath, int Width, int Height,
-    int FrameWidth, int FrameHeight, int FrameCount, PlayerGenderArtPoint DrawOffsetFromTileOrigin,
-    ImmutableArray<PlayerGenderArtSourceRef> SourceRefs);
+    int FrameWidth, int FrameHeight, int FrameCount, PlayerGenderArtPoint DrawOffsetFromTileOrigin);
 public sealed record PretFishingAnimCommand(string Opcode, int Value, int Duration, bool FlipH, int OffsetX, int OffsetY);
 public sealed record PretFishingAnimation(string Id, int SourceAnimationId, string Direction,
     ImmutableArray<PretFishingAnimCommand> Commands, string SourceText, PlayerGenderArtSourceRef SourceRef);
@@ -113,7 +112,6 @@ public sealed class PretCityCycleArt
     /// <summary>Fresh authenticated PNG bytes; subsequent caller or disk mutations cannot alter this snapshot.</summary>
     public byte[] ReadTexture(int gender) { ValidateGender(gender); return [.. textures[gender]]; }
 
-
     /// <summary>Convenience one-shot load for canonical gender 0 or 1; prefer one Load for repeated rendering.</summary>
     public static byte[] ReadTexture(string projectRoot, int gender)
     {
@@ -153,10 +151,6 @@ public sealed class PretCityCycleArt
 var bytes = File.ReadAllBytes(path);
 return bytes;
     }
-
-
-
-
 
     private static string SafeFile(string root, string relative)
     {

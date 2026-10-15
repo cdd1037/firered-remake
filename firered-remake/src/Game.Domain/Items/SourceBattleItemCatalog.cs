@@ -4,12 +4,17 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Items;
 
-public sealed record SourceBattleItemDefinition(string Symbol, int SourceItemId, string Name, string Pocket,
-    int BattleUsage, string BattleUseFunction, ImmutableArray<byte> EffectBytes, bool Reusable)
+public sealed record SourceBattleItemDefinition(QuestItemDefinition Item, ImmutableArray<byte> EffectBytes, bool Reusable)
 {
-    public string HoldEffect { get; init; } = "HOLD_EFFECT_NONE";
-    public int HoldEffectParam { get; init; }
-    public ItemId Id => new("pret:" + Symbol);
+    [System.Text.Json.Serialization.JsonIgnore] public string Symbol => Item.SourceItemSymbol;
+    [System.Text.Json.Serialization.JsonIgnore] public int SourceItemId => Item.SourceItemId;
+    [System.Text.Json.Serialization.JsonIgnore] public string Name => Item.Name;
+    [System.Text.Json.Serialization.JsonIgnore] public string Pocket => Item.Pocket;
+    [System.Text.Json.Serialization.JsonIgnore] public int BattleUsage => Item.BattleUsage;
+    [System.Text.Json.Serialization.JsonIgnore] public string BattleUseFunction => Item.BattleUseFunction;
+    [System.Text.Json.Serialization.JsonIgnore] public string HoldEffect => Item.HoldEffect;
+    [System.Text.Json.Serialization.JsonIgnore] public int HoldEffectParam => Item.HoldEffectParam;
+    [System.Text.Json.Serialization.JsonIgnore] public ItemId Id => Item.Id;
     public bool IsFixedEffect => !EffectBytes.IsDefaultOrEmpty;
     public bool IsStatBooster => BattleUseFunction == "BattleUseFunc_StatBooster";
     public bool IsPokeFlute => Symbol == "ITEM_POKE_FLUTE";

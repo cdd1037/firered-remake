@@ -45,16 +45,15 @@ public sealed class PretRoute11Pokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretRoute11Pokemon(string directory, Route11PokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        Route11PokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        Route11PokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -77,7 +76,7 @@ public sealed class PretRoute11Pokemon
         });
     }
 
-    public static PretRoute11Pokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
+    public static PretRoute11Pokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null)
     {
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
@@ -99,7 +98,7 @@ public sealed class PretRoute11Pokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -122,8 +121,6 @@ public sealed class PretRoute11Pokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "Route11 Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "Route11 sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<Route11PokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -138,8 +135,7 @@ public sealed class PretRoute11Pokemon
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
-                icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                (outputs[icon.TexturePath]).Length > 0, "Route11 icon identity/pixels differ.");
+                icon.PaletteRgb555.Length == 16 && (outputs[icon.TexturePath]).Length > 0, "Route11 icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
@@ -163,22 +159,14 @@ public sealed class PretRoute11Pokemon
                 dex.Entries[weight.SourceSpeciesId].WeightHectograms == weight.WeightHectograms && weight.WeightHectograms > 0,
                 "Route11 weight differs from the authenticated Dex source.");
         }
-        using var scope = JsonDocument.Parse(outputs["scope.json"]);
-        Require(scope.RootElement.GetProperty("trainers").GetArrayLength() == 10 &&
-            !scope.RootElement.GetProperty("effectsEnabledByThisCatalog").GetBoolean(), "Route11 evidence scope differs.");
-        Require(scope.RootElement.GetProperty("naturalLevelLimit").ValueKind == JsonValueKind.Null &&
-            scope.RootElement.GetProperty("requiredTrainerMoves").GetArrayLength() == 35 &&
-            scope.RootElement.GetProperty("sourceDefinitions").GetArrayLength() == 61 &&
-            scope.RootElement.GetProperty("teachingMoves").EnumerateArray().Select(x => x.GetString()).SequenceEqual(new[] { "MOVE_FLASH" }),
-            "Route11 source dependency or uncapped battle scope differs.");
-        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary(), scope.RootElement.Clone());
+        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary());
     }
 
-    public static Route11PokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
+    public static Route11PokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
         string pewterGeneratedJson, string route22GeneratedJson, string route3GeneratedJson, string mtmoonGeneratedJson, string ceruleanGeneratedJson, string billGeneratedJson, string vermilionGeneratedJson, string ssanneGeneratedJson, string route11GeneratedJson)
     {
-        var original = PretSsAnnePokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson, ssanneGeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretSsAnnePokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson, ssanneGeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<Route11PokemonDocument>(route11GeneratedJson, options);
@@ -231,11 +219,11 @@ public sealed class PretRoute11Pokemon
         var overlay = doc.EvolutionOverrides.Single();
         Require(overlay.Species.Value == "pret:SPECIES_MAGNEMITE" && overlay.Evolution.Target.Value == "pret:SPECIES_MAGNETON" &&
             overlay.Evolution.Level == 30 && overlay.Evolution.Method == PokemonEvolutionMethod.Level && overlay.Evolution.Parameter is null &&
-            species[overlay.Species].Evolutions.IsEmpty && overlay.Evolution.Source.Symbol == "SPECIES_MAGNEMITE",
+            species[overlay.Species].Evolutions.IsEmpty,
             "Route11 Magnemite level evolution overlay differs.");
         species[overlay.Species] = species[overlay.Species] with { Evolutions = [overlay.Evolution] };
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 79 && result.Moves.Count == 209 && names.Count == 79 && moveNames.Count == 209, "Incomplete composed Route11 Pokemon catalog.");
         Require(doc.DeferredEvolutions.Length == 3, "Missing Route11 deferred evolution metadata.");
         var expectedDeferred = new HashSet<(string Species, string Method, string Parameter, string Target)>

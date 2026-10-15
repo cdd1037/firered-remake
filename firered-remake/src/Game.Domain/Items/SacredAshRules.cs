@@ -10,7 +10,7 @@ public static class SacredAshRules
     {
         SacredAshResult Fail(string error)=>new(inventory,party,0,error);
         EarlyShopInventoryRules.ValidateCatalog(catalog);
-        var item=EarlyShopInventoryRules.Find(catalog,EventIslandShopCatalog.SacredAshId);
+        var item=EarlyShopInventoryRules.Find(catalog,ItemIds.SacredAshId);
         if(item is null)return Fail("sacred_ash_catalog_missing");
         if(EarlyShopInventoryRules.Validate(catalog,inventory) is {} error)return Fail(error);
         if(item.SourceItemId!=45||item.FieldUseFunction!="FieldUseFunc_SacredAsh"||item.BattleUsage!=0)return Fail("sacred_ash_source_mismatch");

@@ -44,9 +44,9 @@ public partial class CampaignView
         }
         LoadPokeDollIcon();
         LoadOrdinarySupplementIcons();
-        if (OrdinaryItemInventoryCatalog.For(_catalog.EarlyShop)?.IsAddition(OrdinaryItemInventoryCatalog.RetroMailId) == true)
+        if (_catalog.EarlyShop?.Items.Any(i => i.Id == ItemIds.RetroMailId) == true)
         {
-            _earlyItemIcons.Add(OrdinaryItemInventoryCatalog.RetroMailId, ItemTexture(PretDepartmentFourthFloor.LoadDocument(_root).Icons[0]));
+            _earlyItemIcons.Add(ItemIds.RetroMailId, ItemTexture(PretDepartmentFourthFloor.LoadDocument(_root).Icons[0]));
         }
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
@@ -56,7 +56,7 @@ public partial class CampaignView
     }
     private void LoadOrdinarySupplementIcons()
     {
-        if (OrdinaryItemInventoryCatalog.For(_catalog.EarlyShop) is null) return;
+        if (_catalog.EarlyShop is null) return;
         foreach (var icon in PretOrdinaryItemSupplement.LoadDocument(_root).Icons)
         {
             _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
@@ -65,7 +65,7 @@ public partial class CampaignView
     private void LoadPokeDollIcon()
     {
         if (_catalog.PokeDollShopStock is null) return;
-        _earlyItemIcons.Add(PokeDollInventoryCatalog.PokeDollId, ItemTexture(PretPokeDollItems.LoadDocument(_root).Icons[0]));
+        _earlyItemIcons.Add(ItemIds.PokeDollId, ItemTexture(PretPokeDollItems.LoadDocument(_root).Icons[0]));
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
     private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop
@@ -74,7 +74,7 @@ public partial class CampaignView
         FieldMedicineEffect.HealHp or FieldMedicineEffect.CureStatus or FieldMedicineEffect.CureSleep ||
         _catalog.EarlyShop is {} shop && _catalog.PresetDoubleItems is {} sourceItems && (SourceFieldStatusCureRules.Supports(shop, sourceItems, id) || SourceFieldHpMedicineRules.Supports(shop, sourceItems, id));
     private string InventoryName(ItemId id) => EarlyItem(id)?.Name ??
-        (_catalog.PewterMachines is {} machines ? PewterMachineRules.Definition(machines, id)?.Machine.Item.Name : null) ??
+        (_catalog.PewterMachines is {} machines ? MachineRules.Definition(machines, id)?.Machine.Item.Name : null) ??
         (id == OpeningInventoryRules.PotionId ? _itemSkin.PotionName : _catalog.QuestItems?.Items.SingleOrDefault(i => i.Id == id)?.Name ?? throw new InvalidDataException("inventory_item_name_missing"));
     private string InventoryDescription(ItemId id) => EarlyItem(id)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$') ?? _itemSkin.PotionDescription;
     private void DrawInventoryIcon(ItemId id)

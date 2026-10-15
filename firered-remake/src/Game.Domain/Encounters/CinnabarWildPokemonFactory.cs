@@ -25,11 +25,10 @@ public static class CinnabarWildPokemonFactory
         new("pret:SPECIES_TENTACOOL"),
         new("pret:SPECIES_WEEZING")
     ];
-    public static EarlyLandWildPokemonResult Generate(CinnabarOwnedPokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
-        if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            encounter.RulesVersion != EarlyLandEncounterRules.CinnabarRulesVersion) throw new ArgumentException("cinnabar_wild_profile");
+        if (owned is null || encounter.RulesVersion != EarlyLandEncounterRules.CinnabarRulesVersion) throw new ArgumentException("cinnabar_wild_profile");
         EarlyLandEncounterRules.ValidateState(encounter, table);
         var pending = encounter.Pending ?? throw new InvalidOperationException("cinnabar_wild_pending");
         if (!owned.Catalog.Species.ContainsKey(pending.Candidate.Species)) throw new NotSupportedException("cinnabar_wild_species");

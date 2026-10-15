@@ -21,7 +21,7 @@ public sealed class ItemIconAtlasTests
         string root = TestAssets.Output();
         try
         {
-            foreach (string package in new[] { "early-shop", "pewter-machines", "silph-item-art", "cinnabar-item-art", "item-icons" })
+            foreach (string package in new[] { "early-shop", "item-catalog", "pewter-machines", "silph-item-art", "cinnabar-item-art", "item-icons" })
             {
                 string relative = "content/generated/" + package;
                 Directory.CreateDirectory(Path.Combine(root, relative));
@@ -29,7 +29,7 @@ public sealed class ItemIconAtlasTests
                     File.Copy(file, Path.Combine(root, relative, Path.GetFileName(file)));
             }
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));
-            var early = PretEarlyShop.Load(File.ReadAllText(Path.Combine(root, "content/generated/early-shop/early-shop.json")));
+            var early = PretEarlyShop.Load(File.ReadAllText(Path.Combine(root, "content/generated/early-shop/early-shop.json")), SharedItemCatalog.LoadProject(root));
             var machines = MachineIcons(root);
             var silph = PretSilphItemArt.Load(root);
             var cinnabar = PretCinnabarItemArt.LoadProject(root);
@@ -57,7 +57,7 @@ public sealed class ItemIconAtlasTests
     [TestMethod]
     public void InvalidLogicalRegionsAreRejectedBeforeTextureLoading()
     {
-        var document = PretEarlyShop.Load(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/early-shop/early-shop.json")));
+        var document = PretEarlyShop.Load(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/early-shop/early-shop.json")), SharedItemCatalog.LoadProject(TestAssets.Root));
         Assert.ThrowsExactly<InvalidDataException>(() => PretEarlyShop.ValidateIcon(document.Icons[0] with { Region = new(1, 1, 23, 24) }));
         var machines = MachineIcons(TestAssets.Root);
         Assert.ThrowsExactly<InvalidDataException>(() => PretPewterMachines.ValidateIcon(machines[0] with { Region = new(-1, 1, 24, 24) }));

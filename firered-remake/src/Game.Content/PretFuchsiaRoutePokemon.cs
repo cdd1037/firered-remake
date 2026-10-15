@@ -8,8 +8,8 @@ using Game.Domain.Trainers;
 
 namespace Game.Content;
 
-public sealed record FuchsiaRouteHeldItems(SpeciesId Species, string Common, string Rare, PokemonSourceRef Source);
-public sealed record FuchsiaRouteMachineRow(SpeciesId Species, ImmutableArray<string> MachineSymbols, PokemonSourceRef Source);
+public sealed record FuchsiaRouteHeldItems(SpeciesId Species, string Common, string Rare);
+public sealed record FuchsiaRouteMachineRow(SpeciesId Species, ImmutableArray<string> MachineSymbols);
 public sealed record FuchsiaRoutePokemonDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<ForestPokemonInput> Inputs, ImmutableArray<PokemonSpeciesDefinition> Species,
     ImmutableArray<PokemonMoveDefinition> Moves, ImmutableArray<PretRoute1SpeciesName> SpeciesNames,
@@ -51,35 +51,18 @@ public sealed class PretFuchsiaRoutePokemon
         EncodedNames=document.EncodedNames.ToImmutableDictionary(n=>n.Symbol,StringComparer.Ordinal);
     }
 
-    /// <summary>Strict103 predecessor: campaign241 becomes244 moves; standalone240 becomes243. Old records remain identical objects.</summary>
-    public static PretFuchsiaRoutePokemon Load(PokemonCatalog baseCatalog, string projectRoot, string? dependencyProjectRoot=null)
+    /// <summary>Resolve regional presentation against the current admitted catalog.</summary>
+    public static PretFuchsiaRoutePokemon Load(PretCanonicalPokemonCatalog canonical, PokemonCatalog catalog, string projectRoot)
     {
-        PokemonFactory.ValidateCatalog(baseCatalog);
-        Require(baseCatalog.Species.Count==103 && baseCatalog.Moves.Count is 240 or 241,"Fuchsia requires exact103-species predecessor.");
-        string root=Path.GetFullPath(projectRoot);
-        var bytes=PretCeladonApproachSource.Read(root,CatalogRelativePath);
-        var options=ContentJson.CreateOptions();options.Converters.Add(new ExactEnumConverter<GrowthRate>());options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
-        var doc=ContentJson.ParseStrict<FuchsiaRoutePokemonDocument>(Utf8.GetString(bytes),options);
-        Require(doc.SchemaVersion==1 && doc.RequiredMoves.Length==17 && doc.HeldItems.Length==4 && doc.Machines.Length==4 &&
-            doc.NaturalLevelLimit is null && !doc.Limitations.IsDefaultOrEmpty,"Fuchsia source document scope differs.");
-        var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach(var input in doc.Inputs)
-        {
-            files.Add(new(input.Path));
-        }
-        var species=baseCatalog.Species.ToBuilder();var moves=baseCatalog.Moves.ToBuilder();
-        foreach(var s in doc.Species)
-        {
-            Require(PokemonFactory.ValidFuchsiaSpeciesDefinition(s),"Fuchsia exact source species differs.");            species.Add(s.Id,s);
-        }
-        Require(doc.Moves.Select(m=>m.SourceMoveId).SequenceEqual([14,144,210]),"Fuchsia source move delta differs.");
-        foreach(var m in doc.Moves){Require(!m.BattleEffectImplemented,"Metadata cannot admit effects.");moves.Add(m.Id,m);}
-        Require(doc.RequiredMoves.Distinct().Count()==17&&doc.RequiredMoves.All(moves.ContainsKey),"Fuchsia natural move closure differs.");
-        foreach(var n in doc.EncodedNames){Require(n.Bytes.Length==n.Name.Length+1&&n.Bytes[^1]==255,"Fuchsia name encoding differs.");}
-        Require(doc.HeldItems.Single(h=>h.Species.Value=="pret:SPECIES_DITTO") is {Common:"ITEM_NONE",Rare:"ITEM_METAL_POWDER"},"Ditto rare item differs.");
-        var catalog=new PokemonCatalog(SourceCommit,species.ToImmutable(),moves.ToImmutable());PokemonFactory.ValidateCatalog(catalog);
-        Require(catalog.Species.Count==107&&catalog.Moves.Count==baseCatalog.Moves.Count+3,"Fuchsia inherited records differ.");
-        var tb=PretCeladonApproachSource.Read(root,TrainersRelativePath);
+        var doc = SafariSource.Parse<FuchsiaRoutePokemonDocument>(SafariSource.Read(projectRoot, CatalogRelativePath), canonical: canonical);
+        SafariSource.Require(doc.SchemaVersion == 1 && !doc.Species.IsDefaultOrEmpty &&
+            doc.Species.All(species => catalog.Species.ContainsKey(species.Id)) &&
+            doc.RequiredMoves.All(catalog.Moves.ContainsKey), "FuchsiaRoute presentation references are not admitted.");
+        foreach (var name in doc.EncodedNames)
+            SafariSource.Require(!name.Bytes.IsDefaultOrEmpty && name.Bytes[^1] == 255,
+                "FuchsiaRoute encoded name is unterminated.");
+        var files = doc.Inputs.Select(input => new PretWorldSourceFile(input.Path)).ToImmutableArray();
+        var tb=PretCeladonApproachSource.Read(projectRoot,TrainersRelativePath);
         var td=ContentJson.ParseStrict<FuchsiaRouteTrainerDocument>(Utf8.GetString(tb),ContentJson.CreateOptions());
         Require(td.SchemaVersion==1&&!td.CompleteSourceRoster&&td.Actors.GetArrayLength()==43&&td.ResolvedMoves.GetArrayLength()==40,"Fuchsia trainer document scope differs.");
         var initial=ImmutableDictionary.CreateBuilder<TrainerId,ImmutableArray<ImmutableArray<MoveId>>>();
@@ -94,7 +77,7 @@ public sealed class PretFuchsiaRoutePokemon
         }
         var tc=new FuchsiaRouteTrainerCatalog(SourceCommit,td.Profile,false,td.Trainers.ToImmutableDictionary(t=>t.Id),td.Battles.ToImmutableDictionary(b=>b.ScriptEntry,StringComparer.Ordinal),initial.ToImmutable());
         FuchsiaRouteTrainerPartyFactory.ValidateCatalog(tc);
-        return new(catalog,doc,td,tc,files.ToImmutable());
+        return new(catalog, doc, td, tc, files);
     }
     private static void Require(bool value,string message){if(!value)throw new InvalidDataException(message);}
 }

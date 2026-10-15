@@ -17,9 +17,9 @@ public static class PretFuchsiaGymTrainers
     public const string SourceCommit="037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string Profile="firered-fuchsia-gym-trainers-v1";
     public const int TrainerCount=7,PartyMemberCount=18,RequiredMoveCount=24;
-    public static FuchsiaGymTrainerDocument LoadDocument(string root)
+    public static FuchsiaGymTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
-        var d=ContentJson.ParseStrict<FuchsiaGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/fuchsia-gym-trainers/trainers.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<FuchsiaGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/fuchsia-gym-trainers/trainers.json")),canonical.ReferenceOptions());
         Require(d.SchemaVersion==1&&!d.CompleteSourceRoster&&
             d.Trainers.Select(x=>x.Id).Distinct().Count()==7&&d.Trainers.Sum(x=>x.Party.Length)==18&&d.ResolvedMoves.GetArrayLength()==7&&!d.Limitations.IsDefaultOrEmpty,"Fuchsia Gym document scope differs.");
         string[] names=["JUGGLER_KAYDEN","JUGGLER_SHAWN","JUGGLER_KIRK","TAMER_EDGAR","TAMER_PHIL","JUGGLER_NATE","LEADER_KOGA"];
@@ -41,8 +41,8 @@ var resolved=d.ResolvedMoves[i];
         }
         return d;
     }
-    public static FuchsiaGymTrainerCatalogContent Load(string root)
-    {var d=LoadDocument(root);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
+    public static FuchsiaGymTrainerCatalogContent Load(PretCanonicalPokemonCatalog canonical, string root)
+    {var d=LoadDocument(canonical, root);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
     private static void Require(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
     private static byte[] Read(string root,string relative)
     {

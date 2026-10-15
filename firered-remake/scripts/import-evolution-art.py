@@ -137,32 +137,13 @@ def art(lock, sources):
             base = display['playerBaseCenter' if side == 'back' else 'opponentBaseCenter']
             elevation = 0 if side == 'back' else front_elevation
             center = dict(x=base['x'], y=base['y'] + offset - elevation)
-            image_symbol = f'gMon{side.title()}Pic_{name}'
-            def reference(path, symbol_, needle=None):
-                return battle.reference(lock, sources, path, symbol_, needle)
-            shared = [reference(image_path, image_symbol),
-                      reference('include/constants/species.h', symbol, species_row[0]),
-                      reference(coords_path, f'gMon{side.title()}PicCoords[{symbol}]', coords[0]),
-                      reference(elevation_path, f'gEnemyMonElevation[{symbol}]', elevation_source),
-                      reference('src/data/graphics/pokemon.h', image_symbol,
-                          f'const u32 {image_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/{side}.4bpp.lz");'),
-                      reference(f'src/data/pokemon_graphics/{side}_pic_table.h', f'gMon{side.title()}PicTable',
-                          f'    SPECIES_SPRITE({name.upper()}, {image_symbol}),')]
             for variant in ('normal', 'shiny'):
                 palette_path = f'graphics/pokemon/{stem}/{variant}.pal'
                 colors, words = battle.pixels.palette(sources[palette_path])
                 rgba = battle.pixels.rgba_pixels(indices, colors)
                 filename = f'{stem}-{side}-{variant}'
                 outputs[filename + '.png'] = battle.pixels.rgba_png(rgba)
-                palette_symbol = 'gMon' + ('Shiny' if variant == 'shiny' else '') + 'Palette_' + name
-                table = 'shiny_palette_table.h' if variant == 'shiny' else 'palette_table.h'
-                macro = 'SPECIES_SHINY_PAL' if variant == 'shiny' else 'SPECIES_PAL'
-                refs = shared + [reference(palette_path, palette_symbol),
-                    reference('src/data/graphics/pokemon.h', palette_symbol,
-                        f'const u32 {palette_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/{variant}.gbapal.lz");'),
-                    reference('src/data/pokemon_graphics/' + table, macro,
-                        f'    {macro}({name.upper()}, {palette_symbol}),')]
-                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side, paletteVariant=variant, texturePath=filename + '.png', sourceImagePath=image_path, sourcePalettePath=palette_path, width=64, height=64, frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0, sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=elevation, singleBattleBaseCenter=base, singleBattleCenter=center, singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32), alphaBounds=dict(x=left, y=top, width=right - left, height=bottom - top), transparentIndex=0, paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
+                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side, paletteVariant=variant, texturePath=filename + '.png', sourceImagePath=image_path, sourcePalettePath=palette_path, width=64, height=64, frameWidth=64, frameHeight=64, frameCount=1, sourceFrameIndex=0, sourceWidth=width, sourceHeight=height, sourceYOffset=offset, sourceEnemyElevation=elevation, singleBattleBaseCenter=base, singleBattleCenter=center, singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32), alphaBounds=dict(x=left, y=top, width=right - left, height=bottom - top), transparentIndex=0, paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False))
     outputs['battle-art.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          display=display, sprites=sprites,
         runtimeShadersUsed=False, limitations=[

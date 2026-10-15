@@ -2,6 +2,7 @@
 """Import only original Retro Mail and the complete 4F shelf contract from pinned Git blobs.
 REFERENCE DEPENDENCY OUTPUT [--check]. Shared source files remain in DEPENDENCY.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -22,7 +23,7 @@ SHARED={
 }
 def need(value,message):
  if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
+def encoded(value): return (json.dumps(value,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()
 def generate(reference,dependency):
  inputs,raw,cache={},{},{}
  def read(path):
@@ -40,9 +41,9 @@ def generate(reference,dependency):
  item_id=int(one('include/constants/items.h',r'^#define ITEM_RETRO_MAIL\s+(\d+)\s*$')[1])
  need(item_id==132 and item['price']==50 and item['pocket']=='POCKET_ITEMS' and item['importance']==0 and item['type']=='ITEM_TYPE_MAIL' and item['fieldUseFunc']=='FieldUseFunc_Mail' and item['battleUsage']==0 and item['battleUseFunc']=='NULL' and item['holdEffect']=='HOLD_EFFECT_NONE' and item['secondaryId']==11,'Original Retro Mail semantics')
  src=source(path,symbol,block);ident=dict(value='pret:'+symbol)
- metadata=dict(id=ident,sourceItemSymbol=symbol,sourceItemId=item_id,name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=True,canSell=True,canGive=True,source=src)
- addition={key:metadata[key] for key in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
- addition.update(description=item['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=metadata)
+ metadata=shared_item(symbol)
+ addition=dict(item=metadata)
+ addition.update(description=item['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
  use='src/item_use.c';field=one(use,r'^void FieldUseFunc_Mail\(u8 taskId\)\n\{.*?^\}');preview=one(use,r'^static void CB2_CheckMail\(void\)\n\{.*?^\}')
  need('ItemMenu_SetExitCallback(CB2_CheckMail);' in field[0] and 'ReadMail(&mail, CB2_BagMenuFromStartMenu, FALSE);' in preview[0],'Original blank Mail preview callback')
  shelf_path='data/maps/CeladonCity_DepartmentStore_4F/scripts.inc';shelf=one(shelf_path,r'^CeladonCity_DepartmentStore_4F_Items::\n(?:\t\.2byte [A-Z_]+\n)+')
@@ -80,4 +81,4 @@ if __name__=='__main__':
   target=args.output/path
   if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
- print(json.dumps(dict(checked=args.check,itemCount=131),indent=2))
+ print(json.dumps(dict(checked=args.check,itemCount=131),indent=2, default=item_json))

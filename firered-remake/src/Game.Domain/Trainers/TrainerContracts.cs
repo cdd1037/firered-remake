@@ -32,10 +32,8 @@ public sealed record TrainerPartyPokemon(PokemonInstance Pokemon, string HeldIte
 public sealed record TrainerPartyCreationResult(TrainerDefinition Trainer, ImmutableArray<TrainerPartyPokemon> Party,
     RngState Rng, ImmutableArray<RandomTrace> Trace)
 {
-    [System.Text.Json.Serialization.JsonIgnore]
-    internal SourceTrainerPartyReceipt? Receipt { get; init; }
-    [System.Text.Json.Serialization.JsonIgnore]
-    internal Game.Domain.Battle.SourceTrainerTowerPartyReceipt? TowerReceipt { get; init; }
+    public TrainerEncounterRoster? Roster { get; init; }
+    public Game.Domain.Battle.TrainerTowerEncounterRoster? TowerRoster { get; init; }
 }
 
 // Only terminal outcomes reachable in this bounded trainer battle are accepted.

@@ -6,12 +6,12 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretCeruleanMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PewterAdditionalMachine> Machines, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<MachineDefinition> Machines, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates five explicit TMs for 65 species, preserving every historical machine profile.</summary>
 public static class PretCeruleanMachines
 {
-    public const string Profile = PewterMachineRules.CeruleanProfile;
+    public const string Profile = "firered-cerulean-machines-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public static PretCeruleanMachinesDocument Load(string json, SharedMachineCatalog machines)
@@ -27,7 +27,7 @@ public static class PretCeruleanMachines
             Require(machine.Machine.Item.Id.Value == "pret:ITEM_" + symbols[n] && machine.Compatibility.Length == 65,
                 "Cerulean machine order or compatibility differs.");
         }
-        Require(document.Icon.Item == PewterMachineRules.Tm03Id && document.Icon.Region is not null,
+        Require(document.Icon.Item == MachineRules.Tm03Id && document.Icon.Region is not null,
             "Cerulean machine icon identity differs.");
         PretPewterMachines.ValidateIcon(document.Icon);
         return document;
@@ -39,17 +39,6 @@ public static class PretCeruleanMachines
         return document;
     }
 
-    public static PewterMachineCatalog LoadCatalogProject(string root)
-    {
-        var document = LoadProject(root);
-        var old = PretPewterMachines.LoadProject(root);
-        var result = old with
-        {
-            Profile = Profile,Compatibility = document.Machines[0].Compatibility,AdditionalMachines = document.Machines.Skip(1).ToImmutableArray()
-        };
-        PewterMachineRules.ValidateCatalog(result);
-        return result;
-    }
     private static byte[] Read(string root,string path)
     {
         var p = SafeFile(root, path);

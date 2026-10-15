@@ -208,17 +208,17 @@ public partial class CampaignView
     private void DrawStorageItemIcon(ItemId item, Rect2 rect)
     {
         Texture2D? icon = _earlyItemIcons.GetValueOrDefault(item);
-        if (icon is null && _catalog.PewterMachines is { } machines && PewterMachineRules.Definition(machines, item) is not null)
+        if (icon is null && _catalog.PewterMachines is { } machines && MachineRules.Definition(machines, item) is not null)
             icon = _questPocketTextures.GetValueOrDefault(MachineIcon);
         if (icon is not null) DrawTextureRect(icon, rect, false);
     }
 
     private string StorageItemName(ItemId item) =>
-        (_catalog.PewterMachines is { } machines ? PewterMachineRules.Definition(machines, item)?.Machine.Item.Name : null)
+        (_catalog.PewterMachines is { } machines ? MachineRules.Definition(machines, item)?.Machine.Item.Name : null)
         ?? InventoryName(item);
 
     private string StorageItemDescription(ItemId item) =>
-        (_catalog.PewterMachines is { } machines ? PewterMachineRules.Definition(machines, item)?.Machine.Description : null)
+        (_catalog.PewterMachines is { } machines ? MachineRules.Definition(machines, item)?.Machine.Description : null)
         ?? EarlyItem(item)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$')
         ?? _questPocketUi?.Items.SingleOrDefault(i => i.Id == item.Value)?.Description
         ?? "No item information is available.";

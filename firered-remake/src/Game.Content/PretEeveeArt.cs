@@ -51,7 +51,7 @@ public sealed class PretEeveeArt
                 sprite.FrameCount==1&&sprite.SourceFrameIndex==0&&sprite.TransparentIndex==0&&!sprite.FlipH&&sprite.PaletteRgb555.Length==16&&sprite.SourceEnemyElevation==0&&
                 sprite.SingleBattleTopLeft==new ForestPokemonPoint(sprite.Side=="front"?144:40,sprite.Side=="front"?21:58),"Eevee sprite identity differs.");
             Pixels(sprite.TexturePath,64,64);
-            foreach(var r in sprite.SourceRefs){Require(r.Kind=="pret","Eevee art provenance differs.");}
+
         }
         var icon=doc.Icons.Single();
         Require(icon.SpeciesId=="pret:SPECIES_EEVEE"&&icon.SourceSpeciesId==133&&icon.Width==32&&icon.Height==32&&icon.SourceFrameIndex==0&&icon.SourceFrameCount==2&&

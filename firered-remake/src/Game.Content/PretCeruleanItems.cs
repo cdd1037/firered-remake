@@ -15,15 +15,14 @@ public static class PretCeruleanItems
     public const string Profile = "firered-cerulean-items-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretCeruleanItemsDocument Load(string json)
+    public static PretCeruleanItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions();
+        var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretCeruleanItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 &&
             !document.Limitations.IsDefaultOrEmpty,
             "Cerulean item scope differs.");
-        Require(document.Item.EffectSource is not null, "Cerulean item effect source missing.");
         CeruleanItemRules.ValidateSuperPotion(Definition(document.Item));
         CeruleanItemRules.ValidateStock(document.Shop);
         Require(document.Icon.Item == CeruleanItemRules.SuperPotionId, "Cerulean item icon identity differs.");
@@ -31,31 +30,16 @@ public static class PretCeruleanItems
         return document;
     }
 
-    public static PretCeruleanItemsDocument LoadProject(string root)
+    public static PretCeruleanItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/cerulean-items/cerulean-items.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/cerulean-items/cerulean-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
-    }
-
-    public static EarlyShopCatalog LoadShopProject(string root)
-    {
-        var document = LoadProject(root);
-        var old = PretMtMoonItems.LoadShopProject(root);
-        var result = old with
-        {
-            Profile = CeruleanItemRules.Profile,Items = old.Items.Add(Definition(document.Item)),Shops = old.Shops.Add(document.Shop)
-        };
-        EarlyShopInventoryRules.ValidateCatalog(result);
-        return result;
     }
 
     private static EarlyShopItemDefinition Definition(PretMtMoonItem value)
     {
         var item = value.Metadata.Item;
-        return new(item.Id, item.SourceItemSymbol, item.SourceItemId, item.Name, value.Metadata.Description,
-            item.Price, item.Pocket, item.Importance, item.Type, item.FieldUseFunction, item.BattleUsage,
-            item.BattleUseFunction, item.HoldEffectParam, 50, 0, value.EffectBytes, value.UseSupport,
-            item.Source, value.EffectSource) { SourceMetadata = item };
+        return new(item, value.Metadata.Description, 50, 0, value.EffectBytes, value.UseSupport);
     }
     private static byte[] Read(string root,string path)
     {

@@ -10,9 +10,8 @@ public partial class CampaignView
 
     private void LoadGiftEggPresentation()
     {
-        if (OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog), GiftEggOwnedPokemonCatalog.For) is not { } owned) return;
-        if (!_session.IsCurrentGame || _ordinaryEvolutionArt is null ||
-            !ReferenceEquals(LostCaveOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
+        if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
+        if (!_session.IsCurrentGame || _ordinaryEvolutionArt is null)
             throw new InvalidDataException("GiftEgg presentation requires its authenticated Lost Cave predecessor.");
         var art = PretGiftEggPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)

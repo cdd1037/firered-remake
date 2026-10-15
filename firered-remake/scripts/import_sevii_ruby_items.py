@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Derive Ruby keys and HM06/118-species teaching from pinned local source only."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import  json, re
 from pathlib import Path
 from machine_catalog import admission_view, compatibility_additions
@@ -16,7 +17,7 @@ def metadata(symbol):
  i=next(i for i in source_items if i['itemId']==symbol)
  match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
  r=ref('src/data/items.json',symbol,line,line)
- value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
+ value=shared_item(symbol)
  return dict(item=value,description=i['description_english'].replace('\\n','\n'))
 move_constants=source('include/constants/moves.h')
 assert re.search(r'^#define\s+MOVE_ROCK_SMASH\s+249\b',move_constants,re.M)
@@ -27,7 +28,7 @@ assert next(i for i in source_items if i['itemId']=='ITEM_HM06')['moveId']=='Roc
 items=[metadata(s) for s in ['ITEM_RUBY','ITEM_RAINBOW_PASS','ITEM_HM06','ITEM_DIRE_HIT','ITEM_FIRE_STONE']]
 new=[]
 for m in [items[0],items[1],items[3],items[4]]:
- i=m['item'];new.append({k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=m['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i))
+ i=m['item'];new.append(dict(item=i)|dict(description=m['description'], healHp=0, cureStatus=0, effectBytes=[], useSupport=10))
 effect_path=ROOT/'content/raw/pokefirered/037335f4/src/data/pokemon/item_effects.h'
 effects=effect_path.read_bytes()
 # Independently pinned source assigns Dire Hit at byte0 and the shared friendship suffix.
@@ -46,5 +47,5 @@ hm=admission_view(ROOT, 'content/generated/sevii-ruby-items/items.json', '/hm06'
 assert len(hm['species'])==118
 OUT.mkdir(parents=True,exist_ok=True)
 document=dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-items-v1',items=items,additions=new,machineAdditions=additions,hm06=hm)
-output=(json.dumps(document,ensure_ascii=False,indent=2)+'\n').encode();(OUT/'items.json').write_bytes(output)
-print(json.dumps(dict(),indent=2))
+output=(json.dumps(document,ensure_ascii=False,indent=2, default=item_json)+'\n').encode();(OUT/'items.json').write_bytes(output)
+print(json.dumps(dict(),indent=2, default=item_json))

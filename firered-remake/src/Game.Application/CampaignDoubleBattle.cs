@@ -42,8 +42,7 @@ public sealed record CampaignDoubleBattleHistory(string Id, string TrainerId, Wi
 
 public sealed partial class CampaignSession
 {
-    private PokemonCatalog DoubleBattlePokemon => _content.PresetDoublePokemon ??
-        throw new InvalidDataException("preset_double_content_missing");
+    private PokemonCatalog DoubleBattlePokemon => _binding.Ownership.Mechanics.Catalog;
     private SourceTwinsTrainerDefinition TwinsDefinition => _content.Route8Twins ??
         throw new InvalidDataException("preset_double_definition_missing");
     private bool IsRoute16FlyDoubleScript(string script) =>
@@ -87,33 +86,33 @@ public sealed partial class CampaignSession
             battleScript is not null&&IsSeafoamDoubleScript(battleScript)?
             SeafoamDoubleTrainerEncounter.Begin(_content.SeafoamTrainers!,_content.SeafoamOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_binding.Ownership):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             battleScript is not null&&IsSevenIslandDoubleScript(battleScript)?
             SevenIslandDoubleTrainerEncounter.Begin(_content.SevenIslandTrainers!,_content.SevenIslandOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_binding.Ownership):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             battleScript is not null&&IsSixIslandDoubleScript(battleScript)?
             SixIslandDoubleTrainerEncounter.Begin(_content.SixIslandTrainers!,_content.SixIslandOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_content.FiveIslandEnabled?SafariOrdinaryOwnership:null):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             battleScript is not null&&IsSeviiRubyDoubleScript(battleScript)?
             SeviiRubyDoubleTrainerEncounter.Begin(_content.SeviiRubyTrainers!,_content.SeviiRubyOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_content.FourIslandEnabled?SafariOrdinaryOwnership:null):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             battleScript is not null&&IsVictoryRoadDoubleScript(battleScript)?
             VictoryRoadDoubleTrainerEncounter.Begin(_content.VictoryRoadTrainerParties!,_content.CinnabarOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_content.SeviiRubyEnabled?SafariOrdinaryOwnership:null):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)?
             FirstSeviiDoubleTrainerEncounter.Begin(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,battleScript,FirstSeviiDoubleScript(battleScript).Source.StartLine,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_content.SeviiRubyEnabled?SafariOrdinaryOwnership:null):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             battleScript is not null&&IsCinnabarDoubleScript(battleScript)?
             CinnabarDoubleTrainerEncounter.Begin(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_content.SeviiRubyEnabled?SafariOrdinaryOwnership:null):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             SourceTwinsTrainerEncounter.Begin(DoubleBattlePokemon,TwinsDefinition,party,state.World.Rng,
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),successorOwned:_content.SeviiRubyEnabled?SafariOrdinaryOwnership:null);
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"));
         if(!entry.Succeeded)throw new InvalidDataException(entry.Fault);
         // This successor still accepts only the original local gifts/captures. Its stable
         // schema has no infection or trade route. ValidatePlayerSave enforces that closed
@@ -248,7 +247,7 @@ public sealed partial class CampaignSession
                 var invalid=ValidateBattleMedicineCommand(state,command with{PartyIndex=target});
                 if(invalid is not null)return No(invalid);
                 if(command.MoveSlot is < -1 or >3)return No("source_item_pp_slot");
-                var medicine=SourceFourMedicineRules.Select(_content.PresetDoubleItems!,_content.PresetDoubleMechanics!,
+                var medicine=SourceFourMedicineRules.Select(_content.PresetDoubleItems!,_binding.Ownership.Mechanics,
                     frame,frame.Revision,cell.Occupant!.Value,state.Inventory!,state.Party,
                     new(new ItemId(command.Text!),command.TargetInstanceId!.Value,command.MoveSlot<0?null:command.MoveSlot),
                     _content.MapDefinition(state.World.Player.MapId).RegionMapSection);

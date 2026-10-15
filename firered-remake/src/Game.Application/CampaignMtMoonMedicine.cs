@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
         var inventoryError = ValidateCampaignInventory(state.Inventory);
         if (inventoryError is not null) return No(inventoryError);
         var result = MtMoonFieldMedicineRules.Use(ShopCatalog, _content.PokemonContent!,
-            ShopInventoryView(state.Inventory), state.Party[command.PartyIndex], new ItemId(command.Text),
+            state.Inventory, state.Party[command.PartyIndex], new ItemId(command.Text),
             command.MoveSlot == -1 ? null : command.MoveSlot);
         if (!result.Succeeded)
             return result.Error == "medicine_no_effect"
@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
         _ = _content.TextPages(symbol); // Fail before consuming if presentation data is missing.
         return new(CommandStatus.Accepted, state with
         {
-            Inventory = MergeShopInventory(state.Inventory, result.Inventory),
+            Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             TextBuffers = result.HpRestored > 0 ? state.TextBuffers
                 .SetItem("STR_VAR_1", result.Pokemon.Nickname)

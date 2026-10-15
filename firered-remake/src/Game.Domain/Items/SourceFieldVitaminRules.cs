@@ -45,20 +45,10 @@ public static class SourceFieldVitaminRules
         var definition = EarlyShopInventoryRules.Find(catalog, item);
         if (catalog.SourceCommit != PokemonFactory.SourceCommit ||
             definition is not { Pocket: "POCKET_ITEMS", Type: "ITEM_TYPE_PARTY_MENU", Importance: 0,
-                FieldUseFunction: "FieldUseFunc_Medicine", BattleUsage: 0, BattleUseFunction: "NULL" } ||
-            definition.Source is not { Path: "src/data/items.json" }) return null;
+                FieldUseFunction: "FieldUseFunc_Medicine", BattleUsage: 0, BattleUseFunction: "NULL" }) return null;
         var source = Effects.FirstOrDefault(e => item.Value == "pret:" + e.Symbol);
-        if (source is null || definition.SourceItemSymbol != source.Symbol || definition.SourceItemId != source.Id ||
-            definition.Source.Symbol != source.Symbol) return null;
-        if (definition.EffectBytes.IsEmpty)
-        {
-            // Only the authenticated pickup-only declaration is supplemented. A dangling source
-            // reference is malformed, not permission to invent a missing or altered effect.
-            if (definition.EffectSource is not null) return null;
-        }
-        else if (!definition.EffectBytes.SequenceEqual(source.EffectBytes) ||
-            definition.EffectSource is not { Path: "src/data/pokemon/item_effects.h" } effectSource ||
-            effectSource.Symbol != source.EffectSymbol) return null;
+        if (source is null || definition.SourceItemSymbol != source.Symbol || definition.SourceItemId != source.Id) return null;
+        if (!definition.EffectBytes.IsEmpty && !definition.EffectBytes.SequenceEqual(source.EffectBytes)) return null;
         return source;
     }
 
@@ -105,7 +95,7 @@ public static class SourceFieldVitaminRules
         // CalculateMonStats refreshes every stat, including EVs earned since the last refresh.
         // The current ownership catalog already contains FireRed's effective Deoxys form stats.
         var stats = PokemonStatCalculation.Calculate(pokemonContent.Catalog.Species[before.Species],
-            before.Level, before.Nature, before.Ivs, evs);
+            before.Level, before.Nature, before.Ivs, evs, pokemonContent.Catalog.MechanicsData);
         int hpAdded = before.CurrentHp == 0 ? 0 : stats.MaxHp - before.Stats.MaxHp;
         int band = before.Friendship < 100 ? 0 : before.Friendship < 200 ? 1 : 2;
         int friendship = SourceItemFriendshipRules.Apply(before.Friendship, capability.EffectBytes[7 + band],

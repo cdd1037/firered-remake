@@ -32,11 +32,11 @@ public sealed partial class CampaignSession
             var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))throw new InvalidDataException("cerulean_tm_reward_context");
-            if(effect.Opcode=="checkitemspace")result=PewterMachineRules.CanAddMachine(machines,inventory,MistyMachine)?1:0;
+            if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(machines,inventory,MistyMachine)?1:0;
             else
             {
                 if(state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM03_FROM_MISTY"))throw new InvalidDataException("cerulean_tm_already_received");
-                var added=PewterMachineRules.AddMachine(machines,inventory,MistyMachine);next=state with{Inventory=added.State};result=added.Succeeded?1:0;
+                var added=MachineRules.AddMachine(machines,inventory,MistyMachine);next=state with{Inventory=added.State};result=added.Succeeded?1:0;
             }
         }
         next=next with{Script=next.Script with{Variables=next.Script.Variables.SetItem("VAR_RESULT",result)}};return true;

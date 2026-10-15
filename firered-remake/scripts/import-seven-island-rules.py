@@ -2,6 +2,7 @@
 """Import exact Seven Island battle catalogs from pinned Git blobs, without running upstream code.
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
 import re
@@ -111,10 +112,6 @@ def generate(reference, dependency):
     trainer_only=['SPECIES_GIRAFARIG','SPECIES_HITMONTOP','SPECIES_MILTANK','SPECIES_PINECO','SPECIES_SMEARGLE','SPECIES_URSARING']
     need(len(previous_owned)==139 and len(previous_opponents)==168,'Exact Cave/Rematch predecessor')
     need(len(previous_owned|set(additions))==146 and len(previous_opponents|set(additions)|set(trainer_only))==180,'Exact Seven closure')
-    for name in additions+trainer_only:
-        original=species[name];meta=metadata[name]
-        for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[e['source'] for e in meta['sourceEvolutions']]:
-            read(sr['path'])
     edges=[]
     for name,level,target in [('SPECIES_PHANPY',25,'SPECIES_DONPHAN'),('SPECIES_LARVITAR',30,'SPECIES_PUPITAR'),('SPECIES_PUPITAR',55,'SPECIES_TYRANITAR')]:
         e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']==identity(target),'Source evolution')
@@ -152,7 +149,7 @@ def generate(reference, dependency):
     admitted={s['species'] for e in encounters for kind in ['land_mons','water_mons','rock_smash_mons','fishing_mons'] for s in e.get(kind,{}).get('mons',[])[:2 if kind=='fishing_mons' else None]}
     need(admitted-previous_owned=={'SPECIES_PHANPY','SPECIES_LARVITAR','SPECIES_SKARMORY','SPECIES_UNOWN'},'Minimal direct wild additions')
     all_wild={s['species'] for e in encounters for kind in ['land_mons','water_mons','rock_smash_mons','fishing_mons'] for s in e.get(kind,{}).get('mons',[])}
-    held=[dict(species=identity(s),common=metadata[s]['originalFields']['itemCommon'],rare=metadata[s]['originalFields']['itemRare']) for s in sorted(all_wild)]
+    held=[dict(species=identity(s),common=metadata[s]['itemCommon'],rare=metadata[s]['itemRare']) for s in sorted(all_wild)]
     cells=compatibility_additions(ROOT, 'content/generated/seven-island-rules/machines.json')
     need(len(cells)==39, 'Exact admitted machine scope')
     dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
@@ -173,7 +170,7 @@ def generate(reference, dependency):
             cases.append(dict(trainer=team['trainer'],initialSeed=initial,finalSeed=seed,draws=len(raw_draws),rawDraws=raw_draws,originalTrainerIds=ots))
     docs={
       'trainers.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-trainers-v1',completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-owned-pokemon-v1',previousOwnedSpeciesCount=139,ownedSpeciesCount=146,previousOpponentSpeciesCount=168,opponentSpeciesCount=180,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=trainer_only,evolutionEdges=edges,species=[dict(definition=species[s],metadata=metadata[s]) for s in additions+trainer_only]),
+      'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-owned-pokemon-v1',previousOwnedSpeciesCount=139,ownedSpeciesCount=146,previousOpponentSpeciesCount=168,opponentSpeciesCount=180,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=trainer_only,evolutionEdges=edges,species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']),metadata=metadata[s]) for s in additions+trainer_only]),
       'rules.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',identities=identities,generationCases=cases,trainerActors=actors),
       'encounters.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-encounters-v1',sourcePath='src/data/wild_encounters.json',encounters=encounters,fields=fields,heldItems=held,runtimeMethods=['land','surf','oldRod'],retainedMetadataOnlyMethods=['rockSmash','goodRod','superRod']),
       'machines.json':dict(sourceCommit=COMMIT,profile='firered-seven-island-teaching-v1',previousSpeciesCount=139,speciesCount=146,machineCount=39,additions=cells,itemsAdded=[]),
@@ -184,16 +181,16 @@ def generate(reference, dependency):
      i=next(i for i in source_items if i['itemId']==symbol)
      match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
      r=dict(path='src/data/items.json',symbol=symbol,startLine=line,endLine=line)
-     value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
+     value=shared_item(symbol)
      return dict(item=value,description=i['description_english'].replace('\\n','\n'))
     new_items=[]
     for m in [item_metadata(n) for n in ['ITEM_KINGS_ROCK','ITEM_LUCKY_PUNCH','ITEM_HEART_SCALE']]:
         i=m['item']
-        new_items.append({k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=m['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i))
+        new_items.append(dict(item=i)|dict(description=m['description'], healHp=0, cureStatus=0, effectBytes=[], useSupport=10))
     shop_path='data/maps/SevenIsland_Mart/scripts.inc'
     stock=one(shop_path,r'^SevenIsland_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)')
     stock_items=re.findall(r'\t\.2byte (ITEM_\w+)',stock[1]);need(stock_items.pop()=='ITEM_NONE' and len(stock_items)==9,'Source nine-item shop')
-    shop=dict(id='SevenIsland_Mart_Items',items=[identity(s) for s in stock_items],source=ref(shop_path,'SevenIsland_Mart_Items',stock))
+    shop=dict(id='SevenIsland_Mart_Items',items=[identity(s) for s in stock_items])
     flags=read('include/constants/flags.h')
     def flag_value(symbol):
         m=re.search(r'^#define\s+'+symbol+r'\s+([^\n]+)',flags,re.M);need(m,'Pickup flag')
@@ -226,11 +223,11 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--dependency-root',required=True,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency_root)
-    files={'content/generated/seven-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
+    files={'content/generated/seven-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False, default=item_json)+'\n').encode() for n,d in docs.items()}
     lock=dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=18,battles=20,owned=146,opponents=180,machines=39),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=18,battles=20,owned=146,opponents=180,machines=39),indent=2, default=item_json))
 if __name__=='__main__':main()

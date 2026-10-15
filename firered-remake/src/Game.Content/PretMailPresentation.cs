@@ -25,10 +25,10 @@ public sealed class PretMailPresentation
     public ImmutableDictionary<string, string> Texts { get; }
     public JsonElement EasyChat { get; }
 
-    private PretMailPresentation(JsonElement document, ImmutableDictionary<string, byte[]> files)
+    private PretMailPresentation(JsonElement document, ImmutableDictionary<string, byte[]> files, SharedItemCatalog items)
     {
         Stationery = Parse<ImmutableArray<MailStationery>>(document.GetProperty("stationery"));
-        Items = Parse<ImmutableArray<EarlyShopItemDefinition>>(document.GetProperty("items"));
+        Items = document.GetProperty("items").Deserialize<ImmutableArray<EarlyShopItemDefinition>>(items.CreateJsonOptions());
         Assets = Parse<ImmutableArray<MailPresentationAsset>>(document.GetProperty("assets")).ToImmutableDictionary(a => a.Id, StringComparer.Ordinal);
         Texts = Parse<ImmutableArray<NpcTradeMailText>>(document.GetProperty("texts")).ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
         PngFiles = files; EasyChat = document.GetProperty("easyChat").Clone();
@@ -52,8 +52,6 @@ public sealed class PretMailPresentation
     public MailStationery Paper(ushort itemId) => Stationery.Single(p => p.ItemId == itemId);
     public MailPresentationAsset Background(ushort itemId, int gender) => gender is 0 or 1
         ? Assets[Paper(itemId).BackgroundIds[gender]] : throw new ArgumentOutOfRangeException(nameof(gender));
-    public OrdinaryItemInventoryCatalog AppendInventory(EarlyShopCatalog predecessor) =>
-        OrdinaryItemInventoryCatalog.AppendMailStationery(predecessor, Items);
 
     /// <summary>Original conversion omits the separator after FFFF. Empty/space-first lines do not advance the printer.</summary>
     public ImmutableArray<MailReaderLine> ReaderLines(ushort itemId, ImmutableArray<ushort> words, Func<ushort, string> wordText)
@@ -85,7 +83,7 @@ public sealed class PretMailPresentation
         return mailSpecies is > 0 and < 412 ? mailSpecies : null;
     }
 
-    public static PretMailPresentation Load(string projectRoot, string? dependencyRoot = null)
+    public static PretMailPresentation Load(string projectRoot, string? dependencyRoot = null, SharedItemCatalog? items = null)
     {
         dependencyRoot ??= projectRoot;
         var doc = SafariSource.Parse<JsonElement>(SafariSource.Read(projectRoot, Base + "catalog.json"));
@@ -94,6 +92,6 @@ public sealed class PretMailPresentation
         {
             png.Add(asset.Id, SafariSource.Read(asset.PngPath.StartsWith(Base, StringComparison.Ordinal) ? projectRoot : dependencyRoot, asset.PngPath));
         }
-        return new(doc, png.ToImmutable());
+        return new(doc, png.ToImmutable(), items ?? SharedItemCatalog.LoadProject(dependencyRoot));
     }
 }

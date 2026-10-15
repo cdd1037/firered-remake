@@ -15,7 +15,7 @@ public partial class CampaignView
         if (!_session.IsCurrentGame || !_catalog.FossilLabEnabled)
             throw new InvalidDataException("Seafoam requires its current Fossil Lab presentation predecessor.");
         var art = PretSeafoamPresentation.Load(_root);
-        _earlyItemIcons.Add(Game.Domain.Items.SeafoamShopCatalog.WaterStoneId, ItemTexture(PretSeafoamItems.LoadDocument(_root).Icons[0]));
+        _earlyItemIcons.Add(Game.Domain.Items.ItemIds.WaterStoneId, ItemTexture(PretSeafoamItems.LoadDocument(_root).Icons[0]));
         Texture2D Pixels(JsonElement row)
         {
             using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());

@@ -12,11 +12,9 @@ public sealed partial class PretCampaignCatalog
 {
     public PretFossilLabRegion FossilLabRegion { get; }
     public bool FossilLabEnabled => FossilLabRegion is not null;
-    public FossilLabOwnedPokemonCatalog FossilLabOwnership { get; }
-    public FossilLabOpponentPokemonCatalog FossilLabOpponents { get; }
-    public FossilLabMachineCatalog FossilLabMachines { get; }
-    public FossilLabShopCatalog FossilLabShop { get; }
-
+    public GamePokemonCatalog FossilLabOwnership { get; }
+    public GameOpponentPokemonCatalog FossilLabOpponents { get; }
+    public MachineCatalog FossilLabMachines { get; }
 
     private static void ValidateFossilLabComposition(PretFossilLabRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {

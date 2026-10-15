@@ -20,12 +20,8 @@ public sealed partial class PretCampaignCatalog
         SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) ||
         IsCurrentStaticWarpResolved(map, sourceWarpId);
 
-
-
     private static void ValidateSnorlaxComposition(ImmutableDictionary<MapId, PretWorldMap> maps,CampaignPokemonContent pokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {
-        if (pokemon.Catalog.Species.Count != 102 || pokemon.Catalog.Moves.Count != 240)
-            throw new InvalidDataException("snorlax_campaign_composition_scope");
         foreach (var route in new[] { "Route12","Route16" })
         {
             var program = scripts.FindProgram(route + "_EventScript_Snorlax")

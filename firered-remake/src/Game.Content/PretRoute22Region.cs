@@ -71,7 +71,7 @@ public sealed class PretRoute22Region
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/route22-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -145,4 +145,3 @@ public sealed class PretRoute22Region
         return result;
     }
 }
-

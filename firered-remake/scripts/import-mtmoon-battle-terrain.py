@@ -64,11 +64,6 @@ def reference(lock, sources, path, symbol, needle):
     source = sources[path].decode()
     if source.count(needle) != 1:
         raise ValueError('Missing/ambiguous source semantics: ' + symbol)
-    first = source.count('\n', 0, source.index(needle)) + 1
-    last = first + needle.count('\n')
-    entry = next(e for e in lock['files'] if e['path'] == path)
-    return dict(path=path, symbol=symbol, startLine=first, endLine=last,
-                url=entry['sourceUrl'] + f'#L{first}-L{last}')
 
 
 def semantics(lock, sources):
@@ -97,11 +92,12 @@ def semantics(lock, sources):
         ('tools/gbagfx/gfx.c', 'RGB8 to RGB5', '#define DOWNCONVERT_BIT_DEPTH(x) ((x) / 8)'),
     ]
     ui.require(sources['tools/gbagfx/convert_png.c'].decode(), '% (1 << destBitDepth)')
-    return [reference(lock, sources, *check) for check in checks]
+    for check in checks:
+        reference(lock, sources, *check)
 
 
 def convert(lock, sources):
-    refs = semantics(lock, sources)
+    semantics(lock, sources)
     source_png = sources[TERRAIN + 'terrain.png']
     width, height, indices, _ = ui.indexed_png(source_png)
     if (width, height) != (64, 88):
@@ -143,7 +139,7 @@ def convert(lock, sources):
                        textureFilter='nearest', preferredTexture='background-scene',
                        drawBefore=['battler sprites', 'healthboxes', 'menus'],
                        groundBasesIncluded=True, additionalGroundBaseTexturesRequired=False),
-                   assets=assets, sourceRefs=refs, inputs=lock['files'], limitations=[
+                   assets=assets,  inputs=lock['files'], limitations=[
                        'Settled ordinary Mt. Moon cave-floor singles only; no entry animation or palette fades.',
                        'The BG3 source already contains both cave ground bases; do not draw duplicate bases.',
                        'Full background retains source transparency below y=112; menus are drawn separately.',

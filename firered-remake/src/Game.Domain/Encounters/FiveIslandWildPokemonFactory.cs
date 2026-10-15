@@ -12,7 +12,7 @@ namespace Game.Domain.Encounters;
 public static class FiveIslandWildPokemonFactory
 {
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = FiveIslandEncounterTables.Land.SelectMany(t=>t.Slots).Select(s=>s.Species).Concat(FiveIslandEncounterTables.Water.SelectMany(t=>t.Slots).Select(s=>s.Species)).Concat(FiveIslandOldRodEncounterRules.SourceAdditions.SelectMany(t=>t.Slots).Select(s=>s.Species)).Distinct().ToImmutableArray();
-    public static EarlyLandWildPokemonResult Generate(FiveIslandOwnedPokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -30,7 +30,7 @@ public static class FiveIslandWildPokemonFactory
             pending.Candidate.Level,rng,playerTrainerId);
         return new(result.Pokemon,result.GlobalRng,result.RandomTrace);
     }
-    public static Route1WildPokemonResult GenerateSourceSlot(FiveIslandOwnedPokemonCatalog owned, FiveIslandWildOrigin origin,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, FiveIslandWildOrigin origin,
         byte level, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -46,9 +46,9 @@ public static class FiveIslandWildPokemonFactory
         if (!SourceInitialInstance(owned,origin,result.Pokemon)) throw new InvalidOperationException("five_island_wild_generated_identity");
         return result;
     }
-    public static bool SourceInitialInstance(FiveIslandOwnedPokemonCatalog owned, FiveIslandWildOrigin origin, PokemonInstance mon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, FiveIslandWildOrigin origin, PokemonInstance mon)
     {
-        if (owned is null || !ReferenceEquals(FiveIslandOwnedPokemonCatalog.For(owned.Catalog),owned) || mon is null || origin is null ||
+        if (owned is null || mon is null || origin is null ||
             !FiveIslandWildBattleContract.IsRuntimeKind(origin.Kind) || !FiveIslandWildBattleContract.Matches(origin,mon) || !owned.Catalog.Species.TryGetValue(mon.Species,out var species)) return false;
         var dependency=FiveIslandWildSource.Species.Single(s=>s.Species==mon.Species);
         var moves=FiveIslandWildSource.InitialMoves.Single(s=>s.Species==mon.Species && s.Level==mon.Level).Moves;
@@ -73,9 +73,9 @@ public static class FiveIslandWildPokemonFactory
         var draw=Gen3Rng.Next(rng,"wild-battle.held-item",100);
         return new(HeldItem(species,draw.Trace.Result),draw.State,[draw.Trace]);
     }
-    private static void ValidateOwned(FiveIslandOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(FiveIslandOwnedPokemonCatalog.For(owned.Catalog),owned) || owned.Catalog.Species.Count!=135)
+        if (owned is null)
             throw new ArgumentException("five_island_wild_owned_proof");
     }
 }

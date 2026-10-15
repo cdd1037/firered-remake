@@ -5,5 +5,5 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public MemorialPillarTrainerCatalog? MemorialPillarTrainers { get; private init; }
-    public MemorialPillarOpponentPokemonCatalog? MemorialPillarOpponents { get; private init; }
+    public GameOpponentPokemonCatalog? MemorialPillarOpponents { get; private init; }
 }

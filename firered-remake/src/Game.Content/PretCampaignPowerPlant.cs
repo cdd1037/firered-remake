@@ -8,10 +8,8 @@ public sealed partial class PretCampaignCatalog
 {
     public PretPowerPlantRegion PowerPlantRegion { get; }
     public bool PowerPlantEnabled => PowerPlantRegion is not null;
-    public PowerPlantOwnedPokemonCatalog PowerPlantOwnership { get; }
-    public PowerPlantOpponentPokemonCatalog PowerPlantOpponents { get; }
-    public PowerPlantMachineCatalog PowerPlantMachines { get; }
-    public PowerPlantShopCatalog PowerPlantShop { get; }
-
+    public GamePokemonCatalog PowerPlantOwnership { get; }
+    public GameOpponentPokemonCatalog PowerPlantOpponents { get; }
+    public MachineCatalog PowerPlantMachines { get; }
 
 }

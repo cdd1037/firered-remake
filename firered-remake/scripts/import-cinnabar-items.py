@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Import four Cinnabar item declarations and 31 exact teaching matrices from pinned Git blobs."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 from pathlib import Path
 import argparse,  importlib.util, json, re, sys
 sys.dont_write_bytecode = True
@@ -47,12 +48,7 @@ def convert(source, dependency):
         path = 'src/data/items.json'
         match = one(path, r'^    \{\n      "english": "' + re.escape(item['english']) + r'",.*?^    \}')
         item_ref = ref(path, symbol, match)
-        definition = dict(id=ident(symbol), sourceItemSymbol=symbol, sourceItemId=number('include/constants/items.h', symbol),
-            name=item['english'], price=item['price'], importance=item['importance'], registrability=item['registrability'],
-            pocket=item['pocket'], type=str(item['type']), holdEffect=item['holdEffect'], holdEffectParam=item['holdEffectParam'],
-            fieldUseFunction=item['fieldUseFunc'], battleUsage=item['battleUsage'], battleUseFunction=item['battleUseFunc'],
-            secondaryId=item['secondaryId'], canToss=item['importance'] == 0, canSell=item['price'] != 0,
-            canGive=item['importance'] == 0, source=item_ref)
+        definition = shared_item(symbol)
         declaration = item['description_english'].replace(chr(92) + 'n', chr(10))
         description = declaration
         if short in NEW_MACHINES:
@@ -60,12 +56,12 @@ def convert(source, dependency):
             match = one(path, r'^const u8 gMoveDescription_' + item['moveId'] + r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
             description = json.loads(match[1])
         metadata = dict(item=definition, description=description)
-        definitions.append(dict(metadata=metadata, effectBytes=[], effectSource=None))
+        definitions.append(dict(metadata=metadata, effectBytes=[]))
     path = 'data/maps/CinnabarIsland_Mart/scripts.inc'
     match = one(path, r'^CinnabarIsland_Mart_Items::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)')
     stock = re.findall(r'\.2byte (ITEM_\w+)', match[1])
     need(stock == ['ITEM_ULTRA_BALL', 'ITEM_GREAT_BALL', 'ITEM_HYPER_POTION', 'ITEM_REVIVE', 'ITEM_FULL_HEAL', 'ITEM_ESCAPE_ROPE', 'ITEM_MAX_REPEL', 'ITEM_NONE'], 'Cinnabar Mart source stock differs')
-    mart = dict(id='CinnabarIsland_Mart_Items', items=[ident(s) for s in stock[:-1]], source=ref(path, 'CinnabarIsland_Mart_Items', match))
+    mart = dict(id='CinnabarIsland_Mart_Items', items=[ident(s) for s in stock[:-1]])
     items = dict(schemaVersion=1, profile='firered-cinnabar-items-v1', sourceCommit=COMMIT, items=definitions,
                  mart=mart, limitations=['Only Secret Key extends the inherited ordinary inventory; all predecessor item definitions retain identity.',
                  'TM14, TM22 and TM38 belong in the separate TM Case; item declarations do not grant rewards or implement field scripts.'])
@@ -108,7 +104,7 @@ def main():
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
     print(json.dumps(dict(items=4, shopAdditions=1, machines=31, species=115, inheritedCells=3164, appendedCells=56,
-        newCells=345)))
+        newCells=345), default=item_json))
 
 if __name__ == '__main__':
     main()

@@ -13,8 +13,7 @@ public sealed partial class PretCampaignCatalog
     public PretTrainerTowerRegion TrainerTowerRegion { get; }
     public bool TrainerTowerEnabled => TrainerTowerRegion is not null;
     public TrainerTowerCatalog TrainerTowerCatalog { get; }
-    public TrainerTowerOpponentPokemonCatalog TrainerTowerOpponents { get; }
-    public TrainerTowerShopCatalog TrainerTowerShop { get; }
+    public GameOpponentPokemonCatalog TrainerTowerOpponents { get; }
     private readonly ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), ConnectedFieldMap> _trainerTowerConnectedMaps;
 
     public IFieldMap? TrainerTowerMap(MapId map,TrainerTowerBattleFormat format) =>
@@ -34,14 +33,12 @@ public sealed partial class PretCampaignCatalog
     public string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template,int trainerIndex) =>
         TrainerTowerRegion.EncounterMusic(template, trainerIndex);
 
-
-
-    private static void ValidateTrainerTowerComposition(PretTrainerTowerRegion region, PretStoryCompilation scripts, TrainerTowerCatalog courses, TrainerTowerShopCatalog shop)
+    private static void ValidateTrainerTowerComposition(PretTrainerTowerRegion region, PretStoryCompilation scripts, TrainerTowerCatalog courses, EarlyShopCatalog shop)
     {
         foreach (var kind in Enum.GetValues<TrainerTowerChallengeKind>())
         {
             var course = courses.Course(kind);
-            if (course.Floors.Length != 8 || !shop.Catalog.Items.Any(i => i.SourceItemSymbol == course.PrizeItem))
+            if (course.Floors.Length != 8 || !shop.Items.Any(i => i.SourceItemSymbol == course.PrizeItem))
                 throw new InvalidDataException("trainer_tower_course_prize_binding");
             foreach (var floor in course.Floors)
             {

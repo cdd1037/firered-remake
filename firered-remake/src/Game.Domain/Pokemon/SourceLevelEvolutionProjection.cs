@@ -25,7 +25,7 @@ public static class SourceLevelEvolutionProjection
             if (row.Parameter != row.ParameterValue.ToString(System.Globalization.CultureInfo.InvariantCulture) ||
                 (method == PokemonEvolutionMethod.Friendship ? row.ParameterValue != 0 : row.ParameterValue is < 1 or > 100))
                 throw new ArgumentException("normal_evolution_source_parameter");
-            result.Add(new(row.ParameterValue, row.Target, row.Source) { Method = method.Value });
+            result.Add(new(row.ParameterValue, row.Target) { Method = method.Value });
         }
         return result.ToImmutable();
     }

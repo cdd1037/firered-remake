@@ -14,7 +14,7 @@ public static class NpcTradePokemonFactory
     {
         ArgumentNullException.ThrowIfNull(trades);
         ArgumentNullException.ThrowIfNull(content);
-        if (!ReferenceEquals(NpcTradePokemonCatalog.For(content.Catalog), trades))
+        if (!trades.Definitions.OrderBy(p => p.Key).SequenceEqual(content.Catalog.NpcTrades.OrderBy(p => p.Key)))
             throw new ArgumentException("npc_trade_pokemon_catalog", nameof(content));
         if (!trades.IsEnabled(tradeId) || !trades.Definitions.TryGetValue(tradeId, out var definition))
             throw new NotSupportedException("npc_trade_not_enabled");
@@ -33,16 +33,16 @@ public static class NpcTradePokemonFactory
         // overwrites all six IVs. Keep that real shared call and its two draw purposes intact.
         var created = PokemonFactory.CreateCore(content.Catalog,
             new(definition.ReceivedSpecies, offeredLevel, definition.OriginalTrainerId,
-                IvPolicy.Random, PersonalityPolicy.Fixed(definition.Personality)), rng, trades.Mechanics);
+                IvPolicy.Random, PersonalityPolicy.Fixed(definition.Personality)), rng, content.Catalog.MechanicsData);
         var stats = PokemonStatCalculation.Calculate(species, offeredLevel, created.Pokemon.Nature,
-            definition.Ivs, SixStats.Zero, trades.Mechanics);
+            definition.Ivs, SixStats.Zero, content.Catalog.MechanicsData);
         var pokemon = created.Pokemon with
         {
             Ivs = definition.Ivs, Stats = stats, CurrentHp = stats.MaxHp,
             AbilitySlot = definition.AbilitySlot,
             AbilityId = definition.AbilitySlot == 0 ? species.Ability1 : species.Ability2,
             Friendship = 70,
-            NpcTradeOrigin = new(tradeId, NpcTradePokemonCatalog.SemanticSha256, offeredLevel),
+            NpcTradeOrigin = new(tradeId, offeredLevel),
             ContestConditions = definition.ContestConditions
         };
         var owned = new PartyPokemon(instanceId, pokemon, definition.Nickname, definition.OriginalTrainerName,

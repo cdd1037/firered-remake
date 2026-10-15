@@ -72,7 +72,7 @@ public static class TrainerPartyFactory
             result.Add(new(created.Pokemon, member.HeldItem));
         }
         var createdParty = new TrainerPartyCreationResult(trainer, result.MoveToImmutable(), rng, trace.ToImmutable());
-        return createdParty with { Receipt = SourceTrainerPartyReceipt.Create(pokemon, createdParty) };
+        return createdParty with { Roster = TrainerEncounterRoster.Create(pokemon, createdParty) };
     }
 
     public static void ValidateCatalog(TrainerCatalog catalog)

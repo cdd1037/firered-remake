@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Import the four local Trainer Tower courses from pinned Git blobs, without running upstream code."""
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import ast
 import json
@@ -231,11 +232,6 @@ def generate(reference, dependency):
                 stats=dict(maxHp=computed[0],attack=computed[1],defense=computed[2],speed=computed[3],specialAttack=computed[4],specialDefense=computed[5]),
                 maximumPp=[moves[m['value'][5:]]['pp'] for m in mon['moves']],creationRandomDraws=0))
     need(len(mismatches)==22 and len(shinies)==3, 'Exact fixed-identity exceptions')
-    for s in used_species:
-        for r in [species[s]['source'],species[s]['learnsetSource']]:
-            read(r['path'])
-    for m in used_moves:
-        r=moves[m]['source'];read(r['path'])
     mechanics=[]
     for p,symbol,pattern in [
         ('src/trainer_tower.c','BuildEnemyParty',r'^static void BuildEnemyParty\(void\)\n\{.*?^\}'),
@@ -260,20 +256,14 @@ def generate(reference, dependency):
     item_path='src/data/items.json';source_items=json.loads(read(item_path))['items'];symbol='ITEM_METAL_COAT'
     i=next(i for i in source_items if i['itemId']==symbol)
     m=one(item_path,r'"itemId":\s*"'+symbol+r'"');r=matchref(item_path,symbol,m)
-    meta=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number(symbol),name=i['english'],price=i['price'],
-        importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),
-        holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],
-        battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],
-        canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
-    metal={k:meta[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction',
-        'battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=i['description_english'].replace('\\n','\n'),
-        healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=meta)
+    meta=shared_item(symbol)
+    metal=dict(item=meta)|dict(description=i['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=[], useSupport=10)
     lobby='data/maps/TrainerTower_Lobby/scripts.inc'
     stock=one(lobby,r'^TrainerTower_Lobby_Mart_Items::\n(?:\t.2byte ITEM_\w+\n)+')
     stock_symbols=re.findall(r'ITEM_\w+',stock[0]);need(stock_symbols[-1]=='ITEM_NONE','Terminated lobby stock')
     need(stock_symbols[:-1]==['ITEM_ULTRA_BALL','ITEM_GREAT_BALL','ITEM_FULL_RESTORE','ITEM_MAX_POTION','ITEM_HYPER_POTION',
         'ITEM_REVIVE','ITEM_FULL_HEAL','ITEM_ESCAPE_ROPE','ITEM_MAX_REPEL'],'Original nine lobby items')
-    shop=dict(id='TrainerTower_Lobby_Mart_Items',items=[ident(s) for s in stock_symbols[:-1]],source=matchref(lobby,'TrainerTower_Lobby_Mart_Items',stock))
+    shop=dict(id='TrainerTower_Lobby_Mart_Items',items=[ident(s) for s in stock_symbols[:-1]])
     item_document=dict(sourceCommit=COMMIT,profile='firered-trainer-tower-inventory-v1',previousItemCount=123,itemCount=124,
         additions=[metal],shop=shop,
         prizes=[dict(course=c['kind'],item=ident(c['prizeItem']),sourceItemId=c['sourcePrizeItemId'],quantity=1) for c in courses])
@@ -289,7 +279,7 @@ def generate(reference, dependency):
         aiFlags=number('AI_SCRIPT_CHECK_BAD_MOVE')|number('AI_SCRIPT_TRY_TO_FAINT')|number('AI_SCRIPT_CHECK_VIABILITY'),
         mechanicsSources=mechanics,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     outputs={'catalog.json':dict(metadata=metadata,local=local),
-        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-trainer-tower-opponents-v1',ownedSpeciesAdded=[],opponentSpecies=[species[s] for s in missing]),
+        'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-trainer-tower-opponents-v1',ownedSpeciesAdded=[],opponentSpecies=[dict(id=species[s]['id'],evolutions=species[s]['evolutions']) for s in missing]),
         'creation-vectors.json':dict(sourceCommit=COMMIT,profile=PROFILE,levels=[1,50,100],vectors=vectors),
         'items.json':item_document}
     return outputs,raw
@@ -299,7 +289,7 @@ def main():
     p.add_argument('reference',type=Path);p.add_argument('output',type=Path)
     p.add_argument('--dependency-root',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()
     docs,raw=generate(a.reference,a.dependency_root or a.output)
-    files={BASE+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
+    files={BASE+n:(json.dumps(d,indent=2,ensure_ascii=False, default=item_json)+'\n').encode() for n,d in docs.items()}
     files.update({RAW+n:data for n,data in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile=PROFILE,
         files=[dict(path=p) for p,b in sorted(files.items())])
@@ -307,5 +297,5 @@ def main():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,courses=4,floors=32,usedMembers=74,sourceInputs=len(raw),files=len(files)),indent=2))
+    print(json.dumps(dict(checked=a.check,courses=4,floors=32,usedMembers=74,sourceInputs=len(raw),files=len(files)),indent=2, default=item_json))
 if __name__=='__main__':main()

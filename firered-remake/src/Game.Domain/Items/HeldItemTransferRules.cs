@@ -9,13 +9,13 @@ public sealed record HeldItemTransferResult(InventoryState Inventory, PartyPokem
 /// Immutable results make the source rollback atomic; no creature regeneration or RNG.</summary>
 public static class HeldItemTransferRules
 {
-    public static bool CanHold(EarlyShopCatalog catalog, ItemId item, PewterMachineCatalog? machines = null)
+    public static bool CanHold(EarlyShopCatalog catalog, ItemId item, MachineCatalog? machines = null)
     {
         EarlyShopInventoryRules.ValidateCatalog(catalog);
         if (machines is not null)
         {
-            PewterMachineRules.ValidateCatalog(machines);
-            if (PewterMachineRules.Definition(machines, item) is {} machine)
+            MachineRules.ValidateCatalog(machines);
+            if (MachineRules.Definition(machines, item) is {} machine)
                 // tm_case.c IS_HM uses source importance, not the move or item name.
                 return machine.Machine.Item is { Importance: 0, Pocket: "POCKET_TM_CASE" };
         }
@@ -25,13 +25,13 @@ public static class HeldItemTransferRules
     }
 
     public static HeldItemTransferResult Give(EarlyShopCatalog catalog, InventoryState inventory,
-        PartyPokemon pokemon, ItemId item, bool fromPc, bool exchangeConfirmed, PewterMachineCatalog? machines = null)
+        PartyPokemon pokemon, ItemId item, bool fromPc, bool exchangeConfirmed, MachineCatalog? machines = null)
     {
         HeldItemTransferResult No(string error) => new(inventory, pokemon, false, error);
         if (ValidateInventory(catalog, inventory, machines) is {} invalid) return No(invalid);
         if (pokemon.IsEgg || pokemon.Mail != 255 || PokemonStorageRules.IsMailItem(pokemon.HeldItem)) return No("held_item_mail_or_egg_unsupported");
         if (!CanHold(catalog, item, machines)) return No("held_item_not_holdable");
-        var machine = machines is null ? null : PewterMachineRules.Definition(machines, item);
+        var machine = machines is null ? null : MachineRules.Definition(machines, item);
         // The existing PC service admits ordinary stacks only. TM CASE is a Bag pocket.
         if (machine is not null && fromPc) return No("held_item_not_holdable");
         var definition = machine is null ? EarlyShopInventoryRules.Find(catalog, item) : null;
@@ -51,20 +51,20 @@ public static class HeldItemTransferRules
         return new(removed, pokemon with { HeldItem = machine?.Machine.Item.SourceItemSymbol ?? definition!.SourceItemSymbol }, true, null);
     }
 
-    public static HeldItemTransferResult Take(EarlyShopCatalog catalog, InventoryState inventory, PartyPokemon pokemon, PewterMachineCatalog? machines = null)
+    public static HeldItemTransferResult Take(EarlyShopCatalog catalog, InventoryState inventory, PartyPokemon pokemon, MachineCatalog? machines = null)
     {
         if (ValidateInventory(catalog, inventory, machines) is {} error) return new(inventory, pokemon, false, error);
         return ReturnToBag(catalog, inventory, pokemon, machines);
     }
 
-    internal static string? ValidateInventory(EarlyShopCatalog catalog, InventoryState inventory, PewterMachineCatalog? machines)
+    internal static string? ValidateInventory(EarlyShopCatalog catalog, InventoryState inventory, MachineCatalog? machines)
     {
         if (machines is null) return EarlyShopInventoryRules.Validate(catalog, inventory);
-        return PewterMachineRules.Validate(machines, inventory) ??
-            EarlyShopInventoryRules.Validate(catalog, PewterMachineRules.WithoutMachines(inventory));
+        return MachineRules.Validate(machines, inventory) ??
+            EarlyShopInventoryRules.Validate(catalog, inventory);
     }
 
-    private static HeldItemTransferResult ReturnToBag(EarlyShopCatalog catalog, InventoryState inventory, PartyPokemon pokemon, PewterMachineCatalog? machines)
+    private static HeldItemTransferResult ReturnToBag(EarlyShopCatalog catalog, InventoryState inventory, PartyPokemon pokemon, MachineCatalog? machines)
     {
         HeldItemTransferResult No(string error) => new(inventory, pokemon, false, error);
         if (pokemon.IsEgg || pokemon.Mail != 255 || PokemonStorageRules.IsMailItem(pokemon.HeldItem)) return No("held_item_mail_or_egg_unsupported");
@@ -76,13 +76,13 @@ public static class HeldItemTransferRules
     /// <summary>Returns one already-owned held item to its source Bag pocket, including the TM CASE.
     /// Shared by party TAKE and the transient PC item cursor; it never creates a Pokemon or item stock.</summary>
     public static InventoryTransactionResult ReturnItemToBag(EarlyShopCatalog catalog, InventoryState inventory,
-        ItemId item, PewterMachineCatalog? machines = null)
+        ItemId item, MachineCatalog? machines = null)
     {
         InventoryTransactionResult No(string error) => new(inventory, false, error);
         if (ValidateInventory(catalog, inventory, machines) is {} invalid) return No(invalid);
         if (!CanHold(catalog, item, machines)) return No("held_item_not_holdable");
-        if (machines is not null && PewterMachineRules.Definition(machines, item) is not null)
-            return PewterMachineRules.AddMachine(machines, inventory, item);
+        if (machines is not null && MachineRules.Definition(machines, item) is not null)
+            return MachineRules.AddMachine(machines, inventory, item);
         var definition = EarlyShopInventoryRules.Find(catalog, item)!;
         var pocket = EarlyShopInventoryRules.Pocket(inventory, definition);
         int count = OpeningInventoryRules.Quantity(pocket, item);

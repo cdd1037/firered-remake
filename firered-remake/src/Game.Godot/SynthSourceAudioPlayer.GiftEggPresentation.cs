@@ -6,11 +6,8 @@ using Game.Domain.Pokemon;
 public partial class SynthSourceAudioPlayer
 {
     /// <summary>Bind two missing normal cries after current audio, preserving the existing Togepi cue. The shared source sample pack stays unchanged.</summary>
-    public void RegisterGiftEggCues(GiftEggOwnedPokemonCatalog owned, string root, string? inheritedRoot = null)
+    public void RegisterGiftEggCues(GamePokemonCatalog owned, string root, string? inheritedRoot = null)
     {
-        if (!ReferenceEquals(GiftEggOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(LostCaveOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
-            throw new InvalidDataException("GiftEgg audio requires the authenticated owned catalog and predecessor.");
         var art = PretGiftEggPresentation.Load(root, inheritedRoot);
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };

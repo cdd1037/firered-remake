@@ -119,12 +119,7 @@ def import_catalog(raw, out):
     catalog = dict(sourceCommit=COMMIT, profile=PROFILE, completeItemCatalog=False,
                    limits=dict(bagItemSlots=bag_slots, pcItemSlots=pc_slots, maximumStack=limits[0]),
                    initialPcItems=[dict(item={'value': 'pret:ITEM_POTION'}, quantity=1)],
-                   potion=dict(id={'value': 'pret:ITEM_POTION'}, sourceItemId=source_id, name=p['english'], price=p['price'],
-                               pocket=p['pocket'], type=p['type'], fieldUseFunction=p['fieldUseFunc'],
-                               battleUsage=p['battleUsage'], battleUseFunction=p['battleUseFunc'], healHp=int(effects[1][2]),
-                               effectBytes=[0, 0, 0, 0, heal_flag, 0, int(effects[1][2])],
-                               source=reference(items_path, 'ITEM_POTION', item_match),
-                               effectSource=reference(effect_path, 'sItemEffect_Potion', effect_match)))
+                   potion=dict(item='pret:ITEM_POTION', healHp=int(effects[1][2]), effectBytes=[0, 0, 0, 0, heal_flag, 0, int(effects[1][2])]))
     document = dict(schemaVersion=1, inputs=[inputs[x] for x in sorted(inputs)], limitations=['Only ITEM_POTION is imported and executable.',
                                  'Only the ordinary Items pocket and PC are represented; other pockets are unsupported.',
                                  'No shops, held-item actions, status ailments, eggs, reusable tutorial items or multiplayer.',

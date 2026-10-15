@@ -74,8 +74,7 @@ public sealed class PretStorageArt
             var species=Species.Single(s=>icon.SpeciesId=="pret:SPECIES_"+s.Key);
             Require(species.Value==icon.SourceSpeciesId && icon.Width==32 && icon.Height==32 && icon.SourceFrameIndex==0 &&
                 icon.SourceFrameCount==2 && icon.PaletteIndex is >=0 and <=2 && icon.PaletteRgb555.Length==16 &&
-                icon.TransparentIndex==0 && icon.PaletteVariant=="shared-normal-shiny" && icon.SourceRefs.Length==5 &&
-                (outputs[icon.TexturePath]).Length > 0,"Storage icon metadata differs.");
+                icon.TransparentIndex==0 && icon.PaletteVariant=="shared-normal-shiny" && (outputs[icon.TexturePath]).Length > 0,"Storage icon metadata differs.");
         }
         foreach(var asset in assets)
             Require(asset.Width>0 && asset.Height>0 && (outputs[asset.TexturePath]).Length > 0,
@@ -117,5 +116,5 @@ public sealed class PretStorageArt
 public sealed record StorageArtSourceRef(string Path, string Symbol, int? StartLine = null, int? EndLine = null);
 public sealed record StorageArtIcon(string SpeciesId, int SourceSpeciesId, string TexturePath, int Width, int Height,
     int SourceFrameIndex, int SourceFrameCount, int PaletteIndex, string PaletteVariant, int TransparentIndex,
-    ImmutableArray<int> PaletteRgb555, ImmutableArray<StorageArtSourceRef> SourceRefs);
+    ImmutableArray<int> PaletteRgb555);
 public sealed record StorageArtAsset(string Id, string TexturePath, int Width, int Height, int X, int Y);

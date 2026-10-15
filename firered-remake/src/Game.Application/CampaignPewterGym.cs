@@ -24,16 +24,16 @@ public sealed partial class CampaignSession
         {next=state with{TextBuffers=state.TextBuffers.SetItem(effect.Args[0],"TM CASE")};return true;}
         if(effect.Opcode is not("checkitemspace" or "additem" or "bufferitemname" or "bufferitemnameplural" or "checkitemtype"))return false;
         bool buffer=effect.Opcode.StartsWith("bufferitem",StringComparison.Ordinal);
-        if(Value(effect.Args[buffer?1:0])!=machines.Tm39.Item.SourceItemId)return false;
+        if(Value(effect.Args[buffer?1:0])!=MachineRules.Definition(machines, MachineRules.Tm39Id)!.Machine.Item.SourceItemId)return false;
         if(effect.Source.Path is not("data/maps/PewterCity_Gym/scripts.inc" or "data/scripts/obtain_item.inc" or "data/event_scripts.s"))throw new InvalidDataException("gym_item_source_unsupported");
-        if(buffer){next=state with{TextBuffers=state.TextBuffers.SetItem(effect.Args[0],machines.Tm39.Item.Name)};return true;}
+        if(buffer){next=state with{TextBuffers=state.TextBuffers.SetItem(effect.Args[0],MachineRules.Definition(machines, MachineRules.Tm39Id)!.Machine.Item.Name)};return true;}
         int result;
         if(effect.Opcode=="checkitemtype")result=Value("POCKET_TM_CASE");
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
-            if(effect.Opcode=="checkitemspace")result=PewterMachineRules.CanAddTm39(machines,inventory,quantity)?1:0;
-            else{var added=PewterMachineRules.AddTm39(machines,inventory,quantity);next=state with{Inventory=added.State};result=added.Succeeded?1:0;}
+            if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddTm39(machines,inventory,quantity)?1:0;
+            else{var added=MachineRules.AddTm39(machines,inventory,quantity);next=state with{Inventory=added.State};result=added.Succeeded?1:0;}
         }
         next=next with{Script=next.Script with{Variables=next.Script.Variables.SetItem("VAR_RESULT",result)}};return true;
 
@@ -54,56 +54,41 @@ public sealed partial class CampaignSession
         bool aideHidden=state.Script.Flags.GetValueOrDefault("FLAG_HIDE_PEWTER_CITY_RUNNING_SHOES_GUY");
         if(runningShoes&&!won||won&&(shoesSceneComplete!=runningShoes||aideHidden!=runningShoes))
             return "save_running_shoes_progress_mismatch";
-        var machineError=PewterMachineRules.Validate(_content.PewterMachines!,state.Inventory);if(machineError is not null)return machineError;
+        var machineError=MachineRules.Validate(_content.PewterMachines!,state.Inventory);if(machineError is not null)return machineError;
         bool got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM39_FROM_BROCK");
-        bool hasCase=(state.Inventory?.KeyItems??[]).Any(s=>s.Item==PewterMachineRules.TmCaseId);
-        int tmQuantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],PewterMachineRules.Tm39Id);
+        bool hasCase=(state.Inventory?.KeyItems??[]).Any(s=>s.Item==MachineRules.TmCaseId);
+        int tmQuantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],MachineRules.Tm39Id);
         if(got&&!won||got!=hasCase||!got&&tmQuantity!=0||tmQuantity>1)return "save_tm39_reward_mismatch";
         return null;
     }
-    private InventoryState LegacyQuestInventory(InventoryState inventory)
+    private string? ValidateQuestInventory(QuestItemsCatalog catalog, InventoryState? inventory) =>
+        _content.Inventory.Validate(inventory);
+    private int QuestQuantity(QuestItemsCatalog catalog, InventoryState inventory, string symbol)
     {
-        var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
-        if(_content.EarlyShop is not {} shop||_content.QuestItems is not {} quests)return view;
-        // Current item admission is authenticated once at construction. Project
-        // known successor keys/balls out of the small Parcel/TV/Map service by
-        // catalog membership, so another acquired key cannot strand this service.
-        // Unknown items remain present and are rejected by its strict validator.
-        var questIds=quests.Items.Select(i=>i.Id).ToHashSet();
-        var additionalKeys=shop.Items.Where(i=>i.Pocket=="POCKET_KEY_ITEMS"&&!questIds.Contains(i.Id)).Select(i=>i.Id).ToHashSet();
-        var additionalBalls=shop.Items.Where(i=>i.Pocket=="POCKET_POKE_BALLS"&&!questIds.Contains(i.Id)).Select(i=>i.Id).ToHashSet();
-        return view with
-        {
-            KeyItems=view.KeyItems?.Where(s=>s is null||!additionalKeys.Contains(s.Item)).ToImmutableArray(),
-            Balls=view.Balls?.Where(s=>s is null||!additionalBalls.Contains(s.Item)).ToImmutableArray(),
-            Berries=_content.SsAnneEnabled?null:view.Berries
-        };
+        var error = _content.Inventory.Validate(inventory);
+        if (error is not null) throw new ArgumentException(error, nameof(inventory));
+        var item = catalog.Items.SingleOrDefault(i => i.SourceItemSymbol == symbol)
+            ?? throw new NotSupportedException("inventory_item_unsupported");
+        return OpeningInventoryRules.Quantity(item.Pocket == "POCKET_KEY_ITEMS" ? inventory.KeyItems ?? [] : inventory.Balls ?? [], item.Id);
     }
-    private string? ValidateQuestInventory(QuestItemsCatalog catalog,InventoryState? inventory)=>inventory is null?"inventory_missing":QuestItemRules.Validate(catalog,LegacyQuestInventory(inventory));
-    private int QuestQuantity(QuestItemsCatalog catalog,InventoryState inventory,string symbol)=>QuestItemRules.Quantity(catalog,LegacyQuestInventory(inventory),symbol);
-    private InventoryTransactionResult QuestChange(QuestItemsCatalog catalog,InventoryState inventory,string symbol,int quantity,bool add)
+    private InventoryTransactionResult QuestChange(QuestItemsCatalog catalog, InventoryState inventory, string symbol, int quantity, bool add)
     {
-        var inventoryError=ValidateQuestInventory(catalog,inventory);
-        if(inventoryError is not null)return new(inventory,false,inventoryError);
-        // The legacy view strips TM CASE for membership checks, but the physical
-        // Key Items pocket still contains that slot when checking new insertions.
-        if(add&&catalog.Items.FirstOrDefault(i=>i.SourceItemSymbol==symbol) is {Pocket:"POCKET_KEY_ITEMS"} item&&
-            OpeningInventoryRules.Quantity(inventory.KeyItems??[],item.Id)==0&&(inventory.KeyItems?.Length??0)>=catalog.Limits.KeyItemSlots)
-            return new(inventory,false,"inventory_destination_full");
-        var view=LegacyQuestInventory(inventory);var result=add?QuestItemRules.Add(catalog,view,symbol,quantity):QuestItemRules.Remove(catalog,view,symbol,quantity);
-        if(!result.Succeeded)return result with{State=inventory};
-        var keys=result.State.KeyItems;if(_content.PewterEnabled&&inventory.KeyItems is {} original)
-        {
-            var preserved=original.Where(s=>!(view.KeyItems??[]).Any(v=>v.Item==s.Item)).ToArray();
-            foreach(var kept in preserved){var index=original.IndexOf(kept);var items=(keys??[]).ToBuilder();items.Insert(Math.Min(index,items.Count),kept);keys=items.ToImmutable();}
-        }
-        var balls=result.State.Balls;
-        if(_content.RocketHideoutEnabled&&inventory.Balls is {} allBalls)
-        {
-            foreach(var kept in allBalls.Where(s=>!(view.Balls??[]).Any(v=>v.Item==s.Item)))
-            {var items=(balls??[]).ToBuilder();items.Insert(Math.Min(allBalls.IndexOf(kept),items.Count),kept);balls=items.ToImmutable();}
-        }
-        else if(_content.SsAnneEnabled)balls=(balls??[]).AddRange((inventory.Balls??[]).Where(s=>s.Item==SsAnneItemRules.GreatBallId));
-        return result with{State=inventory with{KeyItems=keys,Balls=balls}};
+        InventoryTransactionResult Fail(string error) => new(inventory, false, error);
+        var error = _content.Inventory.Validate(inventory);
+        if (error is not null) return Fail(error);
+        var item = catalog.Items.SingleOrDefault(i => i.SourceItemSymbol == symbol);
+        if (item is null || !_content.Inventory.Items.TryGetValue(item.Id, out var admitted) || admitted != item)
+            return Fail("inventory_item_unsupported");
+        if (quantity < 1 || quantity > catalog.Limits.MaximumStack) return Fail("inventory_transfer_quantity");
+        var pocket = item.Pocket == "POCKET_KEY_ITEMS" ? inventory.KeyItems ?? [] : inventory.Balls ?? [];
+        var current = OpeningInventoryRules.Quantity(pocket, item.Id);
+        if (add && current > catalog.Limits.MaximumStack - quantity) return Fail("inventory_stack_full");
+        var capacity = item.Pocket == "POCKET_KEY_ITEMS" ? catalog.Limits.KeyItemSlots : catalog.Limits.BallSlots;
+        if (add && current == 0 && pocket.Length >= capacity) return Fail("inventory_destination_full");
+        if (!add && current < quantity) return Fail("inventory_insufficient_quantity");
+        var changed = OpeningInventoryRules.SetQuantity(pocket, item.Id, current + (add ? quantity : -quantity));
+        var state = item.Pocket == "POCKET_KEY_ITEMS" ? inventory with { KeyItems = changed } : inventory with { Balls = changed };
+        var invalid = _content.Inventory.Validate(state);
+        return invalid is null ? new(state, true, null) : Fail(invalid);
     }
 }

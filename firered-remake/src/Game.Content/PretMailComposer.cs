@@ -14,14 +14,14 @@ public sealed class PretMailComposer
     private PretMailComposer(SourceEasyChatCatalog catalog, ImmutableArray<ComposerText> texts)
     {
         Catalog = catalog; Texts = texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
-       
+
     }
 
     public static PretMailComposer Load(string root)
     {
         var source = new SilphSourcePackage(root,"mail-composer");
-        var document = source.Parse<ComposerDocument>("catalog.json");
-        var contracts = source.Parse<ComposerContracts>("contracts.json");
+        var document = SafariSource.Parse<ComposerDocument>(source.Read("catalog.json"));
+        var contracts = SafariSource.Parse<ComposerContracts>(source.Read("contracts.json"));
         Need(            document.Groups.Length == 22 && document.Words.Length == 1813 && document.Alphabetical.Length == 27 &&
             document.Groups.Select(g => g.Id).SequenceEqual(Enumerable.Range(0, 22)) &&
             document.Alphabetical.Select(g => g.Id).SequenceEqual(Enumerable.Range(0, 27)), "Mail composer complete group scope differs.");

@@ -17,8 +17,7 @@ public partial class CampaignView
     private void LoadCelioPresentation()
     {
         if (!_catalog.CelioEnabled) return;
-        var pokemon = _catalog.CeruleanCaveEnabled ? _catalog.CeruleanCaveOwnership.Predecessor.Catalog :
-            _catalog.PokemonContent?.Catalog ?? throw new InvalidDataException("Celio owned Pokemon catalog missing.");
+        var pokemon = _catalog.PokemonContent?.Catalog ?? throw new InvalidDataException("Celio owned Pokemon catalog missing.");
         if (!CelioPresentationProfile)
             throw new InvalidDataException("Celio requires its complete Five Island predecessor and owned beast catalog.");
         _celioArt = CelioPresentationAssets.Load(_root);

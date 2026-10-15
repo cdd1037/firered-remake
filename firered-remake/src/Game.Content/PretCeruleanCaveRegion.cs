@@ -69,7 +69,7 @@ public sealed class PretCeruleanCaveRegion
         Need(maps.Keys.ToHashSet().SetEquals(new[] { new MapId("map.cerulean-cave-1f"),new MapId("map.cerulean-cave-2f"),new MapId("map.cerulean-cave-b1f") }) , "Cerulean Cave map/warp collection differs.");
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         return new(source, maps.ToImmutable(), constants);
     }

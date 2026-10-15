@@ -23,6 +23,8 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public CampaignBattleContent? BattleContent { get; }
     public OpeningItemsCatalog? OpeningItems { get; }
     public QuestItemsCatalog? QuestItems { get; }
+    public InventoryCatalog Inventory { get; }
+    public EscapeRopePolicy EscapeRoutes { get; }
     public bool CaptureEnabled { get; }
     public PretViridianCenter? ViridianCenter { get; }
     public bool ViridianCenterEnabled => ViridianCenter is not null;
@@ -71,9 +73,9 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretCeruleanCaveRegion CeruleanCaveRegion { get; }
     public CeruleanCavePokemonContent CeruleanCavePokemon { get; }
     public bool CeruleanCaveEnabled => CeruleanCavePokemon is not null;
-    public CeruleanCaveOwnedPokemonCatalog CeruleanCaveOwnership => CeruleanCavePokemon.Owned;
-    public CeruleanCaveOpponentPokemonCatalog CeruleanCaveOpponents => CeruleanCavePokemon.Opponents;
-    public CeruleanCaveMachineCatalog CeruleanCaveMachines => CeruleanCavePokemon.Machines;
+    public GamePokemonCatalog CeruleanCaveOwnership => CeruleanCavePokemon.Owned;
+    public GameOpponentPokemonCatalog CeruleanCaveOpponents => CeruleanCavePokemon.Opponents;
+    public MachineCatalog CeruleanCaveMachines => CeruleanCavePokemon.Machines;
     public CeruleanCaveWaterEncounterCatalog CeruleanCaveWaterEncounters { get; }
     public PretCityServices? CityServices { get; }
     public PretGameCornerCoins GameCornerCoins { get; }
@@ -93,7 +95,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public bool CityServicesEnabled => CityServices is not null;
     public PretOldRod? OldRod { get; }
     public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters { get; }
-    public ImmutableArray<PewterMachineItem> CityServiceItems { get; }
+    public ImmutableArray<MachineItem> CityServiceItems { get; }
     public PretVermilionGymRegion? VermilionGymRegion { get; }
     public VermilionGymTrainerCatalog? VermilionGymTrainers { get; }
     public bool VermilionGymEnabled => VermilionGymRegion is not null;
@@ -126,7 +128,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public ForestTrainerCatalog? ForestTrainers { get; }
     public PewterTrainerCatalog? PewterTrainers { get; }
     public PretPewterPokemon? PewterPokemon { get; }
-    public PewterMachineCatalog? PewterMachines { get; }
+    public MachineCatalog? PewterMachines { get; }
     public IReadOnlyDictionary<MapId, EarlyLandEncounterTable>? LandEncounters { get; }
     public PretMartMetatiles? MartMetatiles { get; }
     public IReadOnlyDictionary<int, FieldMetatileDefinition>? MetatileDefinitions { get; }
@@ -154,7 +156,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretForestPokemon forestPokemon,
         PretPewterRegion pewter,
         PretPewterPokemon pewterPokemon,
-        PewterMachineCatalog machines,
+        MachineCatalog machines,
         PretEarlyShopDocument earlyShop,
         PretPokemonStorageSource pokemonStorage,
         PretEarlyPickups fieldPickups,
@@ -245,26 +247,20 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretSurfPokemon surfPokemon,
         PretSurfArt surfArt,
         PretSurfEncounters surfEncounters,
-        SurfOwnedPokemonCatalog surfOwned,
         PretSilphRegion silph,
         PretSilphPokemon silphPokemon,
         PretSilphItemsDocument silphItems,
         SilphTrainerCatalogContent silphTrainers,
-        SilphOwnedPokemonCatalog silphOwned,
-        SilphOpponentPokemonCatalog silphOpponents,
         PretSilphArt silphArt,
         PretSaffronGymRegion saffronGym,
         SaffronGymTrainerCatalogContent saffronGymTrainers,
         PretSaffronGymItemsDocument saffronGymItems,
-        SaffronGymOpponentPokemonCatalog saffronGymOpponents,
         SilphPokemonDocument saffronGymPokemon,
         PretSaffronGymArt saffronGymArt,
         PretCinnabarRegion cinnabar,
         SilphPokemonDocument cinnabarPokemon,
         CinnabarTrainerCatalog cinnabarTrainers,
         PretCinnabarItemsDocument cinnabarItems,
-        CinnabarOwnedPokemonCatalog cinnabarOwned,
-        CinnabarOpponentPokemonCatalog cinnabarOpponents,
         PretCinnabarArt cinnabarArt,
         PretCinnabarPresentation cinnabarPresentation,
         PretFirstSeviiRegion firstSevii,
@@ -279,26 +275,17 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         VictoryRoadItemContent victoryRoadItems,
         PretPokemonLeagueRegion pokemonLeague,
         PokemonLeagueTrainerCatalog pokemonLeagueTrainers,
-        PokemonLeagueOpponentPokemonCatalog pokemonLeagueOpponents,
         bool nationalDexEnabled,
         PretSeviiRubyRegion seviiRuby,
-        SeviiRubyOwnedPokemonCatalog seviiRubyOwned,
-        SeviiRubyOpponentPokemonCatalog seviiRubyOpponents,
         SeviiRubyTrainerCatalog seviiRubyTrainers,
         SeviiRubyItemContent seviiRubyItems,
         PretFourIslandRegion fourIsland,
-        FourIslandOwnedPokemonCatalog fourIslandOwned,
-        FourIslandOpponentPokemonCatalog fourIslandOpponents,
         FourIslandTrainerCatalog fourIslandTrainers,
         FourIslandItemContent fourIslandItems,
         PretSixIslandRegion sixIsland,
-        SixIslandOwnedPokemonCatalog sixIslandOwned,
-        SixIslandOpponentPokemonCatalog sixIslandOpponents,
         SixIslandTrainerCatalog sixIslandTrainers,
         SixIslandItemContent sixIslandItems,
         PretFiveIslandRegion fiveIsland,
-        FiveIslandOwnedPokemonCatalog fiveIslandOwned,
-        FiveIslandOpponentPokemonCatalog fiveIslandOpponents,
         FiveIslandTrainerCatalog fiveIslandTrainers,
         FiveIslandItemContent fiveIslandItems,
         CelioPokemonContent celioPokemon,
@@ -306,37 +293,27 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretCeruleanCaveRegion ceruleanCave,
         CeruleanCavePokemonContent ceruleanCavePokemon,
         LeagueRematchTrainerCatalog leagueRematchTrainers,
-        LeagueRematchOpponentPokemonCatalog leagueRematchOpponents,
-        PretSevenIslandRegion sevenIsland, SevenIslandOwnedPokemonCatalog sevenOwned,
-        SevenIslandOpponentPokemonCatalog sevenOpponents, SevenIslandTrainerCatalog sevenTrainers,
-        SevenIslandMachineCatalog sevenMachines, SevenIslandShopCatalog sevenShop, SevenIslandItemsDocument sevenItems, PretMoveTutors moveTutors,
-        PretEventIslandRegion eventIsland, EventIslandOwnedPokemonCatalog eventOwned, EventIslandOpponentPokemonCatalog eventOpponents,
-        EventIslandMachineCatalog eventMachines, EventIslandShopCatalog eventShop,
-        PretPowerPlantRegion powerPlant, PowerPlantOwnedPokemonCatalog powerPlantOwned, PowerPlantOpponentPokemonCatalog powerPlantOpponents,
-        PowerPlantMachineCatalog powerPlantMachines, PowerPlantShopCatalog powerPlantShop,
-        PretTrainerTowerRegion trainerTower, TrainerTowerCatalog trainerTowerCatalog,
-        TrainerTowerOpponentPokemonCatalog trainerTowerOpponents, TrainerTowerShopCatalog trainerTowerShop,
-        PretFightingDojoRegion fightingDojo, FightingDojoOwnedPokemonCatalog dojoOwned,
-        FightingDojoOpponentPokemonCatalog dojoOpponents, FightingDojoMachineCatalog dojoMachines, FightingDojoTrainerCatalog dojoTrainers,
-        PretFossilLabRegion fossilLab, FossilLabOwnedPokemonCatalog fossilOwned,
-        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail, PretGoodRodService goodRodService,
-        PretSeafoamRegion seafoam, SeafoamOwnedPokemonCatalog seafoamOwned, SeafoamOpponentPokemonCatalog seafoamOpponents,
-        SeafoamMachineCatalog seafoamMachines, SeafoamTrainerCatalog seafoamTrainers,
+        PretSevenIslandRegion sevenIsland, SevenIslandTrainerCatalog sevenTrainers,
+        SevenIslandItemsDocument sevenItems, PretMoveTutors moveTutors,
+        PretEventIslandRegion eventIsland, PretPowerPlantRegion powerPlant, PretTrainerTowerRegion trainerTower, TrainerTowerCatalog trainerTowerCatalog,
+        PretFightingDojoRegion fightingDojo, FightingDojoTrainerCatalog dojoTrainers,
+        PretFossilLabRegion fossilLab, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail, PretGoodRodService goodRodService,
+        PretSeafoamRegion seafoam, SeafoamTrainerCatalog seafoamTrainers,
         PretMoveReminderHouse moveReminderHouse, PretMoveReminderService moveReminder, PretMoveDeleterHouse moveDeleterHouse, PretOriginalTutorRooms originalTutorRooms, PretCopycatHouse copycatHouse,
-        PretSuperRodService superRodService, SuperRodOwnedPokemonCatalog superRodOwned,
-        SuperRodOpponentPokemonCatalog superRodOpponents, SuperRodMachineCatalog superRodMachines, PretCapeBrinkTutor capeBrinkTutor,
+        PretSuperRodService superRodService, PretCapeBrinkTutor capeBrinkTutor,
         FieldFlyCatalog fieldFly, PretFlyMap flyMapPresentation, PretRoute16FlyHouse route16FlyHouse, PretRoute5DayCare route5DayCare, PretFourIslandDayCare fourIslandDayCare, PretOriginalTmAcquisition originalTmAcquisition, PretSchoolHouseInteriors schoolHouseInteriors, PretLostCaveRegion lostCave, LostCaveTrainerCatalog lostCaveTrainers, PretTrainerFanClub trainerFanClub)
     {
+        var gamePokemon = pokemonContent.Pokemon;
         NpcTradeContent = npcTrades; NpcTradeElyssa = npcTradeElyssa; NpcTradeHaden = npcTradeHaden; NpcTradeMail = npcTradeMail;
         NpcTradeMaps = ResolveNpcTradeMaps(npcTrades, maps);
-        FossilLabRegion = fossilLab; FossilLabOwnership = fossilOwned; FossilLabOpponents = fossilOpponents; FossilLabMachines = fossilMachines; FossilLabShop = fossilShop;
-        FightingDojoRegion = fightingDojo; FightingDojoOwnership = dojoOwned; FightingDojoOpponents = dojoOpponents;
-        FightingDojoMachines = dojoMachines; FightingDojoTrainers = dojoTrainers;
+        FossilLabRegion = fossilLab; FossilLabOwnership = gamePokemon; FossilLabOpponents = gamePokemon.Opponents; FossilLabMachines = machines;
+        FightingDojoRegion = fightingDojo; FightingDojoOwnership = gamePokemon; FightingDojoOpponents = gamePokemon.Opponents;
+        FightingDojoMachines = machines; FightingDojoTrainers = dojoTrainers;
         TrainerTowerRegion = trainerTower; TrainerTowerCatalog = trainerTowerCatalog;
-        TrainerTowerOpponents = trainerTowerOpponents; TrainerTowerShop = trainerTowerShop;
+        TrainerTowerOpponents = gamePokemon.TrainerTowerOpponents;
         _trainerTowerConnectedMaps = trainerTower.Layouts.ToImmutableDictionary(p => p.Key, p => PretTrainerTowerRegion.ConnectedMap(p.Value));
-        PowerPlantRegion=powerPlant; PowerPlantOwnership=powerPlantOwned; PowerPlantOpponents=powerPlantOpponents;
-        PowerPlantMachines=powerPlantMachines; PowerPlantShop=powerPlantShop;
+        PowerPlantRegion=powerPlant; PowerPlantOwnership=gamePokemon; PowerPlantOpponents=gamePokemon.Opponents;
+        PowerPlantMachines = machines;
         CapeBrinkTutor = capeBrinkTutor;
         Route5DayCare = route5DayCare; FourIslandDayCare = fourIslandDayCare;
         OriginalTmAcquisition = originalTmAcquisition; SchoolHouseInteriors = schoolHouseInteriors;
@@ -352,46 +329,45 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         MoveReminderHouse = moveReminderHouse; MoveReminder = moveReminder.Catalog;
         OriginalTutorRooms = originalTutorRooms; CopycatHouse = copycatHouse;
         MoveDeleterHouse = moveDeleterHouse; MoveDeleter = moveDeleterHouse.Bind(pokemonContent!.Catalog);
-        EventIslandRegion = eventIsland; EventIslandOwnership = eventOwned; EventIslandOpponents = eventOpponents;
-        EventIslandMachines = eventMachines; EventIslandShop = eventShop;
-        SevenIslandRegion = sevenIsland; SevenIslandOwnership = sevenOwned; SevenIslandOpponents = sevenOpponents;
-        SevenIslandTrainerParties = sevenTrainers; SevenIslandMachines = sevenMachines; SevenIslandShop = sevenShop; SevenIslandItems = sevenItems;
+        EventIslandRegion = eventIsland; EventIslandOwnership = gamePokemon; EventIslandOpponents = gamePokemon.Opponents;
+        EventIslandMachines = machines;
+        SevenIslandRegion = sevenIsland; SevenIslandOwnership = gamePokemon; SevenIslandOpponents = gamePokemon.Opponents;
+        SevenIslandTrainerParties = sevenTrainers; SevenIslandMachines = machines;  SevenIslandItems = sevenItems;
         LeagueRematchTrainerParties = leagueRematchTrainers;
-        LeagueRematchOpponents = leagueRematchOpponents;
+        LeagueRematchOpponents = gamePokemon.Opponents;
         CeruleanCaveRegion = ceruleanCave;
         CeruleanCavePokemon = ceruleanCavePokemon;
         CelioPokemon = celioPokemon;
         CelioRoamerMaps = celioRoamerMaps;
         FiveIslandRegion = fiveIsland;
-        FiveIslandOwnership = fiveIslandOwned;
-        FiveIslandOpponents = fiveIslandOpponents;
+        FiveIslandOwnership = gamePokemon;
+        FiveIslandOpponents = gamePokemon.Opponents;
         FiveIslandTrainers = fiveIslandTrainers;
         FiveIslandItems = fiveIslandItems;
         SixIslandRegion = sixIsland;
-        SixIslandOwnership = sixIslandOwned;
-        SixIslandOpponents = sixIslandOpponents;
+        SixIslandOwnership = gamePokemon;
+        SixIslandOpponents = gamePokemon.Opponents;
         SixIslandTrainers = sixIslandTrainers;
         SixIslandItems = sixIslandItems;
         FourIslandRegion = fourIsland;
-        FourIslandOwnership = fourIslandOwned;
-        FourIslandOpponents = fourIslandOpponents;
+        FourIslandOwnership = gamePokemon;
+        FourIslandOpponents = gamePokemon.Opponents;
         FourIslandTrainers = fourIslandTrainers;
         FourIslandItems = fourIslandItems;
-        var seviiRubyShop = fourIslandItems.Shop.Predecessor;
         SeviiRubyRegion = seviiRuby;
-        SeviiRubyOwnership = seviiRubyOwned;
-        SeviiRubyOpponents = seviiRubyOpponents;
+        SeviiRubyOwnership = gamePokemon;
+        SeviiRubyOpponents = gamePokemon.Opponents;
         SeviiRubyTrainers = seviiRubyTrainers;
         SeviiRubyItems = seviiRubyItems;
         NationalDexEnabled = nationalDexEnabled;
         PokemonLeagueRegion = pokemonLeague;
         PokemonLeagueTrainerParties = pokemonLeagueTrainers;
-        PokemonLeagueOpponents = pokemonLeagueOpponents;
-        PokemonLeagueMartStock = CreatePokemonLeagueMartStock(pokemonLeague, seviiRubyShop.Predecessor.Catalog, scripts);
+        PokemonLeagueOpponents = gamePokemon.Opponents;
+        PokemonLeagueMartStock = CreatePokemonLeagueMartStock(pokemonLeague, earlyShop.Catalog, scripts);
         VictoryRoadRegion = victoryRoad;
         VictoryRoadTrainerParties = victoryRoadTrainers;
         VictoryRoadItems = victoryRoadItems;
-        VictoryRoadOpponents = pokemonLeagueOpponents.Predecessor;
+        VictoryRoadOpponents = gamePokemon.Opponents;
         if (VictoryRoadOpponents is { } victoryOpponents && victoryRoadTrainers.Trainers.Values.SelectMany(t => t.Party).Any(p => !victoryOpponents.Catalog.Species.ContainsKey(p.Species)))
             throw new InvalidDataException("victory_road_trainer_species_missing");
         LeagueRivalTrainerParties = leagueRivalTrainers;
@@ -407,25 +383,25 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         CinnabarPokemon = cinnabarPokemon;
         CinnabarTrainerParties = cinnabarTrainers;
         CinnabarItems = cinnabarItems;
-        CinnabarOwnership = cinnabarOwned;
-        CinnabarOpponents = cinnabarOpponents;
+        CinnabarOwnership = gamePokemon;
+        CinnabarOpponents = gamePokemon.Opponents;
         SaffronGymArt = saffronGymArt;
         SaffronGymRegion = saffronGym;
         SaffronGymTrainers = saffronGymTrainers;
         SaffronGymItems = saffronGymItems;
-        SaffronGymOpponents = saffronGymOpponents;
+        SaffronGymOpponents = gamePokemon.Opponents;
         SaffronGymSpeciesNames = saffronGymPokemon.SpeciesNames.ToImmutableSortedDictionary(n => saffronGymPokemon.OpponentSpecies.Single(s => s.Id == n.Id).SourceSpeciesId, n => n.Name);
         SilphRegion = silph;
         SilphPokemon = silphPokemon;
         SilphItems = silphItems;
         SilphTrainers = silphTrainers;
-        SilphOwnership = silphOwned;
-        SilphOpponents = silphOpponents;
+        SilphOwnership = gamePokemon;
+        SilphOpponents = gamePokemon.Opponents;
         SilphArt = silphArt;
         SurfPokemon = surfPokemon;
         SurfArt = surfArt;
         SurfEncounters = surfEncounters;
-        SurfOwnership = surfOwned;
+        SurfOwnership = gamePokemon;
         SafariRegion = safari;
         SafariPokemon = safariPokemon;
         SafariArt = safariArt;
@@ -486,11 +462,11 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         GameCornerCoins = gameCornerCoins;
         GameCornerPrizes = gameCornerPrizes;
         OldRod = oldRod;
-        SeafoamRegion = seafoam; SeafoamOwnership = seafoamOwned; SeafoamOpponents = seafoamOpponents;
-        SeafoamMachines = seafoamMachines; SeafoamTrainers = seafoamTrainers;
+        SeafoamRegion = seafoam; SeafoamOwnership = gamePokemon; SeafoamOpponents = gamePokemon.Opponents;
+        SeafoamMachines = machines; SeafoamTrainers = seafoamTrainers;
         GoodRodService = goodRodService;
-        SuperRodService = superRodService; SuperRodOwnership = superRodOwned;
-        SuperRodOpponents = superRodOpponents; SuperRodMachines = superRodMachines;
+        SuperRodService = superRodService; SuperRodOwnership = gamePokemon;
+        SuperRodOpponents = gamePokemon.Opponents; SuperRodMachines = machines;
         SuperRodEncounters = superRodService.SuperRodTables.Where(t => maps.ContainsKey(t.Map)).ToImmutableDictionary(t => t.Map);
         OldRodEncounters = SevenIslandOldRodEncounterRules.Tables.ToImmutableDictionary(table => table.Map);
         GoodRodEncounters = goodRodService.GoodRodTables.AddRange(SeafoamEncounterTables.GoodRod).AddRange(CapeBrinkEncounterTables.GoodRod).AddRange(MemorialPillarEncounterTables.GoodRod).AddRange(LostCaveEncounterTables.GoodRod).ToImmutableDictionary(table => table.Map);
@@ -528,6 +504,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PokedexMenu = oakPokedex;
         SourceMaps = maps;
         Maps = maps.ToImmutableDictionary(x => x.Key, x => (IFieldMap)x.Value);
+        EscapeRoutes = CurrentEscapeRoutes.Create(Maps.Keys);
         _scripts = scripts;
         _text = text;
         ContentVersion = version;
@@ -548,6 +525,19 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         EarlyPickups = fieldPickups;
         FieldPickups = fieldPickups.Pickups.Select(p => new FieldPickupDefinition(p.Id, p.MapSymbol, p.Kind == "hiddenItem", p.SourceLocalId, p.X, p.Y, p.Elevation, p.Script, p.ItemSymbol, p.SourceItemId, new ItemId(p.ItemId), p.ItemName, p.Pocket, p.Quantity, p.Flag, p.SourceFlagId)).ToImmutableArray();
         EarlyShopDocument = earlyShop;
+        var inventoryDefinitions = earlyShop.Catalog.Items.Select(i => i.Item)
+            .Concat(questItems.Items)
+            .Concat(CityServiceItems.Select(i => i.Item))
+            .Append(regionalGift.TeaItem.Item)
+            .Append(safariItems.Items.Single(i => i.Metadata.Item.Id == PretSafariItems.GoldTeethId).Metadata.Item)
+            .Append(machines.TmCase.Item)
+            .Concat(machines.Machines.Select(m => m.Machine.Item));
+        Inventory = new(inventoryDefinitions, earlyShop.Catalog.Limits, earlyShop.Catalog.QuestLimits,
+            machines.MachineSlots, CityServiceItems.Select(i => i.Item.Id)
+                .Append(regionalGift.TeaItem.Item.Id).Append(PretSafariItems.GoldTeethId)
+                .Append(ItemIds.VsSeekerId));
+        EarlyShopDocument = earlyShop with { Catalog = earlyShop.Catalog with { Inventory = Inventory } };
+        EarlyShopInventoryRules.ValidateCatalog(EarlyShopDocument.Catalog);
         PewterRegion = pewter;
         PewterPokemon = pewterPokemon;
         PewterMachines = machines;
@@ -579,7 +569,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(FirstSeviiPickupDefinitions(firstSevii, firstSeviiItems, seviiRubyShop.Predecessor.Predecessor.Catalog, scripts));
+            FieldPickups = FieldPickups.AddRange(FirstSeviiPickupDefinitions(firstSevii, firstSeviiItems, earlyShop.Catalog, scripts));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(FirstSeviiEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             FirstSeviiWaterEncounters = FirstSeviiWaterEncounterCatalog.Authenticate(CinnabarWaterEncounters!, FirstSeviiWaterEncounterCatalog.SourceAdditions);
         }

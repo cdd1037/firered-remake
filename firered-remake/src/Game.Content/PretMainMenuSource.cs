@@ -44,7 +44,7 @@ public sealed record PretMainMenuRules(int LogicalWidth, int LogicalHeight, int 
     int PlayerNameBufferLength, int PlayerNameTerminator, ImmutableArray<string> PlayerGenderSymbols,
     int PlayTimeHoursDigits, int PlayTimeMinutesDigits, string PokedexVisibleFlag, string PokedexCountKind,
     string BadgeStartFlag, int BadgeCount, int FrameTileBase, int FramePaletteBank,
-    ImmutableArray<PretMainMenuFrameDrawCall> FrameDrawCalls, ImmutableArray<OpeningItemSourceRef> SourceRefs);
+    ImmutableArray<PretMainMenuFrameDrawCall> FrameDrawCalls);
 
 /// <summary>
 /// Authenticated original main-menu presentation and entry contracts. Does not create a session,

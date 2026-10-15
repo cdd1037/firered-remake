@@ -39,7 +39,7 @@ public static partial class SourceFourTrainerAi
             !frame.Reservations.IsEmpty || frame.DeferredKoVacancyMask != 0 ||
             (frame.PreparedMedicines ?? []).Any(p => p.Actor.Slot.Side == BattleSide.Opponent))
             return Fail("source_four_trainer_preparation_phase");
-        var proof = SourceMechanicsCatalog.For(catalog)!;
+        var proof = SourceMechanicsCatalog.FromDefinitions(catalog);
         try
         {
             var current = frame; var remaining = inventory; var currentMove = staleCurrentMove;

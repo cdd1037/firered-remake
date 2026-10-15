@@ -26,9 +26,8 @@ public partial class CampaignView
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
             string id = row.GetProperty("speciesId").GetString()!;
-            if (_catalog.LeagueRematchOpponents!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId != species ||
-                _catalog.LeagueRematchOpponents!.Owned.Catalog.Species.ContainsKey(new(id)))
-                throw new InvalidDataException("League rematch sprite is not an admitted trainer-only species.");
+            if (_catalog.LeagueRematchOpponents!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId != species)
+                throw new InvalidDataException("League rematch sprite is not an admitted opponent species.");
             string side = row.GetProperty("side").GetString()!;
             bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
             using var image = NativeImages.LoadPng(_leagueRematchArt.Files[row.GetProperty("texturePath").GetString()!], 64, 64);

@@ -89,7 +89,7 @@ public static class OpeningInventoryRules
             state with { BagItems = remaining, PcItems = received }, true, null);
     }
 
-    internal static ImmutableArray<InventoryStack> SetQuantity(ImmutableArray<InventoryStack> stacks, ItemId item, int value)
+    public static ImmutableArray<InventoryStack> SetQuantity(ImmutableArray<InventoryStack> stacks, ItemId item, int value)
     {
         int index = -1;
         for (int i = 0; i < stacks.Length; i++) if (stacks[i].Item == item) { index = i; break; }

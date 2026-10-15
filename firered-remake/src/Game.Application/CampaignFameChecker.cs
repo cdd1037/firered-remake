@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
     {
         var item = _content.EarlyShop?.Items.SingleOrDefault(i => i.Id.Value == id);
         var questItem = _content.QuestItems?.Items.SingleOrDefault(i => i.Id.Value == id);
-        if (item?.SourceMetadata is not { Registrability: 1, Pocket: "POCKET_KEY_ITEMS" } &&
+        if (item?.Item is not { Registrability: 1, Pocket: "POCKET_KEY_ITEMS" } &&
             (questItem is null || !KeyItemRegistrationRules.CanRegister(questItem))) return false;
         if (id == QuestItemRules.TeachyTvId.Value) return TeachyTvEnabled;
         return id == ItemfinderRules.Item.Value ? ItemfinderEnabled : id == VsSeekerItem.Value ? VsSeekerEnabled : id == BillItemRules.FameCheckerId.Value && FameCheckerEnabled;

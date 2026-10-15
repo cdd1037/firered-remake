@@ -1,3 +1,4 @@
+using Game.Domain.Ids;
 using Game.Domain.Events;
 using Game.Domain.Items;
 
@@ -16,7 +17,7 @@ public sealed partial class CampaignSession
         int id = SeviiValue(state, a[buffer ? 1 : 0]);
         var item = ShopCatalog.Items.SingleOrDefault(i => i.SourceItemId == id);
         if (item is null || item.SourceItemSymbol is not ("ITEM_RUBY" or "ITEM_RAINBOW_PASS" or "ITEM_TRI_PASS")) return false;
-        if (item.Id == FirstSeviiShopCatalog.TriPassId && effect.Opcode != "removeitem") return false;
+        if (item.Id == ItemIds.TriPassId && effect.Opcode != "removeitem") return false;
         bool pickup = state.World.Player.MapId.Value == "map.mt-ember-ruby-path-b5f" && item.Id == RubyItem;
         bool exchange = state.World.Player.MapId.Value == RubyCenterMap && state.Script.Stack.Any(f =>
             f.ProgramId is "OneIsland_PokemonCenter_1F_EventScript_GiveCelioRuby" or "OneIsland_PokemonCenter_1F_EventScript_GiveRainbowPass" or
@@ -35,13 +36,13 @@ public sealed partial class CampaignSession
         if (quantity != 1) throw new InvalidDataException("sevii_ruby_item_quantity");
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         if (effect.Opcode == "checkitem")
         { next = Result(OpeningInventoryRules.Quantity(view.KeyItems ?? [], item.Id) >= 1 ? 1 : 0); return true; }
         bool remove = effect.Opcode == "removeitem";
         if (remove && (!exchange || effect.Source.Symbol != "OneIsland_PokemonCenter_1F_EventScript_GiveRainbowPass" ||
-            item.Id != RubyItem && item.Id != FirstSeviiShopCatalog.TriPassId)) throw new InvalidDataException("sevii_ruby_remove_source");
-        if (effect.Opcode == "additem" && (item.Id == FirstSeviiShopCatalog.TriPassId ||
+            item.Id != RubyItem && item.Id != ItemIds.TriPassId)) throw new InvalidDataException("sevii_ruby_remove_source");
+        if (effect.Opcode == "additem" && (item.Id == ItemIds.TriPassId ||
             item.Id == RainbowPassItem && (!exchange || effect.Source.Symbol != "OneIsland_PokemonCenter_1F_EventScript_GiveRainbowPass" ||
                 state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 5))) throw new InvalidDataException("sevii_ruby_add_source");
         var result = remove ? EarlyInventoryAddRules.Remove(ShopCatalog, view, item.Id, quantity) :
@@ -52,7 +53,7 @@ public sealed partial class CampaignSession
         var changed = inventory;
         if (result.Succeeded && effect.Opcode != "checkitemspace")
         {
-            changed = MergeShopInventory(inventory, result.State);
+            changed = result.State;
             int count = OpeningInventoryRules.Quantity(result.State.KeyItems ?? [], item.Id);
             var keys = (changed.KeyItems ?? []).RemoveAll(k => k.Item == item.Id);
             changed = changed with { KeyItems = count == 0 ? keys : keys.Add(new(item.Id, count)) };
@@ -88,12 +89,12 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("sevii_ruby_hm06_reward_context");
             var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
             if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
-            var machine = SeviiRubyMachineCatalog.Hm06Id;
+            var machine = new ItemId("pret:ITEM_HM06");
             if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], machine) != 0) throw new InvalidDataException("sevii_ruby_hm06_duplicate");
-            if (effect.Opcode == "checkitemspace") result = PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
+            if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
             else
             {
-                var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
+                var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
                 next = state with { Inventory = added.State }; result = added.Succeeded ? 1 : 0;
             }
         }

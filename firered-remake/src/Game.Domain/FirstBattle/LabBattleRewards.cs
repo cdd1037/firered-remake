@@ -146,11 +146,7 @@ public static class LabBattleRewards
     private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned)
     {
         PokemonFactory.ValidateCatalog(catalog);
-        // Source English names differ from symbols for punctuation and gender markers. This
-        // projection is only for metadata validation; no display or ownership field is replaced.
-        var names = catalog.Species.Values.ToImmutableSortedDictionary(s => s.SourceSpeciesId,
-            s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", 83 => "FARFETCH'D", 122 => "MR. MIME", 250 => "HO-OH", _ => s.Id.Value["pret:SPECIES_".Length..] });
-        var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet), owned);
+        var error = PokemonStateValidator.ValidateOwned(catalog, owned, false, false, false);
         if (error is not null) throw new ArgumentException(error, nameof(owned));
     }
 

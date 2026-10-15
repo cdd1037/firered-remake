@@ -10,7 +10,7 @@ namespace Game.Domain.Encounters;
 /// <summary>Source CreateScriptedWildMon and ordinary nature rejection. Held assignment is a separate battle-entry boundary.</summary>
 public static class SeafoamPokemonFactory
 {
-    public static Route1WildPokemonResult GenerateArticuno(SeafoamOwnedPokemonCatalog owned, RngState rng, uint originalTrainerId)
+    public static Route1WildPokemonResult GenerateArticuno(GamePokemonCatalog owned, RngState rng, uint originalTrainerId)
     {
         ValidateOwned(owned);
         var made = SourcePokemonFactory.Create(owned.Mechanics, new(SeafoamOwnedPokemonCatalog.ArticunoId, 50,
@@ -19,7 +19,7 @@ public static class SeafoamPokemonFactory
             throw new InvalidOperationException("seafoam_articuno_generated_identity");
         return new(made.Pokemon, made.Rng, made.Trace);
     }
-    public static Route1WildPokemonResult GenerateSourceSlot(SeafoamOwnedPokemonCatalog owned, SeafoamWildOrigin origin,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, SeafoamWildOrigin origin,
         byte level, RngState rng, uint originalTrainerId)
     {
         ValidateOwned(owned);
@@ -31,10 +31,9 @@ public static class SeafoamPokemonFactory
         if (!SourceInitialInstance(owned, origin, made.Pokemon)) throw new InvalidOperationException("seafoam_wild_generated_identity");
         return made;
     }
-    public static bool SourceInitialInstance(SeafoamOwnedPokemonCatalog owned, SeafoamWildOrigin origin, PokemonInstance pokemon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, SeafoamWildOrigin origin, PokemonInstance pokemon)
     {
-        if (owned is null || !ReferenceEquals(SeafoamOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !SeafoamWildBattleContract.Matches(origin, pokemon) || SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null)
+        if (owned is null || !SeafoamWildBattleContract.Matches(origin, pokemon) || SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null)
             return false;
         var source = owned.Mechanics.Catalog.Species[pokemon.Species];
         return pokemon.NpcTradeOrigin is null && pokemon.ContestConditions is null && pokemon.StatCalculationEvs is null &&
@@ -56,7 +55,7 @@ public static class SeafoamPokemonFactory
         var draw = Gen3Rng.Next(rng, "wild-battle.held-item", 100);
         return new(HeldItem(slot.Species, draw.Trace.Result), draw.State, [draw.Trace]);
     }
-    public static PartyPokemon PreserveCaughtMetadata(SeafoamOwnedPokemonCatalog owned, SeafoamWildOrigin origin, PartyPokemon caught)
+    public static PartyPokemon PreserveCaughtMetadata(GamePokemonCatalog owned, SeafoamWildOrigin origin, PartyPokemon caught)
     {
         ValidateOwned(owned); ArgumentNullException.ThrowIfNull(caught);
         if (!SeafoamWildBattleContract.Matches(origin, caught.Pokemon) ||
@@ -64,10 +63,9 @@ public static class SeafoamPokemonFactory
             throw new ArgumentException("seafoam_caught_identity");
         return caught with { ModernFatefulEncounter = false };
     }
-    private static void ValidateOwned(SeafoamOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(SeafoamOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            owned.Catalog.Species.Count != 162 || owned.Catalog.Moves.Count != 354)
+        if (owned is null || owned.Catalog.Moves.Count != 354)
             throw new ArgumentException("seafoam_owned_proof");
     }
 }

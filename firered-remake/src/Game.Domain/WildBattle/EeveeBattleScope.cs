@@ -8,13 +8,10 @@ public static class EeveeBattleScope
 {
     // Older trainer/encounter executors explicitly share the Snorlax mechanics; the factory still
     // validates the real103-member identity set. Other unknown counts never collapse to this set.
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<PokemonCatalog, object> ValidatedCatalogs = new();
     public static int MechanicsCount(PokemonCatalog? catalog)
     {
         if (catalog?.Species.Count != 103) return catalog?.Species.Count ?? 0;
-        // Immutable catalogs are verified once per object. A different catalog, including a forged
-        // with-expression copy, must independently pass every identity and exact Eevee field check.
-        _ = ValidatedCatalogs.GetValue(catalog, value => { PokemonFactory.ValidateCatalog(value); return new object(); });
+        PokemonFactory.ValidateCatalog(catalog);
         return 102;
     }
     internal static bool SupportsSharedSpecies(SpeciesId id) => PokemonFactory.EeveeSupportedSpecies.Contains(id);

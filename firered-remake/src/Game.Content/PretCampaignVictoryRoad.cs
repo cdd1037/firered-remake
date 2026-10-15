@@ -15,12 +15,10 @@ public sealed partial class PretCampaignCatalog
     public const string VictoryRoadContentProfile="firered-victory-road-campaign-v1";
     public PretVictoryRoadRegion? VictoryRoadRegion { get; }
     public VictoryRoadTrainerCatalog? VictoryRoadTrainerParties { get; }
-    public VictoryRoadOpponentPokemonCatalog? VictoryRoadOpponents { get; }
+    public GameOpponentPokemonCatalog? VictoryRoadOpponents { get; }
     public VictoryRoadItemContent? VictoryRoadItems { get; }
     public VictoryRoadWaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
     public bool VictoryRoadEnabled=>VictoryRoadRegion is not null;
-
-
 
     private static void ValidateVictoryRoadAnchors(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
@@ -50,9 +48,8 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateVictoryRoadComposition(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,VictoryRoadTrainerCatalog trainers,CinnabarOwnedPokemonCatalog owned,PretStoryCompilation scripts)
+    private static void ValidateVictoryRoadComposition(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,VictoryRoadTrainerCatalog trainers,GamePokemonCatalog owned,PretStoryCompilation scripts)
     {
-        if(            owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354)throw new InvalidDataException("victory_road_composition_scope");
         VictoryRoadTrainerPartyFactory.ValidateCatalog(trainers);
         foreach(var battle in trainers.BattlesByScript.Values)
         {

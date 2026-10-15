@@ -55,7 +55,7 @@ public sealed class PretSnorlaxArt
                 sprite.FrameCount==1&&sprite.SourceFrameIndex==0&&sprite.TransparentIndex==0&&!sprite.FlipH&&sprite.PaletteRgb555.Length==16&&sprite.SourceEnemyElevation==0&&
                 sprite.SingleBattleTopLeft==new ForestPokemonPoint(sprite.Side=="front"?144:40,sprite.Side=="front"?13:59),"Snorlax sprite identity differs.");
             Pixels(sprite.TexturePath,64,64);
-            foreach(var r in sprite.SourceRefs){Require(r.Kind=="pret","Snorlax art provenance differs.");}
+
         }
         var icon=doc.Icons.Single();
         Require(icon.SpeciesId=="pret:SPECIES_SNORLAX"&&icon.SourceSpeciesId==143&&icon.Width==32&&icon.Height==32&&icon.SourceFrameIndex==0&&icon.SourceFrameCount==2&&

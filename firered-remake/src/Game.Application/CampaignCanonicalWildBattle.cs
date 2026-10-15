@@ -20,7 +20,7 @@ public static class CampaignWildReadProjection
             pending is not null&&pending.Kind!=WildBattleCalledSwitchKind.BatonPass,player.Registers.ChosenMoveSlot,opponent.Registers.ChosenMoveSlot,
             false,player.Registers.LastMoveSlot,opponent.Registers.LastMoveSlot)
         {
-            Obedience=frame.Obedience,SourceMechanicsRulesVersion=frame.SourceMechanicsRulesVersion,SourceCampaignRulesVersion=frame.SourceCampaignRulesVersion,
+            Campaign=frame.Campaign,Obedience=frame.Obedience,SourceMechanicsRulesVersion=frame.SourceMechanicsRulesVersion,SourceCampaignRulesVersion=frame.SourceCampaignRulesVersion,
             PermanentWeather=frame.Field.PermanentWeather,SourceMoneyMultiplier=frame.Field.MoneyMultiplier,Terrain=frame.Field.Terrain,
             PayDayMoney=frame.Field.PayDayMoney,RainTurnsRemaining=frame.Field.RainTurnsRemaining,SandstormTurnsRemaining=frame.Field.SandstormTurnsRemaining,
             ScriptedSnorlax=encounter?.ScriptedSnorlax??false,TowerBattleKind=encounter?.TowerBattleKind,
@@ -49,6 +49,7 @@ public sealed partial class CampaignSession
         new(frame.Revision,frame.EventSequence,frame.NextAction,frame.FourTurn?.Phase??throw new InvalidDataException("canonical_wild_continuation"));
     private SourceBattleFrame PrepareCanonicalWildFrame(CampaignState state,SourceBattleFrame frame)=>frame with
     {
+        Campaign=_binding.Ownership,
         Obedience=CampaignObedienceContext(state),
         Rewards=new(){Context=new(SourceRewardBattleKind.OrdinaryWild,state.TrainerId,state.PlayerName,
             _content.MapDefinition(state.World.Player.MapId).RegionMapSection),Metadata=state.Party.Select((p,i)=>new SourceRewardMetadata(

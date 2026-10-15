@@ -62,7 +62,7 @@ def run(project,preparation,output,check=False):
   specs.append(dict(stableId=s['stableId'],sourceName=s['sourceName'],sourceMapSymbol=compact['sourceRef']['symbol'],directory=name,width=compact['width'],height=compact['height']))
  for p,b in assets.items():
   if p.startswith('assets/patches/'): payload[region+p.removeprefix('assets/')]=b
- for name in ['dependencies','npc-source','spin-routes','rocket-hideout']:payload[region+name+'.json']=assets['overlays/'+name+'.json']
+ for name in ['npc-source','spin-routes','rocket-hideout']:payload[region+name+'.json']=assets['overlays/'+name+'.json']
  npcs=json.loads(assets['overlays/npc-source.json'])
  npcs['graphics']=[{'graphicsId':row['graphicsId']} for row in npcs['graphics']]
  payload[region+'npc-source.json']=encode(npcs)
@@ -78,6 +78,9 @@ def run(project,preparation,output,check=False):
   q=safe(output,p)
   if check:need(q.is_file() and q.read_bytes()==b,'Stale output '+p)
   else:q.parent.mkdir(parents=True,exist_ok=True);stage=safe(output,p+'.tmp');stage.write_bytes(b);stage.replace(q)
+ retired=safe(output,region+'dependencies.json')
+ if check:need(not retired.exists(),'Retired dependency inventory remains')
+ else:retired.unlink(missing_ok=True)
  return dict(maps=120, preservedMaps=114, newCells=3179, newBorderCells=24, newWarpEvents=22, dynamicExits=2, sourceFiles=175, files=len(payload), bytes=sum(map(len, payload.values())))
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,required=True);p.add_argument('--preparation',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.project_root,a.preparation,a.output,a.check),sort_keys=True))

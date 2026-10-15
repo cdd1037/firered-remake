@@ -24,7 +24,7 @@ public sealed partial class PretSilphRegion
     private PretSilphRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
-        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants; 
+        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
         Catalog = source.Document("silph-region-catalog.json"); Contracts = source.Document("contracts.json");
         ObjectTemplates = source.Document("objects.json"); NpcSources = source.Document("npc-source.json");
         InitializeField(source);

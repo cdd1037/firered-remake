@@ -56,7 +56,7 @@ public sealed class PretViridianRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/viridian-region");
-        
+
         static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
         static string SafeFile(string root, string path)
         {

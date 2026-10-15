@@ -33,10 +33,28 @@ target = output / "current.json"
 run("valid", source, target, True)
 converted = target.read_bytes()
 old, new = json.loads(original), json.loads(converted)
-assert new["RulesVersion"] == "firered-current-campaign-v1"
-assert old["RulesVersion"] != new["RulesVersion"]
-assert {k: v for k, v in old.items() if k != "RulesVersion"} == {
-    k: v for k, v in new.items() if k != "RulesVersion"}
+assert new["RulesVersion"] == "firered-current-campaign-v2"
+assert new["ContentVersion"] == "firered-current-content-v4"
+assert old["ContentVersion"] != new["ContentVersion"]
+expected_payload = json.loads(json.dumps(old["Payload"]))
+removed_origins = []
+def remove_old_origin(node, path="Payload"):
+    if isinstance(node, dict):
+        for key, value in list(node.items()):
+            if key == "NpcTradeOrigin" and isinstance(value, dict) and "CatalogFingerprint" in value:
+                assert set(value) == {"CatalogFingerprint", "TradeId", "ReceivedLevel"}
+                del value["CatalogFingerprint"]
+                removed_origins.append(path + ".NpcTradeOrigin.CatalogFingerprint")
+            remove_old_origin(value, path + "." + key)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            remove_old_origin(value, path + f"[{index}]")
+if old["ContentVersion"] == "firered-current-content-v3":
+    remove_old_origin(expected_payload)
+assert expected_payload == new["Payload"], "conversion changed actual gameplay values"
+assert old["Generation"] == new["Generation"]
+assert old["SchemaVersion"] == new["SchemaVersion"]
+assert old["GameEdition"] == new["GameEdition"]
 run("refuse-existing-target", source, target, False)
 assert target.read_bytes() == converted
 run("refuse-source-as-target", source, source, False)
@@ -65,7 +83,7 @@ report = {"passed": True, "cases": observations, "source": str(source),
           "target": str(target), "sourceSha256": original_sha,
           "targetSha256": hashlib.sha256(converted).hexdigest(),
           "generation": new["Generation"], "payloadHash": new["PayloadHash"],
-          "wholeGameplayPayloadUnchanged": True}
+          "wholeGameplayPayloadUnchanged": True, "removedObsoleteOriginFields": removed_origins}
 (output / "result.json").write_text(json.dumps(report, indent=2) + "\n")
 print(json.dumps({"passed": True, "cases": len(observations),
                   "generation": new["Generation"], "target": str(target)}))

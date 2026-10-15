@@ -45,16 +45,15 @@ public sealed class PretSsAnnePokemon
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement BattleArt { get; }
-    public JsonElement Scope { get; }
     public string GeneratedDirectory { get; }
     public string CatalogSourcePath => Path.Combine(GeneratedDirectory, "catalog.json");
     public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretSsAnnePokemon(string directory, SsAnnePokemonCatalogContent content,
         ImmutableArray<ForestPokemonSprite> sprites, ImmutableArray<PretWorldSourceFile> files, JsonElement art,
-        SsAnnePokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs, JsonElement scope)
+        SsAnnePokemonSupplement supplement, PretPokedexMenu dex, ImmutableDictionary<string, byte[]> outputs)
     {
-        Scope = scope; GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
+        GeneratedDirectory = directory; Catalog = content.Catalog; SpeciesNames = content.SpeciesNames;
         MoveNames = content.MoveNames; Constants = content.Constants; EncodedNames = content.EncodedNames;
         Sprites = sprites; SourceFiles = files; BattleArt = art; Supplement = supplement;
         PokedexMenu = dex; _outputs = outputs; DeferredEvolutions = content.DeferredEvolutions;
@@ -77,7 +76,7 @@ public sealed class PretSsAnnePokemon
         });
     }
 
-    public static PretSsAnnePokemon Load(string projectRoot, PretPokedexMenu? pokedexMenu = null)
+    public static PretSsAnnePokemon Load(PretCanonicalPokemonCatalog canonical, string projectRoot, PretPokedexMenu? pokedexMenu = null)
     {
         var project = Path.GetFullPath(projectRoot);
         pokedexMenu?.ForProjectRoot(project);
@@ -88,7 +87,6 @@ public sealed class PretSsAnnePokemon
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var dependency = JsonDocument.Parse(ReadPinned(project,"content/generated/ssanne-region/dependencies.json"));
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 && m.GetProperty("composedSpeciesCount").GetInt32() == 73 &&
             !m.GetProperty("runtimeShadersUsed").GetBoolean(), "SsAnne Pokemon manifest identity differs.");
@@ -100,7 +98,7 @@ public sealed class PretSsAnnePokemon
         }
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         var inventory = files.ToImmutable();
-        var content = LoadContent(
+        var content = LoadContent(canonical,
             Utf8.GetString(ReadPinned(project,"content/generated/route1-pokemon/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/old-man-tutorial/catalog.json")),
             Utf8.GetString(ReadPinned(project,"content/generated/forest-pokemon/catalog.json")),
@@ -122,8 +120,6 @@ public sealed class PretSsAnnePokemon
                 sprite.Width == 64 && sprite.Height == 64 && sprite.FrameCount == 1 && sprite.SourceFrameIndex == 0 &&
                 sprite.TransparentIndex == 0 && !sprite.FlipH && sprite.PaletteRgb555.Length == 16 &&
                 (outputs[sprite.TexturePath]).Length > 0, "SsAnne Pokemon sprite identity/pixels differ.");
-            foreach (var source in sprite.SourceRefs)
-                Require(source.Kind == "pret" , "SsAnne sprite provenance differs.");
         }
         var supplement = ContentJson.ParseStrict<SsAnnePokemonSupplement>(Utf8.GetString(outputs["supplement.json"]), ContentJson.CreateOptions());
         var dex = pokedexMenu ?? PretPokedexMenu.Load(project);
@@ -138,8 +134,7 @@ public sealed class PretSsAnnePokemon
             Require(supplement.DexSpeciesIds.Contains(icon.SourceSpeciesId) && content.Catalog.Species[new(icon.SpeciesId)].SourceSpeciesId == icon.SourceSpeciesId &&
                 icon.Width == 32 && icon.Height == 32 && icon.SourceFrameIndex == 0 && icon.SourceFrameCount == 2 &&
                 icon.PaletteIndex is >= 0 and <= 2 && icon.PaletteVariant == "shared-normal-shiny" && icon.TransparentIndex == 0 &&
-                icon.PaletteRgb555.Length == 16 && icon.SourceRefs.Length == 5 &&
-                (outputs[icon.TexturePath]).Length > 0, "SsAnne icon identity/pixels differ.");
+                icon.PaletteRgb555.Length == 16 && (outputs[icon.TexturePath]).Length > 0, "SsAnne icon identity/pixels differ.");
         }
         foreach (var foot in supplement.Footprints)
         {
@@ -163,23 +158,14 @@ public sealed class PretSsAnnePokemon
                 dex.Entries[weight.SourceSpeciesId].WeightHectograms == weight.WeightHectograms && weight.WeightHectograms > 0,
                 "SsAnne weight differs from the authenticated Dex source.");
         }
-        using var scope = JsonDocument.Parse(outputs["scope.json"]);
-        Require(scope.RootElement.GetProperty("trainers").GetArrayLength() == 19 &&
-            !scope.RootElement.GetProperty("effectsEnabledByThisCatalog").GetBoolean(), "SsAnne evidence scope differs.");
-        Require(scope.RootElement.GetProperty("naturalLevelLimit").ValueKind == JsonValueKind.Null &&
-            scope.RootElement.GetProperty("regionDependency").GetProperty("path").GetString() == "content/generated/ssanne-region/dependencies.json" &&
-            scope.RootElement.GetProperty("requiredTrainerMoves").GetArrayLength() == 43 &&
-            scope.RootElement.GetProperty("sourceDefinitions").GetArrayLength() == 62 &&
-            dependency.RootElement.GetProperty("trainers").GetArrayLength() == 19,
-            "S.S. Anne source dependency or uncapped battle scope differs.");
-        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary(), scope.RootElement.Clone());
+        return new(directory, content, sprites, inventory, art.RootElement.Clone(), supplement, dex, outputs.ToImmutableDictionary());
     }
 
-    public static SsAnnePokemonCatalogContent LoadContent(string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
+    public static SsAnnePokemonCatalogContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson, string forestGeneratedJson,
         string pewterGeneratedJson, string route22GeneratedJson, string route3GeneratedJson, string mtmoonGeneratedJson, string ceruleanGeneratedJson, string billGeneratedJson, string vermilionGeneratedJson, string ssanneGeneratedJson)
     {
-        var original = PretVermilionPokemon.LoadContent(route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson);
-        var options = ContentJson.CreateOptions();
+        var original = PretVermilionPokemon.LoadContent(canonical, route1GeneratedJson, tutorialGeneratedJson, forestGeneratedJson, pewterGeneratedJson, route22GeneratedJson, route3GeneratedJson, mtmoonGeneratedJson, ceruleanGeneratedJson, billGeneratedJson, vermilionGeneratedJson);
+        var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var doc = ContentJson.ParseStrict<SsAnnePokemonDocument>(ssanneGeneratedJson, options);
@@ -229,7 +215,7 @@ public sealed class PretSsAnnePokemon
                 doc.MoveNames.Any(n => n.Id.Value == "pret:" + value.Symbol && n.Name == value.Name), "Encoded name is absent from canonical names.");
         }
         var result = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Species.Count == 73 && result.Moves.Count == 201 && names.Count == 73 && moveNames.Count == 201, "Incomplete composed SsAnne Pokemon catalog.");
         Require(doc.DeferredEvolutions.Length == 3, "Missing S.S. Anne deferred evolution metadata.");
         var expectedDeferred = new Dictionary<string, (string Method, string Parameter, string Target)>(StringComparer.Ordinal)

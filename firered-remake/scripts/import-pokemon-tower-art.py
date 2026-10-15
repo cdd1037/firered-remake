@@ -46,7 +46,7 @@ def build(roots):
    x,y=(144,8+offset-elevation) if side=='front' else (40,48+offset)
    for variant in ['normal','shiny']:
     palette_path=f'graphics/pokemon/{stem}/{variant}.pal';rgba=ui.rgba(indices,palette(palette_path));asset=add(f'{stem}-{side}-{variant}',64,64,rgba)
-    sprites.append(dict(speciesId=species,sourceSpeciesId=sid,side=side,paletteVariant=variant,frameCount=1,sourceFrameIndex=0,frameWidth=64,frameHeight=64,sourceWidth=width,sourceHeight=height,sourceYOffset=offset,sourceEnemyElevation=elevation,singleBattleTopLeft=dict(x=x,y=y),transparentIndex=0,paletteExpansion='floor(rgb5 * 255 / 31)',sourceRefs=[source_ref(image_path,'gMon'+side.title()+'Pic_'+name),source_ref(palette_path,'gMonPalette_'+name)],**asset))
+    sprites.append(dict(speciesId=species,sourceSpeciesId=sid,side=side,paletteVariant=variant,frameCount=1,sourceFrameIndex=0,frameWidth=64,frameHeight=64,sourceWidth=width,sourceHeight=height,sourceYOffset=offset,sourceEnemyElevation=elevation,singleBattleTopLeft=dict(x=x,y=y),transparentIndex=0,paletteExpansion='floor(rgb5 * 255 / 31)',**asset))
   palette_section=icon_source.split('const u8 gMonIconPaletteIndices[] = {',1)[1].split('};',1)[0];index=int(re.search(r'\['+symbol+r'\]\s*=\s*(\d+)',palette_section)[1]);need(index==2,'Tower icon palette differs')
   need(f'[{symbol}]' in icon_source and 'gMonIcon_'+name in icon_source,'Tower icon table differs')
   path=f'graphics/pokemon/{stem}/icon.png';w,h,indices,_=ui.indexed_png(s[path]);need((w,h)==(32,64),'Tower icon source shape differs');asset=add('icons/'+stem,32,32,ui.rgba(indices[:1024],palette('graphics/pokemon/icon_palettes/icon_palette_2.pal')))

@@ -119,30 +119,18 @@ def display_contract(lock, sources):
                 (elevation, 'ret = gEnemyMonElevation[species];')]
     if any(needle not in text for text, needle in expected):
         raise ValueError('Unsupported battle-coordinate semantics')
-    refs = [reference(lock, sources, path, symbol, text) for symbol, text in [
-        ('sBattlerCoords', coords), ('GetBattlerSpriteDefault_Y', default),
-        ('GetBattlerSpriteCoord', getter), ('GetBattlerYDelta', delta),
-        ('GetBattlerSpriteFinal_Y', final), ('GetBattlerElevation', elevation)]]
     for controller in ('player', 'opponent'):
         cpath = f'src/battle_controller_{controller}.c'
         text = section(sources[cpath].decode(), 'static void StartSendOutAnim(u8 battlerId, bool8 dontClearSubstituteBit)\n')
         if 'GetBattlerSpriteCoord(battlerId, BATTLER_COORD_X_2)' not in text or 'GetBattlerSpriteDefault_Y(battlerId)' not in text:
             raise ValueError('Unsupported send-out coordinate binding')
-        refs.append(reference(lock, sources, cpath, 'StartSendOutAnim', text))
-    refs += [reference(lock, sources, 'tools/gbagfx/gfx.c', symbol, needle) for symbol, needle in [
-        ('DOWNCONVERT_BIT_DEPTH', '#define DOWNCONVERT_BIT_DEPTH(x) ((x) / 8)'),
-        ('UPCONVERT_BIT_DEPTH', '#define UPCONVERT_BIT_DEPTH(x) (((x) * 255) / 31)')]]
-    refs += [reference(lock, sources, 'include/constants/battle.h', symbol,
-                       re.search(r'^#define ' + symbol + r'\s+\d+$', constants, re.M).group(0))
-             for symbol in ('B_POSITION_PLAYER_LEFT', 'B_POSITION_OPPONENT_LEFT')]
     return dict(logicalWidth=240, logicalHeight=160, frameWidth=64, frameHeight=64,
                 profile='ordinary-untransformed-single-battle-default-position',
                 playerBaseCenter={'x': points[0][0], 'y': points[0][1]},
                 opponentBaseCenter={'x': points[1][0], 'y': points[1][1]},
                 playerSide='back', opponentSide='front', textureFilter='nearest', flipH=False,
                 frameIndex=0, applySourceYOffset=True, applyAnimationTargetExtra8=False,
-                centerFormula='baseCenterY + sourceYOffset - sourceEnemyElevation',
-                sourceRefs=refs)
+                centerFormula='baseCenterY + sourceYOffset - sourceEnemyElevation')
 
 
 def convert(lock, sources):
@@ -180,29 +168,12 @@ def convert(lock, sources):
             base = display['playerBaseCenter' if side == 'back' else 'opponentBaseCenter']
             elevation = 0 if side == 'back' else enemy_elevation
             center = {'x': base['x'], 'y': base['y'] + offset - elevation}
-            image_symbol = f'gMon{side.title()}Pic_{name}'
-            shared_refs = [reference(lock, sources, image_path, image_symbol),
-                           reference(lock, sources, 'include/constants/species.h', symbol, species_row.group(0).rstrip()),
-                           reference(lock, sources, coords_path, f'gMon{side.title()}PicCoords[{symbol}]', coordinates.group(0)),
-                           reference(lock, sources, elevation_path, f'gEnemyMonElevation[{symbol}]', elevation_source),
-                           reference(lock, sources, graphics_path, image_symbol,
-                                     f'const u32 {image_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/{side}.4bpp.lz");')]
-            if side == 'back':
-                shared_refs.append(reference(lock, sources, 'src/data/pokemon_graphics/back_pic_table.h',
-                                             'gMonBackPicTable', f'    SPECIES_SPRITE({name.upper()}, {image_symbol}),'))
             for variant in ('normal', 'shiny'):
                 palette_path = f'graphics/pokemon/{stem}/{variant}.pal'
                 colors, words = pixels.palette(sources[palette_path])
                 rgba = pixels.rgba_pixels(indices, colors)
                 filename = f'{stem}-{side}-{variant}.png'
                 outputs[filename] = pixels.rgba_png(rgba)
-                pal_symbol = 'gMon' + ('Shiny' if variant == 'shiny' else '') + 'Palette_' + name
-                refs = [*shared_refs, reference(lock, sources, palette_path, pal_symbol),
-                        reference(lock, sources, graphics_path, pal_symbol,
-                                  f'const u32 {pal_symbol}[] = INCBIN_U32("graphics/pokemon/{stem}/{variant}.gbapal.lz");')]
-                if variant == 'shiny':
-                    refs.append(reference(lock, sources, 'src/data/pokemon_graphics/shiny_palette_table.h',
-                                          'gMonShinyPaletteTable', f'    SPECIES_SHINY_PAL({name.upper()}, {pal_symbol}),'))
                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side,
                                     paletteVariant=variant, texturePath=filename,
                                     sourceImagePath=image_path, sourcePalettePath=palette_path,
@@ -214,7 +185,7 @@ def convert(lock, sources):
                                     singleBattleTopLeft={'x': center['x'] - 32, 'y': center['y'] - 32},
                                     alphaBounds={'x': left, 'y': top, 'width': right-left, 'height': bottom-top},
                                     transparentIndex=0, paletteRgb555=words,
-                                    paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False, sourceRefs=refs))
+                                    paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False))
     used = [entry for entry in lock['files'] if entry['path'] in REQUIRED_PATHS]
     catalog = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
 

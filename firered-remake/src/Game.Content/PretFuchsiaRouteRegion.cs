@@ -98,7 +98,7 @@ public sealed class PretFuchsiaRouteRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/fuchsia-route-region");
-        
+
         byte[] Pinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(Safe(root, path));
@@ -119,9 +119,9 @@ public sealed class PretFuchsiaRouteRegion
         JsonElement Document(string path) { using var doc = JsonDocument.Parse(outputs[path]); return doc.RootElement.Clone(); }
         var catalog = Document("fuchsia-route-region-catalog.json");
         Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Fuchsia source inventory/availability differs.");
-        
+
         var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        
+
         var files = sources.ToImmutable(); var byPath = files.ToDictionary(s => s.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Six source maps; unchanged Route12 reuse; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
@@ -140,7 +140,7 @@ public sealed class PretFuchsiaRouteRegion
             foreach (var warp in map.FieldWarps)
                 if (maps.TryGetValue(warp.DestinationMapId, out var target))
                     Need(warp.DestinationWarpId < target.Events.GetProperty("warp_events").GetArrayLength(), "Loaded warp index differs.");
-        
+
         var constants = PretSharedConstants.ForPackage(directory);
         Need(constants[HealingLocation] == 8 && constants["LOCALID_FUCHSIA_NURSE"] == 1 && constants["LOCALID_ROUTE14_BORDER_TREE"] == 13 && constants["SPECIES_KABUTO"] == 140 && constants["SPECIES_OMANYTE"] == 138, "Fuchsia source constants differ.");
         var reused = ImmutableDictionary.CreateBuilder<MapId, JsonElement>();

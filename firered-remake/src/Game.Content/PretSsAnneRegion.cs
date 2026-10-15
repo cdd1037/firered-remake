@@ -19,32 +19,18 @@ public sealed class PretSsAnneRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public JsonElement Dependencies { get; }
-    /// <summary>Declarative source metadata only; this class registers no executable handlers.</summary>
-    public JsonElement Trainers => Dependencies.GetProperty("trainers");
-    public JsonElement Ticket => Dependencies.GetProperty("ticket");
-    public JsonElement Captain => Dependencies.GetProperty("captain");
-    public JsonElement Healer => Dependencies.GetProperty("healer");
-    public JsonElement Rival => Dependencies.GetProperty("rival");
-    public JsonElement Departure => Dependencies.GetProperty("departure");
-    public JsonElement Moves => Dependencies.GetProperty("moves");
-    public JsonElement Species => Dependencies.GetProperty("species");
-    public JsonElement Items => Dependencies.GetProperty("items");
-    public JsonElement Machines => Dependencies.GetProperty("machines");
-    public JsonElement Pickups => Dependencies.GetProperty("pickups");
 
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalVermilionEvents { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
-    public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretSsAnneRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalVermilionEvents)
+        ImmutableArray<PretWorldSourceFile> files, JsonElement catalog, JsonElement npcSources, JsonElement externalVermilionEvents)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; SourceFiles = files; Catalog = catalog;
         NpcSources = npcSources; ExternalVermilionEvents = externalVermilionEvents;
     }
 
@@ -97,7 +83,7 @@ public sealed class PretSsAnneRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/ssanne-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -144,17 +130,10 @@ public sealed class PretSsAnneRegion
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_GOT_SS_TICKET"] > 0 && constants["FLAG_GOT_HM01"] > 0 &&
             constants["LOCALID_SS_ANNE_CAPTAIN"] == 1, "S.S. Anne progression/local actor constants differ.");
-        using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]);
-        Require(!dependencies.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
-            dependencies.RootElement.GetProperty("trainers").GetArrayLength() == 19 &&
-            dependencies.RootElement.GetProperty("pickups").GetArrayLength() == 12 &&
-            dependencies.RootElement.GetProperty("captain").GetProperty("item").GetString() == "ITEM_HM01" &&
-            dependencies.RootElement.GetProperty("departure").GetProperty("afterCityScene").GetInt32() == 3,
-            "S.S. Anne dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/VermilionCity/map.json"));
         return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+            inventory, catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

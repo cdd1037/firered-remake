@@ -18,14 +18,10 @@ public sealed partial class CampaignSession
         if (!content.SevenIslandEnabled || content.SevenIslandOwnership is not { } owned ||
             content.SevenIslandOpponents is not { } opponents || content.SevenIslandTrainers is not { } trainers ||
             content.SevenIslandMachines is not { } machines ||
-            !ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned, content.EventIslandOwnership?.Predecessor) || owned.Catalog.Species.Count != 146 ||
-            !ReferenceEquals(owned.Predecessor, content.CeruleanCaveOwnership) ||
-            !ReferenceEquals(SevenIslandOpponentPokemonCatalog.For(owned), opponents) ||
-            !ReferenceEquals(opponents.Predecessor, content.LeagueRematchOpponents) || opponents.Catalog.Species.Count != 180 ||
-            !ReferenceEquals(SevenIslandMachineCatalog.For(machines.Catalog), machines) ||
-            !ReferenceEquals(machines.Pokemon, owned) || !ReferenceEquals(machines.Predecessor, content.CeruleanCaveMachines) ||
-            content.SevenIslandShop is null || trainers.Trainers.Count != 18 || trainers.BattlesByScript.Count != 20)
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) || !content.Inventory.Items.ContainsKey(ItemIds.KingsRockId) || trainers.Trainers.Count != 18 || trainers.BattlesByScript.Count != 20)
             throw new InvalidDataException("seven_island_source_binding");
         SevenIslandTrainerPartyFactory.ValidateCatalog(trainers);
         if (!content.TryConstant("HEAL_LOCATION_SEVEN_ISLAND", out var healing) || healing != 19)

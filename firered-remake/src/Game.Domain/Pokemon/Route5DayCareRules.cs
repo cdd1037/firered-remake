@@ -22,7 +22,7 @@ public static class Route5DayCareRules
 
     /// <summary>Save/transaction validation includes resident uniqueness against party and all
     /// PC boxes, and optional allocator bounds. Mail is removed from attached slots while stored.</summary>
-    public static string? Validate(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static string? Validate(CampaignPokemonContent content, GamePokemonCatalog ownership,
         Route5DayCareState? state, ImmutableArray<PartyPokemon> party, PokemonStorageState storage,
         SourceMailState mail, long? nextInstanceId = null)
     {
@@ -40,7 +40,7 @@ public static class Route5DayCareRules
         return null;
     }
 
-    public static Route5DayCareResult Deposit(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static Route5DayCareResult Deposit(CampaignPokemonContent content, GamePokemonCatalog ownership,
         Route5DayCareState state, ImmutableArray<PartyPokemon> party, PokemonStorageState storage,
         SourceMailState mail, int partyIndex)
     {
@@ -66,7 +66,7 @@ public static class Route5DayCareRules
 
     /// <summary>The displayed level uses total EXP + steps even before withdrawal. The original
     /// base fee is charged with zero growth and at level 100. Quote does not teach moves or evolve.</summary>
-    public static SourceDayCareQuote Quote(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static SourceDayCareQuote Quote(CampaignPokemonContent content, GamePokemonCatalog ownership,
         Route5DayCareState state)
     {
         if (!HasOwnership(content, ownership)) throw new ArgumentException("daycare_owned_catalog_identity");
@@ -86,7 +86,7 @@ public static class Route5DayCareRules
 
     /// <summary>Only successful withdrawal returns MoneyPaid. Commit that deduction with Party,
     /// Mail and State atomically. Party capacity is checked before funds, matching the script.</summary>
-    public static Route5DayCareResult Withdraw(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static Route5DayCareResult Withdraw(CampaignPokemonContent content, GamePokemonCatalog ownership,
         Route5DayCareState state, ImmutableArray<PartyPokemon> party, PokemonStorageState storage,
         SourceMailState mail, int money)
     {
@@ -110,9 +110,9 @@ public static class Route5DayCareRules
             quote.Cost, grown.LearnedMoves);
     }
 
-    internal static bool HasOwnership(CampaignPokemonContent? content, OwnedBattlePokemonCatalog? ownership) =>
+    internal static bool HasOwnership(CampaignPokemonContent? content, GamePokemonCatalog? ownership) =>
         content is not null && ownership is not null && ReferenceEquals(content.Catalog, ownership.Catalog) &&
-        ReferenceEquals(OwnedBattlePokemonCatalog.For(content.Catalog), ownership);
+        ReferenceEquals(content.Pokemon, ownership);
 
     internal static string? ValidateResident(CampaignPokemonContent content, SourceDayCareResident resident)
     {
@@ -138,7 +138,7 @@ public static class SourceDayCareGrowth
 {
     public sealed record Result(PartyPokemon Pokemon, ImmutableArray<SourceDayCareLearnedMove> LearnedMoves);
 
-    public static Result Apply(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+    public static Result Apply(CampaignPokemonContent content, GamePokemonCatalog ownership,
         SourceDayCareResident resident)
     {
         _ = Route5DayCareRules.Quote(content, ownership, new(resident));
@@ -164,7 +164,7 @@ public static class SourceDayCareGrowth
             }
         }
         int level = GrowthRules.LevelFromExperience(species.GrowthRate, experience);
-        var stats = PokemonStatCalculation.Calculate(species, level, before.Nature, before.Ivs, before.Evs);
+        var stats = PokemonStatCalculation.Calculate(species, level, before.Nature, before.Ivs, before.Evs, content.Catalog.MechanicsData);
         var result = resident.Pokemon with { Pokemon = before with
         {
             Experience = experience, Level = level, Stats = stats, StatCalculationEvs = null,

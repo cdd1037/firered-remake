@@ -265,7 +265,7 @@ public sealed partial class CampaignSession
         var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
         var invalid=ValidateCampaignInventory(inventory);if(invalid is not null)throw new InvalidDataException(invalid);
         if(!nugget&&OpeningInventoryRules.Quantity(inventory.KeyItems??[],item.Id)!=0)throw new InvalidDataException("bill_key_item_duplicate");
-        var view=ShopInventoryView(inventory);
+        var view=inventory;
         // The narrowed shop view omits Town Map. Capacity counts the full original key pocket.
         bool keyFull=!nugget&&(inventory.KeyItems?.Length??0)>=ShopCatalog.QuestLimits.KeyItemSlots;
         var result=keyFull?new InventoryTransactionResult(view,false,"inventory_destination_full"):
@@ -274,7 +274,7 @@ public sealed partial class CampaignSession
         next=Result(result.Succeeded?1:0);
         if(result.Succeeded&&effect.Opcode=="additem")
         {
-            next=next with{Inventory=nugget?MergeShopInventory(inventory,result.State):inventory with{KeyItems=(inventory.KeyItems??[]).Add(new(item.Id,1))}};
+            next=next with{Inventory=nugget?result.State:inventory with{KeyItems=(inventory.KeyItems??[]).Add(new(item.Id,1))}};
             if(nugget)next=next with{Script=next.Script with{Flags=next.Script.Flags.SetItem(BillNuggetReceivedFlag,true)}};
         }
         return true;

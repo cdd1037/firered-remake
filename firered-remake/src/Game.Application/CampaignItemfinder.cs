@@ -12,9 +12,9 @@ public sealed partial class CampaignSession
     private const string ItemfinderAidePath="data/maps/Route11_EastEntrance_2F/scripts.inc";
     private const string ItemfinderAide="Route11_EastEntrance_2F_EventScript_Aide";
     private ItemfinderSourceContract? ItemfinderSource=>(_content as IItemfinderSourceCatalog)?.ItemfinderSource;
-    public bool ItemfinderEnabled=>ItemfinderSource is not null&&_content.PowerPlantShop is not null;
+    public bool ItemfinderEnabled=>ItemfinderSource is not null&&_content.Inventory.Items.ContainsKey(ItemIds.ItemfinderId);
     public string? VisibleItemfinderMessage=>State.Itemfinder is {} itemfinder?itemfinder.Pages[itemfinder.Page]:null;
-    public bool SacredAshEnabled=>_content.PowerPlantShop is not null;
+    public bool SacredAshEnabled=>_content.Inventory.Items.ContainsKey(ItemIds.SacredAshId);
     private string? ValidateItemfinderProgress(CampaignState state)
     {
         bool got=state.Script.Flags.GetValueOrDefault(ItemfinderFlag);
@@ -54,12 +54,12 @@ public sealed partial class CampaignSession
         if(item is null||item.SourceItemId!=source.SourceItemId||item.Pocket!="POCKET_ITEMS")return new(CommandStatus.Rejected,state,"itemfinder_pickup_item_unsupported");
         var inventory=state.Inventory!;
         if(ValidateCampaignInventory(inventory) is {} error)return new(CommandStatus.Rejected,state,error);
-        var added=EarlyInventoryAddRules.Add(ShopCatalog,ShopInventoryView(inventory),item.Id,1);
+        var added=EarlyInventoryAddRules.Add(ShopCatalog,inventory,item.Id,1);
         if(!added.Succeeded&&added.Error is not("inventory_stack_full" or "inventory_destination_full"))return new(CommandStatus.Fault,state,added.Error);
         string Render(string symbol)=>ItemfinderSource.Texts[symbol].Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal).Replace("{STR_VAR_2}",item.Name,StringComparison.Ordinal).Replace("{STR_VAR_3}","ITEMS POCKET",StringComparison.Ordinal);
         var pages=ImmutableArray.Create(Render("Text_DugUpItemFromGround"),Render(added.Succeeded?"Text_PutItemAway":"Text_TooBadBagFull"));
         // One authoritative transaction owns the add and one-time flag. A full pocket changes neither.
-        return new(CommandStatus.Accepted,state with{Inventory=added.Succeeded?MergeShopInventory(inventory,added.State):inventory,
+        return new(CommandStatus.Accepted,state with{Inventory=added.Succeeded?added.State:inventory,
             Script=state.Script with{Flags=added.Succeeded?state.Script.Flags.SetItem(source.Flag,true):state.Script.Flags},
             Itemfinder=task with{Pages=pages,Page=0,DigPending=false}});
     }
@@ -99,13 +99,13 @@ public sealed partial class CampaignSession
     }
     private Decision<CampaignState> UseSacredAsh(CampaignState state,CampaignCommand command)
     {
-        if(!SacredAshEnabled||state.ItemMenu is not{Origin:"bag",View:"bag",TargetInstanceId:null} menu||command.Text!=EventIslandShopCatalog.SacredAshId.Value||command.MoveSlot!=-1)return new(CommandStatus.Rejected,state,"sacred_ash_field_context_invalid");
+        if(!SacredAshEnabled||state.ItemMenu is not{Origin:"bag",View:"bag",TargetInstanceId:null} menu||command.Text!=ItemIds.SacredAshId.Value||command.MoveSlot!=-1)return new(CommandStatus.Rejected,state,"sacred_ash_field_context_invalid");
         if(ValidateCampaignInventory(state.Inventory) is {} error)return new(CommandStatus.Rejected,state,error);
-        var result=SacredAshRules.Use(ShopCatalog,_content.PokemonContent!,ShopInventoryView(state.Inventory!),state.Party);
+        var result=SacredAshRules.Use(ShopCatalog,_content.PokemonContent!,state.Inventory!,state.Party);
         if(result.Error is {} invalid)return invalid=="medicine_no_effect"?new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol="gText_WontHaveEffect",ReturnView="bag"}}):new(CommandStatus.Rejected,state,invalid);
         var template=string.Join("\n",_content.TextPages("gText_PkmnHPRestoredByVar2"));
         var messages=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>template.Replace("{STR_VAR_1}",p.Nickname,StringComparison.Ordinal).Replace("{STR_VAR_2}",p.Pokemon.Stats.MaxHp.ToString(CultureInfo.InvariantCulture),StringComparison.Ordinal)).ToImmutableArray();
-        return new(CommandStatus.Accepted,state with{Inventory=MergeShopInventory(state.Inventory!,result.Inventory),Party=result.Party,
+        return new(CommandStatus.Accepted,state with{Inventory=result.Inventory,Party=result.Party,
             ItemMenu=menu with{View="message",MessageSymbol="gText_PkmnHPRestoredByVar2",ReturnView="bag",SourceMessages=messages,SourceMessageIndex=0}});
     }
 }

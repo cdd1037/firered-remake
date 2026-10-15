@@ -2,6 +2,7 @@
 """Import exact Five Island battle catalogs from pinned Git blobs, without running upstream code.
 Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
 import re
@@ -100,10 +101,6 @@ def generate(reference, dependency):
     species = {s['id']['value'][5:]:s for s in canonical['species']}
     metadata = {s['id']['value'][5:]:s for s in canonical['metadata']}
     edges = []
-    for name in additions+opponent_additions:
-        original = species[name]
-        for sr in [original['source'],original['learnsetSource'],metadata[name]['learnsetPointerSource'],metadata[name]['dexSource']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
-            read(sr['path'])
     for name,method,parameter,target in [('SPECIES_HOPPIP','EVO_LEVEL',18,'SPECIES_SKIPLOOM'),('SPECIES_SKIPLOOM','EVO_LEVEL',27,'SPECIES_JUMPLUFF')]:
         matches=[e for e in metadata[name]['sourceEvolutions'] if e['method']==method and e['parameterValue']==parameter and e['target']['value']=='pret:'+target]
         need(len(matches)==1,'Evolution edge: '+name)
@@ -171,14 +168,14 @@ def generate_items(reference,root):
   i=next(i for i in source_items if i['itemId']==symbol)
   match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
   r=ref('src/data/items.json',symbol,line,line)
-  value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
+  value=shared_item(symbol)
   return dict(item=value,description=i['description_english'].replace('\\n','\n'))
  symbols=['ITEM_MAX_POTION','ITEM_PP_UP','ITEM_BIG_PEARL','ITEM_TM36','ITEM_PEARL','ITEM_UP_GRADE','ITEM_NEST_BALL','ITEM_NET_BALL','ITEM_SAPPHIRE']
  items=[metadata(s) for s in symbols]
  new=[]
  for m in [metadata('ITEM_BIG_PEARL'),metadata('ITEM_UP_GRADE'),metadata('ITEM_SAPPHIRE')]:
   i=m['item']
-  new.append({k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=m['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i))
+  new.append(dict(item=i)|dict(description=m['description'], healHp=0, cureStatus=0, effectBytes=[], useSupport=10))
  additions=compatibility_additions(ROOT, 'content/generated/five-island-rules/items.json', 'machineAdditions')
  need(len(additions)==38, 'Exact admitted machine scope')
  tm36=admission_view(ROOT, 'content/generated/five-island-rules/items.json', '/tm36')
@@ -260,19 +257,19 @@ def generate_encounters(reference):
         dependencies.append(dict(species=species,sourceSpeciesId=number,ability1=a,ability2=b,itemCommon=common,itemRare=rare))
     source += "    ];\n}\n"
     witness=dict(sourceCommit=COMMIT,encounters=encounters,initialMoves=move_rows,species=dependencies,inputs=[inputs[k] for k in sorted(inputs)])
-    return {"src/Game.Domain/Encounters/FiveIslandEncounterTables.cs":tables,"src/Game.Domain/Encounters/FiveIslandWildSource.cs":source,"content/generated/five-island-rules/wild-source-witness.json":json.dumps(witness,indent=2)+"\n"}
+    return {"src/Game.Domain/Encounters/FiveIslandEncounterTables.cs":tables,"src/Game.Domain/Encounters/FiveIslandWildSource.cs":source,"content/generated/five-island-rules/wild-source-witness.json":json.dumps(witness,indent=2, default=item_json)+"\n"}
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency)
     items,evidence=generate_items(a.reference,a.dependency)
     docs['items.json']=items;docs['item-source-input-hashes.json']=evidence
-    files={'content/generated/five-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
+    files={'content/generated/five-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False, default=item_json)+'\n').encode() for n,d in docs.items()}
     files.update({name:value.encode() for name,value in generate_encounters(a.reference).items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-five-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=9,battles=9,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount']),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=9,battles=9,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount']),indent=2, default=item_json))
 if __name__=='__main__':main()

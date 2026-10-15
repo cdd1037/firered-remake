@@ -16,37 +16,13 @@ public sealed partial class PretCampaignCatalog
     public CeladonApproachTrainerCatalog? CeladonApproachTrainers { get; }
     public bool CeladonApproachEnabled => CeladonApproachRegion is not null;
 
-    private static PokemonCatalog CeladonApproachCampaignPokemon(PokemonCatalog catalog,PokemonCatalog previous)
-    {
-        PokemonFactory.ValidateCatalog(catalog);
-        PokemonFactory.ValidateCatalog(previous);
-        if (catalog.Species.Count != 94 || previous.Species.Count != 93)
-            throw new InvalidDataException("celadon-approach_campaign_species_scope_differs");
-        var moves = catalog.Moves;
-        // The regional catalog is composed from the original Route11 Pokemon source.
-        // Retain the separate Gym supplement, including Shock Wave, in the campaign.
-        foreach (var (id, move) in previous.Moves)
-        {
-            if (moves.TryGetValue(id, out var current))
-            {
-                if (current with { Flags = move.Flags,Source = move.Source } != move ||
-                    !current.Flags.SequenceEqual(move.Flags))
-                    throw new InvalidDataException("Conflicting CeladonApproach predecessor move: " + id);
-            }
-            else moves = moves.Add(id, move);
-        }
-        var result = catalog with { Moves = moves };
-        PokemonFactory.ValidateCatalog(result);
-        return result;
-    }
-
     private static IEnumerable<FieldPickupDefinition> CeladonApproachPickupDefinitions(
-        PretCeladonApproachItemsDocument items,EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
+        PretCeladonApproachItemsDocument items,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)
     {
         foreach (var pickup in items.Pickups)
         {
             var item = shop.Items.FirstOrDefault(i => i.Id == pickup.Item);
-            var machine = PewterMachineRules.Definition(machines, pickup.Item)?.Machine.Item;
+            var machine = MachineRules.Definition(machines, pickup.Item)?.Machine.Item;
             int itemNumber = item?.SourceItemId ?? machine?.SourceItemId ??
                 throw new InvalidDataException("celadon-approach_pickup_item_missing: " + pickup.Item);
             string symbol = item?.SourceItemSymbol ?? machine!.SourceItemSymbol;

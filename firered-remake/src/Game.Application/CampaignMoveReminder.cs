@@ -216,7 +216,7 @@ public sealed partial class CampaignSession
             if (!tiny && !big) throw new InvalidDataException("move_reminder_mushroom_operands");
             var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
             if (ValidateCampaignInventory(inventory) is { } inventoryError) throw new InvalidDataException(inventoryError);
-            var view = ShopInventoryView(inventory);
+            var view = inventory;
             if (effect.Opcode == "checkitem")
             {
                 if (effect.Source.Symbol != "TwoIsland_House_EventScript_CheckPlayerHasMushrooms") throw new InvalidDataException("move_reminder_check_context");
@@ -233,7 +233,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("move_reminder_payment_context");
             var payment = MoveReminderRules.PayAfterLearning(ShopCatalog, view, scene.Lesson, tiny ? MoveReminderPayment.TinyMushrooms : MoveReminderPayment.BigMushroom);
             if (!payment.Succeeded) throw new InvalidDataException(payment.Error);
-            next = state with { Inventory = MergeShopInventory(inventory, payment.State), MoveReminder = scene with { Paid = true },
+            next = state with { Inventory = payment.State, MoveReminder = scene with { Paid = true },
                 Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 1) } };
             return true;
         }

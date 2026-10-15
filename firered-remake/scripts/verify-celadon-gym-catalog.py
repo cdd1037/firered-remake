@@ -27,11 +27,14 @@ def main():
             for row in lock['files']:
                 raw=(first/'content/raw/pokefirered/037335f4'/row['path']).read_bytes()
                 check(raw==m.git(repo,'show',m.COMMIT+':'+row['path']),'Source differs from pinned Git')
-        p=first/'content/generated/celadon-gym-pokemon';catalog=m.read_json(p/'catalog.json');full=m.read_json(p/'source-species.json');scope=m.read_json(p/'scope.json');supplement=m.read_json(p/'supplement.json')
+        p=first/'content/generated/celadon-gym-pokemon';catalog=m.read_json(p/'catalog.json');full=m.read_json(p/'source-species.json');supplement=m.read_json(p/'supplement.json')
         check(len(catalog['species'])==4 and len(catalog['moves'])==29,'Catalog scope differs')
-        check(len(scope['trainers'])==8 and sum(len(t['party']) for t in scope['trainers'])==21 and len(scope['requiredTrainerMoves'])==17,'Trainer closure differs')
-        check({x['id']['value'] for x in scope['newMoveDefinitions']}=={'pret:MOVE_BARRAGE','pret:MOVE_INGRAIN','pret:MOVE_MEGA_DRAIN','pret:MOVE_TICKLE','pret:MOVE_UPROAR'},'Five metadata additions differ')
-        check(scope['newAbilities']==[] and scope['naturalLevelLimit'] is None and not scope['effectsEnabledByThisCatalog'],'Unverified admission claim')
+        lock=m.read_json(m.ROOT/'scripts/celadon-gym-pokemon.lock.json')
+        sources={row['path']:(first/'content/raw/pokefirered/037335f4'/row['path']).read_bytes() for row in lock['files']}
+        trainers=m.trainer_parties(lock,sources)
+        check(len(trainers)==8 and sum(len(t['party']) for t in trainers)==21 and len({move for t in trainers for mon in t['party'] for move in mon['moves']})==17,'Trainer closure differs')
+        prior_moves={row['value'] for d in recipe['dependencies'] if d['path'].endswith('/catalog.json') for row in m.read_json(project/d['path']).get('moves',[])}
+        check({x['value'] for x in catalog['moves']}-prior_moves=={'pret:MOVE_BARRAGE','pret:MOVE_INGRAIN','pret:MOVE_MEGA_DRAIN','pret:MOVE_TICKLE','pret:MOVE_UPROAR'},'Five metadata additions differ')
         rawtext=(first/'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h').read_text()
         for row in full['species']:
             symbol=row['species']['value'][5:];source=re.search(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',rawtext,re.M|re.S)
@@ -48,7 +51,7 @@ def main():
         check(sum(x['canLearn'] for x in machines[-1]['compatibility'])==25,'TM19 source species compatibility count')
         tm_source=(first/'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h').read_text()
         for index,machine in enumerate(machines):
-            token=machine['machine']['item']['name']+'_'+machine['move']['value'][10:]
+            token=machine['machine']['item']['value'].removeprefix('pret:ITEM_')+'_'+machine['move']['value'][10:]
             for cell in (machine['compatibility'] if index==14 else machine['compatibility'][94:]):
                 symbol=cell['species']['value'][5:];block=re.search(r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),',tm_source,re.M|re.S)
                 actual=token in re.findall(r'TMHM\((\w+)\)',block[1])

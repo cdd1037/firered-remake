@@ -11,7 +11,7 @@ public sealed record VermilionGymPortraitSource(string Id, int Width, int Height
     string SourceImage, string SourcePalette);
 public sealed record PretVermilionGymAssetsDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<VermilionGymLocalInput> LocalInputs,
-    PewterAdditionalMachine Tm34,
+    MachineDefinition Tm34,
     PretPewterMachineIcon Icon, ImmutableArray<VermilionGymPortraitSource> Portraits,
     ImmutableArray<string> Limitations);
 
@@ -48,9 +48,9 @@ public sealed class PretVermilionGymAssets
         Require(document.SchemaVersion == 1 && document.Portraits.Length == 2 &&
             document.Tm34.Compatibility.Length == 73 && !document.Limitations.IsDefaultOrEmpty, "Gym asset scope differs.");
         var inputs = document.Inputs.ToDictionary(i => i.Path, StringComparer.Ordinal);
-        Require(document.Tm34.Machine.Item.Id == PewterMachineRules.Tm34Id &&
-            document.Tm34.Move == PewterMachineRules.ShockWaveId && document.Tm34.SourceMoveId == 351 &&
-            document.Tm34.MovePp == 20 && document.Icon.Item == PewterMachineRules.Tm34Id &&
+        Require(document.Tm34.Machine.Item.Id == MachineRules.Tm34Id &&
+            document.Tm34.Move == MachineRules.ShockWaveId && document.Tm34.SourceMoveId == 351 &&
+            document.Tm34.MovePp == 20 && document.Icon.Item == MachineRules.Tm34Id &&
             document.Icon.Region is not null, "Gym TM34 identity differs.");
         PretPewterMachines.ValidateIcon(document.Icon);
         for (int n = 0; n < 2; n++)
@@ -68,7 +68,7 @@ public sealed class PretVermilionGymAssets
         return document;
     }
 
-    public static PretVermilionGymAssets Load(string root)
+    public static PretVermilionGymAssets Load(string root, SharedMachineCatalog? shared = null)
     {
         using var manifest = JsonDocument.Parse(Read(root,"content/generated/vermilion-gym-assets/manifest.json"));
 var generated = manifest.RootElement;
@@ -78,7 +78,7 @@ var generated = manifest.RootElement;
             string path = output.GetProperty("path").GetString()!;
             Require(outputs.TryAdd(path, Read(root,path.StartsWith("content/generated/", StringComparison.Ordinal) ? path : "content/generated/vermilion-gym-assets/" + path)), "Duplicate Gym output.");
         }
-        var document = LoadDocument(Utf8.GetString(outputs["assets.json"]), SharedMachineCatalog.LoadProject(root));
+        var document = LoadDocument(Utf8.GetString(outputs["assets.json"]), (shared ?? SharedMachineCatalog.LoadProject(root)));
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var input in document.Inputs)
         {
@@ -90,22 +90,6 @@ var generated = manifest.RootElement;
         Require(outputs["synth-manifest-candidate.json"].Length == SynthManifestBytes , "Gym synth candidate differs.");
         return new(document, files.ToImmutable(), outputs.ToImmutable());
     }
-
-    public PewterMachineCatalog ExtendMachines(PewterMachineCatalog old)
-    {
-        PewterMachineRules.ValidateCatalog(old);
-        for (int n = 0; n < 73; n++)
-        {
-            var prior = old.Compatibility[n]; var current = Document.Tm34.Compatibility[n];
-            Require(prior.Species == current.Species && prior.SourceSpeciesId == current.SourceSpeciesId,
-                "Gym TM34 changed species order.");
-        }
-        var result = old with { Profile = PewterMachineRules.VermilionGymProfile,AdditionalMachines = old.AdditionalMachines!.Value.Add(Document.Tm34) };
-        PewterMachineRules.ValidateCatalog(result);
-        return result;
-    }
-
-    public static PewterMachineCatalog LoadCatalogProject(string root) => Load(root).ExtendMachines(PretSsAnneMachines.LoadCatalogProject(root));
 
     private static byte[] Read(string root,string relative)
     {

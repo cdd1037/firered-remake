@@ -72,7 +72,7 @@ public partial class CampaignView
         var source = art.Manifest.GetProperty("oldAmber");
         var icon = source.GetProperty("icon");
         string id = source.GetProperty("id").GetString()!, assetId = icon.GetProperty("id").GetString()!;
-        var item = _catalog.FossilLabShop.Catalog.Items.Single(i => i.Id.Value == id);
+        var item = _catalog.EarlyShop!.Items.Single(i => i.Id.Value == id);
         if (item.SourceItemId != 354 || item.SourceItemSymbol != source.GetProperty("sourceSymbol").GetString() ||
             item.Name != source.GetProperty("name").GetString() || item.Description != source.GetProperty("description").GetString() ||
             item.FieldUseFunction != source.GetProperty("fieldUseFunction").GetString())

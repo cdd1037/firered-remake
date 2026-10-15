@@ -35,7 +35,7 @@ public sealed partial class CampaignSession
         if (quantity != 1) throw new InvalidDataException("five_island_sapphire_quantity");
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         if (ValidateCampaignInventory(inventory) is {} error) throw new InvalidDataException(error);
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         if (effect.Opcode == "checkitem")
         { next = Result(OpeningInventoryRules.Quantity(view.KeyItems ?? [], item.Id) >= 1 ? 1 : 0); return true; }
         var result = effect.Opcode == "checkitemspace" ? EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, item.Id, quantity) :
@@ -45,7 +45,7 @@ public sealed partial class CampaignSession
         var changed = inventory;
         if (result.Succeeded && effect.Opcode == "additem")
         {
-            changed = MergeShopInventory(inventory, result.State);
+            changed = result.State;
             int count = OpeningInventoryRules.Quantity(result.State.KeyItems ?? [], item.Id);
             var keys = (changed.KeyItems ?? []).RemoveAll(k => k.Item == item.Id);
             changed = changed with { KeyItems = count == 0 ? keys : keys.Add(new(item.Id, count)) };

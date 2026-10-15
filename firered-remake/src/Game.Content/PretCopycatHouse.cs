@@ -94,7 +94,7 @@ public sealed class PretCopycatHouse
         ValidateTopology(source, dependencyRoot, first, second);
 
         var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        
+
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["MOVETUTOR_MIMIC"] == 7 && constants["ITEM_POKE_DOLL"] == 80 &&
             constants["SPECIES_CHANSEY"] == 113 && constants["SPECIES_DODUO"] == 84,

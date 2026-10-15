@@ -49,102 +49,102 @@ public sealed partial class CampaignSession
         if (_content.ForestTrainers is { } forest)
         {
             Add(TrainerRegion.Forest, forest.Trainers.Values, forest.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => ForestTrainerPartyFactory.Create(forest, SafariOrdinaryOwnership!.Predecessor, trainer, rng), "forest-trainer");
+                (trainer, rng) => ForestTrainerPartyFactory.Create(forest, _binding.Ownership.Opponents.Catalog, trainer, rng), "forest-trainer");
         }
         if (_content.PewterTrainers is { } pewter)
         {
             Add(TrainerRegion.Pewter, pewter.Trainers.Values, pewter.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => PewterTrainerPartyFactory.Create(pewter, SafariOrdinaryOwnership!.Predecessor, trainer, rng), "pewter-trainer");
+                (trainer, rng) => PewterTrainerPartyFactory.Create(pewter, _binding.Ownership.Opponents.Catalog, trainer, rng), "pewter-trainer");
         }
         if (_content.Route22Trainers is { } route22)
         {
             Add(TrainerRegion.Route22, route22.Trainers.Values, route22.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => Route22TrainerPartyFactory.Create(route22, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "route22-trainer");
+                (trainer, rng) => Route22TrainerPartyFactory.Create(route22, _binding.Ownership.Opponents.Catalog, trainer, rng), "route22-trainer");
         }
         if (_content.Route3Trainers is { } route3)
         {
             Add(TrainerRegion.Route3, route3.Trainers.Values, route3.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => Route3TrainerPartyFactory.Create(route3, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "route3-trainer");
+                (trainer, rng) => Route3TrainerPartyFactory.Create(route3, _binding.Ownership.Opponents.Catalog, trainer, rng), "route3-trainer");
         }
         if (_content.MtMoonTrainers is { } mtMoon)
         {
             Add(TrainerRegion.MtMoon, mtMoon.Trainers.Values, mtMoon.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => MtMoonTrainerPartyFactory.Create(mtMoon, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "mtmoon-trainer");
+                (trainer, rng) => MtMoonTrainerPartyFactory.Create(mtMoon, _binding.Ownership.Opponents.Catalog, trainer, rng), "mtmoon-trainer");
         }
         if (_content.CeruleanTrainers is { } cerulean)
         {
             Add(TrainerRegion.Cerulean, cerulean.Trainers.Values, cerulean.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => CeruleanTrainerPartyFactory.Create(cerulean, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "cerulean-trainer");
+                (trainer, rng) => CeruleanTrainerPartyFactory.Create(cerulean, _binding.Ownership.Opponents.Catalog, trainer, rng), "cerulean-trainer");
         }
         if (_content.BillTrainers is { } bill)
         {
             Add(TrainerRegion.Bill, bill.Trainers.Values, bill.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => BillTrainerPartyFactory.Create(bill, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "bill-trainer");
+                (trainer, rng) => BillTrainerPartyFactory.Create(bill, _binding.Ownership.Opponents.Catalog, trainer, rng), "bill-trainer");
         }
         if (_content.VermilionTrainers is { } vermilion)
         {
             Add(TrainerRegion.Vermilion, vermilion.Trainers.Values, vermilion.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => VermilionTrainerPartyFactory.Create(vermilion, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "vermilion-trainer");
+                (trainer, rng) => VermilionTrainerPartyFactory.Create(vermilion, _binding.Ownership.Opponents.Catalog, trainer, rng), "vermilion-trainer");
         }
         if (_content.SsAnneTrainers is { } ssAnne)
         {
             Add(TrainerRegion.SsAnne, ssAnne.Trainers.Values, ssAnne.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SsAnneTrainerPartyFactory.Create(ssAnne, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "ssanne-trainer");
+                (trainer, rng) => SsAnneTrainerPartyFactory.Create(ssAnne, _binding.Ownership.Opponents.Catalog, trainer, rng), "ssanne-trainer");
         }
         if (_content.VermilionGymTrainers is { } vermilionGym)
         {
             Add(TrainerRegion.VermilionGym, vermilionGym.Trainers.Values, vermilionGym.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => VermilionGymTrainerPartyFactory.Create(vermilionGym, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "vermilion-gym-trainer");
+                (trainer, rng) => VermilionGymTrainerPartyFactory.Create(vermilionGym, _binding.Ownership.Opponents.Catalog, trainer, rng), "vermilion-gym-trainer");
         }
         if (_content.Route11Trainers is { } route11)
         {
             Add(TrainerRegion.Route11, route11.Trainers.Values, route11.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => Route11TrainerPartyFactory.Create(route11, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "route11-trainer");
+                (trainer, rng) => Route11TrainerPartyFactory.Create(route11, _binding.Ownership.Opponents.Catalog, trainer, rng), "route11-trainer");
         }
         if (_content.RockTunnelTrainers is { } rockTunnel)
         {
             Add(TrainerRegion.RockTunnel, rockTunnel.Trainers.Values, rockTunnel.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => RockTunnelTrainerPartyFactory.Create(rockTunnel, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "rocktunnel-trainer");
+                (trainer, rng) => RockTunnelTrainerPartyFactory.Create(rockTunnel, _binding.Ownership.Opponents.Catalog, trainer, rng), "rocktunnel-trainer");
         }
         if (_content.CeladonApproachTrainers is { } celadonApproach)
         {
             Add(TrainerRegion.CeladonApproach, celadonApproach.Trainers.Values, celadonApproach.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => CeladonApproachTrainerPartyFactory.Create(celadonApproach, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "celadon-approach-trainer");
+                (trainer, rng) => CeladonApproachTrainerPartyFactory.Create(celadonApproach, _binding.Ownership.Opponents.Catalog, trainer, rng), "celadon-approach-trainer");
         }
         if (_content.CeladonGymTrainers is { } celadonGym)
         {
             Add(TrainerRegion.CeladonGym, celadonGym.Trainers.Values, celadonGym.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => CeladonGymTrainerPartyFactory.Create(celadonGym, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "celadon-gym-trainer");
+                (trainer, rng) => CeladonGymTrainerPartyFactory.Create(celadonGym, _binding.Ownership.Opponents.Catalog, trainer, rng), "celadon-gym-trainer");
         }
         if (_content.RocketHideoutTrainers is { } rocketHideout)
         {
             Add(TrainerRegion.RocketHideout, rocketHideout.Trainers.Values, rocketHideout.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => RocketHideoutTrainerPartyFactory.Create(rocketHideout, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "rocket-hideout-trainer");
+                (trainer, rng) => RocketHideoutTrainerPartyFactory.Create(rocketHideout, _binding.Ownership.Opponents.Catalog, trainer, rng), "rocket-hideout-trainer");
         }
         if (_content.PokemonTowerTrainers is { } pokemonTower)
         {
             Add(TrainerRegion.PokemonTower, pokemonTower.Trainers.Values, pokemonTower.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => PokemonTowerTrainerPartyFactory.Create(pokemonTower, SafariOrdinaryOwnership!.Predecessor, trainer, rng, fuchsiaRules: true), "pokemon-tower-trainer");
+                (trainer, rng) => PokemonTowerTrainerPartyFactory.Create(pokemonTower, _binding.Ownership.Opponents.Catalog, trainer, rng), "pokemon-tower-trainer");
         }
         if (_content.FuchsiaRouteEnabled && _content.FuchsiaRouteTrainers is { } fuchsiaRoute)
         {
             Add(TrainerRegion.FuchsiaRoute, fuchsiaRoute.Trainers.Values, fuchsiaRoute.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => FuchsiaRouteTrainerPartyFactory.Create(fuchsiaRoute, SafariOrdinaryOwnership!.Predecessor, trainer, rng), "fuchsia-route-trainer");
+                (trainer, rng) => FuchsiaRouteTrainerPartyFactory.Create(fuchsiaRoute, _binding.Ownership.Opponents.Catalog, trainer, rng), "fuchsia-route-trainer");
         }
         if (_content.FuchsiaGymTrainerParties is { } fuchsiaGym)
         {
             Add(TrainerRegion.FuchsiaGym, fuchsiaGym.Trainers.Values, fuchsiaGym.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => FuchsiaGymTrainerPartyFactory.Create(fuchsiaGym, SafariOrdinaryOwnership!.Predecessor, trainer, rng), "fuchsia-gym-trainer");
+                (trainer, rng) => FuchsiaGymTrainerPartyFactory.Create(fuchsiaGym, _binding.Ownership.Opponents.Catalog, trainer, rng), "fuchsia-gym-trainer");
         }
         if (_content.SilphTrainerParties is { } silph)
         {
             Add(TrainerRegion.Silph, silph.Trainers.Values, silph.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SilphTrainerPartyFactory.Create(silph, _content.CinnabarOpponents!.Predecessor.Predecessor, trainer, rng), "silph-trainer");
+                (trainer, rng) => SilphTrainerPartyFactory.Create(silph, _binding.Ownership.Opponents, trainer, rng), "silph-trainer");
         }
         if (_content.SaffronGymTrainerParties is { } saffronGym)
         {
             Add(TrainerRegion.SaffronGym, saffronGym.Trainers.Values, saffronGym.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SaffronGymTrainerPartyFactory.Create(saffronGym, _content.CinnabarOpponents!.Predecessor, trainer, rng), "saffron-gym-trainer");
+                (trainer, rng) => SaffronGymTrainerPartyFactory.Create(saffronGym, _binding.Ownership.Opponents, trainer, rng), "saffron-gym-trainer");
         }
         if (_content.CinnabarTrainerParties is { } cinnabar)
         {

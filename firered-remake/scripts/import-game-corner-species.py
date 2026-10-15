@@ -52,7 +52,7 @@ def generate(reference, dependency):
             need(len(raw) == 1 and raw[0]['method'] == 'EVO_LEVEL' and raw[0]['sourceMethodId'] == 4 and
                  raw[0]['parameter'] == str(level) and raw[0]['parameterValue'] == level and
                  raw[0]['target']['value'] == 'pret:SPECIES_' + target, 'Exact source level edge: ' + symbol)
-            evolutions.append(dict(species=definition['id'], level=level, target=raw[0]['target'], source=raw[0]['source']))
+            evolutions.append(dict(species=definition['id'], level=level, target=raw[0]['target']))
         elif name == 'PORYGON':
             need(len(raw) == 1 and raw[0]['method'] == 'EVO_TRADE_ITEM' and raw[0]['sourceMethodId'] == 6 and
                  raw[0]['parameter'] == 'ITEM_UP_GRADE' and raw[0]['parameterValue'] == 218 and
@@ -60,8 +60,6 @@ def generate(reference, dependency):
             excluded.append(dict(species=definition['id'], **raw[0]))
         else:
             need(not raw, 'Terminal Dragonite source')
-        for source in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [e['source'] for e in raw]:
-            read(source)
         definitions.append(dict(definition=definition, metadata=metadata))
     return {
         'pokemon.json': dict(sourceCommit=COMMIT,  profile='firered-game-corner-owned-pokemon-v1',

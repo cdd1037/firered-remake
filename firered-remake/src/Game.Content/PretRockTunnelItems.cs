@@ -18,9 +18,9 @@ public static class PretRockTunnelItems
     public const string Profile = "firered-rocktunnel-items-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretRockTunnelItemsDocument Load(string json)
+    public static PretRockTunnelItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions();
+        var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretRockTunnelItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 7 && document.Icons.Length == 7 &&
@@ -48,26 +48,14 @@ public static class PretRockTunnelItems
         return document;
     }
 
-    public static PretRockTunnelItemsDocument LoadProject(string root)
+    public static PretRockTunnelItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/rocktunnel-items/rocktunnel-items.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/rocktunnel-items/rocktunnel-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
 
     /// <summary>Preserves all32 inherited definitions, including Revive; adds six new unique IDs.</summary>
-    public static EarlyShopCatalog LoadShopProject(string root, EarlyShopCatalog route11Shop)
-    {
-        Route11ItemRules.ValidateShop(route11Shop);
-        var document = LoadProject(root);
-        var sourceRevive = Definition(document, RockTunnelItemRules.ReviveId)!;
-        var inheritedRevive = route11Shop.Items.Single(i => i.Id == RockTunnelItemRules.ReviveId);
-        Require(inheritedRevive.EffectBytes.SequenceEqual(sourceRevive.EffectBytes) &&
-            inheritedRevive with { EffectBytes = sourceRevive.EffectBytes } == sourceRevive,
-            "RockTunnel changed inherited Revive metadata or active field support.");
-        var result = route11Shop with { Profile = RockTunnelItemRules.Profile,Items = route11Shop.Items.AddRange(document.Items.Where(i => i.Metadata.Item.Id != RockTunnelItemRules.ReviveId).Select(PretSsAnneItems.Definition)) };
-        EarlyShopInventoryRules.ValidateCatalog(result);
-        return result;
-    }
+
     public static EarlyShopItemDefinition? Definition(PretRockTunnelItemsDocument document, ItemId id)
     {
         var source = document.Items.SingleOrDefault(i => i.Metadata.Item.Id == id);

@@ -76,7 +76,7 @@ public static class PokemonFactory
     }
 
     internal static PokemonCreationResult CreateCore(PokemonCatalog catalog, CreatePokemonRequest request,
-        RngState rng, SourceMechanicsCatalog? mechanics = null)
+        RngState rng, PokemonMechanicsData? mechanics = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Ivs);
@@ -116,7 +116,7 @@ public static class PokemonFactory
                 (int)(second & 31), (int)((second >> 5) & 31), (int)((second >> 10) & 31));
         }
         var nature = (Nature)(personality % 25);
-        var stats = PokemonStatCalculation.Calculate(species, request.Level, nature, ivs, SixStats.Zero, mechanics);
+        var stats = PokemonStatCalculation.Calculate(species, request.Level, nature, ivs, SixStats.Zero, mechanics ?? catalog.MechanicsData);
         int slot = species.Ability2 == "ABILITY_NONE" ? 0 : (int)(personality & 1);
         var pokemon = new PokemonInstance(species.Id, species.SourceSpeciesId, request.Level, experience,
             request.OriginalTrainerId, personality, nature, ivs, SixStats.Zero, stats, stats.MaxHp,
@@ -138,18 +138,17 @@ public static class PokemonFactory
     public static void ValidateCatalog(PokemonCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (OwnedBattlePokemonCatalog.For(catalog) is not null) return;
-        if (catalog.SourceCommit != SourceCommit) throw new NotSupportedException("Unsupported Pokemon source commit.");
-        if (catalog.Species is null || catalog.Moves is null || catalog.Species.Count is not (9 or 14 or 17 or 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107) || catalog.Moves.Count == 0)
-            throw new ArgumentException("A complete bounded starter, Route 1, old-man tutorial, forest, Pewter, Route22, Route3, Mt. Moon or Cerulean catalog is required.");
-        if (catalog.Species.Count is 102 or 103 or 107 && !Game.Domain.WildBattle.SnorlaxBattleScope.ValidSpecies(catalog.Species.GetValueOrDefault(new("pret:SPECIES_SNORLAX"))!)) throw new ArgumentException("Invalid source Snorlax definition.");
-        if (catalog.Species.Count is 103 or 107 && !Game.Domain.WildBattle.EeveeBattleScope.IsEeveeDefinition(catalog.Species.GetValueOrDefault(new("pret:SPECIES_EEVEE")))) throw new ArgumentException("Invalid source Eevee definition.");
-        if (catalog.Species.Count == 107 && FuchsiaSupportedSpecies.Except(EeveeSupportedSpecies).Any(id =>
-            !ValidFuchsiaSpeciesDefinition(catalog.Species.GetValueOrDefault(id)))) throw new ArgumentException("Invalid source Fuchsia route definition.");
-        var supported=catalog.Species.Count switch{9=>SupportedSpecies,14=>Route1SupportedSpecies,17=>OldManTutorialSupportedSpecies,22=>ForestSupportedSpecies,29=>PewterSupportedSpecies,32=>Route22SupportedSpecies,40=>Route3SupportedSpecies,56=>MtMoonSupportedSpecies,65=>CeruleanSupportedSpecies,68=>BillSupportedSpecies,70=>VermilionSupportedSpecies,79=>Route11SupportedSpecies,93=>RockTunnelSupportedSpecies,94=>CeladonApproachSupportedSpecies,98=>CeladonGymSupportedSpecies,99=>RocketHideoutSupportedSpecies,101=>PokemonTowerSupportedSpecies,102=>SnorlaxSupportedSpecies,103=>EeveeSupportedSpecies,107=>FuchsiaSupportedSpecies,_=>SsAnneSupportedSpecies};
+        if (catalog.Species is null || catalog.Moves is null || catalog.Species.Count == 0 || catalog.Moves.Count == 0)
+            throw new ArgumentException("Pokemon definitions and moves are required.");
+    }
+
+    /// <summary>Full immutable definition validation at import/composition boundaries.</summary>
+    public static void ValidateDefinitions(PokemonCatalog catalog)
+    {
+        ValidateCatalog(catalog);
         foreach (var (id, species) in catalog.Species)
         {
-            if (species is null || species.Id != id || !supported.Contains(id) || species.SourceSpeciesId != SourceIds[id])
+            if (species is null || species.Id != id || !ValidSymbol(id.Value, "pret:SPECIES_") || species.SourceSpeciesId < 1)
                 throw new ArgumentException("Invalid or unsupported species identity.");
             if (species.BaseStats is null || species.BaseStats.Values.Any(x => x is < 1 or > 255) ||
                 species.EvYield is null || species.EvYield.Values.Any(x => x is < 0 or > 3) ||
@@ -176,33 +175,17 @@ public static class PokemonFactory
                     if (evolution.Level is < 1 or > 100 || evolution.Parameter is not null)
                         throw new ArgumentException("Invalid level-evolution parameter.");
                 }
-                else if (evolution.Method == PokemonEvolutionMethod.Item)
+                else if (evolution.Method is PokemonEvolutionMethod.LevelAttackGreaterDefense or
+                    PokemonEvolutionMethod.LevelAttackEqualDefense or PokemonEvolutionMethod.LevelAttackLessDefense)
                 {
-                    bool thunderStone = catalog.Species.Count is 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107 &&
-                        id.Value == "pret:SPECIES_PIKACHU" && evolution.Target.Value == "pret:SPECIES_RAICHU" &&
-                        evolution.Parameter == "ITEM_THUNDER_STONE";
-                    bool moonStone = catalog.Species.Count is 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107 && evolution.Parameter == "ITEM_MOON_STONE" &&
-                        (id.Value, evolution.Target.Value) is
-                            ("pret:SPECIES_NIDORINA", "pret:SPECIES_NIDOQUEEN") or
-                            ("pret:SPECIES_NIDORINO", "pret:SPECIES_NIDOKING") or
-                            ("pret:SPECIES_CLEFAIRY", "pret:SPECIES_CLEFABLE") or
-                            ("pret:SPECIES_JIGGLYPUFF", "pret:SPECIES_WIGGLYTUFF");
-                    bool waterStone = catalog.Species.Count is 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107 && id.Value == "pret:SPECIES_STARYU" &&
-                        evolution.Target.Value == "pret:SPECIES_STARMIE" && evolution.Parameter == "ITEM_WATER_STONE";
-                    bool leafStone = catalog.Species.Count is 98 or 99 or 101 or 102 or 103 or 107 && evolution.Parameter == "ITEM_LEAF_STONE" &&
-                        (id.Value, evolution.Target.Value) is ("pret:SPECIES_GLOOM", "pret:SPECIES_VILEPLUME") or ("pret:SPECIES_WEEPINBELL", "pret:SPECIES_VICTREEBEL");
-                    if (evolution.Level != 0 || !(thunderStone || moonStone || waterStone || leafStone))
-                        throw new ArgumentException("Unsupported item-evolution metadata. Item use/evolution execution is not implemented.");
+                    if (evolution.Level is < 1 or > 100 || evolution.Parameter is not null)
+                        throw new ArgumentException("Invalid level/stat evolution parameter.");
                 }
-                else if (evolution.Method == PokemonEvolutionMethod.Trade)
-                {
-                    if (catalog.Species.Count is not (29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107) || id.Value != "pret:SPECIES_GRAVELER" ||
-                        evolution.Level != 0 || evolution.Target.Value != "pret:SPECIES_GOLEM" || evolution.Parameter is not null)
-                        throw new ArgumentException("Unsupported trade-evolution metadata. Trade execution is not implemented.");
-                }
-                else if (catalog.Species.Count is not (29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107) || id.Value != "pret:SPECIES_ONIX" ||
-                    evolution.Level != 0 || evolution.Target.Value != "pret:SPECIES_STEELIX" || evolution.Parameter != "ITEM_METAL_COAT")
-                    throw new ArgumentException("Unsupported trade-item evolution metadata. Trade execution is not implemented.");
+                else if (evolution.Level != 0 ||
+                    (evolution.Method is PokemonEvolutionMethod.Item or PokemonEvolutionMethod.TradeItem
+                        ? evolution.Parameter is null || !ValidSymbol(evolution.Parameter, "ITEM_")
+                        : evolution.Parameter is not null))
+                    throw new ArgumentException("Invalid evolution parameter.");
             }
         }
         foreach (var (id, move) in catalog.Moves)

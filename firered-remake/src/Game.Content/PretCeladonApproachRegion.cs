@@ -16,15 +16,6 @@ public sealed class PretCeladonApproachRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public JsonElement Dependencies { get; }
-    public JsonElement Trainers => Dependencies.GetProperty("trainers");
-    public JsonElement Centers => Dependencies.GetProperty("centers");
-    public JsonElement Mart => Dependencies.GetProperty("mart");
-    public JsonElement Guards => Dependencies.GetProperty("guards");
-    public JsonElement VolunteerHouse => Dependencies.GetProperty("volunteerHouse");
-    public JsonElement CutTrees => Dependencies.GetProperty("cutTrees");
-    public JsonElement Items => Dependencies.GetProperty("items");
-    public JsonElement Pickups => Dependencies.GetProperty("pickups");
     public ImmutableArray<MapId> ReusedMapIds => [new("map.lavender-town")];
 
     public JsonElement Catalog { get; }
@@ -33,15 +24,14 @@ public sealed class PretCeladonApproachRegion
     public JsonElement ExternalRoute16Events { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
-    public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
     private PretCeladonApproachRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants, ImmutableArray<PretWorldSourceFile> files,
-        JsonElement dependencies, JsonElement catalog, JsonElement npcSources,
+        JsonElement catalog, JsonElement npcSources,
         JsonElement lavenderEvents, JsonElement route16Events)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
+        Constants = constants; SourceFiles = files; Catalog = catalog;
         NpcSources = npcSources;
         ExternalLavenderEvents = lavenderEvents; ExternalRoute16Events = route16Events;
     }
@@ -95,7 +85,7 @@ public sealed class PretCeladonApproachRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/celadon-approach-region");
-        
+
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
@@ -138,17 +128,11 @@ public sealed class PretCeladonApproachRegion
 
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_GOT_TEA"] == 0x2A6 && constants["FLAG_RESCUED_MR_FUJI"] == 0x23C && constants["HEAL_LOCATION_LAVENDER_TOWN"] == 5 && constants["HEAL_LOCATION_CELADON_CITY"] == 7, "Service requirements differ.");
-        using var dependencies = JsonDocument.Parse(outputs["dependencies.json"]); var d = dependencies.RootElement;
-        Require(!d.GetProperty("runtimeIntegrated").GetBoolean() && d.GetProperty("trainers").GetArrayLength() == 13 &&
-            d.GetProperty("trainers").EnumerateArray().Count(x => x.GetProperty("battleCommand").GetString() == "trainerbattle_double") == 2 &&
-            d.GetProperty("pickups").GetArrayLength() == 13 && d.GetProperty("centers").GetArrayLength() == 2 && d.GetProperty("guards").GetArrayLength() == 2 &&
-            d.GetProperty("mart").GetProperty("stock").GetArrayLength() == 9 && d.GetProperty("cutTrees").GetArrayLength() == 6 &&
-            d.GetProperty("volunteerHouse").GetProperty("mrFujiActor").GetProperty("flag").GetString() == "FLAG_HIDE_POKEHOUSE_FUJI", "Dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
         using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/LavenderTown/map.json"));
         using var route16Events = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/Route16/map.json"));
         return new(directory, maps.ToImmutable(), constants.ToImmutable(), inventory,
-            d.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(), route16Events.RootElement.Clone());
+            catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(), route16Events.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

@@ -19,21 +19,21 @@ public static class SixIslandOldRodEncounterRules
         new("map.six-island-dotted-hole-b3f"),new("map.six-island-dotted-hole-b4f"),new("map.six-island-dotted-hole-sapphire-room")];
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t=>t.Map==map) || MapsWithoutFishingMons.Contains(map) || FourIslandOldRodEncounterRules.IsAdmittedMap(map);
 
-    public static OldRodFishingResult Start(SixIslandOwnedPokemonCatalog pokemon, OldRodCastContext context,
+    public static OldRodFishingResult Start(GamePokemonCatalog pokemon, OldRodCastContext context,
         RngState rng, bool cancelBeforeCast = false)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.StartCore(context, rng, cancelBeforeCast, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true, seviiRubyRules: true, fourIslandRules: true, sixIslandRules: true);
     }
 
-    public static OldRodFishingResult Advance(SixIslandOwnedPokemonCatalog pokemon, OldRodFishingState state,
+    public static OldRodFishingResult Advance(GamePokemonCatalog pokemon, OldRodFishingState state,
         OldRodFrameInput input, RngState rng)
     {
         ValidatePokemon(pokemon);
         return OldRodFishingRules.AdvanceCore(state, input, rng, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true, seviiRubyRules: true, fourIslandRules: true, sixIslandRules: true);
     }
 
-    public static void ValidateState(SixIslandOwnedPokemonCatalog pokemon, OldRodFishingState state)
+    public static void ValidateState(GamePokemonCatalog pokemon, OldRodFishingState state)
     {
         ValidatePokemon(pokemon);
         OldRodFishingRules.ValidateStateCore(state, cinnabarRules: true, firstSeviiRules: true, victoryRoadRules: true, seviiRubyRules: true, fourIslandRules: true, sixIslandRules: true);
@@ -59,7 +59,7 @@ public static class SixIslandOldRodEncounterRules
             throw new ArgumentException("six_island_old_rod_candidate_source");
     }
 
-    public static OldRodEncounterResult GenerateCandidate(SixIslandOwnedPokemonCatalog pokemon,
+    public static OldRodEncounterResult GenerateCandidate(GamePokemonCatalog pokemon,
         OldRodEncounterTable table, OldRodFishingState fishing, RngState rng)
     {
         ValidateTable(table);
@@ -69,7 +69,7 @@ public static class SixIslandOldRodEncounterRules
         return OldRodEncounterRules.GenerateCandidateCore(table, rng);
     }
 
-    public static OldRodPokemonResult GeneratePokemon(SixIslandOwnedPokemonCatalog pokemon,
+    public static OldRodPokemonResult GeneratePokemon(GamePokemonCatalog pokemon,
         OldRodEncounterCandidate candidate, RngState rng, uint playerTrainerId)
     {
         ValidatePokemon(pokemon);
@@ -80,10 +80,8 @@ public static class SixIslandOldRodEncounterRules
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 
-    private static void ValidatePokemon(SixIslandOwnedPokemonCatalog pokemon)
+    private static void ValidatePokemon(GamePokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
-        if (!ReferenceEquals(SixIslandOwnedPokemonCatalog.For(pokemon.Catalog), pokemon))
-            throw new ArgumentException("six_island_old_rod_owned_proof");
     }
 }

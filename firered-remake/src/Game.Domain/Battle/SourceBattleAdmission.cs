@@ -24,54 +24,34 @@ public sealed class BattleRulesProfile
     public bool Supports(SourceBattleCapability capability) => Capabilities.Contains(capability);
 }
 
-/// <summary>Current permanent/campaign membership. A full mechanics catalog does not enlarge it.</summary>
-public sealed class CampaignAdmissionPolicy
-{
-    public static CampaignAdmissionPolicy CurrentFuchsia { get; } = new(PokemonFactory.FuchsiaSupportedSpecies);
-    private readonly ImmutableHashSet<SpeciesId> admitted;
-    private CampaignAdmissionPolicy(ImmutableArray<SpeciesId> species) => admitted = species.ToImmutableHashSet();
-    public bool Admits(SpeciesId species) => admitted.Contains(species);
-    public string? ValidatePokemon(PokemonInstance? pokemon) => pokemon is null ? "campaign_pokemon_missing" :
-        !Admits(pokemon.Species) ? "campaign_species_unsupported" : null;
-}
-
 public static class SourceBattleAdmission
 {
-    internal static bool IsCurrentCampaignCatalog(PokemonCatalog? catalog) => catalog is not null &&
-        catalog.SourceCommit == PokemonFactory.SourceCommit && catalog.Species.Count == PokemonFactory.FuchsiaSupportedSpecies.Length &&
-        catalog.Moves.Count == 354 && catalog.Species.Keys.All(CampaignAdmissionPolicy.CurrentFuchsia.Admits);
-
-    public static bool IsSafariOwnedCampaign(PokemonCatalog? catalog, WildBattleState state) =>
-        state.SourceCampaignRulesVersion == SafariOwnedPokemonCatalog.Profile && IsOwnedCampaign(catalog, state);
-
     public static bool IsOwnedCampaign(PokemonCatalog? catalog, WildBattleState state) =>
-        IsCanonicalSourceState(catalog, state) &&
-        OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion) is not null;
+        IsCanonicalSourceState(catalog, state) && state.Campaign is { } campaign &&
+        ReferenceEquals(campaign.Mechanics.Catalog, catalog) &&
+        state.SourceCampaignRulesVersion is GamePokemonCatalog.Profile or GameOpponentPokemonCatalog.Profile;
 
-    public static bool IsOwnedCampaign(OwnedBattlePokemonCatalog owned, WildBattleState state) =>
-        ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) &&
-        ReferenceEquals(OwnedBattlePokemonCatalog.ForMechanics(owned.Mechanics.Catalog, state.SourceCampaignRulesVersion), owned) &&
-        IsOwnedCampaign(owned.Mechanics.Catalog, state);
-
+    public static bool IsOwnedCampaign(GamePokemonCatalog owned, WildBattleState state) =>
+        ReferenceEquals(state.Campaign, owned) && IsOwnedCampaign(owned.Mechanics.Catalog, state);
 
     internal static string? ValidateCampaignMembership(PokemonCatalog? catalog, WildBattleState state)
     {
         if (state.SourceCampaignRulesVersion is null) return null;
         if (!IsOwnedCampaign(catalog, state)) return "source_campaign_admission";
-        var owned = OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion)!;
+        var owned = state.Campaign!;
         if (state.CalledParty is not { } party || party.Player.IsDefaultOrEmpty || party.Opponent.IsDefaultOrEmpty)
             return "source_campaign_actual_parties";
         if (party.Player.Any(m => m?.Pokemon is null || !owned.Catalog.Species.ContainsKey(m.Pokemon.Species)) ||
             party.Opponent.Any(m => m?.Pokemon is null || !(party.BattleKind == WildBattleCalledBattleKind.Trainer
-                ? owned.AdmitsTrainerOpponent(m.Pokemon.Species, state.SourceCampaignRulesVersion) : owned.Catalog.Species.ContainsKey(m.Pokemon.Species))))
+                ? owned.Opponents.Catalog.Species.ContainsKey(m.Pokemon.Species) : owned.Catalog.Species.ContainsKey(m.Pokemon.Species))))
             return "source_campaign_species_unsupported";
         return null;
     }
 
-    internal static string? ValidateOwnedEntry(OwnedBattlePokemonCatalog owned,
+    internal static string? ValidateOwnedEntry(GamePokemonCatalog owned,
         ImmutableArray<WildBattleCombatant> players, int activeIndex)
     {
-        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned)) return "source_campaign_admission";
+        if (owned is null) return "source_campaign_admission";
         if (players.IsDefaultOrEmpty || players.Length > 6 || activeIndex < 0 || activeIndex >= players.Length)
             return "source_campaign_party";
         if (players[activeIndex]?.IsEgg != false) return "source_campaign_active_egg";
@@ -87,7 +67,7 @@ public static class SourceBattleAdmission
     }
 
     internal static bool HasCapability(PokemonCatalog? catalog, SourceBattleCapability capability) =>
-        SourceMechanicsCatalog.For(catalog) is not null && BattleRulesProfile.CanonicalSourceSingles.Supports(capability);
+        catalog?.MechanicsData is not null && BattleRulesProfile.CanonicalSourceSingles.Supports(capability);
 
     internal static bool IsCanonicalSourceState(PokemonCatalog? catalog, WildBattleState state) =>
         state.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion &&
@@ -103,7 +83,7 @@ public static class SourceBattleAdmission
         state.SourceFocusBandedMask != 0 && (state.SourceFocusBandedMask > 3 || !IsCanonicalSourceState(catalog, state)) ? "source_focus_band_state" :
         SourceObedienceRules.Validate(state) ??
         SourceTraceForecastRules.Validate(state.Player, state.SourceMechanicsRulesVersion) ??
-        SourceTraceForecastRules.Validate(state.Opponent, state.SourceMechanicsRulesVersion) ?? SourceWeatherRules.Validate(state) ?? (SourceMechanicsCatalog.For(catalog) is not null || state.SourceMechanicsRulesVersion is not null
+        SourceTraceForecastRules.Validate(state.Opponent, state.SourceMechanicsRulesVersion) ?? SourceWeatherRules.Validate(state) ?? (catalog?.MechanicsData is not null || state.SourceMechanicsRulesVersion is not null
             ? IsCanonicalSourceState(catalog, state) ? null : "source_mechanics_rules_profile" : null));
 
     internal static bool SupportsHeldItem(PokemonCatalog? catalog, string item) =>
@@ -111,7 +91,7 @@ public static class SourceBattleAdmission
         HasCapability(catalog, SourceBattleCapability.SourceHeldItems) && (SourceHeldItemCatalog.Supported(catalog, item) || SourceBattleHeldItems.OrderEffect(item) is not null || item is "ITEM_CHOICE_BAND" or "ITEM_FOCUS_BAND" or "ITEM_KINGS_ROCK" or "ITEM_SHELL_BELL");
 
     internal static bool SupportsAbility(PokemonCatalog catalog, string ability) =>
-        SourceMechanicsCatalog.For(catalog) is { } proof && proof.Abilities.ContainsKey(ability) &&
+        catalog?.MechanicsData is { } proof && proof.Abilities.ContainsKey(ability) &&
         (FuchsiaBattleScope.SupportsAbility(ability) || ability is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or
             "ABILITY_WONDER_GUARD" or "ABILITY_SERENE_GRACE" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or
             "ABILITY_VOLT_ABSORB" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_COLOR_CHANGE" or
@@ -131,7 +111,7 @@ public static class SourceBattleAdmission
     }
 
     public static string? ValidateEntry(SourceMechanicsCatalog catalog, BattleRulesProfile profile,
-        ImmutableArray<WildBattleCombatant> players, int activeIndex, WildBattleCombatant opponent, OwnedBattlePokemonCatalog? ownership = null)
+        ImmutableArray<WildBattleCombatant> players, int activeIndex, WildBattleCombatant opponent, GamePokemonCatalog? ownership = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (!ReferenceEquals(profile, BattleRulesProfile.CanonicalSourceSingles)) return "source_mechanics_rules_profile";

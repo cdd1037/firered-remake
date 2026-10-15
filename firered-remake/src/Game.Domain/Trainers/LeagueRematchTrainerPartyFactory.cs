@@ -35,11 +35,10 @@ public static class LeagueRematchTrainerPartyFactory
     }
 
     public static TrainerPartyCreationResult Create(LeagueRematchTrainerCatalog trainers,
-        LeagueRematchOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
+        GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(LeagueRematchOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("league_rematch_trainer_catalog");
         var source = opponents.Mechanics;
         foreach (var member in trainer.Party)

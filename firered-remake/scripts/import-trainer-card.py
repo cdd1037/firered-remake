@@ -249,14 +249,12 @@ def convert( sources):
                   dict(id='trades',x=18,y=75,valueX=194,gate='trade count nonzero'),
                   dict(id='unionRoom',x=18,y=91,valueX=194,gate='union-room count nonzero'),
                   dict(id='berryCrush',x=18,y=107,valueX=194,gate='berry-crush points nonzero')])
-    refs=[]
     for symbol in ['PrintNameOnCardFront','PrintIdOnCard','PrintMoneyOnCard','GetCaughtMonsCount','PrintPokedexOnCard',
                    'PrintTimeOnCard','SetPlayerCardData','SetDataFromTrainerCard','DrawStarsAndBadgesOnCard','CreateTrainerCardTrainerPic']:
         match=re.search(r'^static [^;\n]+ '+symbol+r'\([^;\n]*\)\n\{',code,re.M)
         if match is None: raise ValueError('Missing source function '+symbol)
-        refs.append(dict(path='src/trainer_card.c',symbol=symbol,startLine=code.count('\n',0,match.start())+1))
     outputs['trainer-card.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-        assets=assets,texts=texts,layout=layout,rules=rules,sourceRefs=refs,
+        assets=assets,texts=texts,layout=layout,rules=rules,
         limitations=['Static FRLG own-card, zero-star graphics only. No card-flip timing or link profile.',
             'Play time and game statistics are not persisted by the current campaign. Do not manufacture them from steps.',
             'Back-side frame is supplied, but statistics and sticker/selected-icon systems remain unimplemented.',

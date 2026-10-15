@@ -28,11 +28,10 @@ public static class FourIslandTrainerPartyFactory
         return checked(4 * trainer.BaseMoney * trainer.Party[^1].Level);
     }
     public static TrainerPartyCreationResult Create(FourIslandTrainerCatalog trainers,
-        FourIslandOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
+        GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(FourIslandOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("four_island_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("four_island_trainer_catalog");
         if (trainer.Party.Any(member => !opponents.Catalog.Species.ContainsKey(member.Species)))
             throw new NotSupportedException("four_island_trainer_species");
         return TrainerPartyFactory.CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);

@@ -14,10 +14,10 @@ public static class PretRocketHideoutTrainers
     public const string SourceCommit="037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string Profile="firered-rocket-hideout-trainers-v1";
     public const int TrainerCount=13,PartyMemberCount=36,RequiredMoveCount=38;
-    public static RocketHideoutTrainerDocument LoadDocument(string root)
+    public static RocketHideoutTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
         var bytes=PretCeladonApproachSource.Read(root,"content/generated/rocket-hideout-trainers/trainers.json");
-        var d=ContentJson.ParseStrict<RocketHideoutTrainerDocument>(Encoding.UTF8.GetString(bytes),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<RocketHideoutTrainerDocument>(Encoding.UTF8.GetString(bytes),canonical.ReferenceOptions());
         PretCeladonApproachSource.Require(d.SchemaVersion==1&&!d.CompleteSourceRoster&&d.Trainers.Length==TrainerCount&&d.Battles.Length==TrainerCount&&
             d.Trainers.Select(x=>x.Id).Distinct().Count()==TrainerCount&&d.Trainers.Sum(x=>x.Party.Length)==PartyMemberCount&&d.ResolvedMoves.GetArrayLength()==TrainerCount&&d.Moves.Length==RequiredMoveCount&&d.MoveNames.Length==RequiredMoveCount&&!d.Limitations.IsDefaultOrEmpty,"Rocket Hideout document scope differs.");
         RocketHideoutTrainerPartyFactory.ValidateCatalog(new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer)));
@@ -38,6 +38,6 @@ public static class PretRocketHideoutTrainers
         }
         return d;
     }
-    public static RocketHideoutTrainerCatalog Load(string root)
-    {var d=LoadDocument(root);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
+    public static RocketHideoutTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
+    {var d=LoadDocument(canonical, root);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
 }

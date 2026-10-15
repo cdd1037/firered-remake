@@ -123,7 +123,7 @@ def convert( source):
     texts={key:re.search(r'const u8 '+symbol+r'\[\] = _\("(.*)"\);',source['src/strings.c'].decode())[1] for key,symbol in [('move','gText_RegionMap_DPadMove'),('ok','gText_RegionMap_AButtonOK'),('cancel','gText_RegionMap_AButtonCancel'),('space','gText_RegionMap_Space')]}
     outputs['fly-map.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
         assets=assets,regions=regions,sections=positions,positionOverrides=overrides,uiTexts=texts,flyIconFrameTicks=[30,60],
-        switchAvailable=False,sourceRefs=['InitRegionMapType','LoadRegionMapGfx','BufferRegionMapBg','GetMapsecType','GetDungeonMapsecType','CreateFlyIcons','CreateDungeonIconSprite','Task_FlyMap','GetPlayerPositionOnRegionMap_HandleOverrides'],
+        switchAvailable=False,
         limitations=['Indoor/underground/secret-base projection needs saved escapeWarp/dynamicWarp and is rejected by this outdoor-only Fly helper.',
         'Original Birth Island map-name lookup uses the Navel Rock flag; this source quirk is preserved independently of its own background visibility flag.',
         'Static source pixels and data are authenticated; transition animation, native rendering and audible output are separate gates.']))

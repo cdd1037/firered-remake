@@ -45,13 +45,5 @@ public static class PretPokemonLeagueRules
         return result;
     }
 
-    public static PokemonLeagueOpponentPokemonCatalog LoadOpponents(string root, VictoryRoadOpponentPokemonCatalog predecessor)
-    {
-        var document = Read<PokemonLeagueOpponentDocument>(root,"pokemon.json");
-        if (            document.OwnedSpeciesAdded.IsDefault || !document.OwnedSpeciesAdded.IsEmpty)
-            throw new InvalidDataException("Pokemon League opponent projection differs.");
-        return PokemonLeagueOpponentPokemonCatalog.Authenticate(predecessor, document.OpponentSpecies);
-    }
-
     public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

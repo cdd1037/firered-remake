@@ -30,16 +30,11 @@ public static class VermilionGymTrainerPartyFactory
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     public static TrainerId LtSurge { get; } = new("pret:TRAINER_LEADER_LT_SURGE");
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(VermilionGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
+    public static TrainerPartyCreationResult Create(VermilionGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng)
     {
-        towerRules |= fuchsiaRules;
-        rocketHideoutRules |= towerRules;
-        celadonGymRules |= rocketHideoutRules;
-        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != (towerRules && !fuchsiaRules) || (pokemon.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
-        rockTunnelRules |= celadonGymRules;
-        route11Rules |= rockTunnelRules;
+
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : 73) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (!trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("VermilionGym requires the exact seventy-three-species catalog and one source Gym team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

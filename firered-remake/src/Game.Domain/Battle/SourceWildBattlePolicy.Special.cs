@@ -12,15 +12,10 @@ public static partial class SourceWildBattlePolicy
         frame.WildEncounter?.TowerBattleKind is { } kind ? PokemonTowerBattleContract.Policy(kind) : null;
     internal static bool Disguised(SourceBattleFrame frame) => TowerPolicy(frame) is { OrdinaryAttacks: false };
 
-    private static CelioOwnedPokemonCatalog? CelioSourceOwnership(OwnedBattlePokemonCatalog? owned) =>
-        OwnedBattlePokemonCatalog.SourceRoot(owned) is { } source
-            ? CelioOwnedPokemonCatalog.For(source.Catalog) ?? CeruleanCaveOwnedPokemonCatalog.For(source.Catalog)?.Predecessor ?? SevenIslandOwnedPokemonCatalog.For(source.Catalog)?.Predecessor.Predecessor ?? (EventIslandOwnedPokemonCatalog.For(source.Catalog) ?? PowerPlantOwnedPokemonCatalog.For(source.Catalog)?.Predecessor)?.Predecessor.Predecessor.Predecessor
-            : null;
-
-    private static bool AdmitsOpponent(OwnedBattlePokemonCatalog owned, SourceWildEncounterContext context, WildBattleCombatant opponent)
+    private static bool AdmitsOpponent(GamePokemonCatalog owned, SourceWildEncounterContext context, WildBattleCombatant opponent)
     {
         var mon = opponent.Pokemon;
-        if (!owned.Catalog.Species.ContainsKey(mon.Species) || OwnedBattlePokemonCatalog.SourceRoot(owned) is not { } source) return false;
+        if (!owned.Catalog.Species.ContainsKey(mon.Species)) return false;
         if (context.RockSmash is { } rock)
             return RockSmashWildBattleContract.SourceInitialInstance(owned, rock, mon) &&
                 opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
@@ -28,31 +23,22 @@ public static partial class SourceWildBattlePolicy
             return SourceTableWildBattleContract.SourceInitialInstance(owned, sourceTable, mon) &&
                 opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.Seafoam is {} seafoam)
-            return OwnedBattlePokemonCatalog.SourceAncestor(owned, SeafoamOwnedPokemonCatalog.For) is {} proof &&
-                SeafoamPokemonFactory.SourceInitialInstance(proof,seafoam,mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
+            return SeafoamPokemonFactory.SourceInitialInstance(owned,seafoam,mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.Fishing is { } fishing)
             return FishingBattleContract.SourceInitialInstance(owned, fishing, mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.CelioRoamer is { } roamer)
-            return CelioSourceOwnership(owned) is not null && CelioRoamerBattleContract.MatchesIdentity(roamer, mon);
-        var five = FiveIslandOwnedPokemonCatalog.For(source.Catalog) ?? CelioSourceOwnership(source)?.Predecessor;
-        var six = SixIslandOwnedPokemonCatalog.For(source.Catalog) ?? five?.Predecessor;
-        var four = FourIslandOwnedPokemonCatalog.For(source.Catalog) ?? six?.Predecessor;
-        var ruby = SeviiRubyOwnedPokemonCatalog.For(source.Catalog) ?? four?.Predecessor;
-        var cinnabar = CinnabarOwnedPokemonCatalog.For(source.Catalog) ?? ruby?.Predecessor;
-        var events = EventIslandOwnedPokemonCatalog.For(source.Catalog) ?? PowerPlantOwnedPokemonCatalog.For(source.Catalog)?.Predecessor;
-        var seven = SevenIslandOwnedPokemonCatalog.For(source.Catalog) ?? events?.Predecessor;
+            return CelioRoamerBattleContract.MatchesIdentity(roamer, mon);
         bool sourceEntry = context switch {
-            { PowerPlant: { } origin } => PowerPlantOwnedPokemonCatalog.For(source.Catalog) is { } plant && PowerPlantPokemonFactory.SourceInitialInstance(plant, origin, mon),
-            { EventIsland: { } origin } => events is not null && EventIslandPokemonFactory.SourceInitialInstance(events, origin, mon),
-            { SevenIsland: { } origin } => seven is not null && SevenIslandWildPokemonFactory.SourceInitialInstance(seven, origin, mon),
-            { CeruleanCave: { } origin } => (CeruleanCaveOwnedPokemonCatalog.For(source.Catalog) ?? seven?.Predecessor) is { } cave &&
-                CeruleanCaveWildPokemonFactory.SourceInitialInstance(cave, origin, mon),
-            { FiveIsland: { } origin } => five is not null && FiveIslandWildPokemonFactory.SourceInitialInstance(five, origin, mon),
-            { SixIsland: { } origin } => six is not null && SixIslandWildPokemonFactory.SourceInitialInstance(six, origin, mon),
-            { FourIsland: { } origin } => four is not null && FourIslandWildPokemonFactory.SourceInitialInstance(four, origin, mon),
-            { SeviiRuby: { } origin } => ruby is not null && SeviiRubyWildPokemonFactory.SourceInitialInstance(ruby, origin, mon),
-            { VictoryRoad: { } origin } => cinnabar is not null && VictoryRoadWildPokemonFactory.SourceInitialInstance(cinnabar, origin, mon),
-            { FirstSeviiWild: true } => cinnabar is not null && FirstSeviiWildPokemonFactory.WildSpecies.Contains(mon.Species),
+            { PowerPlant: { } origin } => PowerPlantPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { EventIsland: { } origin } => EventIslandPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { SevenIsland: { } origin } => SevenIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { CeruleanCave: { } origin } => CeruleanCaveWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { FiveIsland: { } origin } => FiveIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { SixIsland: { } origin } => SixIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { FourIsland: { } origin } => FourIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { SeviiRuby: { } origin } => SeviiRubyWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { VictoryRoad: { } origin } => VictoryRoadWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { FirstSeviiWild: true } => FirstSeviiWildPokemonFactory.WildSpecies.Contains(mon.Species),
             _ => owned.AdmitsWildOpponent(mon)
         };
         bool regional = context.PowerPlant is not null || context.EventIsland is not null || context.SevenIsland is not null || context.CeruleanCave is not null || context.FiveIsland is not null || context.SixIsland is not null || context.FourIsland is not null ||

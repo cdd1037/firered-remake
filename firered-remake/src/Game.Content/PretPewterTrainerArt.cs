@@ -4,7 +4,6 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-
 /// <summary>Authenticated original static trainer frame pixels, never a runtime palette effect.</summary>
 public static class PretPewterTrainerArt
 {

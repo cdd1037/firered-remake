@@ -5,8 +5,10 @@ No upstream code is executed. The catalog has one definition per admitted item
 and one source learnset per real species. Regional references retain their exact
 ordered roster; they never define a cumulative compatibility delta.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 from collections import Counter
+from collections.abc import Mapping
 import copy
 import json
 from pathlib import Path
@@ -30,7 +32,7 @@ SOURCE_PATHS = (
     'include/constants/items.h', 'include/constants/moves.h',
     'include/constants/species.h', 'src/data/items.json',
     'src/data/battle_moves.h', 'src/data/pokemon/tmhm_learnsets.h',
-    'src/data/party_menu.h', 'src/move_descriptions.c',
+    'src/data/party_menu.h', 'src/move_descriptions.c', 'include/constants/global.h',
 )
 
 
@@ -52,7 +54,7 @@ def read_json(path):
 
 
 def encode(value):
-    return (json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
+    return (json.dumps(value, ensure_ascii=False, separators=(',', ':'), default=item_json) + '\n').encode()
 
 
 def constants(text, prefix):
@@ -84,13 +86,8 @@ def compile_catalog(raw, recipe):
             'Item aliases and source TM/HM move dispatch disagree')
     require([item_ids['ITEM_' + m] for m in MACHINES] == list(range(289, 347)),
             'Non-contiguous TM/HM item IDs')
-    recipe_groups = ('itemFieldSpanMachines', 'itemSymbolSpanMachines',
-                     'itemDescriptionMachines')
-    for group in recipe_groups:
-        require(len(recipe[group]) == len(set(recipe[group])) and
-                set(recipe[group]) <= set(ADMITTED_MACHINES), 'Invalid recipe group: ' + group)
-    require(not set(recipe['itemFieldSpanMachines']) & set(recipe['itemSymbolSpanMachines']),
-            'Conflicting item source spans')
+    require(len(recipe['itemDescriptionMachines']) == len(set(recipe['itemDescriptionMachines'])) and
+            set(recipe['itemDescriptionMachines']) <= set(ADMITTED_MACHINES), 'Invalid item descriptions')
     item_path = 'src/data/items.json'
     item_text = texts[item_path]
     items = json.loads(item_text, object_pairs_hook=unique_pairs)['items']
@@ -104,25 +101,7 @@ def compile_catalog(raw, recipe):
     for name in ADMITTED_MACHINES:
         symbol = 'ITEM_' + name
         item = items[symbol]
-        location = item_text.index('"itemId": "' + symbol + '"')
-        begin = item_text.rfind('{', 0, location)
-        end = item_text.index('}', location)
-        if name in recipe['itemSymbolSpanMachines']:
-            item_source = source_ref(item_path, symbol, item_text, location, location)
-        elif name in recipe['itemFieldSpanMachines']:
-            item_source = source_ref(item_path, symbol, item_text,
-                                     item_text.index('"english"', begin), end)
-            item_source['endLine'] -= 1
-        else:
-            item_source = source_ref(item_path, symbol, item_text, begin, end)
-        value = dict(id=dict(value='pret:' + symbol), sourceItemSymbol=symbol,
-                     sourceItemId=item_ids[symbol], name=item['english'], price=item['price'],
-                     importance=item['importance'], registrability=item['registrability'],
-                     pocket=item['pocket'], type=str(item['type']), holdEffect=item['holdEffect'],
-                     holdEffectParam=item['holdEffectParam'], fieldUseFunction=item['fieldUseFunc'],
-                     battleUsage=item['battleUsage'], battleUseFunction=item['battleUseFunc'],
-                     secondaryId=item['secondaryId'], canToss=item['importance'] == 0,
-                     canSell=item['price'] != 0, canGive=item['importance'] == 0, source=item_source)
+        value = shared_item(symbol)
         description_match = re.search(
             r'^const u8 (gMoveDescription_' + re.escape(item['moveId']) +
             r')\[\] = _\(("(?:[^"\\]|\\.)*")\);', descriptions, re.M)
@@ -169,15 +148,26 @@ def compile_catalog(raw, recipe):
         compatibility.append(dict(species=dict(value='pret:' + symbol), sourceSpeciesId=number,
                                   compatibleItems=[dict(value='pret:ITEM_' + name)
                                                    for name in MACHINES if name in choices]))
+    current_order = recipe['currentMachineOrder']
+    require(len(current_order) == 57 and set(current_order) == set(ITEM_IDS[:-1]), 'Invalid current machine order')
+    case = next(row for row in json.loads(item_text)['items'] if row['itemId'] == 'ITEM_TM_CASE')
+    global_constants = constants(texts['include/constants/global.h'], '')
+    current = dict(order=[dict(value=item) for item in current_order],
+                   tmCase=dict(item=shared_item('ITEM_TM_CASE'), description=case['description_english'].replace('\\n', '\n')),
+                   machineSlots=global_constants['BAG_TMHM_COUNT'], keyItemSlots=global_constants['BAG_KEYITEMS_COUNT'], maximumStack=999)
     return dict(schemaVersion=1, sourceCommit=COMMIT, machines=definitions,
-                compatibility=compatibility)
+                compatibility=compatibility, current=current)
 
 
 class Catalog:
     def __init__(self, document):
         require(document['schemaVersion'] == 1 and document['sourceCommit'] == COMMIT,
                 'Unsupported catalog')
-        self.machines = {row['machine']['item']['id']['value']: row for row in document['machines']}
+        self.machines = {}
+        for row in document['machines']:
+            item = row['machine']['item']
+            identity = item if isinstance(item, str) else item['id']['value']
+            self.machines[identity] = dict(row, machine=dict(row['machine'], item=shared_item(identity)))
         self.species = {row['species']['value']: row for row in document['compatibility']}
         require(len(self.machines) == len(document['machines']) == 57, 'Duplicate/missing machines')
         require(len(self.species) == len(document['compatibility']) == 386, 'Duplicate/missing species')
@@ -215,7 +205,7 @@ def machine_context(value, inherited):
         if isinstance(child, dict):
             nested = child.get('item')
             item = child.get('value') or (nested.get('id', {}).get('value')
-                                          if isinstance(nested, dict) else nested)
+                                          if isinstance(nested, Mapping) else nested)
             if is_machine_id(item):
                 inherited = item
     return inherited
@@ -229,11 +219,6 @@ def transform(value, catalog, path, expand=False, inherited=None, pointer='', co
                 for i, row in enumerate(value)]
     if not isinstance(value, dict):
         return value
-    if path == 'content/generated/pewter-machines/pewter-machines.json' and pointer == '/catalog/tm39':
-        item = 'pret:ITEM_TM39'
-        definition = catalog.machines[item]['machine']
-        require(value == definition or value == dict(item=item), 'Conflicting base TM39 definition')
-        return copy.deepcopy(definition) if expand else dict(item=item)
     if FULL_MACHINE_FIELDS <= value.keys():
         require(set(value) == FULL_MACHINE_FIELDS, 'Unexpected machine fields at ' + path + pointer)
         item = value['machine']['item']['id']['value']
@@ -328,7 +313,7 @@ def main():
     parser.add_argument('--references-only', action='store_true', default=True,
                         help='Reject any legacy full definition/cell; allow only direct typed references')
     args = parser.parse_args()
-    print(json.dumps(run(args.project_root.resolve(), args.check, args.references_only), indent=2))
+    print(json.dumps(run(args.project_root.resolve(), args.check, args.references_only), indent=2, default=item_json))
 
 
 if __name__ == '__main__':

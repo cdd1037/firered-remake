@@ -26,12 +26,11 @@ public static class SaffronGymTrainerPartyFactory
         [new("pret:TRAINER_CHANNELER_TASHA")] = new("TASHA",131,1u,[206, 187, 205, 194, 187],["ITEM_NONE", "ITEM_NONE", "ITEM_NONE", "ITEM_NONE"],[new("pret:SPECIES_GASTLY",92,"GASTLY",33,0,[193, 187, 205, 206, 198, 211],["pret:MOVE_NIGHT_SHADE", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_DREAM_EATER", "pret:MOVE_DESTINY_BOND"]),new("pret:SPECIES_GASTLY",92,"GASTLY",33,0,[193, 187, 205, 206, 198, 211],["pret:MOVE_NIGHT_SHADE", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_DREAM_EATER", "pret:MOVE_DESTINY_BOND"]),new("pret:SPECIES_HAUNTER",93,"HAUNTER",33,0,[194, 187, 207, 200, 206, 191, 204],["pret:MOVE_NIGHT_SHADE", "pret:MOVE_CONFUSE_RAY", "pret:MOVE_SHADOW_PUNCH", "pret:MOVE_DREAM_EATER"])]),
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(t => t.Value, StringComparer.Ordinal).ToImmutableArray();
-    public static TrainerPartyCreationResult Create(SaffronGymTrainerCatalog trainers, SaffronGymOpponentPokemonCatalog opponents,
+    public static TrainerPartyCreationResult Create(SaffronGymTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(SaffronGymOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("saffron_gym_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("saffron_gym_trainer_catalog");
         var source = opponents.Mechanics; var expected = Expected[id];
         for (int i = 0; i < trainer.Party.Length; i++)
         {

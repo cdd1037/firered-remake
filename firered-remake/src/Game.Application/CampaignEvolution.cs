@@ -21,7 +21,7 @@ public sealed record CampaignEvolution(string? BattleId, ImmutableArray<LevelEvo
     // no level proposals or battle; this same-level projection is display data only and is never
     // passed to LevelEvolutionRules.Apply/Cancel.
     public LevelEvolutionEligibility Proposal => ItemUse is { Eligibility: var item }
-        ? new(item.InstanceId, item.PreviousSpecies, item.TargetSpecies, item.Level, item.Level, item.Source)
+        ? new(item.InstanceId, item.PreviousSpecies, item.TargetSpecies, item.Level, item.Level)
         : Proposals[ProposalIndex];
 }
 // The capture ledger always retains the originally caught species. This separate source-ordered
@@ -73,7 +73,7 @@ public sealed partial class CampaignSession
         var inventoryError = ValidateCampaignInventory(state.Inventory);
         if (inventoryError is not null) return No(inventoryError);
         // Preflight consumption against the narrowed inventory, but publish no partial result.
-        var consumed = EarlyInventoryAddRules.Remove(shop, ShopInventoryView(state.Inventory), evolutionItem, 1);
+        var consumed = EarlyInventoryAddRules.Remove(shop, state.Inventory, evolutionItem, 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
         var owned = state.Party[command.PartyIndex];
         if (command.TargetInstanceId is { } targetInstance && targetInstance != owned.InstanceId)
@@ -92,7 +92,7 @@ public sealed partial class CampaignSession
         var stats = state.GameStats ?? ImmutableSortedDictionary<string, int>.Empty.WithComparers(StringComparer.Ordinal);
         return new(CommandStatus.Accepted, state with
         {
-            Inventory = MergeShopInventory(state.Inventory, consumed.State),
+            Inventory = consumed.State,
             Party = state.Party.SetItem(command.PartyIndex, evolved.Pokemon),
             SeenSpecies = state.SeenSpecies.Add(target), CaughtSpecies = state.CaughtSpecies.Add(target),
             EvolutionHistory = (state.EvolutionHistory ?? []).Add(new(owned.InstanceId, null,
@@ -155,7 +155,7 @@ public sealed partial class CampaignSession
                     pages.Add($"{result.Pokemon.Nickname} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
                 var history = new CampaignEvolutionHistory(owned.InstanceId, scene.BattleId,
                     owned.Pokemon.SourceSpeciesId, target, scene.Proposal.LevelBeforeBattle, scene.Proposal.Level) { Item = candyScene ? RareCandyItem : null,
-                    NormalTrigger = NormalEvolutionTrigger(BattlePokemon.Species[owned.Pokemon.Species].Evolutions.Single(e => e.Target == result.TargetSpecies && e.Source == scene.Proposal.Source).Method, owned.Pokemon) };
+                    NormalTrigger = NormalEvolutionTrigger(BattlePokemon.Species[owned.Pokemon.Species].Evolutions.Single(e => e.Target == result.TargetSpecies).Method, owned.Pokemon) };
                 var stats = state.GameStats ?? ImmutableSortedDictionary<string, int>.Empty.WithComparers(StringComparer.Ordinal);
                 next = state with
                 {

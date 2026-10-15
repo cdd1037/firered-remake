@@ -3,6 +3,7 @@
 REFERENCE DEPENDENCY OUTPUT [--check]. Only pinned Git blobs and existing dependencies are read.
 No upstream code is run; source art is local-only and only six new icon variants are generated.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -42,7 +43,7 @@ DEPENDENCIES = (
 
 def need(value, message):
     if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
+def encoded(value): return (json.dumps(value,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()
 
 def generate(reference, dependency):
     inputs,raw,cache,dependencies={}, {}, {}, []
@@ -69,10 +70,7 @@ def generate(reference, dependency):
         i=next(x for x in items if x['itemId']==symbol)
         block=one(ip,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}')
         sr=source(ip,symbol,block)
-        m=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),
-            name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),
-            holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],
-            battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=sr)
+        m=shared_item(symbol)
         return i,m
     icon_path='src/data/item_icon_table.h';graphics='src/data/graphics/items.h'
     icons,generated,aliases=[],{},[]
@@ -101,8 +99,8 @@ def generate(reference, dependency):
             need(number('include/constants/item_effects.h','ITEM3_CONFUSION')==1 and i['battleUsage']==1 and i['battleUseFunc']=='BattleUseFunc_Medicine','Yellow Flute effect')
             effects = [0, 0, 0, 1, 0, 0];effect_source=source(ep,es,row)
         else:need(i['battleUsage']==0 and i['battleUseFunc']=='NULL','Held-only item')
-        addition={k:m[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
-        addition.update(description=i['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=effects,useSupport=10,effectSource=effect_source,sourceMetadata=m)
+        addition=dict(item=m)
+        addition.update(description=i['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=effects, useSupport=10)
         ordinary.append(addition);icon(symbol,symbol[5:].lower().replace('_','-'))
     tm_rows=[('TM13','ICE_BEAM','IceBeam',58,10,'ICE',4000,'TM14'),('TM23','IRON_TAIL','IronTail',231,15,'STEEL',3500,'TM47'),
         ('TM24','THUNDERBOLT','Thunderbolt',85,15,'ELECTRIC',4000,'TM25'),('TM30','SHADOW_BALL','ShadowBall',247,15,'GHOST',4500,None),('TM35','FLAMETHROWER','Flamethrower',53,15,'FIRE',4000,'TM38')]
@@ -186,4 +184,4 @@ if __name__=='__main__':
         if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
     catalog=load_catalog(args.dependency)
-    print(json.dumps(dict(checked=args.check,prizes=len(facts),compatible=[sum(catalog.compatibility(m['item'], species)['canLearn'] for species in m['species']) for m in machines['additions']]),indent=2))
+    print(json.dumps(dict(checked=args.check,prizes=len(facts),compatible=[sum(catalog.compatibility(m['item'], species)['canLearn'] for species in m['species']) for m in machines['additions']]),indent=2, default=item_json))

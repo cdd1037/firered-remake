@@ -27,7 +27,7 @@ public static class PokemonStorageItemRules
 {
     public static PokemonStorageDiagnostic? Validate(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
-        PokemonStorageItemCursor? cursor, PewterMachineCatalog? machines = null, long? nextInstanceId = null)
+        PokemonStorageItemCursor? cursor, MachineCatalog? machines = null, long? nextInstanceId = null)
     {
         if (PokemonStorageValidator.Validate(content, party, storage, nextInstanceId) is {} error) return error;
         if (HeldItemTransferRules.ValidateInventory(items, inventory, machines) is {} invalid) return new(invalid);
@@ -38,7 +38,7 @@ public static class PokemonStorageItemRules
     public static PokemonStorageItemResult Take(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation source, long expectedInstanceId,
-        PewterMachineCatalog? machines = null)
+        MachineCatalog? machines = null)
     {
         var error = TargetError(content, items, party, storage, inventory, cursor, source, expectedInstanceId, machines);
         if (error is not null) return Reject(party, storage, inventory, cursor, error);
@@ -52,19 +52,19 @@ public static class PokemonStorageItemRules
     public static PokemonStorageItemResult Give(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation target, long expectedInstanceId,
-        ItemId expectedCursorItem, PewterMachineCatalog? machines = null)
+        ItemId expectedCursorItem, MachineCatalog? machines = null)
         => MoveToHolder(content, items, party, storage, inventory, cursor, target, expectedInstanceId, expectedCursorItem, false, machines);
 
     public static PokemonStorageItemResult Switch(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation target, long expectedInstanceId,
-        ItemId expectedCursorItem, PewterMachineCatalog? machines = null)
+        ItemId expectedCursorItem, MachineCatalog? machines = null)
         => MoveToHolder(content, items, party, storage, inventory, cursor, target, expectedInstanceId, expectedCursorItem, true, machines);
 
     private static PokemonStorageItemResult MoveToHolder(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation target, long expectedInstanceId,
-        ItemId expectedCursorItem, bool exchange, PewterMachineCatalog? machines)
+        ItemId expectedCursorItem, bool exchange, MachineCatalog? machines)
     {
         var error = TargetError(content, items, party, storage, inventory, cursor, target, expectedInstanceId, machines)
             ?? CursorError(cursor, expectedCursorItem);
@@ -84,7 +84,7 @@ public static class PokemonStorageItemRules
     public static PokemonStorageItemResult ToBag(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation source, long expectedInstanceId,
-        PewterMachineCatalog? machines = null)
+        MachineCatalog? machines = null)
     {
         var error = TargetError(content, items, party, storage, inventory, cursor, source, expectedInstanceId, machines);
         if (error is not null) return Reject(party, storage, inventory, cursor, error);
@@ -99,7 +99,7 @@ public static class PokemonStorageItemRules
     public static PokemonStorageDiagnostic? CheckGiveFromBagTarget(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation target, long expectedInstanceId,
-        PewterMachineCatalog? machines = null)
+        MachineCatalog? machines = null)
     {
         var error = TargetError(content, items, party, storage, inventory, cursor, target, expectedInstanceId, machines);
         if (error is not null) return error;
@@ -110,7 +110,7 @@ public static class PokemonStorageItemRules
     public static PokemonStorageItemResult GiveFromBag(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation target, long expectedInstanceId,
-        ItemId item, PewterMachineCatalog? machines = null)
+        ItemId item, MachineCatalog? machines = null)
     {
         var error = CheckGiveFromBagTarget(content, items, party, storage, inventory, cursor, target, expectedInstanceId, machines);
         if (error is not null) return Reject(party, storage, inventory, cursor, error);
@@ -126,7 +126,7 @@ public static class PokemonStorageItemRules
     /// a later B/Close interaction is required to leave. No/B must leave the complete state untouched.</summary>
     public static PokemonStorageItemResult CursorToBag(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
-        PokemonStorageItemCursor? cursor, ItemId expectedCursorItem, PewterMachineCatalog? machines = null)
+        PokemonStorageItemCursor? cursor, ItemId expectedCursorItem, MachineCatalog? machines = null)
     {
         var error = Validate(content, items, party, storage, inventory, cursor, machines) ?? CursorError(cursor, expectedCursorItem);
         if (error is not null) return Reject(party, storage, inventory, cursor, error);
@@ -137,7 +137,7 @@ public static class PokemonStorageItemRules
 
     public static PokemonStorageItemResult SelectBox(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
-        PokemonStorageItemCursor? cursor, int boxIndex, PewterMachineCatalog? machines = null)
+        PokemonStorageItemCursor? cursor, int boxIndex, MachineCatalog? machines = null)
     {
         if (Validate(content, items, party, storage, inventory, cursor, machines) is {} error)
             return Reject(party, storage, inventory, cursor, error);
@@ -150,7 +150,7 @@ public static class PokemonStorageItemRules
     /// return-to-origin, rollback, cursor discard or serialization. Resolve the item explicitly first.</summary>
     public static PokemonStorageItemResult CheckExit(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
-        PokemonStorageItemCursor? cursor, PewterMachineCatalog? machines = null)
+        PokemonStorageItemCursor? cursor, MachineCatalog? machines = null)
     {
         if (Validate(content, items, party, storage, inventory, cursor, machines) is {} error)
             return Reject(party, storage, inventory, cursor, error);
@@ -161,7 +161,7 @@ public static class PokemonStorageItemRules
     private static PokemonStorageDiagnostic? TargetError(CampaignPokemonContent? content, EarlyShopCatalog items,
         ImmutableArray<PartyPokemon> party, PokemonStorageState storage, InventoryState inventory,
         PokemonStorageItemCursor? cursor, PokemonStorageMoveLocation? target, long expectedInstanceId,
-        PewterMachineCatalog? machines)
+        MachineCatalog? machines)
     {
         if (Validate(content, items, party, storage, inventory, cursor, machines) is {} invalid) return invalid;
         if (target is null) return new("storage_item_location_missing");
@@ -179,7 +179,7 @@ public static class PokemonStorageItemRules
             ? new("held_item_mail_or_egg_unsupported") : null;
     }
 
-    private static PokemonStorageDiagnostic? HeldError(EarlyShopCatalog items, PartyPokemon pokemon, PewterMachineCatalog? machines)
+    private static PokemonStorageDiagnostic? HeldError(EarlyShopCatalog items, PartyPokemon pokemon, MachineCatalog? machines)
         => pokemon.HeldItem == "ITEM_NONE" ? new("held_item_none")
             : !HeldItemTransferRules.CanHold(items, new("pret:" + pokemon.HeldItem), machines) ? new("held_item_not_holdable") : null;
     private static PokemonStorageDiagnostic? CursorError(PokemonStorageItemCursor? cursor, ItemId expected)

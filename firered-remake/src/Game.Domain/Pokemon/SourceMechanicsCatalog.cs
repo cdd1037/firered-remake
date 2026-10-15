@@ -1,41 +1,44 @@
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Pokemon;
 
 public sealed record SourceMechanicsEvolution(string Method, int SourceMethodId, string Parameter,
-    int ParameterValue, SpeciesId Target, PokemonSourceRef Source);
+    int ParameterValue, SpeciesId Target);
 public sealed record SourceSpeciesMechanics(SpeciesId Species, int WeightHectograms,
     ImmutableArray<SourceMechanicsEvolution> SourceEvolutions);
 public sealed record SourceAbilityIdentity(string Symbol, int SourceAbilityId);
-public sealed record SourceFormStatOverride(SpeciesId Species, string Scope, SixStats BaseStats,
-    PokemonSourceRef Source, PokemonSourceRef RuleSource);
+public sealed record SourceFormStatOverride(SpeciesId Species, string Scope, SixStats BaseStats);
+
+public sealed record PokemonMechanicsData(
+    ImmutableDictionary<SpeciesId, SourceSpeciesMechanics> SpeciesMechanics,
+    ImmutableDictionary<string, SourceAbilityIdentity> Abilities,
+    SpeciesId MaximumHpOneSpecies,
+    ImmutableArray<SourceFormStatOverride> FormStatOverrides);
 
 /// <summary>Immutable source definitions and mechanics metadata, separate from campaign eligibility.</summary>
 public sealed class SourceMechanicsCatalog
 {
     public const string SemanticVersion = "firered-source-mechanics-v1";
-    private static readonly ConditionalWeakTable<PokemonCatalog, SourceMechanicsCatalog> Authenticated = new();
     public PokemonCatalog Catalog { get; }
-    public ImmutableDictionary<SpeciesId, SourceSpeciesMechanics> SpeciesMechanics { get; }
-    public ImmutableDictionary<string, SourceAbilityIdentity> Abilities { get; }
-    public SpeciesId MaximumHpOneSpecies { get; }
-    public ImmutableArray<SourceFormStatOverride> FormStatOverrides { get; }
+    public PokemonMechanicsData Data => Catalog.MechanicsData!;
+    public ImmutableDictionary<SpeciesId, SourceSpeciesMechanics> SpeciesMechanics => Data.SpeciesMechanics;
+    public ImmutableDictionary<string, SourceAbilityIdentity> Abilities => Data.Abilities;
+    public SpeciesId MaximumHpOneSpecies => Data.MaximumHpOneSpecies;
+    public ImmutableArray<SourceFormStatOverride> FormStatOverrides => Data.FormStatOverrides;
 
-    private SourceMechanicsCatalog(PokemonCatalog catalog, ImmutableArray<SourceSpeciesMechanics> metadata,
-        ImmutableArray<SourceAbilityIdentity> abilities, SpeciesId maximumHpOneSpecies,
-        ImmutableArray<SourceFormStatOverride> formStatOverrides)
+    private SourceMechanicsCatalog(PokemonCatalog catalog) { Catalog = catalog; }
+
+    /// <summary>Compose definitions with their explicit mechanics data; no identity registry is consulted.</summary>
+    public static SourceMechanicsCatalog FromDefinitions(PokemonCatalog catalog)
     {
-        Catalog = catalog;
-        SpeciesMechanics = metadata.ToImmutableDictionary(m => m.Species);
-        Abilities = abilities.ToImmutableDictionary(a => a.Symbol, StringComparer.Ordinal);
-        MaximumHpOneSpecies = maximumHpOneSpecies;
-        FormStatOverrides = formStatOverrides;
+        ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.MechanicsData is null) throw new ArgumentException("source_mechanics_missing");
+        return new(catalog);
     }
 
-    /// <summary>Bind parsed definitions and metadata to one immutable catalog owner.</summary>
-    public static SourceMechanicsCatalog Authenticate(PokemonCatalog catalog,
+    /// <summary>Validate and compose definitions with immutable mechanics metadata.</summary>
+    public static SourceMechanicsCatalog Create(PokemonCatalog catalog,
         ImmutableArray<SourceSpeciesMechanics> metadata, ImmutableArray<SourceAbilityIdentity> abilities,
         SpeciesId maximumHpOneSpecies, ImmutableArray<SourceFormStatOverride> formStatOverrides)
     {
@@ -53,13 +56,8 @@ public sealed class SourceMechanicsCatalog
             formStatOverrides.Any(f => f is null || !catalog.Species.ContainsKey(f.Species) || f.BaseStats is null ||
                 f.BaseStats.Values.Any(value => value is < 1 or > 255)))
             throw new ArgumentException("source_mechanics_metadata");
-        // Clone the root so each owner has an independent immutable catalog identity.
-        var result = new SourceMechanicsCatalog(catalog with { }, metadata, abilities, maximumHpOneSpecies, formStatOverrides);
-        Authenticated.Add(result.Catalog, result);
-        return result;
+        var data = new PokemonMechanicsData(metadata.ToImmutableDictionary(m => m.Species),
+            abilities.ToImmutableDictionary(a => a.Symbol, StringComparer.Ordinal), maximumHpOneSpecies, formStatOverrides);
+        return new(catalog with { MechanicsData = data });
     }
-
-    internal static SourceMechanicsCatalog? For(PokemonCatalog? catalog) =>
-        catalog is not null && Authenticated.TryGetValue(catalog, out var proof) ? proof : null;
-
 }

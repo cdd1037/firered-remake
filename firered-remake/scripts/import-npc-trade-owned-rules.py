@@ -67,10 +67,6 @@ def generate(reference, dependency):
         metadata = next(s for s in canonical["metadata"] if s["id"] == identity(species))
         need(definition["sourceSpeciesId"] == metadata["nationalDexNumber"] == source_id and
              not definition["evolutions"] and not metadata["sourceEvolutions"], "Canonical terminal identity: " + species)
-        references = [definition["source"], definition["learnsetSource"], metadata["learnsetPointerSource"], metadata["dexSource"]]
-        for source in references:
-            text = read(source["path"])
-            need(1 <= source['startLine'] <= source['endLine'] <= len(text.splitlines()), "Exact canonical source reference")
         need(one("include/constants/species.h", rf"^#define {species}[ \t]+(\d+)[ \t]*$")[1] == str(source_id), "Source species number")
         evolution = read("src/data/pokemon/evolution.h")
         need(not re.search(rf"^\s*\[{species}\]\s*=", evolution, re.M), "No source evolution: " + species)

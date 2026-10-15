@@ -94,9 +94,9 @@ public sealed partial class CampaignSession
         if (toss.Phase != CampaignBagTossPhase.Result || command.Kind != "bag_toss_ack") return No("bag_toss_result_ack_required");
         // Original item_menu.c:1558-1578 / berry_pouch.c:1166-1184 removes only on
         // result A/B. All modal phases retain the original inventory and block other commands.
-        var result = BagTossRules.Toss(shop, ShopInventoryView(state.Inventory!), toss.Item, toss.Pocket, toss.Quantity);
+        var result = BagTossRules.Toss(shop, state.Inventory!, toss.Item, toss.Pocket, toss.Quantity);
         if (!result.Succeeded) return No(result.Error!);
-        var inventory = MergeShopInventory(state.Inventory!, result.State);
+        var inventory = result.State;
         if (ValidateCampaignInventory(inventory) is {} invalid) return No(invalid);
         return new(CommandStatus.Accepted, state with { Inventory = inventory, ItemMenu = menu with { Toss = null } });
     }

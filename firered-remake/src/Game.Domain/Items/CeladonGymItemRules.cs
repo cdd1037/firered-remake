@@ -15,29 +15,12 @@ public static class CeladonGymItemRules
         item.BattleUsage == 0 && item.BattleUseFunction == "NULL" && item.SecondaryId == 0 &&
         item.CanToss && item.CanSell && item.CanGive;
 
-    public static void ValidateMachine(PewterMachineItem machine)
+    public static void ValidateMachine(MachineItem machine)
     {
         if (machine is null || !IsSupportedItem(machine.Item) || string.IsNullOrWhiteSpace(machine.Description))
             throw new NotSupportedException("Exact source TM19 metadata required.");
     }
-    public static void ValidateShop(EarlyShopCatalog catalog)
-    {
-        ArgumentNullException.ThrowIfNull(catalog);
-        if (catalog.Profile != Profile || catalog.Items.IsDefault || catalog.Items.Length != 46 ||
-            catalog.Items.Any(i => i is null) || catalog.Items.Select(i => i.Id).Distinct().Count() != 46)
-            throw new NotSupportedException("Exact Celadon Gym 46-item profile required.");
-        LavenderItemRules.ValidateShop(catalog with { Profile = LavenderItemRules.Profile, Items = catalog.Items.Take(45).ToImmutableArray() });
-        var item = catalog.Items[45];
-        if (item.Id != Tm19Id || item.SourceItemSymbol != "ITEM_TM19" ||
-            item.SourceItemId != 307 || item.Name != "TM19" || string.IsNullOrWhiteSpace(item.Description) ||
-            item.Price != 3000 || item.Pocket != "POCKET_TM_CASE" || item.Importance != 0 ||
-            item.Type != "ITEM_TYPE_PARTY_MENU" || item.FieldUseFunction != "NULL" ||
-            item.BattleUsage != 0 || item.BattleUseFunction != "NULL" ||
-            item.HoldEffectParam != 0 || item.HealHp != 0 || item.CureStatus != 0 || item.EffectBytes.IsDefault || !item.EffectBytes.IsEmpty ||
-            item.UseSupport != EarlyShopUseSupport.NoFieldUse || item.EffectSource is not null ||
-            !IsSupportedItem(item.SourceMetadata))
-            throw new NotSupportedException("Celadon Gym source item differs.");
-    }
+
     public static bool IsBerry(ItemId item) => LavenderItemRules.IsBerry(item);
     public static string? ValidateBerries(InventoryState state) => LavenderItemRules.ValidateBerries(state);
 }

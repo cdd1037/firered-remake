@@ -14,9 +14,9 @@ public sealed record PretQuestItemsDocument(int SchemaVersion, ImmutableArray<Pr
 public static class PretQuestItems
 {
 
-    public static QuestItemsCatalog Load(string generatedJson)
+    public static QuestItemsCatalog Load(string generatedJson, SharedItemCatalog items)
     {
-        var document = ContentJson.ParseStrict<PretQuestItemsDocument>(generatedJson, ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<PretQuestItemsDocument>(generatedJson, items.CreateJsonOptions());
         if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||
             document.Limitations.IsDefaultOrEmpty || document.Catalog is null)
             throw ContentJson.Error("quest_items_profile", "$", "The complete bounded Parcel/Poke Ball document is required.");

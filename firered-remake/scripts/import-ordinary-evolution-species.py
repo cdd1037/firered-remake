@@ -53,10 +53,6 @@ def generate(reference,dependency):
   edges=[e for e in metas[pid]['sourceEvolutions'] if e['target']['value']==sid]
   need(len(edges)==1 and edges[0]['method']==method and edges[0]['parameterValue']==parameter,'Exact original parent edge')
   evolutions.append(dict(species=dict(value=pid),**edges[0]))
-  for ident in [sid,pid]:
-   d,m=definitions[ident],metas[ident]
-   refs=[d['source'],d['learnsetSource'],m['learnsetPointerSource'],m['dexSource']]+[e['source'] for e in m['sourceEvolutions']]
-   for sr in refs:read(sr['path'])
  cells=compatibility_additions(dependency,BASE+'machines.json');need(len(cells)==51,'Exact admitted machines')
  groups=dict((k,int(v)) for k,v in re.findall(r'^#define (EGG_GROUP_\w+)\s+(\d+)',read('include/constants/pokemon.h'),re.M));eggs=read('src/data/pokemon/egg_moves.h');egg_moves={n:re.findall(r'MOVE_\w+',body) for n,body in re.findall(r'egg_moves\(([A-Z0-9_]+),\s*(.*?)\)',eggs,re.S)}
  rows=[];sorted_species=sorted(canonical['species'],key=lambda r:r['sourceSpeciesId'])
@@ -67,8 +63,8 @@ def generate(reference,dependency):
    species=parent
   return species
  for name,*_ in IDENTITIES:
-  sid='pret:SPECIES_'+name;original=metas[sid]['originalFields']
-  group_ids=[groups[g.strip('{} ')] for g in original['eggGroups'].split(',')]
+  sid='pret:SPECIES_'+name;original=metas[sid]
+  group_ids=[groups[g] for g in original['eggGroups']]
   rows.append(dict(breeding=dict(species=dict(value=sid),eggGroup1=group_ids[0],eggGroup2=group_ids[1],eggCycles=int(original['eggCycles'])),baseEggSpecies=dict(value=base_species(sid)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(name,[])]))
  read('src/data/pokemon/tutor_learnsets.h');read('src/pokemon.c')
  return {

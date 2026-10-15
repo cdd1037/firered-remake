@@ -36,7 +36,7 @@ public partial class CampaignView
     private PokemonCatalog SourceBattlePresentationCatalog(CampaignWildBattle battle)
     {
         var frame = PresentedCanonicalFrame(battle);
-        var owned = OwnedBattlePokemonCatalog.For(_catalog.PokemonContent!.Catalog);
+        var owned = _catalog.PokemonContent!.Pokemon;
         return owned is not null && (frame.Pokedude is not null
             ? SourceFourActionTurns.ValidateCapability(owned.Mechanics.Catalog, frame) is null : frame.TrainerEncounter is null
             ? frame.SourceCampaignRulesVersion == owned.RulesVersion

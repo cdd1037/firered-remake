@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
         if (!take && (string.IsNullOrEmpty(command.Text) || !CanGiveHeldItem(new(command.Text)))) return No("held_item_not_holdable");
         if (!take && CanGiveMail(new(command.Text!)))
             return fromPc ? No("mail_give_from_bag_required") : OpenMailComposer(state, command, false);
-        bool offeredMachine = !take && _content.PewterMachines is {} machines && PewterMachineRules.Definition(machines, new(command.Text!)) is not null;
+        bool offeredMachine = !take && _content.PewterMachines is {} machines && MachineRules.Definition(machines, new(command.Text!)) is not null;
         if (!take && (menu.View == "machines") != offeredMachine) return No("held_item_context_invalid");
         if (!take && menu.View == "berries" && shop.Items.FirstOrDefault(i => i.Id.Value == command.Text)?.Pocket != "POCKET_BERRY_POUCH")
             return No("berry_item_context_invalid");
@@ -57,20 +57,20 @@ public sealed partial class CampaignSession
     }
     private InventoryState HeldItemInventoryView(InventoryState inventory)
     {
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         return _content.PewterMachines is null ? view : view with { Machines = inventory.Machines,
-            KeyItems = (view.KeyItems ?? []).AddRange((inventory.KeyItems ?? []).Where(s => s.Item == PewterMachineRules.TmCaseId)) };
+            KeyItems = (view.KeyItems ?? []).AddRange((inventory.KeyItems ?? []).Where(s => s.Item == MachineRules.TmCaseId)) };
     }
 
     private string? MergeHeldItemInventory(InventoryState original, InventoryState changed, out InventoryState result)
     {
-        result = MergeShopInventory(original, changed) with { Machines = changed.Machines };
-        if ((changed.KeyItems ?? []).Any(s => s.Item == PewterMachineRules.TmCaseId) &&
-            !(result.KeyItems ?? []).Any(s => s.Item == PewterMachineRules.TmCaseId))
+        result = changed with { Machines = changed.Machines };
+        if ((changed.KeyItems ?? []).Any(s => s.Item == MachineRules.TmCaseId) &&
+            !(result.KeyItems ?? []).Any(s => s.Item == MachineRules.TmCaseId))
         {
             // Validate full key capacity before adding a CASE created while returning a held TM.
             if ((result.KeyItems?.Length ?? 0) >= _content.PewterMachines!.KeyItemSlots) return "inventory_key_items_full";
-            result = result with { KeyItems = (result.KeyItems ?? []).Add(new(PewterMachineRules.TmCaseId, 1)) };
+            result = result with { KeyItems = (result.KeyItems ?? []).Add(new(MachineRules.TmCaseId, 1)) };
         }
         return null;
     }

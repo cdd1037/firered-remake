@@ -139,9 +139,6 @@ def declarations(src, scripts, worlds, proof):
         evolution |= extra
     opponents = {m['species'] for t in trainers for m in t['party']}
     wanted = evolution|opponents
-    for symbol in wanted:
-        for ref in [species[symbol]['source'], species[symbol]['learnsetSource']]:
-            src.read(ref['path'])
     item_symbols = {'ITEM_SAPPHIRE'}
     local_labels = {e.get('script') for w in worlds for e in w['events']['object_events']}
     for block in scripts['blocks']:
@@ -158,7 +155,7 @@ def declarations(src, scripts, worlds, proof):
         wildSpecies=sorted(wild), nationalDexLevelEvolutionSpecies=sorted(evolution), trainerSpecies=sorted(opponents),
         trainerMoves=sorted({m for t in trainers for mon in t['party'] for m in mon['resolvedMoves']}-{'MOVE_NONE'}),
         fullNaturalMoveClosure=sorted({m['move']['value'][5:] for s in wanted for m in species[s]['levelUpMoves']}),
-        pokemon=[species[s] for s in sorted(wanted)], pokemonMetadata=[metadata[s] for s in sorted(wanted)],
+        pokemon=[dict(id=species[s]['id'],evolutions=species[s]['evolutions']) for s in sorted(wanted)], pokemonMetadata=[metadata[s] for s in sorted(wanted)],
         itemDeclarations=items,
         limitations=['Complete original first-encounter teams, wild tables and level evolutions are inventory only.',
             'Gideon grants the inventory Sapphire; Celio delivery remains outside this region package.',

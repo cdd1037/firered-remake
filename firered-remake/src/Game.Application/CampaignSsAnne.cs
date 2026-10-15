@@ -115,9 +115,9 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("ssanne_hm_reward_operands");
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var error = ValidateCampaignInventory(inventory); if (error is not null) throw new InvalidDataException(error);
-        if (effect.Opcode == "checkitemspace") { next = Result(next, PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, Hm01) ? 1 : 0); return true; }
+        if (effect.Opcode == "checkitemspace") { next = Result(next, MachineRules.CanAddMachine(_content.PewterMachines!, inventory, Hm01) ? 1 : 0); return true; }
         if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], Hm01) != 0) throw new InvalidDataException("ssanne_hm_duplicate");
-        var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, Hm01);
+        var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, Hm01);
         if (!added.Succeeded) throw new InvalidDataException("ssanne_hm_add_failed: " + added.Error);
         next = state with { Inventory = added.State };
         next = Result(next, 1); return true;

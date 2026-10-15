@@ -12,12 +12,10 @@ public sealed partial class PretCampaignCatalog
 {
     public PretFightingDojoRegion FightingDojoRegion { get; }
     public bool FightingDojoEnabled => FightingDojoRegion is not null;
-    public FightingDojoOwnedPokemonCatalog FightingDojoOwnership { get; }
-    public FightingDojoOpponentPokemonCatalog FightingDojoOpponents { get; }
-    public FightingDojoMachineCatalog FightingDojoMachines { get; }
+    public GamePokemonCatalog FightingDojoOwnership { get; }
+    public GameOpponentPokemonCatalog FightingDojoOpponents { get; }
+    public MachineCatalog FightingDojoMachines { get; }
     public FightingDojoTrainerCatalog FightingDojoTrainers { get; }
-
-
 
     private static void ValidateFightingDojoComposition(PretFightingDojoRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {

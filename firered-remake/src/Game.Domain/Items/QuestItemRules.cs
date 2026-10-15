@@ -31,7 +31,7 @@ public static class QuestItemRules
         {
             if (item is null || item.SourceItemSymbol is null || !seen.Add(item.SourceItemSymbol) ||
                 item.Id != new ItemId("pret:" + item.SourceItemSymbol) || item.HoldEffect != "HOLD_EFFECT_NONE" ||
-                item.HoldEffectParam != 0 || item.Source is null)
+                item.HoldEffectParam != 0)
                 throw new NotSupportedException("Invalid quest item definition.");
             bool valid = item.SourceItemSymbol switch
             {

@@ -47,7 +47,6 @@ public sealed class PretFourIslandDayCare
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
 
-
     /// <summary>Load map/script evidence before compiling campaign scripts. dependencyRoot supplies unchanged town/NPC resources.</summary>
     public static PretFourIslandDayCare Load(string projectRoot, string? dependencyRoot = null)
     {

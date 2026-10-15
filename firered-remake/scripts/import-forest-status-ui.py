@@ -85,16 +85,11 @@ def read_sources(lock, raw, repository=None):
 
 
 def semantics(lock, sources):
-    refs = []
 
     def require(path, symbol, needle):
         text = sources[path].decode()
         if text.count(needle) != 1:
             raise ValueError('Missing/ambiguous forest status source semantics: ' + symbol)
-        line = text.count('\n', 0, text.index(needle)) + 1
-        entry = next(e for e in lock['files'] if e['path'] == path)
-        refs.append(dict(path=path, symbol=symbol, startLine=line, endLine=line + needle.count('\n'),
-                          url=entry['sourceUrl'] + f'#L{line}-L{line + needle.count(chr(10))}'))
 
     for name, map_id in [('ViridianForest', 'MAP_VIRIDIAN_FOREST'), ('Route1', 'MAP_ROUTE1')]:
         path = f'data/maps/{name}/map.json'
@@ -171,13 +166,12 @@ def semantics(lock, sources):
             'static const union AnimCmd sSpriteAnim_StatusFaint[] =\n{\n    ANIMCMD_FRAME(24, 0),')
     require('src/data/party_menu.h', 'single party status centers',
             '        { 16,  40,  20,  50,  56,  52,  16,  34},\n        {104,  18, 108,  28, 144,  27, 102,  25},\n        {104,  42, 108,  52, 144,  51, 102,  49},\n        {104,  66, 108,  76, 144,  75, 102,  73},\n        {104,  90, 108, 100, 144,  99, 102,  97},\n        {104, 114, 108, 124, 144, 123, 102, 121},')
-    return refs
 
 
 def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Incomplete forest status source data')
-    refs = semantics(lock, sources)
+    semantics(lock, sources)
     elements = codec.tile_list(sources[BATTLE + 'healthbox_elements.png'])
     if len(elements) != 120:
         raise ValueError('Battle status tile sheet dimensions differ')
@@ -220,7 +214,7 @@ def convert(lock, sources):
     add('party-fainted', party_pixels(24), 32, 0, 0,
         'party', 'fainted', 24, party_palette, PARTY, PARTY)
     document = dict(schemaVersion=1, profile=PROFILE, repository=REPOSITORY, sourceCommit=COMMIT,
-                     inputs=lock['files'], assets=assets, sourceRefs=refs,
+                     inputs=lock['files'], assets=assets,
                     display=dict(logicalWidth=240, logicalHeight=160, textureFilter='nearest',
                                  paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', playerKeepsHpLabel=True,
                                  opponentSuppressesHpLabel=True, opponentStatusHidesCaughtBall=True,

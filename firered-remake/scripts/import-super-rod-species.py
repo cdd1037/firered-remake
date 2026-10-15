@@ -51,8 +51,6 @@ def generate(reference, dependency):
             inputs[path] = dict(path=path, localPath=shared, shared=True)
             raw[path] = data
         return raw[path].decode()
-    for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']]:
-        read(sr['path'])
     cells = compatibility_additions(dependency, 'content/generated/super-rod-species/machines.json')
     docs = {
         'pokemon.json': dict(sourceCommit=COMMIT,  profile='firered-super-rod-owned-pokemon-v1',

@@ -100,7 +100,7 @@ public sealed class PretSafariRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/safari-region");
-        
+
         byte[] Pinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(Safe(root, path));
@@ -123,7 +123,7 @@ public sealed class PretSafariRegion
         Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Safari source inventory/availability differs.");
 
         var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        
+
         var files = sources.ToImmutable(); var byPath = files.ToDictionary(s => s.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Twelve source maps; unchanged FuchsiaCity reuse; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
@@ -148,7 +148,7 @@ public sealed class PretSafariRegion
             foreach (var warp in map.FieldWarps)
                 if (maps.TryGetValue(warp.DestinationMapId, out var target))
                     Need(warp.DestinationWarpId < target.Events.GetProperty("warp_events").GetArrayLength(), "Loaded warp index differs.");
-        
+
         var constants = PretSharedConstants.ForPackage(directory);
         Need(constants["ITEM_HM03"] == 341 && constants["ITEM_HM04"] == 342 && constants["ITEM_GOLD_TEETH"] == 353 &&
             constants["FLAG_GOT_HM03"] == 0x239 && constants["FLAG_GOT_HM04"] == 0x23a && constants["FLAG_HIDE_SAFARI_ZONE_WEST_GOLD_TEETH"] == 0x189,

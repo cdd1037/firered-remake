@@ -48,8 +48,10 @@ public static partial class SourceFourActionTurns
     {
         if (catalog is null || frame is null) return "source_four_action_missing_input";
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return invalid;
+        if (frame.Campaign is { } campaign && !ReferenceEquals(campaign.Mechanics.Catalog, catalog))
+            return "source_campaign_mechanics_mismatch";
         if (frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version ||
-            frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion || SourceMechanicsCatalog.For(catalog) is null)
+            frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion || catalog?.MechanicsData is null)
             return "source_four_action_capability";
         if (SourceTrainerTowerEncounter.Validate(catalog, frame) is { } towerError) return towerError;
         if (SourcePokemonValidator.ValidateFrameParties(catalog, frame) is { } partyError) return partyError;

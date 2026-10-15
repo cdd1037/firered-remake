@@ -36,20 +36,20 @@ def generate(root):
   if learn.start()<=m.start()<learn.end():level_moves.append(dict(level=int(m[1]),move=ident(m[2])));required.add(m[2])
  assert len(level_moves)==14 and not re.search(r'\['+symbol+r'\]',texts['src/data/pokemon/evolution.h'])
  stat_source=('HP','Attack','Defense','Speed','SpAttack','SpDefense');stat_names=('hp','attack','defense','speed','specialAttack','specialDefense')
- species=dict(id=ident(symbol),sourceSpeciesId=constant('include/constants/species.h',symbol)['value'],baseStats={k:int(fields['base'+s]) for k,s in zip(stat_names,stat_source)},type1='TYPE_NORMAL',type2='TYPE_NORMAL',catchRate=int(fields['catchRate']),experienceYield=int(fields['expYield']),evYield={k:int(fields['evYield_'+s]) for k,s in zip(stat_names,stat_source)},growthRate='slow',genderRatio=31,ability1='ABILITY_IMMUNITY',ability2='ABILITY_THICK_FAT',friendship=int(fields['friendship']),levelUpMoves=level_moves,evolutions=[],source=source,learnsetSource=ref(path,pointer,learn))
+ species=dict(id=ident(symbol), sourceSpeciesId=constant('include/constants/species.h', symbol)['value'], baseStats={k: int(fields['base' + s]) for k, s in zip(stat_names, stat_source)}, type1='TYPE_NORMAL', type2='TYPE_NORMAL', catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_names, stat_source)}, growthRate='slow', genderRatio=31, ability1='ABILITY_IMMUNITY', ability2='ABILITY_THICK_FAT', friendship=int(fields['friendship']), levelUpMoves=level_moves, evolutions=[])
  definitions=[]
  for symbol in sorted(required):
   f,r=block('src/data/battle_moves.h',symbol)
-  definitions.append(dict(id=ident(symbol),sourceMoveId=constant('include/constants/moves.h',symbol)['value'],pp=int(f['pp']),power=int(f['power']),type=f['type'],accuracy=int(f['accuracy']),effect=f['effect'],secondaryEffectChance=int(f['secondaryEffectChance']),target=f['target'],priority=int(f['priority']),flags=[] if f['flags']=='0' else f['flags'].split(' | '),battleEffectImplemented=False,source=r))
- moves=[m for m in definitions if m['id']['value'][5:] in NEW_MOVES]
+  definitions.append(ident(symbol))
+ moves=[m for m in definitions if m['value'][5:] in NEW_MOVES]
  names=[name('src/data/text/species_names.h','SPECIES_SNORLAX')];move_names=[name('src/data/text/move_names.h',s) for s in NEW_MOVES]
  encoding=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'));encoded=[]
  for n in names+move_names:
   codes=[int(one('charmap.txt',r"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in n['name']+'$']
   encoded.append(dict(symbol=n['source']['symbol'],name=n['name'],bytes=codes,source=n['source'],encodingSource=encoding))
  constants=[constant('include/constants/species.h','SPECIES_SNORLAX')]+[constant('include/constants/moves.h',s) for s in sorted(required)]+[constant('include/constants/abilities.h',s) for s in ('ABILITY_IMMUNITY','ABILITY_THICK_FAT')]+[constant('include/constants/items.h','ITEM_CHESTO_BERRY')]
- held=dict(species='SPECIES_SNORLAX',common=fields['itemCommon'],rare=fields['itemRare'],source=source)
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],species=[species],moves=moves,speciesNames=names,moveNames=move_names,constants=constants,encodedNames=encoded,deferredEvolutions=[],requiredMoves=[ident(s) for s in sorted(required)],naturalLevelLimit=None,limitations=['The entire 14-entry natural learnset is metadata. Battle execution is admitted independently.','Block, Covet, Rollout and Hyper Beam above level40 remain outside this increment; no artificial growth cap is imposed.','Sleep Talk37 requires the new battle executor or an explicit unsupported-effect boundary.','Munchlax does not exist in FireRed; Snorlax has no evolution.'])
+ held=dict(species='SPECIES_SNORLAX',common=fields['itemCommon'],rare=fields['itemRare'])
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],species=[dict(id=species['id'], evolutions=species['evolutions'])],moves=moves,speciesNames=names,moveNames=move_names,constants=constants,encodedNames=encoded,deferredEvolutions=[],requiredMoves=[ident(s) for s in sorted(required)],naturalLevelLimit=None,limitations=['The entire 14-entry natural learnset is metadata. Battle execution is admitted independently.','Block, Covet, Rollout and Hyper Beam above level40 remain outside this increment; no artificial growth cap is imposed.','Sleep Talk37 requires the new battle executor or an explicit unsupported-effect boundary.','Munchlax does not exist in FireRed; Snorlax has no evolution.'])
  fixtures=[]
  for level in [1,5,9,13,17,21,25,29,30,33,37,40,41,45,49,53,100]:
   learned=[]
@@ -58,7 +58,7 @@ def generate(root):
    if row['level']<=level and move not in learned:learned=(learned+[move])[-4:]
   fixtures.append(dict(species=species['id']['value'],level=level,moves=learned))
  tm_path='src/data/pokemon/tmhm_learnsets.h';tm=one(tm_path,r'^    \[SPECIES_SNORLAX\]\s*= TMHM_LEARNSET\((.*?)\),');machine_symbols=re.findall(r'TMHM\((\w+)\)',tm[1])
- machine=dict(species='pret:SPECIES_SNORLAX',sourceSpeciesId=143,machineSymbols=machine_symbols,source=ref(tm_path,'SPECIES_SNORLAX',tm))
+ machine=dict(species='pret:SPECIES_SNORLAX',sourceSpeciesId=143,machineSymbols=machine_symbols)
  fixture=dict(schemaVersion=1,sourceCommit=COMMIT,sourceFiles=lock['files'],expectedSpeciesDelta=1,expectedMoveDelta=4,expectedCampaignSpecies=102,expectedCampaignMoves=240,naturalMoves=fixtures,requiredMoveDefinitions=definitions,initialLevel30Pp=[15,10,10,15],machines=machine)
  items=json.loads(texts['src/data/items.json']);items=items if isinstance(items,list) else items['items']
  audit=dict(schemaVersion=1,sourceCommit=COMMIT,newSpecies=[143],newMoves=list(NEW_MOVES),metadataAlreadyPresent=sorted(required-set(NEW_MOVES)),newAbilities=['ABILITY_IMMUNITY','ABILITY_THICK_FAT'],wildHeldItems=[held],heldItemAdmissions=['ITEM_CHESTO_BERRY'],constants=constants,itemDefinitions=[i for i in items if i['itemId']=='ITEM_CHESTO_BERRY'],machines=machine,limitations=doc['limitations'])

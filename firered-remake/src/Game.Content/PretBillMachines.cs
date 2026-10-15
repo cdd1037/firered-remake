@@ -6,12 +6,12 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretBillMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PewterAdditionalMachine> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<MachineDefinition> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates eight explicit TMs for 68 species, preserving every historical machine profile.</summary>
 public static class PretBillMachines
 {
-    public const string Profile = PewterMachineRules.BillProfile;
+    public const string Profile = "firered-bill-machines-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
     public static PretBillMachinesDocument Load(string json, SharedMachineCatalog machines)
@@ -44,17 +44,6 @@ public static class PretBillMachines
         return document;
     }
 
-    public static PewterMachineCatalog LoadCatalogProject(string root)
-    {
-        var document = LoadProject(root);
-        var old = PretPewterMachines.LoadProject(root);
-        var result = old with
-        {
-            Profile = Profile,Compatibility = document.Machines[0].Compatibility,AdditionalMachines = document.Machines.Skip(1).ToImmutableArray()
-        };
-        PewterMachineRules.ValidateCatalog(result);
-        return result;
-    }
     private static byte[] Read(string root,string path)
     {
         var p = SafeFile(root, path);

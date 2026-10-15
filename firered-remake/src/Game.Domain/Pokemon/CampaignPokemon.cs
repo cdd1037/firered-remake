@@ -17,8 +17,24 @@ public sealed record PartyPokemon(long InstanceId,PokemonInstance Pokemon,string
     public bool IsEgg{get;init;}
 }
 public sealed record StarterChoiceDefinition(int Index,int SourceSpeciesId,int RivalSourceSpeciesId,string BallId,string BallHideFlag,string RivalBallId,string RivalBallHideFlag);
-public sealed record CampaignPokemonContent(PokemonCatalog Catalog,ImmutableSortedDictionary<int,string> SpeciesNames,string NicknameCharacters)
+public sealed record CampaignPokemonContent
 {
+    public GamePokemonCatalog Pokemon { get; init; }
+    public ImmutableSortedDictionary<int, string> SpeciesNames { get; init; }
+    public string NicknameCharacters { get; init; }
+    public CampaignPokemonContent(GamePokemonCatalog pokemon, ImmutableSortedDictionary<int, string> speciesNames, string nicknameCharacters)
+    {
+        ArgumentNullException.ThrowIfNull(pokemon);
+        if (nicknameCharacters is null || nicknameCharacters.Length != PokemonStateValidator.NicknameAlphabet.Length ||
+            !nicknameCharacters.ToHashSet().SetEquals(PokemonStateValidator.NicknameAlphabet))
+            throw new ArgumentException("pokemon_nickname_alphabet");
+        if (speciesNames is null || speciesNames.Count != pokemon.Catalog.Species.Count ||
+            pokemon.Catalog.Species.Values.Any(s => !speciesNames.TryGetValue(s.SourceSpeciesId, out var name) ||
+                string.IsNullOrWhiteSpace(name) || name.Length > 10 || name.Any(c => !nicknameCharacters.Contains(c))))
+            throw new ArgumentException("pokemon_species_names");
+        Pokemon = pokemon; SpeciesNames = speciesNames; NicknameCharacters = nicknameCharacters;
+    }
+    public PokemonCatalog Catalog => Pokemon.Catalog;
     public ImmutableArray<StarterChoiceDefinition> StarterChoices{get;init;}=[];
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
     public bool AllowSleepStatus{get;init;}

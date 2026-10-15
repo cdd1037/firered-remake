@@ -1,3 +1,4 @@
+using Game.Domain.Ids;
 using System.Collections.Immutable;
 using System.Globalization;
 using Game.Domain.Events;
@@ -142,7 +143,7 @@ public sealed partial class CampaignSession
     {
         if (state.FlyEffect is not null) return "save_event_active";
         bool received = state.Script.Flags.GetValueOrDefault(FieldFlySourceRules.GiftFlag);
-        int count = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], FieldFlyMachineCatalog.Hm02Id);
+        int count = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], new ItemId("pret:ITEM_HM02"));
         if (_content.FieldFly is null) return received || count != 0 ? "save_field_fly_profile_missing" : null;
         return count == (received ? 1 : 0) ? null : "save_field_fly_hm02_reward_mismatch";
     }
@@ -176,9 +177,9 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("field_fly_gift_reward_context");
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
-        if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], FieldFlyMachineCatalog.Hm02Id) != 0)
+        if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], new ItemId("pret:ITEM_HM02")) != 0)
             throw new InvalidDataException("field_fly_gift_duplicate_hm02");
-        var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, FieldFlyMachineCatalog.Hm02Id);
+        var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, new ItemId("pret:ITEM_HM02"));
         if (effect.Opcode == "checkitemspace") { next = Result(state, added.Succeeded ? 1 : 0); return true; }
         if (!added.Succeeded) throw new InvalidDataException("field_fly_gift_failed: " + added.Error);
         next = Result(state with { Inventory = added.State }, 1); return true;

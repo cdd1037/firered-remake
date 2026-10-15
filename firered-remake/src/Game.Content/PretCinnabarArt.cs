@@ -47,7 +47,6 @@ public sealed class PretCinnabarArt
             foreach(var s in ss)
             {
                 Require(s.SpeciesId=="pret:SPECIES_"+name&&s.Width==64&&s.Height==64&&s.FrameWidth==64&&s.FrameHeight==64&&s.FrameCount==1&&s.SourceFrameIndex==0&&s.TransparentIndex==0&&!s.FlipH&&s.PaletteRgb555.Length==16,"Cinnabar sprite identity differs.");Pixels(s.TexturePath,64,64);
-                foreach(var r in s.SourceRefs){Require(r.Kind=="pret","Cinnabar sprite provenance differs.");}
             }
             var icon=doc.Icons.Single(i=>i.SourceSpeciesId==id);Require(icon.SpeciesId=="pret:SPECIES_"+name&&icon.Width==32&&icon.Height==32&&icon.SourceFrameIndex==0&&icon.SourceFrameCount==2&&icon.TransparentIndex==0&&icon.PaletteVariant=="shared-normal-shiny"&&icon.PaletteRgb555.Length==16,"Cinnabar icon differs.");Pixels(icon.TexturePath,32,32);            var foot=doc.Footprints.Single(i=>i.SourceSpeciesId==id);Require(foot.Width==16&&foot.Height==16,"Cinnabar footprint differs.");Pixels(foot.TexturePath,16,16);        }
         pokedexMenu?.ForProjectRoot(dependency);var dex=pokedexMenu??PretPokedexMenu.Load(dependency);

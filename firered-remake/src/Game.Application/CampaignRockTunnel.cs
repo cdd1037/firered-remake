@@ -84,13 +84,13 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("rocktunnel_aide_reward_context");
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var error = ValidateCampaignInventory(inventory); if (error is not null) throw new InvalidDataException(error);
-        var view = ShopInventoryView(inventory);
+        var view = inventory;
         var result = effect.Opcode == "additem"
             ? EarlyInventoryAddRules.Add(ShopCatalog, view, Everstone, 1)
             : EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, Everstone, 1);
         if (!result.Succeeded && effect.Opcode == "additem")
             throw new InvalidDataException("rocktunnel_aide_reward_failed: " + result.Error);
-        next = Result(state with { Inventory = effect.Opcode == "additem" ? MergeShopInventory(inventory, result.State) : inventory }, result.Succeeded ? 1 : 0);
+        next = Result(state with { Inventory = effect.Opcode == "additem" ? result.State : inventory }, result.Succeeded ? 1 : 0);
         return true;
     }
 }

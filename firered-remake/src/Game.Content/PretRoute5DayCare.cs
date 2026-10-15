@@ -45,7 +45,6 @@ public sealed class PretRoute5DayCare
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
 
-
     /// <summary>Load map/script evidence before compiling campaign scripts. dependencyRoot supplies unchanged town/NPC resources.</summary>
     public static PretRoute5DayCare Load(string projectRoot, string? dependencyRoot = null)
     {

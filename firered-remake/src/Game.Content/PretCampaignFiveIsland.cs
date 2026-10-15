@@ -15,13 +15,12 @@ public sealed partial class PretCampaignCatalog
 {
     public const string FiveIslandContentProfile = "firered-five-island-campaign-v1";
     public PretFiveIslandRegion? FiveIslandRegion { get; }
-    public FiveIslandOwnedPokemonCatalog? FiveIslandOwnership { get; }
-    public FiveIslandOpponentPokemonCatalog? FiveIslandOpponents { get; }
+    public GamePokemonCatalog? FiveIslandOwnership { get; }
+    public GameOpponentPokemonCatalog? FiveIslandOpponents { get; }
     public FiveIslandTrainerCatalog? FiveIslandTrainers { get; }
     public FiveIslandTrainerCatalog? FiveIslandTrainerParties => FiveIslandTrainers;
     public FiveIslandItemContent? FiveIslandItems { get; }
-    public FiveIslandShopCatalog? FiveIslandShop => FiveIslandItems?.Shop;
-    public FiveIslandMachineCatalog? FiveIslandMachines => FiveIslandItems?.Machines;
+    public MachineCatalog? FiveIslandMachines => FiveIslandItems?.Machines;
     public FiveIslandWaterEncounterCatalog? FiveIslandWaterEncounters { get; }
     public bool FiveIslandEnabled => FiveIslandRegion is not null;
 
@@ -30,20 +29,12 @@ public sealed partial class PretCampaignCatalog
          "FiveIsland_PokemonCenter_2F", "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire", "InitRoamer",
          "SevenIsland", "GoodRod", "SuperRod", "Porygon.TradeEvolution", "VsSeeker.Rematch"];
 
-
-
     private static void ValidateFiveIslandAnchors(PretFiveIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
         if (region.NewMaps.Keys.Any(maps.ContainsKey))
             throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
-    private static IEnumerable<KeyValuePair<int, string>> FiveIslandSpeciesNames(PretPokedexMenu pokedex,FiveIslandOwnedPokemonCatalog owned) =>
-        FiveIslandOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-        {
-            int sourceId = owned.Catalog.Species[id].SourceSpeciesId;
-            return KeyValuePair.Create(sourceId, pokedex.Entries[sourceId].Name);
-        });
 
     private static void ValidateFiveIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FiveIslandTrainerCatalog trainers, PretStoryCompilation scripts, FiveIslandItemContent items, bool includeCelio = false)
     {

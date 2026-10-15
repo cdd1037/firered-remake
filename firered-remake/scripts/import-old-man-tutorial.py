@@ -87,21 +87,13 @@ def import_content(repo, raw, out):
         for m in re.finditer(r'^    \[' + species_symbol + r'\]\s*= \{\{EVO_LEVEL,\s+(\d+), (SPECIES_\w+)\}\},$', sources['src/data/pokemon/evolution.h'], re.M):
             if m[2] not in ['SPECIES_KAKUNA', 'SPECIES_BEEDRILL']:
                 raise ValueError('Evolution target beyond complete family')
-            evolutions.append(dict(level=int(m[1]), target=ident(m[2]), source=ref('src/data/pokemon/evolution.h', species_symbol, m)))
-        species.append(dict(id=ident(species_symbol), sourceSpeciesId=number('include/constants/species.h', species_symbol),
-                       baseStats=base, type1=types[1], type2=types[2], catchRate=int(f['catchRate']),
-                       experienceYield=int(f['expYield']), evYield=yields, growthRate='mediumFast', genderRatio=127,
-                       ability1=abilities[1], ability2=abilities[2], friendship=int(f['friendship']), levelUpMoves=entries,
-                       evolutions=evolutions, source=species_ref, learnsetSource=ref(learnpath, pointer, learn)))
+            evolutions.append(dict(level=int(m[1]), target=ident(m[2])))
+        species.append(dict(id=ident(species_symbol), sourceSpeciesId=number('include/constants/species.h', species_symbol), baseStats=base, type1=types[1], type2=types[2], catchRate=int(f['catchRate']), experienceYield=int(f['expYield']), evYield=yields, growthRate='mediumFast', genderRatio=127, ability1=abilities[1], ability2=abilities[2], friendship=int(f['friendship']), levelUpMoves=entries, evolutions=evolutions))
         species_names.append(name('src/data/text/species_names.h', species_symbol))
     moves, move_names = [], []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
-        moves.append(dict(id=ident(symbol), sourceMoveId=number('include/constants/moves.h', symbol),
-                          pp=int(f['pp']), power=int(f['power']), type=f['type'], accuracy=int(f['accuracy']),
-                          effect=f['effect'], secondaryEffectChance=int(f['secondaryEffectChance']), target=f['target'],
-                          priority=int(f['priority']), flags=[] if f['flags'] == '0' else f['flags'].split(' | '),
-                          battleEffectImplemented=False, source=source))
+        moves.append(ident(symbol))
         move_names.append(name('src/data/text/move_names.h', symbol))
     textpath = 'src/battle_message.c'
     texts = []
@@ -110,13 +102,7 @@ def import_content(repo, raw, out):
         # Decode line breaks only; retain source engine control tokens (including \p).
         texts.append(dict(symbol=symbol, text=m[1].replace('\\n', '\n'), source=ref(textpath, symbol, m)))
     item = next(i for i in json.loads(sources['src/data/items.json'])['items'] if i['itemId'] == 'ITEM_TEACHY_TV')
-    item_match = one(r'    \{\n      "english": "TEACHY TV",.*?^    \}', sources['src/data/items.json'])
-    teachy_tv = dict(sourceItemId=number('include/constants/items.h', 'ITEM_TEACHY_TV'), name=item['english'],
-                     price=item['price'], holdEffect=item['holdEffect'], holdEffectParam=item['holdEffectParam'],
-                     description=item['description_english'].replace('\\n', '\n'), importance=item['importance'],
-                     registrability=item['registrability'], pocket=item['pocket'], type=item['type'],
-                     fieldUseFunc=item['fieldUseFunc'], battleUsage=item['battleUsage'], battleUseFunc=item['battleUseFunc'],
-                     secondaryId=item['secondaryId'], source=ref('src/data/items.json', 'ITEM_TEACHY_TV', item_match))
+    teachy_tv = dict(item=ident('ITEM_TEACHY_TV'), description=item['description_english'].replace('\\n', '\n'))
     assets = []
     for p, b in verified.items():
         if p.startswith('graphics/'):
@@ -139,7 +125,7 @@ def import_content(repo, raw, out):
                             'Weedle, Kakuna and Beedrill complete source learnsets/evolutions are metadata; only Lv5 Weedle is used by the tutorial.',
                             'Presentation metadata does not claim full original rendering/audio or VBlank frame RNG equivalence.',
                             'Teachy TV reward definition does not enable its five Pokedude tutorials.'],
-               species=species, moves=moves, speciesNames=species_names, moveNames=move_names,
+               species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=species_names, moveNames=move_names,
                texts=texts, teachyTv=teachy_tv, assets=assets, oldManThrowFrames=frames,
                oldManThrowSource=ref(animpath, 'sAnimCmd_OldMan_1', anim), layouts=layouts)
     data = (json.dumps(doc, indent=2, ensure_ascii=False) + '\n').encode()

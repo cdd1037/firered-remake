@@ -9,34 +9,32 @@ namespace FireRed.Tests.Content;
 [TestClass, TestCategory("Game")]
 public sealed class MachineItemDefinitionTests
 {
-    private static readonly OpeningItemSourceRef OtherLocation = new("relocated/items", "description", 1, 2);
-    private static PewterMachineItem AlternateText(PewterMachineItem item) =>
-        item with { Description = "Another nonempty display description.", Item = item.Item with { Source = OtherLocation } };
+    private static MachineItem AlternateText(MachineItem item) =>
+        item with { Description = "Another nonempty display description." };
 
     [TestMethod]
     public void WrapperSerializesOnlyItemAndDisplayedDescription()
     {
-        var item = PretPewterMachines.LoadProject(TestAssets.Root).TmCase;
-        var options = ContentJson.CreateOptions();
+        var item = SharedMachineCatalog.LoadProject(TestAssets.Root).LoadCurrent(SharedMachineCatalogTests.Pokemon()).TmCase;
+        var options = SharedMachineCatalog.LoadProject(TestAssets.Root).Items.CreateJsonOptions();
         var json = JsonSerializer.Serialize(item, options);
         using var parsed = JsonDocument.Parse(json);
         CollectionAssert.AreEquivalent(new[] { "item", "description" },
             parsed.RootElement.EnumerateObject().Select(p => p.Name).ToArray());
-        Assert.AreEqual(item, JsonSerializer.Deserialize<PewterMachineItem>(json, options));
+        Assert.AreEqual(item, JsonSerializer.Deserialize<MachineItem>(json, options));
         foreach (var field in new[] { "declarationDescription", "descriptionSource" })
-            Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<PewterMachineItem>(
+            Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<MachineItem>(
                 json[..^1] + ",\"" + field + "\":null}", options));
     }
 
     [TestMethod]
     [DataRow("TM06")]
     [DataRow("TM19")]
-    public void GymDefinitionsAcceptDisplayEditsAndRelocatedSourceButRejectUnsupportedCapabilities(string symbol)
+    public void GymDefinitionsAcceptDisplayEditsButRejectUnsupportedCapabilities(string symbol)
     {
         var machine = SharedMachineCatalog.LoadProject(TestAssets.Root).Definition(new("pret:ITEM_" + symbol)).Machine;
-        Action<PewterMachineItem> validate = symbol == "TM06" ? FuchsiaGymItemRules.ValidateMachine : CeladonGymItemRules.ValidateMachine;
+        Action<MachineItem> validate = symbol == "TM06" ? FuchsiaGymItemRules.ValidateMachine : CeladonGymItemRules.ValidateMachine;
         validate(AlternateText(machine));
-        validate(machine with { Item = machine.Item with { Source = null! } });
         Assert.ThrowsExactly<NotSupportedException>(() => validate(machine with { Description = "  " }));
         foreach (var invalid in new[] {
             machine.Item with { Pocket = "POCKET_ITEMS" },
@@ -49,35 +47,30 @@ public sealed class MachineItemDefinitionTests
     }
 
     [TestMethod]
-    [DataRow("pewter")]
-    [DataRow("ssanne")]
-    [DataRow("route11")]
-    [DataRow("rocktunnel")]
-    public void RegionalMachineRulesValidateGameplayIndependentlyOfDisplayText(string region)
+    public void CurrentMachineRulesValidateGameplayIndependentlyOfDisplayText()
     {
-        var catalog = region switch {
-            "ssanne" => PretSsAnneMachines.LoadCatalogProject(TestAssets.Root),
-            "route11" => PretRoute11Machines.LoadCatalogProject(TestAssets.Root),
-            "rocktunnel" => PretRockTunnelMachines.LoadCatalogProject(TestAssets.Root),
-            _ => PretPewterMachines.LoadProject(TestAssets.Root)
-        };
+        var catalog = SharedMachineCatalog.LoadProject(TestAssets.Root).LoadCurrent(SharedMachineCatalogTests.Pokemon());
         var changed = catalog with {
-            Tm39 = AlternateText(catalog.Tm39), TmCase = AlternateText(catalog.TmCase),
-            AdditionalMachines = catalog.AdditionalMachines?.Select(m => m with { Machine = AlternateText(m.Machine) }).ToImmutableArray()
+            TmCase = AlternateText(catalog.TmCase),
+            Machines = catalog.Machines.Select(m => m with { Machine = AlternateText(m.Machine) }).ToImmutableArray()
         };
-        PewterMachineRules.ValidateCatalog(changed);
-        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(changed with { MovePp = 1 }));
-        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(changed with {
+        MachineRules.ValidateCatalog(changed);
+        Assert.ThrowsExactly<ArgumentException>(() => MachineRules.ValidateCatalog(changed with {
+            Machines = changed.Machines.SetItem(0, changed.Machines[0] with { MovePp = 0 }) }));
+        Assert.ThrowsExactly<ArgumentException>(() => MachineRules.ValidateCatalog(changed with {
             TmCase = changed.TmCase with { Item = changed.TmCase.Item with { CanToss = true } } }));
-        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(changed with {
-            Tm39 = changed.Tm39 with { Description = " " } }));
+        Assert.ThrowsExactly<ArgumentException>(() => MachineRules.ValidateCatalog(changed with {
+            Machines = changed.Machines.SetItem(0, changed.Machines[0] with {
+                Machine = changed.Machines[0].Machine with { Description = " " } }) }));
         var inventory = new InventoryState([], [], OpeningInventoryRules.SourceLimits) {
-            Machines = [new(PewterMachineRules.Tm39Id, 1)]
+            Machines = [new(MachineRules.Tm39Id, 1)]
         };
-        Assert.AreEqual("inventory_tm_case_missing", PewterMachineRules.Validate(changed, inventory));
-        inventory = inventory with { KeyItems = [new(PewterMachineRules.TmCaseId, 1)] };
-        Assert.IsNull(PewterMachineRules.Validate(changed, inventory));
-        Assert.AreEqual("inventory_stack_quantity", PewterMachineRules.Validate(changed, inventory with {
-            Machines = [new(PewterMachineRules.Tm39Id, 1000)] }));
+        Assert.AreEqual("inventory_tm_case_missing", MachineRules.Validate(changed, inventory));
+        inventory = inventory with { KeyItems = [new(MachineRules.TmCaseId, 1)] };
+        Assert.IsNull(MachineRules.Validate(changed, inventory));
+        Assert.AreEqual("inventory_stack_quantity", MachineRules.Validate(changed, inventory with {
+            Machines = [new(MachineRules.Tm39Id, 1000)] }));
+        Assert.AreEqual("inventory_machine_unsupported", MachineRules.Validate(changed, inventory with {
+            Machines = [new(new("pret:ITEM_HM08"), 1)] }));
     }
 }

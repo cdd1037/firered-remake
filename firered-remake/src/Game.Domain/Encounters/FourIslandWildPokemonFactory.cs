@@ -12,7 +12,7 @@ namespace Game.Domain.Encounters;
 public static class FourIslandWildPokemonFactory
 {
     public static ImmutableArray<SpeciesId> WildSpecies { get; } = FourIslandWildSource.Species.Select(s=>s.Species).ToImmutableArray();
-    public static EarlyLandWildPokemonResult Generate(FourIslandOwnedPokemonCatalog owned, EarlyLandEncounterTable table,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned, EarlyLandEncounterTable table,
         EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -30,7 +30,7 @@ public static class FourIslandWildPokemonFactory
             pending.Candidate.Level,rng,playerTrainerId);
         return new(result.Pokemon,result.GlobalRng,result.RandomTrace);
     }
-    public static Route1WildPokemonResult GenerateSourceSlot(FourIslandOwnedPokemonCatalog owned, FourIslandWildOrigin origin,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned, FourIslandWildOrigin origin,
         byte level, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -46,9 +46,9 @@ public static class FourIslandWildPokemonFactory
         if (!SourceInitialInstance(owned,origin,result.Pokemon)) throw new InvalidOperationException("four_island_wild_generated_identity");
         return result;
     }
-    public static bool SourceInitialInstance(FourIslandOwnedPokemonCatalog owned, FourIslandWildOrigin origin, PokemonInstance mon)
+    public static bool SourceInitialInstance(GamePokemonCatalog owned, FourIslandWildOrigin origin, PokemonInstance mon)
     {
-        if (owned is null || !ReferenceEquals(FourIslandOwnedPokemonCatalog.For(owned.Catalog),owned) || mon is null ||
+        if (owned is null || mon is null ||
             !FourIslandWildBattleContract.Matches(origin,mon) || !owned.Catalog.Species.TryGetValue(mon.Species,out var species)) return false;
         var dependency=FourIslandWildSource.Species.Single(s=>s.Species==mon.Species);
         var moves=FourIslandWildSource.InitialMoves.Single(s=>s.Species==mon.Species && s.Level==mon.Level).Moves;
@@ -73,9 +73,9 @@ public static class FourIslandWildPokemonFactory
         var draw=Gen3Rng.Next(rng,"wild-battle.held-item",100);
         return new(HeldItem(species,draw.Trace.Result),draw.State,[draw.Trace]);
     }
-    private static void ValidateOwned(FourIslandOwnedPokemonCatalog owned)
+    private static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(FourIslandOwnedPokemonCatalog.For(owned.Catalog),owned) || owned.Catalog.Species.Count!=125)
+        if (owned is null)
             throw new ArgumentException("four_island_wild_owned_proof");
     }
 }

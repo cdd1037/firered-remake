@@ -46,7 +46,7 @@ internal abstract partial class SourceRecipeContext
             // EffectLowKick: attackstring, ppreduce, weight, accuracy. Weight uses the
             // target's live battle species, including the existing singles Transform view.
             SpendEarlyPartyPp(actor, target, slot, move);
-            var mechanics = SourceMechanicsCatalog.For(catalog) ?? throw new SourceRecipeUnsupported("source_dynamic_power_catalog");
+            var mechanics = catalog?.MechanicsData ?? throw new SourceRecipeUnsupported("source_dynamic_power_catalog");
             power = SourceDynamicPowerRules.Weight(mechanics.SpeciesMechanics[Get(target).Pokemon.Species].WeightHectograms);
         }
         bool hit = FixedDamageAccuracy(actor, target, move, purpose);

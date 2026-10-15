@@ -36,7 +36,7 @@ public static class SourceFieldPpBoostRules
         if (item.Value == "pret:ITEM_PP_UP" && definition.SourceItemSymbol == "ITEM_PP_UP" &&
             definition.SourceItemId == 69 && definition.EffectBytes.SequenceEqual(new[] { 0, 0, 0, 0, 32, 224, 5, 3, 2 }))
             return new(item, SourcePpBoostKind.PpUp);
-        if (item == OrdinaryItemInventoryCatalog.PpMaxId && definition.SourceItemSymbol == "ITEM_PP_MAX" &&
+        if (item == ItemIds.PpMaxId && definition.SourceItemSymbol == "ITEM_PP_MAX" &&
             definition.SourceItemId == 71 && definition.EffectBytes.SequenceEqual(new[] { 0, 0, 0, 0, 0, 240, 5, 3, 2 }))
             return new(item, SourcePpBoostKind.PpMax);
         return null;

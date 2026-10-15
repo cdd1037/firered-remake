@@ -32,14 +32,14 @@ public sealed class PretMetronomeMoveCatalog
 
     public PokemonCatalog Extend(PokemonCatalog predecessor)
     {
-        PokemonFactory.ValidateCatalog(predecessor);
+        PokemonFactory.ValidateDefinitions(predecessor);
         foreach (var (id, move) in predecessor.Moves)
-            Require(id == move.Id , "Metronome predecessor move conflicts with pinned source: " + id.Value);
+            Require(id == move.Id && MatchesSource(move), "Metronome predecessor move conflicts with pinned source: " + id.Value);
         var moves = predecessor.Moves.ToBuilder();
         foreach (var (id, move) in Moves)
             if (!moves.ContainsKey(id)) moves.Add(id, move);
         var result = new PokemonCatalog(SourceCommit, predecessor.Species, moves.ToImmutable());
-        PokemonFactory.ValidateCatalog(result);
+        PokemonFactory.ValidateDefinitions(result);
         Require(result.Moves.Count == 354 , "Metronome inherited records differ.");
         return result;
     }
@@ -53,7 +53,7 @@ public sealed class PretMetronomeMoveCatalog
         left.Id == right.Id && left.SourceMoveId == right.SourceMoveId && left.Pp == right.Pp && left.Power == right.Power &&
         left.Type == right.Type && left.Accuracy == right.Accuracy && left.Effect == right.Effect &&
         left.SecondaryEffectChance == right.SecondaryEffectChance && left.Target == right.Target && left.Priority == right.Priority &&
-        left.Flags.SequenceEqual(right.Flags) && left.BattleEffectImplemented == right.BattleEffectImplemented && left.Source == right.Source;
+        left.Flags.SequenceEqual(right.Flags) && left.BattleEffectImplemented == right.BattleEffectImplemented;
 
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
 }

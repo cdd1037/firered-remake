@@ -111,7 +111,7 @@ public sealed class PretNpcTradeMail
         Need(            items.PreviousItemCount == 126 && items.ItemCount == 127 && items.Additions.Length == 1 &&
             items.Additions[0].Id == FabMailId &&
             items.ShopsAdded.IsEmpty && items.Icons.Length == 1, "Fab inventory addition scope differs.");
-        Need(items.Additions[0].SourceMetadata is { HoldEffect: "HOLD_EFFECT_NONE", SecondaryId: 10,
+        Need(items.Additions[0].Item is { HoldEffect: "HOLD_EFFECT_NONE", SecondaryId: 10,
             CanGive: true, CanSell: true, CanToss: true } && items.Additions[0].Type == "ITEM_TYPE_MAIL" &&
             items.Additions[0].FieldUseFunction == "FieldUseFunc_Mail" && items.Additions[0].Price == 50,
             "Original Fab Mail held-item metadata differs.");

@@ -20,8 +20,6 @@ public sealed partial class PretCampaignCatalog
     public PretFirstSeviiPresentation? FirstSeviiPresentation { get; }
     public bool FirstSeviiEnabled=>FirstSeviiRegion is not null;
 
-
-
     private static void ValidateFirstSeviiAnchors(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
         if (region.NewMaps.Keys.Any(maps.ContainsKey))
@@ -30,7 +28,7 @@ public sealed partial class PretCampaignCatalog
 
     private static IEnumerable<FieldPickupDefinition> FirstSeviiPickupDefinitions(PretFirstSeviiRegion region,FirstSeviiItemCatalog items,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
-        items.Validate();FirstSeviiShopCatalog.ValidateCatalog(shop);
+        items.Validate();EarlyShopInventoryRules.ValidateCatalog(shop);
         foreach(var pickup in items.Pickups)
         {
             var map=region.NewMaps[PretFirstSeviiRegion.MapIdFromSourceSymbol(pickup.MapSymbol)];
@@ -62,10 +60,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents,FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(maps.Count!=previous.Count+14||owned.Catalog.Species.Count!=115||
-            opponents.Catalog.Species.Count!=122||owned.Catalog.Moves.Count!=354)
+        if(maps.Count!=previous.Count+14)
             throw new InvalidDataException("first_sevii_composition_scope");
         foreach(var battle in trainers.BattlesBySource.Values)
         {

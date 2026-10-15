@@ -31,20 +31,5 @@ public static class PretSeviiRubyRules
             document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         SeviiRubyTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static SeviiRubyOwnedPokemonCatalog LoadOwned(CinnabarOwnedPokemonCatalog predecessor)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        var species = predecessor.Catalog.Species.SetItem(SeviiRubyOwnedPokemonCatalog.Ponyta,
-            SeviiRubyOwnedPokemonCatalog.ExpectedSpecies(predecessor, SeviiRubyOwnedPokemonCatalog.Ponyta));
-        foreach (var id in SeviiRubyOwnedPokemonCatalog.AdditionalSpecies)
-            species = species.Add(id, SeviiRubyOwnedPokemonCatalog.ExpectedSpecies(predecessor, id));
-        return SeviiRubyOwnedPokemonCatalog.Authenticate(predecessor, predecessor.Catalog with { Species = species });
-    }
-    public static SeviiRubyOwnedPokemonCatalog LoadOwned(string root, CinnabarOwnedPokemonCatalog predecessor)
-    {
-        return LoadOwned(predecessor);
-    }
-    public static SeviiRubyOpponentPokemonCatalog LoadOpponents(PokemonLeagueOpponentPokemonCatalog predecessor,
-        SeviiRubyOwnedPokemonCatalog owned) => SeviiRubyOpponentPokemonCatalog.Authenticate(predecessor, owned);
     public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

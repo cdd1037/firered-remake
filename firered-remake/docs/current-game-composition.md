@@ -1,7 +1,7 @@
 # Current-game composition and retired runtime profiles
 
 The normal game is the accepted Celio composition, with one save rules ID:
-`firered-current-campaign-v1`. This does not claim that unfinished optional content,
+`firered-current-campaign-v2`. This does not claim that unfinished optional content,
 League rematches or Cerulean Cave are implemented. The authenticated source and
 owned/opponent admission limits remain unchanged.
 

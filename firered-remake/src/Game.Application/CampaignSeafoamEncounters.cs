@@ -34,7 +34,7 @@ public sealed partial class CampaignSession
     private static void ValidateSeafoamEncounterCatalog(ICampaignCatalog content)
     {
         if (!content.SeafoamEnabled || content.SeafoamOwnership is not { } owned ||
-            !ReferenceEquals(SeafoamOwnedPokemonCatalog.For(owned.Catalog), owned))
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon))
             throw new InvalidDataException("seafoam_current_binding");
         var definition = content.MapDefinition(new(ArticunoMap));
         var program = content.FindProgram(ArticunoScript);

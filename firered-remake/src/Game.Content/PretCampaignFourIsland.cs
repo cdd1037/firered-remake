@@ -15,17 +15,14 @@ public sealed partial class PretCampaignCatalog
 {
     public const string FourIslandContentProfile = "firered-four-island-campaign-v1";
     public PretFourIslandRegion? FourIslandRegion { get; }
-    public FourIslandOwnedPokemonCatalog? FourIslandOwnership { get; }
-    public FourIslandOpponentPokemonCatalog? FourIslandOpponents { get; }
+    public GamePokemonCatalog? FourIslandOwnership { get; }
+    public GameOpponentPokemonCatalog? FourIslandOpponents { get; }
     public FourIslandTrainerCatalog? FourIslandTrainers { get; }
     public FourIslandTrainerCatalog? FourIslandTrainerParties => FourIslandTrainers;
     public FourIslandItemContent? FourIslandItems { get; }
-    public FourIslandShopCatalog? FourIslandShop => FourIslandItems?.Shop;
-    public FourIslandMachineCatalog? FourIslandMachines => FourIslandItems?.Machines;
+    public MachineCatalog? FourIslandMachines => FourIslandItems?.Machines;
     public FourIslandWaterEncounterCatalog? FourIslandWaterEncounters { get; }
     public bool FourIslandEnabled => FourIslandRegion is not null;
-
-
 
     private static void ValidateFourIslandAnchors(PretFourIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
@@ -33,12 +30,6 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
-    private static IEnumerable<KeyValuePair<int, string>> FourIslandSpeciesNames(PretPokedexMenu pokedex,FourIslandOwnedPokemonCatalog owned) =>
-        FourIslandOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
-        {
-            int sourceId = owned.Catalog.Species[id].SourceSpeciesId;
-            return KeyValuePair.Create(sourceId, pokedex.Entries[sourceId].Name);
-        });
 
     private static void ValidateFourIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FourIslandTrainerCatalog trainers, PretStoryCompilation scripts)
     {
@@ -59,6 +50,5 @@ public sealed partial class PretCampaignCatalog
             if (maps.ContainsKey(PretFourIslandRegion.MapIdFromSourceSymbol(symbol)))
                 throw new InvalidDataException("four_island_excluded_map_admitted");
     }
-
 
 }

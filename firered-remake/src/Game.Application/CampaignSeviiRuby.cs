@@ -38,10 +38,9 @@ public sealed partial class CampaignSession
         }
         if (!content.NationalDexEnabled || content.SeviiRubyOwnership is not { } owned ||
             content.SeviiRubyOpponents is not { } opponents || content.SeviiRubyTrainers is not { } trainers ||
-            !ReferenceEquals(owned.Predecessor, content.CinnabarOwnership) || !ReferenceEquals(content.FourIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.PokemonLeagueOpponents) ||
-            (((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? SeviiRubyMachineCatalog.For(content.PewterMachines)) is not { } machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            (((content.SevenIslandShop?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? SeviiRubyShopCatalog.For(content.EarlyShop)) is null) throw new InvalidDataException("sevii_ruby_source_profile_missing");
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.RubyId)) throw new InvalidDataException("sevii_ruby_source_profile_missing");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
     }
 
@@ -81,12 +80,12 @@ public sealed partial class CampaignSession
             return "save_sevii_ruby_quest_progress";
         // The source sets GOT_RUBY and removes the object before AddBagItem. A full
         // Key Items pocket can therefore legally retain the flag without the item.
-        if (Flag("FLAG_HIDE_RUBY") != got || SeviiRubyEscapeRopeRules.IsRubyCave(state.World.Player.MapId) && scene < 4)
+        if (Flag("FLAG_HIDE_RUBY") != got || state.World.Player.MapId.Value.StartsWith("map.mt-ember-ruby-path-", StringComparison.Ordinal) && scene < 4)
             return "save_sevii_ruby_visibility_or_access";
         bool bothGrunts = state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_43") &&
             state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_44");
         if (got && !bothGrunts || Flag("FLAG_HIDE_MT_EMBER_EXTERIOR_ROCKETS") != bothGrunts) return "save_sevii_ruby_grunts_required";
-        if (OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], SeviiRubyMachineCatalog.Hm06Id) > 0 && !Flag("FLAG_GOT_HM06"))
+        if (OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], new ItemId("pret:ITEM_HM06")) > 0 && !Flag("FLAG_GOT_HM06"))
             return "save_sevii_ruby_hm06_flag";
         if (SeviiRubyEditedMap(state.World.Player.MapId) && !(state.MapEdits ?? ImmutableSortedDictionary<string, FieldMetatileEdit>.Empty)
             .SequenceEqual(SeviiRubyExpectedEdits(state))) return "save_sevii_ruby_metatiles";

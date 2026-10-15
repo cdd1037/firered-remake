@@ -18,10 +18,6 @@ public sealed class TrainerPolicyTests
     private global::Game.Domain.Pokemon.SourceMechanicsCatalog proof = default !;
     private global::Game.Domain.Pokemon.PokemonCatalog catalog = default !;
     private global::Game.Domain.Items.SourceBattleItemCatalog items = default !;
-    private global::Game.Domain.Pokemon.PokemonCatalog raw = default !;
-    private global::Game.Domain.Pokemon.PokemonCatalog extra = default !;
-    private global::Game.Domain.Pokemon.PokemonCatalog prior = default !;
-    private global::Game.Content.PretFuchsiaRoutePokemon route = default !;
     private global::Game.Domain.Pokemon.PokemonCatalog trainerCatalog = default !;
     private global::Game.Content.FuchsiaGymTrainerCatalogContent loaded = default !;
     private global::Game.Domain.Trainers.FuchsiaGymTrainerCatalog gym = default !;
@@ -32,12 +28,9 @@ public sealed class TrainerPolicyTests
         proof = TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(root));
         catalog = proof.Catalog;
         items = SourceBattleItemCatalogLoader.LoadAuthenticated(root);
-        raw = PretRocketHideoutPokemon.Load(root).Catalog;
-        extra = PretVermilionGymTrainers.ExtendPokemon(root, PretCeladonApproachPokemon.Load(root).Catalog, celadonApproachRules: true);
-        prior = PretEeveePokemon.Load(PretSnorlaxPokemon.Load(PretPokemonTowerPokemon.Load(raw with { Moves = raw.Moves.SetItems(extra.Moves) }, root, root).Catalog, root).Catalog, root).Catalog;
-        route = PretFuchsiaRoutePokemon.Load(prior, root);
-        trainerCatalog = PretMetronomeMoveCatalog.Load(root).Extend(route.Catalog);
-        loaded = PretFuchsiaGymTrainers.Load(root);
+        var canonical = PretCanonicalPokemonCatalog.Load(root, root);
+        trainerCatalog = catalog;
+        loaded = PretFuchsiaGymTrainers.Load(canonical, root);
         gym = new FuchsiaGymTrainerCatalog(loaded.SourceCommit, loaded.Profile, loaded.CompleteSourceRoster, loaded.Trainers, loaded.Battles);
     }
 
@@ -200,17 +193,20 @@ public sealed class TrainerPolicyTests
         var stalePrepare = SourceTrainerEncounterPolicy.PrepareActions(items, catalog, f, f.Revision + 1);
         Assert.IsTrue(!stalePrepare.Succeeded && ReferenceEquals(stalePrepare.State, f) && stalePrepare.Trace.IsEmpty && stalePrepare.Events.IsEmpty && stalePrepare.Inventory.ConsumedMask == 0, "stale preparation cannot pay for an item");
         var restored = JsonSerializer.Deserialize<SourceBattleFrame>(Json(f))!;
-        Assert.IsTrue(SourceTrainerEncounterPolicy.Validate(catalog, restored)is null, "same-process JSON retains authentic proof");
+        Assert.IsTrue(SourceTrainerEncounterPolicy.Validate(catalog, restored)is null, "JSON retains explicit generated roster");
         Assert.IsTrue(Json(after) == Json(SourceTrainerEncounterPolicy.PrepareActions(items, catalog, restored, restored.Revision)), "same JSON-resumed prepared result");
         var setup = SourceTrainerEncounterEntry.Prepare(new(999), "fuchsia-gym-trainer");
         var mismatched = SourceTrainerEncounterEntry.Begin(catalog, setup, made, [Player(0)], 0);
         Assert.IsTrue(!mismatched.Succeeded && mismatched.Rng == setup.InitialRng && mismatched.Events.IsEmpty && mismatched.Trace.IsEmpty, "entry refuses a discontinuous setup/factory RNG chain atomically");
+        var restoredCreation = JsonSerializer.Deserialize<TrainerPartyCreationResult>(Json(made))!;
+        Assert.IsTrue(SourceTrainerEncounterPolicy.CreateContext(catalog, restoredCreation).Succeeded,
+            "generated roster values survive JSON without a process registry");
         var fabricated = new TrainerPartyCreationResult(made.Trainer, made.Party, made.Rng, made.Trace);
-        Assert.IsTrue(!SourceTrainerEncounterPolicy.CreateContext(catalog, fabricated).Succeeded, "fabricated receipt refused");
+        Assert.IsTrue(!SourceTrainerEncounterPolicy.CreateContext(catalog, fabricated).Succeeded, "missing generated roster refused");
         Assert.IsTrue(!SourceTrainerEncounterPolicy.CreateContext(catalog, made with { Trainer = made.Trainer with { AiFlags = 1 } }).Succeeded, "changed AI metadata refused");
         Assert.IsTrue(!SourceTrainerEncounterPolicy.CreateContext(catalog, made with { Party = made.Party.SetItem(0, made.Party[0] with { Pokemon = made.Party[0].Pokemon with { OriginalTrainerId = 17 } }) }).Succeeded, "changed generated identity refused");
-        var unknownProof = JsonSerializer.Deserialize<SourceBattleFrame>(Json(restored with { TrainerEncounter = restored.TrainerEncounter!with { RosterProof = "fabricated" } }))!;
-        Assert.IsTrue(SourceTrainerEncounterPolicy.Validate(catalog, unknownProof)is not null, "unknown JSON proof explicitly refused");
+        var unknownProof = JsonSerializer.Deserialize<SourceBattleFrame>(Json(restored with { TrainerEncounter = restored.TrainerEncounter!with { Roster = null! } }))!;
+        Assert.IsTrue(SourceTrainerEncounterPolicy.Validate(catalog, unknownProof)is not null, "missing JSON roster explicitly refused");
     }
 
     [TestMethod]

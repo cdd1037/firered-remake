@@ -23,7 +23,7 @@ public sealed partial class CampaignSession
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length)
             return No("item_party_index_invalid");
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
-        var consumed = EarlyInventoryAddRules.Remove(ShopCatalog, ShopInventoryView(state.Inventory!), new(RareCandyItem), 1);
+        var consumed = EarlyInventoryAddRules.Remove(ShopCatalog, state.Inventory!, new(RareCandyItem), 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
         var result = RareCandyRules.Apply(_content.PokemonContent!, _binding.Ownership,
             state.Party[command.PartyIndex], _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
@@ -35,7 +35,7 @@ public sealed partial class CampaignSession
         return new(CommandStatus.Accepted, BeginRareCandyFanfare(state with
         {
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
-            Inventory = MergeShopInventory(state.Inventory!, consumed.State), ItemMenu = null,
+            Inventory = consumed.State, ItemMenu = null,
             RareCandy = new(result, menu, CampaignRareCandyStage.LevelMessage,
                 [$"{result.Pokemon.Nickname} grew to\nLV. {result.Pokemon.Pokemon.Level}!"], 0, result.PendingMoves)
         }));

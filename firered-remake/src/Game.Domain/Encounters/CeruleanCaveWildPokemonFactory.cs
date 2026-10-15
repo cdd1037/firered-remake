@@ -16,7 +16,7 @@ public static class CeruleanCaveWildPokemonFactory
         .Concat(CeruleanCaveEncounterTables.OldRod.SelectMany(t => t.Slots).Select(s => s.Species))
         .Distinct().ToImmutableArray();
 
-    public static EarlyLandWildPokemonResult Generate(CeruleanCaveOwnedPokemonCatalog owned,
+    public static EarlyLandWildPokemonResult Generate(GamePokemonCatalog owned,
         EarlyLandEncounterTable table, EarlyLandEncounterState encounter, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -30,7 +30,7 @@ public static class CeruleanCaveWildPokemonFactory
         return new(result.Pokemon, result.GlobalRng, result.RandomTrace);
     }
 
-    public static Route1WildPokemonResult GenerateSourceSlot(CeruleanCaveOwnedPokemonCatalog owned,
+    public static Route1WildPokemonResult GenerateSourceSlot(GamePokemonCatalog owned,
         CeruleanCaveWildOrigin origin, byte level, RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -45,7 +45,7 @@ public static class CeruleanCaveWildPokemonFactory
     }
 
     /// <summary>setwildbattle MEWTWO,70 calls CreateMon directly: two PID and two IV draws, with no nature retry.</summary>
-    public static Route1WildPokemonResult GenerateMewtwo(CeruleanCaveOwnedPokemonCatalog owned,
+    public static Route1WildPokemonResult GenerateMewtwo(GamePokemonCatalog owned,
         RngState rng, uint playerTrainerId)
     {
         ValidateOwned(owned);
@@ -56,11 +56,10 @@ public static class CeruleanCaveWildPokemonFactory
         return new(created.Pokemon, created.Rng, created.Trace);
     }
 
-    public static bool SourceInitialInstance(CeruleanCaveOwnedPokemonCatalog owned,
+    public static bool SourceInitialInstance(GamePokemonCatalog owned,
         CeruleanCaveWildOrigin origin, PokemonInstance pokemon)
     {
-        if (owned is null || !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            pokemon is null || !CeruleanCaveWildBattleContract.Matches(origin, pokemon) ||
+        if (owned is null || pokemon is null || !CeruleanCaveWildBattleContract.Matches(origin, pokemon) ||
             !owned.Catalog.Species.TryGetValue(pokemon.Species, out var species)) return false;
         // Mechanics is the independently authenticated complete source; ownership authenticates inherited identity.
         var source = owned.Mechanics.Catalog.Species[pokemon.Species];
@@ -87,11 +86,9 @@ public static class CeruleanCaveWildPokemonFactory
         return new(HeldItem(species, draw.Trace.Result), draw.State, [draw.Trace]);
     }
 
-    internal static void ValidateOwned(CeruleanCaveOwnedPokemonCatalog owned)
+    internal static void ValidateOwned(GamePokemonCatalog owned)
     {
-        if (owned is null || !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor) ||
-            owned.Catalog.Species.Count != 139)
+        if (owned is null)
             throw new ArgumentException("cerulean_cave_owned_proof");
     }
 }

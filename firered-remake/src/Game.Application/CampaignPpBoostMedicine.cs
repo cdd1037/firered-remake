@@ -18,7 +18,7 @@ public sealed partial class CampaignSession
             return No("pp_boost_target_stale");
         if (ValidateCampaignInventory(state.Inventory) is { } inventoryError) return No(inventoryError);
         var result = SourceFieldPpBoostRules.Use(ShopCatalog, _content.PokemonContent!,
-            ShopInventoryView(state.Inventory), target, new ItemId(command.Text), command.MoveSlot,
+            state.Inventory, target, new ItemId(command.Text), command.MoveSlot,
             _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
         if (!result.Succeeded)
             return result.Error == "pp_boost_no_effect"
@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
         string moveName = _content.BattleContent!.MoveNames[result.Pokemon.Pokemon.Moves[command.MoveSlot].Move.Value];
         return new(CommandStatus.Accepted, state with
         {
-            Inventory = MergeShopInventory(state.Inventory, result.Inventory),
+            Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", moveName),
             ItemMenu = menu with { View = "message", MessageSymbol = symbol, ReturnView = "bag" }

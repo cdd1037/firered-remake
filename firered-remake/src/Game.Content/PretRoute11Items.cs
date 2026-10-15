@@ -18,9 +18,9 @@ public static class PretRoute11Items
     public const string Profile = "firered-route11-items-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretRoute11ItemsDocument Load(string json)
+    public static PretRoute11ItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions();
+        var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretRoute11ItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 7 && document.Icons.Length == 7 &&
@@ -48,25 +48,13 @@ public static class PretRoute11Items
         return document;
     }
 
-    public static PretRoute11ItemsDocument LoadProject(string root)
+    public static PretRoute11ItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/route11-items/route11-items.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/route11-items/route11-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         return document;
     }
 
     /// <summary>Appends X Defend and Aspear Berry to the authenticated thirty-item ship catalog.</summary>
-    public static EarlyShopCatalog LoadShopProject(string root, EarlyShopCatalog vermilionShop)
-    {
-        SsAnneItemRules.ValidateShop(vermilionShop);
-        var document = LoadProject(root);
-        string[] added = ["X_DEFEND", "ASPEAR_BERRY"];
-        var result = vermilionShop with
-        {
-            Profile = Route11ItemRules.Profile,Items = vermilionShop.Items.AddRange(added.Select(s => Definition(document, new ItemId("pret:ITEM_" + s))!))
-        };
-        EarlyShopInventoryRules.ValidateCatalog(result);
-        return result;
-    }
 
     public static EarlyShopItemDefinition? Definition(PretRoute11ItemsDocument document, ItemId id)
     {
@@ -87,10 +75,7 @@ public static class PretRoute11Items
         };
         int heal = use == EarlyShopUseSupport.Potion ? item.HoldEffectParam : 0;
         uint cure = item.SourceItemSymbol is "ITEM_CHERI_BERRY" or "ITEM_PARALYZE_HEAL" ? 64u : item.SourceItemSymbol == "ITEM_PECHA_BERRY" ? 8u : item.SourceItemSymbol == "ITEM_ASPEAR_BERRY" ? 32u : 0u;
-        return new(item.Id, item.SourceItemSymbol, item.SourceItemId, item.Name, value.Metadata.Description,
-            item.Price, item.Pocket, item.Importance, item.Type, item.FieldUseFunction, item.BattleUsage,
-            item.BattleUseFunction, item.HoldEffectParam, heal, cure, value.EffectBytes, use,
-            item.Source, value.EffectSource) { SourceMetadata = item };
+        return new(item, value.Metadata.Description, heal, cure, value.EffectBytes, use);
     }
     private static byte[] Read(string root,string path)
     {

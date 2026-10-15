@@ -15,7 +15,7 @@ public partial class CampaignView
         if (_catalog.FieldFly is null) return;
         if (!_earlyItemIcons.TryGetValue(PretFieldFly.ReusedHm02Icon, out var icon))
             throw new InvalidDataException("field_fly_shared_icon_missing");
-        _earlyItemIcons.Add(FieldFlyMachineCatalog.Hm02Id, icon);
+        _earlyItemIcons.Add(new Game.Domain.Ids.ItemId("pret:ITEM_HM02"), icon);
     }
 
     private TownMapPoint InitializeFlyMap()

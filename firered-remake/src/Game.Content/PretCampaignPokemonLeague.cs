@@ -15,11 +15,9 @@ public sealed partial class PretCampaignCatalog
     public const string PokemonLeagueContentProfile="firered-pokemon-league-first-clear-v1";
     public PretPokemonLeagueRegion? PokemonLeagueRegion { get; }
     public PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties { get; }
-    public PokemonLeagueOpponentPokemonCatalog? PokemonLeagueOpponents { get; }
+    public GameOpponentPokemonCatalog? PokemonLeagueOpponents { get; }
     public PokemonLeagueMartStock? PokemonLeagueMartStock { get; }
     public bool PokemonLeagueEnabled=>PokemonLeagueRegion is not null;
-
-
 
     private static void ValidatePokemonLeagueAnchors(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
@@ -39,10 +37,9 @@ public sealed partial class PretCampaignCatalog
         return result;
     }
 
-    private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PokemonLeagueTrainerCatalog trainers,PokemonLeagueOpponentPokemonCatalog opponents,CinnabarOwnedPokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PokemonLeagueTrainerCatalog trainers,GameOpponentPokemonCatalog opponents,GamePokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354||opponents.Predecessor.Catalog.Species.Count!=124||opponents.Catalog.Species.Count!=133||
-            maps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
+        if(maps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
             throw new InvalidDataException("pokemon_league_composition_scope");
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(trainers);
         if(trainers.Trainers.Count!=7||trainers.Trainers.Values.Sum(t=>t.Party.Length)!=38||

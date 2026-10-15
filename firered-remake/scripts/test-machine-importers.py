@@ -2,6 +2,7 @@
 import importlib.util,json,sys,pathlib,unittest
 from unittest.mock import patch
 root=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(root/'scripts'));raw=root/'content/raw/pokefirered/037335f4'
+from item_catalog import item_json
 def load(name):
  s=importlib.util.spec_from_file_location(name,root/'scripts'/('import-'+name+'.py'));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 def refs(v):
@@ -12,7 +13,7 @@ def refs(v):
 def wrappers(value):
  if isinstance(value,list):return [row for child in value for row in wrappers(child)]
  if not isinstance(value,dict):return []
- if 'description' in value and isinstance(value.get('item'),dict) and 'sourceItemSymbol' in value['item']:
+ if 'description' in value and isinstance(value.get('item'),str) and set(value)=={'item','description'}:
   assert set(value)=={'item','description'}, 'Retired item proof fields emitted'
   return [value]
  return [row for child in value.values() for row in wrappers(child)]
@@ -22,7 +23,7 @@ class EarlyMachineImporterTests(unittest.TestCase):
   for name in ['pewter-machines','mtmoon-items','cerulean-machines','bill-machines','vermilion-machines','ssanne-machines','route11-machines','rocktunnel-items','celadon-gym-catalog','rocket-hideout-items']:
    m=load(name)
    if name=='pewter-machines':
-    lock=m.read_lock();d={x['path']:(raw/x['path']).read_bytes() for x in lock['files']};doc,_=m.build(lock,d);outputs={'pewter-machines.json':json.dumps(doc).encode()};folder=name
+    lock=m.read_lock();d={x['path']:(raw/x['path']).read_bytes() for x in lock['files']};doc,_=m.build(lock,d);outputs={'pewter-machines.json':json.dumps(doc,default=item_json).encode()};folder=name
    elif name=='vermilion-machines':outputs={'machines.json':json.dumps(m.convert({p:(raw/p).read_bytes() for p in m.PATHS})).encode()};folder=name
    elif name=='celadon-gym-catalog':
     lock=json.loads((root/'scripts/celadon-gym-items.lock.json').read_bytes());d={x['path']:(raw/x['path']).read_bytes() for x in lock['files']};outputs=m.item_outputs(lock,d,root);folder='celadon-gym-items'
@@ -55,6 +56,7 @@ class LateMachineImporterTests(unittest.TestCase):
    elif isinstance(result,tuple):docs=result[0]
    else:docs=result
    for file,value in docs.items():
+    value=json.loads(json.dumps(value,default=item_json))
     a=refs(value)
     if not a:continue
     b=refs(json.loads((root/'content/generated'/name/file).read_bytes()));assert a==b,(name,file,len(a),len(b))

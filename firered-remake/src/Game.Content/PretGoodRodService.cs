@@ -17,7 +17,7 @@ public sealed class PretGoodRodService
     public static MapId HouseMapId { get; } = new("map.fuchsia-city-house-2");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PewterMachineItem> Items { get; }
+    public ImmutableArray<MachineItem> Items { get; }
     public ImmutableArray<PretPewterMachineIcon> Icons { get; }
     /// <summary>Exactly 22 loaded ordinary Kanto tables in ordinal map-ID order, with original slot indexes 2, 3, 4.</summary>
     public ImmutableArray<OldRodEncounterTable> GoodRodTables { get; }

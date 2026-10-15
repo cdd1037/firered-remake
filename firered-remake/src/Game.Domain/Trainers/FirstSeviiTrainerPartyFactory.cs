@@ -40,12 +40,11 @@ public static class FirstSeviiTrainerPartyFactory
         new("ThreeIsland_EventScript_BattleBikersScene",248)]);
     public static ImmutableArray<TrainerId> AllTrainers { get; } = Expected.Keys.OrderBy(t => t.Value, StringComparer.Ordinal).ToImmutableArray();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = AllTrainers.Where(t => !Expected[t].DoubleBattle).ToImmutableArray();
-    public static TrainerPartyCreationResult Create(FirstSeviiTrainerCatalog trainers, CinnabarOpponentPokemonCatalog opponents,
+    public static TrainerPartyCreationResult Create(FirstSeviiTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("first_sevii_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("first_sevii_trainer_catalog");
         var source = opponents.Mechanics; var expected = Expected[id];
         for (int i = 0; i < trainer.Party.Length; i++)
         {

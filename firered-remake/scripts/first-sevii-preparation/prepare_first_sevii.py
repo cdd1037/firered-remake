@@ -147,13 +147,11 @@ def declarations(src,doc,worlds,proof):
     for m in species['SPECIES_HYPNO']['levelUpMoves']:
         ms=m['move']['value'][5:]
         if m['level']<=30 and ms not in hypno:hypno=(hypno+[ms])[-4:]
-    for s in wanted:
-        for r in [species[s]['source'],species[s]['learnsetSource']]:src.read(r['path'])
     return dict(trainers=trainers,battleOccurrences=occurrences,wildEncounters=encounters,encounterSlotTables=slot_tables,
       scriptedHypno=dict(species='SPECIES_HYPNO',level=30,resolvedMoves=hypno,sourceRef=src.ref('data/maps/ThreeIsland_BerryForest/scripts.inc','ThreeIsland_BerryForest_EventScript_Lostelle',10)),
       wildSpecies=sorted(wild),preNationalDexLevelEvolutionSpecies=sorted(evolution),trainerSpecies=sorted(opponents),
       trainerMoves=battle_moves,fullNaturalMoveClosure=fullmoves,
-      speciesReferences=[dict(species=s,sourceSpeciesId=species[s]['sourceSpeciesId'],source=species[s]['source'],learnsetSource=species[s]['learnsetSource'],sourceEvolutions=metadata[s]['sourceEvolutions']) for s in sorted(wanted)])
+      speciesReferences=[dict(species=s,sourceSpeciesId=species[s]['sourceSpeciesId'],sourceEvolutions=metadata[s]['sourceEvolutions']) for s in sorted(wanted)])
 
 def item_declarations(src, doc, worlds, data):
     bylabel={b['label']:b for b in doc['blocks']};items=[];hidden=[]

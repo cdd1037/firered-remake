@@ -119,8 +119,6 @@ def generate(reference, dependency):
     need(len(species)==386,'Complete shared source mechanics')
     original=species[additions[0]]; meta=metadata[additions[0]]
     need(original['sourceSpeciesId']==144 and not original['evolutions'] and not meta['sourceEvolutions'],'Terminal Articuno source')
-    for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]:
-        read(sr['path'])
     battles=[];actors=[];script_path='data/scripts/trainers.inc'
     for mapname in ['Route19','Route20']:
         mapping=json.loads(read('data/maps/'+mapname+'/map.json'))
@@ -167,7 +165,7 @@ def generate(reference, dependency):
             else:tables['land' if field=='land_mons' else 'water'].append(dict(base,slots=slots))
     need([len(tables[k]) for k in tables]==[5,4,4,4,4],'Exact land/surf/rod scope')
     wild_species=sorted({s['species']['value'][5:] for group in tables.values() for t in group for s in t['slots']}|{'SPECIES_ARTICUNO'})
-    held=[dict(species=identity(s),common=metadata[s]['originalFields']['itemCommon'],rare=metadata[s]['originalFields']['itemRare']) for s in wild_species]
+    held=[dict(species=identity(s),common=metadata[s]['itemCommon'],rare=metadata[s]['itemRare']) for s in wild_species]
     initial_moves=[]
     pairs={(s['species']['value'][5:],lv) for group in tables.values() for t in group for s in t['slots'] for lv in range(min(s['minimumLevel'],s['maximumLevel']),max(s['minimumLevel'],s['maximumLevel'])+1)}|{('SPECIES_ARTICUNO',50)}
     for s,level in sorted(pairs):initial_moves.append(dict(species=identity(s),level=level,moves=[identity(m) for m in natural_moves(s,level)]))

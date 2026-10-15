@@ -45,13 +45,6 @@ public static class PretTrainerTowerRules
         return document;
     }
     public static TrainerTowerCatalog Load(string root) => TrainerTowerCatalog.Authenticate(LoadDocument(root).Local);
-    public static TrainerTowerOpponentPokemonCatalog LoadOpponents(string root, PowerPlantOpponentPokemonCatalog predecessor)
-    {
-        var document = Document<TrainerTowerOpponentDocument>(root,"pokemon.json");
-        if (            document.OwnedSpeciesAdded.IsDefault || !document.OwnedSpeciesAdded.IsEmpty)
-            throw new InvalidDataException("trainer_tower_opponent_source");
-        return TrainerTowerOpponentPokemonCatalog.Authenticate(predecessor, document.OpponentSpecies);
-    }
     public static JsonElement LoadCreationVectors(string root) => Document<JsonElement>(root,"creation-vectors.json");
     public static TrainerTowerItemsDocument LoadItemsDocument(string root)
     {
@@ -63,10 +56,5 @@ public static class PretTrainerTowerRules
             throw new InvalidDataException("trainer_tower_items_scope");
         return d;
     }
-    public static TrainerTowerShopCatalog LoadShop(string root, PowerPlantShopCatalog predecessor)
-    {
-        var d = LoadItemsDocument(root);
-        return TrainerTowerShopCatalog.Authenticate(predecessor, predecessor.Catalog with {
-            Profile = TrainerTowerShopCatalog.Profile,Items = predecessor.Catalog.Items.AddRange(d.Additions),Shops = predecessor.Catalog.Shops.Add(d.Shop) });
-    }
+
 }

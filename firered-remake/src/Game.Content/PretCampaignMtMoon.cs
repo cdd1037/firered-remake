@@ -9,7 +9,7 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    private static IEnumerable<FieldPickupDefinition> MtMoonPickupDefinitions(PretMtMoonItemsDocument items,EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
+    private static IEnumerable<FieldPickupDefinition> MtMoonPickupDefinitions(PretMtMoonItemsDocument items,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)
     {
         foreach(var p in items.Pickups)
         {

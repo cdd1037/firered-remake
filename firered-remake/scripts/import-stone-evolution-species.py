@@ -51,10 +51,6 @@ def generate(reference, dependency):
             inputs[path] = dict(path=path, localPath=shared, shared=True)
             raw[path] = data
         return raw[path].decode()
-    for row in definitions:
-        definition, metadata = row['definition'], row['metadata']
-        for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']]:
-            read(sr['path'])
     cells = compatibility_additions(dependency, BASE + 'machines.json')
     need(len(cells) == 42, 'Exactly 42 admitted machines')
     docs = {

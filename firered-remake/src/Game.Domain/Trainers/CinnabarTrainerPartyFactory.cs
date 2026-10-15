@@ -85,12 +85,11 @@ public static class CinnabarTrainerPartyFactory
         new("pret:TRAINER_SUPER_NERD_ERIK"),
         new("pret:TRAINER_SUPER_NERD_ZAC")
     ];
-    public static TrainerPartyCreationResult Create(CinnabarTrainerCatalog trainers, CinnabarOpponentPokemonCatalog opponents,
+    public static TrainerPartyCreationResult Create(CinnabarTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("cinnabar_trainer_catalog");
+        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("cinnabar_trainer_catalog");
         var source = opponents.Mechanics; var expected = Expected[id];
         for (int i = 0; i < trainer.Party.Length; i++)
         {

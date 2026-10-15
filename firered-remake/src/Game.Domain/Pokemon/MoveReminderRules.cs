@@ -15,8 +15,7 @@ public sealed class MoveReminderCatalog
 
     public static MoveReminderCatalog Authenticate(PokemonCatalog owned, ImmutableDictionary<string, string> texts)
     {
-        if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
-            throw new ArgumentException("move_reminder_source_authentication");
+        PokemonFactory.ValidateCatalog(owned);
         foreach (string symbol in new[] { "gText_TeachWhichMoveToMon", "gText_TeachMoveQues", "gText_MonLearnedMove",
             "gText_MonIsTryingToLearnMove", "gText_StopLearningMove", "gText_1_2_and_Poof",
             "gText_MonForgotOldMoveAndMonLearnedNewMove", "gText_GiveUpTryingToTeachNewMove",
@@ -58,7 +57,6 @@ public static class MoveReminderRules
     /// excluding every already-known move and later duplicate. No TM/tutor/egg/pre-evolution backfill.</summary>
     public static MoveReminderCandidates Candidates(MoveReminderCatalog catalog, PartyPokemon mon)
     {
-        if (OwnedBattlePokemonCatalog.For(catalog.Pokemon) is null) return new([], "move_reminder_pokemon_catalog");
         string? error = PokemonStateValidator.Validate(catalog.Pokemon, mon.Pokemon);
         if (error is not null) return new([], error);
         if (mon.IsEgg) return new([], "move_reminder_egg");

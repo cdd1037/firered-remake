@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
     {
         var error=ValidateBattleMedicineCommand(state,command);if(error is not null)return new(CommandStatus.Rejected,state,error);
         var battle=state.WildBattle!;var frame=battle.Frame??throw new InvalidDataException("canonical_wild_frame_required");
-        var result=SourceFourMedicineRules.Select(_content.PresetDoubleItems!,_content.PresetDoubleMechanics!,
+        var result=SourceFourMedicineRules.Select(_content.PresetDoubleItems!,_binding.Ownership.Mechanics,
             frame,frame.Revision,frame.Get(new(0)).Occupant!.Value,state.Inventory!,state.Party,
             new(new ItemId(command.Text!),command.TargetInstanceId!.Value,command.MoveSlot<0?null:command.MoveSlot),
             _content.MapDefinition(state.World.Player.MapId).RegionMapSection);

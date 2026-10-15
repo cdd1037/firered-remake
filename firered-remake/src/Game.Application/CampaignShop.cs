@@ -24,7 +24,7 @@ public sealed partial class CampaignSession
         DepartmentStoreCounterStock? counter = null;
         PokeDollShopStock? fourthFloor = null;
         if(_content.TrainerTowerEnabled && map==TrainerTowerLobby)
-        { stockId=TrainerTowerShopCatalog.LobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
+        { stockId=ItemIds.TrainerTowerLobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
         else if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
         {
             var stock=PokemonLeagueStock(PokemonLeagueMartStock.ExpectedStockId)!;
@@ -119,12 +119,12 @@ public sealed partial class CampaignSession
     private DepartmentStoreMachineStock? DepartmentMachineStock(string shopId)
     {
         if (shopId != DepartmentStoreMachineStock.ExpectedStockId) return null;
-        if (!_content.RegionalInteriorServicesEnabled || DepartmentStoreMachineStock.For(_content.PewterMachines) is not { } stock)
+        if (!_content.RegionalInteriorServicesEnabled || _content.PewterMachines is not { } machines)
             throw new InvalidDataException("department_machine_shop_not_admitted");
-        stock.Validate(); return stock;
+        return new DepartmentStoreMachineStock(machines);
     }
     private bool IsShopMachine(ItemId item) => _content.PewterMachines is { } machines &&
-        PewterMachineRules.Definition(machines, item) is not null;
+        MachineRules.Definition(machines, item) is not null;
     private DepartmentStoreCounterStock? DepartmentCounterStock(string shopId)
     {
         if (!DepartmentStoreCounterStock.IsStockId(shopId)) return null;
@@ -141,7 +141,7 @@ public sealed partial class CampaignSession
         var inventory = State.Inventory!;
         // Some inherited shop definitions also describe HMs. The authenticated machine
         // owner supplies their move, description and Machines-pocket quantity.
-        if (_content.PewterMachines is { } machines && PewterMachineRules.Definition(machines, id) is { } machine)
+        if (_content.PewterMachines is { } machines && MachineRules.Definition(machines, id) is { } machine)
             return new(id, machine.Machine.Item.Name, machine.Machine.Item.Price, machine.Machine.Description,
                 OpeningInventoryRules.Quantity(inventory.Machines ?? [], id), machine.Move);
         if (ShopCatalog.Items.FirstOrDefault(item => item.Id == id) is { } ordinary)
@@ -173,7 +173,7 @@ public sealed partial class CampaignSession
             return EarlyShopRules.QuoteSell(ShopCatalog, _content.PewterMachines!, state.Inventory!, state.Money, item);
         if (shop.Mode == "buy" && DepartmentMachineStock(shop.ShopId) is { } machines)
             return EarlyShopRules.QuoteBuy(ShopCatalog, state.Inventory!, state.Money, machines, item);
-        var inventory = ShopInventoryView(state.Inventory!);
+        var inventory = state.Inventory!;
         if (shop.Mode != "buy") return EarlyShopRules.QuoteSell(ShopCatalog, inventory, state.Money, item);
         return OrdinaryStock(shop.ShopId) is { } stock
             ? EarlyShopRules.QuoteBuy(ShopCatalog, inventory, state.Money, stock, item)
@@ -183,8 +183,8 @@ public sealed partial class CampaignSession
         DepartmentMachineStock(shop.ShopId) is { } machines
             ? EarlyShopRules.Buy(ShopCatalog, state.Inventory!, state.Money, machines, item, shop.Quantity)
             : OrdinaryStock(shop.ShopId) is { } stock
-            ? EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, stock, item, shop.Quantity)
-            : EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, shop.ShopId, item, shop.Quantity);
+            ? EarlyShopRules.Buy(ShopCatalog, state.Inventory!, state.Money, stock, item, shop.Quantity)
+            : EarlyShopRules.Buy(ShopCatalog, state.Inventory!, state.Money, shop.ShopId, item, shop.Quantity);
 
     private Decision<CampaignState> DecideShop(CampaignState state, CampaignCommand command)
     {
@@ -242,7 +242,7 @@ public sealed partial class CampaignSession
                 ? BuyShop(state, shop, item)
                 : machineTransaction
                 ? EarlyShopRules.Sell(ShopCatalog, _content.PewterMachines!, state.Inventory!, state.Money, item, shop.Quantity)
-                : EarlyShopRules.Sell(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, item, shop.Quantity);
+                : EarlyShopRules.Sell(ShopCatalog, state.Inventory!, state.Money, item, shop.Quantity);
             var next = shop.Mode == "buy" ? CampaignShopStage.Buy : CampaignShopStage.Sell;
             if (!result.Succeeded) return result.Error switch
             {
@@ -250,7 +250,7 @@ public sealed partial class CampaignSession
                 "inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full" => Message("gText_NoMoreRoomForThis", next),
                 _ => No(result.Error!)
             };
-            return new(CommandStatus.Accepted, state with { Inventory = machineTransaction ? result.Inventory : MergeShopInventory(state.Inventory!,result.Inventory), Money = result.Money,
+            return new(CommandStatus.Accepted, state with { Inventory = machineTransaction ? result.Inventory : result.Inventory, Money = result.Money,
                 Shop = shop with { Stage = CampaignShopStage.Message, MessageSymbol = shop.Mode == "buy" ? "gText_HereYouGoThankYou" : "gText_TurnedOverItemsWorthYen", ReturnStage = next } });
         }
         return No("shop_active");

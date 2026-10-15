@@ -29,7 +29,7 @@ public static class FuchsiaGymTrainerPartyFactory
     public static TrainerPartyCreationResult Create(FuchsiaGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != 107 || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (!trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("FuchsiaGym requires the exact107-species catalog and one initial source FuchsiaGym team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

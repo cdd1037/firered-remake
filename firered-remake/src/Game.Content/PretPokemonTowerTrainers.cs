@@ -14,10 +14,10 @@ public static class PretPokemonTowerTrainers
     public const string SourceCommit="037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string Profile="firered-pokemon-tower-trainers-v1";
     public const int TrainerCount=19,PartyMemberCount=40,RequiredMoveCount=43;
-    public static PokemonTowerTrainerDocument LoadDocument(string root, string? dependencyProjectRoot = null)
+    public static PokemonTowerTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root, string? dependencyProjectRoot = null)
     {
         var bytes=PretCeladonApproachSource.Read(root,"content/generated/pokemon-tower-trainers/trainers.json");
-        var d=ContentJson.ParseStrict<PokemonTowerTrainerDocument>(Encoding.UTF8.GetString(bytes),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<PokemonTowerTrainerDocument>(Encoding.UTF8.GetString(bytes),canonical.ReferenceOptions());
         PretCeladonApproachSource.Require(d.SchemaVersion==1&&!d.CompleteSourceRoster&&d.Trainers.Length==TrainerCount&&d.Battles.Length==TrainerCount&&
             d.Trainers.Select(x=>x.Id).Distinct().Count()==TrainerCount&&d.Trainers.Sum(x=>x.Party.Length)==PartyMemberCount&&d.ResolvedMoves.GetArrayLength()==TrainerCount&&d.Moves.Length==RequiredMoveCount&&d.MoveNames.Length==RequiredMoveCount&&!d.Limitations.IsDefaultOrEmpty,"Pokemon Tower document scope differs.");
         PokemonTowerTrainerPartyFactory.ValidateCatalog(new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer)));
@@ -38,6 +38,6 @@ public static class PretPokemonTowerTrainers
         }
         return d;
     }
-    public static PokemonTowerTrainerCatalog Load(string root, string? dependencyProjectRoot = null)
-    {var d=LoadDocument(root, dependencyProjectRoot);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
+    public static PokemonTowerTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root, string? dependencyProjectRoot = null)
+    {var d=LoadDocument(canonical, root, dependencyProjectRoot);return new(d.SourceCommit,d.Profile,false,d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
 }

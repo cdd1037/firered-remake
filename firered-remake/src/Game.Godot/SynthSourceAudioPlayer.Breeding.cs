@@ -6,11 +6,8 @@ using Game.Domain.Pokemon;
 public partial class SynthSourceAudioPlayer
 {
     /// <summary>Bind six missing normal cries after current and Game Corner audio. The shared source sample pack stays unchanged.</summary>
-    public void RegisterBreedingCues(BreedingOwnedPokemonCatalog owned, string root, string? inheritedRoot = null)
+    public void RegisterBreedingCues(GamePokemonCatalog owned, string root, string? inheritedRoot = null)
     {
-        if (!ReferenceEquals(BreedingOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(GameCornerOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
-            throw new InvalidDataException("Breeding audio requires the authenticated owned catalog and predecessor.");
         var art = PretBreedingPresentation.Load(root, inheritedRoot);
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };

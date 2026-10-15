@@ -2,6 +2,7 @@
 """Import original ordinary item supplement from fixed pret Git blobs, without running upstream code.
 REFERENCE DEPENDENCY OUTPUT [--check]. No predecessor catalog or raw content tree is duplicated.
 """
+from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -21,7 +22,7 @@ SHARED={
 }
 def need(value,message):
  if not value:raise ValueError(message)
-def encoded(value):return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
+def encoded(value):return (json.dumps(value,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()
 def generate(reference,dependency):
  inputs,raw,cache={},{},{}
  def read(path):
@@ -39,7 +40,7 @@ def generate(reference,dependency):
  item_id=int(one('include/constants/items.h',r'^#define ITEM_PP_MAX\s+(\d+)\s*$')[1])
  need(item_id==71 and item['price']==9800 and item['pocket']=='POCKET_ITEMS' and item['importance']==0 and item['type']=='ITEM_TYPE_PARTY_MENU' and item['fieldUseFunc']=='FieldUseFunc_PpUp' and item['battleUsage']==0 and item['battleUseFunc']=='NULL' and item['holdEffect']=='HOLD_EFFECT_NONE','Original PP Max semantics')
  src=source(path,symbol,block);ident=dict(value='pret:'+symbol)
- metadata=dict(id=ident,sourceItemSymbol=symbol,sourceItemId=item_id,name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=True,canSell=True,canGive=True,source=src)
+ metadata=shared_item(symbol)
  effect_path='src/data/pokemon/item_effects.h';effect=one(effect_path,r'^static const u8 sItemEffect_PPMax\[9\] = \{.*?^\};')
  need(effect[0]=='static const u8 sItemEffect_PPMax[9] = {\n    [5] = ITEM5_PP_MAX | ITEM5_FRIENDSHIP_ALL,\n    VITAMIN_FRIENDSHIP_CHANGE(6),\n};','PP Max exact effect bytes layout')
  constants='include/constants/item_effects.h'
@@ -49,8 +50,8 @@ def generate(reference,dependency):
  friendship=[int(x) for x in re.findall(r'\[\(i\) \+ \d\] = (\d+)',vitamin[0])];need(friendship==[5,3,2],'Original vitamin friendship changes')
  need('[ITEM_PP_MAX - ITEM_POTION]        = sItemEffect_PPMax,' in text(effect_path),'Original effect table binding')
  effects=[0,0,0,0,0,flags[0]|flags[1]|flags[2]|flags[3],*friendship]
- addition={key:metadata[key] for key in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
- addition.update(description=item['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=effects,useSupport=10,effectSource=source(effect_path,'sItemEffect_PPMax',effect),sourceMetadata=metadata)
+ addition=dict(item=metadata)
+ addition.update(description=item['description_english'].replace('\\n','\n'), healHp=0, cureStatus=0, effectBytes=effects, useSupport=10)
  use='src/item_use.c';field=one(use,r'^void FieldUseFunc_PpUp\(u8 taskId\)\n\{.*?^\}')
  need('gItemUseCB = ItemUseCB_PPUp;' in field[0] and 'DoSetUpItemUseCallback(taskId);' in field[0],'Original field callback')
  icon_path='src/data/item_icon_table.h';binding=one(icon_path,r'^    \[ITEM_PP_MAX\]\s*= \{gItemIcon_PPMax, gItemIconPalette_PPMax\},$')
@@ -62,7 +63,7 @@ def generate(reference,dependency):
  rgba=bytes(v for index in im.tobytes() for v in (*colors[index],255 if index else 0));stream=io.BytesIO();Image.frombytes('RGBA',(24,24),rgba).save(stream,format='PNG',compress_level=9);png=stream.getvalue()
  icon = dict(item=ident, width=24, height=24, texturePath=BASE + 'pp-max.png', sourcePaths=[image, palette], bindingSource=source(icon_path, symbol, binding))
  items=dict(sourceCommit=COMMIT,profile=PROFILE,previousItemCount=129,itemCount=130,additions=[addition],shopsAdded=[],icons=[icon])
- facts=dict(sourceCommit=COMMIT,fieldUseImplemented=False,fieldUseSupport='NoFieldUse',reason='The original PP Up/PP Max move-selection effect is not implemented.',fieldUseSource=source(use,'FieldUseFunc_PpUp',field),effectSource=source(effect_path,'sItemEffect_PPMax',effect),friendshipSource=source(effect_path,'VITAMIN_FRIENDSHIP_CHANGE',vitamin),effectBytes=effects)
+ facts=dict(sourceCommit=COMMIT, fieldUseImplemented=False, fieldUseSupport='NoFieldUse', reason='The original PP Up/PP Max move-selection effect is not implemented.', fieldUseSource=source(use,'FieldUseFunc_PpUp',field), friendshipSource=source(effect_path,'VITAMIN_FRIENDSHIP_CHANGE',vitamin), effectBytes=effects)
  evidence=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=[])
  files = {BASE + 'items.json': encoded(items), BASE + 'source-input-hashes.json': encoded(evidence), BASE + 'source-contract.json': encoded(facts), icon['texturePath']: png, **raw}
  return files,items
@@ -74,4 +75,4 @@ if __name__=='__main__':
   target=args.output/path
   if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)
   else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
- print(json.dumps(dict(checked=args.check,itemCount=130),indent=2))
+ print(json.dumps(dict(checked=args.check,itemCount=130),indent=2, default=item_json))

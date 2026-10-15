@@ -8,7 +8,7 @@ namespace Game.Domain.Tutorials;
 
 public enum TeachyTvFieldScreen { Bag, BagExit, TmCase, Completed }
 public enum TeachyTvBagPocket { Items, KeyItems, Balls }
-public sealed record TeachyTvFieldMachine(PewterAdditionalMachine Machine, PokemonMoveDefinition Move);
+public sealed record TeachyTvFieldMachine(MachineDefinition Machine, PokemonMoveDefinition Move);
 public sealed record TeachyTvFieldDemoData(InventoryState BagInventory, InventoryState TmInventory,
     QuestItemDefinition TeachyTvItem, ImmutableArray<TeachyTvFieldMachine> Machines);
 public sealed record TeachyTvFieldDemoInput(bool Confirm = false, bool Cancel = false,
@@ -48,11 +48,11 @@ public static class TeachyTvFieldDemoRules
         new("pret:ITEM_TM09"), new("pret:ITEM_TM35")];
 
     public static TeachyTvFieldDemoData CreateData(QuestItemsCatalog quests, EarlyShopCatalog items,
-        PewterMachineCatalog machines, PokemonCatalog pokemon)
+        MachineCatalog machines, PokemonCatalog pokemon)
     {
         QuestItemRules.ValidateCatalog(quests);
         EarlyShopInventoryRules.ValidateCatalog(items);
-        PewterMachineRules.ValidateCatalog(machines);
+        MachineRules.ValidateCatalog(machines);
         if (pokemon.SourceCommit != OpeningInventoryRules.SourceCommit)
             throw new ArgumentException("teachy_tv_pokemon_source", nameof(pokemon));
         var tv = quests.Items.Single(i => i.Id == QuestItemRules.TeachyTvId);
@@ -62,17 +62,17 @@ public static class TeachyTvFieldDemoRules
         // InitPokedudeBag's seven AddBagItem calls retain pocket-local insertion order.
         var bag = new InventoryState([new(new("pret:ITEM_POTION"), 1), new(new("pret:ITEM_ANTIDOTE"), 1)], [], items.Limits)
         {
-            KeyItems = [new(QuestItemRules.TeachyTvId, 1), new(PewterMachineRules.TmCaseId, 1)],
+            KeyItems = [new(QuestItemRules.TeachyTvId, 1), new(MachineRules.TmCaseId, 1)],
             Balls = [new(QuestItemRules.PokeBallId, 5), new(new("pret:ITEM_GREAT_BALL"), 1), new(new("pret:ITEM_NEST_BALL"), 1)]
         };
         var tms = new InventoryState([], [], items.Limits);
         var definitions = ImmutableArray.CreateBuilder<TeachyTvFieldMachine>();
         foreach (var id in TutorialMachines)
         {
-            var result = PewterMachineRules.AddMachine(machines, tms, id);
+            var result = MachineRules.AddMachine(machines, tms, id);
             if (!result.Succeeded) throw new ArgumentException("teachy_tv_machine_source:" + result.Error);
             tms = result.State;
-            var definition = PewterMachineRules.Definition(machines, id)!;
+            var definition = MachineRules.Definition(machines, id)!;
             if (!pokemon.Moves.TryGetValue(definition.Move, out var move) ||
                 move.SourceMoveId != definition.SourceMoveId || move.Pp != definition.MovePp)
                 throw new ArgumentException("teachy_tv_machine_move_source");
@@ -128,7 +128,7 @@ public static class TeachyTvFieldDemoRules
                 break;
             case 204 when register:
             case 306 when !register:
-                string selected = register ? QuestItemRules.TeachyTvId.Value : PewterMachineRules.TmCaseId.Value;
+                string selected = register ? QuestItemRules.TeachyTvId.Value : MachineRules.TmCaseId.Value;
                 s = s with { ContextOpen = true, ContextCursor = 0, SelectedItem = selected };
                 effects.Add(new("sound", "SE_SELECT"));
                 effects.Add(new("context_open", selected));

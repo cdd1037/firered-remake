@@ -31,30 +31,23 @@ public sealed partial class CampaignSession
     private const string CelioCaveGuardFlag = "FLAG_HIDE_CERULEAN_CAVE_GUARD";
     private const string CelioLoreleiFlag = "FLAG_HIDE_LORELEI_IN_HER_HOUSE";
 
-    // Each older profile still validates its own proof; only unwrap the authenticated successor.
-    private static FiveIslandMachineCatalog? CelioFiveMachines(ICampaignCatalog content) =>
-        content.CelioEnabled ? content.CelioMachines?.Predecessor : FiveIslandMachineCatalog.For(content.PewterMachines);
 
     private static void ValidateCelioCatalog(ICampaignCatalog content)
     {
         if (!content.CelioEnabled)
         {
             if (content.CelioOwnership is not null || content.CelioOpponents is not null ||
-                content.CelioMachines is not null || content.CelioRoamerMaps is not null ||
-                CelioOwnedPokemonCatalog.For(content.PokemonContent?.Catalog) is not null ||
-                CelioMachineCatalog.For(content.PewterMachines) is not null)
+                content.CelioMachines is not null || content.CelioRoamerMaps is not null)
                 throw new InvalidDataException("celio_profile_missing");
             return;
         }
         if (!content.FiveIslandEnabled || content.CelioOwnership is not {} owned ||
             content.CelioOpponents is not {} opponents || content.CelioMachines is not {} machines ||
-            !ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Predecessor, content.FiveIslandOwnership) ||
-            !ReferenceEquals(content.CeruleanCaveOwnership?.Predecessor, owned) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FiveIslandOpponents) ||
-            !ReferenceEquals(CelioOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !ReferenceEquals(CelioMachineCatalog.For(machines.Catalog), machines) ||
-            !ReferenceEquals(machines.Pokemon, owned) || !ReferenceEquals(machines.Predecessor, content.FiveIslandMachines) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
+            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
+            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
             content.CelioRoamerMaps is not {} maps || maps.Count != content.Maps.Count ||
             !maps.Keys.ToHashSet().SetEquals(content.Maps.Keys) || maps.Values.Distinct().Count() != maps.Count ||
             maps.Values.Any(m => m.Group is < 0 or > 255 || m.Number is < 0 or > 255))

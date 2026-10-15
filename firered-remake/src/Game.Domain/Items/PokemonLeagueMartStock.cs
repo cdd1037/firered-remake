@@ -25,19 +25,7 @@ public sealed record PokemonLeagueMartStock(string SourceCommit, ImmutableArray<
 
     public override void Validate(EarlyShopCatalog catalog)
     {
-        catalog = OrdinaryItemInventoryCatalog.BaseCatalog(catalog);
-        catalog = PokeDollInventoryCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = SeafoamShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = NpcTradeShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = FossilLabShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = TrainerTowerShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = PowerPlantShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = EventIslandShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = SevenIslandShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = FiveIslandShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = SixIslandShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        catalog = FourIslandShopCatalog.For(catalog)?.Predecessor.Predecessor.Catalog ?? SeviiRubyShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
-        VictoryRoadShopCatalog.ValidateCatalog(catalog);
+        ArgumentNullException.ThrowIfNull(catalog);
         if(SourceCommit!=OpeningInventoryRules.SourceCommit||Source!=ExpectedSource||StockItems.IsDefault||
             !StockItems.SequenceEqual(ExpectedEntries.Select(e=>new ItemId("pret:"+e.Symbol))))
             throw new NotSupportedException("pokemon_league_mart_source");
