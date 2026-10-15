@@ -110,6 +110,12 @@ public static class CampaignTeachyTvBattleRules
                 var cursors = move ? battle.MoveCursors : battle.ActionCursors;
                 var rows = (move ? definition.ChooseMove : definition.ChooseAction)
                     .Select(r => new SourcePokedudeInput(r.CursorPositions, r.Delays)).ToImmutableArray();
+                // Approved completion correction: Status and Matchups get exactly one
+                // final FIGHT for both controllers. Keep the authenticated source data,
+                // existing move scripts and all shared battle/RNG rules unchanged.
+                // There is no repeat sentinel: a fifth action still exhausts the stream.
+                if (!move && battle.Lesson is 1 or 2)
+                    rows = rows.Add(new([0, 0], [64, 0]));
                 var input = SourcePokedudeController.Tick(rows, cursors[battle.SelectingSide], (BattleSide)battle.SelectingSide, move);
                 if (!input.Succeeded) return Yes(battle with { Stage = CampaignTeachyTvBattleStage.Boundary, Boundary = input.Fault });
                 cursors = cursors.SetItem(battle.SelectingSide, input.State);
