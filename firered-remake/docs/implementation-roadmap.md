@@ -184,3 +184,8 @@ See [the late-rival checkpoint](league-rival-campaign.md). Route23 badge guards,
 Surf approach and Victory Road Strength mechanisms subsequently passed; the
 controlled League result is linked in the current status above. No separate full Drive package is planned before main-story completion
 and the agreed project-level refactor; source checkpoints continue normally.
+
+
+## 2026-10-15 current pause boundary
+
+User Sentinel_5e2aaf7c3aec8191acfdc79ba4dfd327 requested pausing after item1: Trainer Fan Club, observed play time and the approved two Teachy TV lesson corrections. Complete those bounded integrations, necessary checkpoint conversion and focused checks, then synchronize the fixed source to private GitHub and pause. This supersedes automatic progression into Pokédex, full Trainer Card/settings, Safari, presentation or other new work. No new full Drive package is implied by this instruction.

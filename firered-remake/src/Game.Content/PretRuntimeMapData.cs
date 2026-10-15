@@ -225,6 +225,7 @@ public sealed class PretRuntimeMapData : IFieldMap
             PretCapeBrinkTutor.FullSourceHash => PretCapeBrinkTutor.MapIdFromSourceSymbol,
             PretOriginalTutorRooms.FullSourceHash => PretOriginalTutorRooms.MapIdFromSourceSymbol,
             PretCopycatHouse.FullSourceHash => PretCopycatHouse.MapIdFromSourceSymbol,
+            PretTrainerFanClub.FullSourceHash => PretTrainerFanClub.MapIdFromSourceSymbol,
             PretMoveDeleterHouse.FullSourceHash => PretMoveDeleterHouse.MapIdFromSourceSymbol,
             PretSeafoamRegion.FullSourceHash => PretSeafoamRegion.MapIdFromSourceSymbol,
             PretEventIslandRegion.FullSourceHash => PretEventIslandRegion.MapIdFromSourceSymbol,

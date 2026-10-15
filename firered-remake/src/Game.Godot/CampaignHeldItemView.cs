@@ -29,9 +29,8 @@ public partial class CampaignView
     {
         int target = _fieldPartyCursor;
         var id = _session.State.Party[target].InstanceId;
-        long revision = _session.Revision;
-        Apply(new("party_item_open", PartyIndex: target) { TargetInstanceId = id });
-        if (_session.Revision != revision) ResetFieldMenu();
+        bool accepted = Apply(new("party_item_open", PartyIndex: target) { TargetInstanceId = id });
+        if (accepted) ResetFieldMenu();
         else _fieldMenuNotice = HeldItemNotice(_status);
     }
     private void StartGiveItem(ItemId item, bool pc = false)
@@ -70,9 +69,8 @@ public partial class CampaignView
         if (_heldChoice == 2) { Apply(new("menu_back")); return true; }
         int target = menu.TargetPartyIndex!.Value;
         string previous = _session.State.Party[target].HeldItem;
-        long revision = _session.Revision;
-        Apply(new(_heldChoice == 0 ? "held_bag_open" : "field_take", PartyIndex: target) { TargetInstanceId = menu.TargetInstanceId });
-        if (_session.Revision == revision) _itemNotice = HeldItemNotice(_status);
+        bool accepted = Apply(new(_heldChoice == 0 ? "held_bag_open" : "field_take", PartyIndex: target) { TargetInstanceId = menu.TargetInstanceId });
+        if (!accepted) _itemNotice = HeldItemNotice(_status);
         else if (_heldChoice == 1) _itemNotice = "Received " + InventoryName(new("pret:" + previous)) + ".";
         return true;
     }
@@ -89,13 +87,12 @@ public partial class CampaignView
         var command = new CampaignCommand(_heldGivePc ? "pc_give" : "field_give", Text: item.Value,
             Choice: exchange ? 1 : null, PartyIndex: _heldTarget) { TargetInstanceId = _heldTargetIds[_heldTarget] };
         _heldGiveItem = null; _heldExchange = false;
-        long revision = _session.Revision;
-        Apply(command);
+        bool accepted = Apply(command);
         if (MachineActive) _machineCursor = Math.Min(_machineCursor, MachineStacks.Length);
         _itemCursor = Math.Min(_itemCursor, FieldItemStacks.Length);
         _questPocketCursor = Math.Min(_questPocketCursor, QuestPocketStacks.Length);
         if (_session.State.MailComposer is not null) { _itemNotice = null; return; }
-        _itemNotice = _session.Revision == revision ? HeldItemNotice(_status) : "Gave " + InventoryName(item) + "\nto " + _session.State.Party[_heldTarget].Nickname + ".";
+        _itemNotice = !accepted ? HeldItemNotice(_status) : "Gave " + InventoryName(item) + "\nto " + _session.State.Party[_heldTarget].Nickname + ".";
     }
     private static string HeldItemNotice(string status) => status switch {
         "held_item_none" => "It isn't holding anything.",

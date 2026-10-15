@@ -122,8 +122,8 @@ public partial class CampaignView
     private bool StorageReleaseAction(CampaignCommand command)
     {
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return false; }
-        long before = _session.Revision; Apply(command);
-        if (_session.Revision != before) return true;
+        bool accepted = Apply(command);
+        if (accepted) return true;
         _pcNotice = _status.Contains("storage_release_egg", StringComparison.Ordinal) ? PcText("gText_YouCantReleaseAnEgg")
             : _status.Contains("identity", StringComparison.Ordinal) || _status.Contains("stale", StringComparison.Ordinal)
                 ? "The selected POKéMON has changed.\nPlease choose its current slot." : StorageError(_status);

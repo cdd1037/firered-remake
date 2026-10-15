@@ -19,7 +19,10 @@ public sealed record CampaignHallOfFamePokemon(int PartySlot,long InstanceId,int
     uint Personality,int Level,string Nickname,ImmutableArray<byte> NicknameBytes);
 public sealed record CampaignHallOfFameTeam(int ChallengeNumber,string TrainerBattleId,ImmutableArray<CampaignHallOfFamePokemon> Members);
 public sealed record CampaignHallOfFameRibbonRecipient(long InstanceId,int ChallengeNumber);
-public sealed record CampaignHallOfFameArchive(ImmutableArray<CampaignHallOfFameTeam> Teams,int? FirstHallOfFamePlayTime,bool FanClubUpdateDeferred)
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record CampaignHallOfFameArchive(
+    [property: JsonRequired] ImmutableArray<CampaignHallOfFameTeam> Teams,
+    [property: JsonRequired] int? FirstHallOfFamePlayTime)
 {
     // Display teams roll over after fifty entries. Ribbon provenance must survive
     // that rollover, so retain each recipient's first award independently.
@@ -77,13 +80,16 @@ public sealed partial class CampaignSession
             p.Pokemon.Personality,p.Pokemon.Level,p.IsEgg?"EGG":p.Nickname,PokemonLeagueNicknameBytes(p.IsEgg?"EGG":p.Nickname))).ToImmutableArray();
         var flags=state.Script.Flags.SetItem("FLAG_SYS_GAME_CLEAR",true);
         var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty;
-        // SAVE_HALL_OF_FAME's statistic is prepared once with this record. A failed
-        // write/retry reuses the same payload and never appends or awards again.
-        stats=stats.SetItem("GAME_STAT_ENTERED_HOF",Math.Min(999,stats.GetValueOrDefault("GAME_STAT_ENTERED_HOF")+1));
+        // SAVE_HALL_OF_FAME's statistic, team and ribbon awards are prepared once.
+        // Each save attempt captures the current clock in its own immutable request;
+        // retrying never appends a team or repeats these gameplay awards.
+        int? firstTime=RecordFirstHallOfFamePlayTime(state);
+        stats=stats.SetItem(FirstHallOfFameTimeStat,firstTime??0)
+            .SetItem("GAME_STAT_ENTERED_HOF",Math.Min(999,stats.GetValueOrDefault("GAME_STAT_ENTERED_HOF")+1));
         if(ribbon){flags=flags.SetItem("FLAG_SYS_RIBBON_GET",true);stats=stats.SetItem("GAME_STAT_RECEIVED_RIBBONS",Math.Min(0xffffff,stats.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")+1));}
         return GrantEventIslandTicketsForHall(state with{Party=party,GameStats=stats,Script=state.Script with{Flags=flags},
             HallOfFame=new((state.HallOfFame?.Teams??[]).Add(new(pending.ChallengeNumber,champion.Id,members)).TakeLast(50).ToImmutableArray(),
-                state.HallOfFame?.FirstHallOfFamePlayTime,true){RibbonRecipients=recipients},
+                firstTime){RibbonRecipients=recipients},
             PokemonLeagueCompletion=pending with{Stage=CampaignPokemonLeagueCompletionStage.AwaitingSave}},ribbon);
     }
     private CampaignState PokemonLeagueContinueSnapshot(CampaignState state)
@@ -166,10 +172,10 @@ public sealed partial class CampaignSession
         var completions=(state.PokemonLeague?.Resets??[]).Where(r=>r.Reason=="hall-of-fame").ToArray();
         if(state.HallOfFame is not {} archive)
             return state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||HistoricalPokemon(state).Any(p=>p.ChampionRibbon)||completions.Length!=0||
-                state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0?"save_pokemon_league_hof_missing":null;
+                (state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0||state.GameStats?.GetValueOrDefault(FirstHallOfFameTimeStat)>0)?"save_pokemon_league_hof_missing":null;
         if(!PokemonLeagueCompletedContinue(state)||archive.Teams.IsDefault||archive.Teams.Length is <1 or >50||
-            archive.Teams.Length!=Math.Min(50,completions.Length)||archive.Teams.Any(t=>t is null)||archive.FirstHallOfFamePlayTime is not null||
-            !archive.FanClubUpdateDeferred||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
+            archive.Teams.Length!=Math.Min(50,completions.Length)||archive.Teams.Any(t=>t is null)||
+            !ValidHallOfFamePlayTime(state,archive)||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
 
             state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=Math.Min(999,completions.Length)||

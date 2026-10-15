@@ -167,8 +167,8 @@ public partial class CampaignView
             if(key.Keycode==Key.Backspace){_battleMenu="bag";_battleCursor=0;}
             else if(key.Keycode==Key.Enter)
             {
-                var revision=_session.Revision;Apply(new("battle_potion",PartyIndex:0));
-                if(_session.Revision>revision){_battleMenu="actions";_battleCursor=0;}
+               bool accepted = Apply(new("battle_potion",PartyIndex:0));
+                if(accepted){_battleMenu="actions";_battleCursor=0;}
                 else{_battleNotice=_status=="potion_no_effect"?ItemText("gText_WontHaveEffect"):_status;_battleNoticeReturn="bag";}
             }
             return true;
@@ -184,7 +184,7 @@ public partial class CampaignView
         else if(key.Keycode==Key.Enter)
         {
             if(_battleMenu=="moves")
-            {_lastMoveCursor=_battleCursor;var before=_session.Revision;Apply(new("battle_move",MoveSlot:FirstBattleRules.RequiresStruggle(b.State.Player)?-1:_battleCursor));if(_session.Revision>before){_battleMenu="actions";_battleCursor=0;}else _battleNotice=_lastCommandFault?"The battle step was not committed.":"This move has no PP left.";}
+            {_lastMoveCursor=_battleCursor;bool accepted = Apply(new("battle_move",MoveSlot:FirstBattleRules.RequiresStruggle(b.State.Player)?-1:_battleCursor));if(accepted){_battleMenu="actions";_battleCursor=0;}else _battleNotice=_lastCommandFault?"The battle step was not committed.":"This move has no PP left.";}
             else switch(_battleCursor)
             {
                 case 0:_battleMenu="moves";_battleCursor=Math.Min(_lastMoveCursor,Math.Max(0,b.State.Player.Pokemon.Moves.Length-1));break;

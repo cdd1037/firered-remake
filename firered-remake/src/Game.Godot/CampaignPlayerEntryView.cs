@@ -73,6 +73,7 @@ public partial class CampaignView
 
     private void ReadEntrySave()
     {
+        ResetPlayTimeHost();
         _entrySave=null;_entryCursor=0;_entryNotice=null;
         try
         {
@@ -139,7 +140,7 @@ public partial class CampaignView
     {
         _entryMode="closed";_entryNotice=null;_entryNameEdit!.Visible=false;_entryNameEdit.ReleaseFocus();
         _entryFreshFieldFrame=Engine.GetProcessFrames();
-        _session=session;_sequence=session.Revision;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;
+        _session=session;ResetPlayTimeHost();_sequence=session.Revision;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;
         ResetSourceAudio();LoadMap(session.State.World.Player.MapId);Synchronize(null,session.State);_held=null;_repeat=0;
     }
     private void EntryKey(Key key)
@@ -248,8 +249,9 @@ public partial class CampaignView
             SourceText(_entryHeadingFont!,new(continueBox.PixelX+2,continueBox.PixelY+2),EntryText("gText_Continue"));
             SourceText(_entryHeadingFont!,new(newBox.PixelX+2,newBox.PixelY+2),EntryText("gText_NewGame"));
             int badges=Enumerable.Range(1,8).Count(n=>saved.State.Script.Flags.GetValueOrDefault("FLAG_BADGE"+n.ToString("00")+"_GET"));
-            foreach(var (symbol,value,row) in new[]{("gText_Player",saved.State.PlayerName,18),("gText_Time","--:--",34),("gText_Pokedex",PokedexCaughtCount(saved.State).ToString(),50),("gText_Badges",badges.ToString(),66)})
+            foreach(var (symbol,value,row) in new[]{("gText_Player",saved.State.PlayerName,18),("gText_Time",FormatPlayTime(saved.State.PlayTime),34),("gText_Pokedex",PokedexCaughtCount(saved.State).ToString(),50),("gText_Badges",badges.ToString(),66)})
             {if(symbol=="gText_Pokedex"&&!saved.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))continue;SourceText(_entryGenderFonts[saved.State.PlayerGender],new(continueBox.PixelX+2,continueBox.PixelY+row),EntryText(symbol));SourceText(_entryGenderFonts[saved.State.PlayerGender],new(continueBox.PixelX+62,continueBox.PixelY+row),value);}
+            if(saved.State.PlayTime.SinceCheckpoint)SourceText(_sourceSmall,new(8,146),CheckpointTimeNote);
             var selected=source.SelectionRegions[_entryCursor==0?PretMainMenuSource.ContinueWindow:PretMainMenuSource.NewGameWindow];
             // Source darkens all layers except the selected rectangular window.
             float amount=source.Rules.DarkeningCoefficient/16f;

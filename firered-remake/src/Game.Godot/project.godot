@@ -17,3 +17,6 @@ renderer/rendering_method="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
 textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0.04, 0.065, 0.12, 1)
+
+[physics]
+common/physics_ticks_per_second=60

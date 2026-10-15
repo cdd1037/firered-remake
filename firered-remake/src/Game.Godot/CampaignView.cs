@@ -67,6 +67,7 @@ public partial class CampaignView:Node2D
         try
         {
             GetTree().AutoAcceptQuit=false;
+            if(Engine.PhysicsTicksPerSecond!=60)throw new InvalidOperationException("play_time_requires_60_physics_ticks");
             var startup=Startup??throw new InvalidOperationException("current_startup_selection_missing");
             if(startup.Mode!=GameStartupMode.Current)throw new InvalidOperationException("current_startup_mode_invalid");
             _root=startup.ProjectRoot;_evidence=OS.GetEnvironment("FIRERED_EVIDENCE");
@@ -91,6 +92,7 @@ public partial class CampaignView:Node2D
                 _session=CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation);_sequence=saved.Generation;
                 Write("checkpointLoaded",new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(saved.State)});
             }
+            ResetPlayTimeHost();
             LoadSourceAudio();LoadMap(_session.State.World.Player.MapId);if(!InitializePlayerEntry(checkpoint))Synchronize(null,_session.State);
             Write("ready",new{scope="source-driven opening and starter gift/nickname; first lab battle semantic profile; original menu art, animation, audio and exact timing incomplete",_catalog.ContentVersion,state=_session.State});
         }
@@ -234,6 +236,7 @@ public partial class CampaignView:Node2D
         if(_quitRequested||_session is null)return;
         ProcessTrainerTowerTime(delta);
         if(PlayerEntryActive){QueueRedraw();return;}
+        if(!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
         if(ProcessTeachyTvBattle(delta))return;
         if(ProcessTeachyTvFieldPresentation(delta))return;
         if(ProcessTeachyTvPresentation(delta))return;
@@ -302,7 +305,9 @@ public partial class CampaignView:Node2D
     {
         if(_quitRequested)return;
         ResetSourceMoveAnimation("quit");
-        _quitRequested=true;_held=null;_repeat=0;
+        CommitPlayTime(true);
+        _quitRequested=true;_held=null;_repeat=0;ResetPlayTimeHost();
+        SetPhysicsProcess(false);
         SetProcess(false);SetProcessUnhandledInput(false);
         var tree=GetTree();
         if(_sourceAudio is not null)
@@ -426,7 +431,7 @@ public partial class CampaignView:Node2D
                 {
                     if(_tracks.Any(t=>t.Time<t.Duration)||_session.ValidatePlayerSave(_session.State) is not null)throw new InvalidDataException("current_event_or_presentation_active");
                     var path=ProjectSettings.GlobalizePath("user://campaign-save.json");var saved=_entrySource is null?new SaveService(new LocalSaveStorage()).Load<CampaignState>(path,_session.RulesVersion,_catalog.ContentVersion,_session.ValidatePlayerSave):LoadEntryProtectedSave();
-                    _session=CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation);_trainerTowerFrames.Reset();_entryOverwritePending=false;_sequence=saved.Generation;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;ResetSourceAudio();LoadMap(saved.State.World.Player.MapId);Synchronize(null,saved.State);_status="已读取";Write("loaded",new{hash=CanonicalJson.Hash(saved.State),saved.Source});
+                    _session=CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation);ResetPlayTimeHost();_trainerTowerFrames.Reset();_entryOverwritePending=false;_sequence=saved.Generation;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;ResetSourceAudio();LoadMap(saved.State.World.Player.MapId);Synchronize(null,saved.State);_status="已读取";Write("loaded",new{hash=CanonicalJson.Hash(saved.State),saved.Source});
                 }
                 catch(Exception e){_status="不能读取："+e.Message;if(_session.State.Battle is not null)_battleNotice="You can't load during a battle.";if(PresentedWildBattle is not null)_wildNotice="You can't load during a battle.";if(DoubleBattleVisible)_doubleNotice="You can't load during a battle.";if(_session.State.ItemMenu is not null)_itemNotice="Close the menu before loading.";if(_session.State.Shop is not null)_shopNotice="Finish shopping before loading.";if(_session.State.Pc is not null)_pcNotice="Log off from the PC before loading.";Write("loadRejected",new{error=e.Message});}
             }
@@ -435,9 +440,11 @@ public partial class CampaignView:Node2D
         }
         QueueRedraw();GetViewport().SetInputAsHandled();
     }
-    private void Apply(CampaignCommand command)
+    private bool Apply(CampaignCommand command)
     {
-        if(_quitRequested||_busy)return;CommitTrainerTowerTime(true);_busy=true;
+        if(_quitRequested||_busy)return false;
+        if(!CommitPlayTime(true))return false;
+        CommitTrainerTowerTime(true);_busy=true;
         var before=_session.State;_fieldStepTicks=command.Kind=="move"?FieldStepTicksForDirection(before,command.Direction):16;var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
         if(command.Kind=="slot_tick")Write("slotFrame",new{command.SlotInput,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,phase=result.State.SlotMachine?.Phase.ToString(),step=result.State.SlotMachine?.MainStep,coins=result.State.Coins});
         else Write("command",new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State});
@@ -452,6 +459,7 @@ public partial class CampaignView:Node2D
         else if(result.Status==CommandStatus.Fault){_lastCommandFault=true;_blockedAutomaticWait=before.Script.Wait?.CorrelationId;_status="未接入或故障："+result.Error;_held=null;/* authoritative state is unchanged; let the player choose a different valid action */}
         else _status=result.Error??"操作被拒绝";
         _busy=false;
+        return result.Status==CommandStatus.Accepted;
     }
     // The source trainer approach completes before intro speech opens. One gate
     // covers the message frame, text, cursor and any choice drawn inside it.

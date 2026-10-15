@@ -176,10 +176,9 @@ public partial class CampaignView
         if (key.Keycode == Key.Enter)
         {
             var item = FieldItemStacks[_itemCursor].Item;
-            var revision = _session.Revision;
-            Apply(new("field_medicine", Text: item.Value, PartyIndex: _fieldMedicineTarget));
+               bool accepted = Apply(new("field_medicine", Text: item.Value, PartyIndex: _fieldMedicineTarget));
             _fieldMedicineTargetOpen = false;
-            if (_session.Revision == revision) _itemNotice = _status == "medicine_effect_unsupported" ? "This item's use is not\nimplemented yet." : _status;
+            if (!accepted) _itemNotice = _status == "medicine_effect_unsupported" ? "This item's use is not\nimplemented yet." : _status;
             else if (_session.State.ItemMenu?.View != "message") _itemNotice = InventoryName(item) + " was used.";
             _itemCursor = Math.Min(_itemCursor, FieldItemStacks.Length);
         }

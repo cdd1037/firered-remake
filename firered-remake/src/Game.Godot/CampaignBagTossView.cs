@@ -16,17 +16,15 @@ public partial class CampaignView
     private void SelectFieldBagPocket(int pocket)
     {
         if(_session.State.ItemMenu is not { Origin:"bag",View:"bag",Toss:null } menu||pocket==menu.Pocket)return;
-        long revision=_session.Revision;
-        Apply(new("bag_pocket",Choice:pocket));
-        if(_session.Revision!=revision){_questPocketCursor=0;_questPocketAction=0;_itemCursor=0;_itemAction=0;}
+        bool accepted = Apply(new("bag_pocket",Choice:pocket));
+        if(accepted){_questPocketCursor=0;_questPocketAction=0;_itemCursor=0;_itemAction=0;}
     }
 
     private void OpenBagToss(ItemId item)
     {
-        long revision=_session.Revision;
-        Apply(new("bag_toss_open",Text:item.Value));
+        bool accepted = Apply(new("bag_toss_open",Text:item.Value));
         _itemPopup=false;_questPocketPopup=false;
-        if(_session.Revision==revision)_itemNotice="That item can't be tossed.";
+        if(!accepted)_itemNotice="That item can't be tossed.";
     }
 
     private void SynchronizeBagToss()

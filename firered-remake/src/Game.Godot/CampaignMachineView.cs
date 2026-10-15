@@ -149,9 +149,8 @@ public partial class CampaignView
                 else if (_machineMode == "replace-confirm") { _machineMode = "replacement"; _machineCursor = 0; }
                 else
                 {
-                    long revision = _session.Revision;
-                    Apply(new("machine_teach", Text: _machineSelected.Value, PartyIndex: _machineParty, MoveSlot: _machineSlot));
-                    if (_session.Revision == revision)
+                               bool accepted = Apply(new("machine_teach", Text: _machineSelected.Value, PartyIndex: _machineParty, MoveSlot: _machineSlot));
+                    if (!accepted)
                     {
                         if (_status is "machine_cannot_forget_hm" or "hm_move_cannot_be_forgotten")
                         { _machineMode = "replacement"; _machineCursor = Math.Max(0, _machineSlot); _itemNotice = HmCannotForgetText; }

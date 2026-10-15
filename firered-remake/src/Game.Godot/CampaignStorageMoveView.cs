@@ -30,9 +30,8 @@ public partial class CampaignView
     private bool StorageMoveAction(CampaignCommand command)
     {
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return false; }
-        long before = _session.Revision;
-        Apply(command);
-        if (_session.Revision != before) return true;
+        bool accepted = Apply(command);
+        if (accepted) return true;
         _pcNotice = StorageMoveError(_status);
         return false;
     }

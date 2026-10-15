@@ -68,9 +68,8 @@ public partial class CampaignView
 
     private void UseFieldPartyRockSmash()
     {
-        long revision = _session.Revision;
-        Apply(new("field_rock_smash", PartyIndex: _fieldPartyCursor));
-        if (_session.Revision > revision) { ResetFieldMenu(); return; }
+        bool accepted = Apply(new("field_rock_smash", PartyIndex: _fieldPartyCursor));
+        if (accepted) { ResetFieldMenu(); return; }
         _fieldMenuMode = "party";
         _fieldMenuNotice = _status == "field_rock_smash_badge_required"
             ? "This can't be used until a new\nBADGE is obtained."

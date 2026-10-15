@@ -47,9 +47,8 @@ public partial class CampaignView
             if (confirm || cancel)
             {
                 if (confirm && _evolutionMoveCursor < owned.Pokemon.Moves.Length && MoveLearningUnavailable(scene.PendingMoves[0].Move)) return true;
-                long revision = _session.Revision;
-                Apply(new("evolution_learn", MoveSlot: cancel || _evolutionMoveCursor == owned.Pokemon.Moves.Length ? -1 : _evolutionMoveCursor));
-                if (_session.Revision == revision) _wildNotice = MoveLearningError();
+                       bool accepted = Apply(new("evolution_learn", MoveSlot: cancel || _evolutionMoveCursor == owned.Pokemon.Moves.Length ? -1 : _evolutionMoveCursor));
+                if (!accepted) _wildNotice = MoveLearningError();
             }
         }
         return true;

@@ -56,8 +56,8 @@ public partial class CampaignView
     private bool StorageItemAction(CampaignCommand command, string? success = null)
     {
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return false; }
-        long before = _session.Revision; Apply(command);
-        if (_session.Revision != before) { if (success is not null) _pcNotice = success; return true; }
+        bool accepted = Apply(command);
+        if (accepted) { if (success is not null) _pcNotice = success; return true; }
         _pcNotice = _status.Contains("full", StringComparison.Ordinal) ? PcText("gText_BagIsFull2")
             : _status.Contains("identity", StringComparison.Ordinal) || _status.Contains("stale", StringComparison.Ordinal)
                 ? "The selected POKéMON or item changed.\nPlease choose again."

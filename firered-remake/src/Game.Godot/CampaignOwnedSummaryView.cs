@@ -66,10 +66,9 @@ public partial class CampaignView
         }
         else
         {
-            long before = _session.Revision;
-            Apply(new("party_summary_swap", PartyIndex: _fieldPartyCursor, MoveSlot: source, Choice: _summaryMoveCursor)
+               bool accepted = Apply(new("party_summary_swap", PartyIndex: _fieldPartyCursor, MoveSlot: source, Choice: _summaryMoveCursor)
                 { TargetInstanceId = owned.InstanceId });
-            if (_session.Revision != before) CaptureOwnedSummarySelection(_session.State.Party[_fieldPartyCursor]);
+            if (accepted) CaptureOwnedSummarySelection(_session.State.Party[_fieldPartyCursor]);
             else { ResetOwnedSummarySelection(); _fieldMenuNotice = "The move order could not be\nchanged here."; }
         }
         return true;

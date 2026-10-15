@@ -28,9 +28,9 @@ public partial class CampaignView
         (definition.IsFixedEffect||definition.IsPokeFlute);
     private void SubmitDoubleMedicine(int actor,int partyIndex,int moveSlot=-1)
     {
-        var target=_session.State.Party[partyIndex];long revision=_session.Revision;
-        Apply(new("double_medicine",PartyIndex:actor,Choice:partyIndex,Text:_doubleMedicineItem!.Value.Value,MoveSlot:moveSlot){TargetInstanceId=target.InstanceId});
-        if(_session.Revision==revision)_doubleNotice=DoubleMedicineNotice(_status);
+        var target=_session.State.Party[partyIndex];
+        bool accepted = Apply(new("double_medicine",PartyIndex:actor,Choice:partyIndex,Text:_doubleMedicineItem!.Value.Value,MoveSlot:moveSlot){TargetInstanceId=target.InstanceId});
+        if(!accepted)_doubleNotice=DoubleMedicineNotice(_status);
     }
     private bool DoubleMedicineInput(InputEventKey key,int actor)
     {

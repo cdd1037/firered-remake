@@ -100,6 +100,7 @@ public interface ICampaignCatalog:IStoryCatalog
     FossilLabOpponentPokemonCatalog? FossilLabOpponents=>null;
     FossilLabMachineCatalog? FossilLabMachines=>null;
     FossilLabShopCatalog? FossilLabShop=>null;
+    bool TrainerFanClubEnabled=>false;
     bool FightingDojoEnabled=>false;
     FightingDojoOwnedPokemonCatalog? FightingDojoOwnership=>null;
     FightingDojoOpponentPokemonCatalog? FightingDojoOpponents=>null;

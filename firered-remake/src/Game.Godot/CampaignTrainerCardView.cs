@@ -21,6 +21,7 @@ public partial class CampaignView
     private void OpenTrainerCard()
     {
         if(_trainerCard is null){_fieldMenuNotice="The TRAINER CARD cannot be\nopened here.";return;}
+        if(!CommitPlayTime(true)){_fieldMenuNotice=_status;return;}
         _fieldMenuMode="trainer-card";
     }
     private bool TrainerCardInput(InputEventKey key)
@@ -44,9 +45,10 @@ public partial class CampaignView
             int count=PretTrainerCard.CountCaught(numbers,nationalEnabled:_session.NationalPokedexEnabled);
             Text(layout.PokedexLabel,card.Texts.Pokedex);Text(card.CaughtValuePosition(count),count.ToString());
         }
-        // No elapsed-play-time counter is persisted yet. Do not fabricate time from step count,
-        // wall-clock launch time, or an untracked zero. Other back-page statistics remain deferred.
-        Text(layout.TimeLabel,card.Texts.Time);Text(layout.TimeHours,"--");Text(layout.TimeColon,card.Texts.Colon);Text(layout.TimeMinutes,"--");
+        // Authoritative source fields, including all three hour digits. The marker
+        // distinguishes a checkpoint observation origin from whole-adventure time.
+        Text(layout.TimeLabel,card.Texts.Time);Text(layout.TimeHours,s.PlayTime.Hours.ToString());Text(layout.TimeColon,card.Texts.Colon);Text(layout.TimeMinutes,s.PlayTime.Minutes.ToString("D2")+(s.PlayTime.SinceCheckpoint?"+":""));
+        if(s.PlayTime.SinceCheckpoint)SourceText(_sourceSmall,new(8,146),CheckpointTimeNote);
         foreach(var badge in card.Badges)if(s.Script.Flags.GetValueOrDefault(badge.Flag))DrawTexture(_trainerCardTextures[badge.AssetId],new(badge.X,badge.Y));
         SourceText(_sourceSmall,new(190,146),"BACK");
     }

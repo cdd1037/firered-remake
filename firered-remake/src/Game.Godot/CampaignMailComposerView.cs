@@ -42,15 +42,15 @@ public partial class CampaignView
             _earlyItemIcons.Add(id, ImageTexture.CreateFromImage(image));
         }
     }
-    private void MailComposeAction(string kind, int? choice = null, int quantity = 0)
+    private bool MailComposeAction(string kind, int? choice = null, int quantity = 0)
     {
         var draft = _session.State.MailComposer ?? throw new InvalidOperationException("No Mail composition is active.");
-        MailAction(new(kind, Choice: choice, Quantity: quantity, Text: draft.WaitId));
+        return MailAction(new(kind, Choice: choice, Quantity: quantity, Text: draft.WaitId));
     }
     private void MailChooseWord(ushort word)
     {
-        long revision = _session.Revision; MailComposeAction("mail_compose_word", MailEditSlot, word);
-        if (_session.Revision != revision) _mailBrowseMode = 0;
+        bool accepted = MailComposeAction("mail_compose_word", MailEditSlot, word);
+        if (accepted) _mailBrowseMode = 0;
     }
     private bool MailComposerInput(InputEventKey key)
     {

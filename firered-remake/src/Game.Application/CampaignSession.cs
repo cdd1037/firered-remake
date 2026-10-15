@@ -26,6 +26,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     ImmutableArray<CampaignMotion> Motions,int PresentationTicks,string LastHealingLocation,string TextColor,string Music,
     string PlayerName,string RivalName,int Money,string SavedMusic,ImmutableArray<CampaignPresentation> PresentationEffects,bool PlayerVisible)
 {
+    [JsonRequired] public CampaignPlayTime PlayTime{get;init;}=CampaignPlayTime.NewGame;
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RegisteredItem{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignTeachyTv? TeachyTv{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFameChecker? FameChecker{get;init;}
@@ -304,6 +305,7 @@ public sealed partial class CampaignSession
         if(content.ConnectedFieldMaps is not null)initial=InitializeExploration(initial);
         if(content.OldManTutorialEnabled)initial=initial with{ObjectSlots=EmptyObjectPool};
         initial=InitializeRenewableHiddenItems(initial);
+        initial=InitializeTrainerFanClub(initial);
         // NewGameInitData runs this real source script before normal map entry. No hand-copied hide flag list.
         initial=StartStory(initial,"EventScript_ResetAllMapFlags");
         initial=EnterMap(initial,null);
@@ -324,9 +326,11 @@ public sealed partial class CampaignSession
     public string? ValidatePlayerSave(CampaignState s)
     {
         if(s is null||s.World is null||s.World.Player is null||s.Script is null||s.Actors is null||s.PlayerName is null||s.RivalName is null||s.EntryPrograms.IsDefault||s.Motions.IsDefault||s.PresentationEffects.IsDefault||s.Party.IsDefault||s.SeenSpecies is null||s.CaughtSpecies is null||s.TextBuffers is null||s.SettledBattles is null||s.BattledTrainers is null||s.BattleHistory.IsDefault)return "save_structure_invalid";
+        if(ValidatePlayTime(s) is {} playTimeError)return playTimeError;
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
+        if(ValidateTrainerFanClub(s) is {} fanClubError)return fanClubError;
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         if(ValidateSelphyRequest(s) is {} selphyError)return selphyError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
@@ -467,8 +471,11 @@ public sealed partial class CampaignSession
     {
         try
         {
-            // MOVE owns a removed creature or held item. Route before every other command family,
-            // including field actions and timers, so none can bypass this native modal.
+            // The source clock owns no modal object and runs during every active scene.
+            // Dispatch this bounded, time-only transaction before ownership guards.
+            if(command.Kind=="play_time_tick")return DecidePlayTime(state,command);
+            // MOVE owns a removed creature or held item. All gameplay commands
+            // remain behind this native modal.
             if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null} or {Summary:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
@@ -782,6 +789,7 @@ public sealed partial class CampaignSession
             if(TryApplySixIslandEffect(state,effect,out var sixIslandState)){state=sixIslandState;continue;}
             if(TryApplyFourIslandEffect(state,effect,out var fourIslandState)){state=fourIslandState;continue;}
             if(TryApplySeviiRubyEffect(state,effect,out var rubyState)){state=rubyState;continue;}
+            if(TryApplyTrainerFanClubEffect(state,effect,out var fanClubState)){state=fanClubState;continue;}
             if(TryApplyPokemonLeagueEffect(state,effect,out var pokemonLeagueState)){state=pokemonLeagueState;continue;}
             if(TryApplyVictoryRoadFieldEffect(state,effect,out var victoryRoadFieldState)){state=victoryRoadFieldState;continue;}
             if(TryApplyViridianGymEffect(state,effect,out var viridianGymState)){state=viridianGymState;continue;}

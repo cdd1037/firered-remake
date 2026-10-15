@@ -275,8 +275,8 @@ public partial class CampaignView
     }
     private void DoubleSubmit(CampaignCommand command)
     {
-        long revision=_session.Revision;Apply(command);
-        if(_session.Revision==revision)_doubleNotice=_status=="preset_double_item_already_used"?"The item was already used.\nChoose this POKéMON's action.":command.Kind=="double_switch"?"That POKéMON can't\nswitch in now.":"That choice can't be\nused now.";
+        bool accepted = Apply(command);
+        if(!accepted)_doubleNotice=_status=="preset_double_item_already_used"?"The item was already used.\nChoose this POKéMON's action.":command.Kind=="double_switch"?"That POKéMON can't\nswitch in now.":"That choice can't be\nused now.";
     }
     private void DoubleAcknowledge()
     {

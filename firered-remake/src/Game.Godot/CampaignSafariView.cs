@@ -177,9 +177,8 @@ public partial class CampaignView
         if (key.Keycode == Key.Enter)
         {
             _safariActionFrame = Engine.GetProcessFrames();
-            long revision = _session.Revision;
-            Apply(new("safari_action", Text: SafariActions[_safariCursor]));
-            if (_session.Revision == revision) _safariNotice = "That action is not available\nright now.";
+               bool accepted = Apply(new("safari_action", Text: SafariActions[_safariCursor]));
+            if (!accepted) _safariNotice = "That action is not available\nright now.";
         }
         return true;
     }

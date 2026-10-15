@@ -23,6 +23,7 @@ public static class PretCampaignMapPresentation
                 if(localBorder)localBorders.Add(id);
             }
         }
+        Add(catalog.TrainerFanClub.NewMaps.Keys,catalog.TrainerFanClub.NpcSourcePath);
         Add(catalog.LostCaveRegion.NewMaps.Keys,catalog.LostCaveRegion.NpcSourcePath);
         Add(catalog.FightingDojoRegion.NewMaps.Keys,catalog.FightingDojoRegion.NpcSourcePath);
         Add(catalog.FossilLabRegion.NewMaps.Keys,catalog.FossilLabRegion.NpcSourcePath);

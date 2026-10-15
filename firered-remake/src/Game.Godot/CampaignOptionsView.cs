@@ -79,8 +79,8 @@ public partial class CampaignView
         // Original OptionMenu_ProcessInput closes and commits on either A or B from any row.
         if(key.Keycode is Key.Enter or Key.Backspace)
         {
-            long revision=_session.Revision;Apply(new CampaignCommand("options_save"){Options=_optionsDraft});
-            if(_session.Revision>revision)_fieldMenuMode="start";
+           bool accepted = Apply(new CampaignCommand("options_save"){Options=_optionsDraft});
+            if(accepted)_fieldMenuMode="start";
             else _fieldMenuNotice="Options could not be applied.\nReturn to a stable field.";
         }
         return true;

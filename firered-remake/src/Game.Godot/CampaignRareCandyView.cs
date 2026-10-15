@@ -32,9 +32,8 @@ public partial class CampaignView
             if (confirm || cancel)
             {
                 if (confirm && _candyMoveCursor < count && MoveLearningUnavailable(scene.PendingMoves[0].Move)) return true;
-                long revision = _session.Revision;
-                Apply(new("rare_candy_learn", MoveSlot: cancel || _candyMoveCursor == count ? -1 : _candyMoveCursor));
-                if (_session.Revision == revision) _candyNotice = MoveLearningError();
+                       bool accepted = Apply(new("rare_candy_learn", MoveSlot: cancel || _candyMoveCursor == count ? -1 : _candyMoveCursor));
+                if (!accepted) _candyNotice = MoveLearningError();
             }
         }
         else if ((confirm || cancel) && _fanfareRemaining <= 0)

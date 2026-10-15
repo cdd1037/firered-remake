@@ -53,8 +53,8 @@ public partial class CampaignView
     }
     private void StorageAction(CampaignCommand command,string? successSymbol=null,string? name=null)
     {
-        var before=_session.Revision;Apply(command);
-        if(_session.Revision!=before){if(successSymbol is not null)_pcNotice=PcText(successSymbol,name);return;}
+        bool accepted = Apply(command);
+        if(accepted){if(successSymbol is not null)_pcNotice=PcText(successSymbol,name);return;}
         _pcNotice=StorageError(_status);
     }
     private string StorageError(string error)

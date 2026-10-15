@@ -39,10 +39,11 @@ public partial class CampaignView
         return new(kind, Choice: choice, PartyIndex: pending?.PartyIndex ?? menu.TargetPartyIndex ?? -1) {
             TargetInstanceId = pending?.TargetInstanceId ?? menu.TargetInstanceId };
     }
-    private void MailAction(CampaignCommand command)
+    private bool MailAction(CampaignCommand command)
     {
-        long revision = _session.Revision; Apply(command);
-        if (_session.Revision == revision) _itemNotice = MailError(_status);
+        bool accepted = Apply(command);
+        if (!accepted) _itemNotice = MailError(_status);
+        return accepted;
     }
     private string MailError(string error) => error switch {
         "mail_mailbox_full" => MailText("gText_PCMailboxFull"),

@@ -347,8 +347,8 @@ public partial class CampaignView
     };
     private bool ApplyWildChoice(CampaignCommand command)
     {
-        var revision = _session.Revision; Apply(command);
-        if (_session.Revision > revision) { _wildMenu = "actions"; _wildCursor = 0; return true; }
+        bool accepted = Apply(command);
+        if (accepted) { _wildMenu = "actions"; _wildCursor = 0; return true; }
         _wildNotice = WildCommandError(); return false;
     }
     private void BeginWildMoveLearning()

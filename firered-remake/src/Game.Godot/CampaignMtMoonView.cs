@@ -156,15 +156,14 @@ public partial class CampaignView
             { _mtMoonMoveSlotOpen = false; return true; }
             if (key.Keycode != Key.Enter) return true;
         }
-        long revision = _session.Revision;
         bool ppBoost = IsFieldPpBoost(_mtMoonTargetItem);
         bool evolution = IsFieldEvolution(_mtMoonTargetItem);
-        Apply(new(evolution ? "field_evolution" : _mtMoonTargetItem.Value == "pret:ITEM_RARE_CANDY" ? "field_rare_candy" : "field_medicine", Text: _mtMoonTargetItem.Value,
+        bool accepted = Apply(new(evolution ? "field_evolution" : _mtMoonTargetItem.Value == "pret:ITEM_RARE_CANDY" ? "field_rare_candy" : "field_medicine", Text: _mtMoonTargetItem.Value,
             PartyIndex: _fieldMedicineTarget, MoveSlot: _mtMoonMoveSlotOpen ? _mtMoonMoveSlot : -1, Quantity: 1)
             { TargetInstanceId = evolution ? _evolutionPartyInstances[_fieldMedicineTarget] : ppBoost ? _ppBoostTargetInstance :
                 IsFieldVitamin(_mtMoonTargetItem) ? _vitaminPartyInstances[_fieldMedicineTarget] : null });
         _fieldMedicineTargetOpen = false; _mtMoonMoveSlotOpen = false;
-        if (_session.Revision == revision) _itemNotice = FieldConsumableNotice(_status);
+        if (!accepted) _itemNotice = FieldConsumableNotice(_status);
         _itemCursor = Math.Min(_itemCursor, _session.State.Inventory!.BagItems.Length);
         return true;
     }

@@ -108,8 +108,8 @@ public partial class CampaignView
 
     private void UseFieldPartySurf()
     {
-        long revision = _session.Revision; Apply(new("field_surf", PartyIndex: _fieldPartyCursor));
-        if (_session.Revision > revision) { ResetFieldMenu(); return; }
+        bool accepted = Apply(new("field_surf", PartyIndex: _fieldPartyCursor));
+        if (accepted) { ResetFieldMenu(); return; }
         _fieldMenuMode = "party";
         _fieldMenuNotice = _status == "field_surf_badge_required" ? "This can't be used until a new\nBADGE is obtained." : "Can't use that here.";
     }

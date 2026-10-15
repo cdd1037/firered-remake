@@ -199,6 +199,7 @@ public partial class CampaignView
     }
     private void SaveCampaignWithTrainerTowerClock(string path)
     {
+        if(!CommitPlayTime(true))throw new InvalidDataException("play_time_not_committed");
         CommitTrainerTowerTime(true);
         ulong started = Time.GetTicksUsec();
         try { new SaveService(EntrySaveStorage()).Save(path, _session.State, _session.Revision, _session.RulesVersion, _catalog.ContentVersion, _session.ValidatePlayerSave); }

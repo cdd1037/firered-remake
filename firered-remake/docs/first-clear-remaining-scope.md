@@ -1,6 +1,10 @@
 # 首次主线后：当前剩余范围
 
-更新：2026-10-14，稳定节点已包含Fly、日托／培育、碎岩及原57机器的获取与携带闭环。本页只维护当前状态和未完项；历史逐批数字、夹具、失败探针和精确执行身份保留在各模块报告及Git记录，不把旧段落的“下一步”当成今天的待办。
+更新：2026-10-15，稳定节点已包含Fly、日托／培育、碎岩及原57机器的获取与携带闭环。本页只维护当前状态和未完项；历史逐批数字、夹具、失败探针和精确执行身份保留在各模块报告及Git记录，不把旧段落的“下一步”当成今天的待办。
+
+## 当前暂停边界
+
+按用户最新要求，仅收完粉丝俱乐部、真实游玩时间统计、两段Teachy演示窄修及必要验证，再同步GitHub并暂停。图鉴、训练家卡背面、设置、Safari和表现余项等待后续安排；本次不追加完整Drive打包。详见[粉丝与时钟](trainer-fan-club-play-time.md)。
 
 ## 当前工作与统计边界
 
@@ -8,7 +12,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 
 原代币盒／余额／换币柜台与三位普通赠币NPC已完成实际应用路线、独立Continue和短headless View；奖品三柜台／15项已接入，受控边界与实际三类兑换、独立Continue及短headless View均通过。原12处隐藏币已通过实际120→380续走与独立Continue；老虎机规则及生产入口已接入，原默认实走一回合/退出与短视图通过，精确原生视听仍未完成。通信进化替代的具体接入仍待讨论。
 
-当前已加载组合为364地图、189可持有物种、212普通敌方定义、354招式、151普通物品、57机器和18导师定义。新增五TM实际取得与真道具携带往返已通过，TM10另有明示受控Pickup→公共TAKE验证，见[本批边界](original-machine-integration.md)。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
+当前已加载组合为365地图、189可持有物种、212普通敌方定义、354招式、151普通物品、57机器和18导师定义。新增五TM实际取得与真道具携带往返已通过，TM10另有明示受控Pickup→公共TAKE验证，见[本批边界](original-machine-integration.md)。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
 
 项目级深入重构R1–R4的有界结果已经交付：普通单／双打共用唯一frame与执行生命周期，旧执行器及桥接实体退休，Content只保留当前入口，普通训练家、场外遭遇和药品／进化石使用共享绑定。原始资源证明、特殊实验室／教学战和只读表现投影是实际保留边界。[重构范围](project-refactor-plan.md#2026-10-13-final-bounded-refactor-result)
 
@@ -20,7 +24,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 该范围已完成并以02c32b8固定为stage13完整包，包含当前源码、运行资源、必要原输入及少量关键存档／验收摘要。以下第2项后继工作分别继续，不把历史备份节点误当当前未完成要求：
 - 玉虹游戏厅原老虎机：规则、App 会话、原资源和显示/音频接线已接入；用户批准 None/0 初值与 21 格负索引归一，原默认入口实际单回合与退出、短 headless View 通过，精确调色动画/原生视听仍待验。见[当前边界](slot-machine-integration.md)。
 - 对战搜寻器原规则、351队伍、共享单／双打入口和场外表现已接入，原领取／100步充电／6号路真实再战与独立Continue、短headless View通过；全部重战地点和原生视听仍分别验收。见[当前边界](vs-seeker-integration.md)。
-- 人物收集器列表／事实／肖像界面已接通；96条资料中原7条区域缺口已实际接通学校／浅红民居／三岛House2的4条；水迷宫Daisy2与豪华度假区住宅Blaine5的原入口现已挂载，尚未在本批实际收集，仍缺训练家粉丝俱乐部Bruno2入口，精确原生表现另列。
+- 人物收集器列表／事实／肖像界面已接通；96条资料中原7条区域缺口已实际接通学校／浅红民居／三岛House2的4条；水迷宫Daisy2与豪华度假区住宅Blaine5的原入口现已挂载，尚未在本批实际收集，训练家粉丝俱乐部Bruno2已通过原门与初见剧情实际收集／重复／独立Continue，96条资料均已有挂载路径；全收集与精确原生表现另列。
 - Teachy TV已接原目录／菜单／临时演示所有者，状态与相性课已按批准方案各补一次合法FIGHT，通过定向Session和公开完成／B返回；第五行动仍安全停止。逐帧表现／原生视听仍按[教学接线说明](teachy-tv-integration.md)区分。
 - 邮件九词编写／确认取消和12种原信纸已接通，真实既有Retro Mail写信／读信／送PC、独立Continue和短View通过，见[邮件当前边界](mail-composer-integration.md)。
 
@@ -68,16 +72,16 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 ## 养成、场外能力及特殊服务
 
 - 原单只寄放、四岛双亲培育、蛋和孵化已接通，真实服务路线与受控蛋链分别记录；原悠闲薰香的迷失洞窟道具来源已挂载，但本批未逐一实际拾取九处道具，也未完成自然Wynaut培育；Rhydon、Slowbro、Crobat、Blissey 四项普通进化闭包已组合接入，取得与表现验收边界另列。原50TM／7HM至少一条当前取得入口及携带规则已接通；未覆盖物种的教学兼容与特殊表现仍按物种范围继续补齐。碎岩已在原温泉领取并通过实际破石路径。Fly、攀瀑、Surf、Strength、Cut已在各自场景接通，不能用这些能力替代其他服务。[养成分母](full-scope-audit.md#6-宝可梦数据与养成的完整口径)
-- 对战搜寻器已通过有界实际重战／独立Continue与短View，Teachy TV目录／菜单／六段临时演示已接线；状态／相性课已按批准方案各补一次合法FIGHT并通过定向Session／公开生命周期，原生视听仍未验收。人物收集器已接通原16人／96条数据、列表／事实／肖像模式、背包与注册入口及存读；原96条事实中现有95条具备挂载的地图路径，训练家粉丝俱乐部Bruno2入口仍未挂载，不能视为全收集完成。文本逐像素滚动、控制码精确帧耗与原生视听仍待验。[人物收集器](fame-checker-integration.md)。可再生隐藏物的原步数／入口机制已有实现；专属探宝器箭头／星光原生表现仍缺。
+- 对战搜寻器已通过有界实际重战／独立Continue与短View，Teachy TV目录／菜单／六段临时演示已接线；状态／相性课已按批准方案各补一次合法FIGHT并通过定向Session／公开生命周期，原生视听仍未验收。人物收集器已接通原16人／96条数据、列表／事实／肖像模式、背包与注册入口及存读；原96条事实均已具备挂载的地图路径；训练家粉丝俱乐部Bruno2已真实收集和独立Continue，但不能把静态覆盖视为全部事实已实走收集。文本逐像素滚动、控制码精确帧耗与原生视听仍待验。[人物收集器](fame-checker-integration.md)。可再生隐藏物的原步数／入口机制已有实现；专属探宝器箭头／星光原生表现仍缺。
 - 原NPC交换专用表现仍未完整还原。12种原信纸与九词编写已接线，真实公共路线／独立Continue／短UI通过，精确动画和原生视听仍待验；不会给原火红没有本地来源的信纸擅增购买入口。[邮件当前边界](mail-composer-integration.md)
 - 狩猎特殊捕获／步数循环、四种塔课程已经实现；动态谜之果载荷、外部e-Reader和真实通信另有输入依赖，不计普通主线能力。[狩猎](safari-campaign.md)
 
 ## 菜单、专属表现和声音
 
-- 实用界面：PC与场外共用Summary、队伍／盒内／持有查看、按物理槽浏览与完整PP槽换序已接入；真实公共命令和独立Continue、主组合构建通过，薄View197检查／6Draw通过，完整原版Summary美术／过渡仍未验，见[Summary](storage-summary-application.md)。箱子8字符命名／16壁纸／四标记已接入共享PC所有者，Domain与真实公共命令／独立Continue通过；主组合构建及短headless View通过，见[盒子定制](storage-customization-application.md)。图鉴栖息地／搜索排序／分布／大小／叫声页面；训练家卡背面和持久游玩时长。普通PC存取／14×30容量、数值图鉴和卡片正面已有功能。单只Move Pokémon已接入真实持有游标／交换／跨箱和邮件所有权，隔离公共PC命令与Continue、主组合构建及短headless View通过；多只矩形选择仍未实现，见[Move接线](storage-move-application.md)。PC Move Items已接入独立物品游标、箱内／队伍持物交换、Bag给予／取回及原关闭提示；受控容量边界、真实既有物品的公共PC命令与独立Continue已通过，主组合构建和短headless View已通过，见[物品接线](storage-items-application.md)。放生已接原默认No确认、last-able／Egg／Mail及Surf-Dive保护，释放后身份来源仍可验证；真实PC分支与独立Continue、主组合构建及短headless View通过，见[放生接线](storage-release-application.md)。名人堂只读回看已通过真实PC进入／历史队伍浏览／退出、独立Continue及短headless View；原过渡与精确原生视听仍另列，见[Hall PC](hall-pc-contract.md)。普通持物与50TM的给予／取回／交换及PC普通物品GIVE已接通；7HM按原重要物品规则禁止携带。场外背包Items／Balls／Berry Pouch的TOSS已接通，取消、结果确认才扣量、最后栈压缩与真实存读／短View通过；战内Berry Pouch丢弃仍未接通。[PC](pokemon-storage-contract.md)、[携带物](held-item-transfers.md)、[菜单](basic-menu-application.md)
+- 实用界面：PC与场外共用Summary、队伍／盒内／持有查看、按物理槽浏览与完整PP槽换序已接入；真实公共命令和独立Continue、主组合构建通过，薄View197检查／6Draw通过，完整原版Summary美术／过渡仍未验，见[Summary](storage-summary-application.md)。箱子8字符命名／16壁纸／四标记已接入共享PC所有者，Domain与真实公共命令／独立Continue通过；主组合构建及短headless View通过，见[盒子定制](storage-customization-application.md)。图鉴栖息地／搜索排序／分布／大小／叫声页面；训练家卡背面仍待补；持久游玩时钟与Continue／卡片正面／Hall时长已接通，迁移档明确标注从检查点开始观察。普通PC存取／14×30容量、数值图鉴和卡片正面已有功能。单只Move Pokémon已接入真实持有游标／交换／跨箱和邮件所有权，隔离公共PC命令与Continue、主组合构建及短headless View通过；多只矩形选择仍未实现，见[Move接线](storage-move-application.md)。PC Move Items已接入独立物品游标、箱内／队伍持物交换、Bag给予／取回及原关闭提示；受控容量边界、真实既有物品的公共PC命令与独立Continue已通过，主组合构建和短headless View已通过，见[物品接线](storage-items-application.md)。放生已接原默认No确认、last-able／Egg／Mail及Surf-Dive保护，释放后身份来源仍可验证；真实PC分支与独立Continue、主组合构建及短headless View通过，见[放生接线](storage-release-application.md)。名人堂只读回看已通过真实PC进入／历史队伍浏览／退出、独立Continue及短headless View；原过渡与精确原生视听仍另列，见[Hall PC](hall-pc-contract.md)。普通持物与50TM的给予／取回／交换及PC普通物品GIVE已接通；7HM按原重要物品规则禁止携带。场外背包Items／Balls／Berry Pouch的TOSS已接通，取消、结果确认才扣量、最后栈压缩与真实存读／短View通过；战内Berry Pouch丢弃仍未接通。[PC](pokemon-storage-contract.md)、[携带物](held-item-transfers.md)、[菜单](basic-menu-application.md)
 - 选项：文字速度、SHIFT／SET、边框可编辑；Battle Scene、Sound、Button Mode的玩家入口仍提示不可用。测试Scene Off不等于完整设置功能。菜单鼠标／键盘已有实现，地图鼠标移动／寻路后置。[选项代码](../src/Game.Godot/CampaignOptionsView.cs)、[鼠标边界](menu-pointer-controls.md)
 - 专属动画：当前矩阵20／354，余334未纳入专属还原。通用效果不计专属；已有20也有各自源／主机／原生证据边界。[矩阵](battle-system-completion-matrix.md)、[trace批次](source-trace-choreography.md)
-- 场景与物种：原片头／大木介绍、原命名键盘、部分进化／捕获／狩猎演出和完整菜单动效仍缺；晃晃斑PID斑点未实现。Hall背景混色／纸屑／排布／过渡未全还原；片尾66条源脚本与顺序保留，地图镜头／放大构图等仍简化，时长显示--:--。[联盟表现差异](pokemon-league-presentation.md#verification-and-explicit-boundaries)、[物种边界](full-scope-audit.md#61-三个不同集合)
+- 场景与物种：原片头／大木介绍、原命名键盘、部分进化／捕获／狩猎演出和完整菜单动效仍缺；晃晃斑PID斑点未实现。Hall背景混色／纸屑／排布／过渡未全还原；片尾66条源脚本与顺序保留，地图镜头／放大构图等仍简化；时长现用持久时钟，迁移档以加号标记历史时长未知。[联盟表现差异](pokemon-league-presentation.md#verification-and-explicit-boundaries)、[物种边界](full-scope-audit.md#61-三个不同集合)
 - 声音：默认原序列／采样C#合成器已运行；完整招式声音时序和全部场景仍未验收，硬件声道／起音／尾音等近似见文档。Dummy有限非零PCM、事件和结束检查不证明实际听感／音质／同步；P0实际音频输出门禁仍未关闭。原生检查只保留其固定批次范围。[合成器](synth-audio-integration.md#pcm-buffering-and-sound-boundaries)、[联盟音频](pokemon-league-presentation.md)
 
 ## 中文化

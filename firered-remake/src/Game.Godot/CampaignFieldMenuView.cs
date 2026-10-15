@@ -151,9 +151,8 @@ public partial class CampaignView
             // Source cancels when the same slot is chosen, without any game command.
             if (source != _fieldPartyCursor)
             {
-                long revision = _session.Revision;
-                Apply(new("party_swap", Choice: source, PartyIndex: _fieldPartyCursor));
-                if (_session.Revision == revision) _fieldMenuNotice = "The party order could not\nbe changed here.";
+                       bool accepted = Apply(new("party_swap", Choice: source, PartyIndex: _fieldPartyCursor));
+                if (!accepted) _fieldMenuNotice = "The party order could not\nbe changed here.";
             }
         }
         else { _fieldMenuMode = "actions"; _fieldPartyAction = 0; }
@@ -186,9 +185,8 @@ public partial class CampaignView
         int selected=_fieldPartyCursor;
         // This query is advisory. The command repeats every gate and owns the effect.
         bool usable=_session.CanUseFieldCut(selected);
-        long revision=_session.Revision;
-        Apply(new("field_cut",PartyIndex:selected));
-        if(_session.Revision>revision){ResetFieldMenu();return;}
+        bool accepted = Apply(new("field_cut",PartyIndex:selected));
+        if(accepted){ResetFieldMenu();return;}
         _fieldMenuMode="party";
         _fieldMenuNotice=_status=="field_cut_badge_required"
             ? "This can't be used until a new\nBADGE is obtained."

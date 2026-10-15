@@ -87,9 +87,8 @@ public partial class CampaignView
     private bool StorageCustomizationAction(CampaignCommand command)
     {
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return false; }
-        long revision = _session.Revision;
-        Apply(command);
-        if (_session.Revision != revision) { _storageCustomizationRevision = _session.Revision; return true; }
+        bool accepted = Apply(command);
+        if (accepted) { _storageCustomizationRevision = _session.Revision; return true; }
         _pcNotice = _status.Contains("name", StringComparison.Ordinal)
             ? "Use up to 8 source keyboard characters."
             : _status.Contains("identity", StringComparison.Ordinal) || _status.Contains("stale", StringComparison.Ordinal)

@@ -11,7 +11,7 @@ namespace Game.Application;
 public static class CurrentGameProfile
 {
     public const string Id = "current";
-    public const string RulesVersion = "firered-current-campaign-v1";
+    public const string RulesVersion = "firered-current-campaign-v2";
 }
 
 internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog Pokemon, OwnedBattlePokemonCatalog Ownership);
@@ -86,7 +86,7 @@ public sealed partial class CampaignSession
             content.CinnabarEnabled && content.FirstSeviiEnabled && content.ViridianGymEnabled &&
             content.LeagueRivalEnabled && content.VictoryRoadEnabled && content.PokemonLeagueEnabled &&
             content.NationalDexEnabled && content.SeviiRubyEnabled && content.FourIslandEnabled &&
-            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled && content.Route5DayCareEnabled && content.FourIslandDayCareEnabled) ||
+            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled && content.Route5DayCareEnabled && content.FourIslandDayCareEnabled && content.TrainerFanClubEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
         if (content.BreedingMetadata is not {} metadata || !ReferenceEquals(metadata, BreedingSpeciesMetadataCatalog.For(content.PokemonContent?.Catalog))) throw new InvalidDataException("current_breeding_metadata_missing");

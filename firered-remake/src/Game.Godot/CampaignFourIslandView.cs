@@ -179,8 +179,8 @@ public partial class CampaignView
     private void DrawFourIslandBanner() { if (FourIslandShowMon) DrawFieldIndoorShowMonBanner(FourIslandFrame,FourIslandShowMonPartyIndex()); }
     private void UseFieldPartyWaterfall()
     {
-        long revision=_session.Revision; Apply(new("field_waterfall",PartyIndex:_fieldPartyCursor));
-        if (_session.Revision > revision) { ResetFieldMenu(); return; }
+        bool accepted = Apply(new("field_waterfall",PartyIndex:_fieldPartyCursor));
+        if (accepted) { ResetFieldMenu(); return; }
         _fieldMenuMode="party"; _fieldMenuNotice="Can't use that here.";
     }
     private bool TryFourIslandButtonInput(InputEventKey key)

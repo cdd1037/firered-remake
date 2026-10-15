@@ -66,9 +66,8 @@ public partial class CampaignView
         var facing = _session.State.World.Player.Facing;
         var direction = _regionalSignHeld ?? facing;
         if (direction != facing && _session.State.SignMessage.WalkawayDisabled) return true;
-        long revision = _session.Revision;
-        Apply(new("sign_cancel", direction, Text: "start"));
-        if (_session.Revision > revision && direction == facing && CanOpenFieldMenu) OpenFieldStartMenu();
+        bool accepted = Apply(new("sign_cancel", direction, Text: "start"));
+        if (accepted && direction == facing && CanOpenFieldMenu) OpenFieldStartMenu();
         return true;
     }
 

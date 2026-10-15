@@ -37,8 +37,8 @@ public partial class CampaignView
     private bool StorageSummaryAction(CampaignCommand command)
     {
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return false; }
-        long before = _session.Revision; Apply(command);
-        if (_session.Revision != before) return true;
+        bool accepted = Apply(command);
+        if (accepted) return true;
         // Source navigation stops at the first/last visible creature without a popup.
         if (_status.Contains("summary_boundary", StringComparison.Ordinal)) return false;
         ResetOwnedSummarySelection();

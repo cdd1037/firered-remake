@@ -162,11 +162,10 @@ public sealed partial class CampaignSession
                 if(room is <0 or >3)throw new InvalidDataException("pokemon_league_redraw_context");return true;
             case "Script_TryGainNewFanFromCounter":
                 if(room!=3||symbol!="PokemonLeague_LancesRoom_EventScript_DefeatedLance"||state.Script.Variables.GetValueOrDefault("VAR_0x8004")!=0)throw new InvalidDataException("pokemon_league_fan_counter_context");
-                // Fan-club state is outside the inherited model; preserve the invocation,
-                // explicitly mark this deferred subsystem in the completed archive.
-                return true;
+                next=TryGainTrainerFanFromLance(state);return true;
             case "Script_UpdateTrainerFanClubGameClear":
-                if(!hall||symbol!="EventScript_SetDefeatedEliteFourFlagsVars")throw new InvalidDataException("pokemon_league_fan_clear_context");return true;
+                if(!hall||symbol!="EventScript_SetDefeatedEliteFourFlagsVars")throw new InvalidDataException("pokemon_league_fan_clear_context");
+                next=UpdateTrainerFanClubGameClear(state);return true;
             case "EnterHallOfFame":
                 if(symbol!=PokemonLeagueHallEntry||state.World.Player.MapId.Value!=PokemonLeagueHallMap)throw new InvalidDataException("pokemon_league_hof_source");
                 next=EnterPokemonLeagueHallOfFame(state);return true;

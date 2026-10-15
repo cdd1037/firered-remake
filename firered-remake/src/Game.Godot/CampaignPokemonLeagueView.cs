@@ -187,7 +187,7 @@ public partial class CampaignView
         }
         if(c.Stage==CampaignPokemonLeagueCompletionStage.ResetRequested)
         {
-            ResetSourceAudio();_held=null;_repeat=0;_tracks.Clear();_nicknameEdit.Visible=false;
+            ResetPlayTimeHost();ResetSourceAudio();_held=null;_repeat=0;_tracks.Clear();_nicknameEdit.Visible=false;
             if(_entrySource is null)InitializePlayerEntry("",force:true);else ReadEntrySave();
             _entryActionFrame=Engine.GetProcessFrames();
             Write("pokemonLeagueReturnToEntry",new{verifiedContinue=_entrySave is not null,originalTitleMovieImplemented=false});return true;
@@ -196,6 +196,8 @@ public partial class CampaignView
     }
     private void SavePokemonLeagueHallOfFame(bool approvedOverwrite)
     {
+        if(!CommitPlayTime(true))return;
+        // One coherent snapshot/generation/hash per write attempt, including retries.
         var request=_session.PokemonLeagueHallOfFameSaveRequest;
         if(request is null)return;
         _leagueSaveAttempted=true;
@@ -334,7 +336,8 @@ public partial class CampaignView
             if(phase.Ready)
             {
                 _battleSkin.DrawStandardFrame(this,new(8,8,144,64));SourceText(_sourceNormal,new(20,17),"NAME  "+_session.State.PlayerName);
-                SourceText(_sourceNormal,new(20,33),"IDNo. "+((ushort)_session.State.TrainerId).ToString("D5"));SourceText(_sourceNormal,new(20,49),"TIME  --:--");
+                SourceText(_sourceNormal,new(20,33),"IDNo. "+((ushort)_session.State.TrainerId).ToString("D5"));SourceText(_sourceNormal,new(20,49),"TIME  "+FormatPlayTime(_session.State.PlayTime));
+                if(_session.State.PlayTime.SinceCheckpoint)SourceText(_sourceSmall,new(8,83),CheckpointTimeNote);
                 ItemMessageBox(LeagueManifest.GetProperty("texts").GetProperty("gText_LeagueChamp").GetString()!);
             }
         }
