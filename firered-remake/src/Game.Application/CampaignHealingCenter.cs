@@ -21,6 +21,7 @@ public sealed partial class CampaignSession
         switch(effect.Opcode)
         {
             case "multichoice":
+                if(a.Length!=4||!Is(a[2],"MULTICHOICE_YES_NO"))return false;
                 RequireCenter();
                 if(a[0]!="19"||a[1]!="8"||!Is(a[2],"MULTICHOICE_YES_NO")||a[3].Replace(" ","",StringComparison.Ordinal) is not ("FALSE|(TRUE<<1)" or "2"))throw new InvalidDataException("center_menu_profile_unsupported");
                 // Result indices are 0=YES/1=NO, and bit 1 of flags 2 does not disable B.

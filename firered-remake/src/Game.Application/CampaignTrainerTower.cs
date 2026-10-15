@@ -144,10 +144,11 @@ public sealed partial class CampaignSession
         if(opcode=="ttower_dobattle") { next=BeginTrainerTowerBattle(state,effect); return true; }
         if(opcode=="multichoice")
         {
-            var options=a[2] switch { "MULTICHOICE_YES_NO_INFO"=>ImmutableArray.Create("YES","NO","INFO"),
-                "MULTICHOICE_TRAINER_TOWER_MODE"=>["SINGLE","DOUBLE","KNOCKOUT","MIXED","EXIT"],
-                _=>throw new InvalidDataException("trainer_tower_menu_source") };
-            next=state with{TrainerTowerMenu=new(a[2],options)};return true;
+            // Ordinary choices come from the same catalog definition as the interpreter and UI.
+            // Facility side effects remain in the native instructions after the player's answer.
+            if(StoryMenuRules.Pending(state.Script,_content) is null)
+                throw new InvalidDataException("trainer_tower_menu_definition_missing");
+            return true;
         }
         if(opcode=="special" && a[0]=="ShowBattleRecords")
         { next=state with{TrainerTowerRecordsVisible=true};return true; }

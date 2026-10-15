@@ -1,14 +1,14 @@
 using Game.Domain.Trainers;
 
 /// <summary>Source multichoice geometry and online 60 Hz batching, independent of Godot.</summary>
-internal sealed class TrainerTowerMenuPresentation
+internal sealed class TrainerTowerMenuPresentation : SourceVerticalMenuPresentation
 {
-    internal readonly record struct Layout(int X, int Y, int Width, int Height);
-    internal const int Cancel = 127;
     internal string SourceSymbol { get; }
-    internal IReadOnlyList<string> Options { get; }
-    internal int Cursor { get; private set; }
     internal TrainerTowerMenuPresentation(string sourceSymbol, IEnumerable<string> options, int defaultCursor = 0)
+        : base(Validate(sourceSymbol, options), sourceSymbol == "MULTICHOICE_ROOFTOP_B1F" ? 0 : sourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 18 : 13,
+            sourceSymbol == "MULTICHOICE_ROOFTOP_B1F" ? 0 : sourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 6 : 3, defaultCursor)
+    { SourceSymbol = sourceSymbol; }
+    private static string[] Validate(string sourceSymbol, IEnumerable<string> options)
     {
         string[] expected = sourceSymbol switch
         {
@@ -18,33 +18,7 @@ internal sealed class TrainerTowerMenuPresentation
             _ => throw new InvalidDataException("Trainer Tower source menu differs.")
         };
         if (!options.SequenceEqual(expected)) throw new InvalidDataException("Trainer Tower menu rows differ.");
-        if (defaultCursor < 0 || defaultCursor >= expected.Length) throw new ArgumentOutOfRangeException(nameof(defaultCursor));
-        SourceSymbol = sourceSymbol; Options = Array.AsReadOnly(expected); Cursor = defaultCursor;
-    }
-    internal Layout Frame(int textWidth)
-    {
-        if (textWidth is <= 0 or > 200) throw new ArgumentOutOfRangeException(nameof(textWidth));
-        int width = (textWidth + 9) / 8 + 1;
-        int left = SourceSymbol == "MULTICHOICE_ROOFTOP_B1F" ? 0 : SourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 18 : 13;
-        int top = SourceSymbol == "MULTICHOICE_ROOFTOP_B1F" ? 0 : SourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 6 : 3;
-        return new(Math.Min(left, 28 - width) * 8, top * 8, (width + 2) * 8, ((Options.Count * 14 + 7) / 8 + 2) * 8);
-    }
-    internal bool Move(int direction)
-    {
-        if (direction is not (-1 or 1)) throw new ArgumentOutOfRangeException(nameof(direction));
-        int next = Options.Count > 3 ? (Cursor + direction + Options.Count) % Options.Count : Math.Clamp(Cursor + direction, 0, Options.Count - 1);
-        return Select(next);
-    }
-    internal bool Select(int index)
-    {
-        if (index < 0 || index >= Options.Count || index == Cursor) return false;
-        Cursor = index; return true;
-    }
-    internal int RowAt(double x, double y, int textWidth)
-    {
-        var f = Frame(textWidth);
-        return x >= f.X + 8 && x < f.X + f.Width - 8 && y >= f.Y + 8 && y < f.Y + 8 + 14 * Options.Count
-            ? (int)((y - f.Y - 8) / 14) : -1;
+        return expected;
     }
     internal static string ElevatorFloorLabel(int floor) => floor switch
     { 3 => "B1F", 15 => "ROOFTOP", _ => throw new InvalidDataException("Trainer Tower elevator floor differs.") };

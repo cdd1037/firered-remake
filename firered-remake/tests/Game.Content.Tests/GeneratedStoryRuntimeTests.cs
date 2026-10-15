@@ -35,7 +35,24 @@ public sealed class GeneratedStoryRuntimeTests
         CollectionAssert.AreEqual(new[] { "lockall", "msgbox", "releaseall", "end" },
             compiled.FindProgram("EventScript_CantUseWaterfall")!.Instructions.Select(i => i.Opcode).ToArray());
         Assert.AreEqual("return", compiled.FindProgram("FourIsland_EventScript_TrySetDayCareManPos")!.Instructions.Last().Opcode);
-        Assert.AreEqual(1, compiled.Menus.Count);
+        CollectionAssert.AreEquivalent(new[]
+        {
+            "MULTICHOICE_TRAINER_SCHOOL_WHITEBOARD",
+            "MULTICHOICE_TRAINER_TOWER_MODE",
+            "MULTICHOICE_YES_NO_INFO",
+        }, compiled.Menus.Keys.ToArray());
+        var whiteboard = compiled.FindMenu("MULTICHOICE_TRAINER_SCHOOL_WHITEBOARD")!;
+        Assert.AreEqual(15, whiteboard.SourceId);
+        CollectionAssert.AreEqual(new[] { "SLP", "PSN", "PAR", "BRN", "FRZ", "EXIT" },
+            whiteboard.Options.Select(option => option.Text).ToArray());
+        var towerMode = compiled.FindMenu("MULTICHOICE_TRAINER_TOWER_MODE")!;
+        Assert.AreEqual(64, towerMode.SourceId);
+        CollectionAssert.AreEqual(new[] { "SINGLE", "DOUBLE", "KNOCKOUT", "MIXED", "EXIT" },
+            towerMode.Options.Select(option => option.Text).ToArray());
+        var yesNoInfo = compiled.FindMenu("MULTICHOICE_YES_NO_INFO")!;
+        Assert.AreEqual(16, yesNoInfo.SourceId);
+        CollectionAssert.AreEqual(new[] { "YES", "NO", "INFO" },
+            yesNoInfo.Options.Select(option => option.Text).ToArray());
         Assert.IsTrue(story.TextBank.Values.Any(text => text.Contains(@"\p", StringComparison.Ordinal)));
         Assert.IsTrue(story.TextBank.Values.Any(text => text.Contains("{PLAYER}", StringComparison.Ordinal)));
         Assert.IsTrue(story.TextBank.Values.Any(text => text.Contains("{PLAY_BGM", StringComparison.Ordinal)));

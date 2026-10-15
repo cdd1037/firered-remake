@@ -243,7 +243,8 @@ public sealed partial class PretCampaignCatalog
 
         maps = maps.AddRange(silph.NewMaps);
         {
-            if (maps.Count != 179 || !JsonElement.DeepEquals(maps[new("map.saffron-city")].Events, saffronGym.ExternalSaffronEvents))
+            if (!maps.TryGetValue(new("map.saffron-city"), out var saffronCity) ||
+                !JsonElement.DeepEquals(saffronCity.Events, saffronGym.ExternalSaffronEvents))
                 throw new InvalidDataException("saffron_gym_predecessor_maps");
             maps = maps.AddRange(saffronGym.NewMaps);
         }

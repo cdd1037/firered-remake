@@ -58,7 +58,7 @@ public sealed class WildCaptureTests : WildBattleFixture
     [TestMethod]
     public void public_Celio_capture_and_PC_delivery_retain_typed_provenance()
     {
-        var fixture = FieldFixture();
+        var fixture = CelioHistoryRetentionTests.WithPriorSettlements(FieldFixture(), 2);
         var rng = fixture.World.Rng;
         var party = (ImmutableArray<WildBattleCombatant>)typeof(CampaignSession).GetMethod("SourceTrainerEntryParty", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(validator, [fixture])!;
         int active = Enumerable.Range(0, party.Length).First(i => party[i].Pokemon.CurrentHp > 0);
@@ -117,6 +117,7 @@ public sealed class WildCaptureTests : WildBattleFixture
         Assert.IsTrue(session.State.WildBattle is null && !session.State.Roamer!.Individual!.Active, "actual public capture deactivates roamer");
         var capture = session.State.Exploration!.Captured!.Value[^1];
         Assert.IsTrue(capture.CelioRoamer?.Individual.Personality == fixture.Roamer!.Individual!.Personality && session.State.Exploration.Battles[^1].CelioRoamer?.Battle.Outcome == RoamerBattleOutcome.Caught, "capture and terminal ledger preserve typed Celio receipt");
+        Assert.AreEqual(1, session.State.Exploration!.Battles.Count(h => h.CelioRoamer is not null), "prior roaming settlements were reduced after the public battle");
         StrictRoundtrip(session);
     }
 

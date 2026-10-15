@@ -8,6 +8,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task ScriptLayout() => Run("test-script-layout.py");
     [TestMethod]
+    public Task StoryMenus() => Run("test-story-menus.py");
+    [TestMethod]
     public Task SingleFileImportPublishing() => Run("test-single-file-imports.py");
     [TestMethod]
     public Task ImageIo() => Run("test-image-io.py");

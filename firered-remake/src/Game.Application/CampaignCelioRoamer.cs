@@ -116,25 +116,26 @@ public sealed partial class CampaignSession
                 history.Outcome != WildBattleOutcome.Won && history.ExperienceGained != 0) return false;
             var expected = SourceRoamerRules.Settle(receipt.Before, receipt.Battle, receipt.RngBefore);
             return expected.Rng == receipt.RngAfter && expected.Trace.SequenceEqual(receipt.Trace) &&
-                CanonicalJson.Hash(expected.State) == CanonicalJson.Hash(receipt.After);
+                expected.State.Individual == receipt.After.Individual &&
+                expected.State.Runtime.Location == receipt.After.Runtime.Location &&
+                !receipt.After.Runtime.PlayerHistory.IsDefault &&
+                expected.State.Runtime.PlayerHistory.SequenceEqual(receipt.After.Runtime.PlayerHistory);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or KeyNotFoundException or InvalidDataException or OverflowException)
         { return false; }
     }
 
-    private string? ValidateCelioRoamerLedger(CampaignState state)
+    private string? ValidateCelioRoamerProgress(CampaignState state)
     {
-        var histories = state.Exploration!.Battles.Where(h => h.CelioRoamer is not null).ToArray();
-        if (!_content.CelioEnabled) return histories.Length == 0 ? null : "save_celio_roamer_profile_missing";
-        var individual = state.CelioHandoff?.Initialization?.InitialState.Individual;
-        ulong cursor = state.CelioHandoff?.Initialization?.RngAfter.Cursor ?? 0;
-        foreach (var history in histories)
-        {
-            if (!IsCelioRoamerHistory(state, history) || history.CelioRoamer!.Encounter.Individual != individual ||
-                history.CelioRoamer.RngBefore.Cursor < cursor) return "save_celio_roamer_ledger";
-            individual = history.CelioRoamer.After.Individual;
-            cursor = history.CelioRoamer.RngAfter.Cursor;
-        }
+        var latest = state.Exploration!.Battles.LastOrDefault(h => h.CelioRoamer is not null);
+        if (!_content.CelioEnabled) return latest is null ? null : "save_celio_roamer_profile_missing";
+        // Roamer is the authoritative live individual. Movement changes its runtime route
+        // without changing HP/status/identity, so only the latest settlement's individual
+        // must agree. Old encounters are not a proof chain from initialization to now.
+        if (latest is not null && !IsCelioRoamerHistory(state, latest))
+            return "save_celio_roamer_progress";
+        var individual = latest?.CelioRoamer?.After.Individual ??
+            state.CelioHandoff?.Initialization?.InitialState.Individual;
         return state.Roamer?.Individual == individual ? null : "save_celio_roamer_live_settlement";
     }
 

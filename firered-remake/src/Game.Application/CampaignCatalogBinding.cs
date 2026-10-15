@@ -71,7 +71,7 @@ public sealed partial class CampaignSession
         if(content.PresetDoublePokemon is null||content.PresetDoubleItems is null||content.PresetDoubleMechanics is null||
             SourceTwinsTrainerEncounter.ValidateDefinition(content.Route8Twins) is not null)
             throw new InvalidDataException("preset_double_requires_authenticated_successor");
-        if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
+        if(content.FuchsiaGymTrainerParties is null)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
         if (content.GameCornerPrizes is not {} prizes || !ReferenceEquals(prizes.Pokemon, content.PokemonContent?.Catalog) ||

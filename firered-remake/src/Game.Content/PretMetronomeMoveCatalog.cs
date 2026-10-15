@@ -40,7 +40,7 @@ public sealed class PretMetronomeMoveCatalog
             if (!moves.ContainsKey(id)) moves.Add(id, move);
         var result = new PokemonCatalog(SourceCommit, predecessor.Species, moves.ToImmutable());
         PokemonFactory.ValidateDefinitions(result);
-        Require(result.Moves.Count == 354 , "Metronome inherited records differ.");
+        Require(result.Moves.Keys.ToHashSet().SetEquals(Moves.Keys), "Extended moves must match the shared move catalog.");
         return result;
     }
 

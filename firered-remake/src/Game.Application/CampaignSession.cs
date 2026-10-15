@@ -862,6 +862,9 @@ public sealed partial class CampaignSession
             if(TryApplyParcelEffect(state,effect,out var parcelState)){state=parcelState;continue;}
             switch(effect.Opcode)
             {
+                case "multichoice":case "multichoicedefault":
+                    if(StoryMenuRules.Pending(state.Script,_content) is null)throw new InvalidDataException("campaign_menu_definition_missing");
+                    break;
                 case "multichoicegrid":
                     if(StoryGridMenuRules.Pending(state.Script,_content) is null)throw new InvalidDataException("campaign_grid_menu_invalid");
                     break;

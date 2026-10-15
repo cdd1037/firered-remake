@@ -6,7 +6,7 @@ namespace Game.Application;
 
 /// <summary>
 /// Retains business-referenced settlements, not a chronological audit log.
-/// Special encounters retain their current attempt; the roamer continuity ledger is separate.
+/// Special encounters and the roamer retain their current settlement, not a lifecycle ledger.
 /// </summary>
 public static class CampaignWildHistoryRetention
 {
@@ -74,7 +74,7 @@ public static class CampaignWildHistoryRetention
             if (battle.PowerPlantReceipt is { Origin.Kind: PowerPlantEncounterKind.Land }) firstSighting |= powerPlantSeen.Add(battle.SourceSpeciesId);
             if (battle.SevenIsland is not null) firstSighting |= sevenIslandSeen.Add(battle.SourceSpeciesId);
             if (i == exploration.Battles.Length - 1 || battle.Outcome == WildBattleOutcome.Caught ||
-                referenced.Contains(battle.Id) || firstSighting || battle.CelioRoamer is not null)
+                referenced.Contains(battle.Id) || firstSighting)
                 retained.Add(battle);
         }
         var removed = exploration.Battles.Length - retained.Count;
@@ -89,6 +89,7 @@ public static class CampaignWildHistoryRetention
 
     private static (string Family, int Variant)? EventKey(CampaignWildHistory b)
     {
+        if (b.CelioRoamer is not null) return ("celio-roamer", 0);
         if (b.EventIslandReceipt is { } island) return ("event-island", (int)island.Origin.Kind);
         if (b.CeruleanCaveOrigin?.Kind == CeruleanCaveEncounterKind.Mewtwo || b.MewtwoReceipt is not null)
             return ("mewtwo", 0);

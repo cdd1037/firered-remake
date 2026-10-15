@@ -79,7 +79,7 @@ public partial class CampaignView
             if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
                 _session.State.SafariBattle is not null || DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
-                _session.State.Battle is not null || FieldDialogueVisible || MoveTutorActive || MagikarpRecordChoosing || NameRaterChoosing || NpcTradeChoosing || NpcTradePresenting || TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible || SeagallopMenuActive || SilphElevatorMenuActive || DepartmentElevatorMenuActive || RooftopMenuActive || GameCornerCoinMenuActive || GameCornerPrizeMenuActive || RocketElevatorMenuActive || SourceGridMenuActive || FossilLabMenuActive || BillPcMenuActive || BillPcPictureActive ||
+                _session.State.Battle is not null || FieldDialogueVisible || MoveTutorActive || MagikarpRecordChoosing || NameRaterChoosing || NpcTradeChoosing || NpcTradePresenting || TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible || SeagallopMenuActive || SilphElevatorMenuActive || DepartmentElevatorMenuActive || RooftopMenuActive || GameCornerCoinMenuActive || GameCornerPrizeMenuActive || RocketElevatorMenuActive || SourceMenuActive || SourceGridMenuActive || FossilLabMenuActive || BillPcMenuActive || BillPcPictureActive ||
                 _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff)
             { MouseKey(Key.Backspace); QueueRedraw(); GetViewport().SetInputAsHandled(); }
             else if (CanOpenFieldMenu)
@@ -87,7 +87,7 @@ public partial class CampaignView
             return true;
         }
 
-        bool acted = SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : MagikarpRecordChoosing ? MouseMagikarpRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
+        bool acted = SourceMenuActive ? MouseSourceMenu(point) : SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : MagikarpRecordChoosing ? MouseMagikarpRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
             : TownMapActive ? MouseTownMap(point)
             : FieldMenuOpen ? MouseFieldMenu(point)
             : _session.State.Shop is not null ? MouseShop(point)
@@ -138,6 +138,7 @@ public partial class CampaignView
     }
     private bool NavigateMenuPointer(Vector2 point, int direction)
     {
+        if(SourceMenuActive)return NavigateSourceMenuPointer(point,direction);
         if(SourceGridMenuActive)return NavigateSourceGridPointer(point,direction);
         if(TrainerTowerMenuActive)return NavigateTrainerTowerPointer(point,direction);
         if(_session.State.TrainerTowerRecordsVisible)return false;

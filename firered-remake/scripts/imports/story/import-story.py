@@ -11,6 +11,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse, ast, json, os, re, subprocess
 from pathlib import Path
+from story_menus import extract_menus
 
 ROOT = _PROJECT_ROOT
 RAW = ROOT / 'content/raw/pokefirered/037335f4'
@@ -103,12 +104,12 @@ def prepare():
     const = constants(recipe['constantSymbols'])
     pokemon = json.loads((ROOT / 'content/generated/data/pokemon/starters.json').read_text())
     # The starter package defines the initial roster; later catalogs extend it at runtime.
-    species_ids = {s['sourceSpeciesId'] for s in pokemon['species']}
+    species_ids = {const[s['id']['value'].removeprefix('pret:')] for s in pokemon['species']}
     species_names = {str(const[name]): text for name, text in re.findall(r'\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*_\("([^"]+)"\)', read('src/data/text/species_names.h')) if name in const and const[name] in species_ids}
     keyboard = re.search(r'static const u8 sKeyboardChars[^=]+=(.*?);', read('src/naming_screen.c'), re.S)
     chars = ''.join(sorted(set(''.join(re.findall(r'__\("([^"]*)"\)', keyboard[1])))))
     move_names = {'pret:' + name: text for name, text in re.findall(r'\[(MOVE_[A-Z0-9_]+)\]\s*=\s*_\("([^"]*)"\)', read('src/data/text/move_names.h'))}
-    menus = json.loads((ROOT / 'content/generated/ui/grid-menus.json').read_text())['menus']
+    menus = extract_menus(RAW)
     def pascal(value):
         if isinstance(value, dict): return {key[0].upper()+key[1:]: pascal(item) for key,item in value.items()}
         if isinstance(value, list): return [pascal(item) for item in value]
@@ -120,11 +121,12 @@ def prepare():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dotnet', default=os.environ.get('DOTNET', 'dotnet'))
+    parser.add_argument('--output-root', type=Path, default=ROOT, help='Write compiled IR to an isolated root for review')
     parser.add_argument('--check', action='store_true', help='Verify the checked-in IR without writing it')
     args = parser.parse_args()
     data = prepare()
     project = ROOT / 'tools/import-story/import-story.csproj'
     subprocess.run([args.dotnet, 'build', str(project), '-m:1', '-nr:false', '-p:UseSharedCompilation=false', '-v:quiet'], check=True)
-    subprocess.run([args.dotnet, str(project.parent / 'bin/Debug/net10.0/import-story.dll'), str(ROOT)] + (['--check'] if args.check else []), input=json.dumps(data), text=True, check=True)
+    subprocess.run([args.dotnet, str(project.parent / 'bin/Debug/net10.0/import-story.dll'), str(args.output_root.resolve())] + (['--check'] if args.check else []), input=json.dumps(data), text=True, check=True)
 
 if __name__ == '__main__': main()

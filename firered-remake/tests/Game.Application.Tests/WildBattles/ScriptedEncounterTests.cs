@@ -28,7 +28,7 @@ public sealed class ScriptedEncounterTests : WildBattleFixture
     [TestMethod]
     public void public_Celio_entry_and_source_flee_settlement_survive_Continue()
     {
-        var fixture = FieldFixture();
+        var fixture = CelioHistoryRetentionTests.WithPriorSettlements(FieldFixture(), 2);
         var rng = fixture.World.Rng;
         while (Gen3Rng.Next(rng, "fixture.roamer-gate", 4).Value % 4 != 0)
             rng = Gen3Rng.Next(rng, "fixture.advance").State;
@@ -55,6 +55,7 @@ public sealed class ScriptedEncounterTests : WildBattleFixture
         Drain(session);
         Assert.IsTrue(session.State.WildBattle is null && session.State.Exploration!.Battles[^1].CelioRoamer?.Battle.Outcome == RoamerBattleOutcome.MonFled, "typed enemy flee outcome retained");
         Assert.IsTrue(session.State.Roamer!.Individual!.CurrentHp < fixture.Roamer.Individual!.CurrentHp, "roamer battle damage persisted");
+        Assert.AreEqual(1, session.State.Exploration!.Battles.Count(h => h.CelioRoamer is not null), "prior roaming settlements were reduced after the public battle");
         StrictRoundtrip(session);
     }
 

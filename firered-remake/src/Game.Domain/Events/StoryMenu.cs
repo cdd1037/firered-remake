@@ -11,6 +11,16 @@ public sealed record StoryMenu(StoryMenuDefinition Definition, int Left, int Top
 
 public static class StoryMenuRules
 {
+    public static StoryMenu? Pending(StoryState state, IStoryCatalog catalog)
+    {
+        if (state.Wait?.Kind != StoryWaitKind.MenuChoice || state.Stack.IsEmpty) return null;
+        var frame = state.Stack[^1];
+        var program = catalog.FindProgram(frame.ProgramId);
+        int index = frame.InstructionIndex - 1;
+        return program is not null && index >= 0 && index < program.Instructions.Length
+            ? Resolve(program.Instructions[index], catalog) : null;
+    }
+
     // Existing native services also use multichoice, but do not all have catalog definitions yet.
     // Those services retain their own dispatch until their definitions are migrated.
     public static bool HasDefinition(StoryInstruction instruction, IStoryCatalog catalog) =>
