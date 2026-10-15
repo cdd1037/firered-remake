@@ -60,7 +60,7 @@ def generate(reference, dependency):
             excluded.append(dict(species=definition['id'], **raw[0]))
         else:
             need(not raw, 'Terminal Dragonite source')
-        for source in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [m['source'] for m in definition['levelUpMoves']] + [e['source'] for e in raw]:
+        for source in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [e['source'] for e in raw]:
             read(source)
         definitions.append(dict(definition=definition, metadata=metadata))
     return {

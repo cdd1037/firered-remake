@@ -183,11 +183,9 @@ def extract(lock, src, moves):
         pointer = pm[1]
         lm = one(r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};', learntext)
         entries, end_seen = [], False
-        offset = lm.start(1)
         for line in lm[1].splitlines(keepends=True):
             stripped = line.strip()
             if not stripped:
-                offset += len(line)
                 continue
             if stripped == 'LEVEL_UP_END':
                 require(not end_seen, 'Duplicate learnset terminator')
@@ -197,8 +195,7 @@ def extract(lock, src, moves):
                 require(match is not None and not end_seen, 'Unhandled learnset entry: ' + line)
                 level, move = number(match[1]), match[2]
                 require(1 <= level <= 100 and 'pret:' + move in move_ids, 'Invalid learnset level/move')
-                entries.append(dict(level=level, move=ident(move), source=src.ref(LEARNSETS, pointer, offset, offset + len(line.rstrip('\n')))))
-            offset += len(line)
+                entries.append(dict(level=level, move=ident(move)))
         require(end_seen and entries and [e['level'] for e in entries] == sorted(e['level'] for e in entries), 'Unterminated/empty/unordered learnset')
         dex_symbol = symbol.replace('SPECIES_', 'NATIONAL_DEX_', 1)
         dex, dex_source = src.block(POKEDEX, dex_symbol)

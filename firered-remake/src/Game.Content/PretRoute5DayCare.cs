@@ -64,7 +64,7 @@ public sealed class PretRoute5DayCare
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Route 5 Day Care catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Route 5 Day Care; service rules and current-game admission are separate.", ResourceId, []);
+            "Original Route 5 Day Care; service rules and current-game admission are separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
         string path = spec.GetProperty("path").GetString()!;

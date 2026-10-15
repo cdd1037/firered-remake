@@ -64,7 +64,7 @@ public sealed class PretNpcTradeElyssa
         var city = SilphSourcePackage.Json(SafariSource.Read(projectRoot,retained.GetProperty("path").GetString()!));
         Need(JsonElement.DeepEquals(city.GetProperty("events").GetProperty("warp_events")[6], retained.GetProperty("warp")),
             "Elyssa retained city door differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Vermilion trade room and Stick.", ResourceId, []);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Vermilion trade room and Stick.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
         string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
         var bytes = source.Read(path);

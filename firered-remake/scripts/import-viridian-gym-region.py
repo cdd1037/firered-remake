@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-viridian-gym-region-v1'
 PACKAGE = 'viridian-gym-region'
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_ViridianGym':'secondary/viridian_gym'}
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, m):
     if not v: raise ValueError(m)
 def module(path, name):
@@ -171,7 +171,7 @@ def main():
         rich=(stage/name/'runtime-map.json').read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(rich)));(stage/name/'runtime-map.json').write_bytes(compact)
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=['ViridianCity_Gym']);lockdata=canonical(lock)
         mapentry=dict(sourceName='ViridianCity_Gym',stableId='map.'+name,directory=name,sourceMapSymbol=world['events']['id'],path=name+'/runtime-map.json')
-        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=[mapentry],tilesets=TILESETS,mapSymbols={'MAP_VIRIDIAN_CITY_GYM':'map.viridian-city-gym','MAP_VIRIDIAN_CITY':'map.viridian-city'},inputFiles=lock['files']),
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=[mapentry],tilesets=TILESETS,mapSymbols={'MAP_VIRIDIAN_CITY_GYM':'map.viridian-city-gym','MAP_VIRIDIAN_CITY':'map.viridian-city'}),
             'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory([world])}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

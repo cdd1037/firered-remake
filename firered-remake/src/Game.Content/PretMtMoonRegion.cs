@@ -92,7 +92,7 @@ public sealed class PretMtMoonRegion
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
-            "Authenticated MtMoon / three-floor source; runtime certification is separate.", Profile, inventory);
+            "Authenticated MtMoon / three-floor source; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {

@@ -37,7 +37,7 @@ ANCHORS = [
 NPC_REUSE = {'OBJ_EVENT_GFX_FAT_MAN', 'OBJ_EVENT_GFX_POKE_MANIAC', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_SCIENTIST'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
@@ -203,7 +203,7 @@ def main():
         symbols = {w['events']['id']: w['stableId'] for w in worlds}
         symbols.update({a['sourceMap']: a['map'] for a in anchors})
         docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS, mapSymbols=symbols),
+                     maps=entries, tilesets=TILESETS, mapSymbols=symbols),
                 'scripts.json': scripts,  'contracts.json': contract,
                 'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage / name).write_bytes(canonical(value))

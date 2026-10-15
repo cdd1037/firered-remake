@@ -33,7 +33,7 @@ CITY_PACKAGE = 'content/generated/rocket-hideout-runtime-maps'
 CITY_PATH = 'cerulean-region/cerulean-city/runtime-map.json'
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -348,7 +348,7 @@ def main():
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False)
         lock_bytes = canonical(lock)
         docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-                                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
+                                     maps=entries, tilesets=TILESETS,
                                     mapSymbols={symbol: w['stableId'] for symbol,w in bysymbol.items()}),
                 'reachability.json': route, 'scripts.json': scripts,  'npc-source.json': npcs, 'contracts.json': contracts,
                 'encounters.json': encounters, 'items.json': dict(schemaVersion=1, declarations=items),

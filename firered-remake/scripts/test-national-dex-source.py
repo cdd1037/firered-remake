@@ -16,23 +16,27 @@ def main():
     generated = root / 'content/generated' / PACKAGE
     manifest = load(generated / 'manifest.json')
     constants = load(generated.parent / 'shared-constants/values.json'); contract = load(generated / 'contracts.json')
-    lock = dict(files=contract['inputFiles'], commit=contract['sourceCommit'])
-    raw = {}
-    for entry in lock['files']:
-        p = entry['path']; raw[p] = (root / 'content/raw/pokefirered/037335f4' / p).read_text()
     for entry in manifest['outputs']:
         load(generated / entry['path'])
-    need(contract['inputFiles'] == lock['files'] and manifest['mapCount'] == contract['mapCount'] == 0 and not contract['runtimeIntegrated'], 'Package admits maps/runtime')
-    need(len(raw) == manifest['inputCount'] == 31, 'Unexpected input count')
+    need(manifest['mapCount'] == contract['mapCount'] == 0 and not contract['runtimeIntegrated'], 'Package admits maps/runtime')
     spec = importlib.util.spec_from_file_location('national_dex_import', ROOT / 'scripts/import-national-dex-source.py')
     importer = importlib.util.module_from_spec(spec); spec.loader.exec_module(importer)
+    raw = {}
     class LocalSource:
-        def text(self, path): return raw[path]
+        def text(self, path):
+            if path not in raw: raw[path] = (root / 'content/raw/pokefirered/037335f4' / path).read_text()
+            return raw[path]
+        def json(self, path): return json.loads(self.text(path))
         def ref(self, path, symbol, line=None):
-            result = dict(kind='pret', repository='pret/pokefirered', commit=lock['commit'], path=path, symbol=symbol)
+            result = dict(kind='pret', repository='pret/pokefirered', commit=contract['sourceCommit'], path=path, symbol=symbol)
             if line is not None: result['line'] = line
             return result
-    scripts, _ = importer.script_inventory(LocalSource())
+    source = LocalSource()
+    scripts, source_blocks = importer.script_inventory(source)
+    source_constants = importer.constants_inventory(source, scripts)
+    source_contract = importer.contracts(source, scripts, source_blocks, source_constants)
+    for key in ['entry', 'grant', 'countRules', 'actors', 'directionCases', 'nativeDependencies', 'specialBindings']:
+        need(contract[key] == source_contract[key], 'Generated National Dex contract differs: ' + key)
     blocks = {b['label']: b for b in scripts['blocks']}
     def commands(label): return [r['text'].split('@')[0].strip() for r in blocks[label]['lines'] if r['text'].split('@')[0].strip()]
     for b in scripts['blocks'] + scripts['dispatchBlocks']:

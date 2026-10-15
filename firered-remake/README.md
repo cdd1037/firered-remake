@@ -13,7 +13,7 @@ dotnet build
 dotnet test
 ```
 
-完整测试中的六项资源导入检查需要 Python 3；普通 C# 测试没有 Python 依赖。定向运行与各项目职责见 [测试说明](tests/README.md)。直接构建和测试使用标准 NuGet 还原，不需要先执行 `dev env`。
+完整测试中的资源导入检查需要 Python 3；普通 C# 测试没有 Python 依赖。定向运行与各项目职责见 [测试说明](tests/README.md)。直接构建和测试使用标准 NuGet 还原，不需要先执行 `dev env`。
 
 需要本机工具诊断或使用 Godot 安装目录内的包时，可选用 `python dev doctor`、`python dev build`。Windows 也可执行 `.\dev.cmd build`；Linux 可执行 `./dev build`。这些开发辅助入口需要 Python，不自动安装工具。目标框架仍为 net10.0，Godot 仍为 4.7.2 .NET。
 
@@ -31,7 +31,7 @@ dotnet build FireRed.Current.slnx --no-restore
 
 ## 当前测试入口
 
-`dotnet test` 直接还原、构建并执行全部维护测试，不依赖 Python 调度。测试按依赖边界拆成八个 MSTest 项目：领域规则、真实内容战斗、应用、内容契约、音频、表现逻辑、资源导入与跨进程检查。只有六项资源导入检查需要 Python；只有跨进程哈希检查需要专用 .NET 子进程。
+`dotnet test` 直接还原、构建并执行全部维护测试，不依赖 Python 调度。测试按依赖边界拆成八个 MSTest 项目：领域规则、真实内容战斗、应用、内容契约、音频、表现逻辑、资源导入与跨进程检查。只有资源导入检查需要 Python；只有跨进程哈希检查需要专用 .NET 子进程。
 
 各项目内部按功能组织源文件和夹具，不再按旧验收套件拆项目。单项筛选先指定项目，例如 `dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj --filter FullyQualifiedName~RandomnessTests`。可用 `--no-build` 复用构建，`--logger "trx;LogFilePrefix=tests"` 输出各程序集独立报告。默认存档可用 `FIRERED_TEST_CHECKPOINT` 环境变量覆盖。缺失输入、空项目、空筛选与发现警告均报错。
 

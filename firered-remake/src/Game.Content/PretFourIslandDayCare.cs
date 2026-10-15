@@ -66,7 +66,7 @@ public sealed class PretFourIslandDayCare
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Four Island Day Care catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Four Island Day Care; service rules and current-game admission are separate.", ResourceId, []);
+            "Original Four Island Day Care; service rules and current-game admission are separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("directory").GetString()!;
         string path = spec.GetProperty("path").GetString()!;

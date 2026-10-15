@@ -37,7 +37,7 @@ ANCHORS = {
 NPCS = {'OBJ_EVENT_GFX_LASS', 'OBJ_EVENT_GFX_BALDING_MAN', 'OBJ_EVENT_GFX_MAN',
     'OBJ_EVENT_GFX_ROCKER', 'OBJ_EVENT_GFX_ITEM_BALL', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(ok, message):
     if not ok: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: '+str(path))
@@ -255,7 +255,7 @@ def main():
                 sourceMapSymbol=world['events']['id'],path=directory+'/runtime-map.json'))
         lock=src.lock(); lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False); lock_bytes=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=PROFILE,sourceCommit=COMMIT,
-                  maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
+                  maps=entries,tilesets=TILESETS),
               'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
               'memorial-trainers.json':trainers,'memorial-encounters.json':encounters}, check=a.check)
         for name,value in docs.items(): (stage/name).write_bytes(canonical(value))

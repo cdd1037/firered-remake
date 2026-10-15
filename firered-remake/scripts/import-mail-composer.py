@@ -17,7 +17,7 @@ PACKAGE = 'mail-composer'
 PROFILE = 'firered-mail-composer-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(test, message):
     if not test: raise ValueError(message)
 def safe(path):

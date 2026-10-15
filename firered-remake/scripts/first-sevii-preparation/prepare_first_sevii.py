@@ -148,7 +148,7 @@ def declarations(src,doc,worlds,proof):
         ms=m['move']['value'][5:]
         if m['level']<=30 and ms not in hypno:hypno=(hypno+[ms])[-4:]
     for s in wanted:
-        for r in [species[s]['source'],species[s]['learnsetSource']]+[m['source'] for m in species[s]['levelUpMoves']]:src.read(r['path'])
+        for r in [species[s]['source'],species[s]['learnsetSource']]:src.read(r['path'])
     return dict(trainers=trainers,battleOccurrences=occurrences,wildEncounters=encounters,encounterSlotTables=slot_tables,
       scriptedHypno=dict(species='SPECIES_HYPNO',level=30,resolvedMoves=hypno,sourceRef=src.ref('data/maps/ThreeIsland_BerryForest/scripts.inc','ThreeIsland_BerryForest_EventScript_Lostelle',10)),
       wildSpecies=sorted(wild),preNationalDexLevelEvolutionSpecies=sorted(evolution),trainerSpecies=sorted(opponents),

@@ -63,7 +63,7 @@ public sealed class PretNpcTrades
         NpcTradePokemonCatalog trades;
         try { trades = NpcTradePokemonCatalog.Authenticate(mechanics, definitions); }
         catch (ArgumentException e) { throw new InvalidDataException("NPC trade semantic authentication failed.", e); }
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId, []);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

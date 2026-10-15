@@ -47,7 +47,7 @@ public sealed partial class PretSaffronGymRegion
  var files = ImmutableArray<PretWorldSourceFile>.Empty; var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var directory = source.Directory;
         var catalog = source.Document("saffron-gym-region-catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Saffron Gym, PokemonCenter1F and Mart; application admission remains separate.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Saffron Gym, PokemonCenter1F and Mart; application admission remains separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

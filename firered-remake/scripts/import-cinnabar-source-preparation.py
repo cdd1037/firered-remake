@@ -23,7 +23,7 @@ CORE = ['Route21_North','Route21_South','CinnabarIsland','PokemonMansion_1F','Po
 OPTIONAL = []
 TILESETS = {'gTileset_General':'primary/general','gTileset_Building':'primary/building','gTileset_PalletTown':'secondary/pallet_town','gTileset_CinnabarIsland':'secondary/cinnabar_island','gTileset_PokemonMansion':'secondary/pokemon_mansion','gTileset_CinnabarGym':'secondary/cinnabar_gym','gTileset_PokemonCenter':'secondary/pokemon_center','gTileset_Mart':'secondary/mart'}
 
-def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -383,7 +383,7 @@ def main():
                 sourceMapSymbol=w['events']['id'],path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE)
         lockdata=canonical(lock)
-        docs=package_documents(out.parent, constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],**links),
+        docs=package_documents(out.parent, constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,**links),
               'scripts.json':doc,'npc-source.json':npcs,'contracts.json':contract,
               'geometry.json':dict(maps=geometry_inventory(worlds)),'item-art.json':item_art}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))

@@ -21,20 +21,18 @@ DEPENDENCIES = (
 
 def need(value, message):
     if not value: raise ValueError(message)
-def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
+def encoded(value): return (json.dumps(value, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
 
 def generate(reference, dependency, raw=None):
     raw_root = raw if raw is not None else ROOT / "content/raw/pokefirered/037335f4"
-    texts, inputs, dependencies = {}, {}, []
+    texts = {}
     def read(path):
         if path not in texts:
             data = read_source(raw_root, path, commit=COMMIT, repository=reference)
-            inputs[path] = dict(path=path)
             texts[path] = data.decode()
         return texts[path]
     def dep(path):
         data = safe(dependency, path).read_bytes()
-        dependencies.append(dict(path=path))
         return json.loads(data)
     def one(path, pattern):
         rows = list(re.finditer(pattern, read(path), re.M | re.S))
@@ -55,11 +53,10 @@ def generate(reference, dependency, raw=None):
     need(len(owned) == 135 and len(opponents) == 159 and owned <= opponents and not opponents & added_ids, 'Exact Five predecessor scope')
     cells = compatibility_additions(ROOT, 'content/generated/celio-pokemon/machines.json')
     need(len(cells) == 39, 'Exact admitted machine scope')
-    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
     species_rows, level50 = [], []
     for name in ADDITIONS:
         original, meta = species[name], metadata[name]
-        for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']] + [m['source'] for m in original['levelUpMoves']]:
+        for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']]:
             read(sr['path'])
         info = one('src/data/pokemon/species_info.h', r'^    \[' + name + r'\] =\n    \{\n(.*?)^    \},')
         fields = dict(re.findall(r'^        \.(\w+) = (.*),$', info[1], re.M))
@@ -94,8 +91,7 @@ def generate(reference, dependency, raw=None):
         limitation='Catalog authentication alone does not admit roaming encounters, lifecycle, battle AI, capture, presentation or save migration.')
     machines = dict(sourceCommit=COMMIT, profile='firered-celio-teaching-v1', previousSpeciesCount=len(owned), speciesCount=len(owned | added_ids),
         machineCount=len(cells), additions=cells,  itemsAdded=[])
-    evidence = dict(sourceCommit=COMMIT,  files=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
-    return {'pokemon.json': pokemon, 'machines.json': machines, 'source-input-hashes.json': evidence}
+    return {'pokemon.json': pokemon, 'machines.json': machines}
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

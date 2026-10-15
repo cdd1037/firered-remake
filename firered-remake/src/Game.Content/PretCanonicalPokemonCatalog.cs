@@ -90,9 +90,7 @@ public sealed class PretCanonicalPokemonCatalog
             int previous = 0;
             foreach (var entry in s.LevelUpMoves)
             {
-                Require(entry.Level >= previous && entry.Level is >= 1 and <= 100 && moves.Moves.ContainsKey(entry.Move) &&
-                    entry.Source.Path == s.LearnsetSource.Path && entry.Source.Symbol == s.LearnsetSource.Symbol &&
-                    entry.Source.StartLine >= s.LearnsetSource.StartLine && entry.Source.EndLine <= s.LearnsetSource.EndLine,
+                Require(entry.Level >= previous && entry.Level is >= 1 and <= 100 && moves.Moves.ContainsKey(entry.Move),
                     "Canonical learnset differs: " + s.Id.Value);
                 previous = entry.Level;
             }

@@ -498,7 +498,7 @@ def import_catalog(raw, out, lock_path=None):
         catalog = dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
                         runtimeIntegrated=False,
                        map=dict(sourceName=name, stableId=stable, sourceMapSymbol=world['events']['id'], directory=directory),
-                       connections=connections, warps=warps, inputFiles=src.lock['files'])
+                       connections=connections, warps=warps)
         for filename, document in package_documents(out.parent, constants, {'center-catalog.json': catalog, 'scripts.json': scripts,
                                     'npc-source.json': npcs, 'service.json': service}).items():
             (stage / filename).write_text(canonical(document), encoding='utf-8')

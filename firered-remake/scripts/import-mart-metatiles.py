@@ -181,8 +181,7 @@ def render(data, lock, output):
     result = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', sourceCommit=COMMIT,
                    tileSize=16, mapId='map.viridian-mart',
                   metatiles=definitions, onLoadPatches=patches, preserveSourceElevation=True,
-                  onLoadProgram='ViridianCity_Mart_EventScript_HideQuestionnaire',
-                  inputFiles=lock['files'])
+                  onLoadProgram='ViridianCity_Mart_EventScript_HideQuestionnaire')
     (output / 'metatiles.json').write_bytes(canonical(result))
     outputs = [dict(path=p.name)
                for p in sorted(output.iterdir())]

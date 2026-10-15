@@ -277,7 +277,7 @@ def import_catalog(raw, out, lock_path=None):
         npcs=regional_npcs(src,worlds,stage/'npc');dependencies=dependency_inventory(src,worlds,scripts,constants,connections,warps)
         catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],
-            connections=connections,warps=warps,inputFiles=src.lock['files'])
+            connections=connections,warps=warps)
         for filename,doc in package_documents(out.parent, constants, {'cerulean-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies}).items():
             (stage/filename).write_bytes(canonical(doc).encode('utf-8'))
 

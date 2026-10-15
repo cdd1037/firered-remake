@@ -55,7 +55,7 @@ public sealed class PretPowerPlantRegion
         var source = new SilphSourcePackage(projectRoot,"power-plant-resources");
         var catalog = source.Document("catalog.json");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Power Plant resources; current-game admission is separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Power Plant resources; current-game admission is separate.", ResourceId);
 
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())

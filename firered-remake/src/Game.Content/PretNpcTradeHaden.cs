@@ -84,7 +84,7 @@ public sealed class PretNpcTradeHaden
             contract.GetProperty("changesToTradeDefinitions").GetArrayLength() == 0 &&
             !contract.GetProperty("sourceCyclingState").GetProperty("specialAdmitted").GetBoolean(),
             "Haden scope or pending cycling boundary differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Route18 and Haden's two east gate floors.", ResourceId, []);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Route18 and Haden's two east gate floors.", ResourceId);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

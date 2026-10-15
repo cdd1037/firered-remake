@@ -713,7 +713,7 @@ def import_catalog(raw, out, lock_path=None):
                         runtimeIntegrated=False,
                        maps=[dict(sourceName=name, stableId=stable, sourceMapSymbol=world['events']['id'], directory=directory)
                              for (name, stable, directory), world in zip(MAPS, worlds)],
-                       connections=connections, warps=warps, inputFiles=src.lock['files'])
+                       connections=connections, warps=warps)
         for filename, document in package_documents(out.parent, constants, {'forest-catalog.json': catalog, 'scripts.json': scripts,
                                     'npc-source.json': npcs, 'dependencies.json': dependencies}).items():
             (stage / filename).write_bytes(canonical(document).encode('utf-8'))

@@ -22,7 +22,7 @@ SHOP_PROFILE = 'firered-npc-trade-inventory-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -260,8 +260,7 @@ def main():
         layout = read_layout(src, words); source_contracts = contracts(src); texts = strings(src)
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[], completeGame=False)
         lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-             inputFiles=lock['files'], tradeId=1, assets=assets),
+        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT, tradeId=1, assets=assets),
             'dontae.json': dontae, 'easy-chat-words.json': words, 'read-layout.json': layout,
             'contracts.json': source_contracts, 'items.json': items, 'texts.json': texts}
         for name, value in docs.items(): (stage/name).write_bytes(canonical(value))

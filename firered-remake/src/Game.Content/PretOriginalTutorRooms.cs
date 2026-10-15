@@ -63,7 +63,7 @@ public sealed class PretOriginalTutorRooms
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 2 ,
             "Original tutor room catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Two original tutor interiors; teaching definitions and current-game admission are separate.", ResourceId, []);
+            "Two original tutor interiors; teaching definitions and current-game admission are separate.", ResourceId);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

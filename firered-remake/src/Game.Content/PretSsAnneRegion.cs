@@ -122,7 +122,7 @@ public sealed class PretSsAnneRegion
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
-            "Authenticated S.S. Anne source profile; runtime certification is separate.", Profile, inventory);
+            "Authenticated S.S. Anne source profile; runtime certification is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {

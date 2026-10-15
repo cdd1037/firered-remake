@@ -45,3 +45,11 @@ After these changes the full maintained solution build passed with zero warnings
 Ordinary player sessions log compact ready/command summaries and errors; they do not serialize the complete campaign state or emit routine play-time clock records. Set `FIRERED_VERBOSE=1` for detailed console diagnostics, or set `FIRERED_EVIDENCE` to capture the established detailed evidence format. Evidence capture deliberately includes full ready/command state for verification tools; do not enable it for normal play.
 
 The startup simplification passed a zero-warning solution build and all 2,435 maintained tests. Native checkpoint runs with diagnostics off and evidence on retained the same generation/payload hash; the detailed evidence payload remains available only when explicitly requested. The Pokemon import-family refactor compared 645 temporary output files, including all JSON fields and 508 decoded PNGs, without changing runtime resources.
+
+## Gameplay JSON cleanup
+
+Learnset rows retain move and level semantics without per-row source spans. Generated top-level input inventories are tool bookkeeping and no longer belong to runtime documents. Breeding/ordinary-evolution/gift-egg metadata retain egg groups/cycles, base egg species and ordered egg moves; their repeated machine-move lists are projected from the existing shared compatibility catalog and preserved 58-slot machine mapping (including HM08, without enabling a teachable HM08 definition). All 188 metadata rows match frozen gameplay values.
+
+Breeding can regenerate from retained raw files with `python3 scripts/import-breeding-species.py - . . --check`; `-` selects ordinary raw input, not a claim of Git authentication. Ordinary-evolution and gift-egg importers retain their `--dependency-root . --project-root . --check` entry points.
+
+This JSON slice reduced 1,295 files / 30,320,868 bytes to 1,293 files / 26,067,341 bytes: 1,755,435 bytes of unused/duplicated semantics and 2,498,092 bytes of formatting. The same JSON set compressed with ZIP DEFLATE level 9 changed from 3,655,177 to 3,476,165 bytes; raw-file savings are not archive savings. Current direct-output producers emit the compact form, with parsed values and array order preserved. Two unused source-input receipts were removed.

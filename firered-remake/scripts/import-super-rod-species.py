@@ -51,7 +51,7 @@ def generate(reference, dependency):
             inputs[path] = dict(path=path, localPath=shared, shared=True)
             raw[path] = data
         return raw[path].decode()
-    for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [m['source'] for m in definition['levelUpMoves']]:
+    for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']]:
         read(sr['path'])
     cells = compatibility_additions(dependency, 'content/generated/super-rod-species/machines.json')
     docs = {

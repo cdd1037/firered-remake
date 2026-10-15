@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
-from machine_catalog import compatibility_additions, load_catalog
+from machine_catalog import compatibility_additions
 
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -15,12 +15,13 @@ IDENTITIES=[('RHYDON',112,'RHYHORN','EVO_LEVEL',42),('SLOWBRO',80,'SLOWPOKE','EV
 DEPENDENCIES=(
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/breeding-species/pokemon.json',
-    'content/generated/breeding-species/metadata.json',
 )
 SHARED_INPUTS={p:'content/raw/pokefirered/037335f4/'+p for p in ['include/constants/pokemon.h','src/data/pokemon/evolution.h','src/data/pokemon/level_up_learnset_pointers.h','src/data/pokemon/level_up_learnsets.h','src/data/pokemon/pokedex_entries.h','src/data/pokemon/species_info.h']}
 SHARED_INPUTS.update({'src/data/pokemon/egg_moves.h':'content/raw/pokefirered/037335f4/src/data/pokemon/egg_moves.h','src/data/pokemon/tutor_learnsets.h':'content/raw/pokefirered/037335f4/src/data/pokemon/tutor_learnsets.h','src/pokemon.c':'content/raw/pokefirered/037335f4/src/pokemon.c'})
 
-def encode(value):return (json.dumps(value,indent=2,ensure_ascii=False)+'\n').encode()
+def encode(value, *, compact=False):
+    return (json.dumps(value, ensure_ascii=False, indent=None if compact else 2,
+                       separators=(',', ':') if compact else None) + '\n').encode()
 def need(ok,message):
  if not ok:raise ValueError(message)
 def safe(root,path):
@@ -34,9 +35,8 @@ def generate(reference,dependency):
  deps=[]
  def dependent(p):
   b=safe(dependency,p).read_bytes();deps.append(dict(path=p));return json.loads(b)
- canonical,previous,metadata=[dependent(p) for p in DEPENDENCIES]
+ canonical,previous=[dependent(p) for p in DEPENDENCIES]
  deps.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
- catalog=load_catalog(dependency)
  need(previous['ownedSpeciesCount']==182 and previous['opponentSpeciesCount']==203,'Exact predecessor')
  definitions={s['id']['value']:s for s in canonical['species']};metas={s['id']['value']:s for s in canonical['metadata']};inputs={};raw={}
  def read(p):
@@ -55,11 +55,11 @@ def generate(reference,dependency):
   evolutions.append(dict(species=dict(value=pid),**edges[0]))
   for ident in [sid,pid]:
    d,m=definitions[ident],metas[ident]
-   refs=[d['source'],d['learnsetSource'],m['learnsetPointerSource'],m['dexSource']]+[r['source'] for r in d['levelUpMoves']]+[e['source'] for e in m['sourceEvolutions']]
+   refs=[d['source'],d['learnsetSource'],m['learnsetPointerSource'],m['dexSource']]+[e['source'] for e in m['sourceEvolutions']]
    for sr in refs:read(sr['path'])
  cells=compatibility_additions(dependency,BASE+'machines.json');need(len(cells)==51,'Exact admitted machines')
  groups=dict((k,int(v)) for k,v in re.findall(r'^#define (EGG_GROUP_\w+)\s+(\d+)',read('include/constants/pokemon.h'),re.M));eggs=read('src/data/pokemon/egg_moves.h');egg_moves={n:re.findall(r'MOVE_\w+',body) for n,body in re.findall(r'egg_moves\(([A-Z0-9_]+),\s*(.*?)\)',eggs,re.S)}
- all_moves=metadata['allMachineMoves'];rows=[];sorted_species=sorted(canonical['species'],key=lambda r:r['sourceSpeciesId'])
+ rows=[];sorted_species=sorted(canonical['species'],key=lambda r:r['sourceSpeciesId'])
  def base_species(species):
   for _ in range(5):
    parent=next((r['id']['value'] for r in sorted_species if any(e['target']['value']==species for e in metas[r['id']['value']]['sourceEvolutions'])),None)
@@ -67,12 +67,9 @@ def generate(reference,dependency):
    species=parent
   return species
  for name,*_ in IDENTITIES:
-  sid='pret:SPECIES_'+name;original=metas[sid]['originalFields'];compatible=[]
-  for item in catalog.species[sid]['compatibleItems']:
-   machine=item['value'].removeprefix('pret:ITEM_');i=int(machine[2:])-1+(50 if machine.startswith('HM') else 0)
-   compatible.append(dict(all_moves[i]))
+  sid='pret:SPECIES_'+name;original=metas[sid]['originalFields']
   group_ids=[groups[g.strip('{} ')] for g in original['eggGroups'].split(',')]
-  rows.append(dict(breeding=dict(species=dict(value=sid),eggGroup1=group_ids[0],eggGroup2=group_ids[1],eggCycles=int(original['eggCycles'])),baseEggSpecies=dict(value=base_species(sid)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(name,[])],machineMoves=compatible))
+  rows.append(dict(breeding=dict(species=dict(value=sid),eggGroup1=group_ids[0],eggGroup2=group_ids[1],eggCycles=int(original['eggCycles'])),baseEggSpecies=dict(value=base_species(sid)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(name,[])]))
  read('src/data/pokemon/tutor_learnsets.h');read('src/pokemon.c')
  return {
  'pokemon.json':dict(sourceCommit=COMMIT,profile='firered-ordinary-evolution-owned-pokemon-v1',previousOwnedSpeciesCount=182,ownedSpeciesCount=186,previousOpponentSpeciesCount=203,opponentSpeciesCount=204,ownedSpeciesAdded=['SPECIES_'+r[0] for r in IDENTITIES],opponentSpeciesAdded=['SPECIES_BLISSEY'],parentsUpdated=['SPECIES_'+r[2] for r in IDENTITIES],evolutions=evolutions,movesAdded=[]),
@@ -82,7 +79,7 @@ def generate(reference,dependency):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-root',type=Path);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--project-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference_root,a.dependency_root)
- files={BASE+name:encode(doc) for name,doc in docs.items()};lock=dict(sourceCommit=COMMIT,profile='firered-ordinary-evolution-species-v1',files=[dict(path=name) for name,data in sorted(files.items())])
+ files={BASE+name:encode(doc, compact=name in ('metadata.json', 'machines.json')) for name,doc in docs.items()};lock=dict(sourceCommit=COMMIT,profile='firered-ordinary-evolution-species-v1',files=[dict(path=name) for name,data in sorted(files.items())])
  for name,data in files.items():
   path=safe(a.project_root,name)
   if a.check:need(path.read_bytes()==data,'Regeneration differs: '+name)

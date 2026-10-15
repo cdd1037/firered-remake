@@ -491,7 +491,7 @@ def import_catalog(raw, out, lock_path=None):
                        maps=[dict(sourceName=name, stableId=stable, sourceMapSymbol=w['events']['id'], directory=directory,
                                   role='newMap' if w['events']['id'] in NEW_MAPS else 'existingPalletReference')
                              for (name, stable, directory), w in zip(MAPS, worlds)],
-                       connections=connections, warps=warps, inputFiles=src.lock['files'],
+                       connections=connections, warps=warps,
                        scope='Independent source-data increment. The existing five-map application catalog is unchanged.')
         documents = {'viridian-catalog.json': catalog, 'encounters.json': encounters,
                      'parcel-quest.json': quest, 'npc-source.json': npcs}

@@ -30,7 +30,7 @@ TRADE_MAPS = ['Route2_House', 'CeruleanCity_House3', 'UndergroundPath_NorthEntra
               'CinnabarIsland_PokemonLab_Lounge', 'CinnabarIsland_PokemonLab_ExperimentRoom']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_Lab': 'secondary/lab'}
 NPC_REUSE = {'OBJ_EVENT_GFX_OLD_MAN_2', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_SCIENTIST', 'OBJ_EVENT_GFX_WOMAN_2'}
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def compact(value): return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
 def need(value, message):
     if not value: raise ValueError(message)
@@ -208,7 +208,7 @@ def main():
             mapTopology=links,construction=construction,numericRecords=numeric_records,
             deferredTradeIds=[i for i in range(9) if i not in ENABLED_TRADE_IDS],limitations=['All nine original NPC trades are enabled; Dontae retains the original Fab Mail through the authenticated mail package.',
             'No source cutscene visual/audio timing parity is claimed by this content contract.'])
-        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=entries,tilesets=TILESETS),
             'trades.json':offers,'presentation-text.json':presentation,'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
             'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))

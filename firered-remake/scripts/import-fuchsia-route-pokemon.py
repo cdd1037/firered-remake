@@ -52,7 +52,7 @@ def generate(root):
    lm=re.fullmatch(r'LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),',line)
    if not lm:raise ValueError('Unsupported source learn row: '+line)
    lv=int(lm[1]);assert lv>=previous;previous=lv
-   rows.append(dict(level=lv,move=ident(lm[2]),source=ref(p,pointer,row)))
+   rows.append(dict(level=lv,move=ident(lm[2])))
   assert rows and not stack
   return rows,ref(p,pointer,m)
  def initial(sp,lv):

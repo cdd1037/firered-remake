@@ -73,7 +73,6 @@ def generate(reference, dependency):
         need(definition["sourceSpeciesId"] == 138 + index and not definition["evolutions"],
              "Canonical fossil identity and metadata-only evolution")
         references = [definition["source"], definition["learnsetSource"], meta["learnsetPointerSource"], meta["dexSource"]]
-        references += [m["source"] for m in definition["levelUpMoves"]]
         references += [e["source"] for e in meta["sourceEvolutions"]]
         for source in references:
             read(source["path"])

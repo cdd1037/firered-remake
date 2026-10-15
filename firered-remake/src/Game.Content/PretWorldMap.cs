@@ -10,8 +10,7 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record PretWorldSourceFile(string Path);
-public sealed record PretWorldMetadata(string Repository, string Commit, string Rights, string Scope, string RenderProfile,
-    ImmutableArray<PretWorldSourceFile> Files);
+public sealed record PretWorldMetadata(string Repository, string Commit, string Rights, string Scope, string RenderProfile);
 public sealed record PretWorldArtifact(string Path, int Width, int Height);
 public sealed record PretWorldSpawn(int X, int Y, int Elevation, string Reason);
 public sealed record PretWorldAttributes(int BehaviorId, int Terrain, int Attribute2, int Attribute3,

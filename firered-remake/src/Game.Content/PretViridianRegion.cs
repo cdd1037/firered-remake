@@ -94,7 +94,7 @@ public sealed class PretViridianRegion
 
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Source material remains local; no asset distribution rights are inferred.", "Authenticated Viridian region increment; runtime support is separate.", Profile, inventory);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Source material remains local; no asset distribution rights are inferred.", "Authenticated Viridian region increment; runtime support is separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {

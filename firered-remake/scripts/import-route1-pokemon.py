@@ -107,8 +107,7 @@ def import_catalog(raw, out, lock_path=None):
                 raise ValueError('Invalid learnset level/order')
             previous = level
             move_symbols.add(move)
-            pos = sources[path].index(line, match.start(), match.end())
-            entries.append(dict(level=level, move=ident(move), source=ref(path, pointer, pos, pos + len(line))))
+            entries.append(dict(level=level, move=ident(move)))
         evolution_path = 'src/data/pokemon/evolution.h'
         evolutions = []
         matches = list(re.finditer(r'^    \[' + symbol + r'\]\s*= \{\{EVO_LEVEL, (\d+), (SPECIES_\w+)\}\},$', sources[evolution_path], re.M))
@@ -151,7 +150,7 @@ def import_catalog(raw, out, lock_path=None):
         'No TM/HM, egg, tutor, breeding, wild held-item, original-save encoding or complete-species profile is enabled.']
     document = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'],
                     limitations=limitations, species=species, moves=moves, speciesNames=species_names, moveNames=move_names)
-    data = (json.dumps(document, indent=2, ensure_ascii=False) + '\n').encode('utf-8')
+    data = (json.dumps(document, separators=(',', ':'), ensure_ascii=False) + '\n').encode('utf-8')
     manifest = dict(schemaVersion=1, repository=lock['repository'], commit=COMMIT, profile=PROFILE,
                      inputs=lock['files'],
                     outputs=[dict(path='content/generated/route1-pokemon/catalog.json')],
@@ -166,7 +165,7 @@ def import_catalog(raw, out, lock_path=None):
     targets = [safe(out, name) for name in ['catalog.json', 'manifest.json']]
     out.mkdir(parents=True, exist_ok=True)
     targets[0].write_bytes(data)
-    targets[1].write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
+    targets[1].write_text(json.dumps(manifest, separators=(',', ':')) + '\n', encoding='utf-8', newline='\n')
     return manifest
 
 

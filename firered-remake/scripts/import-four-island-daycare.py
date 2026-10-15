@@ -34,7 +34,7 @@ TOWN_RESOURCE = 'four-island/runtime-map.json'
 NPC_REUSE = {'OBJ_EVENT_GFX_OLD_MAN_1', 'OBJ_EVENT_GFX_OLD_WOMAN', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
@@ -234,9 +234,9 @@ def main():
         entry = dict(sourceName=MAP, stableId=MAP_ID, directory=DIRECTORY, sourceMapSymbol=world['events']['id'],
             path=DIRECTORY + '/runtime-map.json')
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[MAP], completeGame=False)
-        lock_bytes = canonical(lock)
+        lock_bytes = (json.dumps(lock, sort_keys=True, indent=2) + '\n').encode()
         docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-                     maps=[entry], inputFiles=lock['files'], tilesets=TILESETS,
+                     maps=[entry], tilesets=TILESETS,
                     mapSymbols={'MAP_FOUR_ISLAND_POKEMON_DAY_CARE': MAP_ID, 'MAP_FOUR_ISLAND': 'map.four-island'}),
                 'scripts.json': scripts,  'contracts.json': contract,
                 'npc-source.json': npcs, 'geometry.json': dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}, check=args.check)
@@ -249,7 +249,7 @@ def main():
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
         writes = [(target / 'scripts/four-island-daycare.lock.json', lock_bytes),
-                  (target / 'scripts/four-island-daycare.contract.json', canonical(contract))]
+                  (target / 'scripts/four-island-daycare.contract.json', (json.dumps(contract, sort_keys=True, indent=2) + '\n').encode())]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

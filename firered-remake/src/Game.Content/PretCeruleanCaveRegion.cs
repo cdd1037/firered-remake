@@ -50,7 +50,7 @@ public sealed class PretCeruleanCaveRegion
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Cerulean Cave catalog source identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original cave resources; current-game admission is separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original cave resources; current-game admission is separate.", ResourceId);
 
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())

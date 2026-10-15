@@ -49,7 +49,7 @@ graphics/main_menu/textbox.pal'''.splitlines())
 
 
 def canonical(value):
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n').encode('utf-8')
 
 
 def unique_pairs(pairs):
@@ -319,7 +319,7 @@ def convert(lock, data):
         pokedexVisibleFlag='FLAG_SYS_POKEDEX_GET',pokedexCountKind='FLAG_GET_CAUGHT',badgeStartFlag='FLAG_BADGE01_GET',badgeCount=8,
         frameTileBase=draw_calls[0]['tileId'],framePaletteBank=draw_calls[0]['paletteNum'],frameDrawCalls=draw_calls,
         sourceRefs=[*rules_refs,frameref,cursorref])
-    catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputFiles=lock['files'],windows=windows,backgrounds=backgrounds,textColors=colors,
+    catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,windows=windows,backgrounds=backgrounds,textColors=colors,
         palettes=palettes,genderColors=gender_colors,textPlacements=placements,texts=texts,selectionRegions=regions,
         saveStatuses=statuses,constants=s.constants,rules=rules,limitations=[
             'Authenticated source metadata only; application entry, save validation and native-frame verification remain separate gates.',

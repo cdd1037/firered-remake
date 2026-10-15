@@ -120,7 +120,7 @@ public sealed class PretTrainerTowerRegion
     {
         var source = Source(projectRoot);
         var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile, ImmutableArray<PretWorldSourceFile>.Empty);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile);
         var layouts = ImmutableDictionary.CreateBuilder<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

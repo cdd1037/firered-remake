@@ -12,8 +12,7 @@ public sealed record PowerPlantMachineRows(ItemId Item, ImmutableArray<PewterMac
 public sealed record PowerPlantPokemonDocument(string SourceCommit, string Profile, int OwnedSpeciesCount, int OpponentSpeciesCount, int ItemCount,
     int MachineCount, EarlyLandEncounterTable Land, ImmutableArray<PowerPlantHeldItemSource> HeldItems,
     ImmutableArray<PowerPlantMachineRows> Machines, ImmutableArray<PewterAdditionalMachine> NewMachines,
-    ImmutableArray<EarlyShopItemDefinition> Items, ImmutableArray<FieldPickupDefinition> Pickups,
-    ImmutableArray<CanonicalPokemonInput> Inputs, ImmutableArray<CanonicalPokemonArtifact> DependencyInputs);
+    ImmutableArray<EarlyShopItemDefinition> Items, ImmutableArray<FieldPickupDefinition> Pickups);
 
 /// <summary>Power Plant and Thunder Stone catalogs; field access remains Application-owned.</summary>
 public static partial class PretPowerPlantRules

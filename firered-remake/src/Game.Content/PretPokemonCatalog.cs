@@ -40,8 +40,6 @@ public static class PretPokemonCatalog
             foreach (var entry in species.LevelUpMoves)
             {
                 if (entry is null) throw ContentJson.Error("pokemon_learnset", "$.species", "Null learnset entry.");
-                if (entry.Source.Symbol != species.LearnsetSource.Symbol || entry.Source.StartLine < species.LearnsetSource.StartLine || entry.Source.EndLine > species.LearnsetSource.EndLine)
-                    throw ContentJson.Error("pokemon_learnset_source", "$.species", "Learnset entry must be inside its species learnset source.");
             }
             foreach (var evolution in species.Evolutions)
             {

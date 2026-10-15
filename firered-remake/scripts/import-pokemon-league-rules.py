@@ -121,7 +121,7 @@ def generate(reference, dependency):
                  'src/field_specials.c','include/constants/battle.h','asm/macros/event.inc']:
         read(path)
     for p in [species[s] for s in required]:
-        for source in [p['source'],p['learnsetSource']]+[m['source'] for m in p['levelUpMoves']]:
+        for source in [p['source'],p['learnsetSource']]:
             read(source['path'])
     starter_source=one('src/field_specials.c',r'^static const u16 sStarterSpecies\[\] = \{(.*?)^\};')
     need(re.findall(r'SPECIES_\w+',starter_source[1])==['SPECIES_BULBASAUR','SPECIES_SQUIRTLE','SPECIES_CHARMANDER'],'Player starter order differs')

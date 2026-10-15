@@ -60,9 +60,6 @@ public static class PretRoute1PokemonCatalog
             {
                 if (entry is null || entry.Level is < 1 or > 100 || entry.Level < previous)
                     throw Error("learnset", "Expected ordered level-up entries.");
-                if (entry.Source.Symbol != species.LearnsetSource.Symbol ||
-                    entry.Source.StartLine < species.LearnsetSource.StartLine || entry.Source.EndLine > species.LearnsetSource.EndLine)
-                    throw Error("learnset_source", "Learnset entry must be within the species source block.");
                 previous = entry.Level;
             }
             foreach (var evolution in species.Evolutions)

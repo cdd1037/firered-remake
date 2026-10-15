@@ -232,7 +232,7 @@ def generate(reference, dependency):
                 maximumPp=[moves[m['value'][5:]]['pp'] for m in mon['moves']],creationRandomDraws=0))
     need(len(mismatches)==22 and len(shinies)==3, 'Exact fixed-identity exceptions')
     for s in used_species:
-        for r in [species[s]['source'],species[s]['learnsetSource']]+[m['source'] for m in species[s]['levelUpMoves']]:
+        for r in [species[s]['source'],species[s]['learnsetSource']]:
             read(r['path'])
     for m in used_moves:
         r=moves[m]['source'];read(r['path'])

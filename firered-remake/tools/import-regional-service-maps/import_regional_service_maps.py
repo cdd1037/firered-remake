@@ -75,7 +75,7 @@ def build(raw,out,check=False):
         warps=warp_inventory(src,worlds)
         catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=n,stableId=s,directory=d,sourceMapSymbol=w['events']['id'],availability='authenticatedSourceOnly' if n.endswith('_Elevator') else 'requiresExplicitComposition') for (n,s,d),w in zip(NEW_MAPS,worlds)],
-            reusedMaps=reused_inventory(src),connections=[],warps=warps,inputFiles=src.lock['files'],tilesets=TILESETS)
+            reusedMaps=reused_inventory(src),connections=[],warps=warps,tilesets=TILESETS)
         compact_entries=[]
         for (n,s,d),w in zip(NEW_MAPS,worlds):
             rich=(stage/d/'runtime-map.json').read_bytes();encoded=CONVERTER.encode(CONVERTER.normalize_runtime(json.loads(rich)));(stage/d/'runtime-map.json').write_bytes(encoded)

@@ -10,6 +10,10 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task NationalDex() => Run("test-national-dex-source.py");
     [TestMethod]
+    public Task Learnsets() => Run("test-learnset-import.py");
+    [TestMethod]
+    public Task CompactUiJson() => Run("test-compact-ui-json.py");
+    [TestMethod]
     public async Task MachineCatalog()
     {
         await Run("test-machine-catalog-import.py");

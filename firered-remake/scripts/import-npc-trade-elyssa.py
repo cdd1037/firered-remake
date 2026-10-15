@@ -25,7 +25,7 @@ CITY_PATH = 'content/generated/vermilion-region/vermilion-city/runtime-map.json'
 NPC_REUSE = {'OBJ_EVENT_GFX_LITTLE_GIRL', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -135,7 +135,7 @@ def main():
                 'Existing NPC trade definitions and receipt semantics remain byte-identical.',
                 'No species, machine compatibility, shop stock, trade animation or audio addition.'])
         docs = {'catalog.json':dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-             maps=[spec], inputFiles=lock['files'], tilesets=TILESETS),
+             maps=[spec], tilesets=TILESETS),
             'contracts.json':contracts, 'npc-source.json':npcs, 'items.json':item,
             'geometry.json':dict(maps=reader.geometry_inventory([world]), tilesets=TILESETS)}
         for name, value in docs.items(): (stage/name).write_bytes(canonical(value))

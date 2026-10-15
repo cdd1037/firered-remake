@@ -25,7 +25,7 @@ TILESETS = {'gTileset_Building':'primary/building', 'gTileset_GenericBuilding1':
 ANCHORS = [('Route16','route-16/runtime-map.json'),
            ('Route16_NorthEntrance_1F','route-16-north-entrance-1f/runtime-map.json')]
 NPC_REUSE = {'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_WOMAN_1'}
-def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: '+str(path))
@@ -292,7 +292,7 @@ def main():
             if storage is None:own_raw.append((target/row['storagePath'],raw))
         lock_bytes=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
-                maps=[entry],inputFiles=lock['files'],tilesets=TILESETS), 'scripts.json':scripts,
+                maps=[entry],tilesets=TILESETS), 'scripts.json':scripts,
                 'contracts.json':contract,'trainers.json':trainer,'npc-source.json':npcs}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

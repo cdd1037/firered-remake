@@ -23,7 +23,7 @@ CORE = ['SaffronCity_Gym','SaffronCity_PokemonCenter_1F','SaffronCity_Mart']
 OPTIONAL = []
 TILESETS = {'gTileset_Building':'primary/building','gTileset_SaffronGym':'secondary/saffron_gym','gTileset_PokemonCenter':'secondary/pokemon_center','gTileset_Mart':'secondary/mart'}
 
-def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -235,7 +235,7 @@ def main():
             catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE);lockdata=canonical(lock)
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds for i,o in enumerate(w['events']['object_events'])]
-        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],externalSaffronEvents=city,**links)
+        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,externalSaffronEvents=city,**links)
         docs=package_documents(out.parent, constants, {'saffron-gym-region-catalog.json':main_catalog,'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'contracts.json':contract}, check=a.check)
         for filename,value in docs.items():(stage/filename).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

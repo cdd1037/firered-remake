@@ -60,7 +60,7 @@ public sealed class PretFossilLabRegion
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Cinnabar fossil lab catalog source identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Cinnabar fossil lab resources; current-game admission is separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Cinnabar fossil lab resources; current-game admission is separate.", ResourceId);
 
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())

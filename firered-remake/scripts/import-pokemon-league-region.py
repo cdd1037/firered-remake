@@ -16,7 +16,7 @@ TILESETS = {'gTileset_Building':'primary/building','gTileset_PokemonCenter':'sec
 MAPS = ['IndigoPlateau_PokemonCenter_1F','PokemonLeague_LoreleisRoom','PokemonLeague_BrunosRoom','PokemonLeague_AgathasRoom','PokemonLeague_LancesRoom','PokemonLeague_ChampionsRoom','PokemonLeague_HallOfFame']
 ANCHORS = ['IndigoPlateau_Exterior','IndigoPlateau_PokemonCenter_2F']
 SCRIPT_MAPS = MAPS + ['IndigoPlateau_Exterior']
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, m):
     if not v: raise ValueError(m)
 def module(path, name):
@@ -265,7 +265,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=MAPS);lockdata=canonical(lock)
         map_symbols={w['events']['id']:w['stableId'] for w in worlds}
         for name in ANCHORS:map_symbols[src.json('data/maps/'+name+'/map.json')['id']]='map.'+reader.directory(name)
-        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=entries,tilesets=TILESETS,mapSymbols=map_symbols,inputFiles=lock['files']),
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=entries,tilesets=TILESETS,mapSymbols=map_symbols),
             'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory(worlds)}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

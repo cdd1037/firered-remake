@@ -152,7 +152,7 @@ public sealed class PretOriginalTmAcquisition
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 , "Original TM catalog scope differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original TM acquisition maps; shared gameplay admission is separate.", ResourceId, []);
+            "Original TM acquisition maps; shared gameplay admission is separate.", ResourceId);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

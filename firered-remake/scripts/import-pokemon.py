@@ -64,8 +64,7 @@ def convert(lock, raw_sources):
             e=re.fullmatch(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),',line)
             if not e:raise ValueError('Unhandled learnset entry: '+line)
             level=number(e[1]);move=e[2];move_symbols.add(move)
-            pos=sources[lp].index(line,lm.start(),lm.end())
-            entries.append(dict(level=level,move=ident(move),source=ref(lp,pointer,pos,pos+len(line))))
+            entries.append(dict(level=level,move=ident(move)))
         ep='src/data/pokemon/evolution.h';evs=[]
         em=list(re.finditer(r'^    \['+symbol+r'\]\s*= \{\{EVO_LEVEL, (\d+), (SPECIES_\w+)\}\},$',sources[ep],re.M))
         mentions=re.findall(r'^    \['+symbol+r'\]',sources[ep],re.M)
@@ -88,8 +87,8 @@ def convert(lock, raw_sources):
         counts=dict(species=len(species), moves=len(moves), levelUpEntries=sum(len(s['levelUpMoves']) for s in species)),
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False)
     return {
-        'starter-catalog.json': (json.dumps(doc, indent=2, ensure_ascii=False) + '\n').encode(),
-        'manifest.json': (json.dumps(manifest, indent=2) + '\n').encode(),
+        'starter-catalog.json': (json.dumps(doc, separators=(',', ':'), ensure_ascii=False) + '\n').encode(),
+        'manifest.json': (json.dumps(manifest, separators=(',', ':')) + '\n').encode(),
     }
 
 

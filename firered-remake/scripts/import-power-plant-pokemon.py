@@ -27,7 +27,7 @@ DEPENDENCIES=(
 from image_io import png as encode_rgba_png
 from item_icon_exports import decode_icon_page
 
-def encoded(v):return (json.dumps(v,indent=2,ensure_ascii=False)+'\n').encode()
+def encoded(v):return (json.dumps(v,separators=(',',':'),ensure_ascii=False)+'\n').encode()
 def ident(s):return dict(value='pret:'+s)
 def need(v,m):
  if not v:raise ValueError(m)
@@ -188,7 +188,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
 
 
  def encode(value):
-     return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=False) + '\n').encode()
+     return (json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
 
 
  png = encode_rgba_png
@@ -436,7 +436,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
                  files=[inputs[p] for p in sorted(inputs)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
      lock_bytes = encode(lock)
      manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-         inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], assets=assets, sprites=sprites, pokemonIcons=icons,
+         assets=assets, sprites=sprites, pokemonIcons=icons,
          footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], itemIcons=item_icons,
          moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows),
          audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues], cries=cry_evidence,
@@ -462,11 +462,10 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
 
 def generate(reference,dependency,raw=None):
  raw_root=raw if raw is not None else ROOT/RAW
- inputs={};raw={};dependencies=[]
+ raw={}
  def readbytes(path):
   if path not in raw:
    b=read_source(raw_root,path,commit=COMMIT,repository=reference);raw[path]=b
-   inputs[path]=dict(path=path)
   return raw[path]
  def read(path):return readbytes(path).decode()
  def one(path,pattern):
@@ -474,7 +473,7 @@ def generate(reference,dependency,raw=None):
  def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=read(path).count('\n',0,m.start())+1,endLine=read(path).count('\n',0,m.end())+1)
  def dep(path):
   b=safe(dependency,path).read_bytes()
-  dependencies.append(dict(path=path));return json.loads(b)
+  return json.loads(b)
  d={p:dep(p) for p in DEPENDENCIES};canonical=d['content/generated/canonical-pokemon/catalog.json']
  species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
  seven=d['content/generated/seven-island-rules/pokemon.json']
@@ -547,7 +546,7 @@ def generate(reference,dependency,raw=None):
   for _ in range(4):seed=(seed*1103515245+24691)&0xffffffff;draws.append(seed>>16)
   pid=draws[0]|draws[1]<<16;ivs=[draws[2]&31,(draws[2]>>5)&31,(draws[2]>>10)&31,draws[3]&31,(draws[3]>>5)&31,(draws[3]>>10)&31]
   vectors.append(dict(kind=kind,species=ident(s),level=level,initialSeed=initial,finalSeed=seed,rawDraws=draws,personality=pid,nature=pid%25,ivs=ivs,originalTrainerId=0x12345678))
- doc=dict(sourceCommit=COMMIT,profile='firered-power-plant-pokemon-v1',ownedSpeciesCount=152,opponentSpeciesCount=186,itemCount=123,machineCount=41,species=[dict(definition=species[s],metadata=metadata[s]) for s in SPECIES],thunderStoneEvolutions=edges,land=land,heldItems=held,staticEncounters=statics,machines=cells,newMachines=newmachines,items=items,pickups=pickups,generationVectors=vectors,generationOrder='Static: player OT, random PID then IVs, explicit low16/high16 profile; original target-compiler Random32 operand ordering unverified. Ordinary land uses existing nature rejection generation. Legendary Zapdos skips held draw; ordinary land and Electrode consume one held draw at battle entry. No fateful metadata.',inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
+ doc=dict(sourceCommit=COMMIT,profile='firered-power-plant-pokemon-v1',ownedSpeciesCount=152,opponentSpeciesCount=186,itemCount=123,machineCount=41,species=[dict(definition=species[s],metadata=metadata[s]) for s in SPECIES],thunderStoneEvolutions=edges,land=land,heldItems=held,staticEncounters=statics,machines=cells,newMachines=newmachines,items=items,pickups=pickups,generationVectors=vectors,generationOrder='Static: player OT, random PID then IVs, explicit low16/high16 profile; original target-compiler Random32 operand ordering unverified. Ordinary land uses existing nature rejection generation. Legendary Zapdos skips held draw; ordinary land and Electrode consume one held draw at battle entry. No fateful metadata.')
  slots=',\n            '.join(f'new({r["index"]},new("{r["species"]["value"]}"),{r["minimumLevel"]},{r["maximumLevel"]},{r["weight"]})' for r in land['slots'])
  heldrows=',\n        '.join(f'new(new("{r["species"]["value"]}"),"{r["common"]}","{r["rare"]}")' for r in held)
  code='''using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, string Rare);\n/// <summary>Exact FireRed Power Plant table, generated only from pinned source.</summary>\npublic static class PowerPlantEncounterTables\n{\n'''+f'''    public static MapId Map {{ get; }} = new("map.power-plant");\n    public static EarlyLandEncounterTable Land {{ get; }} = new(Map, EarlyLandEncounterRules.SourceCommit,\n        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", 7,\n        [{slots}]);\n    public static ImmutableArray<PowerPlantHeldItemSource> HeldItems {{ get; }} = [\n        {heldrows}];\n}}\n'''

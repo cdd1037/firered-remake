@@ -178,7 +178,7 @@ def import_map(name,stable_id,out):
     warp=mapjson['warp_events'][0]
     neighbors=[(warp['x']+dx,warp['y']+dy) for dx,dy in ([(0,1)] if name=='PalletTown' else [(0,-1),(-1,0),(0,1),(1,0)])]
     sx,sy=next((x,y) for x,y in neighbors if 0<=x<width and 0<=y<height and cells[y*width+x]['behaviorId']==0 and cells[y*width+x]['collision']==0 and cells[y*width+x]['elevation']==3)
-    world={'schemaVersion':1,'stableId':stable_id,'sourceRef':source(map_path,mapjson['id']),'metadata':{'repository':lock['repository'],'commit':lock['commit'],'rights':lock['rights'],'scope':'Bounded five-map static conversion. Original events/scripts/text retained without executing upstream code; runtime script/NPC/warp behavior belongs to the event engine. No water traversal or tile animation.','renderProfile':'Pinned source indexed PNG tiles, GBA RGB555 expanded to RGB888; no display color correction, tint, or animation. BG3 bottom, BG2 middle, BG1 top.','files':manifest['files']},'width':width,'height':height,'tileSize':16,'borderWidth':borderW,'borderHeight':borderH,'texturePath':'map.png','artifacts':artifacts,'cells':cells,'borderCells':[cell(b,i%borderW,i//borderW) for i,b in enumerate(border)],'embeddedSource':embedded,'technicalSpawn':{'x':sx,'y':sy,'elevation':3,'reason':'Technical safe neighbor of the first source warp; not an original story-start claim.'},'events':mapjson}
+    world={'schemaVersion':1,'stableId':stable_id,'sourceRef':source(map_path,mapjson['id']),'metadata':{'repository':lock['repository'],'commit':lock['commit'],'rights':lock['rights'],'scope':'Bounded five-map static conversion. Original events/scripts/text retained without executing upstream code; runtime script/NPC/warp behavior belongs to the event engine. No water traversal or tile animation.','renderProfile':'Pinned source indexed PNG tiles, GBA RGB555 expanded to RGB888; no display color correction, tint, or animation. BG3 bottom, BG2 middle, BG1 top.'},'width':width,'height':height,'tileSize':16,'borderWidth':borderW,'borderHeight':borderH,'texturePath':'map.png','artifacts':artifacts,'cells':cells,'borderCells':[cell(b,i%borderW,i//borderW) for i,b in enumerate(border)],'embeddedSource':embedded,'technicalSpawn':{'x':sx,'y':sy,'elevation':3,'reason':'Technical safe neighbor of the first source warp; not an original story-start claim.'},'events':mapjson}
     if cells[sy*width+sx]['movement']!='normal' or cells[sy*width+sx]['collision']!=0 or cells[sy*width+sx]['elevation']!=3:raise ValueError('Technical spawn no longer safe')
     (out / 'runtime-map.json').write_bytes(_encode_runtime(_compact_world(world))); (out/'manifest.json').write_text(canonical({'artifacts':artifacts,'rights':lock['rights']}), encoding='utf-8', newline='\n')
     print(f'Imported {name}: {width}x{height} map; {width*16}x{height*16}px; {len(cells)} cells; behaviors {dict(collections.Counter(c["behaviorName"] for c in cells))}')
@@ -186,9 +186,8 @@ def import_map(name,stable_id,out):
 
 def write_source_registry(generated, metadata):
     """Store common provenance once, independently of each compact map."""
-    excluded = {'fullSourceHash', 'tree', 'sha256', 'gitBlobSha1', 'byteLength'}
-    clean = {key: value for key, value in metadata.items() if key not in excluded and key != 'files'}
-    clean['files'] = [{key: value for key, value in row.items() if key not in excluded} for row in metadata['files']]
+    excluded = {'fullSourceHash', 'tree', 'sha256', 'gitBlobSha1', 'byteLength', 'files'}
+    clean = {key: value for key, value in metadata.items() if key not in excluded}
     data = _encode_runtime(dict(schemaVersion=2, converterVersion=_RUNTIME_VERSION,
                                 sourceCommit=metadata['commit'], metadata=clean))
     target = pathlib.Path(generated) / 'map-source-registry.json'

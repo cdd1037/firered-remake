@@ -17,17 +17,16 @@ public sealed class PretViridianCenter
     public const string StableMapId = "map.viridian-pokemon-center-1f";
     public PretWorldMap Map { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string ServiceSourcePath => Path.Combine(GeneratedDirectory, "service.json");
 
     private PretViridianCenter(string directory, PretWorldMap map, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, ImmutableDictionary<string, string> uiTexts)
+        ImmutableDictionary<string, string> uiTexts)
     {
         GeneratedDirectory = directory; Map = map;
-        Constants = constants; SourceFiles = files; SourceUiTexts = uiTexts;
+        Constants = constants; SourceUiTexts = uiTexts;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => PretViridianRegion.MapIdFromSourceSymbol(symbol);
@@ -53,13 +52,8 @@ public sealed class PretViridianCenter
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate center output.");
         }
         using var catalog = JsonDocument.Parse(outputs["center-catalog.json"]);
-        var inventory = catalog.RootElement.GetProperty("inputFiles").EnumerateArray().Select(entry =>
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            return new PretWorldSourceFile(path);
-        }).ToImmutableArray();
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
-            "Authenticated Viridian Pokemon Center 1F; runtime certification is separate.", Profile, inventory);
+            "Authenticated Viridian Pokemon Center 1F; runtime certification is separate.", Profile);
         var spec = catalog.RootElement.GetProperty("map");
         var relative = spec.GetProperty("directory").GetString()!;
         PretWorldMap map;
@@ -78,7 +72,7 @@ public sealed class PretViridianCenter
             constants["FLDEFF_POKECENTER_HEAL"] == 25 && constants["SCR_MENU_CANCEL"] == 127, "Center required source constants differ.");
         var storyTexts = PretStoryRuntime.Load(projectRoot).TextBank;
         var uiTexts = ImmutableDictionary<string, string>.Empty.Add("gText_PlayerScurriedToCenter", storyTexts["gText_PlayerScurriedToCenter"]);
-        return new(directory, map, constants.ToImmutable(), inventory, uiTexts);
+        return new(directory, map, constants.ToImmutable(), uiTexts);
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

@@ -63,7 +63,7 @@ public sealed class PretMoveReminderHouse
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Move Reminder house catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Two Island Move Reminder house; service rules and current-game admission are separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Two Island Move Reminder house; service rules and current-game admission are separate.", ResourceId);
 
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;

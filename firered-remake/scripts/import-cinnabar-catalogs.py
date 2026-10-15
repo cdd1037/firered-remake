@@ -27,7 +27,7 @@ def main():
     def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=src.text(path).count('\n',0,m.start())+1,endLine=src.text(path).count('\n',0,m.end())+1)
     names=[];encoded=[];machines=[];held=[];evolutions=[]
     for s in selected:
-        for r in [s['source'],s['learnsetSource']]+[x['source'] for x in s['levelUpMoves']]:src.read(r['path'])
+        for r in [s['source'],s['learnsetSource']]:src.read(r['path'])
         symbol=s['id']['value'][5:];np='src/data/text/species_names.h';m=one(np,r'^    \['+symbol+r'\]\s*= _\("([^"\n]+)"\),$');name=m[1];r=ref(np,symbol,m)
         names.append(dict(id=s['id'],name=name,source=r))
         codes=[int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in name+'$']

@@ -16,7 +16,7 @@ PACKAGE = 'trainer-tower-region'
 MAPS = ['TrainerTower_Lobby', *[f'TrainerTower_{i}F' for i in range(1,9)], 'TrainerTower_Roof', 'TrainerTower_Elevator']
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_TrainerTower':'secondary/trainer_tower', 'gTileset_SilphCo':'secondary/silph_co'}
 FORMATS = [('Single',''),('Double','_DOUBLES'),('Knockout','_KNOCKOUT')]
-def canonical(value): return (json.dumps(value,sort_keys=True,indent=2)+'\n').encode()
+def canonical(value): return (json.dumps(value,sort_keys=True,separators=(',', ':'))+'\n').encode()
 def need(value,message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink path rejected: '+str(path))
@@ -205,7 +205,7 @@ def build(target,dep,ref,check):
             doc=compact(rw,src);data=canonical(doc);(stage/relative/'runtime-map.json').write_bytes(data)
             catalog.append(dict(sourceName=w['sourceName'],sourceMapSymbol=w['events']['id'],stableId=w['stableId'],format=fmt,layoutId=rw['layout']['id'],directory=relative,path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lb=canonical(lock)
-        docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,maps=catalog,inputFiles=lock['files'],tilesets=TILESETS),
+        docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,maps=catalog,tilesets=TILESETS),
           'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs}, check=check)
         for p,doc in docs.items():(stage/p).write_bytes(canonical(doc))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

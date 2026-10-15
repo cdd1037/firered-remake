@@ -49,7 +49,7 @@ public sealed partial class PretViridianGymRegion
         var files = ImmutableArray<PretWorldSourceFile>.Empty;
         var directory = source.Directory;
         var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Viridian Gym and city-entry source; application admission remains separate.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Viridian Gym and city-entry source; application admission remains separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

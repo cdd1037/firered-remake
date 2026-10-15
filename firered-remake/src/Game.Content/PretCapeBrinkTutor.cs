@@ -69,7 +69,7 @@ public sealed class PretCapeBrinkTutor
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Cape Brink catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Cape Brink and ultimate tutor house; current-game admission is separate.", ResourceId, []);
+            "Original Cape Brink and ultimate tutor house; current-game admission is separate.", ResourceId);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

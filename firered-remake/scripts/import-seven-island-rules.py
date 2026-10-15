@@ -113,7 +113,7 @@ def generate(reference, dependency):
     need(len(previous_owned|set(additions))==146 and len(previous_opponents|set(additions)|set(trainer_only))==180,'Exact Seven closure')
     for name in additions+trainer_only:
         original=species[name];meta=metadata[name]
-        for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[m['source'] for m in original['levelUpMoves']]+[e['source'] for e in meta['sourceEvolutions']]:
+        for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[e['source'] for e in meta['sourceEvolutions']]:
             read(sr['path'])
     edges=[]
     for name,level,target in [('SPECIES_PHANPY',25,'SPECIES_DONPHAN'),('SPECIES_LARVITAR',30,'SPECIES_PUPITAR'),('SPECIES_PUPITAR',55,'SPECIES_TYRANITAR')]:

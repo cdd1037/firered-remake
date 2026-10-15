@@ -601,7 +601,7 @@ def import_catalog(raw, out):
                         runtimeIntegrated=False,
                        maps=[dict(sourceName=name, stableId=stable, sourceMapSymbol=w['events']['id'], directory=d)
                              for (name,stable,d),w in zip(MAPS,worlds)],
-                       connections=connections, warps=warps, inputFiles=src.lock['files'])
+                       connections=connections, warps=warps)
         for filename, document in package_documents(out.parent, constants, {'route22-catalog.json':catalog,'scripts.json':scripts,
                                    'npc-source.json':npcs,'dependencies.json':dependencies}).items():
             (stage / filename).write_bytes(canonical(document).encode())

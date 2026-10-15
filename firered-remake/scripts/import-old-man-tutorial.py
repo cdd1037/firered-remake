@@ -79,7 +79,7 @@ def import_content(repo, raw, out):
         entries = []
         for m in re.finditer(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),', sources[learnpath]):
             if learn.start() < m.start() < learn.end():
-                entries.append(dict(level=int(m[1]), move=ident(m[2]), source=ref(learnpath, pointer, m)))
+                entries.append(dict(level=int(m[1]), move=ident(m[2])))
                 move_symbols.add(m[2])
         if not entries or not learn[1].strip().endswith('LEVEL_UP_END'):
             raise ValueError('Missing complete learnset')

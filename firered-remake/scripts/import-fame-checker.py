@@ -22,7 +22,7 @@ def need(value, message):
 
 
 def json_bytes(value):
-    return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode()
+    return (json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
 
 
 def read_sources(git_dir, lock_path):

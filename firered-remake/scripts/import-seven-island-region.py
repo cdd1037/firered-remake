@@ -26,7 +26,7 @@ TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/b
     'gTileset_SeafoamIslands':'secondary/seafoam_islands', 'gTileset_GenericBuilding2':'secondary/generic_building_2',
     'gTileset_TanobyRuins':'secondary/tanoby_ruins', 'gTileset_DiglettsCave':'secondary/digletts_cave'}
 
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, message):
     if not v: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in output: '+str(path))
@@ -293,7 +293,7 @@ def main():
             catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE);lockbytes=canonical(lock)
         docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-                runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=symbols,inputFiles=lock['files'],**links),
+                runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=symbols,**links),
             'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contract,'items.json':items,
             'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))

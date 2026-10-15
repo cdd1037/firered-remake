@@ -10,7 +10,7 @@
 | Game.Content.Tests | 只引用 Content：内容契约、序列化、引用校验和原版地图形状转换 |
 | Game.Audio.Tests | 只引用 Audio.Core：合成、PSG、声像、播放控制、回声、音序、叫声和目录 |
 | Game.Presentation.Tests | 源码链接纯 C# 的 SourceTextProgress：文本分页、帧推进和输入状态，不加载 Godot 引擎 |
-| Game.ResourceImport.Tests | 无产品程序集依赖：六项必要的 Python 资源导入检查 |
+| Game.ResourceImport.Tests | 无产品程序集依赖：维护的 Python 资源导入检查 |
 | Game.Process.Tests | 引用 Application：新进程之间的状态哈希一致性、存档往返；辅助程序在 Helpers/HashProbe |
 
 Domain 的输入矩阵不依赖内容加载。Battle 使用经过认证的内容验证领域行为，Application 验证会话接线；同一功能出现在不同层时，各自承担不同职责。不会为了每个功能建立一个项目。
@@ -22,7 +22,7 @@ Domain 的输入矩阵不依赖内容加载。Battle 使用经过认证的内容
 在 `firered-remake` 执行：
 
 ```powershell
-# 全部八个项目；六项资源导入检查需要 Python 3。
+# 全部八个项目；资源导入检查需要 Python 3。
 dotnet test
 
 # 局部修改只运行对应依赖边界。

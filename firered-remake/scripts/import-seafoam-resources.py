@@ -32,7 +32,7 @@ TILESETS = {'gTileset_General': 'primary/general', 'gTileset_SeafoamIslands': 's
             'gTileset_FuchsiaCity': 'secondary/fuchsia_city', 'gTileset_CinnabarIsland': 'secondary/cinnabar_island'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -368,7 +368,7 @@ def main():
                 'Shared script files contain unrelated labels as original bytes; only scripts.json selected closure is in scope.'])
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
-                maps=entries,layoutVariants=variants,inputFiles=lock['files'],tilesets=TILESETS,
+                maps=entries,layoutVariants=variants,tilesets=TILESETS,
                 mapSymbols={**{w['events']['id']:w['stableId'] for w in worlds},'MAP_FUCHSIA_CITY':'map.fuchsia-city','MAP_CINNABAR_ISLAND':'map.cinnabar-island'}),
               'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
               'items.json':dict(schemaVersion=1,declarations=items),'trainers.json':dict(schemaVersion=1,ordinaryObjects=trainers,declarations=trainer_declarations),

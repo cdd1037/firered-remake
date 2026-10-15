@@ -78,7 +78,7 @@ def run(project,raw,out,reference=None):
   stage=pathlib.Path(tmp);world=shared.import_map(src,*MAPS[0][:2],stage/MAPS[0][2]);worlds=[world]
   scripts=inventory.script_inventory(src,worlds);constants=shared.constants_inventory(src,worlds,scripts)
   npcs=shared.npc_inventory(src,worlds,stage/'npc');connections,warps=shared.connections_and_warps(src,worlds)
-  catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,maps=[dict(sourceName=MAPS[0][0],stableId=MAPS[0][1],directory=MAPS[0][2],sourceMapSymbol=world['events']['id'])],connections=connections,warps=warps,inputFiles=src.lock['files'])
+  catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,maps=[dict(sourceName=MAPS[0][0],stableId=MAPS[0][1],directory=MAPS[0][2],sourceMapSymbol=world['events']['id'])],connections=connections,warps=warps)
   for p,doc in package_documents(out.parent, constants, {'celadon-gym-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':extract_dependencies(src,scripts,world)}).items():safe(stage,p).write_bytes(canonical(doc))
   rich=safe(stage,'celadon-city-gym/runtime-map.json').read_bytes();safe(stage,'celadon-city-gym/runtime-map.json').write_bytes(converter.encode(converter.normalize_runtime(json.loads(rich))))
   outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

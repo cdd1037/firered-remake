@@ -145,7 +145,7 @@ def generate(reference, dependency, region):
     metadata={m['id']['value'][5:]:m for m in declarations['pokemonMetadata']}
     for name in additions+['SPECIES_PONYTA']:
         need(next(s for s in declarations['pokemon'] if s['id']['value']=='pret:'+name)==species[name], 'Region canonical species')
-        for source in [species[name]['source'],species[name]['learnsetSource']]+[m['source'] for m in species[name]['levelUpMoves']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
+        for source in [species[name]['source'],species[name]['learnsetSource']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
             read(source['path'])
     edges=[]
     for name,level,target in [('SPECIES_PONYTA',40,'SPECIES_RAPIDASH'),('SPECIES_SLUGMA',38,'SPECIES_MAGCARGO')]:

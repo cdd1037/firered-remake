@@ -9,7 +9,7 @@ using Game.Domain.Pokemon;
 namespace Game.Content;
 
 public sealed record GiftEggMetadataDocument(string SourceCommit, string Profile, int PreviousSpeciesCount, int SpeciesCount,
-    ImmutableArray<SourceEggSpeciesRow> Additions);
+    ImmutableArray<GeneratedEggSpeciesRow> Additions);
 public sealed record GiftEggMachineRows(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility);
 public sealed record GiftEggMachinesDocument(string SourceCommit, string Profile, int PreviousSpeciesCount, int SpeciesCount, int MachineCount,
     ImmutableArray<GiftEggMachineRows> Additions, ImmutableArray<ItemId> ItemsAdded);
@@ -61,7 +61,7 @@ public static class PretGiftEggSpecies
 
     public static BreedingSpeciesMetadataCatalog LoadMetadata(string root, GiftEggOwnedPokemonCatalog owned)
     {
-        var document = Read<GiftEggMetadataDocument>(root,"metadata.json");
-        return GiftEggSpeciesMetadataCatalog.Authenticate(owned, document.Additions);
+        var document = GeneratedBreedingMetadata.Read<GiftEggMetadataDocument>(root, "gift-egg-species/metadata.json");
+        return GiftEggSpeciesMetadataCatalog.Authenticate(owned, GeneratedBreedingMetadata.Resolve(root, document.Additions));
     }
 }

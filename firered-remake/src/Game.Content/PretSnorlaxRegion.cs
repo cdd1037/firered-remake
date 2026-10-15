@@ -103,7 +103,7 @@ public sealed class PretSnorlaxRegion
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
 
         var inventory = files.ToImmutable(); var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Bounded source import; application and native acceptance remain separate.", Profile, inventory);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Bounded source import; application and native acceptance remain separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
         {

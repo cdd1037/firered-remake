@@ -33,7 +33,7 @@ ANCHOR_PATH = 'saffron-city/runtime-map.json'
 NPC_REUSE = {'OBJ_EVENT_GFX_BEAUTY', 'OBJ_EVENT_GFX_BLACK_BELT', 'OBJ_EVENT_GFX_CRUSH_GIRL', 'OBJ_EVENT_GFX_GENTLEMAN', 'OBJ_EVENT_GFX_LITTLE_GIRL', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_ROCKER', 'OBJ_EVENT_GFX_WOMAN_3', 'OBJ_EVENT_GFX_YOUNGSTER'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink rejected: ' + str(path))
@@ -199,7 +199,7 @@ def main():
             path=directory+'/runtime-map.json')
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lb=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-            runtimeIntegrated=False,maps=[entry],inputFiles=lock['files'],tilesets=TILESETS,
+            runtimeIntegrated=False,maps=[entry],tilesets=TILESETS,
             mapSymbols={world['events']['id']:MAP_ID,'MAP_SAFFRON_CITY':'map.saffron-city'}),
             'scripts.json':scripts,'contracts.json':contract,
             'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory([world]),tilesets=TILESETS)}, check=args.check)

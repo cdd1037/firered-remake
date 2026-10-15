@@ -355,7 +355,7 @@ def import_catalog(raw, out, lock_path=None):
         beams=beam_metatiles(src,scripts,constants,stage/'beam-metatiles')
         catalog=dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,runtimeIntegrated=False,
             maps=[dict(sourceName=name,stableId=stable,sourceMapSymbol=w['events']['id'],directory=directory) for (name,stable,directory),w in zip(MAPS,worlds)],
-            connections=connections,warps=warps,inputFiles=src.lock['files'])
+            connections=connections,warps=warps)
         for filename,doc in package_documents(out.parent, constants, {'vermilion-gym-catalog.json':catalog,'scripts.json':scripts,'npc-source.json':npcs,'dependencies.json':dependencies,'beam-metatiles.json':beams}).items():
             (stage/filename).write_bytes(canonical(doc).encode('utf-8'))
 

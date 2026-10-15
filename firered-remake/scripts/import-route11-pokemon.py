@@ -81,7 +81,7 @@ def metadata(lock, sources):
         learn = one(r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};', text[learnpath])
         moves = []
         for m in learn_rows(text[learnpath], learn):
-            moves.append(dict(level=int(m[1]), move=ident(m[2]), source=ref(learnpath, pointer, m)))
+            moves.append(dict(level=int(m[1]), move=ident(m[2])))
             move_symbols.add(m[2])
         evolution_path = 'src/data/pokemon/evolution.h'
         rows = list(re.finditer(r'^    \[' + symbol + r'\]\s*= (\{\{.*?\}\}),$', text[evolution_path], re.M | re.S))

@@ -69,11 +69,10 @@ public sealed class PretMainMenuSource
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PretMainMenuConstant> ConstantSources { get; }
     public PretMainMenuRules Rules { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public ImmutableArray<string> Limitations { get; }
     public string GeneratedDirectory { get; }
 
-    private PretMainMenuSource(string directory, JsonElement root, ImmutableArray<PretWorldSourceFile> files)
+    private PretMainMenuSource(string directory, JsonElement root)
     {
         GeneratedDirectory = directory;
         var options = ContentJson.CreateOptions();
@@ -92,7 +91,6 @@ public sealed class PretMainMenuSource
         Constants = ConstantSources.ToImmutableDictionary(x => x.Key, x => x.Value.Value, StringComparer.Ordinal);
         Rules = Decode<PretMainMenuRules>("rules");
         Limitations = Decode<ImmutableArray<string>>("limitations");
-        SourceFiles = files;
     }
 
     public static PretMainMenuSource Load(string projectRoot)
@@ -108,14 +106,7 @@ return bytes;
         var root = document.RootElement;
         Require(root.GetProperty("schemaVersion").GetInt32() == 1 ,
             "Main-menu identity differs.");
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var entry in root.GetProperty("inputFiles").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            files.Add(new(path));
-        }
-        var inventory = files.ToImmutable();
-        var result = new PretMainMenuSource(generatedDirectory, root, inventory);
+        var result = new PretMainMenuSource(generatedDirectory, root);
         Require(result.Windows.Count == 5 && result.TextPlacements.Length == 15 && result.Palettes.Count == 2 &&
             result.SaveStatuses.Count == 5 && result.SelectionRegions.Count == 5 && result.GenderColors.Count == 2 &&
             result.Rules.FrameDrawCalls.Length == 8, "Main-menu metadata incomplete.");

@@ -88,7 +88,7 @@ def metadata(lock, sources):
         moves = []
         for m in re.finditer(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),', text[learnpath]):
             if learn.start() < m.start() < learn.end():
-                moves.append(dict(level=int(m[1]), move=ident(m[2]), source=ref(learnpath, pointer, m)))
+                moves.append(dict(level=int(m[1]), move=ident(m[2])))
                 move_symbols.add(m[2])
         evolution_path = 'src/data/pokemon/evolution.h'
         rows = list(re.finditer(r'^    \[' + symbol + r'\]\s*= (.*),$', text[evolution_path], re.M))

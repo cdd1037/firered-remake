@@ -67,7 +67,7 @@ def independent_source_rows():
     check(len(source_evolutions) == 184 and sorted(source_evolutions) == sorted(emitted_evolutions), 'Every original evolution triple retained')
     # A separate linear pass over the raw FR/LG source, with exact known edition directive vocabulary.
     active = True
-    raw_rows, excluded_rows = [], []
+    raw_rows, excluded_rows, learnsets = [], [], {}
     array_name = ''
     for line in sources.text['src/data/pokemon/level_up_learnsets.h'].splitlines():
         if line == '#if defined(FIRERED)': active = True
@@ -75,7 +75,10 @@ def independent_source_rows():
         elif line == '#endif': active = True
         elif active:
             declaration = re.fullmatch(r'static const u16 (\w+)\[\] = \{', line)
-            if declaration: array_name = declaration[1]
+            if declaration:
+                array_name = declaration[1]
+                check(array_name not in learnsets, 'Duplicate source learnset array')
+                learnsets[array_name] = []
             match = re.fullmatch(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),', line)
             if match:
                 placeholder = re.fullmatch(r'sSpecies(\d+)LevelUpLearnset', array_name)
@@ -83,26 +86,25 @@ def independent_source_rows():
                     check(252 <= int(placeholder[1]) <= 276, 'Unknown placeholder learnset')
                     excluded_rows.append((int(match[1]), match[2]))
                 else:
-                    raw_rows.append((int(match[1]), match[2]))
+                    row = (int(match[1]), match[2])
+                    raw_rows.append(row)
+                    learnsets[array_name].append(row)
     check(excluded_rows == [(1, 'MOVE_TACKLE')] * 25, 'All25 old-Unown placeholder learnsets are separately excluded')
     generated_rows = [(e['level'], e['move']['value'][5:]) for s in doc['species'] for e in s['levelUpMoves']]
     check(len(raw_rows) == 4011 and sorted(raw_rows) == sorted(generated_rows), 'Every FR level-up row retained with multiplicity')
+    for species in doc['species']:
+        check([(row['level'], row['move']['value'][5:]) for row in species['levelUpMoves']] ==
+              learnsets[species['learnsetSource']['symbol']], 'Every species retains the exact ordered FR learnset')
 test('complete species, evolution and level rows independently match original source', independent_source_rows)
 
 def references():
     texts = {k: v.splitlines() for k, v in sources.text.items()}
-    for s in doc['species']:
-        for e in s['levelUpMoves']:
-            r = e['source']
-            check(r['startLine'] == r['endLine'], 'Learnset row source must be exact')
-            line = texts[r['path']][r['startLine'] - 1].strip()
-            check(line == 'LEVEL_UP_MOVE(%d, %s),' % (e['level'], e['move']['value'][5:]), 'Exact raw source learnset line differs')
     for m in doc['metadata']:
         for e in m['sourceEvolutions']:
             r = e['source']
             text = '\n'.join(texts[r['path']][r['startLine'] - 1:r['endLine']])
             check(re.search(r'\{' + e['method'] + r',\s+' + e['parameter'] + r',\s+' + e['target']['value'][5:] + r'\}', text) is not None, 'Exact evolution source line differs')
-test('all 4011 learnset and184 evolution references point to actual source rows', references)
+test('all 184 evolution references point to actual source rows', references)
 
 def bad_editions():
     raw = sources.text['src/data/pokemon/level_up_learnsets.h']

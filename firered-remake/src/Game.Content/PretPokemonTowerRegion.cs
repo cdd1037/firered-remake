@@ -64,7 +64,7 @@ public sealed partial class PretPokemonTowerRegion
         var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal); 
             
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, "Local authenticated source data.",
-            "Source contracts only; executable progression must be registered by Application.", Profile, files);
+            "Source contracts only; executable progression must be registered by Application.", Profile);
         var spec = Document("runtime.json"); var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         Need(!spec.GetProperty("runtimeIntegrated").GetBoolean(), "Map data cannot claim campaign integration.");
         foreach (var s in spec.GetProperty("maps").EnumerateArray())

@@ -8,8 +8,8 @@ import argparse
 import json
 from pathlib import Path
 import re
-import subprocess
-from machine_catalog import admission_species, compatibility_additions, load_catalog
+from pokemon_import_io import read_source
+from machine_catalog import admission_species, compatibility_additions
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -22,7 +22,9 @@ SHARED_INPUTS = {'include/constants/pokemon.h': 'content/raw/pokefirered/037335f
 IDENTITIES = [('PICHU',172), ('CLEFFA',173), ('IGGLYBUFF',174), ('TYROGUE',236), ('SMOOCHUM',238), ('ELEKID',239), ('WYNAUT',360), ('HITMONTOP',237)]
 
 
-def encode(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
+def encode(value, *, compact=False):
+    return (json.dumps(value, ensure_ascii=False, indent=None if compact else 2,
+                       separators=(',', ':') if compact else None) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 
@@ -35,7 +37,6 @@ def generate(reference, dependency):
         return json.loads(data)
     canonical, previous = [dependent(p) for p in DEPENDENCIES]
     dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
-    catalog = load_catalog(dependency)
     need(previous['ownedSpeciesCount'] == 174 and previous['opponentSpeciesCount'] == 196, 'Exact predecessor')
     identities = IDENTITIES
     definitions = []
@@ -48,7 +49,7 @@ def generate(reference, dependency):
     inputs, raw = {}, {}
     def read(path):
         if path not in raw:
-            data = subprocess.check_output(['git', 'show', COMMIT + ':' + path], cwd=reference)
+            data = read_source(dependency / 'content/raw/pokefirered/037335f4', path, commit=COMMIT, repository=reference)
             shared = SHARED_INPUTS.get(path)
             if shared: need((dependency / shared).read_bytes() == data, 'Shared source differs: ' + path)
             local = shared or 'content/raw/pokefirered/037335f4/' + path
@@ -57,7 +58,7 @@ def generate(reference, dependency):
         return raw[path].decode()
     for row in definitions:
         definition, metadata = row['definition'], row['metadata']
-        for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [m['source'] for m in definition['levelUpMoves']] + [e['source'] for e in metadata['sourceEvolutions']]:
+        for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [e['source'] for e in metadata['sourceEvolutions']]:
             read(sr['path'])
     cells = compatibility_additions(dependency, BASE + 'machines.json')
     need(len(cells) == 51, 'Exactly 51 admitted machines')
@@ -81,13 +82,8 @@ def generate(reference, dependency):
     rows = []
     for species in owned:
         original = metadata_by_id[species]['originalFields']
-        compatible = []
-        for item in catalog.species[species]['compatibleItems']:
-            machine = item['value'].removeprefix('pret:ITEM_')
-            index = int(machine[2:])-1+(50 if machine.startswith('HM') else 0)
-            compatible.append(dict(value='pret:'+all_moves[index]))
         rows.append(dict(breeding=dict(species=dict(value=species),eggGroup1=groups[original['eggGroups'].split(',')[0].strip().strip('{} ').strip()],eggGroup2=groups[original['eggGroups'].split(',')[1].strip().strip('{} ').strip()],eggCycles=int(original['eggCycles'])),
-            baseEggSpecies=dict(value=base_species(species)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(species[13:],[])],machineMoves=compatible))
+            baseEggSpecies=dict(value=base_species(species)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(species[13:],[])]))
     read('src/daycare.c');read('src/pokemon.c')
     evolution_rows=[dict(species=r['definition']['id'], **e) for r in definitions for e in r['metadata']['sourceEvolutions']]
     docs = {
@@ -113,12 +109,13 @@ def generate(reference, dependency):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for argument in ['reference', 'dependency', 'output']: parser.add_argument(argument, type=Path)
+    parser.add_argument('reference', type=lambda value: None if value == '-' else Path(value), help='Pinned Git checkout, or - to use retained raw inputs')
+    for argument in ['dependency', 'output']: parser.add_argument(argument, type=Path)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     docs = generate(args.reference, args.dependency)
     raw = docs.pop('_raw')
-    files = {BASE + name: encode(doc) for name, doc in docs.items()}
+    files = {BASE + name: encode(doc, compact=name in ('metadata.json', 'machines.json')) for name, doc in docs.items()}
     lock = dict(sourceCommit=COMMIT,  profile='firered-breeding-species-v1',
 
         files=[dict(path=p) for p, data in sorted(files.items())])

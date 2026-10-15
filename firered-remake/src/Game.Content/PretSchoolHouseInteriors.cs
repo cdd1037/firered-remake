@@ -79,7 +79,7 @@ public sealed class PretSchoolHouseInteriors
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == Rooms.Length ,
             "School/house interior catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Three source-authenticated ordinary interiors; grid and wall-map runtime admission remain separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Three source-authenticated ordinary interiors; grid and wall-map runtime admission remain separate.", ResourceId);
 
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())

@@ -35,7 +35,7 @@ CITY_PATH = 'cinnabar-island/runtime-map.json'
 NPC_REUSE = {'OBJ_EVENT_GFX_BOY', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_SCIENTIST'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -306,7 +306,7 @@ def main():
                         path=relative + '/runtime-map.json'))
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False); lock_bytes = canonical(lock)
         docs = package_documents(target / 'content/generated', constants, {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-                                     maps=entries, inputFiles=lock['files'], tilesets=TILESETS,
+                                     maps=entries, tilesets=TILESETS,
                                     mapSymbols={w['events']['id']: w['stableId'] for w in worlds + [city]}),
                 'scripts.json': scripts,  'contracts.json': contracts, 'npc-source.json': npcs,
                 'geometry.json': dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)

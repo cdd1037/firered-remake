@@ -22,7 +22,7 @@ ROOTS = ['PalletTown_EventScript_OakRatingScene'] + [LAB + '_EventScript_' + n f
 EVIDENCE = ['PalletTown_MapScripts', 'PalletTown_OnFrame', LAB + '_MapScripts', LAB + '_OnTransition', LAB + '_OnFrame',
     LAB + '_EventScript_ProfOak', 'EventScript_SetReadyTryGiveNationalDexScene', 'EventScript_SetDefeatedEliteFourFlagsVars']
 HEADERS = ['flags', 'vars', 'global', 'event_objects', 'event_object_movement', 'map_scripts', 'songs', 'help_system', 'opponents', 'pokedex']
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in path: ' + str(path))
@@ -186,9 +186,7 @@ def contracts(src, scripts, blocks, constants):
         if match[1] in names: bindings.append(dict(symbol=match[1], id=special_index, sourceRef=src.ref('data/specials.inc', match[1], line_no)))
         special_index += 1
     need({b['symbol'] for b in bindings} == names, 'Special dispatch binding missing')
-    compiler = (ROOT / 'src/Game.Content/PretStoryCompiler.cs').read_text()
     relational = {'call_if_eq', 'goto_if_eq', 'goto_if_lt'}
-    need(all('"' + op + '"' in compiler or op in relational for op in scripts['opcodeCounts']), 'Closure opcode lacks base compiler support')
     compiler_effects = [dict(opcode=op, count=count, support='base-comparison' if op in relational else 'base-opcode', nativeHandlerRequired=op in ['special', 'specialvar', 'buffernumberstring']) for op, count in scripts['opcodeCounts'].items()]
     return dict(schemaVersion=1, profile=PROFILE, runtimeIntegrated=False, completeGame=False, mapCount=0,
         scope='First postgame National Dex node on the existing Pallet Town and Oak lab maps.',
@@ -218,9 +216,7 @@ def generate(reference, generated_directory, check=False):
     scripts, blocks = script_inventory(src)
     constants = constants_inventory(src, scripts)
     contract = contracts(src, scripts, blocks, constants)
-    lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, completeGame=False, maps=[])
-    lock_data = canonical(lock)
-    contract.update(sourceCommit=helper.COMMIT, sourceTree=helper.TREE,  inputFiles=lock['files'])
+    contract.update(sourceCommit=helper.COMMIT, sourceTree=helper.TREE)
     documents = package_documents(generated_directory, constants, {'scripts.json': scripts, 'contracts.json': contract}, check=check)
     docs = {name: canonical(value) for name, value in documents.items()}
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=helper.COMMIT,   inputCount=len(src.entries), mapCount=0, scriptBlockCount=len(scripts['blocks']),

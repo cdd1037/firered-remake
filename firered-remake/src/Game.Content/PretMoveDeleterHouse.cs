@@ -69,7 +69,7 @@ public sealed class PretMoveDeleterHouse
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Move Deleter house catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Fuchsia City Move Deleter house; service rules and current-game admission are separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Fuchsia City Move Deleter house; service rules and current-game admission are separate.", ResourceId);
 
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;

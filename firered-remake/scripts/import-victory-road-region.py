@@ -15,7 +15,7 @@ PACKAGE = 'victory-road-region'
 TILESETS = {'gTileset_General':'primary/general','gTileset_Cave':'secondary/cave','gTileset_IndigoPlateau':'secondary/indigo_plateau'}
 MAPS = ['Route23','VictoryRoad_1F','VictoryRoad_2F','VictoryRoad_3F','IndigoPlateau_Exterior']
 ANCHORS = ['Route22','Route22_NorthEntrance','IndigoPlateau_PokemonCenter_1F']
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, m):
     if not v: raise ValueError(m)
 def module(path, name):
@@ -237,7 +237,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=MAPS);lockdata=canonical(lock)
         map_symbols={w['events']['id']:w['stableId'] for w in worlds}
         for name in ANCHORS:map_symbols[src.json('data/maps/'+name+'/map.json')['id']]='map.'+reader.directory(name)
-        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=entries,tilesets=TILESETS,mapSymbols=map_symbols,inputFiles=lock['files']),
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=entries,tilesets=TILESETS,mapSymbols=map_symbols),
             'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'geometry.json':reader.geometry_inventory(worlds)}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]

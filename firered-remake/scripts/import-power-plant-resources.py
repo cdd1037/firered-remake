@@ -34,7 +34,7 @@ ROUTE_PACKAGE = 'content/generated/rocket-hideout-runtime-maps'
 ROUTE_PATH = 'rocktunnel-region/route-10/runtime-map.json'
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -321,7 +321,7 @@ def main():
         entries=[dict(sourceName='PowerPlant',stableId='map.power-plant',directory=relative,sourceMapSymbol='MAP_POWER_PLANT',path=relative+'/runtime-map.json')]
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
-                                  maps=entries,inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={s:w['stableId'] for s,w in bysymbol.items()}),
+                                  maps=entries,tilesets=TILESETS,mapSymbols={s:w['stableId'] for s,w in bysymbol.items()}),
               'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,'reachability.json':witness,
               'items.json':dict(schemaVersion=1,declarations=items),'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS),
               'encounters.json':dict(schemaVersion=1,sourceRef=src.ref(ep,'gWildMonHeaders'),groups=groups,runtimeIntegrated=False)}, check=args.check)

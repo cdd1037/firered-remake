@@ -123,7 +123,7 @@ public sealed class PretFuchsiaRouteRegion
         var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         
         var files = sources.ToImmutable(); var byPath = files.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Six source maps; unchanged Route12 reuse; services require explicit admission.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Six source maps; unchanged Route12 reuse; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
         Need(runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion , "Fuchsia runtime converter differs.");
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();

@@ -286,7 +286,6 @@ def make_document(src):
         'data/maps/Route25_SeaCottage/scripts.inc': ['FLAG_SYS_NOT_SOMEONES_PC'],
     }.items() for symbol in symbols]
     return dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
-                 inputFiles=src.lock['files'],
                 scripts=scripts, constants=constants, uiTexts=ui_texts(src), pcMenuVariants=variants, storageMenu=storage,
                 rulesSources=[src.ref(path,symbol) for path,symbol in rules],
                 entry='EventScript_PC', storageEntry='EventScript_AccessPokemonStorage', returnEntry='EventScript_PCMainMenu',

@@ -108,7 +108,7 @@ def generate(reference, dependency):
     for name in additions:
         original=species[name];meta=metadata[name]
         need(not original['evolutions'] and not meta['sourceEvolutions'],'Terminal source species')
-        for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[m['source'] for m in original['levelUpMoves']]:
+        for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]:
             read(sr['path'])
     battles=[];actors=[];mapping=json.loads(read('data/maps/SaffronCity_Dojo/map.json'));path='data/maps/SaffronCity_Dojo/scripts.inc'
     for local_id,actor in enumerate(mapping['object_events'],1):

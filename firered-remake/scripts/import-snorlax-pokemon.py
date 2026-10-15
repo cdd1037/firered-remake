@@ -33,7 +33,7 @@ def generate(root):
  path='src/data/pokemon/level_up_learnsets.h';learn=one(path,r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};')
  level_moves=[];required=set()
  for m in re.finditer(r'^    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),\n',texts[path],re.M):
-  if learn.start()<=m.start()<learn.end():level_moves.append(dict(level=int(m[1]),move=ident(m[2]),source=ref(path,pointer,m)));required.add(m[2])
+  if learn.start()<=m.start()<learn.end():level_moves.append(dict(level=int(m[1]),move=ident(m[2])));required.add(m[2])
  assert len(level_moves)==14 and not re.search(r'\['+symbol+r'\]',texts['src/data/pokemon/evolution.h'])
  stat_source=('HP','Attack','Defense','Speed','SpAttack','SpDefense');stat_names=('hp','attack','defense','speed','specialAttack','specialDefense')
  species=dict(id=ident(symbol),sourceSpeciesId=constant('include/constants/species.h',symbol)['value'],baseStats={k:int(fields['base'+s]) for k,s in zip(stat_names,stat_source)},type1='TYPE_NORMAL',type2='TYPE_NORMAL',catchRate=int(fields['catchRate']),experienceYield=int(fields['expYield']),evYield={k:int(fields['evYield_'+s]) for k,s in zip(stat_names,stat_source)},growthRate='slow',genderRatio=31,ability1='ABILITY_IMMUNITY',ability2='ABILITY_THICK_FAT',friendship=int(fields['friendship']),levelUpMoves=level_moves,evolutions=[],source=source,learnsetSource=ref(path,pointer,learn))

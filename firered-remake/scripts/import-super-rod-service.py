@@ -35,7 +35,7 @@ CITY_RESOURCE = 'route-12/runtime-map.json'
 NPC_REUSE = {'OBJ_EVENT_GFX_FISHER', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
@@ -223,7 +223,7 @@ def main():
         data=converter.encode(compact);(stage/DIRECTORY/'runtime-map.json').write_bytes(data)
         entry=dict(sourceName=MAP,stableId=MAP_ID,directory=DIRECTORY,sourceMapSymbol=world['events']['id'],path=DIRECTORY+'/runtime-map.json')
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=[MAP],completeGame=False);lock_bytes=canonical(lock)
-        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=[entry],inputFiles=lock['files'],tilesets=TILESETS,mapSymbols={'MAP_ROUTE12_FISHING_HOUSE':MAP_ID,'MAP_ROUTE12':'map.route-12'}),
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,maps=[entry],tilesets=TILESETS,mapSymbols={'MAP_ROUTE12_FISHING_HOUSE':MAP_ID,'MAP_ROUTE12':'map.route-12'}),
               'scripts.json':scripts,'contracts.json':contract,'npc-source.json':npcs,'items.json':items,'super-rod-tables.json':tables,
               'geometry.json':dict(maps=reader.geometry_inventory([world]),tilesets=TILESETS)}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))

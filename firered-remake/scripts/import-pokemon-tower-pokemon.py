@@ -73,7 +73,7 @@ def generate(project):
         for match in re.finditer(r'^    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),\n', texts[path], re.M):
             if not learn.start() <= match.start() < learn.end():
                 continue
-            moves.append(dict(level=int(match[1]), move=ident(match[2]), source=ref(path, pointer, match)))
+            moves.append(dict(level=int(match[1]), move=ident(match[2])))
             required.add(match[2])
         assert len(moves) == (11 if short == 'GASTLY' else 13)
         evo_path = 'src/data/pokemon/evolution.h'

@@ -70,7 +70,7 @@ public sealed class PretSuperRodService
             catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Super Rod catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Super Rod service resources; current-game admission is separate.", ResourceId, []);
+            "Original Super Rod service resources; current-game admission is separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
         string path = spec.GetProperty("path").GetString()!;

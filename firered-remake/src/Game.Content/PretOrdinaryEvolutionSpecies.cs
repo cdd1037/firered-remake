@@ -10,7 +10,7 @@ using Game.Domain.Pokemon;
 namespace Game.Content;
 
 public sealed record OrdinaryEvolutionMetadataDocument(string SourceCommit, string Profile, int PreviousSpeciesCount, int SpeciesCount,
-    ImmutableArray<SourceEggSpeciesRow> Additions);
+    ImmutableArray<GeneratedEggSpeciesRow> Additions);
 public sealed record OrdinaryEvolutionMachineRows(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility);
 public sealed record OrdinaryEvolutionMachinesDocument(string SourceCommit, string Profile, int PreviousSpeciesCount, int SpeciesCount, int MachineCount,
     ImmutableArray<OrdinaryEvolutionMachineRows> Additions, ImmutableArray<ItemId> ItemsAdded);
@@ -77,9 +77,9 @@ public static class PretOrdinaryEvolutionSpecies
 
     public static BreedingSpeciesMetadataCatalog LoadMetadata(string root, OrdinaryEvolutionOwnedPokemonCatalog owned)
     {
-        var document = Read<OrdinaryEvolutionMetadataDocument>(root,"metadata.json");
+        var document = GeneratedBreedingMetadata.Read<OrdinaryEvolutionMetadataDocument>(root, "ordinary-evolution-species/metadata.json");
         if (            document.PreviousSpeciesCount != 182 || document.SpeciesCount != 186 )
             throw new InvalidDataException("ordinary_evolution_metadata_scope");
-        return OrdinaryEvolutionSpeciesMetadataCatalog.Authenticate(owned, document.Additions);
+        return OrdinaryEvolutionSpeciesMetadataCatalog.Authenticate(owned, GeneratedBreedingMetadata.Resolve(root, document.Additions));
     }
 }

@@ -22,7 +22,7 @@ MAPS = ['FiveIsland_WaterLabyrinth', 'FiveIsland_ResortGorgeous', 'FiveIsland_Re
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/building',
     'gTileset_SeviiIslands45':'secondary/sevii_islands_45', 'gTileset_Cave':'secondary/cave',
     'gTileset_Museum':'secondary/museum'}
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, message):
     if not v: raise ValueError(message)
 def safe(p): need(not any(x.is_symlink() for x in [p,*p.parents]), 'Symlink rejected: '+str(p))
@@ -173,7 +173,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=MAPS);lb=canonical(lock)
         symbols={w['events']['id']:w['stableId'] for w in worlds};symbols['MAP_FIVE_ISLAND']='map.five-island'
         docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-            runtimeIntegrated=False,maps=maps,tilesets=TILESETS,mapSymbols=symbols,inputFiles=lock['files']),
+            runtimeIntegrated=False,maps=maps,tilesets=TILESETS,mapSymbols=symbols),
             'scripts.json':scripts,'contracts.json':contracts,'items.json':dict(declarations=data['itemDeclarations']),
             'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=a.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))

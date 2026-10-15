@@ -38,7 +38,7 @@ def generate(root,dependency_root=None):
   pointer=one('src/data/pokemon/level_up_learnset_pointers.h',r'^    \['+s+r'\] = (\w+),$')[1];p='src/data/pokemon/level_up_learnsets.h';m=one(p,r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};');rows=[]
   require('#' not in m[1],'Unexpected conditional learnset')
   for row in re.finditer(r'^    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),$',texts[p],re.M):
-   if m.start(1)<=row.start()<m.end(1):rows.append(dict(level=int(row[1]),move=ident(row[2]),source=ref(p,pointer,row)))
+   if m.start(1)<=row.start()<m.end(1):rows.append(dict(level=int(row[1]),move=ident(row[2])))
   require(len(rows)==m[1].count('LEVEL_UP_MOVE(') and '    LEVEL_UP_END\n' in m[1] and rows,'Incomplete learnset')
   return rows,ref(p,pointer,m)
  def move(s):

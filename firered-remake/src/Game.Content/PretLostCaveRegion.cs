@@ -75,7 +75,7 @@ public sealed class PretLostCaveRegion
         var catalog = source.Document("catalog.json");
         Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean() , "Lost Cave catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Lost Cave and connecting outdoor maps; gameplay and services require separate admission.", Profile, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Lost Cave and connecting outdoor maps; gameplay and services require separate admission.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

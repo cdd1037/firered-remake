@@ -96,7 +96,7 @@ public sealed class PretRegionalServiceMaps
         var catalog = Document("regional-service-maps-catalog.json");
         Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean(), "Regional source inventory/availability differs.");
         var files = ImmutableArray<PretWorldSourceFile>.Empty;
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "17 source maps; four unchanged reused gates; services require explicit admission.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "17 source maps; four unchanged reused gates; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
         Need(runtimeCatalog.GetProperty("converterVersion").GetString() == PretRuntimeMapCatalog.ConverterVersion &&
             runtimeCatalog.GetProperty("maps").GetArrayLength() == 17, "Regional runtime converter differs.");

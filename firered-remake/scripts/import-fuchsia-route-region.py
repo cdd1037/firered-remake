@@ -28,7 +28,7 @@ CORE = ['Route12', 'Route13', 'Route14', 'Route15', 'Route15_WestEntrance_1F', '
 OPTIONAL = ['Route12_FishingHouse', 'Route15_WestEntrance_2F']
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_LavenderTown':'secondary/lavender_town', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2', 'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_GenericBuilding1':'secondary/generic_building_1'}
 
-def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -206,7 +206,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE,optionalSourceOnlyMaps=OPTIONAL)
         lock_data=canonical(lock)
         reused=dict(sourceName='Route12',stableId='map.route-12',sourceMapSymbol='MAP_ROUTE12',sourceRef=src.ref('data/maps/Route12/map.json','MAP_ROUTE12'),regenerate=False)
-        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
+        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,connections=links['connections'],warps=links['warps'])
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds if w['sourceName'] in CORE for i,o in enumerate(w['events']['object_events'])]
         availability=dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,enabledServices=[],loadedMapSymbols=[w['events']['id'] for w in worlds if w['sourceName'] in CORE[1:]],reusedMapSymbols=['MAP_ROUTE12'],deferredDestinations=sorted({w['dest_map'] for m in worlds if m['sourceName'] in CORE for w in m['events']['warp_events']} - {m['events']['id'] for m in worlds if m['sourceName'] in CORE}),deferredConnections=['MAP_ROUTE18','MAP_ROUTE19'],notes=['Map import preserves full original cells, events, clones, water and grass. Admission belongs to the successor application profile.','The no-grass arrival witness is a topology proof, not a permanent encounter ban.','Optional fishing house, gate 2F, other Fuchsia interiors, Safari and Koga are source boundaries in this map increment.'])
         docs=package_documents(out.parent, constants, {'fuchsia-route-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=2,profile=PROFILE,converterVersion=converter.VERSION,sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability}, check=a.check)

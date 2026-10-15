@@ -67,7 +67,7 @@ public sealed class PretCopycatHouse
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Copycat house catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Saffron Copycat house; Mimic and Poke Doll service admission are separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Saffron Copycat house; Mimic and Poke Doll service admission are separate.", ResourceId);
 
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())

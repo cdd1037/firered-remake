@@ -28,7 +28,7 @@ CORE = ['FuchsiaCity_SafariZone_Entrance', 'FuchsiaCity_SafariZone_Office', 'Saf
 OPTIONAL = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_SafariZoneBuilding':'secondary/safari_zone_building', 'gTileset_Museum':'secondary/museum'}
 
-def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
 def git(repo, *args):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -271,7 +271,7 @@ def main():
             catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE,optionalSourceOnlyMaps=OPTIONAL)
         lock_data=canonical(lock)
-        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
+        main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,connections=links['connections'],warps=links['warps'])
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds for i,o in enumerate(w['events']['object_events'])]
         availability=dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,enabledServices=[],loadedMapSymbols=[w['events']['id'] for w in worlds],reusedMapSymbols=['MAP_FUCHSIA_CITY'],deferredDestinations=[],deferredConnections=[],notes=['Full original map grids, events, warp offsets, water and grass are retained.', 'All four areas, four rest houses, Secret House, Entrance, Office and Warden house require explicit successor application admission.', 'Water traversal, fishing and Strength boulder use are separate field capabilities; HM rewards do not authorize a movement shortcut.'])
         docs=package_documents(out.parent, constants, {'safari-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=2,profile=PROFILE,converterVersion=converter.VERSION,sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'contracts.json':contracts,'encounters.json':encounters}, check=a.check)

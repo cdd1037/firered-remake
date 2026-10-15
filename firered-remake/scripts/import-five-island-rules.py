@@ -102,7 +102,7 @@ def generate(reference, dependency):
     edges = []
     for name in additions+opponent_additions:
         original = species[name]
-        for sr in [original['source'],original['learnsetSource'],metadata[name]['learnsetPointerSource'],metadata[name]['dexSource']]+[m['source'] for m in original['levelUpMoves']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
+        for sr in [original['source'],original['learnsetSource'],metadata[name]['learnsetPointerSource'],metadata[name]['dexSource']]+[e['source'] for e in metadata[name]['sourceEvolutions']]:
             read(sr['path'])
     for name,method,parameter,target in [('SPECIES_HOPPIP','EVO_LEVEL',18,'SPECIES_SKIPLOOM'),('SPECIES_SKIPLOOM','EVO_LEVEL',27,'SPECIES_JUMPLUFF')]:
         matches=[e for e in metadata[name]['sourceEvolutions'] if e['method']==method and e['parameterValue']==parameter and e['target']['value']=='pret:'+target]

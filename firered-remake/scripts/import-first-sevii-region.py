@@ -12,7 +12,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-first-sevii-region-v1'
 PACKAGE = 'first-sevii-region'
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v,m):
     if not v: raise ValueError(m)
 def module(path, name):
@@ -117,7 +117,7 @@ def main():
             catalog.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],directory=relative,sourceMapSymbol=w['events']['id'],path=relative+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=names)
         lockdata=canonical(lock)
-        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=prep.TILESETS,mapSymbols=map_symbols,inputFiles=lock['files'],**contracts['mapTopology']),
+        docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=prep.TILESETS,mapSymbols=map_symbols,**contracts['mapTopology']),
               'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contracts,
               'geometry.json':original['geometry.json'],
               'catalog-delta.json':original['catalog-delta.json']}, check=a.check)

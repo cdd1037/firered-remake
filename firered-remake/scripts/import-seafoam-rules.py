@@ -119,7 +119,7 @@ def generate(reference, dependency):
     need(len(species)==386,'Complete shared source mechanics')
     original=species[additions[0]]; meta=metadata[additions[0]]
     need(original['sourceSpeciesId']==144 and not original['evolutions'] and not meta['sourceEvolutions'],'Terminal Articuno source')
-    for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]+[m['source'] for m in original['levelUpMoves']]:
+    for sr in [original['source'],original['learnsetSource'],meta['learnsetPointerSource'],meta['dexSource']]:
         read(sr['path'])
     battles=[];actors=[];script_path='data/scripts/trainers.inc'
     for mapname in ['Route19','Route20']:

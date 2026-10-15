@@ -78,7 +78,7 @@ public sealed class PretSeafoamRegion
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("resourceId").GetString() == ResourceId &&
             catalog.GetProperty("maps").GetArrayLength() == 7 && catalog.GetProperty("layoutVariants").GetArrayLength() == 2 , "Seafoam catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Seafoam resources; current-game admission is separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Seafoam resources; current-game admission is separate.", ResourceId);
         string player = PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png");
         PretWorldMap LoadMap(JsonElement spec, bool variant)
         {

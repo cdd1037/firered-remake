@@ -107,7 +107,8 @@ def generate(package):
                     module.main()
                 relative = 'content/generated/department-machine-stock/machines.json'
                 return {relative: READ_BYTES(root / relative)}
-        result = module.generate(Path('/retained-source-adapter'), ROOT)
+        reference = None if package == 'breeding-species' else Path('/retained-source-adapter')
+        result = module.generate(reference, ROOT)
         if package in ('department-rooftop-items', 'game-corner-prizes', 'field-fly'):
             return result[0]
         raw = result.pop('_raw', {})

@@ -32,7 +32,7 @@ CITY_PATH = 'content/generated/fuchsia-route-region/fuchsia-city/runtime-map.jso
 NPC_REUSE = {'OBJ_EVENT_GFX_BOY', 'OBJ_EVENT_GFX_POLICEMAN', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_ROCKER'}
 
 
-def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path):
@@ -172,7 +172,7 @@ def main():
                 sourceMapSymbol=world['events']['id'], path=relative+'/runtime-map.json'))
         lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=MAPS, completeGame=False); lock_bytes = canonical(lock)
         docs = package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1, resourceId=RESOURCE_ID, sourceCommit=COMMIT,
-             maps=entries, inputFiles=lock['files'], tilesets=TILESETS),
+             maps=entries, tilesets=TILESETS),
             'contracts.json':contract, 'npc-source.json':npcs, 'scripts.json':scripts,
             'geometry.json':dict(maps=reader.geometry_inventory(worlds), tilesets=TILESETS)}, check=args.check)
         for name, value in docs.items(): (stage/name).write_bytes(canonical(value))

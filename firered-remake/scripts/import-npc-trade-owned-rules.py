@@ -68,7 +68,6 @@ def generate(reference, dependency):
         need(definition["sourceSpeciesId"] == metadata["nationalDexNumber"] == source_id and
              not definition["evolutions"] and not metadata["sourceEvolutions"], "Canonical terminal identity: " + species)
         references = [definition["source"], definition["learnsetSource"], metadata["learnsetPointerSource"], metadata["dexSource"]]
-        references += [m["source"] for m in definition["levelUpMoves"]]
         for source in references:
             text = read(source["path"])
             need(1 <= source['startLine'] <= source['endLine'] <= len(text.splitlines()), "Exact canonical source reference")

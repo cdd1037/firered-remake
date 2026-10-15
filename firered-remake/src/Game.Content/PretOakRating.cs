@@ -27,15 +27,14 @@ public sealed class PretOakRating
     public ImmutableArray<OakRatingBand> RatingBands { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement SourceContract { get; }
 
     private PretOakRating(ImmutableArray<OakRatingBand> bands,
         ImmutableDictionary<string, string> ui, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement contract)
+        JsonElement contract)
     {
         RatingBands = bands;
-        SourceUiTexts = ui; Constants = constants; SourceFiles = files; SourceContract = contract;
+        SourceUiTexts = ui; Constants = constants; SourceContract = contract;
     }
 
     /// <summary>Original Kanto count tiers, including Mew's 150-caught exception; no National count is rated here.</summary>
@@ -113,11 +112,6 @@ public sealed class PretOakRating
         }
         using var catalogDocument = JsonDocument.Parse(Read("content/generated/oak-rating/oak-rating.json"));
         var catalog = catalogDocument.RootElement;
-        var inventory = catalog.GetProperty("inputFiles").EnumerateArray().Select(entry =>
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            return new PretWorldSourceFile(path);
-        }).ToImmutableArray();
         var options = ContentJson.CreateOptions();
         T Decode<T>(JsonElement value) => value.Deserialize<T>(options) ?? throw new InvalidDataException("Missing Oak rating value.");
         var bands = Decode<ImmutableArray<OakRatingBand>>(catalog.GetProperty("ratingBands"));
@@ -137,7 +131,7 @@ public sealed class PretOakRating
         Require(rules.GetProperty("regionalCount").GetInt32() == 151 && rules.GetProperty("nationalCount").GetInt32() == 386 &&
             rules.GetProperty("nationalCompletionExcluded").EnumerateArray().Select(e => e.GetInt32()).ToImmutableHashSet().SetEquals(NationalExcluded),
             "Oak rating count rules differ.");
-        return new(bands, texts.ToImmutable(), constants.ToImmutable(), inventory, catalog.Clone());
+        return new(bands, texts.ToImmutable(), constants.ToImmutable(), catalog.Clone());
     }
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)

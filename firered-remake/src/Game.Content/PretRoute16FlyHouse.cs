@@ -94,7 +94,7 @@ public sealed class PretRoute16FlyHouse
         dependencyRoot ??= projectRoot; var source = new Source(projectRoot);
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("maps").GetArrayLength() == 1 , "Fly house catalog differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "One house; north path admission remains separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "One house; north path admission remains separate.", ResourceId);
         var spec = catalog.GetProperty("maps")[0]; string path = spec.GetProperty("path").GetString()!;
         Need(path == "route-16-house/runtime-map.json" && spec.GetProperty("stableId").GetString() == HouseMapId.Value ,
             "Fly house compact map identity differs.");

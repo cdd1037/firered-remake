@@ -21,7 +21,7 @@ LAB_SCRIPT = 'data/maps/PalletTown_ProfessorOaksLab/scripts.inc'
 
 
 def canonical(value):
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n').encode('utf-8')
 
 
 def unique(pairs):
@@ -230,7 +230,7 @@ def build(source):
         match = source.one('asm/macros/event.inc', r'^\s*\.macro ' + re.escape(symbol) + r'(?:\s[^\n]*)?\n[\s\S]*?^\s*\.endm')
         macros.append(dict(symbol=symbol, source=source.reference('asm/macros/event.inc', symbol, match), text=match[0]))
     return dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        inputFiles=list(source.entries.values()), constants=constants, ratingBands=bands, texts=texts,
+        constants=constants, ratingBands=bands, texts=texts,
         scriptBlocks=blocks, callerBlocks=callers, nativeDependencies=native, macroDependencies=macros,
         requiredOpcodes=opcodes, specialBindings=special_bindings,
         rules=dict(regionalCount=151, nationalCount=386, nationalMagic=185, nationalVariableValue=25176,

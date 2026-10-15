@@ -1,0 +1,54 @@
+using Game.Content;
+using Game.Domain.Ids;
+
+namespace FireRed.Tests.Content;
+
+[TestClass, TestCategory("Game")]
+public sealed class GeneratedMenuAndRatingTests
+{
+    [TestMethod]
+    public void MenusRatingsAndCenterLoadWithGeneratedResourcesOnly()
+    {
+        var root = TestAssets.Output();
+        var generated = Path.Combine(TestAssets.Root, "content/generated");
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(generated, "*", SearchOption.AllDirectories))
+            {
+                var target = Path.Combine(root, "content/generated", Path.GetRelativePath(generated, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target);
+            }
+
+            var menu = PretMainMenuSource.Load(root);
+            var window = menu.Windows[PretMainMenuSource.ContinueWindow];
+            Assert.AreEqual((24, 8, 192, 80), (window.PixelX, window.PixelY, window.PixelWidth, window.PixelHeight));
+            Assert.AreEqual((240, 160), (menu.Rules.LogicalWidth, menu.Rules.LogicalHeight));
+            Assert.IsTrue(menu.Rules.EmptySaveEntersNewGameDirectly);
+            Assert.IsFalse(menu.Rules.NavigationWraps);
+
+            var rating = PretOakRating.Load(root);
+            Assert.AreEqual("PokedexRating_Text_LessThan10", rating.SelectKantoRating(0, false).TextSymbol);
+            Assert.IsTrue(rating.SelectKantoRating(150, false).KantoComplete);
+            Assert.IsFalse(rating.SelectKantoRating(150, true).KantoComplete);
+            Assert.IsTrue(rating.SelectKantoRating(151, true).KantoComplete);
+            var regional = rating.EvaluateNationalNumbers([1, 2, 151, 152], [1, 151], new(true));
+            Assert.AreEqual(new OakRatingCounts(3, 2), regional.Kanto);
+            Assert.IsNull(regional.National);
+            var national = rating.EvaluateNationalNumbers(Enumerable.Range(1, 386), Enumerable.Range(1, 386), new(true, true, 185, 25176));
+            Assert.IsTrue(national.NationalComplete);
+            Assert.IsTrue(national.ShouldSetOakSawDexCompletion);
+
+            var center = PretViridianCenter.Load(root);
+            Assert.AreEqual(new MapId(PretViridianCenter.StableMapId), center.Map.Id);
+            Assert.AreEqual((15, 10), (center.Map.Width, center.Map.Height));
+            Assert.AreEqual(2, center.Constants["HEAL_LOCATION_VIRIDIAN_CITY"]);
+            Assert.AreEqual(1, center.Constants["LOCALID_VIRIDIAN_NURSE"]);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(center.SourceUiTexts["gText_PlayerScurriedToCenter"]));
+            Assert.AreEqual(5, PretWorldCatalog.Load(Path.Combine(root, "content/generated")).Count);
+            Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));
+            Assert.IsFalse(Directory.Exists(Path.Combine(root, "scripts")));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+}

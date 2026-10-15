@@ -21,7 +21,7 @@ PATHS = frozenset(['src/region_map.c', 'src/strings.c', 'src/data/region_map/reg
 spec = importlib.util.spec_from_file_location('fly_map_pixels', ROOT / 'scripts/first-sevii-town-map-pixels.py')
 pixels = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pixels)
-def canonical(data): return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()
+def canonical(data): return (json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n').encode()
 def safe(root, relative=None):
     root = pathlib.Path(root).absolute()
     target = root

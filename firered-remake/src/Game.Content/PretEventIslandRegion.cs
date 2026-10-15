@@ -73,7 +73,7 @@ public sealed partial class PretEventIslandRegion
         var directory = source.Directory;
         var catalog = source.Document("catalog.json");
         Need(            !catalog.GetProperty("runtimeIntegrated").GetBoolean() , "EventIsland source inventory differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original event-island source maps; application admission remains separate.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original event-island source maps; application admission remains separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

@@ -23,7 +23,7 @@ TILESETS = {'gTileset_General':'primary/general',
             'gTileset_SeviiIslands123':'secondary/sevii_islands_123',
             'gTileset_MtEmber':'secondary/mt_ember'}
 
-def canonical(v): return (json.dumps(v, sort_keys=True, indent=2)+'\n').encode()
+def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, message):
     if not v: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in output: '+str(path))
@@ -84,7 +84,7 @@ def declarations(src, scripts, worlds, proof):
     opponents = {m['species'] for t in trainers for m in t['party']}
     wanted = evolution|opponents
     for symbol in wanted:
-        for ref in [species[symbol]['source'], species[symbol]['learnsetSource']]+[m['source'] for m in species[symbol]['levelUpMoves']]:
+        for ref in [species[symbol]['source'], species[symbol]['learnsetSource']]:
             src.read(ref['path'])
     item_symbols = {'ITEM_RUBY','ITEM_TRI_PASS','ITEM_RAINBOW_PASS','ITEM_HM06'}
     local_labels = {e.get('script') for w in worlds for e in w['events']['object_events']}
@@ -230,7 +230,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE+SUPPORT)
         lockbytes=canonical(lock)
         docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-            runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=mapsymbols,inputFiles=lock['files'],**links),
+            runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=mapsymbols,**links),
             'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contract,
             'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))

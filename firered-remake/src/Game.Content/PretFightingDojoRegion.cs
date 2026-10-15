@@ -53,7 +53,7 @@ public sealed class PretFightingDojoRegion
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Saffron Fighting Dojo catalog source identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Saffron Fighting Dojo resources; current-game admission is separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+            "Original Saffron Fighting Dojo resources; current-game admission is separate.", ResourceId);
 
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())

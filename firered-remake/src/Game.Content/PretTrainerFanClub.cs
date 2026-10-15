@@ -63,7 +63,7 @@ public sealed class PretTrainerFanClub
         Need(catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Trainer Fan Club catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Saffron Trainer Fan Club and original shared script closure.", ResourceId, []);
+            "Original Saffron Trainer Fan Club and original shared script closure.", ResourceId);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
         string path = spec.GetProperty("path").GetString()!;

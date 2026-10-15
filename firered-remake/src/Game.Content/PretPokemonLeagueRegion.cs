@@ -60,7 +60,7 @@ public sealed partial class PretPokemonLeagueRegion
         var files = ImmutableArray<PretWorldSourceFile>.Empty;
         var directory = source.Directory;
         var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original seven Pokemon League interiors; battles, Hall of Fame saving and credits remain separate runtime work.", Profile, files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original seven Pokemon League interiors; battles, Hall of Fame saving and credits remain separate runtime work.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {

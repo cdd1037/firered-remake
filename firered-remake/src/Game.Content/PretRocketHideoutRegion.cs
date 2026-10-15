@@ -142,7 +142,7 @@ public sealed class PretRocketHideoutRegion
         var files = ImmutableArray<PretWorldSourceFile>.Empty;
         var byPath = files.ToDictionary(f=>f.Path,StringComparer.Ordinal);
             
-        var metadata = new PretWorldMetadata("pret/pokefirered",PretWorldMap.SourceCommit,"Local authenticated source data.","Source contracts; executable progression is registered by Application.",Profile,files);
+        var metadata = new PretWorldMetadata("pret/pokefirered",PretWorldMap.SourceCommit,"Local authenticated source data.","Source contracts; executable progression is registered by Application.",Profile);
         var spec = Document("runtime.json"); var maps=ImmutableDictionary.CreateBuilder<MapId,PretWorldMap>();
         foreach(var s in spec.GetProperty("maps").EnumerateArray())
         {
