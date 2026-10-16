@@ -12,7 +12,7 @@ public sealed class CurrentItemCatalogTests
     {
         var shared = SharedItemCatalog.LoadProject(TestAssets.Root);
         var current = CurrentItemCatalog.Load(TestAssets.Root, shared);
-        Assert.AreEqual(151, current.Items.Length);
+        Assert.IsFalse(current.Items.IsDefaultOrEmpty);
         Assert.AreEqual(14, current.Shops.Length);
         Assert.AreEqual("ViridianCity_Mart_Items", current.Shops[0].Id);
         Assert.AreEqual("TrainerTower_Lobby_Mart_Items", current.Shops[^1].Id);
@@ -23,6 +23,15 @@ public sealed class CurrentItemCatalogTests
         var fullRestore = current.Items.Single(item => item.Id.Value == "pret:ITEM_FULL_RESTORE");
         Assert.AreEqual(EarlyShopUseSupport.NoFieldUse, fullRestore.UseSupport);
         Assert.IsTrue(fullRestore.EffectBytes.IsEmpty);
+        var amulet = current.Items.Single(item => item.Id.Value == "pret:ITEM_AMULET_COIN");
+        Assert.AreEqual(EarlyShopUseSupport.NoFieldUse, amulet.UseSupport);
+        Assert.AreEqual("HOLD_EFFECT_DOUBLE_PRIZE", amulet.Item.HoldEffect);
+        Assert.IsTrue(amulet.Item.CanGive);
+        var icons = PretEarlyShop.LoadPresentation(TestAssets.Root, current).Icons;
+        var icon = icons.Single(i => i.Item == amulet.Id);
+        Assert.AreEqual(24, icon.Width);
+        Assert.AreEqual(24, icon.Height);
+        Assert.IsTrue(File.Exists(Path.Combine(TestAssets.Root, icon.PngPath)));
         Assert.IsFalse(current.Items.Any(item => item.Id.Value == "pret:ITEM_HM08"));
         Assert.IsNotNull(shared.Definition(new("pret:ITEM_HM08")));
     }

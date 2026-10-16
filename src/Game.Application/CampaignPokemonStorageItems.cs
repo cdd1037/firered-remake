@@ -19,11 +19,10 @@ public sealed partial class CampaignSession
         if (ValidateStorageItemOwnership(state) is {} invalid) return No(invalid);
         var content = _content.PokemonContent;
         var machines = _content.PewterMachines;
-        var view = HeldItemInventoryView(inventory);
         Decision<CampaignState> ClearPrompt() => new(CommandStatus.Accepted, state with { Pc = pc with { ItemPrompt = null } });
         Decision<CampaignState> Exit()
         {
-            var exit = PokemonStorageItemRules.CheckExit(content, items, state.Party, storage, view, pc.ItemCursor, machines);
+            var exit = PokemonStorageItemRules.CheckExit(content, items, state.Party, storage, inventory, pc.ItemCursor, machines);
             return exit.Succeeded
                 ? new(CommandStatus.Accepted, state with { Pc = pc with { View = CampaignPcView.StorageMenu, ItemPrompt = null } })
                 : No(exit.Diagnostic!.Code);
@@ -31,8 +30,7 @@ public sealed partial class CampaignSession
         Decision<CampaignState> Commit(PokemonStorageItemResult result)
         {
             if (!result.Succeeded) return No(result.Diagnostic!.Code);
-            if (MergeHeldItemInventory(inventory, result.Inventory, out var merged) is {} mergeError) return No(mergeError);
-            var next = state with { Party = result.Party, Storage = result.Storage, Inventory = merged,
+            var next = state with { Party = result.Party, Storage = result.Storage, Inventory = result.Inventory,
                 Pc = pc with { ItemCursor = result.Cursor, ItemPrompt = null, ItemBagTarget = null } };
             return ValidateStorageItemOwnership(next) is {} error ? No(error) : new(CommandStatus.Accepted, next);
         }
@@ -56,7 +54,7 @@ public sealed partial class CampaignSession
                 if (string.IsNullOrEmpty(command.HeldItemId)) return No("storage_item_cursor_identity");
                 // Task_CloseBoxWhileHoldingItem returns to BOX after putting the item away.
                 // A full Bag leaves the cursor and prompt intact, including its cancel path.
-                return Commit(PokemonStorageItemRules.CursorToBag(content, items, state.Party, storage, view,
+                return Commit(PokemonStorageItemRules.CursorToBag(content, items, state.Party, storage, inventory,
                     pc.ItemCursor, new(command.HeldItemId), machines));
             }
             bool exit = prompt == CampaignStorageItemPrompt.Exit ? choice == 0 : choice != 0;
@@ -70,7 +68,7 @@ public sealed partial class CampaignSession
         }
         if (command.Kind == "storage_box")
             return command.Choice is {} box
-                ? Commit(PokemonStorageItemRules.SelectBox(content, items, state.Party, storage, view, pc.ItemCursor, box, machines))
+                ? Commit(PokemonStorageItemRules.SelectBox(content, items, state.Party, storage, inventory, pc.ItemCursor, box, machines))
                 : No("storage_box_index");
         if (command.Kind is not ("storage_item_take" or "storage_item_give" or "storage_item_switch" or
             "storage_item_to_bag" or "storage_item_from_bag" or "storage_item_bag_open")) return No("storage_item_active");
@@ -83,7 +81,7 @@ public sealed partial class CampaignSession
         if (command.Kind == "storage_item_bag_open")
         {
             var targetError = PokemonStorageItemRules.CheckGiveFromBagTarget(content, items, state.Party, storage,
-                view, pc.ItemCursor, location, target, machines);
+                inventory, pc.ItemCursor, location, target, machines);
             return targetError is not null ? No(targetError.Code) :
                 new(CommandStatus.Accepted, state with { Pc = pc with { ItemBagTarget = new(location, target, command.TargetHeldItemId) } });
         }
@@ -92,11 +90,11 @@ public sealed partial class CampaignSession
         if (command.Kind == "storage_item_from_bag" && string.IsNullOrEmpty(command.Text)) return No("held_item_not_holdable");
         return Commit(command.Kind switch
         {
-            "storage_item_take" => PokemonStorageItemRules.Take(content, items, state.Party, storage, view, pc.ItemCursor, location, target, machines),
-            "storage_item_give" => PokemonStorageItemRules.Give(content, items, state.Party, storage, view, pc.ItemCursor, location, target, new(command.HeldItemId!), machines),
-            "storage_item_switch" => PokemonStorageItemRules.Switch(content, items, state.Party, storage, view, pc.ItemCursor, location, target, new(command.HeldItemId!), machines),
-            "storage_item_to_bag" => PokemonStorageItemRules.ToBag(content, items, state.Party, storage, view, pc.ItemCursor, location, target, machines),
-            "storage_item_from_bag" => PokemonStorageItemRules.GiveFromBag(content, items, state.Party, storage, view, pc.ItemCursor, location, target, new(command.Text!), machines),
+            "storage_item_take" => PokemonStorageItemRules.Take(content, items, state.Party, storage, inventory, pc.ItemCursor, location, target, machines),
+            "storage_item_give" => PokemonStorageItemRules.Give(content, items, state.Party, storage, inventory, pc.ItemCursor, location, target, new(command.HeldItemId!), machines),
+            "storage_item_switch" => PokemonStorageItemRules.Switch(content, items, state.Party, storage, inventory, pc.ItemCursor, location, target, new(command.HeldItemId!), machines),
+            "storage_item_to_bag" => PokemonStorageItemRules.ToBag(content, items, state.Party, storage, inventory, pc.ItemCursor, location, target, machines),
+            "storage_item_from_bag" => PokemonStorageItemRules.GiveFromBag(content, items, state.Party, storage, inventory, pc.ItemCursor, location, target, new(command.Text!), machines),
             _ => throw new InvalidOperationException("storage_item_command_dispatch")
         });
     }
@@ -111,12 +109,12 @@ public sealed partial class CampaignSession
         {
             if (pc.ItemPrompt is not null || pc.ItemCursor is not null || target.HeldItemId != "pret:ITEM_NONE") return "storage_item_bag_context";
             var error = PokemonStorageItemRules.CheckGiveFromBagTarget(_content.PokemonContent, _content.EarlyShop,
-                state.Party, state.Storage, HeldItemInventoryView(state.Inventory), pc.ItemCursor,
+                state.Party, state.Storage, state.Inventory, pc.ItemCursor,
                 target.Location, target.InstanceId, _content.PewterMachines);
             if (error is not null) return error.Code;
         }
         return ValidateCampaignInventory(state.Inventory) ?? ValidateStorageMoveOwnership(state) ??
             PokemonStorageItemRules.Validate(_content.PokemonContent, _content.EarlyShop, state.Party, state.Storage,
-                HeldItemInventoryView(state.Inventory), pc.ItemCursor, _content.PewterMachines, state.NextPokemonId)?.Code;
+                state.Inventory, pc.ItemCursor, _content.PewterMachines, state.NextPokemonId)?.Code;
     }
 }

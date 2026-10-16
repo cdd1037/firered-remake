@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Import Route17 and Cycling Road's initial single trainer battles from pinned raw data.
+"""Import Route17, the north gate upstairs and initial Cycling Road single battles.
 
-Route16, Route18 and their gates keep their existing resource ownership. This
+Route16, Route18 and the existing first-floor gates retain their ownership. This
 offline converter reuses the ordinary map renderer, shared trainers and NPC art.
 After importing, rebuild field tilesets and map atlases with their usual tools.
 """
@@ -27,7 +27,9 @@ from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PACKAGE = 'maps/regions/cycling-road'
-TILESETS = {'gTileset_General': 'primary/general', 'gTileset_CeladonCity': 'secondary/celadon_city'}
+TILESETS = {'gTileset_General': 'primary/general', 'gTileset_CeladonCity': 'secondary/celadon_city',
+            'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
+MAPS = (('Route17', 'map.route-17'), ('Route16_NorthEntrance_2F', 'map.route-16-north-entrance-2f'))
 ROUTES = ('Route16', 'Route17', 'Route18')
 
 
@@ -181,24 +183,29 @@ def convert(root, raw, check=False):
     output = safe(generated / PACKAGE)
     src = Source(raw)
     events = src.json('data/maps/Route17/map.json')
-    # The shared renderer includes these dispatch paths in the compact map.
-    for name in ('scripts.inc', 'text.inc'):
-        src.text('data/maps/Route17/' + name)
+    # Missing story inputs fail before publishing a room with inert actors.
+    map_events = {name: src.json(f'data/maps/{name}/map.json') for name, _ in MAPS}
+    for map_name, _ in MAPS:
+        for name in ('scripts.inc', 'text.inc'):
+            src.text(f'data/maps/{map_name}/' + name)
     renderer = module(PROJECT_ROOT / 'tools/import-regional-service-maps/_regional_service_shared.py', 'cycling_map_renderer')
     renderer.TILESETS = TILESETS
     renderer.PROFILE = 'firered-cycling-road-v1'
     documents = {
-        'catalog.json': dict(schemaVersion=1, maps=[dict(stableId='map.route-17', sourceName='Route17',
-            sourceMapSymbol='MAP_ROUTE17', mapPath='route-17.json')],
-            mapSymbols={f'MAP_ROUTE{number}': f'map.route-{number}' for number in (16, 17, 18)}, tilesets=TILESETS),
+        'catalog.json': dict(schemaVersion=1, maps=[dict(stableId=identity, sourceName=name,
+            sourceMapSymbol=map_events[name]['id'], mapPath=identity.removeprefix('map.') + '.json') for name, identity in MAPS],
+            mapSymbols={**{f'MAP_ROUTE{number}': f'map.route-{number}' for number in (16, 17, 18)},
+                        **{map_events[name]['id']: identity for name, identity in MAPS},
+                        'MAP_ROUTE16_NORTH_ENTRANCE_1F': 'map.route-16-north-entrance-1f'}, tilesets=TILESETS),
         'npc-source.json': dict(schemaVersion=1, dynamicGraphics=[], graphics=[dict(graphicsId=identity)
-            for identity in sorted({actor['graphics_id'] for actor in events['object_events']} | {'OBJ_EVENT_GFX_RED_NORMAL'})]),
+            for identity in sorted({actor['graphics_id'] for data in map_events.values() for actor in data['object_events']} | {'OBJ_EVENT_GFX_RED_NORMAL'})]),
         'trainers.json': trainer_battles(src, generated),
         'land-encounters.json': land_encounters(src),
     }
     with tempfile.TemporaryDirectory(prefix='firered-cycling-road-') as temporary:
         stage = Path(temporary)
-        renderer.import_map(src, 'Route17', 'map.route-17', stage / 'route-17')
+        for name, identity in MAPS:
+            renderer.import_map(src, name, identity, stage / identity.removeprefix('map.'))
         for name, value in documents.items():
             (stage / name).write_bytes(encode(value))
         publish_map_package(stage)
@@ -225,7 +232,7 @@ def convert(root, raw, check=False):
             for path in sorted(stage.iterdir()):
                 shutil.copyfile(path, safe(output / path.name))
         package_documents(generated, hidden_constants(src, events), {}, check=check)
-    return dict(checked=check, maps=1, trainerBattles=len(documents['trainers.json']['battles']),
+    return dict(checked=check, maps=len(MAPS), trainerBattles=len(documents['trainers.json']['battles']),
                 landEncounterTables=len(documents['land-encounters.json']),
                 signs=sum(event['type'] == 'sign' for event in events['bg_events']),
                 hiddenItems=sum(event['type'] == 'hidden_item' for event in events['bg_events']))

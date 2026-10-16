@@ -93,3 +93,25 @@ Celadon approach 遇敌表由 `python scripts/imports/story/import-celadon-appro
 音频从零恢复有单独的输入合同：主 pack 需要现有 pack 或合法自备 ROM；normal-cries 目录生成需要匹配 pret 常量/声明、生成后的 cry .bin 与源 .wav，并对照现有 pack。工具直接写目录，不再依赖旧 inventory/ELF/map。当前 raw 树没有生成后的 cry .bin。目前八份早期cue配方缺失；在这些闭包补齐前保留现有私有音频资源，不宣称完整冷重建。
 
 音频现合入主工程 `src/Game.Audio`，只保留 `content/generated/audio/synth/firered.pack` 与 `normal-cries.bin` 一套运行素材。`tools/AudioTool` 和 catalog 生成器显式接收输入路径；运行库不依赖项目目录。当前入口见 [音频说明](audio.md)，音频测试按需单独执行。
+
+## 16号路门楼二层与新增物品图标
+
+`import-cycling-road.py` 的地图清单现在包含17号路及16号路门楼二层，
+读取同一固定raw目录的地图、楼层布局、脚本和文本。故事路径在
+`tools/import-story/recipe.json`；护符金币从既有共享物品定义和显式取得清单导入。
+取得清单的可选 `icon: true` 使用上游图标表与调色板生成
+`data/items/current-icons.json`，由通用商店／背包表现加载，不增加地区专用UI入口。
+
+```sh
+python scripts/imports/maps/import-cycling-road.py
+python scripts/imports/maps/import-field-tilesets.py
+python scripts/imports/maps/import-map-atlases.py
+python scripts/imports/items/import-current-items.py
+python scripts/lib/item_icon_exports.py
+python scripts/imports/story/import-story.py
+python scripts/imports/maps/import-cycling-road.py --check
+python scripts/imports/items/import-current-items.py --check
+```
+
+物品图标检查在收进图集后仍比较完整RGBA像素；不要求PNG压缩字节一致。
+新增原始输入仍只保存在本地raw中，不进入Git或公开站点。

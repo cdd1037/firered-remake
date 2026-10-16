@@ -662,6 +662,11 @@
     {
       "item": "pret:ITEM_LUXURY_BALL",
       "useSupport": "separateCapture"
+    },
+    {
+      "item": "pret:ITEM_AMULET_COIN",
+      "useSupport": "noFieldUse",
+      "icon": true
     }
   ],
   "shops": [

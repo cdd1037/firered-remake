@@ -22,7 +22,7 @@ class CurrentItemTests(unittest.TestCase):
     def test_current_output_is_reproducible_and_bounded(self):
         catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
         self.assertEqual(catalog, json.loads((ROOT / compiler.TARGET).read_text()))
-        self.assertEqual(151, len(catalog['items']))
+        self.assertEqual(len(compiler.read_recipe(ROOT)['items']), len(catalog['items']))
         self.assertEqual(14, len(catalog['shops']))
         self.assertEqual('pret:ITEM_POKE_BALL', catalog['items'][0]['item'])
         self.assertEqual(99, catalog['maximumTransactionQuantity'])
@@ -37,6 +37,12 @@ class CurrentItemTests(unittest.TestCase):
                 self.assertEqual(effects[item['item'].removeprefix('pret:')], item['effectBytes'])
             self.assertEqual({'item', 'description', 'healHp', 'cureStatus', 'effectBytes', 'useSupport'}, set(item))
         self.assertTrue(all(set(shop) == {'id', 'items'} for shop in catalog['shops']))
+
+    def test_current_item_icons_match_source_pixels_after_atlas_packing(self):
+        self.assertEqual(1, compiler.import_icons(ROOT, check=True))
+        icons = json.loads((ROOT / 'content/generated/data/items/current-icons.json').read_text())['icons']
+        self.assertEqual('pret:ITEM_AMULET_COIN', icons[0]['item']['value'])
+        self.assertEqual((24, 24), (icons[0]['width'], icons[0]['height']))
 
     def test_explicit_admission_has_no_historical_count_gate(self):
         recipe = copy.deepcopy(compiler.read_recipe(ROOT))
@@ -63,7 +69,7 @@ class CurrentItemTests(unittest.TestCase):
         for replacement, error in [({'item': original['items'][0]['item']}, 'Duplicate current item'),
                                    ({'item': 'pret:ITEM_NONE'}, 'Unknown item'),
                                    ({'useSupport': 'inventedUse'}, 'Unknown item use'),
-                                   ({'price': 1}, 'entry schema')]:
+                                   ({'price': 1}, 'entry schema'), ({'icon': 'true'}, 'Invalid icon admission')]:
             recipe = copy.deepcopy(original)
             recipe['items'][1].update(replacement)
             with self.subTest(replacement=replacement), self.assertRaisesRegex(ValueError, error):

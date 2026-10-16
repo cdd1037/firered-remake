@@ -18,8 +18,7 @@ public sealed partial class CampaignSession
         bool onRoad = state.Script.Flags.GetValueOrDefault(CyclingRoadFlag);
         var p = state.World.Player;
         bool outdoor = p.MapId.Value is "map.route-16" or "map.route-17" or "map.route-18";
-        bool gate = p.MapId.Value is "map.route-16-north-entrance-1f" or "map.route-18-east-entrance-1f" or
-            "map.route-18-east-entrance-2f";
+        bool gate = _content.CyclingRoadSceneInteriors.Contains(p.MapId);
         if (scene is not (0 or 1) || scene == 1 && (!outdoor && !gate ||
             OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], BicycleId) != 1))
             return "save_cycling_road_scene";

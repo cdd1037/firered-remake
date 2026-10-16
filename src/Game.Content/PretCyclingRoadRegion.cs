@@ -8,7 +8,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-/// <summary>Route17 fills the existing Route16/18 connection. Existing gate/map owners remain unchanged.</summary>
+/// <summary>Route17 and the north gate upstairs extend the source map catalog; existing map owners remain unchanged.</summary>
 public sealed class PretCyclingRoadRegion
 {
     public static MapId Route17MapId { get; } = new("map.route-17");
@@ -18,10 +18,10 @@ public sealed class PretCyclingRoadRegion
     public string NpcSourcePath { get; }
     private readonly ImmutableDictionary<string, int> _constants;
 
-    private PretCyclingRoadRegion(PretWorldMap map, CyclingRoadTrainerCatalog trainers, string directory,
+    private PretCyclingRoadRegion(ImmutableDictionary<MapId, PretWorldMap> maps, CyclingRoadTrainerCatalog trainers, string directory,
         ImmutableDictionary<string, int> constants, ImmutableArray<EarlyLandEncounterTable> landEncounters)
     {
-        NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(map.Id, map);
+        NewMaps = maps;
         Trainers = trainers;
         LandEncounters = landEncounters;
         NpcSourcePath = Path.Combine(directory, "npc-source.json");
@@ -41,7 +41,7 @@ public sealed class PretCyclingRoadRegion
     };
 
     public static ConnectedFieldMap ConnectedMap(PretWorldMap map) => new(map.Id, map.Width, map.Height,
-        map.CreateConnectedCells(), map.Events.GetProperty("connections").EnumerateArray().Select(c =>
+        map.CreateConnectedCells(), map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null ? [] : map.Events.GetProperty("connections").EnumerateArray().Select(c =>
             new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch
             {
                 "up" => Direction.North,
@@ -53,12 +53,28 @@ public sealed class PretCyclingRoadRegion
     public static PretCyclingRoadRegion Load(string root)
     {
         var source = new SilphSourcePackage(root, "maps/regions/cycling-road");
-        var runtime = PretRuntimeMapData.Decode(source.Read("route-17.json"), Route17MapId.Value, MapIdFromSourceSymbol);
+        var catalog = source.Document("catalog.json");
+        var symbols = catalog.GetProperty("mapSymbols").EnumerateObject()
+            .ToImmutableDictionary(p => p.Name, p => new MapId(p.Value.GetString()!), StringComparer.Ordinal);
+        MapId Resolve(string symbol) => symbols.TryGetValue(symbol, out var id) ? id :
+            throw new InvalidDataException("cycling_road_map_symbol:" + symbol);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,
-            "Local source evidence; redistribution rights are not inferred.", "Original Cycling Road Route17.",
+            "Local source evidence; redistribution rights are not inferred.", "Original Cycling Road maps and gate interiors.",
             "firered-cycling-road-v1");
-        var map = PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, "route-17.json"),
-            PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
+        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
+        foreach (var entry in catalog.GetProperty("maps").EnumerateArray())
+        {
+            string id = entry.GetProperty("stableId").GetString()!;
+            string relative = entry.GetProperty("mapPath").GetString()!;
+            var runtime = PretRuntimeMapData.Decode(source.Read(relative), id, Resolve);
+            var map = PretWorldMap.FromRuntime(runtime, metadata,
+                PretRuntimeMapValidation.SafeFile(source.Directory, relative),
+                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), Resolve);
+            if (Resolve(runtime.SourceMapSymbol) != map.Id)
+                throw new InvalidDataException("cycling_road_map_identity");
+            maps.Add(map.Id, map);
+        }
+        if (maps.Count == 0) throw new InvalidDataException("cycling_road_maps_empty");
         var doc = JsonSerializer.Deserialize<FiveIslandTrainerDocument>(source.Read("trainers.json"),
             SharedTrainerCatalog.Options(root)) ?? throw new InvalidDataException("cycling_road_trainers_missing");
         var trainers = new CyclingRoadTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id),
@@ -70,7 +86,7 @@ public sealed class PretCyclingRoadRegion
             !land.Select(t => t.Map.Value).ToHashSet().SetEquals(["map.route-17", "map.route-18"]))
             throw new InvalidDataException("cycling_road_land_maps");
         foreach (var table in land) EarlyLandEncounterRules.ValidateTableDefinition(table);
-        return new(map, trainers, source.Directory, PretSharedConstants.ForPackage(source.Directory), land);
+        return new(maps.ToImmutable(), trainers, source.Directory, PretSharedConstants.ForPackage(source.Directory), land);
     }
 
     public ImmutableArray<FieldPickupDefinition> HiddenPickups(EarlyShopCatalog shop) =>

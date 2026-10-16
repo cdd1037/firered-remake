@@ -21,6 +21,12 @@ public static class PretEarlyShop
     {
         using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "content/generated/data/services/early-shop/early-shop.json")));
         var icons = ContentJson.ParseStrict<ImmutableArray<PretEarlyShopIcon>>(json.RootElement.GetProperty("icons").GetRawText(), ContentJson.CreateOptions());
+        using var current = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "content/generated/data/items/current-icons.json")));
+        icons = icons.AddRange(ContentJson.ParseStrict<ImmutableArray<PretEarlyShopIcon>>(
+            current.RootElement.GetProperty("icons").GetRawText(), ContentJson.CreateOptions()));
+        if (icons.Select(i => i.Item).Distinct().Count() != icons.Length ||
+            icons.Any(i => catalog.Items.All(item => item.Id != i.Item)))
+            throw new InvalidDataException("current_item_icon_admission");
         foreach (var icon in icons) ValidateIcon(icon);
         return new(1, catalog, icons, []);
     }

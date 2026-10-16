@@ -110,7 +110,8 @@ public sealed class GeneratedDomainCatalogTests
             var currentMachines = SharedMachineCatalog.LoadProject(root).LoadCurrent(SharedMachineCatalogTests.Pokemon(root));
             Assert.AreEqual(57, currentMachines.Machines.Length);
             Assert.IsTrue(currentMachines.Machines.All(machine => machine.Compatibility.Length == 189));
-            Assert.AreEqual(151, CurrentItemCatalog.Load(root).Items.Length);
+            CollectionAssert.AreEquivalent(CurrentItemCatalog.Load(TestAssets.Root).Items.Select(i => i.Id).ToArray(),
+                CurrentItemCatalog.Load(root).Items.Select(i => i.Id).ToArray());
             Assert.IsNotNull(PretSafariItems.LoadProject(root));
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "scripts")));
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));

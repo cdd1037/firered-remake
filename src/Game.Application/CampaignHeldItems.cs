@@ -44,35 +44,13 @@ public sealed partial class CampaignSession
             return No("berry_item_context_invalid");
         if (ValidateCampaignInventory(state.Inventory) is {} invalid) return No(invalid);
         var owned = state.Party[command.PartyIndex];
-        // Full strict admission above precedes the legacy shop projection. Retain the
-        // TM pocket and CASE for the shared transaction; restore every other Key Item below.
-        var view = HeldItemInventoryView(state.Inventory);
-        var result = take ? HeldItemTransferRules.Take(shop, view, owned, _content.PewterMachines)
-            : HeldItemTransferRules.Give(shop, view, owned, new(command.Text!), fromPc, command.Choice == 1, _content.PewterMachines);
+        // Shared transactions consume the complete validated inventory directly.
+        var inventory = state.Inventory;
+        var result = take ? HeldItemTransferRules.Take(shop, inventory, owned, _content.PewterMachines)
+            : HeldItemTransferRules.Give(shop, inventory, owned, new(command.Text!), fromPc, command.Choice == 1, _content.PewterMachines);
         if (!result.Succeeded) return No(result.Error!);
-        if (MergeHeldItemInventory(state.Inventory, result.Inventory, out var changed) is {} mergeError) return No(mergeError);
-        return new(CommandStatus.Accepted, state with { Inventory = changed,
+        return new(CommandStatus.Accepted, state with { Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             ItemMenu = !take && menu.TargetInstanceId is not null ? menu with { Origin = "party", View = "held" } : menu });
     }
-    private InventoryState HeldItemInventoryView(InventoryState inventory)
-    {
-        var view = inventory;
-        return _content.PewterMachines is null ? view : view with { Machines = inventory.Machines,
-            KeyItems = (view.KeyItems ?? []).AddRange((inventory.KeyItems ?? []).Where(s => s.Item == MachineRules.TmCaseId)) };
-    }
-
-    private string? MergeHeldItemInventory(InventoryState original, InventoryState changed, out InventoryState result)
-    {
-        result = changed with { Machines = changed.Machines };
-        if ((changed.KeyItems ?? []).Any(s => s.Item == MachineRules.TmCaseId) &&
-            !(result.KeyItems ?? []).Any(s => s.Item == MachineRules.TmCaseId))
-        {
-            // Validate full key capacity before adding a CASE created while returning a held TM.
-            if ((result.KeyItems?.Length ?? 0) >= _content.PewterMachines!.KeyItemSlots) return "inventory_key_items_full";
-            result = result with { KeyItems = (result.KeyItems ?? []).Add(new(MachineRules.TmCaseId, 1)) };
-        }
-        return null;
-    }
-
 }

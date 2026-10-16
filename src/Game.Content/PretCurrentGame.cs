@@ -662,7 +662,7 @@ public sealed partial class PretCampaignCatalog
 
         // Change this explicit version only when the saved content model changes.
         const string version = "firered-current-content-v4";
-        return new(
+        var result = new PretCampaignCatalog(
             maps: maps,
             scripts: compiled,
             text: bank.ToImmutable(),
@@ -818,6 +818,9 @@ public sealed partial class PretCampaignCatalog
             leagueRematchTrainers: leagueRematchTrainers,
             sevenIsland: sevenIsland, sevenTrainers: sevenTrainers, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, powerPlant: powerPlant, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             fightingDojo: fightingDojo, dojoTrainers: dojoTrainers, fossilLab: fossilLab, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition, schoolHouseInteriors: schoolHouseInteriors, lostCave: lostCave, lostCaveTrainers: lostCaveTrainers, trainerFanClub: trainerFanClub, cyclingRoad: cyclingRoad, canonicalPokemon: canonicalPokemon, fishingDefinitions: PretOrdinaryFishing.Load(projectRoot)) { MailPresentation = mailPresentation, MailComposer = mailComposer.Catalog, TeachyTv = teachyTv, VsSeeker = vsSeeker.Catalog, VsSeekerTexts = vsSeekerPresentation.EncodedTexts, VsSeekerTrainers = vsSeekerTrainers, VsSeekerBattleOccurrences = vsSeekerOccurrences, VsSeekerOpponents = gamePokemon.Opponents, FameChecker = fameChecker.Catalog, GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = gamePokemon.Opponents };
+        result.BindPokedexAides();
+        result.BindCyclingRoadSceneInteriors();
+        return result;
     }
 
     private static void ValidateCeruleanCaveComposition(PretCeruleanCaveRegion region,

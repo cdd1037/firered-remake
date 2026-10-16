@@ -42,6 +42,7 @@ public sealed record CampaignDepartmentDynamicExit(int WarpIndex,int X,int Y,int
 public interface ICampaignCatalog:IStoryCatalog
 {
     InventoryCatalog Inventory { get; }
+    PokedexAideCatalog PokedexAides => PokedexAideCatalog.Empty;
     EscapeRopePolicy EscapeRoutes { get; }
     string ContentVersion{get;}
     Game.Domain.Pokemon.SourceEasyChatCatalog? MailComposer=>null;
@@ -95,6 +96,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool SafariEnabled=>false;
     SafariFishingEncounterCatalog? SafariFishing => null;
     bool CyclingRoadEnabled => false;
+    ImmutableHashSet<MapId> CyclingRoadSceneInteriors => ImmutableHashSet<MapId>.Empty;
     CyclingRoadTrainerCatalog? CyclingRoadTrainers => null;
     bool PokemonLeagueEnabled=>false;
     NpcTradePokemonCatalog? NpcTrades=>null;

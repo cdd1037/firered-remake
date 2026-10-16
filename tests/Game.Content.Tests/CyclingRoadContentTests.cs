@@ -19,7 +19,7 @@ public sealed class CyclingRoadContentTests
         var region = catalog.CyclingRoadRegion;
         var id = PretCyclingRoadRegion.Route17MapId;
         Assert.IsTrue(catalog.CyclingRoadEnabled);
-        CollectionAssert.AreEqual(new[] { id }, region.NewMaps.Keys.ToArray());
+        CollectionAssert.AreEquivalent(new[] { id, new MapId("map.route-16-north-entrance-2f") }, region.NewMaps.Keys.ToArray());
         Assert.AreSame(region.NewMaps[id], catalog.SourceMaps[id]);
         Assert.AreEqual(24, catalog.SourceMaps[id].Width);
         Assert.AreEqual(160, catalog.SourceMaps[id].Height);
@@ -51,6 +51,38 @@ public sealed class CyclingRoadContentTests
         Assert.AreEqual(6, signs.Length);
         foreach (var sign in signs)
             Assert.IsNotNull(catalog.FindProgram(sign.GetProperty("script").GetString()!));
+    }
+
+    [TestMethod]
+    public void UpstairsHasSourceGeometryActorsBinocularsAndReciprocalStairs()
+    {
+        var catalog = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
+        var id = new MapId("map.route-16-north-entrance-2f");
+        var map = catalog.SourceMaps[id];
+        Assert.AreEqual(13, map.Width);
+        Assert.AreEqual(11, map.Height);
+        var definition = catalog.MapDefinition(id);
+        Assert.AreEqual(3, definition.Actors.Length);
+        var aideActor = definition.Actors.Single(a => a.ScriptId.EndsWith("_EventScript_Aide", StringComparison.Ordinal));
+        var aide = catalog.PokedexAides.ByActor[(id, aideActor.LocalId)];
+        Assert.AreEqual(40, aide.RequiredCaught);
+        Assert.AreEqual("pret:ITEM_AMULET_COIN", aide.Item.Id.Value);
+        Assert.AreEqual("FLAG_GOT_AMULET_COIN_FROM_OAKS_AIDE", aide.RewardFlag);
+        Assert.AreEqual(2, definition.BackgroundTriggers.Length);
+        Assert.IsFalse(map.Events.GetProperty("allow_cycling").GetBoolean());
+        Assert.IsTrue(catalog.ConnectedFieldMaps![id].Connections.IsEmpty);
+        foreach (var script in definition.Actors.Select(a => a.ScriptId).Concat(definition.BackgroundTriggers.Select(b => b.ScriptId)))
+        {
+            var program = catalog.FindProgram(script);
+            Assert.IsNotNull(program);
+            Assert.IsFalse(program.Instructions.Any(i => i.Op == Game.Domain.Events.StoryOp.Unsupported));
+        }
+        var stair = map.FieldWarps.Single();
+        Assert.AreEqual(new MapId("map.route-16-north-entrance-1f"), stair.DestinationMapId);
+        Assert.AreEqual(4, stair.DestinationWarpId);
+        Assert.AreEqual(id, catalog.SourceMaps[stair.DestinationMapId].FieldWarps[4].DestinationMapId);
+        Assert.IsTrue(catalog.CyclingRoadSceneInteriors.Contains(id));
+        Assert.IsFalse(catalog.CyclingRoadSceneInteriors.Contains(new("map.cerulean-city-bike-shop")));
     }
 
     [TestMethod]
@@ -112,7 +144,7 @@ public sealed class CyclingRoadContentTests
     public void LegalGeneratedTableChangesReachCandidateGenerationWithoutStaticFallback()
     {
         using var output = TestAssets.TemporaryOutput();
-        foreach (var relative in new[] { Package + "/route-17.json", Package + "/trainers.json",
+        foreach (var relative in new[] { Package + "/route-17.json", Package + "/route-16-north-entrance-2f.json", Package + "/catalog.json", Package + "/trainers.json",
             Package + "/land-encounters.json", "content/generated/data/trainers.json", "content/generated/data/constants.json" })
         {
             string target = Path.Combine(output.Path, relative);

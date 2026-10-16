@@ -40,7 +40,7 @@ public sealed partial class CampaignSession
             if (HeldItemTargetError(state, command) is {} targetError) return No(targetError);
             if (menu.TargetInstanceId is not null && (menu.TargetInstanceId != command.TargetInstanceId || menu.TargetPartyIndex != command.PartyIndex))
                 return No("held_item_target_stale");
-            if (SourceMailComposerRules.CheckGive(_content.EarlyShop, HeldItemInventoryView(state.Inventory), state.Mail ?? SourceMailState.Empty,
+            if (SourceMailComposerRules.CheckGive(_content.EarlyShop, state.Inventory, state.Mail ?? SourceMailState.Empty,
                 state.Party, command.PartyIndex, (ushort)definition.SourceItemId, command.Choice == 1, _content.PewterMachines) is {} error) return No(error);
         }
         return new(CommandStatus.Accepted, state with { MailComposer = new("mail:" + (Revision + 1), 0,
@@ -91,12 +91,11 @@ public sealed partial class CampaignSession
         if (ValidateCampaignInventory(state.Inventory) is {} invalid) return No(invalid);
         var author = SourceMailComposerRules.CreateAuthor(_content.MailComposer!, state.PlayerName, state.TrainerId);
         var result = SourceMailComposerRules.Give(_content.EarlyShop!, _content.MailComposer!, MailSelection(state),
-            HeldItemInventoryView(state.Inventory!), state.Mail ?? SourceMailState.Empty, state.Party, draft.PartyIndex,
+            state.Inventory!, state.Mail ?? SourceMailState.Empty, state.Party, draft.PartyIndex,
             draft.ItemId, draft.Words, author, draft.ReplaceConfirmed, _content.PewterMachines);
         if (!result.Succeeded) return No(result.Error!);
-        if (MergeHeldItemInventory(state.Inventory!, result.Inventory, out var inventory) is {} mergeError) return No(mergeError);
         return new(CommandStatus.Accepted, state with { MailComposer = null, Mail = result.State, Party = result.Party,
-            Inventory = inventory,
+            Inventory = result.Inventory,
             ItemMenu = menu.TargetInstanceId is not null ? menu with { Origin = "party", View = "held" } : menu });
     }
 }

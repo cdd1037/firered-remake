@@ -16,6 +16,8 @@ import re
 from item_catalog import ROOT, RAW, COMMIT, item_definition, inventory_item, item_json
 from item_effects import read_effects
 from machine_catalog import load_catalog
+from item_icon_exports import item_icon_path, decode_icon_page
+from PIL import Image
 
 RECIPE = Path('scripts/recipes/config/current-item-admissions.json')
 TARGET = Path('content/generated/data/available-items.json')
@@ -57,8 +59,9 @@ def compile_catalog(root, recipe=None):
                  4: status_bits['FREEZE'], 2: status_bits['PARALYSIS']}
     items, admitted = [], set()
     for entry in recipe['items']:
-        require({'item', 'useSupport'} <= entry.keys() <= {'item', 'useSupport', 'effects', 'description'},
+        require({'item', 'useSupport'} <= entry.keys() <= {'item', 'useSupport', 'effects', 'description', 'icon'},
                 'Current item entry schema')
+        require(type(entry.get('icon', False)) is bool, 'Invalid icon admission')
         item = item_definition(entry['item'], root)
         require(item.identity not in admitted, 'Duplicate current item: ' + item.identity)
         admitted.add(item.identity)
@@ -103,6 +106,63 @@ def compile_catalog(root, recipe=None):
                 maximumTransactionQuantity=maximum_quantity, maximumMoney=maximum_money, items=items, shops=shops)
 
 
+def import_icons(root, check=False):
+    """Render explicitly selected current-item icons with the common source table/palette recipe.
+
+    These supplement retained icon families; runtime consumers need no region-specific loader.
+    A check compares logical pixels whether the image is standalone or already atlased.
+    """
+    raw = root / RAW
+    table = (raw / 'src/data/item_icon_table.h').read_text()
+    declarations = (raw / 'src/data/graphics/items.h').read_text()
+    icons, images = [], {}
+    for entry in read_recipe(root)['items']:
+        if not entry.get('icon', False):
+            continue
+        symbol = item_definition(entry['item'], root)['sourceItemSymbol']
+        binding = re.findall(r'^\s*\[' + re.escape(symbol) + r'\]\s*= \{(\w+), (\w+)\},$', table, re.M)
+        require(len(binding) == 1, 'Missing source icon binding: ' + symbol)
+        paths = []
+        for name, suffix in zip(binding[0], ('.4bpp.lz', '.gbapal.lz')):
+            matches = re.findall(r'^const u32 ' + re.escape(name) + r'\[\] = INCBIN_U32\("([^"\n]+)' + re.escape(suffix) + r'"\);$', declarations, re.M)
+            require(len(matches) == 1, 'Missing source icon declaration: ' + name)
+            relative = matches[0] + ('.png' if suffix == '.4bpp.lz' else '.pal')
+            require(not Path(relative).is_absolute() and '..' not in Path(relative).parts, 'Unsafe icon source path')
+            paths.append(relative)
+        with Image.open(raw / paths[0]) as indexed:
+            require(indexed.mode == 'P' and indexed.size == (24, 24) and max(indexed.tobytes()) < 16,
+                    'Invalid source item icon: ' + symbol)
+            indices = indexed.tobytes()
+        lines = (raw / paths[1]).read_text().splitlines()
+        require(lines[:3] == ['JASC-PAL', '0100', '16'] and len(lines) == 19, 'Invalid item palette')
+        colors = [tuple(int(value) for value in line.split()) for line in lines[3:]]
+        require(all(len(color) == 3 and all(0 <= value <= 255 for value in color) for color in colors), 'Invalid palette RGB')
+        colors = [tuple(((value >> 3) << 3) | ((value >> 3) >> 2) for value in color) for color in colors]
+        pixels = bytes(value for index in indices for value in (*colors[index], 255 if index else 0))
+        image = Image.frombytes('RGBA', (24, 24), pixels)
+        path = item_icon_path(*paths)
+        icons.append(dict(item=dict(value=entry['item']), width=24, height=24, pngPath=path))
+        images[entry['item']] = image
+    target = root / 'content/generated/data/items/current-icons.json'
+    if check:
+        actual = json.loads(target.read_text())['icons']
+        require(len(actual) == len(icons), 'Current icon count differs')
+        for expected, row in zip(icons, actual):
+            require(all(row[key] == expected[key] for key in ('item', 'width', 'height')), 'Current icon identity differs')
+            path = Path(row['pngPath'])
+            require(not path.is_absolute() and '..' not in path.parts, 'Unsafe icon output path')
+            image = decode_icon_page((root / path).read_bytes(), row)
+            require(image.tobytes() == images[row['item']['value']].tobytes(), 'Current icon RGBA differs')
+    else:
+        for icon in icons:
+            destination = root / icon['pngPath']
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            images[icon['item']['value']].save(destination, format='PNG')
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(dict(icons=icons), separators=(',', ':')) + '\n')
+    return len(icons)
+
+
 def run(root, check=False):
     document = compile_catalog(root)
     data = (json.dumps(document, ensure_ascii=False, separators=(',', ':'), default=item_json) + '\n').encode()
@@ -112,7 +172,8 @@ def run(root, check=False):
     else:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    return dict(checked=check, items=len(document['items']), shops=len(document['shops']), bytes=len(data))
+    icons = import_icons(root, check)
+    return dict(checked=check, items=len(document['items']), shops=len(document['shops']), icons=icons, bytes=len(data))
 
 
 if __name__ == '__main__':

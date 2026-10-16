@@ -135,7 +135,7 @@ public sealed class CyclingRoadFlowTests : WildBattleFixture
     }
 
     [TestMethod]
-    public void RoadConnectionsWorkBothWaysAndNorthernUpstairsStaysDeferred()
+    public void RoadConnectionsWorkBothWaysAndNorthernStairsRoundtrip()
     {
         var session = EnterRoad();
         foreach (var (origin, destination, direction) in new[] {
@@ -163,12 +163,134 @@ public sealed class CyclingRoadFlowTests : WildBattleFixture
             Assert.AreEqual(1, session.State.Script.Variables.GetValueOrDefault(RoadScene));
             StrictRoundtrip(session);
         }
-        Place(session, session.State, "map.route-16-north-entrance-1f", 9, 15, Direction.South);
-        var before = CanonicalJson.Hash(session.State);
-        var denied = session.Execute("unimplemented-north-upstairs", session.Revision, new("move", Direction.South));
-        Assert.AreEqual(CommandStatus.Rejected, denied.Status);
-        Assert.AreEqual("snorlax_warp_not_open", denied.Error);
-        Assert.AreEqual(before, CanonicalJson.Hash(session.State));
+        Place(session, session.State, "map.route-16-north-entrance-1f", 8, 16, Direction.East);
+        Send(session, new("move", Direction.East)); DrainField(session);
+        Send(session, new("move", Direction.East)); DrainField(session);
+        Assert.AreEqual("map.route-16-north-entrance-2f", session.State.World.Player.MapId.Value);
+        Assert.AreEqual(1, session.State.Script.Variables.GetValueOrDefault(RoadScene));
+        Assert.IsFalse(session.State.Script.Flags.GetValueOrDefault(Road));
+        Assert.IsFalse(session.State.IsCycling);
+        StrictRoundtrip(session);
+        Send(session, new("move", Direction.West)); DrainField(session);
+        Send(session, new("move", Direction.West)); DrainField(session);
+        Assert.AreEqual("map.route-16-north-entrance-1f", session.State.World.Player.MapId.Value);
+        StrictRoundtrip(session);
+    }
+
+    private const string Upstairs = "map.route-16-north-entrance-2f";
+    private const string AmuletFlag = "FLAG_GOT_AMULET_COIN_FROM_OAKS_AIDE";
+    private static readonly ItemId Amulet = new("pret:ITEM_AMULET_COIN");
+
+    private CampaignSession VisitAide(int? caught = null, bool fullBag = false)
+    {
+        var session = CampaignSession.CreateCurrent(content);
+        var state = WithoutBike(false);
+        if (caught is { } count)
+            state = state with { CaughtSpecies = Enumerable.Range(1, count).ToImmutableSortedSet(),
+                SeenSpecies = state.SeenSpecies.Union(Enumerable.Range(1, count)) };
+        var bag = state.Inventory!.BagItems.RemoveAll(i => i.Item == Amulet);
+        if (fullBag)
+            bag = content.Inventory.Items.Values.Where(i => i.Pocket == "POCKET_ITEMS" && i.Id != Amulet)
+                .OrderBy(i => i.Id.Value, StringComparer.Ordinal).Take(content.Inventory.Limits.BagItemSlots)
+                .Select(i => new InventoryStack(i.Id, 1)).ToImmutableArray();
+        state = state with { Inventory = state.Inventory with { BagItems = bag },
+            Script = state.Script with { Flags = state.Script.Flags.SetItem(AmuletFlag, false) } };
+        Place(session, state, Upstairs, 10, 7, Direction.North);
+        return session;
+    }
+
+    private HashSet<string> FinishConversation(CampaignSession session, int choice)
+    {
+        var labels = new HashSet<string>();
+        for (int n = 0; n < 300; n++)
+        {
+            if (session.State.Dialogue is { } dialogue) labels.Add(dialogue.TextSymbol);
+            if (session.State.Dialogue is null && session.State.Script.Completed && session.State.EntryPrograms.IsEmpty)
+                return labels;
+            Send(session, new("ack", Choice: session.State.Script.Wait?.Kind == StoryWaitKind.Choice ? choice : null));
+        }
+        Assert.Fail("Source conversation did not finish.");
+        return labels;
+    }
+
+    [TestMethod]
+    [DataRow(39, 1, false)]
+    [DataRow(40, 1, true)]
+    [DataRow(40, 0, false)]
+    public void UpstairsAideUsesCaughtThresholdAndPlayerChoice(int caught, int choice, bool rewarded)
+    {
+        var session = VisitAide(caught);
+        Send(session, new("interact"));
+        var labels = FinishConversation(session, choice);
+        Assert.AreEqual(rewarded, session.State.Script.Flags.GetValueOrDefault(AmuletFlag));
+        Assert.AreEqual(rewarded ? 1 : 0, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        Assert.IsTrue(labels.Contains(choice == 0 ? "Aide_Text_GetEnoughMonsComeBackForItem" : caught < 40
+            ? "Aide_Text_HaventCaughtEnoughMonsForItem" : "Route16_NorthEntrance_2F_Text_ExplainAmuletCoin"));
+    }
+
+    [TestMethod]
+    public void UpstairsAideFullBagRetryAndRepeatAreAtomicAndPersist()
+    {
+        var session = VisitAide(fullBag: true);
+        Send(session, new("interact"));
+        var labels = FinishConversation(session, 1);
+        Assert.IsFalse(session.State.Script.Flags.GetValueOrDefault(AmuletFlag));
+        Assert.AreEqual(0, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        Assert.IsTrue(labels.Contains("Aide_Text_DontHaveAnyRoomForItem"));
+        Set(session, session.State with { Inventory = session.State.Inventory with {
+            BagItems = session.State.Inventory.BagItems.RemoveAt(0) } });
+        Send(session, new("interact")); FinishConversation(session, 1);
+        Assert.IsTrue(session.State.Script.Flags.GetValueOrDefault(AmuletFlag));
+        Assert.AreEqual(1, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        StrictRoundtrip(session);
+        Send(session, new("interact")); labels = FinishConversation(session, 1);
+        Assert.AreEqual(1, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        CollectionAssert.AreEquivalent(new[] { "Route16_NorthEntrance_2F_Text_ExplainAmuletCoin" }, labels.ToArray());
+        StrictRoundtrip(session);
+        Send(session, new("bag_open"));
+        Send(session, new("field_give", PartyIndex: 0, Text: Amulet.Value, Quantity: 1, Choice: 1)
+            { TargetInstanceId = session.State.Party[0].InstanceId });
+        Send(session, new("menu_back"));
+        Assert.AreEqual("ITEM_AMULET_COIN", session.State.Party[0].HeldItem);
+        Assert.AreEqual(0, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        Assert.IsTrue(session.State.Script.Flags.GetValueOrDefault(AmuletFlag));
+        StrictRoundtrip(session);
+        Send(session, new("interact")); FinishConversation(session, 1);
+        Assert.AreEqual(0, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        Send(session, new("party_item_open", PartyIndex: 0) { TargetInstanceId = session.State.Party[0].InstanceId });
+        Send(session, new("field_take", PartyIndex: 0) { TargetInstanceId = session.State.Party[0].InstanceId });
+        Send(session, new("menu_back"));
+        Assert.AreEqual("ITEM_NONE", session.State.Party[0].HeldItem);
+        Assert.AreEqual(1, OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems, Amulet));
+        Assert.AreEqual(1, OpeningInventoryRules.Quantity(session.State.Inventory.KeyItems ?? [], MachineRules.TmCaseId));
+        StrictRoundtrip(session);
+    }
+
+    [TestMethod]
+    [DataRow(4, "Route16_NorthEntrance_2F_Text_ItsCeladonDeptStore")]
+    [DataRow(8, "Route16_NorthEntrance_2F_Text_LongPathOverWater")]
+    public void UpstairsBinocularsUseOriginalBackgroundInteractions(int x, string text)
+    {
+        var session = VisitAide();
+        Place(session, session.State, Upstairs, x, 2, Direction.North);
+        Send(session, new("interact"));
+        Assert.AreEqual(text, session.State.Dialogue?.TextSymbol);
+        FinishConversation(session, 1);
+        StrictRoundtrip(session);
+    }
+
+    [TestMethod]
+    [DataRow(1, "Route16_NorthEntrance_2F_Text_OnBikeRideWithGirlfriend")]
+    [DataRow(2, "Route16_NorthEntrance_2F_Text_RidingTogetherOnNewBikes")]
+    public void UpstairsChildrenUseOriginalNpcDialogue(int localId, string text)
+    {
+        var session = VisitAide();
+        var actor = session.State.Actors.Values.Single(a => a.SourceLocalId == localId);
+        Place(session, session.State, Upstairs, actor.X, actor.Y + 1, Direction.North);
+        Send(session, new("interact"));
+        Assert.AreEqual(text, session.State.Dialogue?.TextSymbol);
+        FinishConversation(session, 1);
+        StrictRoundtrip(session);
     }
 
     [TestMethod]
