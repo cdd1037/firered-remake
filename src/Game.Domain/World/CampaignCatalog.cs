@@ -194,7 +194,8 @@ public interface ICampaignCatalog:IStoryCatalog
     SeviiRubyWaterEncounterCatalog? SeviiRubyWaterEncounters=>null;
     // Original species IDs include Hoenn entries 277–411 and skip legacy Unown placeholders.
     bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => sourceSpeciesId is >=1 and <=251 or >=277 and <=411;
-    // Text-only source lookup does not imply that the species is admitted for ownership or battle.
+    // Dex metadata does not imply that a species is admitted for ownership or battle.
+    int? SourceSpeciesHeightDecimeters(int sourceSpeciesId) => null;
     string? SourceSpeciesName(int sourceSpeciesId) => PokemonContent?.SpeciesNames.GetValueOrDefault(sourceSpeciesId);
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;

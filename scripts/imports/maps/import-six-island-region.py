@@ -19,7 +19,8 @@ CORE = ['SixIsland', 'SixIsland_Harbor', 'SixIsland_WaterPath', 'SixIsland_RuinV
         'SixIsland_DottedHole_1F', 'SixIsland_DottedHole_B1F', 'SixIsland_DottedHole_B2F',
         'SixIsland_DottedHole_B3F', 'SixIsland_DottedHole_B4F', 'SixIsland_DottedHole_SapphireRoom',
         'SixIsland_GreenPath', 'SixIsland_PatternBush', 'SixIsland_OutcastIsland', 'SixIsland_AlteringCave']
-SUPPORT = ['SixIsland_PokemonCenter_1F', 'SixIsland_Mart']
+SUPPORT = ['SixIsland_PokemonCenter_1F', 'SixIsland_Mart',
+           'SixIsland_WaterPath_House1', 'SixIsland_WaterPath_House2']
 ANCHOR = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/building',
             'gTileset_SeviiIslands67':'secondary/sevii_islands_67',
@@ -27,7 +28,8 @@ TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/b
             'gTileset_RockTunnel':'secondary/rock_tunnel',
             'gTileset_ViridianForest':'secondary/viridian_forest',
             'gTileset_IslandHarbor':'secondary/island_harbor',
-            'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart'}
+            'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart',
+            'gTileset_GenericBuilding2':'secondary/generic_building_2'}
 
 def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, message):

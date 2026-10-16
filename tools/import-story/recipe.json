@@ -4129,6 +4129,26 @@
         "Repository": "pret/pokefirered",
         "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
       }
+    },
+    {
+      "path": "data/maps/SixIsland_WaterPath_House1/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/SixIsland_WaterPath_House1/scripts.inc",
+        "Symbol": "MAP_SIX_ISLAND_WATER_PATH_HOUSE1",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
+      "path": "data/maps/SixIsland_WaterPath_House2/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/SixIsland_WaterPath_House2/scripts.inc",
+        "Symbol": "MAP_SIX_ISLAND_WATER_PATH_HOUSE2",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
     }
   ],
   "textPaths": [
@@ -4670,7 +4690,9 @@
     "data/maps/SixIsland_GreenPath/text.inc",
     "data/maps/SixIsland_PatternBush/text.inc",
     "data/maps/OneIsland_TreasureBeach/text.inc",
-    "data/maps/SixIsland_OutcastIsland/text.inc"
+    "data/maps/SixIsland_OutcastIsland/text.inc",
+    "data/maps/SixIsland_WaterPath_House1/text.inc",
+    "data/maps/SixIsland_WaterPath_House2/text.inc"
   ],
   "constantSymbols": [
     "(MAX_COINS + 1) - 10",
@@ -11575,7 +11597,8 @@
     "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_BIG_PEARL",
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_OUTCAST_ISLAND_NET_BALL",
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_OUTCAST_ISLAND_STAR_PIECE",
-    "FLAG_WORLD_MAP_SIX_ISLAND_ALTERING_CAVE"
+    "FLAG_WORLD_MAP_SIX_ISLAND_ALTERING_CAVE",
+    "VAR_HERACROSS_SIZE_RECORD"
   ],
   "supplementalTexts": [
     {

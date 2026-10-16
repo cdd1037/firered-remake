@@ -115,6 +115,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretMtMoonItemsDocument? MtMoonItems { get; }
 
     public bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => PokedexMenu?.Entries.ContainsKey(sourceSpeciesId) == true;
+    public int? SourceSpeciesHeightDecimeters(int sourceSpeciesId) => PokedexMenu?.Entries.GetValueOrDefault(sourceSpeciesId)?.HeightDecimeters;
     public string? SourceSpeciesName(int sourceSpeciesId) => PokedexMenu?.Entries.GetValueOrDefault(sourceSpeciesId)?.Name;
 
     public CampaignOakRatingProjection EvaluateOakRating(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)

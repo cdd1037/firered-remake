@@ -78,7 +78,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignUltimateTutor? UltimateTutor{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoveReminder? MoveReminder{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoveDeleter? MoveDeleter{get;init;}
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMagikarpRecord? MagikarpRecord{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSizeRecord? SizeRecord{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDepartmentElevator? DepartmentElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignGiftDelivery? GiftDelivery{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public EscapeRopeDestination? EscapeDestination{get;init;}
@@ -348,7 +348,7 @@ public sealed partial class CampaignSession
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         if(ValidateSelphyRequest(s) is {} selphyError)return selphyError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
-        if(s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.MagikarpRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.SizeRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         if(s.MailComposer is not null||s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null||s.EggHatch is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
@@ -508,7 +508,7 @@ public sealed partial class CampaignSession
             if(TryDecideFourIslandDayCare(state,command,out var fourDaycareDecision))return fourDaycareDecision;
             if(TryDecideEggHatch(state,command,out var eggHatchDecision))return eggHatchDecision;
             if(TryDecideRoute5DayCare(state,command,out var daycareDecision))return daycareDecision;
-            if(TryDecideMagikarpRecord(state,command,out var magikarpRecordDecision))return magikarpRecordDecision;
+            if(TryDecideSizeRecord(state,command,out var sizeRecordDecision))return sizeRecordDecision;
             if(TryDecideMoveDeleter(state,command,out var moveDeleterDecision))return moveDeleterDecision;
             if(TryDecideMoveReminder(state,command,out var moveReminderDecision))return moveReminderDecision;
             if(command.Kind=="trainer_tower_tick")return DecideTrainerTowerTime(state,command);
@@ -737,7 +737,7 @@ public sealed partial class CampaignSession
             if(state.MoveReminder is not null)state=state with{MoveReminder=null};
             if(state.MoveDeleter is not null)state=state with{MoveDeleter=null};
             if(state.DayCareInteraction is not null)state=state with{DayCareInteraction=null};
-            if(state.MagikarpRecord is not null)state=state with{MagikarpRecord=null};
+            if(state.SizeRecord is not null)state=state with{SizeRecord=null};
             if(_content.SupportsRegionalFlavor(state.World.Player.MapId)&&state.Dialogue is null&&!state.Script.Locked)state=state with{SignMessage=null};
             if(!state.EntryPrograms.IsEmpty)
             {
@@ -773,7 +773,7 @@ public sealed partial class CampaignSession
     private CampaignState Advance(CampaignState state,StoryTransition transition)
     {
         if(transition.Status!=TransitionStatus.Accepted)throw new InvalidDataException(transition.Diagnostic?.Code+": "+transition.Diagnostic?.Message);
-        state=state with{Script=transition.State};
+        state=PreserveUncommittedSizeRecord(state with{Script=transition.State});
         foreach(var effect in transition.Effects)
         {
             var a=effect.Args;
@@ -834,7 +834,7 @@ public sealed partial class CampaignSession
             if(TryApplyMewtwoEffect(state,effect,out var mewtwoState)){state=mewtwoState;continue;}
             if(TryApplySnorlaxEffect(state,effect,out var snorlaxState)){state=snorlaxState;continue;}
             if(TryApplyTowerEffect(state,effect,out var towerState)){state=towerState;continue;}
-            if(TryApplyMagikarpRecordEffect(state,effect,out var magikarpRecordState)){state=magikarpRecordState;continue;}
+            if(TryApplySizeRecordEffect(state,effect,out var sizeRecordState)){state=sizeRecordState;continue;}
             if(TryApplyMoveDeleterEffect(state,effect,out var moveDeleterState)){state=moveDeleterState;continue;}
             if(TryApplyMoveReminderEffect(state,effect,out var moveReminderState)){state=moveReminderState;continue;}
             if(TryApplyCopycatItemEffect(state,effect,out var copycatItemState)){state=copycatItemState;continue;}
@@ -892,7 +892,7 @@ public sealed partial class CampaignSession
                     break;
                 case "pokemart":state=OpenShop(state,effect);break;
                 case "lock":case "lockall":break;
-                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,PrizeExchange=null,NameRater=null,NpcTrade=null,UltimateTutor=null,MoveReminder=null,MoveDeleter=null,DayCareInteraction=null,MagikarpRecord=null,FossilMenu=null};break;
+                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,PrizeExchange=null,NameRater=null,NpcTrade=null,UltimateTutor=null,MoveReminder=null,MoveDeleter=null,DayCareInteraction=null,SizeRecord=null,FossilMenu=null};break;
                 case "signmsg":state=state with{SignMessage=(state.SignMessage??new()) with{SignStyle=true}};break;
                 case "normalmsg":state=state with{SignMessage=state.SignMessage is {} signStyle?signStyle with{SignStyle=false}:null};break;
                 case "setrespawn":state=state with{LastHealingLocation=a[0]};break;
