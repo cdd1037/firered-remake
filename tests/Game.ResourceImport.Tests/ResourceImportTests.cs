@@ -18,6 +18,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task MapAtlases() => Run("test-map-atlases.py");
     [TestMethod]
+    public Task Route15GateSourceAndRegeneration() => Run("test-route15-gate-import.py");
+    [TestMethod]
     public Task MapImporterUnification() => Run("verify-map-importer-unification.py");
     [TestMethod]
     public Task CeladonApproachEncounters() => Run("test-celadon-approach-encounters.py");

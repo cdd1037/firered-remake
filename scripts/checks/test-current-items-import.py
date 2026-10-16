@@ -39,10 +39,14 @@ class CurrentItemTests(unittest.TestCase):
         self.assertTrue(all(set(shop) == {'id', 'items'} for shop in catalog['shops']))
 
     def test_current_item_icons_match_source_pixels_after_atlas_packing(self):
-        self.assertEqual(1, compiler.import_icons(ROOT, check=True))
+        selected = {item['item'] for item in compiler.read_recipe(ROOT)['items'] if item.get('icon')}
+        self.assertTrue(selected)
+        self.assertEqual(len(selected), compiler.import_icons(ROOT, check=True))
         icons = json.loads((ROOT / 'content/generated/data/items/current-icons.json').read_text())['icons']
-        self.assertEqual('pret:ITEM_AMULET_COIN', icons[0]['item']['value'])
-        self.assertEqual((24, 24), (icons[0]['width'], icons[0]['height']))
+        self.assertEqual(selected, {icon['item']['value'] for icon in icons})
+        self.assertTrue({'pret:ITEM_AMULET_COIN', 'pret:ITEM_EXP_SHARE'} <= selected)
+        for icon in icons:
+            self.assertEqual((24, 24), (icon['width'], icon['height']))
 
     def test_explicit_admission_has_no_historical_count_gate(self):
         recipe = copy.deepcopy(compiler.read_recipe(ROOT))

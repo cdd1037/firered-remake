@@ -582,7 +582,7 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Accepted,state with{Party=state.Party.SetItem(naming.PartyIndex,mon with{Nickname=name}),Nickname=naming with{Submitted=true},TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",name),ScreenIsBlack=false,PresentationTicks=16,Script=state.Script with{Wait=wait with{Kind=StoryWaitKind.Presentation}}});
             }
             if(command.Kind is "sign_tick" or "sign_cancel")return DecideRegionalSignWalkaway(state,command);
-            if(command.Kind=="button_press")return SourceScriptedButtonWait(state)?DecideSourceScriptedButton(state,command):ArticunoButtonWait(state)?DecideArticunoButton(state,command):PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):DecideOakRatingButton(state,command);
+            if(command.Kind=="button_press")return SourceScriptedButtonWait(state)?DecideSourceScriptedButton(state,command):ArticunoButtonWait(state)?DecideArticunoButton(state,command):PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):state.MonPicture is not null?DecidePokemonPictureButton(state,command):DecideOakRatingButton(state,command);
             if(command.Kind=="ack")
             {
                 if(state.Script.Wait is not {} wait)return new(CommandStatus.Rejected,state,"no_pending_event");
@@ -951,9 +951,11 @@ public sealed partial class CampaignSession
                     state=EnterMap(state,facing);break;
                 case "showmonpic":
                     var pictureSpecies=Int(a[0]);RequireSpecies(pictureSpecies);
-                    if(pictureSpecies is not (1 or 4 or 7))throw new InvalidDataException("pokemon_picture_not_implemented");
                     if(Int(a[1]) is <0 or >20||Int(a[2]) is <0 or >10)throw new InvalidDataException("pokemon_picture_bounds");
                     state=state with{MonPicture=new(pictureSpecies,Int(a[1]),Int(a[2]))};break;
+                case "waitbuttonpress":
+                    if(state.MonPicture is null)throw new InvalidDataException("picture_button_context_missing");
+                    break;
                 case "hidemonpic":state=state with{MonPicture=null,PresentationTicks=Math.Max(state.PresentationTicks,1)};break;
                 case "bufferspeciesname":
                     if(a[0] is not ("STR_VAR_1" or "STR_VAR_2" or "STR_VAR_3"))throw new InvalidDataException("string_buffer_unsupported");
@@ -973,6 +975,12 @@ public sealed partial class CampaignSession
                 case "trainerbattle_no_intro":case "trainerbattle_single":state=BeginForestTrainerBattle(state,effect);break;
                 case "trainerbattle_earlyrival":state=effect.Source.Path=="data/maps/Route22/scripts.inc"?BeginRoute22RivalBattle(state,effect):BeginLabBattle(state,effect);break;
                 case "special":
+                    if(a[0]=="SetSeenMon")
+                    {
+                        int seenSpecies=state.Script.Variables.GetValueOrDefault("VAR_0x8004");
+                        if(a.Length!=1||!_content.IsValidPokedexSourceSpecies(seenSpecies))throw new InvalidDataException("pokedex_seen_species_invalid");
+                        state=state with{SeenSpecies=state.SeenSpecies.Add(seenSpecies)};break;
+                    }
                     if(a[0]=="SetWalkingIntoSignVars"){state=state with{SignMessage=(state.SignMessage??new()) with{Cancelable=true,InhibitTicks=6}};break;}
                     if(a[0]=="DisableMsgBoxWalkaway"){state=state with{SignMessage=(state.SignMessage??new()) with{WalkawayDisabled=true}};break;}
                     if(a[0] is "BedroomPC" or "Script_SetHelpContext" or "AnimatePcTurnOn" or "AnimatePcTurnOff" or "SetHelpContextForMap")

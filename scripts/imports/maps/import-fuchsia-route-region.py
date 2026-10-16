@@ -1,31 +1,41 @@
 #!/usr/bin/env python3
-"""Import six authenticated southern-route maps and preserve Route12 source reuse.
+"""Import the southern routes and Route15 gate upstairs; preserve Route12 reuse.
 
-No upstream scripts are executed. Map and compact-data converters run only during import. Optional services are inventoried without creating extra runtime maps.
+Read the retained 037335f4 raw cache by default, or an explicitly selected pinned
+Git checkout. Raw mode trusts that pinned input selection and does not claim Git
+verification. No upstream scripts are executed. Rebuild the shared field tilesets
+and map atlases after importing; --check accepts both standalone and packed art.
 """
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from map_runtime import publish_map_package, generated_root
+from map_runtime import publish_map_package
 
 from shared_constants import package_documents
 
 from pathlib import Path
-import argparse, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
+import argparse, collections, importlib.util, json, os, re, struct, subprocess, tempfile
+from PIL import Image
 
 ROOT = _PROJECT_ROOT
 PRODUCT = ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-PRODUCT_COMMIT = 'e85553866e96a975957464cd6efd3b327278e6ab'
 PROFILE = 'firered-fuchsia-route-region-import-v1'
-CORE = ['Route12', 'Route13', 'Route14', 'Route15', 'Route15_WestEntrance_1F', 'FuchsiaCity', 'FuchsiaCity_PokemonCenter_1F']
-OPTIONAL = ['Route12_FishingHouse', 'Route15_WestEntrance_2F']
+PACKAGE = 'maps/regions/fuchsia-route'
+CORE = ['Route12', 'Route13', 'Route14', 'Route15', 'Route15_WestEntrance_1F', 'Route15_WestEntrance_2F', 'FuchsiaCity', 'FuchsiaCity_PokemonCenter_1F']
+OPTIONAL = ['Route12_FishingHouse']
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_LavenderTown':'secondary/lavender_town', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2', 'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_GenericBuilding1':'secondary/generic_building_1'}
 
 def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
+def require(value, message):
+    if not value: raise ValueError(message)
+
+def safe(path):
+    require(not any(p.is_symlink() for p in (path, *path.parents)), 'Symlink path rejected: '+str(path))
+    return path
+
 def git(repo, *args):
     env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
     env.update(GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL=os.devnull,GIT_NO_REPLACE_OBJECTS='1',GIT_OPTIONAL_LOCKS='0')
@@ -36,20 +46,34 @@ class LazyBlobs(dict):
     def __missing__(self, path): return self.owner.read(path)
 
 class Source:
-    def __init__(self, reference):
+    def __init__(self, reference=None, *, raw_root=None):
+        require((reference is None) != (raw_root is None), 'Select exactly one Git checkout or raw root')
         self.reference=reference
-        if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
+        self.raw_root=safe(Path(raw_root).absolute()) if raw_root is not None else None
         self.tree={}
-        for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
-            if row:
-                fields,path=row.split(b'\t'); self.tree[path.decode()]=tuple(fields.decode().split())
-        self.data=LazyBlobs(self);self.entries={};self.roles=collections.defaultdict(set)
+        if self.raw_root is not None:
+            require(self.raw_root.is_dir(), 'Missing pinned raw root: '+str(self.raw_root))
+            for path in sorted(self.raw_root.rglob('*')):
+                safe(path)
+                if path.is_file(): self.tree[path.relative_to(self.raw_root).as_posix()]=None
+        else:
+            require(git(reference, 'rev-parse', 'HEAD').decode().strip() == COMMIT, 'Source HEAD differs from pinned revision')
+            for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
+                if row:
+                    fields,path=row.split(b'\t'); self.tree[path.decode()]=tuple(fields.decode().split())
+        self.data=LazyBlobs(self)
+    def peek(self,path):
+        relative=Path(path)
+        require(not relative.is_absolute() and '..' not in relative.parts and '\\' not in path,
+                'Unsafe raw path: '+path)
+        require(path in self.tree, 'Missing pinned source input: '+path)
+        if self.raw_root is not None:
+            return safe(self.raw_root/path).read_bytes()
+        require(self.tree[path][:2]==('100644','blob'), 'Not a regular source blob: '+path)
+        return git(self.reference,'cat-file','blob',self.tree[path][2])
     def read(self,path,role='source-dependency'):
-        if path not in self.tree or self.tree[path][:2]!=('100644','blob'): raise ValueError('Not a regular source blob: '+path)
-        self.roles[path].add(role)
         if path not in self.data:
-            b=git(self.reference,'cat-file','blob',self.tree[path][2])
-            self.data[path]=b;self.entries[path]=dict(path=path)
+            self.data[path]=self.peek(path)
         return self.data[path]
     def text(self,path):return self.read(path).decode()
     def json(self,path):return json.loads(self.read(path))
@@ -62,8 +86,6 @@ class Source:
         v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol)
         if line is not None:v['line']=line
         return v
-    def lock(self):
-        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
 def decode(src,name):
     events=src.json(f'data/maps/{name}/map.json');layout=next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id')==events['layout'])
@@ -82,9 +104,8 @@ def scripts(src,maps):
     # dependencies. This deliberately does not equate closure membership to admission.
     blocks={};aliases={}
     paths=[p for p in src.tree if p.endswith('.inc') and (p.startswith(('data/scripts/','data/text/')) or any(p.startswith('data/maps/'+n+'/') for n in CORE+OPTIONAL))]+['data/event_scripts.s']
-    scanned={}
-    for p in paths:
-        b=git(src.reference,'cat-file','blob',src.tree[p][2]);scanned[p]=b;current=None;macro=False
+    for p in sorted(paths):
+        b=src.peek(p);current=None;macro=False
         for ln,line in enumerate(b.decode().splitlines(),1):
             code=line.split('@')[0].strip()
             if code.startswith('.macro'):macro=True;current=None;continue
@@ -158,68 +179,144 @@ def topology(src,worlds):
 
 
 def load_helper(name):
-    p=PRODUCT/('scripts/imports/maps' if name == 'export-runtime-maps.py' else 'tools/import-regional-service-maps')/name
+    p=PRODUCT/('scripts/imports/maps' if name.startswith(('export-', 'import-map-atlases')) else 'tools/import-regional-service-maps')/name
     spec=importlib.util.spec_from_file_location('_fuchsia_'+p.stem,p);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
 
-def main():
-    ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--reference-root',type=Path,required=True)
-    ap.add_argument('--check',action='store_true')
-    a=ap.parse_args()
-    out=ROOT/'content/generated/maps/regions/fuchsia-route'
-    raw=ROOT/'content/raw/pokefirered/037335f4'
+def check_package(stage, output, generated, manifest):
+    """Compare fresh output, resolving pruned images through the shared atlas."""
+    atlas = None
+    for path in sorted(stage.iterdir()):
+        destination = safe(output / path.name)
+        if path.suffix == '.png':
+            with Image.open(path) as image:
+                expected = image.convert('RGBA')
+            if destination.is_file():
+                with Image.open(destination) as image:
+                    actual = image.convert('RGBA')
+            else:
+                if atlas is None:
+                    atlas_module = load_helper('import-map-atlases.py')
+                    atlas = atlas_module.AtlasReader(generated / 'maps/atlases')
+                actual = atlas.read(PACKAGE + '/' + path.name)
+            require(actual.size == expected.size and actual.tobytes() == expected.tobytes(),
+                    'Map RGBA differs: ' + path.name)
+        elif path.name == 'manifest.json':
+            require(destination.is_file(), 'Missing package manifest: ' + str(destination))
+            # Atlas pruning removes just the images that it packed. Check each
+            # image above and derive the exact inventory of remaining files.
+            current = dict(manifest, outputs=[row for row in manifest['outputs']
+                if not row['path'].endswith('.png') or (output / row['path']).is_file()])
+            require(json.loads(destination.read_bytes()) == current,
+                    'Regeneration differs: ' + str(destination))
+        else:
+            require(destination.is_file() and destination.read_bytes() == path.read_bytes(),
+                    'Regeneration differs: ' + str(destination))
 
-    for target in (out,raw):
-        if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output root symlink denied')
-    out.mkdir(parents=True,exist_ok=True)
-    src=Source(a.reference_root);worlds=[decode(src,n) for n in CORE+OPTIONAL]
-    doc=scripts(src,worlds);topology(src,worlds)
-    doc['profile']=PROFILE
 
-    for p in ['src/heal_location.c','src/data/heal_locations.json','src/overworld.c','src/field_player_avatar.c','src/field_control_avatar.c','src/event_object_movement.c','tools/mapjson/mapjson.cpp','src/data/wild_encounters.json','src/data/trainers.h','src/data/trainer_parties.h']:
-        src.read(p,'rule-reference')
-    for name in ['flags','vars','event_objects','trainers','opponents','items','species','moves','songs','map_scripts','field_effects','battle','pokemon','global','menu','game_stat','battle_ai','event_bg','event_object_movement','sound']:
-        p='include/constants/'+name+'.h'
-        if p in src.tree:src.read(p,'rule-reference')
-    shared=load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
-    converter=load_helper('export-runtime-maps.py')
-    with tempfile.TemporaryDirectory(prefix='.stage-',dir=out) as temp:
-        stage=Path(temp);rendered=[]
-        for n in CORE[1:]:
-            d=directory(n);shared.import_map(src,n,'map.'+d,stage/d);rendered.append(d)
-        npc_worlds=[dict(events=dict(object_events=[o for o in w['events']['object_events'] if o['graphics_id']!='OBJ_EVENT_GFX_VAR_0'])) for w in worlds if w['sourceName'] in CORE]
-        npc_worlds.append(dict(events=dict(object_events=[dict(graphics_id=x) for x in ['OBJ_EVENT_GFX_KABUTO','OBJ_EVENT_GFX_OMANYTE']])))
-        npcs=shared.npc_inventory(src,npc_worlds,stage/'npc')
-        npcs['dynamicGraphics']=[dict(map='MAP_FUCHSIA_CITY',localId=9,sourceGraphics='OBJ_EVENT_GFX_VAR_0',variable='VAR_OBJ_GFX_ID_0',flag='FLAG_GOT_DOME_FOSSIL',whenSet='OBJ_EVENT_GFX_OMANYTE',whenUnset='OBJ_EVENT_GFX_KABUTO')]
-        constants=shared.constants_inventory(src,worlds,doc)
-        heals=src.json('src/data/heal_locations.json')['heal_locations']
-        for i,h in enumerate(heals,1):constants['values'][h['id']]=dict(value=i,sourceRef=src.ref('src/data/heal_locations.json',h['id']),derivation='one-based source array index generated by mapjson')
-        catalog=[]
-        for n,d in zip(CORE[1:],rendered):
-            p=stage/d/'runtime-map.json';b=p.read_bytes();compact=converter.encode(converter.normalize_runtime(json.loads(b)));(stage/d/'runtime-map.json').write_bytes(compact)
-            catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
-        lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE,optionalSourceOnlyMaps=OPTIONAL)
-        lock_data=canonical(lock)
-        reused=dict(sourceName='Route12',stableId='map.route-12',sourceMapSymbol='MAP_ROUTE12',sourceRef=src.ref('data/maps/Route12/map.json','MAP_ROUTE12'),regenerate=False)
-        main_catalog=dict(schemaVersion=1,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,connections=links['connections'],warps=links['warps'])
-        objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds if w['sourceName'] in CORE for i,o in enumerate(w['events']['object_events'])]
-        availability=dict(schemaVersion=1,completeGame=False,enabledServices=[],loadedMapSymbols=[w['events']['id'] for w in worlds if w['sourceName'] in CORE[1:]],reusedMapSymbols=['MAP_ROUTE12'],deferredDestinations=sorted({w['dest_map'] for m in worlds if m['sourceName'] in CORE for w in m['events']['warp_events']} - {m['events']['id'] for m in worlds if m['sourceName'] in CORE}),deferredConnections=['MAP_ROUTE18','MAP_ROUTE19'],notes=['Map import preserves full original cells, events, clones, water and grass. Admission belongs to the successor application profile.','The no-grass arrival witness is a topology proof, not a permanent encounter ban.','Optional fishing house, gate 2F, other Fuchsia interiors, Safari and Koga are source boundaries in this map increment.'])
-        docs=package_documents(generated_root(out), constants, {'fuchsia-route-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=3,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability}, check=a.check)
-        for filename,value in docs.items():(stage/filename).write_bytes(canonical(value))
+def convert(root, raw=None, reference=None, check=False):
+    generated = safe(root / 'content/generated')
+    out = safe(generated / PACKAGE)
+    raw = safe(raw or root / 'content/raw/pokefirered/037335f4')
+    require(not (raw.is_relative_to(generated) or generated.is_relative_to(raw)),
+            'Raw source overlaps generated output')
+    if reference is not None:
+        require(not (reference.is_relative_to(root) or root.is_relative_to(reference)),
+                'Reference and output must be disjoint')
+    src = Source(reference, raw_root=raw if reference is None else None)
+    worlds = [decode(src, name) for name in CORE + OPTIONAL]
+    # Load every local script/text explicitly, even files with no selected label.
+    # The compact renderer must retain the complete story dispatch paths.
+    for name in CORE + OPTIONAL:
+        for filename in ('scripts.inc', 'text.inc'):
+            src.read(f'data/maps/{name}/{filename}', 'map-story-input')
+    doc = scripts(src, worlds)
+    links = topology(src, worlds)
+    for name in ['flags', 'vars', 'event_objects', 'trainers', 'opponents', 'items',
+                 'species', 'moves', 'songs', 'map_scripts', 'field_effects', 'battle',
+                 'pokemon', 'global', 'menu', 'game_stat', 'battle_ai', 'event_bg',
+                 'event_object_movement', 'sound']:
+        src.read('include/constants/' + name + '.h', 'rule-reference')
+    src.read('tools/mapjson/mapjson.cpp', 'local-object-id-rule')
+    shared = load_helper('_regional_service_shared.py')
+    shared.PROFILE = PROFILE
+    shared.TILESETS = TILESETS
+    with tempfile.TemporaryDirectory(prefix='firered-fuchsia-route-') as temp:
+        stage = Path(temp)
+        catalog = []
+        for world in worlds:
+            name = world['sourceName']
+            if name not in CORE[1:]:
+                continue
+            relative = directory(name)
+            shared.import_map(src, name, world['stableId'], stage / relative)
+            catalog.append(dict(sourceName=name, stableId=world['stableId'], directory=relative,
+                                sourceMapSymbol=world['events']['id'], path=relative + '/runtime-map.json'))
+        npc_worlds = [dict(events=dict(object_events=[actor for actor in world['events']['object_events']
+            if actor['graphics_id'] != 'OBJ_EVENT_GFX_VAR_0'])) for world in worlds if world['sourceName'] in CORE]
+        npc_worlds.append(dict(events=dict(object_events=[dict(graphics_id=name)
+            for name in ['OBJ_EVENT_GFX_KABUTO', 'OBJ_EVENT_GFX_OMANYTE']])))
+        npcs = shared.npc_inventory(src, npc_worlds, stage / 'npc')
+        npcs['dynamicGraphics'] = [dict(map='MAP_FUCHSIA_CITY', localId=9,
+            sourceGraphics='OBJ_EVENT_GFX_VAR_0', variable='VAR_OBJ_GFX_ID_0',
+            flag='FLAG_GOT_DOME_FOSSIL', whenSet='OBJ_EVENT_GFX_OMANYTE', whenUnset='OBJ_EVENT_GFX_KABUTO')]
+        constants = shared.constants_inventory(src, worlds, doc)
+        for index, heal in enumerate(src.json('src/data/heal_locations.json')['heal_locations'], 1):
+            constants['values'][heal['id']] = dict(value=index,
+                sourceRef=src.ref('src/data/heal_locations.json', heal['id']))
+        reused = dict(sourceName='Route12', stableId='map.route-12', sourceMapSymbol='MAP_ROUTE12',
+            sourceRef=src.ref('data/maps/Route12/map.json', 'MAP_ROUTE12'), regenerate=False)
+        main_catalog = dict(schemaVersion=1, maps=catalog, reusedMaps=[reused], tilesets=TILESETS, **links)
+        objects = [dict(map=world['stableId'], sourceMap=world['events']['id'], localId=index + 1,
+            sourceObjectIndex=index, declaration=actor, sourceRef=world['sourceRef'])
+            for world in worlds if world['sourceName'] in CORE
+            for index, actor in enumerate(world['events']['object_events'])]
+        admitted = {world['events']['id'] for world in worlds if world['sourceName'] in CORE}
+        availability = dict(schemaVersion=1, completeGame=False, enabledServices=[],
+            loadedMapSymbols=[row['sourceMapSymbol'] for row in catalog], reusedMapSymbols=['MAP_ROUTE12'],
+            deferredDestinations=sorted({warp['dest_map'] for world in worlds if world['sourceName'] in CORE
+                                        for warp in world['events']['warp_events']} - admitted),
+            deferredConnections=['MAP_ROUTE18', 'MAP_ROUTE19'],
+            notes=['Map import preserves full original cells, events, clones, water and grass. Admission belongs to the application composition.',
+                   'The fishing house and other Fuchsia interiors remain separate map-package boundaries.'])
+        documents = package_documents(generated, constants, {
+            'fuchsia-route-region-catalog.json': main_catalog,
+            'runtime-catalog.json': dict(schemaVersion=3, maps=catalog),
+            'npc-source.json': npcs, 'objects.json': dict(objects=objects), 'availability.json': availability}, check=check)
+        for filename, value in documents.items():
+            (stage / filename).write_bytes(canonical(value))
         publish_map_package(stage)
-        outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
-        selected=[w for w in worlds if w['sourceName'] in CORE[1:]]
-        manifest=dict(schemaVersion=1,outputs=outputs)
-        manifest_data=canonical(manifest)
-        (stage/'manifest.json').write_bytes(manifest_data)
-        raw_manifest=canonical(dict(schemaVersion=1,commit=COMMIT,inputCount=len(src.entries)))
-        writes=[]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
-        for target,data in writes:
-            if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output symlink denied: '+str(target))
-            if a.check:
-                if not target.is_file() or target.read_bytes()!=data:raise ValueError('Reproduction differs: '+str(target))
-            else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(outputCount=len(outputs))))
+        outputs = [dict(path=path.name) for path in sorted(stage.iterdir()) if path.is_file()]
+        manifest = dict(schemaVersion=1, outputs=outputs)
+        (stage / 'manifest.json').write_bytes(canonical(manifest))
+        if check:
+            check_package(stage, out, generated, manifest)
+        else:
+            # An explicit Git source may refresh the retained cache. Offline raw
+            # mode never writes its inputs or requires a reference repository.
+            if reference is not None:
+                for relative, data in sorted(src.data.items()):
+                    target = safe(raw / relative)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+            out.mkdir(parents=True, exist_ok=True)
+            for path in sorted(stage.iterdir()):
+                safe(out / path.name).write_bytes(path.read_bytes())
+    return dict(checked=check, maps=len(catalog), reusedMaps=1, outputCount=len(outputs))
 
-if __name__=='__main__':main()
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', '--project-root', dest='root', type=Path, default=ROOT)
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument('--reference-root', type=Path, help='Pinned source Git checkout')
+    source.add_argument('--raw', '--raw-root', dest='raw', type=Path,
+                        help='Offline pinned raw cache; defaults to content/raw/pokefirered/037335f4')
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    print(json.dumps(convert(args.root.absolute(), args.raw.absolute() if args.raw else None,
+        args.reference_root.absolute() if args.reference_root else None, args.check), sort_keys=True))
+
+
+if __name__ == '__main__':
+    main()

@@ -75,13 +75,15 @@ public sealed partial class CampaignSession
         bool ratingSource = effect.Source.Path == OakRatingSource;
         bool countSource = effect.Source.Path == OakLabSource && effect.Source.Symbol == OakCountEntry;
         bool ballsSource = effect.Source.Path == OakLabSource && effect.Source.Symbol == OakBallsEntry;
+        // Shared opcodes (including picture waits) belong to their current script,
+        // not to Oak merely because his service also uses them.
+        if (!ratingSource && !countSource && !ballsSource) return false;
         bool ownedEffect = effect.Opcode is "buffernumberstring" or "waitbuttonpress" or "checkitem" ||
             effect.Opcode == "specialvar" && effect.Args[1] is "GetPokedexCount" or "HasAllMons" ||
             effect.Opcode == "special" && effect.Args[0] is "GetProfOaksRatingMessage" or "BackupHelpContext" or "RestoreHelpContext" ||
             effect.Opcode == "special" && (ratingSource || ballsSource) && effect.Args[0] is "QuestLog_CutRecording" or "Script_SetHelpContext";
         if (!ownedEffect) return false;
         if (!_content.OakRatingEnabled) throw new InvalidDataException("oak_rating_not_enabled");
-        if (!ratingSource && !countSource && !ballsSource) throw new InvalidDataException("oak_rating_source_unsupported");
         var projection = OakProjection(state);
         int Value(string token) => int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) ? number :
             token.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? Convert.ToInt32(token[2..], 16) :

@@ -12,7 +12,7 @@ public sealed class PretFuchsiaRouteRegion
     public const string Profile = "firered-fuchsia-route-region-import-v1";
     public static readonly MapId CenterMapId = new("map.fuchsia-city-pokemon-center-1f");
     public const string HealingLocation = "HEAL_LOCATION_FUCHSIA_CITY";
-    /// <summary>Six complete authenticated maps. Loading alone admits no field action or service.</summary>
+    /// <summary>Complete authenticated southern-route maps. Loading alone admits no field action or service.</summary>
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps => SourceMaps;
     public ImmutableArray<MapId> ReusedMapIds => [new("map.route-12")];
@@ -118,7 +118,7 @@ public sealed class PretFuchsiaRouteRegion
         var catalog = Document("fuchsia-route-region-catalog.json");
 
 
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Six source maps; unchanged Route12 reuse; services require explicit admission.", Profile);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Southern-route source maps; unchanged Route12 reuse; services require explicit admission.", Profile);
         var runtimeCatalog = Document("runtime-catalog.json");
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
