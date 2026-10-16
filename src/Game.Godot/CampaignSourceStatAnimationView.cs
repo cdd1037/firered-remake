@@ -7,8 +7,6 @@ public partial class CampaignView
 {
     private readonly SourceBattleAnimationGate _sourceStatAnimationGate=new();
     private CampaignStatAnimationDispatch? _sourceStatContinuation;
-    private SourceAnimationScript? _sourceStatScript;
-    private SourceStatMaskMaterial? _sourceStatMaterial;
     private bool SourceAnimationBlocking=>_sourceMoveAnimationGate.IsBlocking||_sourceStatAnimationGate.IsBlocking;
     private bool SourceAnimationPresented=>_sourceMoveContinuation is not null||_sourceStatContinuation is not null;
     private void SynchronizeSourceStatPresentation()
@@ -23,16 +21,16 @@ public partial class CampaignView
             dispatch=CampaignStatAnimationPresentation.AtResult(b,SourceTrainerPresentationActive(b),_sourceSubstituteHp.GetValueOrDefault(stat.Target)>0);
         if(dispatch is null)return;
         EnsureSourceMoveAssets();
-        if(_sourceStatScript is null)(_sourceStatScript,_sourceStatMaterial)=SourceStatAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/stat-mask"));
+        var resolved=_sourceAnimationResources!.Resolve(0);
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,0,new(dispatch.Affected.Value),new(dispatch.Affected.Value)){StatAnimationArgument=dispatch.AnimationArgument};
         var (assets,battlers)=CreateSourceAnimationScene(doubles);
         SourceBattleAnimationAudioAdapter? sound=null;
         if(!_sourceStatAnimationGate.TryStart(cue,()=>
         {
             sound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceStatAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan})):null;
-            return new(_sourceStatScript,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio());
+            return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio());
         }))return;
-        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),_sourceStatMaterial);_sourceStatContinuation=dispatch;
+        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask);_sourceStatContinuation=dispatch;
         _sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceStatAnimationGate.Current!.Tick());
         Write("sourceStatAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,scene=_session.EffectiveOptions.BattleScene.ToString()});

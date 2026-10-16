@@ -88,7 +88,7 @@ class ResourceEntryTests(unittest.TestCase):
     def test_targets_are_final_resource_producers(self):
         commands = self.module.build_commands(['field-services', 'field-rules', 'world'], self.raw, self.out)
         self.assertEqual(['import-world.py', 'import-early-field-rules.py',
-                          'import-world-field-rules.py', 'import-city-services.py',
+                          'import-world-field-rules.py', 'import-cut-grass.py', 'import-city-services.py',
                           'import-field-services.py', 'item_icon_exports.py'],
                          [Path(command[1]).name for command in commands])
         for command in commands[:-1]:
@@ -108,7 +108,7 @@ class ResourceEntryTests(unittest.TestCase):
     def test_check_is_forwarded_to_every_producer(self):
         commands = self.module.build_commands(['world', 'field-rules', 'field-services', 'audio-cues'],
                                                self.raw, self.out, check=True)
-        self.assertEqual(6, len(commands))
+        self.assertEqual(7, len(commands))
         self.assertTrue(all(command[-1] == '--check' for command in commands))
         self.assertNotIn('item_icon_exports.py', [Path(command[1]).name for command in commands])
 
@@ -194,7 +194,7 @@ class ResourceEntryTests(unittest.TestCase):
         result = subprocess.CompletedProcess([], 0)
         with patch.object(self.module.subprocess, 'run', return_value=result) as run:
             self.assertEqual(0, self.invoke(*self.arguments('field-rules', 'field-services'), '--check'))
-        self.assertEqual(4, run.call_count)
+        self.assertEqual(5, run.call_count)
         self.assertTrue(all(call.args[0][-1] == '--check' for call in run.call_args_list))
 
 

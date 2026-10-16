@@ -39,6 +39,7 @@ public sealed record SourceSpriteRecipe(string Template,string Asset,string Call
 public sealed record SourceAnimationScript(int MoveId, string Label, SourceAnimationCommand[] Commands)
 {
     public IReadOnlyDictionary<string,SourceAnimationCommand[]> Subroutines {get;init;} = new Dictionary<string,SourceAnimationCommand[]>();
+    public IReadOnlyDictionary<string,int> Labels {get;init;} = new Dictionary<string,int>();
     public int[] SineTable {get;init;} = [];
     public IReadOnlyDictionary<string,SourceSpriteRecipe> SpriteRecipes {get;init;} = new Dictionary<string,SourceSpriteRecipe>();
 }
@@ -92,7 +93,7 @@ public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] O
 public sealed partial class SourceBattleAnimation
 {
     public const double SourceFrameSeconds=280896d/16777216;
-    public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"panse","splitbgprio","splitbgprio_foes","waitplaysewithpan","call","return","loadspritegfx","monbg","setalpha","playsewithpan","loopsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
+    public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"createsoundtask","waitsound","goto","panse","splitbgprio","splitbgprio_foes","waitplaysewithpan","call","return","loadspritegfx","monbg","setalpha","playsewithpan","loopsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
     private readonly SourceAnimationScript _script;
     private readonly bool _doubles;
     private readonly int _battlerCount;
@@ -176,9 +177,10 @@ public sealed partial class SourceBattleAnimation
         }
         Array.Copy(_affineMode,_affineOamMode,4);
         SortSourceSprites();
+        // BattleMainCB2 updates the global palette fade before RunTasks.
+        _fade?.Update(this);
         foreach(var task in _soundTasks.ToArray()){task.Step(this);if(task.Finished)_soundTasks.Remove(task);}
         foreach(var task in _tasks.ToArray()){task.Step(this);if(task.Finished)_tasks.Remove(task);}
-        _fade?.Update(this);
         if(_clearTicks>=0&&++_clearTicks==2){_clearTicks=-1;_backgrounds.Clear();_trace.Add("monbg-cleared");}
         // General animations run the script in the priority-10 table task, after
         // OAM construction and the priority-5 visual callback. Newly created tasks
@@ -217,6 +219,9 @@ public sealed partial class SourceBattleAnimation
             var c=Program[_pc];var a=c.Args;
             switch(c.Op)
             {
+                case "goto":
+                    if(_subroutine is not null)Fail(c,"Goto inside subroutine requires separate source control-flow support.");
+                    _pc=_script.Labels[a[0]];continue;
                 case "call":
                     if(_subroutine is not null||!_script.Subroutines.TryGetValue(a[0],out _subroutine))Fail(c,"Missing or recursive subroutine.");
                     _returnPc=_pc+1;_pc=0;continue;
@@ -262,6 +267,12 @@ public sealed partial class SourceBattleAnimation
                     }
                     break;
                 case "createvisualtask":
+                    if(a[0]=="AnimTask_RockMonBackAndForth")
+                    {if(Number(a[3])!=0&&ResolveShakeParticipant(Number(a[2]),false) is {} rocking)_tasks.Add(new RockMonTask(this,rocking,Number(a[3]),Number(a[4])));break;}
+                    if(a[0]=="AnimTask_SetGrayscaleOrOriginalPal")
+                    {if(ResolveShakeParticipant(Number(a[2]),true) is {} paletteSlot)SetBattlerGreyscaleOrOriginal(paletteSlot.Value,Number(a[3])!=0);break;}
+                    if(a[0]=="AnimTask_BlendMonInAndOut")
+                    {var blendSlot=ResolveShakeParticipant(Number(a[2]),false);if(blendSlot is {} selected)_tasks.Add(new BlendMonInAndOutTask(selected,(ushort)PaletteNumber(a[3]),Number(a[4]),Number(a[5]),Number(a[6])));break;}
                     if(a[0]=="AnimTask_InvertScreenColor"){InvertSelectedPalettes(Number(a[2]),Number(a[3]),Number(a[4]));break;}
                     if(TryCreateElementalTask(c))break;
                     if(a[0]=="AnimTask_SwayMon"){_tasks.Add(new SwayMonTask(this,a.Skip(2).Select(Number).ToArray()));break;}
@@ -273,9 +284,9 @@ public sealed partial class SourceBattleAnimation
                     if(a[0]=="AnimTask_BlendBattleAnimPal"){var blend=new BlendPaletteTask(a.Skip(2).Select(PaletteNumber).ToArray(),this);blend.Step(this);if(!blend.Finished)_tasks.Add(blend);break;}
                     if(a[0]=="AnimTask_Minimize"){_tasks.Add(new MinimizeTask(this));break;}
                     if(a[0]=="AnimTask_Withdraw"){_tasks.Add(new WithdrawTask(this));break;}
-                    if(a[0]=="AnimTask_MetallicShine"){_tasks.Add(new MetallicTask(this));break;}
+                    if(a[0]=="AnimTask_MetallicShine"){_tasks.Add(new MetallicTask(this,Number(a[2])==0,Number(a[3])!=0,(ushort)PaletteNumber(a[4])));break;}
                     if(a[0]=="AnimTask_BlendColorCycle"){_tasks.Add(new BlendCycleTask(this,a.Skip(2).Select(PaletteNumber).ToArray()));break;}
-                    if(a[0]=="AnimTask_ScaleMonAndRestore"){_tasks.Add(new ScaleMonTask(this));break;}
+                    if(a[0]=="AnimTask_ScaleMonAndRestore"){_tasks.Add(new ScaleMonTask(this,a.Skip(2).Select(Number).ToArray()));break;}
                     if(a[0]=="AnimTask_StatsChange"){_tasks.Add(new StatMaskTask(this));break;}
                     if(a[0]=="AnimTask_Flash"){_tasks.Add(new FlashTask(this));break;}
                     if(a[0] is "AnimTask_TranslateMonEllipticalRespectSide" or "AnimTask_TranslateMonElliptical")
@@ -284,6 +295,15 @@ public sealed partial class SourceBattleAnimation
                     if(shakeSlot is null)break;
                     var shake=new ShakeTask(shakeSlot.Value,Number(a[3]),Number(a[4]),Number(a[5]),Number(a[6]),a[0]=="AnimTask_ShakeMon2");
                     _offsets[shake.Slot.Value]=new(shake.X,shake.Y);shake.Step(this);_tasks.Add(shake);break;
+                case "createsoundtask":
+                    if(a[0]=="SoundTask_FireBlast"){_soundTasks.Add(new FireBlastSound(a[1],a[2],AdjustPanning(-64),AdjustPanning(63)));break;}
+                    var panningLoop=new PanningSoundLoop(a[1],AdjustPanning(SoundPan(a[2])),AdjustPanning(SoundPan(a[3])),Number(a[4]),Number(a[5]),Number(a[6]),Number(a[7]));
+                    panningLoop.Step(this);if(!panningLoop.Finished)_soundTasks.Add(panningLoop);break;
+                case "waitsound":
+                    if(_soundTasks.Count!=0){_soundWait=0;return;}
+                    if(_audio.IsPlaying)
+                    {if(++_soundWait>90){_audio.StopAnimationEffects();_soundWait=0;}return;}
+                    _soundWait=0;break;
                 case "waitplaysewithpan":_soundTasks.Add(new DelayedSound(a[0],AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),Number(a[2])));break;
                 case "loopsewithpan":
                     var loop=new SoundLoop(a[0],AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),Number(a[2]),Number(a[3]));loop.Step(this);if(!loop.Finished)_soundTasks.Add(loop);break;

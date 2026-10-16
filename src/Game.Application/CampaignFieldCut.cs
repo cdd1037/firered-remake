@@ -6,7 +6,11 @@ using Game.Domain.World;
 namespace Game.Application;
 
 /// <summary>Transient acknowledgement-owned field-move presentation; never a player-save checkpoint.</summary>
-public sealed record CampaignCutEffect(int PartyIndex,int SourceSpeciesId,string Nickname,string ActorId,string Phase);
+public sealed record CampaignCutEffect(int PartyIndex,int SourceSpeciesId,string Nickname,string ActorId,string Phase)
+{
+    public bool Grass{get;init;}
+    public string? WaitId{get;init;}
+}
 
 /// <summary>
 /// Source animation parameters, not a claim about GBA task/VBlank scheduling.
@@ -14,7 +18,8 @@ public sealed record CampaignCutEffect(int PartyIndex,int SourceSpeciesId,string
 /// </summary>
 public static class FieldCutSourcePresentation
 {
-    public const string ShowMon="show-mon",TreeReady="tree-ready",TreeCut="tree-cut";
+    public const string ShowMon="show-mon",TreeReady="tree-ready",TreeCut="tree-cut",GrassCut="grass-cut";
+    public const int GrassCutCueFrames=31;
     public static ImmutableArray<int> PlayerFrameDurations => [4,4,4,4,8];
     public const int OutdoorBannerOpenFrames=20;
     public const int MonStartX=320,MonCenterX=120,MonY=80,MonSlidePixelsPerFrame=20;
@@ -64,7 +69,7 @@ public sealed partial class CampaignSession
         if(partyIndex<0||partyIndex>=state.Party.Length)return "field_cut_party_index_invalid";
         if(!KnowsFieldCut(state.Party[partyIndex]))return "field_cut_move_missing";
         if(!state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))return "field_cut_badge_required";
-        return !RuinValleyCutPosition(state)&&AdjacentFieldCutTree(state) is null?"field_cut_nothing_to_cut":null;
+        return !RuinValleyCutPosition(state)&&AdjacentFieldCutTree(state) is null&&!NearbyCutGrass(state).Any()?"field_cut_nothing_to_cut":null;
     }
 
     private Decision<CampaignState> DecideFieldCut(CampaignState state,CampaignCommand command)
@@ -72,7 +77,8 @@ public sealed partial class CampaignSession
         var error=FieldCutCommandError(state,command.PartyIndex);
         if(error is not null)return new(CommandStatus.Rejected,state,error);
         if(RuinValleyCutPosition(state))return DecideRuinValleyCut(state,command);
-        var tree=AdjacentFieldCutTree(state)!;
+        var tree=AdjacentFieldCutTree(state);
+        if(tree is null)return StartFieldGrassCut(state,command.PartyIndex);
         // FieldCallback_CutTree stores the selected menu member, then starts this entry.
         // Unlike direct interaction, this source path has no Yes/No or used-move textbox.
         // CheckObjectGraphicsInFrontOfPlayer changes LastTalked, not gSelectedObjectEventId.

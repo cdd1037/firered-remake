@@ -19,7 +19,7 @@ public sealed class SourceUiCorrections : IDisposable
         var result = new SourceUiCorrections();
         try
         {
-            foreach (var (id, width, height) in new[] { ("battle-selection-cursor", 8, 16), ("pc-submenu-background", 240, 160) })
+            foreach (var (id, width, height) in new[] { ("battle-selection-cursor", 8, 16), ("battle-swap-source-cursor", 8, 16), ("battle-swap-destination-cursor", 8, 16), ("pc-submenu-background", 240, 160) })
             {
                 var entry = root.GetProperty("assets").EnumerateArray().Single(e => e.GetProperty("id").GetString() == id);
                 var path = Path.Combine(directory, id + ".png");
@@ -65,6 +65,11 @@ public sealed class SourceUiCorrections : IDisposable
     {
         canvas.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
         canvas.DrawTexture(_textures["battle-selection-cursor"], SelectionCursorPosition(moves, choice));
+    }
+    public void DrawMoveSwapCursor(CanvasItem canvas, int choice, bool destination)
+    {
+        canvas.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+        canvas.DrawTexture(_textures[destination ? "battle-swap-destination-cursor" : "battle-swap-source-cursor"], SelectionCursorPosition(true, choice));
     }
     public void DrawPcSubmenuBackground(CanvasItem canvas)
     {

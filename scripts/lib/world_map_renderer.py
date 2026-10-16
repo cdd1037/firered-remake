@@ -8,7 +8,7 @@ from PIL import Image
 from map_runtime import encode, movement
 
 
-def render_map(src, name, stable_id, output, *, tilesets, render_border=True, layout_symbol=None, technical_spawn=None):
+def render_map(src, name, stable_id, output, *, tilesets, render_border=True, layout_symbol=None, technical_spawn=None, metatile_exports=None):
     output = Path(output)
     out = output.parent
     prefix = output.stem + "."
@@ -121,6 +121,25 @@ def render_map(src, name, stable_id, output, *, tilesets, render_border=True, la
             result.putdata(pixels)
             tile_cache[entry] = result
         return tile_cache[entry]
+
+    if metatile_exports is not None:
+        result = {}
+        for mid in metatile_exports:
+            raw_attribute, entries, _, _ = attributes(mid)
+            layer_type = (raw_attribute >> 29) & 3
+            groups = ([[0x3014] * 4, entries[:4], entries[4:]] if layer_type == 0 else
+                      [entries[:4], entries[4:], [0] * 4] if layer_type == 1 else
+                      [entries[:4], [0] * 4, entries[4:]] if layer_type == 2 else None)
+            if groups is None:
+                raise ValueError('Reserved metatile layer type')
+            images = []
+            for group in groups:
+                image = Image.new('RGBA', (16, 16))
+                for k, entry in enumerate(group):
+                    image.paste(tile(entry), ((k % 2) * 8, (k // 2) * 8))
+                images.append(image)
+            result[mid] = images
+        return result
 
     layers = [Image.new('RGBA', (width * 16, height * 16)) for _ in range(3)]
     for c in cells:

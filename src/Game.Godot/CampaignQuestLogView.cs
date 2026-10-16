@@ -57,26 +57,25 @@ public partial class CampaignView
         if(_questLogPlayback is not {} playback)return false;
         EnsureQuestLogArt();
         var id=new MapId(playback.Map);
-        // Pin both scene and actual saved map; never call LoadMap/Synchronize with recorded data.
-        var key=PresentationMapKey(id);_drawMapPins.Add(key);MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(_session.State.World.Player.MapId)));
-        var art=GetMapArt(id);
+        var art=GetQuestLogMapArt(playback);
         var actors=playback.Actors.ToArray();var hero=actors.Single(a=>a.Id==CampaignQuestLogRecorder.PlayerId);
         var heroPosition=new Vector2(hero.X*16,hero.Y*16);
-        if(playback.MovingFrom is {} movingHero&&movingHero.Id==hero.Id)heroPosition=new Vector2(movingHero.X*16,movingHero.Y*16).Lerp(heroPosition,(float)playback.MovementFraction);
+        if(playback.Movement(hero.Id) is {} movingHero)heroPosition=new Vector2(movingHero.From.X*16,movingHero.From.Y*16).Lerp(heroPosition,(float)movingHero.Fraction);
         var camera=heroPosition+new Vector2(8-120,8-80);
         DrawRect(new(0,0,240,160),Colors.Black);
-        DrawTexture(art.Bottom,-camera);DrawTexture(art.Middle,-camera);
+        DrawQuestLogLayer(art,camera,0);DrawQuestLogLayer(art,camera,1);
         foreach(var actor in actors.Where(a=>a.Visible).OrderBy(a=>a.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
         {
             SpriteAsset? asset=actor.Id==CampaignQuestLogRecorder.PlayerId?(_session.State.PlayerGender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
             if(asset is null)throw new InvalidDataException("quest_log_actor_art_missing:"+actor.Graphics);
             // Local pose only; the actual saved scene's _poses remain untouched.
             var position=new Vector2(actor.X*16,actor.Y*16);
-            if(playback.MovingFrom is {} from&&from.Id==actor.Id)position=new Vector2(from.X*16,from.Y*16).Lerp(position,(float)playback.MovementFraction);
-            var pose=new Pose{Position=position,Facing=actor.Facing,Visible=true,Frame=playback.MovingFrom?.Id==actor.Id?1+(int)(playback.MovementFraction*3):0};
-            DrawActor(asset,pose,camera);
+            var movement=playback.Movement(actor.Id);
+            if(movement is {} active)position=new Vector2(active.From.X*16,active.From.Y*16).Lerp(position,(float)active.Fraction);
+            var pose=new Pose{Position=position,Facing=actor.Facing,Visible=true,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0};
+            DrawActor(asset,pose,camera,playback.SavedGameVisible?null:asset.Texture);
         }
-        DrawTexture(art.Top,-camera);
+        DrawQuestLogLayer(art,camera,2);
         DrawRect(new(0,0,240,16),QuestLogColor(15));
         DrawRect(new(0,144,240,16),QuestLogColor(15));
         string header=_catalog.QuestLogSource.Texts["PreviouslyOnYourQuest"];

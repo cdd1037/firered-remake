@@ -39,6 +39,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideItemMenu(CampaignState state,CampaignCommand command)
     {
         var menu=state.ItemMenu!;
+        if(menu.Origin=="registered"&&command.Kind is "menu_ack" or "menu_back")return new(CommandStatus.Accepted,state with{ItemMenu=null});
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
         Decision<CampaignState> Menu(string view)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View=view,MessageSymbol=null,DisplayInventory=null,SourceMessages=null,SourceMessageIndex=0}});
         Decision<CampaignState> Message(string symbol,string returnView)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol=symbol,ReturnView=returnView}});
@@ -59,6 +60,7 @@ public sealed partial class CampaignSession
         if(command.Kind=="field_poke_flute")return UseFieldPokeFlute(state,command);
         if(command.Kind=="field_bicycle")return UseFieldBicycle(state,command);
         if(command.Kind=="field_fish")return StartFieldFishing(state,command);
+        if(command.Kind=="field_powder_jar")return UsePowderJar(state,command);
         if(command.Kind=="field_coin_case")return UseCoinCase(state,command);
         if(command.Kind=="teachy_tv_open")return OpenTeachyTv(state,command);
         if(command.Kind=="fame_checker_open")return OpenFameChecker(state,command);

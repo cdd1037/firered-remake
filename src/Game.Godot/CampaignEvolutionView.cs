@@ -115,6 +115,7 @@ public partial class CampaignView
         }
         string key = $"{animationKey}:{scene.ProposalIndex}:{scene.Stage}:{scene.PageIndex}:{scene.PendingMoves.Length}";
         if (_evolutionViewKey == key) return;
+        _moveSelectionStamp = null;
         _evolutionViewKey = key; _evolutionMoveCursor = 0; _held = null;
         if (scene is { Stage: CampaignEvolutionStage.LearnMove } && MoveLearningUnavailable(scene.PendingMoves[0].Move))
             _evolutionMoveCursor = _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId).Pokemon.Moves.Length;
@@ -147,6 +148,8 @@ public partial class CampaignView
         else
         {
             var owned = _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId);
+            if (!MoveSelectionCurrent("evolution", owned, scene.PendingMoves[0].Move))
+            { _evolutionMoveCursor = 0; _wildNotice = SummaryChangedNotice; return true; }
             if (key.Keycode == Key.Up) _evolutionMoveCursor = Math.Max(0, _evolutionMoveCursor - 1);
             if (key.Keycode == Key.Down) _evolutionMoveCursor = Math.Min(owned.Pokemon.Moves.Length, _evolutionMoveCursor + 1);
             if (confirm || cancel)
@@ -229,6 +232,13 @@ public partial class CampaignView
         }
     }
 
+    private bool MouseEvolutionLearning(Vector2 point) => _wildNotice is not null ? MouseConfirm(point, MouseMessage)
+        : MouseMoveSelectionSummary(point, ref _evolutionMoveCursor,
+            _session.State.Party.Single(p => p.InstanceId == _session.State.Evolution!.Proposal.InstanceId).Pokemon.Moves.Length);
+    private bool NavigateEvolutionLearning(Vector2 point, int direction) => _wildNotice is null &&
+        NavigateMoveSelectionSummary(point, direction, ref _evolutionMoveCursor,
+            _session.State.Party.Single(p => p.InstanceId == _session.State.Evolution!.Proposal.InstanceId).Pokemon.Moves.Length);
+
     private void DrawEvolution()
     {
         SynchronizeEvolutionView();
@@ -238,15 +248,9 @@ public partial class CampaignView
         DrawEvolutionBackground();
         if (scene.Stage == CampaignEvolutionStage.LearnMove)
         {
-            _battleSkin.DrawStandardFrame(this, new(8, 8, 224, 104));
-            for (int i = 0; i < owned.Pokemon.Moves.Length; i++)
-            {
-                SourceText(MoveLearningUnavailable(scene.PendingMoves[0].Move) ? _sourceInactiveCursor : _sourceNormal, new(28, 14 + i * 16), MoveName(owned.Pokemon.Moves[i].Move));
-                if (i == _evolutionMoveCursor) SourceText(_sourceNormal, new(14, 14 + i * 16), "▶");
-            }
-            int y = 14 + owned.Pokemon.Moves.Length * 16;
-            SourceText(_sourceNormal, new(28, y), MoveLearningUnavailable(scene.PendingMoves[0].Move) ? "DECLINE" : "CANCEL");
-            if (_evolutionMoveCursor == owned.Pokemon.Moves.Length) SourceText(_sourceNormal, new(14, y), "▶");
+            DrawMoveSelectionSummary("evolution", owned, scene.PendingMoves[0].Move, _evolutionMoveCursor);
+            if (_wildNotice is not null) ItemMessageBox(_wildNotice);
+            return;
         }
         else
         {

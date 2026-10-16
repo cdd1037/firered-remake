@@ -9,7 +9,8 @@ internal static class SourceCopyStateRules
     {
         if (!PokemonShape(body.Pokemon)) return "source_copy_pokemon_shape";
         if (body.Transform is { } transform && (!PokemonShape(transform.OriginalPokemon) || !PokemonShape(transform.CopiedPokemon) ||
-            transform.OriginalPpUps.IsDefault || transform.OriginalPpUps.Length != 4)) return "source_copy_transform_shape";
+            transform.OriginalPpUps.IsDefault || transform.OriginalPpUps.Length != 4 ||
+            !WildBattleTransformationRules.ValidMoveOrder(transform))) return "source_copy_transform_shape";
         if (body.CopyMoves is { } copies && (body.Transform is not null || copies.RulesVersion != WildBattleRules.CalledMoveKernelRulesVersion ||
             copies.Slots.IsDefaultOrEmpty || copies.Slots.Length > 4 || copies.Slots.Any(c => c is null || c.PersistentSlot is null ||
                 c.Slot < 0 || c.Slot >= body.Pokemon.Moves.Length) || copies.Slots.Select(c => c.Slot).Distinct().Count() != copies.Slots.Length))

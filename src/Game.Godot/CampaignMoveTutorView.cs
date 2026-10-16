@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Application;
 using Game.Domain.Pokemon;
+using Game.Domain.Ids;
 using Game.Domain.World;
 using Godot;
 
@@ -47,7 +48,7 @@ public partial class CampaignView
     private MoveReminderCatalog ReminderCatalog => ((ICampaignCatalog)_catalog).MoveReminder!;
     private MoveDeleterCatalog DeleterCatalog => ((ICampaignCatalog)_catalog).MoveDeleter!;
     private static Rect2 TutorPartyRow(int index) => NativePartySlot(index);
-    private static Rect2 TutorMoveRow(int index) => new(8, 12 + index * 18, 224, 18);
+    private static Rect2 TutorMoveRow(int index) => new(120, 18 + index * 28, 120, 28);
     private static Rect2 TutorChoiceRow(int index) => new(182, 73 + index * 16, 50, 16);
     private static Rect2 TutorPaymentRow(int index) => new(8, 32 + index * 24, 224, 22);
     private static Rect2 TutorMessageRect => new(0, 112, 240, 48);
@@ -58,6 +59,7 @@ public partial class CampaignView
             before?.MoveReminder?.Stage != after.MoveReminder?.Stage || before?.MoveReminder?.Page != after.MoveReminder?.Page ||
             before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage || before?.DayCareInteraction?.Stage != after.DayCareInteraction?.Stage || IsDayCareChoosing(before) != IsDayCareChoosing(after))
         {
+            _moveSelectionStamp = null; _teachingSummaryNotice = null;
             _held = null; _repeat = 0; ReleaseFieldTextInput(); _tutorCursor = 0; _tutorScroll = 0;
             ResetDayCarePartyPresentation();
             _tutorTransitionFrame = Engine.GetProcessFrames();
@@ -75,7 +77,7 @@ public partial class CampaignView
     {
         if (Teaching?.Moves != true) return;
         if (_tutorCursor < _tutorScroll) _tutorScroll = _tutorCursor;
-        if (_tutorCursor >= _tutorScroll + 6) _tutorScroll = _tutorCursor - 5;
+        if (_tutorCursor >= _tutorScroll + 5) _tutorScroll = _tutorCursor - 4;
     }
 
     private bool MoveTutorInput(InputEventKey key)
@@ -85,6 +87,8 @@ public partial class CampaignView
         if (!key.Pressed || key.Echo || _fade > 0) return true;
         if (DayCareChoosing) return DayCarePartyInput(key);
         var scene = Teaching!;
+        if (_teachingSummaryNotice is not null)
+        { if (key.Keycode is Key.Enter or Key.A or Key.Backspace or Key.B) _teachingSummaryNotice = null; return true; }
         bool confirm = key.Keycode is Key.Enter or Key.KpEnter or Key.A;
         bool cancel = key.Keycode is Key.Backspace or Key.Escape or Key.B;
         int count = TutorRowCount;
@@ -96,6 +100,9 @@ public partial class CampaignView
             TutorKeepCursorVisible();
         }
         if (!confirm && !cancel) return true;
+        if ((scene.Replace || scene.Moves) && !MoveSelectionCurrent(scene.Prefix,
+            _session.State.Party[scene.PartyIndex], TeachingNewMove(scene)))
+        { _tutorCursor = 0; _tutorScroll = 0; _teachingSummaryNotice = SummaryChangedNotice; return true; }
         if (scene.Party)
         {
             if (cancel || _tutorCursor == _session.State.Party.Length) Apply(new(scene.Prefix + "cancel"));
@@ -126,19 +133,19 @@ public partial class CampaignView
         var scene = Teaching!;
         return scene.Party ? index == _session.State.Party.Length ? NativePartyCancel : TutorPartyRow(index)
             : scene.Replace ? TutorMoveRow(index) : scene.Payment ? TutorPaymentRow(index)
-            : scene.Moves ? new(8, 6 + (index - _tutorScroll) * 16, 224, 16) : TutorChoiceRow(index);
+            : scene.Moves ? TutorMoveRow(index - _tutorScroll) : TutorChoiceRow(index);
     }
     private int TutorPointerRow(Vector2 point)
     {
         int start = Teaching?.Moves == true ? _tutorScroll : 0;
-        int end = Teaching?.Moves == true ? Math.Min(TutorRowCount, start + 6) : TutorRowCount;
+        int end = Teaching?.Moves == true ? Math.Min(TutorRowCount, start + 5) : TutorRowCount;
         for (int i = start; i < end; i++) if (TutorRow(i).HasPoint(point)) return i;
         return -1;
     }
     private bool NavigateMoveTutorPointer(Vector2 point, int direction)
     {
         if (DayCareChoosing) return NavigateDayCarePartyPointer(point, direction);
-        if (!MoveTutorActive) return false;
+        if (!MoveTutorActive || _teachingSummaryNotice is not null) return false;
         int row = TutorPointerRow(point); if (row < 0) return false;
         if (direction != 0) return MouseNavigationKey(direction);
         if (_tutorCursor == row) return false;
@@ -147,11 +154,22 @@ public partial class CampaignView
     private bool MouseMoveTutor(Vector2 point)
     {
         if (DayCareChoosing) return MouseDayCareParty(point);
+        if (_teachingSummaryNotice is not null) return MouseConfirm(point, MouseMessage);
+        if (Teaching is { } screen && (screen.Replace || screen.Moves))
+        {
+            if (new Rect2(208, 0, 32, 16).HasPoint(point)) return MouseKey(Key.Backspace);
+            if (new Rect2(152, 0, 56, 16).HasPoint(point)) return MouseKey();
+        }
         int row = TutorPointerRow(point);
         if (row >= 0) { _tutorCursor = row; MouseKey(Key.Enter); return true; }
         if (TutorRowCount == 0 && TutorMessageRect.HasPoint(point)) { MouseKey(Key.Enter); return true; }
         return false;
     }
+
+    private string? _teachingSummaryNotice;
+    private MoveId? TeachingNewMove(TeachingPresentation scene) => scene.Delete || scene.Moves ? null
+        : _session.State.MoveTutor is { } tutor ? _catalog.MoveTutors!.Definitions[tutor.TutorIndex].Move
+        : _session.State.MoveReminder!.Move;
 
     private bool DrawMoveTutor()
     {
@@ -159,6 +177,19 @@ public partial class CampaignView
         if (DayCareChoosing) { DrawDayCareParty(); return true; }
         if (Teaching is not { } scene) return false;
         var state = _session.State;
+        if (scene.Replace || scene.Moves)
+        {
+            var owned = state.Party[scene.PartyIndex];
+            if (scene.Replace) DrawMoveSelectionSummary(scene.Prefix, owned, TeachingNewMove(scene), _tutorCursor);
+            else
+            {
+                if (_moveSelectionStamp is null) CaptureMoveSelection(scene.Prefix, owned, null);
+                DrawNativeSummary(owned, 2, true, new(SummaryInteractionMode.SelectNew, _tutorCursor,
+                    Candidates: state.MoveReminder!.Moves, FirstRow: _tutorScroll));
+            }
+            if (_teachingSummaryNotice is not null) ItemMessageBox(_teachingSummaryNotice);
+            return true;
+        }
         DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         if (scene.Party)
@@ -177,26 +208,7 @@ public partial class CampaignView
         else
         {
             var mon = state.Party[scene.PartyIndex];
-            if (scene.Replace || scene.Moves)
-            {
-                _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
-                int start = scene.Moves ? _tutorScroll : 0, end = scene.Moves ? Math.Min(TutorRowCount, start + 6) : TutorRowCount;
-                for (int i = start; i < end; i++)
-                {
-                    var row = TutorRow(i); bool back = i == TutorRowCount - 1;
-                    SourceText(_sourceNormal, new(24, row.Position.Y), back ? "CANCEL" : MoveName(scene.Moves ? state.MoveReminder!.Moves[i] : mon.Pokemon.Moves[i].Move));
-                    if (!back)
-                    {
-                        string pp = scene.Moves ? "PP " + _catalog.PokemonContent!.Catalog.Moves[state.MoveReminder!.Moves[i]].Pp
-                            : $"{mon.Pokemon.Moves[i].CurrentPp}/{mon.Pokemon.Moves[i].MaximumPp}";
-                        SourceText(_sourceSmall, new(178, row.Position.Y), pp);
-                    }
-                    if (i == _tutorCursor) SourceText(_sourceNormal, new(10, row.Position.Y), "▶");
-                }
-                if (scene.Moves && TutorRowCount > 6)
-                    SourceText(_sourceSmall, new(166, 98), $"{_tutorCursor + 1}/{TutorRowCount}");
-            }
-            else if (scene.Payment)
+            if (scene.Payment)
             {
                 SourceText(_sourceNormal, new(12, 6), mon.Nickname);
                 for (int i = 0; i < 2; i++)

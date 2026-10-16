@@ -216,6 +216,35 @@ def generate(reference, dependency):
         pixels.blit(controls, 240, rgba, width, height, x, 0)
         x += width
     emit('controls', 240, 16, bytes(controls))
+    # Slot_PrintOnWindow0 uses the fixed standard border/palette, independent of the user's
+    # Yes/No border choice. Bake these two bounded, static windows into the same atlas.
+    message_palette = pixels.palette(source('graphics/text_window/stdpal_3.pal'))
+    normal_glyphs = font.decode_indices(source('graphics/fonts/latin_normal.png'), 512)
+    normal_widths = font.widths(source('src/text.c').decode(), 'Normal')
+    standard = pixels.tile_list(source('graphics/text_window/std.png'))
+    need(len(standard) == 9, 'Standard message border differs')
+    for identity, symbol in [('message-quit', 'gString_QuitPlaying'), ('message-no-coins', 'gString_OutOfCoins')]:
+        panel = pixels.canvas(176, 48)
+        for y in range(6):
+            for x in range(22):
+                tile = (0 if y == 0 else 2 if y == 5 else 1)*3 + (0 if x == 0 else 2 if x == 21 else 1)
+                pixels.blit(panel, 176, pixels.rgba(standard[tile], message_palette), 8, 8, x*8, y*8)
+        white = pixels.canvas(160, 32, (*message_palette[1], 255))
+        pixels.blit(panel, 176, white, 160, 32, 8, 8)
+        x, y = 9, 10
+        for char in texts[symbol]:
+            if char == '\n': x, y = 9, y + 16; continue
+            gid = chars[char]; width = normal_widths[gid]
+            gx, gy = gid % 16 * 16, gid // 16 * 16
+            roles = [normal_glyphs[(gy+dy)*256+gx+dx] for dy in range(14) for dx in range(width)]
+            glyph = bytes(channel for role in roles for channel in (*message_palette[2 if role == 1 else 3 if role == 2 else 1], 255))
+            pixels.blit(panel, 176, glyph, width, 14, x, y)
+            x += width
+        emit(identity, 176, 48, bytes(panel))
+    require('AddTextPrinterParameterized5(0, FONT_NORMAL, str, 1, 2, TEXT_SKIP_DRAW, NULL, 1, 2);')
+    need('LoadPalette(GetTextWindowPalette(3), palOffset, PLTT_SIZE_4BPP);' in source('src/text_window.c').decode(),
+         'Standard message palette differs')
+
     require('x = DISPLAY_WIDTH - 4 - GetStringWidth(FONT_SMALL, gString_SlotMachineControls, 0);')
     require('textColor[0] = TEXT_DYNAMIC_COLOR_6;\n        textColor[1] = TEXT_COLOR_WHITE;\n        textColor[2] = TEXT_COLOR_DARK_GRAY;')
     # Extract layout and animation tables, with source-authenticated geometry guards.
@@ -232,6 +261,16 @@ def generate(reference, dependency):
         animations[symbol.removeprefix('sAnimCmd_Clefairy_').lower()] = dict(frames=[dict(tileOffset=int(t, 0), durationTicks=int(d)) for t, d in re.findall(r'ANIMCMD_FRAME\(\s*(0x[\da-fA-F]+|\d+),\s*(\d+)\)', body)], loop='ANIMCMD_JUMP(0)' in body)
     line_names = ['TLBR', 'TopRow', 'MiddleRow', 'BottomRow', 'BLTR']
     layout = dict(width=240, height=160, textureFilter='nearest', paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', mapWidthTiles=32, mapHeightTiles=20, bgTemplates=structures('sBgTemplates'), windows=structures('sWindowTemplates'), yesNoWindow={k: int(v, 0) for k, v in re.findall('\\.(\\w+)\\s*=\\s*(0x[\\da-fA-F]+|\\d+)', declaration('sYesNoWindowTemplate'))}, reels=dict(centers=[[80 + 40 * i, 44 + 24 * j] for i in range(3) for j in range(5)], spriteWidth=32, spriteHeight=32, priority=3, subpriority=2, subpixelScale=8, paletteBanks=palette_tags, iconSymbols=['ICON_7', 'ICON_ROCKET', 'ICON_PIKACHU', 'ICON_PSYDUCK', 'ICON_CHERRIES', 'ICON_MAGNEMITE', 'ICON_SHELLDER'], tileOffsets=[0, 16, 32, 48, 64, 80, 96]), digits=dict(creditCenters=[[85 + 7 * i, 30] for i in range(4)], payoutCenters=[[133 + 7 * i, 30] for i in range(4)], spriteWidth=8, spriteHeight=16, tileOffsets=list(range(0, 20, 2)), leadingZeros=True, priority=1), clefairy=dict(centers=[[16, 136], [224, 136]], rightHFlip=True, spriteWidth=32, spriteHeight=32, priority=1, animations=animations), scanline=dict(registerOffset=43, activeRows=84, affineParameters=table('sReelIconAffineParams'), darkenCoefficients=table('sReelIconBldY'), effect='darken BG3, OBJ and backdrop; outside range affine 0x100 and darken 0'), matchLines=[dict(id=i, name=n, minimumBet=[3, 2, 1, 2, 3][i], tileIndices=table('sLineTiles_' + n)) for i, n in enumerate(line_names)], normalLinePalette=4, betLinePalette=5, winningLinePalette=6, winningUnblendedColorIndices=table('sWinningLineFlashPalIdxs'), buttonTileIndices=table('sReelButtonMapTileIdxs'), pressedButtonTileBase=192, controls=dict(font='small', fontId=0, x=controls_x, y=0, width=controls_width, paletteBank=14, colorIndices=[15, 1, 3], keypad=keypad), help=dict(bg=1, initialScrollPixels=256, finalScrollPixels=0, stepPixels=16, openButton='Right', closeButton='Left'), message=dict(fontId=2, x=1, y=2, letterSpacing=1, lineSpacing=2, borderTileStart=1, borderPalette=15), yesNo=dict(fontId=2, x=0, y=2, borderTileStart=10, borderPalette=13, initialCursor=0, wraps=False), backdropRgb555=[30, 30, 31])
+    need('(r + (((data2->r - r) * coeff) >> 4))' in source('src/blend_palette.c').decode(),
+         'Source software palette rounding differs')
+    # The winning-line task reads the pinned fixed-point sine table, not a host float approximation.
+    sine = [int(float(value) * 256) for value in re.findall(r'Q_8_8\(([-.\d]+)\)', source('src/trig.c').decode())]
+    need(len(sine) >= 128, 'Source sine table missing')
+    for needle in ['data[2] += 32;', 'data[1] = 8;', 'data[4] += 8;',
+                   'gSineTable[data[4]] >> 5', 'gSineTable[data[2]] >> 7']:
+        require(needle)
+    layout['winningFlash'] = dict(lightFrames=[sine[i] >> 7 for i in range(0, 128, 32)],
+        lightHoldTicks=9, darkenCoefficients=[sine[(i + 8) % 128] >> 5 for i in range(0, 128, 8)])
     need(len(layout['scanline']['affineParameters']) == len(layout['scanline']['darkenCoefficients']) == 96, 'Scanline table length differs')
     outputs['palettes.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, palettes=palettes))
     outputs['layout.json'] = encoded(dict(schemaVersion=1, layout=layout, texts=texts))

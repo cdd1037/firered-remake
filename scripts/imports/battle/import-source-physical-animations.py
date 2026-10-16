@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Discover complete straight-line roots using shared physical callback adapters.
+"""Discover complete source roots with bounded shared label targets using shared physical callback adapters.
 Unsupported roots are recorded as dependency gaps, never replaced by a generic hit.
 """
 import argparse, importlib.util, json, re, subprocess
@@ -17,8 +17,8 @@ def read_sources(reference):
  return {path:(subprocess.check_output(['git','-C',str(reference),'show',hit.COMMIT+':'+path])
                if (reference/'.git').exists() else (reference/path).read_bytes()) for path in paths}
 SPRITES={'gKarateChopSpriteTemplate','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSimplePaletteBlendSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gBasicHitSplatSpriteTemplate','gHorizontalLungeSpriteTemplate','gSlideMonToOffsetSpriteTemplate','gSlideMonToOriginalPosSpriteTemplate','gComplexPaletteBlendSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate'}
-TASKS={'AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
-NEW= {'gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+TASKS={'AnimTask_ScaleMonAndRestore','AnimTask_SwayMon','AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+NEW= {'goto','gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
 def sprite_recipe(source,template,asset,expected_callback):
  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
  if match is None:raise ValueError('Missing sprite recipe '+template)
@@ -82,20 +82,37 @@ def build(reference):
    result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
    if op=='return':return result
   raise ValueError('Unterminated source subroutine')
- for match in re.finditer(r'^(Move_(\w+)):\n',source,re.M):
-  commands=[];gaps=set();symbols=set()
+ def source_block(label):
+  match=re.search(r'^'+re.escape(label)+r':\n',source,re.M)
+  if not match:raise ValueError('Missing source label '+label)
+  result=[]
   for offset,line in enumerate(source[match.end():].splitlines()):
    text=line.split('@',1)[0].strip()
    if not text:continue
-   if text.endswith(':'):gaps.add('control-flow:label');break
+   if text.endswith(':'):raise ValueError('Unterminated source block '+label)
    op,*tail=text.split(None,1);args=[a.strip() for a in tail[0].split(',')] if tail else []
-   commands.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
-   if op not in hit.OPS|{'waitplaysewithpan','call','splitbgprio'}:gaps.add('command:'+op)
+   result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
+   if op in {'goto','end','return'}:return result
+  raise ValueError('Unterminated source block '+label)
+ for match in re.finditer(r'^(Move_(\w+)):\n',source,re.M):
+  commands=[];gaps=set();symbols=set();labels={}
+  try:
+   commands=source_block(match[1]);pending=[c['args'][0] for c in commands if c['op']=='goto']
+   while pending:
+    label=pending.pop(0)
+    if label in labels:continue
+    labels[label]=len(commands);block=source_block(label);commands.extend(block)
+    pending.extend(c['args'][0] for c in block if c['op']=='goto')
+    if len(commands)>128:raise ValueError('Source command bound')
+  except ValueError:gaps.add('control-flow:unterminated')
+  for command in commands:
+   op=command['op'];args=command['args']
+   if op not in hit.OPS|{'waitplaysewithpan','call','splitbgprio','goto'}:gaps.add('command:'+op)
+   if op=='goto':symbols.add(op)
    if op in ('createsprite','createvisualtask'):
     symbols.add(args[0]);allowed=SPRITES if op=='createsprite' else TASKS
     if args[0] not in allowed:gaps.add('callback:'+args[0])
    if op=='loadspritegfx' and args[0] not in {'ANIM_TAG_IMPACT','ANIM_TAG_HANDS_AND_FEET','ANIM_TAG_CUT','ANIM_TAG_SLAM_HIT','ANIM_TAG_WHIP_HIT','ANIM_TAG_POISON_POWDER','ANIM_TAG_SLEEP_POWDER','ANIM_TAG_STUN_SPORE','ANIM_TAG_POISON_BUBBLE'}:gaps.add('graphics:'+args[0])
-   if op=='end':break
   if not symbols & NEW:continue
   if not commands or commands[-1]['op']!='end':gaps.add('control-flow:unterminated')
   if len(commands)>128:gaps.add('command-bound')
@@ -111,7 +128,7 @@ def build(reference):
   move=ids.get('MOVE_'+match[2])
   if not move or move>354:continue
   if gaps:blocked.append(dict(moveId=move,missing=sorted(gaps)));continue
-  scripts.append(dict(moveId=move,label=match[1],commands=commands));subroutines.update(local_subs)
+  scripts.append(dict(moveId=move,label=match[1],commands=commands,labels=labels));subroutines.update(local_subs)
  if not scripts:raise ValueError('No supported physical roots')
  return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subroutines,assets=[dict(id=id,path='physical-'+id+'.rgb555') for id in build_assets(reference)],spriteRecipes=[sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gViceGripSpriteTemplate','cut','AnimViceGripPincer'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSlamHitSpriteTemplate','slam-hit','AnimWhipHit'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gVineWhipSpriteTemplate','whip-hit','AnimWhipHit')]+[sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),template,asset,'AnimMovePowderParticle') for template,asset in [('gPoisonPowderParticleSpriteTemplate','poison-powder'),('gSleepPowderParticleSpriteTemplate','sleep-powder'),('gStunSporeParticleSpriteTemplate','stun-spore')]]),indent=2)+'\n').encode(),blocked
 if __name__=='__main__':

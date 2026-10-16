@@ -176,6 +176,8 @@ public interface ICampaignCatalog:IStoryCatalog
     FishingTaskProfile? FishingTables=>null;
     ImmutableDictionary<MapId,OldRodEncounterTable> GoodRodEncounters=>ImmutableDictionary<MapId,OldRodEncounterTable>.Empty;
     int? TerrainAt(MapId map,int x,int y)=>null;
+    FieldMetatileEdit? SourceMetatileAt(MapId map,int x,int y)=>null;
+    ImmutableDictionary<int,int> CutGrassMetatiles=>ImmutableDictionary<int,int>.Empty;
     bool AllowsCycling(MapId map)=>false;
     VermilionGymTrainerCatalog? VermilionGymTrainers=>null;
     SsAnneTrainerCatalog? SsAnneTrainers=>null;

@@ -65,13 +65,13 @@ public sealed partial class SourceBattleAnimation
     private sealed class MetallicTask:VisualTask
     {
         private int _scroll,_passes;
-        private readonly int _slot;
-        public MetallicTask(SourceBattleAnimation owner)
+        private readonly int _slot;private readonly bool _restore;
+        public MetallicTask(SourceBattleAnimation owner,bool restore,bool tint,ushort color)
         {
-            _slot=owner._cue.Actor.Value;var b=owner._battlers[_slot];var center=b.DisplayCenter??b.Center(owner._doubles);
+            _restore=restore;_slot=owner._cue.Actor.Value;var b=owner._battlers[_slot];var center=b.DisplayCenter??b.Center(owner._doubles);
             int partner=owner._doubles&&_slot is 0 or 3&&owner._battlers[_slot^2].Visible?_slot^2:-1;
             owner._metallic=new(true,true,96-center.X,32-center.Y,_slot,b.Visible,partner);
-            owner._greyscale.Add(_slot);owner._blendEnabled=true;owner._alphaA=8;owner._alphaB=12;
+            if(tint)owner.BlendPalettes(1u<<(16+_slot),11,color);else owner.SetBattlerGreyscaleOrOriginal(_slot,false);owner._blendEnabled=true;owner._alphaA=8;owner._alphaB=12;
         }
         public override void Step(SourceBattleAnimation owner)
         {
@@ -79,21 +79,23 @@ public sealed partial class SourceBattleAnimation
             if((_scroll+=4)!=128)return;
             _scroll=0;owner._metallic=owner._metallic with{ScrollX=(short)(owner._metallic.ScrollX+128)};
             if(++_passes==2)
-            {owner._greyscale.Remove(_slot);owner._metallic=owner._metallic with{BackgroundLoaded=false,PriorityPartner=-1};}
+            {if(_restore)owner.SetBattlerGreyscaleOrOriginal(_slot,true);owner._metallic=owner._metallic with{BackgroundLoaded=false,PriorityPartner=-1};}
             else if(_passes==3)
             {owner._metallic=owner._metallic with{WindowEnabled=false};owner._blendEnabled=false;owner._alphaA=owner._alphaB=0;Finished=true;}
         }
     }
     private sealed class ScaleMonTask:VisualTask
     {
-        private readonly int _slot;private int _step=-3,_left=16,_restore=16;
-        public ScaleMonTask(SourceBattleAnimation owner){_slot=owner._cue.Actor.Value;owner._affineMode[_slot]=true;owner._xScale[_slot]=owner._yScale[_slot]=256;}
+        private readonly int _slot;private int _dx,_dy,_left,_restore;
+        public ScaleMonTask(SourceBattleAnimation owner,int[] args)
+        {_slot=args[3]==0?owner._cue.Actor.Value:owner._cue.Target.Value;_dx=args[0];_dy=args[1];_left=_restore=args[2];owner._affineMode[_slot]=true;owner._xScale[_slot]=owner._yScale[_slot]=256;}
         public override void Step(SourceBattleAnimation owner)
         {
-            owner._xScale[_slot]+=_step;owner._yScale[_slot]+=_step;
+            owner._matrixB[_slot]=owner._matrixC[_slot]=0;
+            owner._xScale[_slot]=(short)(owner._xScale[_slot]+_dx);owner._yScale[_slot]=(short)(owner._yScale[_slot]+_dy);
             if(--_left!=0)return;
-            if(_restore>0){_step=-_step;_left=_restore;_restore=0;}
-            else{owner._xScale[_slot]=owner._yScale[_slot]=256;owner._affineMode[_slot]=false;Finished=true;}
+            if(_restore>0){_dx=-_dx;_dy=-_dy;_left=_restore;_restore=0;}
+            else{owner._xScale[_slot]=owner._yScale[_slot]=256;owner._matrixB[_slot]=owner._matrixC[_slot]=0;owner._affineMode[_slot]=false;Finished=true;}
         }
     }
     // Original normal palette fade visits BG and OBJ halves on alternate calls,

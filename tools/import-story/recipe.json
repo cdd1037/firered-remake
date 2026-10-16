@@ -13044,6 +13044,12 @@
       "path": "src/battle_message.c",
       "decodeNewlines": true,
       "terminate": true
+    },
+    {
+      "path": "src/strings.c",
+      "symbol": "gText_PowderQty",
+      "removePause": true,
+      "terminate": true
     }
   ]
 }

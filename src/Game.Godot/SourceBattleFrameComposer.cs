@@ -52,7 +52,7 @@ public sealed class SourceBattleFrameComposer
             if(!b.Visible)return;
             var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];
             var palette=palettes.GetValueOrDefault(16+b.Slot.Value);bool grey=frame.GreyscaleSlots.Contains(b.Slot.Value);
-            if(frame.BattlerAffine.Length>b.Slot.Value&&frame.BattlerAffine[b.Slot.Value].DoubleSize)AffineBattler(pixels,_assets[b.Asset],center.X+offset.X,center.Y+offset.Y,frame.BattlerAffine[b.Slot.Value],palette,frame.InvertedPalettes.Contains(16+b.Slot.Value));
+            if(frame.BattlerAffine.Length>b.Slot.Value&&frame.BattlerAffine[b.Slot.Value].DoubleSize)AffineBattler(pixels,_assets[b.Asset],center.X+offset.X,center.Y+offset.Y,frame.BattlerAffine[b.Slot.Value],palette,frame.InvertedPalettes.Contains(16+b.Slot.Value),grey);
             else Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y,palette,grey,frame.InvertedPalettes.Contains(16+b.Slot.Value));
         }
         void Sprite(SourceVisualSpriteFrame sprite)
@@ -76,12 +76,12 @@ public sealed class SourceBattleFrameComposer
                 if(item.Item2 is {} b)
                 {
                     var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.ObjectOffsets[b.Slot.Value];
-                    Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,palettes.GetValueOrDefault(16+b.Slot.Value));
+                    Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,palettes.GetValueOrDefault(16+b.Slot.Value),frame.GreyscaleSlots.Contains(b.Slot.Value),frame.InvertedPalettes.Contains(16+b.Slot.Value));
                 }
                 else
                 {
                     var sprite=item.Item3!;blend=sprite.Blend;
-                    if(sprite.Template=="AnimMonTrace")Blit(layer,_assets[sprite.Asset!],sprite.Position.X+sprite.Offset.X-32,sprite.Position.Y+sprite.Offset.Y-32,palettes.GetValueOrDefault(16+sprite.BattlerCopySlot));
+                    if(sprite.Template=="AnimMonTrace")Blit(layer,_assets[sprite.Asset!],sprite.Position.X+sprite.Offset.X-32,sprite.Position.Y+sprite.Offset.Y-32,palettes.GetValueOrDefault(16+sprite.BattlerCopySlot),frame.GreyscaleSlots.Contains(sprite.BattlerCopySlot),frame.InvertedPalettes.Contains(16+sprite.BattlerCopySlot));
                     else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,_assets[sprite.Asset!],new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
                     else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false);
                 }
@@ -96,7 +96,7 @@ public sealed class SourceBattleFrameComposer
             // Hardware first selects one frontmost OBJ pixel. A translucent clone
             // blends with the background, never recursively with lower OBJ copies.
             var objects=new ushort[pixels.Length];var translucent=new bool[pixels.Length];
-            void AffineObject(SourcePixelAsset asset,PixelPoint center,SourceBattlerAffine matrix,bool blend)
+            void AffineObject(SourcePixelAsset asset,PixelPoint center,SourceBattlerAffine matrix,bool blend,int paletteSlot)
             {
                 int half=matrix.DoubleSize?64:32;
                 for(int y=-half;y<half;y++)for(int x=-half;x<half;x++)
@@ -104,7 +104,7 @@ public sealed class SourceBattleFrameComposer
                     int sx=((x*matrix.XScale+y*matrix.MatrixB)>>8)+32,sy=((x*matrix.MatrixC+y*matrix.YScale)>>8)+32,dx=center.X+x,dy=center.Y+y;
                     if(sx<0||sx>=64||sy<0||sy>=64||dx<0||dx>=240||dy<0||dy>=112)continue;
                     ushort pixel=asset.Pixels[sy*64+sx];if((pixel&0x8000)==0)continue;
-                    objects[dy*240+dx]=pixel;translucent[dy*240+dx]=blend;
+                    objects[dy*240+dx]=SourcePaletteMath.Apply(pixel,palettes.GetValueOrDefault(16+paletteSlot),frame.InvertedPalettes.Contains(16+paletteSlot),frame.GreyscaleSlots.Contains(paletteSlot));translucent[dy*240+dx]=blend;
                 }
             }
             var ordered=_battlers.Where(b=>b.Visible).Select(b=>(Rank:frame.BattlerOamRanks[b.Slot.Value],Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
@@ -114,13 +114,13 @@ public sealed class SourceBattleFrameComposer
                 if(item.Item2 is {} b)
                 {
                     var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.ObjectOffsets[b.Slot.Value];
-                    AffineObject(_assets[b.Asset],new(center.X+offset.X,center.Y+offset.Y),frame.BattlerAffine[b.Slot.Value],false);
+                    AffineObject(_assets[b.Asset],new(center.X+offset.X,center.Y+offset.Y),frame.BattlerAffine[b.Slot.Value],false,b.Slot.Value);
                 }
                 else
                 {
                     var clone=item.Item3!;
                     if(clone.Template!="ClonedMinizeSprite_Step"||clone.Asset is null)throw new InvalidDataException("Unadmitted object mixed with battler copies.");
-                    AffineObject(_assets[clone.Asset],new(clone.Position.X+clone.Offset.X,clone.Position.Y+clone.Offset.Y),new(false,clone.Scale,clone.Scale),true);
+                    AffineObject(_assets[clone.Asset],new(clone.Position.X+clone.Offset.X,clone.Position.Y+clone.Offset.Y),new(false,clone.Scale,clone.Scale),true,clone.BattlerCopySlot);
                 }
             }
             for(int i=0;i<pixels.Length;i++)if((objects[i]&0x8000)!=0)pixels[i]=translucent[i]&&frame.BlendEnabled?Blend(objects[i],pixels[i],frame.AlphaA,frame.AlphaB):objects[i];
@@ -179,7 +179,7 @@ public sealed class SourceBattleFrameComposer
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
         {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0){if(greyscale){int average=((p&31)+((p>>5)&31)+((p>>10)&31))/3;p=(ushort)(0x8000|average|(average<<5)|(average<<10));}dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted);}}
     }
-    private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette,bool inverted=false)
+    private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette,bool inverted=false,bool greyscale=false)
     {
         // SetSpriteRotScale supplies the inverse sampling matrix directly to the
         // GBA BIOS. Signed products use arithmetic shifts, including the off-diagonal terms.
@@ -188,7 +188,7 @@ public sealed class SourceBattleFrameComposer
             int sx=((x*affine.XScale+y*affine.MatrixB)>>8)+32,sy=((x*affine.MatrixC+y*affine.YScale)>>8)+32,dx=centerX+x,dy=centerY+y;
             if(sx<0||sx>=64||sy<0||sy>=64||dx<0||dx>=240||dy<0||dy>=112)continue;
             ushort p=source.Pixels[sy*64+sx];if((p&0x8000)==0)continue;
-            dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted);
+            dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted,greyscale);
         }
     }
     private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)

@@ -747,6 +747,11 @@
       "item": "pret:ITEM_BELUE_BERRY",
       "useSupport": "noFieldUse",
       "icon": true
+    },
+    {
+      "item": "pret:ITEM_POWDER_JAR",
+      "useSupport": "noFieldUse",
+      "icon": true
     }
   ],
   "shops": [

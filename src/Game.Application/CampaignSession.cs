@@ -55,6 +55,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsSurfing{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSurfEffect? SurfEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFishing? Fishing{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int BerryPowder{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool BerryPowderVendor{get;init;}
     [JsonRequired] public int Coins { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSlotMachine? SlotMachine { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCoinsBox? CoinsBox { get; init; }
@@ -227,6 +229,7 @@ public sealed record CampaignCommand(string Kind,Direction Direction=Direction.S
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public SourceGameOptions? Options{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSlotInput? SlotInput { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignBattleMoveSwap? BattleMoveSwap { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public long? TargetInstanceId{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveLocation? StorageLocation{get;init;}
@@ -331,7 +334,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(ValidatePlayTime(s) is {} playTimeError)return playTimeError;
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
-        if(CampaignQuestLogRecorder.Validate(s.QuestLog, (_content as ICampaignQuestLogCatalog)?.QuestLogSource) is {} questLogError)return questLogError;
+        if(CampaignQuestLogRecorder.Validate(s.QuestLog, (_content as ICampaignQuestLogCatalog)?.QuestLogSource,_content) is {} questLogError)return questLogError;
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
         if(ValidateTrainerCardPhoto(s) is {} photoError)return photoError;
@@ -360,6 +363,10 @@ public sealed partial class CampaignSession
         var oldAmberError=ValidateOldAmberProgress(s);if(oldAmberError is not null)return oldAmberError;
         var fossilGiftError=ValidateFossilLabProgress(s);if(fossilGiftError is not null)return fossilGiftError;
         var giftIdentityError=ValidateGiftIdentityUniqueness(s);if(giftIdentityError is not null)return giftIdentityError;
+        if(ValidateBerryPowder(s) is {} powderError)return powderError;
+        if(s.MapEdits is {Count:>0} cutEdits&&cutEdits.Values.Any(e=>IsCutGrassEdit(s,e))&&
+            (!s.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET")||(s.GameStats?.GetValueOrDefault("GAME_STAT_USED_CUT")??0)==0))return "save_cut_grass_progress";
+        s=WithoutCutGrassEdits(s);
         var coinError=ValidateGameCornerCoins(s);if(coinError is not null)return coinError;
         var prizeError=ValidateGameCornerPrizePokemon(s);if(prizeError is not null)return prizeError;
         var flyError=ValidateFieldFlyProgress(s);if(flyError is not null)return flyError;
@@ -542,6 +549,7 @@ public sealed partial class CampaignSession
             if(command.Kind=="field_flash")return StartFieldFlash(state,command);
             if(state.Fishing is not null)return DecideFishing(state,command);
             if(command.Kind=="field_rock_smash")return DecideFieldRockSmash(state,command);
+            if(state.CutEffect is {Grass:true}||command.Kind=="field_cut_grass_ack")return CompleteFieldGrassCut(state,command);
             if(command.Kind=="field_cut")return DecideFieldCut(state,command);
             if(state.RareCandy is not null)return DecideRareCandy(state,command);
             if(state.EscapeRope is not null)return DecideEscapeRope(state,command);
@@ -557,6 +565,7 @@ public sealed partial class CampaignSession
             if(state.FieldPoison is not null)return DecideFieldPoison(state,command);
             if(state.Evolution is not null)return DecideEvolution(state,command);
             if(state.OldManTutorial is not null)return DecideOldManTutorial(state,command);
+            if(command.Kind=="battle_move_swap")return DecideBattleMoveSwap(state,command);
             if(command.Kind=="battle_toss_open")return OpenBattleBagToss(state,command);
             if(state.DoubleBattle is not null)return DecideDoubleBattle(state,command);
             if(state.ForestTrainerBattle is not null)return DecideForestTrainerBattle(state,command);
@@ -804,6 +813,7 @@ public sealed partial class CampaignSession
             if(TryApplyEggHatchEffect(state,effect,out var eggHatchState)){state=eggHatchState;continue;}
             if(TryApplyRoute5DayCareEffect(state,effect,out var daycareState)){state=daycareState;continue;}
             if(TryApplyGameCornerPrizeEffect(state,effect,out var prizeState)){state=prizeState;continue;}
+            if(TryApplyBerryPowderEffect(state,effect,out var powderState)){state=powderState;continue;}
             if(TryApplyGameCornerCoinEffect(state,effect,out var coinState)){state=coinState;continue;}
             if(TryApplyDepartmentRooftopEffect(state,effect,out var rooftopState)){state=rooftopState;continue;}
             if(TryApplyTrainerTowerElevatorEffect(state,effect,out var towerElevatorState)){state=towerElevatorState;continue;}

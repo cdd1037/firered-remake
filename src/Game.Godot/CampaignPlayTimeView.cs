@@ -53,6 +53,9 @@ public partial class CampaignView
             guard = CampaignPlayTimeTicks.PreserveMatchingRevision(guard, oldRevision, newRevision);
         if (_sourceMoveSession == _session) Keep(ref _sourceMoveRevision, before, after);
         Keep(ref _summaryMoveRevision, before, after);
+        _battlePartySelection = _battlePartySelection?.AfterPlayTimeOnlyCommit(before, after);
+        _moveSelectionStamp = _moveSelectionStamp?.AfterPlayTimeOnlyCommit(before, after);
+        _battleMoveOrderSelection = _battleMoveOrderSelection?.AfterPlayTimeOnlyCommit(before, after);
         Keep(ref _storageCreatureRevision, before, after);
         Keep(ref _storageReleaseRevision, before, after);
         Keep(ref _storageBoxOptionsRevision, before, after);

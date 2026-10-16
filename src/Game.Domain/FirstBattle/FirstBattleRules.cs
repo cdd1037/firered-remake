@@ -175,9 +175,7 @@ public static class FirstBattleRules
         if (p.SourceSpeciesId is not (1 or 4 or 7) || p.Level != 5 || p.Experience != 135 || p.Evs != SixStats.Zero)
             return $"first_battle_{side}_starter_profile_unsupported";
         if (p.Moves.Length != 2 || p.Moves.Any(m => m.PpUps != 0)) return $"first_battle_{side}_moves_unsupported";
-        string expectedAttack = FirstBattleProfile.AttackMove(p.SourceSpeciesId);
-        string expectedStatus = FirstBattleProfile.StatusMove(p.SourceSpeciesId);
-        if (p.Moves[0].Move.Value != expectedAttack || p.Moves[1].Move.Value != expectedStatus)
+        if (!FirstBattleProfile.HasStarterMovePair(p))
             return $"first_battle_{side}_moves_unsupported";
         foreach (var slot in p.Moves)
         {

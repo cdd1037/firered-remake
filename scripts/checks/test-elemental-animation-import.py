@@ -11,8 +11,28 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
+ def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
+  data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
+  for name in ['gSwirlingDirtSpriteTemplate','gWhirlpoolSpriteTemplate','gFireSpinSpriteTemplate']:self.assertEqual('AnimParticleInVortex',recipes[name]['callback'])
+  self.assertEqual((8,40),struct.unpack_from('<HH',assets['mud-sand']))
+  indices=[]
+  for name in ['mud_sand_0','mud_sand_1']:
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+name+'.png')) as image:
+    for y in range(0,image.height,8):
+     for x in range(0,image.width,8):indices.extend(image.crop((x,y,x+8,y+8)).tobytes())
+  rows=(REFERENCE/'graphics/battle_anims/sprites/mud_sand.pal').read_text().splitlines()[3:];palette=[int(c) for row in rows for c in row.split()]
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual(expected,list(struct.unpack_from('<320H',assets['mud-sand'],4)))
+ def test_bite_affine_table_and_shared_clamp_palette(self):
+  data,assets=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(data)['spriteRecipes']}
+  for name in ['gSharpTeethSpriteTemplate','gClampJawSpriteTemplate']:
+   recipe=recipes[name];self.assertEqual('AnimBite',recipe['callback']);self.assertEqual((64,64),(recipe['width'],recipe['height']));self.assertEqual(list(range(0,256,32)),[a[0]['rotation'] for a in recipe['affineAnimations']])
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/sharp_teeth.png') as image:palette=image.getpalette()
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/clamp.png') as image:indices=image.tobytes()
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual(expected,list(struct.unpack_from('<4096H',assets['clamp'],4)))
  def test_small_ember_pixels_match_palette_and_transparency(self):
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/small_ember.png') as image:
    palette=image.getpalette();indices=image.tobytes()
@@ -71,6 +91,42 @@ class ElementalImportTests(unittest.TestCase):
   data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
   self.assertEqual(223,recipes['gLeechLifeNeedleSpriteTemplate']['affineAnimations'][0][0]['rotation'])
   self.assertFalse({124,188}&{s['moveId'] for s in pack['scripts']},'Out-of-range source sludge animation index is not admitted.')
+ def test_ice_sound_task_retains_source_no_priority_abi(self):
+  data,_=imp.build(REFERENCE);scripts={s['moveId']:s for s in json.loads(data)['scripts']}
+  task=next(c for c in scripts[58]['commands'] if c['op']=='createsoundtask')
+  self.assertEqual(['SoundTask_LoopSEAdjustPanning','SE_M_BUBBLE_BEAM2','SOUND_PAN_ATTACKER','SOUND_PAN_TARGET','4','4','0','10'],task['args'])
+  self.assertIn('waitsound',[c['op'] for c in scripts[181]['commands']])
+  original=imp.read
+  def read(reference,path):
+   data=original(reference,path)
+   return data.replace(b'createsoundtask SoundTask_LoopSEAdjustPanning, SE_M_BUBBLE_BEAM2',b'createsoundtask SoundTask_Unknown, SE_M_BUBBLE_BEAM2') if path=='data/battle_anim_scripts.s' else data
+  with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
+  self.assertNotIn(58,{s['moveId'] for s in json.loads(data)['scripts']})
+ def test_energy_and_ice_frame_programs_are_source_derived(self):
+  data,assets=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(data)['spriteRecipes']}
+  energy=recipes['gEndureEnergySpriteTemplate'];self.assertEqual([(0,4),(8,12),(16,4),(24,4)],[(f['tile'],f['duration']) for f in energy['animations'][0]])
+  self.assertEqual((16,128),struct.unpack_from('<HH',assets['focus-energy']))
+  ice=recipes['gIceCrystalHitLargeSpriteTemplate'];self.assertEqual([(206,206,0),(5,5,10),(0,0,6),(0,0,0)],[(c['x'],c['y'],c['duration']) for c in ice['affineAnimations'][0]])
+ def test_fire_bundle_uses_shared_source_palette_and_sound_arguments(self):
+  data,assets=imp.build(REFERENCE);scripts={s['moveId']:s for s in json.loads(data)['scripts']}
+  task=next(c for c in scripts[126]['commands'] if c['op']=='createsoundtask');self.assertEqual(['SoundTask_FireBlast','SE_M_FLAME_WHEEL','SE_M_FLAME_WHEEL2'],task['args'])
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/fire.png') as image:palette=image.getpalette()
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/fire_plume.png') as image:indices=image.tobytes()
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual(expected,list(struct.unpack_from('<5120H',assets['fire-plume'],4)))
+ def test_tail_material_and_heart_dependencies_stay_shared(self):
+  data,assets=imp.build(REFERENCE);pack=json.loads(data);scripts={s['moveId']:s for s in pack['scripts']}
+  self.assertNotIn(106,scripts)
+  for move in [231,342]:
+   commands=scripts[move]['commands'];self.assertIn('AnimTask_MetallicShine',[c['args'][0] for c in commands if c['op']=='createvisualtask']);self.assertIn('AnimTask_SetGrayscaleOrOriginalPal',[c['args'][0] for c in commands if c['op']=='createvisualtask'])
+  self.assertEqual((16,16),struct.unpack_from('<HH',assets['magenta-heart']))
+  self.assertNotIn('metallic',assets);self.assertNotIn('item-bag',assets)
+  self.assertIn('ANIM_TAG_ITEM_BAG',[c['args'][0] for c in scripts[343]['commands'] if c['op']=='loadspritegfx'])
+ def test_shared_sine_projectiles_and_unused_explosion_load_are_materialized(self):
+  data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']};scripts={s['moveId']:s for s in pack['scripts']}
+  for name in ['gSwiftStarSpriteTemplate','gRazorLeafCutterSpriteTemplate']:self.assertEqual('AnimTranslateLinearSingleSineWave',recipes[name]['callback'])
+  self.assertEqual((32,128),struct.unpack_from('<HH',assets['explosion-6']))
+  self.assertIn('ANIM_TAG_EXPLOSION_6',[c['args'][0] for c in scripts[223]['commands'] if c['op']=='loadspritegfx'])
  def test_unknown_source_callback_is_rejected(self):
   original=imp.read
   def read(reference,path):

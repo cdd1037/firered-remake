@@ -152,13 +152,11 @@ public static class FirstBattleAi
             if (pokemon is null) return $"first_battle_ai_{name}_missing";
             int sourceSpecies = FirstBattleProfile.StarterSpecies(pokemon.Species);
             if (sourceSpecies == 0) return $"first_battle_ai_{name}_species";
-            string damageMove = FirstBattleProfile.AttackMove(sourceSpecies);
             if (pokemon.Level != 5 || pokemon.Experience != 135 || pokemon.Evs != SixStats.Zero)
                 return $"first_battle_ai_{name}_initial_starter";
             if (pokemon.Moves.IsDefault || pokemon.Moves.Length is < 2 or > 4 || pokemon.Moves.Any(m => m is null))
                 return $"first_battle_ai_{name}_moves";
-            string statusMove = FirstBattleProfile.StatusMove(sourceSpecies);
-            if (pokemon.Moves[0].Move.Value != damageMove || pokemon.Moves[1].Move.Value != statusMove ||
+            if (!FirstBattleProfile.HasStarterMovePair(pokemon) ||
                 pokemon.Moves.Any(m => m.PpUps != 0) ||
                 pokemon.Moves.Skip(2).Any(m => m.Move.Value != None || m.CurrentPp != 0 || m.MaximumPp != 0))
                 return $"first_battle_ai_{name}_moves";

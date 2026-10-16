@@ -115,10 +115,7 @@ public partial class CampaignView
                 NativePartyMove(key.Keycode,ref _wildCursor,_session.State.Party.Length,cancel:false);
                 if (key.Keycode == Key.Enter)
                 {
-                    var selected = _session.State.Party[_wildCursor];
-                    if (_wildCursor == battle.ActivePartyIndex || selected.Pokemon.CurrentHp == 0 || selected.IsEgg)
-                        _wildNotice = "Choose a living POKéMON\nthat is not already in battle.";
-                    else ApplyWildChoice(new("battle_switch", PartyIndex: _wildCursor));
+                    OpenBattlePartyActions(_wildCursor);
                 }
                 // A failed escape leads here. Back cannot return to the action menu
                 // with a fainted active Pokémon or automatically pick a reserve.

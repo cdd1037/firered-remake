@@ -133,7 +133,7 @@ public sealed partial class CampaignSession
     {
         started = false;
         var p = state.World.Player;
-        int type = _content.Maps[p.MapId].SourceEncounterTypeAt(p.X, p.Y) ?? 0;
+        int type = FieldEncounterTypeAt(state,p.X,p.Y) ?? 0;
         if (type is not (1 or 2) || SevenIslandEncounterTables.IsChamber(p.MapId) && !state.Script.Flags.GetValueOrDefault("FLAG_SYS_UNLOCKED_TANOBY_RUINS")) return state;
         _content.LandEncounters!.TryGetValue(p.MapId, out var land);
         _content.WaterEncounters!.TryGetValue(p.MapId, out var water);

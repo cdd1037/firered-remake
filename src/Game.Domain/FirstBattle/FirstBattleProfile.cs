@@ -26,6 +26,13 @@ internal static class FirstBattleProfile
     internal static string AttackMove(int species) => species == 4 ? "pret:MOVE_SCRATCH" : "pret:MOVE_TACKLE";
     internal static string StatusMove(int species) => species == 7 ? "pret:MOVE_TAIL_WHIP" : "pret:MOVE_GROWL";
 
+    // Both original slots remain owned after SELECT. The AI may additionally carry empty padding.
+    internal static bool HasStarterMovePair(PokemonInstance pokemon) => pokemon.Moves.Length >= 2 &&
+        (pokemon.Moves[0].Move.Value == AttackMove(pokemon.SourceSpeciesId) &&
+         pokemon.Moves[1].Move.Value == StatusMove(pokemon.SourceSpeciesId) ||
+         pokemon.Moves[1].Move.Value == AttackMove(pokemon.SourceSpeciesId) &&
+         pokemon.Moves[0].Move.Value == StatusMove(pokemon.SourceSpeciesId));
+
     internal static bool SupportsMove(PokemonMoveDefinition? move)
     {
         if (!SourceMoveDefinitionRules.IsValid(move) || move!.Type != "TYPE_NORMAL" ||

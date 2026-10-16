@@ -16,6 +16,10 @@ public enum CampaignQuestLogEvent
 }
 public sealed record CampaignQuestLogAction(int ActorIndex,int X,int Y,Direction Facing,bool Visible,CampaignQuestLogEvent Event,int Frames)
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int StartFrame{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public FieldMetatileEdit? Tile{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? Layout{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? SourceAction{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? TextKey{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<string> Arguments{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? Graphics{get;init;}
@@ -23,28 +27,44 @@ public sealed record CampaignQuestLogAction(int ActorIndex,int X,int Y,Direction
 }
 public sealed record CampaignQuestLogScene(string Map,ImmutableArray<CampaignQuestLogActor> Actors,ImmutableArray<CampaignQuestLogAction> Actions)
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? Layout{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<FieldMetatileEdit> Tiles{get;init;}
+
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool Closed{get;init;}
 }
-public sealed record CampaignQuestLog(ImmutableArray<CampaignQuestLogScene> Scenes);
+public sealed record CampaignQuestLog
+{
+    public ImmutableArray<CampaignQuestLogScene> Scenes{get;init;}
+    public int Version{get;init;}
+    public CampaignQuestLog(ImmutableArray<CampaignQuestLogScene> scenes):this(scenes,2){}
+    [System.Text.Json.Serialization.JsonConstructor]
+    public CampaignQuestLog(ImmutableArray<CampaignQuestLogScene> scenes,int version){Scenes=scenes;Version=version;}
+}
 
-public static class CampaignQuestLogRecorder
+public static partial class CampaignQuestLogRecorder
 {
     public const int SceneLimit=4, ActorLimit=16, ActionLimit=32;
     public const string PlayerId="LOCALID_PLAYER";
 
-    public static string? Validate(CampaignQuestLog? log,QuestLogSource? source=null)
+    public static string? Validate(CampaignQuestLog? log,QuestLogSource? source=null,ICampaignCatalog? catalog=null)
     {
         if(log is null)return null;
+        if(log.Version!=2)return "save_quest_log_version_unsupported";
         if(log.Scenes.IsDefault||log.Scenes.Length is <1 or >SceneLimit)return "save_quest_log_scenes_invalid";
         foreach(var scene in log.Scenes)
         {
             if(scene is null||!Identifier(scene.Map)||scene.Actors.IsDefault||scene.Actors.Length is <1 or >ActorLimit||scene.Actions.IsDefault||scene.Actions.Length is <1 or >ActionLimit)return "save_quest_log_scene_invalid";
             if(source is not null&&(!source.MapNames.ContainsKey(scene.Map)||Budget(scene.Actions,source)>QuestLogSource.ScriptBytes))return "save_quest_log_map_or_budget_invalid";
+            if(ValidateAppearance(scene) is {} appearanceError)return appearanceError;
+            if(catalog is not null&&!scene.Tiles.IsDefault&&scene.Tiles.Any(t=>!ValidAppearanceCoordinate(catalog,scene,t)))return "save_quest_log_tiles_invalid";
+            if(catalog is not null&&scene.Layout is {} sceneLayout&&catalog.MapLayout(new(scene.Map),sceneLayout) is null)return "save_quest_log_layout_invalid";
             if(scene.Actors.Any(a=>!ValidActor(a))||scene.Actors.Select(a=>a.Id).Distinct(StringComparer.Ordinal).Count()!=scene.Actors.Length||scene.Actors.Count(a=>a.Id==PlayerId)!=1)return "save_quest_log_actor_invalid";
             foreach(var action in scene.Actions)
             {
-                if(action is null||action.Frames is <1 or >255||!Enum.IsDefined(action.Event)||!Enum.IsDefined(action.Facing))return "save_quest_log_action_invalid";
-                if(action.Event==CampaignQuestLogEvent.None)
+                if(action is null||action.Frames is <1 or >255||action.StartFrame is <0 or >65535||action.SourceAction is {} opcode&&!Identifier(opcode)||!Enum.IsDefined(action.Event)||!Enum.IsDefined(action.Facing))return "save_quest_log_action_invalid";
+                if(action.Tile is not null||action.Layout is not null)
+                {if(action.Event!=CampaignQuestLogEvent.None||action.ActorIndex!=-1||action.Spawn is not null||action.Graphics is not null||action.X!=0||action.Y!=0||action.Visible||action.Tile is not null&&action.Layout is not null||action.Tile is {} tile&&!ValidTile(tile,true)||action.Layout is {} layout&&layout.Length>0&&!Identifier(layout))return "save_quest_log_appearance_invalid";}
+                else if(action.Event==CampaignQuestLogEvent.None)
                 {if((action.Spawn is null?(action.ActorIndex<0||action.ActorIndex>=scene.Actors.Length):action.ActorIndex!=-1||!ValidActor(action.Spawn))||action.X is <-32 or >1024||action.Y is <-32 or >1024)return "save_quest_log_actor_invalid";}
                 else if(action.Spawn is not null||action.ActorIndex!=-1||action.X!=0||action.Y!=0||action.Visible)return "save_quest_log_action_invalid";
                 if(source is not null&&action.Event!=CampaignQuestLogEvent.None)
@@ -52,6 +72,8 @@ public static class CampaignQuestLogRecorder
                     if(action.TextKey is null||action.Arguments.IsDefault)return "save_quest_log_text_missing";
                     try{source.Expand(action.TextKey,"RED",action.Arguments);}catch(Exception e) when(e is KeyNotFoundException or InvalidDataException){return "save_quest_log_arguments_invalid";}
                 }
+                if(catalog is not null&&action.Tile is {} mapTile&&!ValidAppearanceCoordinate(catalog,scene,mapTile))return "save_quest_log_tiles_invalid";
+                if(catalog is not null&&action.Layout is {Length:>0} actionLayout&&catalog.MapLayout(new(scene.Map),actionLayout) is null)return "save_quest_log_layout_invalid";
                 if(action.Graphics is {} graphics&&!Identifier(graphics))return "save_quest_log_graphics_invalid";
                 if(action.TextKey is {} key&&(!Identifier(key)||source is not null&&!source.Texts.ContainsKey(key)))return "save_quest_log_text_invalid";
                 if(!action.Arguments.IsDefault&&(action.Arguments.Length>6||action.Arguments.Any(a=>a is null||a.Length>64||a.Any(char.IsControl))))return "save_quest_log_arguments_invalid";
@@ -81,45 +103,37 @@ public static class CampaignQuestLogRecorder
 
     // Called inside the existing authoritative accepted-command transaction. Nothing is
     // recorded for rejected/faulted commands. No RNG, flags, inventory or rewards are owned here.
-    public static CampaignQuestLog? Record(CampaignQuestLog? log,CampaignState before,CampaignState after,CampaignCommand command,ICampaignCatalog? catalog=null,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainerLookup=null,bool recordingOpen=true,CampaignQuestLogAction? suppliedEvent=null)
+    public static CampaignQuestLog? Record(CampaignQuestLog? log,CampaignState before,CampaignState after,CampaignCommand command,ICampaignCatalog? catalog=null,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainerLookup=null,bool recordingOpen=true,CampaignQuestLogAction? suppliedEvent=null,bool playedSlots=false)
     {
         if(command.Kind=="play_time_tick")return log;
         if(log is not null&&after.PresentationEffects.Any(e=>e.Sequence>before.Script.EffectSequence&&e.Opcode=="special"&&e.Args.Contains("QuestLog_CutRecording")))return Close(log);
         var source=(catalog as ICampaignQuestLogCatalog)?.QuestLogSource;
         if(source?.DisabledMaps.Contains(after.World.Player.MapId.Value)==true)return log;
-        var caption=suppliedEvent??Describe(before,after,command,catalog,source,trainerLookup);
+        var caption=suppliedEvent??Describe(before,after,command,catalog,source,trainerLookup,playedSlots);
         if(recordingOpen&&log is not null&&!log.Scenes[^1].Closed&&caption?.Event==CampaignQuestLogEvent.StoryItem)caption=null;
         bool changedMap=before.World.Player.MapId!=after.World.Player.MapId;
         var scenes=log?.Scenes??[];
+        // Source retains one wild-battle record pointer across movement overflow, but
+        // a different semantic event, map boundary, save/restore or explicit cut ends it.
+        if(recordingOpen&&!changedMap&&!scenes.IsEmpty&&!scenes[^1].Closed&&scenes[^1].Map==after.World.Player.MapId.Value&&caption?.Event==CampaignQuestLogEvent.WildWon)
+        {
+            if(!TryRecordAppearance(scenes[^1],before,after,source,out var wildVisual))return Close(log);
+            var merged=CampaignQuestLogWildCapture.Merge(wildVisual.Actions,caption);
+            if(merged!=wildVisual.Actions)return new(scenes.SetItem(scenes.Length-1,wildVisual with{Actions=merged}));
+        }
         if(!recordingOpen||changedMap||scenes.IsEmpty||scenes[^1].Closed||scenes[^1].Map!=after.World.Player.MapId.Value||Budget(scenes[^1].Actions,source)+8>QuestLogSource.ScriptBytes||scenes[^1].Actions.Length>=ActionLimit)
         {
             if(caption is null||!MayStart(caption.Event,after,trainerLookup))return log;
             var scene=new CampaignQuestLogScene(after.World.Player.MapId.Value,Actors(after,source),[caption]){Closed=caption.Event is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.GymWon or CampaignQuestLogEvent.EliteFourWon or CampaignQuestLogEvent.ChampionWon or CampaignQuestLogEvent.TrainerWon};
-            return new(scenes.Add(scene).TakeLast(SceneLimit).ToImmutableArray());
+            var appearance=CaptureAppearance(scene,after);
+            return appearance is null?Close(log):new(scenes.Add(appearance).TakeLast(SceneLimit).ToImmutableArray());
         }
         var current=scenes[^1];
-        var actions=current.Actions;
-        var previous=current.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
-        foreach(var action in actions)if(action.Event==CampaignQuestLogEvent.None)
-        {var initial=action.Spawn??current.Actors[action.ActorIndex];var actor=previous.GetValueOrDefault(initial.Id)??initial;previous[actor.Id]=actor with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible,Graphics=action.Graphics??actor.Graphics};}
-        var currentActors=Actors(after,source).ToDictionary(a=>a.Id,StringComparer.Ordinal);
-        foreach(var initial in previous.Values.Concat(currentActors.Values.Where(a=>!previous.ContainsKey(a.Id))).ToArray())
-        {
-            var p=after.World.Player;
-            var actor=initial.Id==PlayerId?initial with{X=p.X,Y=p.Y,Facing=p.Facing,Visible=after.PlayerVisible}:
-                currentActors.TryGetValue(initial.Id,out var npc)?npc:initial with{Visible=false};
-            if(actions.Length>=ActionLimit-(caption is null?0:1)||Budget(actions,source)+8+(caption is null?0:source?.EventSizes[(int)caption.Event]??16)>QuestLogSource.ScriptBytes)break;
-            if(!previous.TryGetValue(actor.Id,out var old)||actor!=old)
-            {
-                int index=Array.FindIndex(current.Actors.ToArray(),a=>a.Id==actor.Id);
-                var action=new CampaignQuestLogAction(index,actor.X,actor.Y,actor.Facing,actor.Visible,CampaignQuestLogEvent.None,16){Graphics=index>=0&&actor.Graphics!=old?.Graphics?actor.Graphics:null,Spawn=index<0?actor:null};
-                if(Budget(actions.Add(action),source)+(caption is null?0:source?.EventSizes[(int)caption.Event]??16)>QuestLogSource.ScriptBytes)break;
-                actions=actions.Add(action);
-            }
-        }
-        if(caption is not null&&actions.Length<ActionLimit&&Budget(actions,source)+(source?.EventSizes[(int)caption.Event]??16)<=QuestLogSource.ScriptBytes)actions=actions.Add(caption);
-        return actions==current.Actions?log:new(scenes.SetItem(scenes.Length-1,current with{Actions=actions,Closed=caption?.Event is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.GymWon or CampaignQuestLogEvent.EliteFourWon or CampaignQuestLogEvent.ChampionWon or CampaignQuestLogEvent.TrainerWon}));
+        if(!TryRecordAppearance(current,before,after,source,out var visual))return Close(log);
+        var timed=AppendTimed(visual,before,after,source,caption);
+        return ReferenceEquals(timed,current)?log:new(scenes.SetItem(scenes.Length-1,timed));
     }
+
     public static CampaignQuestLog? RecordEvents(CampaignQuestLog? log,CampaignState state,ImmutableArray<CampaignQuestLogAction> events,ICampaignCatalog catalog,bool recordingOpen)
     {
         foreach(var entry in events)
@@ -131,8 +145,8 @@ public static class CampaignQuestLogRecorder
         return log;
     }
     public static CampaignQuestLogScene SavedScene(CampaignState state,QuestLogSource source)=>new(state.World.Player.MapId.Value,Actors(state,source),
-        [Event(CampaignQuestLogEvent.Arrived,"SavedGameAtLocation",source.MapName(state.World.Player.MapId.Value))]);
-    public static CampaignQuestLog? Close(CampaignQuestLog? log)=>log is null?null:new(log.Scenes.SetItem(log.Scenes.Length-1,log.Scenes[^1] with{Closed=true}));
+        [Event(CampaignQuestLogEvent.Arrived,"SavedGameAtLocation",source.MapName(state.World.Player.MapId.Value))]){Layout=state.MapLayout,Tiles=state.MapEdits?.Values.ToImmutableArray()??[]};
+    public static CampaignQuestLog? Close(CampaignQuestLog? log)=>log is null||log.Scenes[^1].Closed?log:new(log.Scenes.SetItem(log.Scenes.Length-1,log.Scenes[^1] with{Closed=true}));
     private static bool MayStart(CampaignQuestLogEvent kind,CampaignState state,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainers)
     {
         if(kind is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.PokemonCenter)return false;
@@ -142,7 +156,7 @@ public static class CampaignQuestLogRecorder
         return true;
     }
     internal static CampaignQuestLogAction Event(CampaignQuestLogEvent kind,string text,params string[] args)=>new(-1,0,0,Direction.South,false,kind,127){TextKey=text,Arguments=args.ToImmutableArray()};
-    private static CampaignQuestLogAction? Describe(CampaignState before,CampaignState after,CampaignCommand command,ICampaignCatalog? catalog,QuestLogSource? source,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainerLookup)
+    private static CampaignQuestLogAction? Describe(CampaignState before,CampaignState after,CampaignCommand command,ICampaignCatalog? catalog,QuestLogSource? source,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainerLookup,bool playedSlots)
     {
         string map=source?.MapNames.GetValueOrDefault(after.World.Player.MapId.Value)??Location(after.World.Player.MapId.Value);
         string Species(Game.Domain.Pokemon.PartyPokemon mon)=>catalog?.SourceSpeciesName(mon.Pokemon.SourceSpeciesId)??mon.Nickname;
@@ -150,7 +164,7 @@ public static class CampaignQuestLogRecorder
         foreach(var effect in after.PresentationEffects.Where(e=>e.Sequence>before.Script.EffectSequence))
             if(effect.Opcode=="special"&&effect.Args.Contains("SetUsedPkmnCenterQuestLogEvent"))return Event(CampaignQuestLogEvent.PokemonCenter,"MonsWereFullyRestoredAtCenter");
         if(source is not null&&source.ArrivalFlags.Any(f=>!before.Script.Flags.GetValueOrDefault(f)&&after.Script.Flags.GetValueOrDefault(f)))return Event(CampaignQuestLogEvent.Arrived,"ArrivedInLocation",map);
-        if(before.World.Player.MapId!=after.World.Player.MapId&&source?.Departures.FirstOrDefault(d=>d.Inside==before.World.Player.MapId.Value&&d.Outside==after.World.Player.MapId.Value) is {} departure&&departure.Kind!="GAME_CORNER")
+        if(before.World.Player.MapId!=after.World.Player.MapId&&source?.Departures.FirstOrDefault(d=>d.Inside==before.World.Player.MapId.Value&&d.Outside==after.World.Player.MapId.Value) is {} departure&&(departure.Kind!="GAME_CORNER"||playedSlots))
             return Event(CampaignQuestLogEvent.Departed,departure.TextKey,source.MapName(before.World.Player.MapId.Value),departure.Place);
         string SpeciesId(int species)=>catalog?.SourceSpeciesName(species)??"POKéMON";
         if(before.CutEffect is null&&after.CutEffect is {} cut)return Event(CampaignQuestLogEvent.FieldMove,"UsedCut",SpeciesId(cut.SourceSpeciesId));
@@ -190,7 +204,7 @@ public static class CampaignQuestLogRecorder
             {
                 "TRAINER_CLASS_LEADER"=>Event(CampaignQuestLogEvent.GymWon,"TookOnGymLeadersMonWithMonAndWon",map,definition.SourceTrainerName,loser,victor,flavor),
                 "TRAINER_CLASS_ELITE_FOUR"=>Event(CampaignQuestLogEvent.EliteFourWon,"TookOnEliteFoursMonWithMonAndWon",definition.SourceTrainerName,loser,victor,flavor),
-                "TRAINER_CLASS_CHAMPION"=>Event(CampaignQuestLogEvent.ChampionWon,"PlayerBattledChampionRival",after.PlayerName,after.RivalName),
+                "TRAINER_CLASS_CHAMPION"=>Event(CampaignQuestLogEvent.ChampionWon,"PlayerBattledChampionRival",after.PlayerName,after.RivalName,loser,victor,source?.Texts[player.CurrentHp<player.Stats.MaxHp/3?"Barely":player.CurrentHp<player.Stats.MaxHp/3*2?"Somehow":"Coolly"]??"coolly"),
                 _=>Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,definition.SourceTrainerName,loser,victor,flavor)
             };
         }
@@ -297,70 +311,33 @@ public static class CampaignQuestLogRecorder
 public sealed class CampaignQuestLogPlayback
 {
     private readonly CampaignQuestLog _log;
-    private int _action;
     private readonly string _playerName;
     private readonly QuestLogSource? _source;
     private readonly CampaignQuestLogScene? _savedScene;
+    private CampaignQuestLogTimeline _timeline=null!;
     public bool SavedGameVisible{get;private set;}
     private CampaignQuestLogScene CurrentScene=>SavedGameVisible?_savedScene!:_log.Scenes[SceneIndex];
-    public CampaignQuestLogActor? MovingFrom{get;private set;}
-    public double MovementFraction=>Math.Clamp(_frames/Math.Max(1,_duration),0,1);
-    private double _frames;
-    private int _duration;
-    private ImmutableSortedDictionary<string,CampaignQuestLogActor> _actors=ImmutableSortedDictionary<string,CampaignQuestLogActor>.Empty;
     public int SceneIndex{get;private set;}
     public int SceneCount=>_log.Scenes.Length;
     public bool Finished{get;private set;}
     public string Map=>CurrentScene.Map;
-    public string? Caption{get;private set;}
-    public IEnumerable<CampaignQuestLogActor> Actors=>_actors.Values;
+    public int ArtRevision=>_timeline.ArtRevision;
+    public string? Layout=>_timeline.Layout;
+    public ImmutableArray<FieldMetatileEdit> Tiles=>_timeline.Tiles;
+    public string? Caption=>_timeline.Caption;
+    public IEnumerable<CampaignQuestLogActor> Actors=>_timeline.Actors;
+    public (CampaignQuestLogActor From,double Fraction)? Movement(string id)=>_timeline.Movement(id);
     public CampaignQuestLogPlayback(CampaignQuestLog log,string playerName="RED",QuestLogSource? source=null,CampaignQuestLogScene? savedScene=null)
     {
         if(CampaignQuestLogRecorder.Validate(log,source) is {} error)throw new InvalidDataException(error);
         _log=log;_playerName=playerName;_source=source;_savedScene=savedScene;BeginScene();
     }
-    private void BeginScene()
-    {
-        _actors=CurrentScene.Actors.ToImmutableSortedDictionary(a=>a.Id,a=>a,StringComparer.Ordinal);
-        _action=0;_frames=0;Caption=null;ApplyAction();
-    }
-    private void ApplyAction()
-    {
-        var action=CurrentScene.Actions[_action];
-        MovingFrom=null;_duration=action.Frames;
-        if(action.Event==CampaignQuestLogEvent.None)
-        {
-            var id=action.Spawn?.Id??CurrentScene.Actors[action.ActorIndex].Id;
-            if(!_actors.TryGetValue(id,out var from))from=action.Spawn!;
-            MovingFrom=from;
-            _actors=_actors.SetItem(id,MovingFrom with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible,Graphics=action.Graphics??MovingFrom.Graphics});
-        }
-        else if(_source is not null&&action.TextKey is {} key)Caption=_source.Expand(key,_playerName,action.Arguments.IsDefault?[]:action.Arguments);
-        else Caption=action.Event switch
-        {
-            CampaignQuestLogEvent.Arrived=>$"{_playerName} arrived at {CampaignQuestLogRecorder.Location(Map)}.",
-            CampaignQuestLogEvent.PokemonCenter=>$"{_playerName} restored the POKEMON at a POKEMON CENTER.",
-            CampaignQuestLogEvent.TrainerWon=>$"{_playerName} defeated a TRAINER in battle.",
-            CampaignQuestLogEvent.WildWon=>$"{_playerName} defeated a wild POKEMON.",
-            _=>Caption
-        };
-        if(_source is not null&&action.Event!=CampaignQuestLogEvent.None&&!SavedGameVisible)
-        {
-            int count=(Caption??"").Count(c=>c!='\n');
-            _duration=count<20?95:count<36?127:count<46?191:255;
-        }
-    }
+    private void BeginScene()=>_timeline=new(CurrentScene,_playerName,_source,SavedGameVisible);
     public void Tick(double seconds)
     {
         if(!double.IsFinite(seconds)||seconds<0)throw new ArgumentOutOfRangeException(nameof(seconds));
         if(Finished)return;
-        _frames+=seconds*60;
-        while(!Finished&&_frames>=_duration)
-        {
-            _frames-=_duration;
-            if(++_action>=CurrentScene.Actions.Length){NextScene();break;}
-            ApplyAction();
-        }
+        _timeline.Tick(seconds);if(_timeline.Finished)NextScene();
     }
     public void NextScene()
     {
@@ -380,13 +357,17 @@ public sealed partial class CampaignSession
 {
     private bool _questLogRecordingOpen;
     private CampaignQuestLogShopCapture? _questLogShop;
+    private bool _questLogPlayedSlots;
     public void StopQuestLogRecording()=>_questLogRecordingOpen=false;
     private Decision<CampaignState> DecideWithQuestLogRecording(CampaignState state,CampaignCommand command)
     {
         var result=DecideWithWildHistoryRetention(state,command);
         if(result.Status!=CommandStatus.Accepted)return result;
+        if((result.State.SlotMachine?.PlayedSpins??0)>(state.SlotMachine?.PlayedSpins??0))_questLogPlayedSlots=true;
         var log=CampaignQuestLogRecorder.Record(state.QuestLog,state,result.State,command,_content,
-            id=>OrdinaryTrainerBindings.TryGetValue(new Game.Domain.Ids.TrainerId(id),out var binding)?binding.Definition:null,_questLogRecordingOpen);
+            id=>OrdinaryTrainerBindings.TryGetValue(new Game.Domain.Ids.TrainerId(id),out var binding)?binding.Definition:null,_questLogRecordingOpen,playedSlots:_questLogPlayedSlots);
+        if((_content as ICampaignQuestLogCatalog)?.QuestLogSource is {} source&&!source.DisabledMaps.Contains(result.State.World.Player.MapId.Value)&&
+            state.World.Player.MapId!=result.State.World.Player.MapId&&source.Departures.Any(d=>d.Inside==state.World.Player.MapId.Value&&d.Outside==result.State.World.Player.MapId.Value&&(d.Kind!="GAME_CORNER"||_questLogPlayedSlots)))_questLogPlayedSlots=false;
         var shop=CampaignQuestLogShopCapture.Observe(_questLogShop,state,result.State,_content);
         bool recordingOpen=ReferenceEquals(log,state.QuestLog)?_questLogRecordingOpen:log is not null&&!log.Scenes[^1].Closed;
         log=CampaignQuestLogRecorder.RecordEvents(log,result.State,shop.Events,_content,recordingOpen);

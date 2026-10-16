@@ -10,7 +10,7 @@ public partial class CampaignView
     private double _fieldCutFrames;
     private bool _fieldCutCry;
     private bool FieldCutVisualComplete => _session.State.CutEffect is {} cut && FieldCutFrame >=
-        (cut.Phase==FieldCutSourcePresentation.ShowMon?FieldCutSourcePresentation.ShowMonCueFrames:FieldCutSourcePresentation.TreeCutCueFrames);
+        (cut.Phase==FieldCutSourcePresentation.ShowMon?FieldCutSourcePresentation.ShowMonCueFrames:cut.Grass?FieldCutSourcePresentation.GrassCutCueFrames:FieldCutSourcePresentation.TreeCutCueFrames);
     private int FieldCutFrame => _session.State.RuinValleyCut is not null ? SixIslandFieldFrame : (int)Math.Floor(_fieldCutFrames+1e-7);
     private int FieldCutPlayerFrame
     {
@@ -87,7 +87,7 @@ public partial class CampaignView
 
     private void SynchronizeFieldCutPresentation(CampaignState? before,CampaignState after)
     {
-        string? wait=after.CutEffect is null?null:after.Script.Wait?.CorrelationId;
+        string? wait=after.CutEffect is null?null:after.CutEffect.WaitId??after.Script.Wait?.CorrelationId;
         if(wait!=_fieldCutWait||before?.CutEffect?.Phase!=after.CutEffect?.Phase)
         { _fieldCutWait=wait;_fieldCutFrames=0;_fieldCutCry=false; }
         if(after.CutEffect is not null){_held=null;_repeat=0;}
@@ -97,11 +97,12 @@ public partial class CampaignView
     {
         if(_session.State.CutEffect is not {} cut)return;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
-        int duration=cut.Phase==FieldCutSourcePresentation.ShowMon?FieldCutSourcePresentation.ShowMonCueFrames:FieldCutSourcePresentation.TreeCutCueFrames;
+        int duration=cut.Phase==FieldCutSourcePresentation.ShowMon?FieldCutSourcePresentation.ShowMonCueFrames:cut.Grass?FieldCutSourcePresentation.GrassCutCueFrames:FieldCutSourcePresentation.TreeCutCueFrames;
         _fieldCutFrames=Math.Min(duration,_fieldCutFrames+delta*60);
         if(cut.Phase==FieldCutSourcePresentation.ShowMon&&!_fieldCutCry&&FieldCutFrame>=
             FieldCutSourcePresentation.PlayerFrameDurations.Sum()+FieldCutSourcePresentation.OutdoorBannerOpenFrames+FieldCutSourcePresentation.MonSlideInFrames)
         { _fieldCutCry=true;SourceCry(_session.State.Party[cut.PartyIndex].Pokemon); }
+        if(cut.Grass&&FieldCutVisualComplete&&!_busy)Apply(new("field_cut_grass_ack",Text:cut.WaitId));
     }
 
     private void DrawFieldCutActor(string id,SpriteAsset asset,Pose pose,Vector2 camera)

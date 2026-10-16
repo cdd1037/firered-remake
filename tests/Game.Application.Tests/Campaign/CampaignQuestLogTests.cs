@@ -19,10 +19,10 @@ public sealed class CampaignQuestLogTests
         var log=Log();var encoded=System.Text.Json.JsonSerializer.Serialize(log);
         var playback=new CampaignQuestLogPlayback(log,"LEAF");
         Assert.AreEqual("LEAF arrived at pallet town.",playback.Caption);
-        playback.Tick(127d/60);
-        Assert.AreEqual(3,playback.MovingFrom!.X);Assert.AreEqual(4,playback.Actors.Single().X);
-        playback.Tick(8d/60);Assert.AreEqual(.5,playback.MovementFraction,.001);
-        playback.Tick(8d/60);Assert.IsTrue(playback.Finished);
+        Assert.AreEqual(3,playback.Movement(CampaignQuestLogRecorder.PlayerId)!.Value.From.X);Assert.AreEqual(4,playback.Actors.Single().X);
+        playback.Tick(8d/60);Assert.AreEqual(.5,playback.Movement(CampaignQuestLogRecorder.PlayerId)!.Value.Fraction,.001);
+        playback.Tick(8d/60);Assert.IsFalse(playback.Finished);
+        playback.Tick(111d/60);Assert.IsTrue(playback.Finished);
         Assert.AreEqual(encoded,System.Text.Json.JsonSerializer.Serialize(log));
     }
 
@@ -130,12 +130,15 @@ public sealed class CampaignQuestLogTests
         var after=state with{Actors=state.Actors.SetItem("far",far with{Invisible=true}).SetItem("near",near with{Active=true}),ObjectSlots=state.ObjectSlots.Add(2,"near")};
         var recorded=CampaignQuestLogRecorder.Record(new([scene]),state,after,new("wait_done"),catalog)!;
         Assert.IsTrue(recorded.Scenes[0].Actions.Any(a=>a.Spawn?.Id=="near"));
+        var changedSpawn=after with{Actors=after.Actors.SetItem("near",after.Actors["near"] with{GraphicsId="OBJ_EVENT_GFX_MAN"})};
+        recorded=CampaignQuestLogRecorder.Record(recorded,after,changedSpawn,new("wait_done"),catalog)!;
         Assert.IsNull(CampaignQuestLogRecorder.Validate(recorded,catalog.QuestLogSource));
         var playback=new CampaignQuestLogPlayback(recorded,state.PlayerName,catalog.QuestLogSource);
         for(int i=0;i<400&&!playback.Finished;i++)playback.Tick(1d/60);
         Assert.IsTrue(playback.Finished);
         Assert.IsFalse(playback.Actors.Single(a=>a.Id=="far").Visible);
         Assert.IsTrue(playback.Actors.Single(a=>a.Id=="near").Visible);
+        Assert.AreEqual("OBJ_EVENT_GFX_MAN",playback.Actors.Single(a=>a.Id=="near").Graphics);
         Assert.IsFalse(state.Actors["near"].Active);
     }
 
@@ -167,7 +170,7 @@ public sealed class CampaignQuestLogTests
     {
         var scene=Log().Scenes[0] with{Actions=[new(0,4,4,Direction.East,true,CampaignQuestLogEvent.None,32)]};
         var playback=new CampaignQuestLogPlayback(new([scene]));
-        playback.Tick(8d/60);Assert.AreEqual(.25,playback.MovementFraction,.001);
+        playback.Tick(8d/60);Assert.AreEqual(.25,playback.Movement(CampaignQuestLogRecorder.PlayerId)!.Value.Fraction,.001);
         playback.Tick(24d/60);Assert.IsTrue(playback.Finished);
     }
 

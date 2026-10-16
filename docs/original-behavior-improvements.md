@@ -20,3 +20,12 @@
 - 修正范围仅是图鉴分布数据读取；钓鱼概率、可遇物种与实际遇敌规则不变。未据源码越界推定特定 ROM 上必然出现哪些错误标记。
 - 验证：源表数量／第11、12项变异拒绝及代表钓鱼分布测试。见[图鉴说明](pokedex-habitats-and-area.md)。
 - 来源：[固定原作查询](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/wild_pokemon_area.c)。
+
+## 已实现：战斗招式换位后的 Mimic PP 归属（2026-10-16）
+
+- 原作固定版本 `battle_controller_player.c:656–659` 仅在换位的起点带有 `mimickedMoves` 标记时移动该标记，没有对终点进行对称处理。
+- 可复现影响（以下索引从0开始）：普通 TACKLE 在槽0，Mimic 临时复制的 GROWL 在槽1；在 FIGHT 对槽0按 SELECT，然后选择槽1。实时招式变为 GROWL/TACKLE，队伍持久招式为 MIMIC/TACKLE，但原作临时标记错误地仍留在槽1。随后使用普通 TACKLE 只扣实时 PP，离场恢复该 PP；使用临时 GROWL 却会错误地扣持久 MIMIC 的 PP。以复制招式为换位起点时不出现同一错误。
+- 修正：在同一个不可变换位事务中，对已有 `CopyMoves.Slots` 临时招式与持久备份的槽映射做对称置换。没有引入第二套历史位掩码来保存错误。普通招式照常持久扣 PP，Mimic 复制招式照常仅消耗临时 PP。
+- 这是依据用户允许修复开发中发现的明确问题的总体方向作出的修正；不声称用户曾单独投票批准此具体缺陷。Transform 的原队伍招式、PP 和 PP Ups 保持独立，不因临时招式换位而改变。
+- 验证：`SourceBattleMoveOrderTests.MimicBackupFollowsCopiedSlotInBothDirectionsAndRestoresCorrectly` 覆盖两个选择方向、随后使用两类招式、离场恢复与 JSON 还原；另有 Transform 原样恢复、逆向换位及 PP 使用测试。
+- 来源：[固定原作换位处理](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_controller_player.c#L631-L719)、[PP 写回](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_script_commands.c)。

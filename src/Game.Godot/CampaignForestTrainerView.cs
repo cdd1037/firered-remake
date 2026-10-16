@@ -138,9 +138,8 @@ public partial class CampaignView
         if (_session.State.ForestTrainerBattle is null || battle.Phase != CampaignBattlePhase.ChooseMove) return false;
         if (battle.Replacement == CampaignReplacementStage.Select)
         {
-            if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
-            if (key.Keycode == Key.Down) _wildCursor = Math.Min(_session.State.Party.Length - 1, _wildCursor + 1);
-            if (key.Keycode == Key.Enter) ApplyWildChoice(new("battle_switch", PartyIndex: _wildCursor));
+            NativePartyMove(key.Keycode, ref _wildCursor, _session.State.Party.Length, cancel: false);
+            if (key.Keycode == Key.Enter) OpenBattlePartyActions(_wildCursor);
             else if (key.Keycode == Key.Backspace && ForestTrainerShiftPending) ApplyWildChoice(new("trainer_shift", Choice: 0));
             return true;
         }

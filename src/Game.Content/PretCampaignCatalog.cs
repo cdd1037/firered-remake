@@ -172,76 +172,8 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         };
     }
 
-    public FieldMetatileDefinition? MetatileDefinition(MapId map,int id)
-    {
-        if (SeafoamRegion.NewMaps.ContainsKey(map)) return SeafoamRegion.MetatileDefinition(map, id);
-        if (TrainerFanClub.NewMaps.TryGetValue(map, out var goodRodMap) || LostCaveRegion.NewMaps.TryGetValue(map, out goodRodMap) || SchoolHouseInteriors.NewMaps.TryGetValue(map, out goodRodMap) || OriginalTmAcquisition.NewMaps.TryGetValue(map, out goodRodMap) || FourIslandDayCare.NewMaps.TryGetValue(map, out goodRodMap) || Route5DayCare.NewMaps.TryGetValue(map, out goodRodMap) || Route16FlyHouse.NewMaps.TryGetValue(map, out goodRodMap) || CapeBrinkTutor.NewMaps.TryGetValue(map, out goodRodMap) || SuperRodService.NewMaps.TryGetValue(map, out goodRodMap) || GoodRodService.NewMaps.TryGetValue(map, out goodRodMap) || MoveReminderHouse.NewMaps.TryGetValue(map, out goodRodMap) || MoveDeleterHouse.NewMaps.TryGetValue(map, out goodRodMap) || OriginalTutorRooms.NewMaps.TryGetValue(map, out goodRodMap) || CopycatHouse.NewMaps.TryGetValue(map, out goodRodMap))
-        {
-            var cell = goodRodMap.Cells.Concat(goodRodMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if (NpcTradeContent.NewMaps.TryGetValue(map, out var npcTradeMap) || NpcTradeElyssa.NewMaps.TryGetValue(map, out npcTradeMap) || NpcTradeHaden.NewMaps.TryGetValue(map, out npcTradeMap))
-        {
-            var cell = npcTradeMap.Cells.Concat(npcTradeMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if (FossilLabRegion.NewMaps.TryGetValue(map, out var fossilMap))
-        {
-            var cell = fossilMap.Cells.Concat(fossilMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if (FightingDojoRegion.NewMaps.TryGetValue(map, out var dojoMap))
-        {
-            var cell = dojoMap.Cells.Concat(dojoMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if (TrainerTowerRegion.Maps.ContainsKey(map))
-        {
-            var cell = TrainerTowerRegion.Layouts.Where(p => p.Key.Map == map).SelectMany(p => p.Value.Cells.Concat(p.Value.BorderCells)).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if(PowerPlantRegion.NewMaps.TryGetValue(map,out var plantMap))
-        {
-            var cell=plantMap.Cells.Concat(plantMap.BorderCells).FirstOrDefault(c=>c.MetatileId==id);
-            return cell is null?null:new(id,cell.BehaviorId,cell.Terrain,cell.EncounterType,cell.LayerType);
-        }
-        if (EventIslandRegion.NewMaps.TryGetValue(map, out var eventMap))
-        {
-            var cell = eventMap.Cells.Concat(eventMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if (SevenIslandRegion.NewMaps.ContainsKey(map)) return SevenIslandRegion.MetatileDefinition(map, id);
-        if (CeruleanCaveRegion.NewMaps.TryGetValue(map, out var cave))
-        {
-            var cell = cave.Cells.Concat(cave.BorderCells).FirstOrDefault(c => c.MetatileId == id);
-            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
-        }
-        if (FiveIslandRegion?.SourceMaps.ContainsKey(map) == true)
-            return FiveIslandRegion.MetatileDefinition(map, id);
-        if (SixIslandRegion?.SourceMaps.ContainsKey(map) == true)
-            return SixIslandRegion.MetatileDefinition(map, id);
-        if (FourIslandRegion?.SourceMaps.ContainsKey(map) == true)
-            return FourIslandRegion.MetatileDefinition(map, id);
-        if (SeviiRubyRegion?.SourceMaps.ContainsKey(map) == true)
-            return SeviiRubyRegion.MetatileDefinition(map, id);
-        if (PokemonLeagueRegion?.SourceMaps.ContainsKey(map) == true)
-            return PokemonLeagueRegion.MetatileDefinition(map, id);
-        if (VictoryRoadRegion?.SourceMaps.ContainsKey(map) == true)
-            return VictoryRoadRegion.MetatileDefinition(map, id);
-        if (ViridianGymRegion?.NewMaps.ContainsKey(map) == true)
-            return ViridianGymRegion.MetatileDefinition(map, id);
-        if (FirstSeviiRegion?.NewMaps.ContainsKey(map) == true)
-            return FirstSeviiRegion.MetatileDefinition(map, id);
-        if (CinnabarRegion?.NewMaps.ContainsKey(map) == true)
-            return CinnabarRegion.MetatileDefinition(map, id);
-        if (SilphRegion?.NewMaps.ContainsKey(map) == true)
-            return SilphRegion.MetatileDefinition(map, id);
-        if (VermilionGymRegion is not null && map.Value == "map.vermilion-city-gym")
-            return VermilionGymRegion.BeamDefinitions.TryGetValue(id, out var tile) ? new(id, tile.Behavior, tile.Terrain, tile.EncounterType, tile.LayerType) : null;
-        if (RocketHideoutRegion?.NewMaps.ContainsKey(map) == true)
-            return RocketHideoutMetatileDefinition(map, id);
-        return MetatileDefinitions?.GetValueOrDefault(id);
-    }
+    public FieldMetatileDefinition? MetatileDefinition(MapId map,int id) => _fieldLayouts.TryGetValue(map,out var layout)
+        ? _sharedFieldTilesets.Find(layout,id) : null;
 
     public int? TerrainAt(MapId map,int x,int y) => SourceMaps.TryGetValue(map, out var source) ? source.GetSourceCell(x, y)?.Terrain : null;
     public bool AllowsCycling(MapId map) => SourceMaps.TryGetValue(map, out var source) && source.Events.GetProperty("allow_cycling").GetBoolean();

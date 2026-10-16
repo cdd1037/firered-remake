@@ -6,6 +6,33 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/imports/battle/import-source-hit-animations.py');hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
 TEMPLATES={
+ 'gRazorLeafParticleSpriteTemplate':('battle_anim_effects_1.c','AnimRazorLeafParticle'),
+ 'gRazorLeafCutterSpriteTemplate':('battle_anim_effects_1.c','AnimTranslateLinearSingleSineWave'),
+ 'gSwiftStarSpriteTemplate':('battle_anim_effects_1.c','AnimTranslateLinearSingleSineWave'),
+
+ 'gMagentaHeartSpriteTemplate':('battle_anim_effects_2.c','AnimMagentaHeart'),
+ 'gDragonBreathFireSpriteTemplate':('battle_anim_dragon.c', 'AnimDragonFireToTarget'),
+ 'gDragonRageFireSpitSpriteTemplate':('battle_anim_dragon.c', 'AnimDragonFireToTarget'),
+ 'gDragonRageFirePlumeSpriteTemplate':('battle_anim_dragon.c', 'AnimDragonRageFirePlume'),
+ 'gFireBlastRingSpriteTemplate':('battle_anim_fire.c', 'AnimFireRing'),
+ 'gFireBlastCrossSpriteTemplate':('battle_anim_fire.c', 'AnimFireCross'),
+ 'gFireSpiralOutwardSpriteTemplate':('battle_anim_fire.c', 'AnimFireSpiralOutward'),
+
+ 'gPowderSnowSnowballSpriteTemplate':('battle_anim_ice.c','AnimMoveParticleBeyondTarget'),
+ 'gBlizzardIceCrystalSpriteTemplate':('battle_anim_ice.c','AnimMoveParticleBeyondTarget'),
+ 'gIceCrystalSpiralInwardLarge':('battle_anim_ice.c','AnimIcePunchSwirlingParticle'),
+ 'gIceCrystalSpiralInwardSmall':('battle_anim_ice.c','AnimIcePunchSwirlingParticle'),
+ 'gIceBeamInnerCrystalSpriteTemplate':('battle_anim_ice.c','AnimIceBeamParticle'),
+ 'gIceBeamOuterCrystalSpriteTemplate':('battle_anim_ice.c','AnimIceBeamParticle'),
+ 'gIceCrystalHitLargeSpriteTemplate':('battle_anim_ice.c','AnimIceEffectParticle'),
+ 'gIceCrystalHitSmallSpriteTemplate':('battle_anim_ice.c','AnimIceEffectParticle'),
+
+ 'gEndureEnergySpriteTemplate':('battle_anim_effects_1.c','AnimEndureEnergy'),
+ 'gSharpTeethSpriteTemplate':('battle_anim_dark.c','AnimBite'),
+ 'gClampJawSpriteTemplate':('battle_anim_dark.c','AnimBite'),
+ 'gSwirlingDirtSpriteTemplate':('battle_anim_rock.c','AnimParticleInVortex'),
+ 'gWhirlpoolSpriteTemplate':('battle_anim_rock.c','AnimParticleInVortex'),
+ 'gFireSpinSpriteTemplate':('battle_anim_rock.c','AnimParticleInVortex'),
  'gToxicBubbleSpriteTemplate':('battle_anim_poison.c', 'AnimSpriteOnMonPos'),
  'gPoisonBubbleSpriteTemplate':('battle_anim_poison.c', 'AnimBubbleEffect'),
  'gWaterBubbleSpriteTemplate':('battle_anim_poison.c', 'AnimBubbleEffect'),
@@ -96,6 +123,24 @@ SOUNDS={'SE_M_MEGA_KICK2', 'SE_M_CRABHAMMER', 'SE_M_VITAL_THROW2', 'SE_M_HYDRO_P
 GFX={'ANIM_TAG_SPARK', 'ANIM_TAG_METAL_SOUND_WAVES', 'ANIM_TAG_BROWN_ORB', 'ANIM_TAG_LIGHTNING', 'ANIM_TAG_SPARK_2', 'ANIM_TAG_LARGE_FRESH_EGG', 'ANIM_TAG_ICE_CRYSTALS', 'ANIM_TAG_DUCK', 'ANIM_TAG_PURPLE_RING', 'ANIM_TAG_GLOWY_RED_ORB', 'ANIM_TAG_IMPACT', 'ANIM_TAG_SPARK_H', 'ANIM_TAG_BLACK_BALL_2', 'ANIM_TAG_SMALL_EMBER', 'ANIM_TAG_GLOWY_GREEN_ORB', 'ANIM_TAG_WATER_IMPACT', 'ANIM_TAG_BLUE_STAR', 'ANIM_TAG_WATER_ORB', 'ANIM_TAG_HANDS_AND_FEET', 'ANIM_TAG_GRAY_SMOKE', 'ANIM_TAG_SMALL_BUBBLES', 'ANIM_TAG_ORBS', 'ANIM_TAG_BLACK_BALL', 'ANIM_TAG_GOLD_RING', 'ANIM_TAG_EXPLOSION', 'ANIM_TAG_SHOCK_3'}
 GFX|={'ANIM_TAG_TOXIC_BUBBLE','ANIM_TAG_POISON_BUBBLE','ANIM_TAG_NEEDLE','ANIM_TAG_BUBBLE'}
 SOUNDS|={'SE_M_TOXIC','SE_M_BUBBLE2'}
+GFX|={'ANIM_TAG_MUD_SAND'}
+SOUNDS|={'SE_M_SACRED_FIRE2','SE_M_SAND_TOMB','SE_M_WHIRLPOOL'}
+GFX|={'ANIM_TAG_SHARP_TEETH','ANIM_TAG_CLAMP'}
+SOUNDS|={'SE_M_BITE','SE_M_VICEGRIP'}
+GFX|={'ANIM_TAG_FOCUS_ENERGY'}
+SOUNDS|={'SE_M_DRAGON_RAGE'}
+SOUNDS|={'SE_M_GUST','SE_M_GUST2','SE_M_STRING_SHOT','SE_M_ICY_WIND','SE_M_BUBBLE_BEAM2'}
+GFX|={'ANIM_TAG_FIRE_PLUME'}
+SOUNDS|={'SE_M_FLAME_WHEEL2'}
+TASKS|={'AnimTask_BlendMonInAndOut'}
+GFX|={'ANIM_TAG_MAGENTA_HEART','ANIM_TAG_ITEM_BAG'}
+SOUNDS|={'SE_M_CHARM','SE_M_DIZZY_PUNCH'}
+TASKS|={'AnimTask_RockMonBackAndForth'}
+SHARED_SPRITES|={'gHorizontalLungeSpriteTemplate'}
+TASKS|={'AnimTask_MetallicShine','AnimTask_SetGrayscaleOrOriginalPal'}
+SOUNDS|={'SE_M_HARDEN'}
+GFX|={'ANIM_TAG_EXPLOSION_6','ANIM_TAG_LEAF','ANIM_TAG_RAZOR_LEAF','ANIM_TAG_YELLOW_STAR'}
+SOUNDS|={'SE_M_SWIFT','SE_M_POISON_POWDER','SE_M_RAZOR_WIND','SE_M_RAZOR_WIND2'}
 def build(reference):
  source=read(reference,'data/battle_anim_scripts.s').decode()
  def commands(label,end):
@@ -107,7 +152,7 @@ def build(reference):
    if not row:continue
    if row.endswith(':'):raise ValueError('Unexpected label')
    op,*tail=row.split(None,1);args=[a.strip() for a in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else []
-   if op not in hit.OPS|{'call','return','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes'}:raise ValueError('Unsupported command '+op)
+   if op not in hit.OPS|{'call','return','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes','createsoundtask','waitsound'}:raise ValueError('Unsupported command '+op)
    result.append(dict(op=op,args=args,line=source[:m.end()].count('\n')+offset+1))
    if op==end:return result
   raise ValueError('Unterminated '+label)
@@ -128,8 +173,8 @@ def build(reference):
    if any(c['op']=='call' for sub in local.values() for c in sub):continue
   except ValueError:continue
   flat=root+[c for sub in local.values() for c in sub]
-  if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ElectricBolt' for c in flat):continue
-  if any(c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
+  if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_ElectricBolt','AnimTask_SetGrayscaleOrOriginalPal'} for c in flat):continue
+  if any(c['op']=='createsoundtask' and not (c['args'][0]=='SoundTask_LoopSEAdjustPanning' and c['args'][1]=='SE_M_BUBBLE_BEAM2' or c['args']==['SoundTask_FireBlast','SE_M_FLAME_WHEEL','SE_M_FLAME_WHEEL2']) or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
   # Spark's zero modulus requires original ARM helper semantics before admission.
   if any(c['op']=='createsprite' and c['args'][0]=='gSparkElectricityFlashingSpriteTemplate' and int(c['args'][-1],0)&32767==0 for c in flat):continue
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root));subs.update(local)
@@ -145,21 +190,21 @@ def build(reference):
   colors=[int(c) for row in rows[3:] for c in row.split()]
   if len(colors)!=48:raise ValueError('Invalid palette length')
   return colors
- for asset,png,shape,pal in [('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
-  if pal in ('water_impact','lightning_2','poison_bubble','rain_drops'):
+ for asset,png,shape,pal in [('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
+  if pal in ('water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+pal+'.png'))) as im:colors=im.getpalette()[:48]
   else:colors=palette(pal) if pal else None
   pixels[asset]=hit.rgb555(read(reference,'graphics/battle_anims/sprites/'+png+'.png'),shape,colors)
- # GBA 1D tile concatenation: preserve original tile indices 12 and 13
- # while using an 8-pixel-wide runtime sheet for the small bubble pair.
- tiles=[]
- for i in range(5):
-  with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/ice_crystals_'+str(i)+'.png'))) as image:
-   for y in range(0,image.height,8):
-    for x in range(0,image.width,8):tiles.append(image.crop((x,y,x+8,y+8)).copy())
- image=Image.new('P',(8,8*len(tiles)));image.putpalette(palette('ice_crystals'))
- for i,tile in enumerate(tiles):image.paste(tile,(0,8*i))
- buffer=io.BytesIO();image.save(buffer,format='PNG');pixels['ice-crystals']=hit.rgb555(buffer.getvalue(),image.size)
+ # Preserve source 1D tile concatenation before interpreting sprite frame addresses.
+ for asset,names in [('ice-crystals',['ice_crystals_'+str(i) for i in range(5)]),('mud-sand',['mud_sand_0','mud_sand_1'])]:
+  tiles=[]
+  for name in names:
+   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+name+'.png'))) as image:
+    for y in range(0,image.height,8):
+     for x in range(0,image.width,8):tiles.append(image.crop((x,y,x+8,y+8)).copy())
+  image=Image.new('P',(8,8*len(tiles)));image.putpalette(palette(asset.replace('-','_')))
+  for i,tile in enumerate(tiles):image.paste(tile,(0,8*i))
+  buffer=io.BytesIO();image.save(buffer,format='PNG');pixels[asset]=hit.rgb555(buffer.getvalue(),image.size)
  return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subs,spriteRecipes=recipes,assets=[dict(id=id,path='elemental-'+id+'.rgb555') for id in pixels]),indent=2)+'\n').encode(),pixels
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/elemental.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,pixels=build(a.reference)

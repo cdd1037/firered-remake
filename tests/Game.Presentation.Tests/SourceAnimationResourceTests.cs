@@ -1,0 +1,74 @@
+using Game.Presentation.BattleAnimations;
+using System.Text.Json.Nodes;
+namespace FireRed.Tests.Presentation;
+[TestClass,TestCategory("Game")]
+public sealed class SourceAnimationResourceTests
+{
+    private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
+    private sealed class Silent:ISourceAnimationAudio
+    {public bool IsPlaying=>false;public void Play(SourceAnimationSound sound){}public void SetPan(int pan,int frame){}public void StopAnimationEffects(){}}
+    [TestMethod]
+    public void SharedRecipesCoalesceDefaultsAndMaterialSelectionFollowsTaskNotMoveId()
+    {
+        using var resources=new SourceAnimationResources(Folder);Assert.AreEqual(0,resources.CachedAssetCount);
+        var simple=resources.Resolve(1);Assert.IsNull(simple.Metallic);Assert.AreEqual(1,resources.CachedAssetCount);
+        Assert.AreSame(simple.Script.SpriteRecipes,resources.Scripts[92].SpriteRecipes);
+        Assert.IsTrue(simple.Script.SpriteRecipes.ContainsKey("gToxicBubbleSpriteTemplate"));
+        var crossFamily=simple.Script with{MoveId=999,Commands=[new("createvisualtask",["AnimTask_MetallicShine","5","1","0","0"],1),new("end",[],2)]};
+        var resolved=resources.Resolve(crossFamily);Assert.IsNotNull(resolved.Metallic);Assert.IsNull(resolved.StatMask);
+        Assert.AreSame(resolved.Metallic,resources.Resolve(crossFamily).Metallic);
+        Assert.IsNotNull(resources.Resolve(0).StatMask);
+        Assert.AreSame(resources.Asset("explosion"),resources.Asset("explosion"));
+        resources.Dispose();Assert.AreEqual(0,resources.CachedAssetCount);Assert.Throws<ObjectDisposedException>(()=>resources.Asset("impact"));
+    }
+    [TestMethod]
+    public void EveryGeneratedMoveResolvesOnlyItsDependenciesAndComposesEveryFrame()
+    {
+        using var resources=new SourceAnimationResources(Folder);Assert.IsTrue(resources.Scripts.Count>1);
+        var battlers=Enumerable.Range(0,4).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
+        foreach(var script in resources.Scripts.Values.Where(s=>s.MoveId!=0))
+        {
+            var resolved=resources.Resolve(script.MoveId);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
+            assets.Add("background",new(240,112,new ushort[240*112]));foreach(var battler in battlers)assets.Add(battler.Asset,new(64,64,Enumerable.Repeat((ushort)0x801f,4096).ToArray()));
+            var runtime=new SourceBattleAnimation(resolved.Script,new("resources",1,script.MoveId,new(0),new(1)),battlers,true,new Silent());
+            var composer=new SourceBattleFrameComposer(assets,battlers,resolved.StatMask,resolved.Metallic);int ticks=0;
+            while(runtime.Active&&ticks++<2048)
+            {
+                var frame=runtime.Tick();
+                foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null))Assert.IsTrue(assets.ContainsKey(sprite.Asset!),$"Move {script.MoveId} needs {sprite.Asset} through {sprite.Template}.");
+                Assert.AreEqual(240*112*4,composer.ComposeField(frame).Length,$"Move {script.MoveId}");
+            }
+            Assert.IsFalse(runtime.Active,$"Move {script.MoveId} did not finish.");
+            while(runtime.HasResidualSprites&&ticks++<4096)composer.ComposeResidualSprites(runtime.TickResidualSprites());
+            Assert.IsFalse(runtime.HasResidualSprites);
+        }
+    }
+    [TestMethod]
+    public void ProductionResolverLoadsEveryMoveFromGeneratedOnlyDirectory()
+    {
+        string folder=Path.Combine(Path.GetTempPath(),"animation-generated-"+Guid.NewGuid().ToString("N"));
+        try
+        {
+            foreach(string file in Directory.EnumerateFiles(Folder,"*",SearchOption.AllDirectories))
+            {string target=Path.Combine(folder,Path.GetRelativePath(Folder,file));Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(file,target);}
+            using var resources=new SourceAnimationResources(folder);
+            foreach(int move in resources.Scripts.Keys)Assert.IsNotNull(resources.Resolve(move));
+            Assert.IsTrue(resources.CachedAssetCount>1);
+            Assert.IsFalse(Directory.Exists(Path.Combine(folder,"content/raw")));
+        }
+        finally{if(Directory.Exists(folder))Directory.Delete(folder,true);}
+    }
+    [TestMethod]
+    public void ConflictingDuplicateTemplateFailsWithoutReadingPixels()
+    {
+        string folder=Path.Combine(Path.GetTempPath(),"animation-recipes-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
+        try
+        {
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            {string target=Path.Combine(folder,file);Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(Path.Combine(Folder,file),target);}
+            string path=Path.Combine(folder,"explosion/manifest.json");var json=JsonNode.Parse(File.ReadAllText(path))!;json["spriteRecipes"]![0]!["blend"]=true;File.WriteAllText(path,json.ToJsonString());
+            Assert.Throws<InvalidDataException>(()=>new SourceAnimationResources(folder));
+        }
+        finally{Directory.Delete(folder,true);}
+    }
+}

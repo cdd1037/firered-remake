@@ -6,15 +6,38 @@ public sealed partial class SourceBattleAnimation
     private bool ValidateSharedCommand(SourceAnimationCommand c)
     {
         var a=c.Args;
+        if(c.Op=="waitsound")
+        {if(a.Length!=0)Fail(c,"Sound wait takes no operands.");return true;}
+        if(c.Op=="createsoundtask")
+        {
+            if(a.FirstOrDefault()=="SoundTask_FireBlast")
+            {if(a.Length!=3||a[1]!="SE_M_FLAME_WHEEL"||a[2]!="SE_M_FLAME_WHEEL2")Fail(c,"Fire sound sequence operands differ.");return true;}
+            if(a.Length!=8||a[0]!="SoundTask_LoopSEAdjustPanning"||a[1]!="SE_M_BUBBLE_BEAM2"||SoundPan(a[2]) is < -64 or >63||SoundPan(a[3]) is < -64 or >63||Number(a[4]) is < -128 or >127||Number(a[5]) is <1 or >255||Number(a[6]) is <0 or >255||Number(a[7]) is <0 or >255)Fail(c,"Unsupported sound callback or source-width operands.");
+            return true;
+        }
         if(c.Op is "splitbgprio" or "splitbgprio_foes")
         {if(a.Length!=1||a[0] is not ("ANIM_ATTACKER" or "ANIM_TARGET"))Fail(c,"Background priority participant differs.");return true;}
         if(c.Op=="panse")
         {
-            if(a.Length!=5||a[0] is not ("SE_M_FLAMETHROWER" or "SE_M_HYDRO_PUMP" or "SE_M_WHIRLPOOL" or "SE_M_BUBBLE_BEAM" or "SE_M_SCREECH")||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||a[2] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[3]) is < -127 or >127||Number(a[4]) is <0 or >255)Fail(c,"Source pan sweep operands differ.");
+            if(a.Length!=5||a[0] is not ("SE_M_FLAMETHROWER" or "SE_M_HYDRO_PUMP" or "SE_M_WHIRLPOOL" or "SE_M_BUBBLE_BEAM" or "SE_M_SCREECH" or "SE_M_GUST")||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||a[2] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[3]) is < -127 or >127||Number(a[4]) is <0 or >255)Fail(c,"Source pan sweep operands differ.");
             return true;
         }
         if(c.Op=="waitplaysewithpan")
         {if(a.Length!=3||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[2]) is <0 or >255||a[0] is not ("SE_M_DOUBLE_TEAM" or "SE_M_COMET_PUNCH"))return false;return true;}
+        if(c.Op=="goto")
+        {if(a.Length!=1||!_script.Labels.TryGetValue(a[0],out int target)||target<0||target>=_script.Commands.Length)Fail(c,"Missing or invalid source label target.");return true;}
+        if(c.Op=="playsewithpan"&&a.FirstOrDefault()=="SE_M_BIND")
+        {if(a.Length!=2||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET"))Fail(c,"Binding sound operands differ.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_RockMonBackAndForth")
+        {if(a.Length!=5||Number(a[1]) is <0 or >255||Number(a[2]) is <0 or >1||Number(a[3]) is <0 or >32767||Number(a[4]) is < -32768 or >32767)Fail(c,"Battler rocking operands differ.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_SetGrayscaleOrOriginalPal")
+        {if(a.Length!=4||Number(a[1]) is <0 or >255||Number(a[2]) is <0 or >7||Number(a[3]) is <0 or >1)Fail(c,"Grayscale participant or mode differs.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_MetallicShine")
+        {if(a.Length!=5||Number(a[1]) is <0 or >255||Number(a[2]) is <0 or >1||Number(a[3]) is <0 or >1||PaletteNumber(a[4]) is <0 or >65535)Fail(c,"Metallic palette selection differs.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_BlendMonInAndOut")
+        {if(a.Length!=7||Number(a[1]) is <0 or >255||Number(a[2]) is <0 or >3||PaletteNumber(a[3]) is <0 or >65535||Number(a[4]) is <1 or >16||Number(a[5]) is <0 or >32767||Number(a[6]) is <1 or >32767)Fail(c,"Battler color cycle operands differ.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_ScaleMonAndRestore")
+        {if(a.Length!=7||Number(a[1]) is <0 or >255||Number(a[2]) is < -32768 or >32767||Number(a[3]) is < -32768 or >32767||Number(a[4]) is <1 or >32767||Number(a[5]) is <0 or >1||Number(a[6])!=0)Fail(c,"Battler scaling needs signed increments, positive duration and normal object mode.");return true;}
         if(c.Op=="call")
         {if(a.Length!=1||!_script.Subroutines.ContainsKey(a[0]))Fail(c,"Missing source subroutine.");return true;}
         if(c.Op=="return")
@@ -31,6 +54,75 @@ public sealed partial class SourceBattleAnimation
             return true;
         }
         return false;
+    }
+    private sealed class RockMonTask:VisualTask
+    {
+        private readonly int _slot,_leg,_rotationStep,_xStep;
+        private int _phase,_age,_rotation,_cycles;
+        public RockMonTask(SourceBattleAnimation owner,AnimationSlot slot,int rocks,int speed)
+        {
+            _slot=slot.Value;speed=Math.Clamp(speed,0,2);_leg=8-2*speed;
+            int direction=slot.IsPlayer?1:-1;_rotationStep=(256+128*speed)*direction;_xStep=(speed+2)*direction;_cycles=rocks-1;
+            owner._affineMode[_slot]=true;
+        }
+        public override void Step(SourceBattleAnimation owner)
+        {
+            if(_phase==3){owner.SetBattlerRotScale(_slot,256,256,0);owner._affineMode[_slot]=false;Finished=true;return;}
+            int direction=_phase==1?-1:1;var offset=owner._offsets[_slot];
+            _rotation=(short)(_rotation-direction*_rotationStep);owner.SetBattlerRotScale(_slot,256,256,_rotation);
+            owner._offsets[_slot]=new((short)(offset.X+direction*_xStep),Math.Abs(owner._matrixC[_slot])>>3);
+            if(++_age<(_phase==1?2*_leg:_leg))return;
+            _age=0;if(_phase<2)_phase++;else if(_cycles-->0)_phase=0;else _phase=3;
+        }
+    }
+    // Source setup changes the task callback but does not run its first step.
+    private sealed class FireBlastSound:SoundTask
+    {
+        private readonly string _first,_last;private readonly int _increment;
+        private int _pan,_counter=10,_age,_phase;
+        public FireBlastSound(string first,string last,int initial,int target)
+        {_first=first;_last=last;_pan=initial;_increment=initial<target?2:initial>target?-2:0;}
+        public override void Step(SourceBattleAnimation owner)
+        {
+            if(_phase==0)
+            {
+                if(++_age==111){_counter=5;_age=0;_phase=1;return;}
+                if(++_counter==11){_counter=0;owner._audio.Play(new(_first,_pan,owner._frame));}
+                _pan=Math.Clamp(_pan+_increment,-64,63);
+            }
+            else if(++_counter==6)
+            {_counter=0;owner._audio.Play(new(_last,owner.AdjustPanning(63),owner._frame));if(++_age==2)Finished=true;}
+        }
+    }
+    private sealed class BlendMonInAndOutTask:VisualTask
+    {
+        private readonly uint _palette;private readonly ushort _color;private readonly int _peak,_delay;
+        private int _cycles,_counter,_coefficient;private bool _descending;
+        public BlendMonInAndOutTask(AnimationSlot slot,ushort color,int peak,int delay,int cycles)
+        {_palette=1u<<(16+slot.Value);_color=color;_peak=peak;_delay=delay;_cycles=cycles;}
+        public override void Step(SourceBattleAnimation owner)
+        {
+            if(++_counter<_delay)return;_counter=0;_coefficient+=_descending?-1:1;
+            // Palette entry zero is transparent and never sampled by the compositor.
+            owner.BlendPalettes(_palette,_coefficient,_color);
+            if(!_descending&&_coefficient==_peak)_descending=true;
+            else if(_descending&&_coefficient==0){if(--_cycles==0)Finished=true;else _descending=false;}
+        }
+    }
+    private static int SoundPan(string value)=>value switch{"SOUND_PAN_ATTACKER"=>-64,"SOUND_PAN_TARGET"=>63,_=>Number(value)};
+    // The initializer plays immediately; RunTasks steps it again in the creation frame.
+    private sealed class PanningSoundLoop:SoundTask
+    {
+        private readonly string _sound;private readonly int _increment,_panDelay,_playDelay;
+        private int _pan,_remaining,_panCounter,_playCounter;
+        public PanningSoundLoop(string sound,int initial,int target,int increment,int count,int panDelay,int playDelay)
+        {_sound=sound;_pan=initial;_increment=initial<target?Math.Abs(increment):initial>target?-Math.Abs(increment):0;_remaining=count;_panDelay=panDelay;_playDelay=playDelay;_playCounter=playDelay;}
+        public override void Step(SourceBattleAnimation owner)
+        {
+            if(_playCounter++==_playDelay)
+            {_playCounter=0;owner._audio.Play(new(_sound,_pan,owner._frame));if(--_remaining==0){Finished=true;return;}}
+            if(_panCounter++==_panDelay){_panCounter=0;_pan=Math.Clamp(_pan+_increment,-64,63);}
+        }
     }
     // Source SwayMon advances an unsigned 8.8 phase and counts half-wave crossings.
     private sealed class SwayMonTask:VisualTask

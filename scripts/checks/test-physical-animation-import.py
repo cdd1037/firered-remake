@@ -11,9 +11,24 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,289},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,289},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),32)
+ def test_shared_goto_retains_branch_and_one_level_calls(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  for move in [20,35]:
+   script=next(s for s in pack['scripts'] if s['moveId']==move)
+   self.assertEqual('goto',script['commands'][1]['op'])
+   target=script['labels']['BindWrap'];self.assertEqual(2,target)
+   self.assertEqual('playsewithpan',script['commands'][target]['op'])
+   self.assertEqual(['BindWrapSqueezeTarget','BindWrapSqueezeTarget'],[c['args'][0] for c in script['commands'] if c['op']=='call'])
+  squeeze=pack['subroutines']['BindWrapSqueezeTarget']
+  self.assertEqual(['AnimTask_ScaleMonAndRestore','5','10','-5','5','ANIM_TARGET','0'],squeeze[0]['args'])
+ def test_missing_goto_label_is_not_flattened_to_generic_motion(self):
+  raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'goto BindWrap',b'goto MissingPhysicalLabel')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertFalse({20,35}&{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertTrue(all('control-flow:unterminated' in next(b for b in blocked if b['moveId']==move)['missing'] for move in [20,35]))
  def test_generated_slam_and_whip_pixels_match_source_indices_and_palettes(self):
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/slam_hit.png') as image:
    indices=list(image.tobytes());slam=image.getpalette()

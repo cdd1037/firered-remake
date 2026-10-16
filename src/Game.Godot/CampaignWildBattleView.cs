@@ -342,6 +342,7 @@ public partial class CampaignView
     {
         var b = PresentedWildBattle!;
         if (b.PendingMoves.IsEmpty) return;
+        CaptureMoveSelection("wild:" + b.Id, WildRewardRecipient(b), b.PendingMoves[0].Move);
         if (MoveLearningUnavailable(b.PendingMoves[0].Move))
         {
             _wildPages = []; _wildPage = 0; _wildElapsed = 0; _wildMenu = "learn-moves";
@@ -366,6 +367,8 @@ public partial class CampaignView
         }
         if (_wildMenu == "learn-moves")
         {
+            if (!MoveSelectionCurrent("wild:" + b.Id, WildRewardRecipient(b), b.PendingMoves[0].Move))
+            { _wildCursor = 0; _wildNotice = SummaryChangedNotice; return true; }
             if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
             if (key.Keycode == Key.Down) _wildCursor = Math.Min(WildRewardRecipient(b).Pokemon.Moves.Length, _wildCursor + 1);
             if (key.Keycode is Key.Enter or Key.Backspace)
@@ -381,6 +384,8 @@ public partial class CampaignView
         { _wildMenu = "learn-moves"; _wildCursor = 0; return true; }
         if (key.Keycode == Key.Enter)
         {
+            if (!MoveSelectionCurrent("wild:" + b.Id, WildRewardRecipient(b), b.PendingMoves[0].Move))
+            { _wildCursor = 0; _wildMenu = "learn-moves"; _wildNotice = SummaryChangedNotice; return true; }
             if (_wildLearningSlot >= 0 && MoveLearningUnavailable(b.PendingMoves[0].Move))
             { _wildMenu = "learn-moves"; _wildCursor = WildRewardRecipient(b).Pokemon.Moves.Length; return true; }
             if (ApplyWildChoice(new("wild_learn", MoveSlot: _wildLearningSlot)))
@@ -410,6 +415,7 @@ public partial class CampaignView
             }
             return true;
         }
+        if (BattlePartyInspectionInput(key)) return true;
         if(b.Phase==CampaignBattlePhase.ChooseMove && b.Replacement is null && !ForestTrainerShiftPending && SourceBattleForcedMoveSlot(b) is {} forced)
         { SelectWildMoveMenu(b); if(key.Keycode==Key.Enter)ApplyWildChoice(new("battle_move",MoveSlot:forced));return true; }
         if (TryForestTrainerInput(key, b)) return true;
@@ -428,6 +434,8 @@ public partial class CampaignView
             return true;
         }
         if (SingleMedicineInput(key,b)) return true;
+        if (BattleMoveOrderInput(key, _wildMenu, ref _wildCursor, out var swapNotice))
+        { _wildNotice = swapNotice; return true; }
         if (_wildMenu == "party")
         {
             int cancel = _session.State.Party.Length;
@@ -436,11 +444,7 @@ public partial class CampaignView
             { _wildMenu = "actions"; _wildCursor = 2; }
             else if (key.Keycode == Key.Enter)
             {
-                var member = _session.State.Party[_wildCursor];
-                string? error = _wildCursor == b.ActivePartyIndex ? "gText_PkmnAlreadyInBattle" :
-                    member.IsEgg ? "gText_EggCantBattle" : member.Pokemon.CurrentHp == 0 ? "gText_PkmnHasNoEnergy" : null;
-                if (error is not null) _wildNotice = string.Join('\n', WildSourcePages(error, ("STR_VAR_1", member.Nickname)));
-                else ApplyWildChoice(new("battle_switch", PartyIndex: _wildCursor));
+                OpenBattlePartyActions(_wildCursor);
             }
             return true;
         }
@@ -485,6 +489,7 @@ public partial class CampaignView
     private void DrawWildBattle()
     {
         var b = PresentedWildBattle!;
+        if (DrawBattlePartyInspection()) return;
         if (DrawSingleMedicineMove(b)) return;
         if (DrawForestTrainerChoice(b)) return;
         if (DrawCaptureWildOverlay(b)) return;
@@ -558,6 +563,7 @@ public partial class CampaignView
             for (int i = 0; i < 4; i++) SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(i), i < moves.Length ? MoveName(moves[i].Move) : "-");
             _wildCursor = Math.Clamp(_wildCursor, 0, moves.Length - 1);
             _uiCorrections.DrawSelectionCursor(this, true, _wildCursor);
+            if (DrawBattleMoveOrder(_wildCursor)) return;
             var move = moves[_wildCursor]; int ppState = SourceUiCorrections.PpPaletteState(move.CurrentPp, move.MaximumPp);
             SourceText(_battlePpSmallFont[ppState], new(168, 122), "PP"); SourceText(_battlePpFont[ppState], new(202, 122), $"{move.CurrentPp,2}/{move.MaximumPp,2}");
             SourceText(_battleMoveFont, new(168, 138), "TYPE/");
@@ -572,13 +578,8 @@ public partial class CampaignView
         if (_wildMenu == "learn-intro") { WildLines(_wildPages[_wildPage]); DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, _wildPages[_wildPage].Split('\n'), 16, _wildElapsed, true); return; }
         if (_wildMenu == "learn-moves")
         {
-            _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
-            bool unavailable = MoveLearningUnavailable(b.PendingMoves[0].Move);
-            SourceText(_sourceNormal, new(16, 8), unavailable ? MoveName(b.PendingMoves[0].Move) : "Forget which move?");
-            for (int i = 0; i <= moves.Length; i++) SourceText(unavailable && i < moves.Length ? _sourceInactiveCursor : _sourceNormal,
-                new(24, 28 + i * 16), i == moves.Length ? unavailable ? "DECLINE" : "CANCEL" : MoveName(moves[i].Move));
-            SourceText(_sourceNormal, new(12, 28 + _wildCursor * 16), "▶");
-            WildLines(unavailable ? UnsupportedLearningText : "Learn " + MoveName(b.PendingMoves[0].Move) + "?"); return;
+            DrawMoveSelectionSummary("wild:" + b.Id, WildRewardRecipient(b), b.PendingMoves[0].Move, _wildCursor);
+            return;
         }
         WildLines(_wildLearningSlot < 0 ? string.Join('\n', WildSourcePages("sText_StopLearningMove", ("B_BUFF2", MoveName(b.PendingMoves[0].Move))))
             : "Forget " + MoveName(moves[_wildLearningSlot].Move) + "\nand learn " + MoveName(b.PendingMoves[0].Move) + "?");

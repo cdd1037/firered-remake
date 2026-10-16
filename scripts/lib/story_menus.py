@@ -58,7 +58,7 @@ def extract_menus(raw, menu_ids=STATIC_MENUS):
 
 # ListMenu has a separate ID namespace from multichoice. Select only ordinary
 # static lists; elevators and transaction-owning services keep their own adapters.
-STATIC_LIST_MENUS = ('LISTMENU_BADGES',)
+STATIC_LIST_MENUS = ('LISTMENU_BADGES', 'LISTMENU_BERRY_POWDER')
 
 
 def extract_list_menus(raw, menu_ids=STATIC_LIST_MENUS):
@@ -72,6 +72,7 @@ def extract_list_menus(raw, menu_ids=STATIC_LIST_MENUS):
         r"^'(.)'\s*=\s*([A-F0-9]{2})\s*$", read('charmap.txt'), re.M)}
     widths = [int(v) for v in re.search(
         r'sFontNormalLatinGlyphWidths\[\]\s*=\s*\{(.*?)\}', read('src/text.c'), re.S)[1].split(',') if v.strip()]
+    small_widths = [int(v) for v in re.search(r'sFontSmallLatinGlyphWidths\[\]\s*=\s*\{(.*?)\}', read('src/text.c'), re.S)[1].split(',') if v.strip()]
     if not menu_ids or len(set(menu_ids)) != len(menu_ids):
         raise ValueError('List menu import selection must be nonempty and unique')
     definitions = []
@@ -90,10 +91,18 @@ def extract_list_menus(raw, menu_ids=STATIC_LIST_MENUS):
         options = []
         for symbol in symbols:
             label = re.search(r'const u8 ' + re.escape(symbol) + r'\[\]\s*=\s*_\("([^"\n]+)"\);', strings)
-            if label is None or any(c not in charmap or not 32 <= ord(c) <= 126 for c in label[1]):
+            if label is None:
+                raise ValueError('Missing native list menu label: ' + symbol)
+            plain = re.sub(r'\{CLEAR_TO 0x[0-9A-Fa-f]+\}\{FONT_SMALL\}', '', label[1])
+            if any(c not in charmap or not 32 <= ord(c) <= 126 for c in plain):
                 raise ValueError('Unsupported native list menu label: ' + symbol)
             options.append(dict(textSymbol=symbol, text=label[1]))
-        width = (max(sum(widths[charmap[c]] for c in o['text']) for o in options) + 9) // 8 + 1
+        def text_width(text):
+            price = re.fullmatch(r'([^{}]+)\{CLEAR_TO 0x([0-9A-Fa-f]+)\}\{FONT_SMALL\}([^{}]+)', text)
+            if price:
+                return int(price[2],16)+sum(small_widths[charmap[c]] for c in price[3])
+            return sum(widths[charmap[c]] for c in text)
+        width = (max(text_width(o['text']) for o in options) + 9) // 8 + 1
         definitions.append(dict(id=menu_id, sourceId=int(number[1]), options=options, columnWidthTiles=width,
                                 listLayout=dict(left=values[2], top=values[3], visibleRows=values[0],
                                                 heightTiles=values[5], keepOpen=bool(values[6]))))

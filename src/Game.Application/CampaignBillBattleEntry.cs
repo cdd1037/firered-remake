@@ -17,7 +17,7 @@ public sealed partial class CampaignSession
     private WildBattleTerrain CampaignBattleTerrain(CampaignState state)
     {
         var p=state.World.Player;
-        int b=_content.Maps[p.MapId].SourceBehaviorAt(p.X,p.Y)??throw new InvalidDataException("battle_terrain_cell");
+        int b=SourceBehavior(state,p.X,p.Y)??throw new InvalidDataException("battle_terrain_cell");
         if(b is 0x02 or 0xd1)return WildBattleTerrain.Grass;
         // FireRed's IsLongGrass always returns false.
         if(b is 0x21 or 0x17)return WildBattleTerrain.Sand;

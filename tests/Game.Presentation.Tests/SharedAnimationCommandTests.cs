@@ -7,12 +7,85 @@ public sealed class SharedAnimationCommandTests
     {
         public List<SourceAnimationSound> Sounds {get;}=[];
         public List<(int Pan,int Frame)> Pans {get;}=[];
-        public bool IsPlaying=>false;
+        public bool IsPlaying{get;set;}
+        public int Stops{get;private set;}
         public void Play(SourceAnimationSound cue)=>Sounds.Add(cue);
         public void SetPan(int pan,int frame)=>Pans.Add((pan,frame));
-        public void StopAnimationEffects(){}
+        public void StopAnimationEffects(){Stops++;IsPlaying=false;}
     }
     private static AnimationBattler[] Battlers()=>Enumerable.Range(0,4).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
+    [TestMethod]
+    public void PaletteFadeCompletesBeforeTaskCallbacksInSourceMainLoop()
+    {
+        var script=new SourceAnimationScript(105,"fade-order",[new("createvisualtask",["AnimTask_BlendColorCycle","2","F_PAL_ATTACKER","0","2","0","2","RGB_WHITE"],1),new("waitforvisualfinish",[],2),new("end",[],3)]);
+        var runtime=new SourceBattleAnimation(script,new("fade-order",1,105,new(0),new(1)),Battlers(),true,new Audio());
+        int ticks=0;while(runtime.Active&&ticks++<30)runtime.Tick();Assert.IsFalse(runtime.Active);
+        Assert.AreEqual(16,runtime.Snapshot().Frame);Assert.AreEqual(0,runtime.Snapshot().PaletteBlends.Length);
+    }
+    [TestMethod][DataRow(-3,0)][DataRow(0,0)][DataRow(1,1)][DataRow(2,2)][DataRow(8,2)]
+    public void RockMonUsesThreeSignedLegsClampedSpeedAndDeferredCleanup(int requested,int speed)
+    {
+        foreach(int actor in new[]{0,1})
+        {
+            var script=new SourceAnimationScript(204,"rock",[new("createvisualtask",["AnimTask_RockMonBackAndForth","5","ANIM_ATTACKER","2",requested.ToString()],1),new("waitforvisualfinish",[],2),new("end",[],3)]);
+            var runtime=new SourceBattleAnimation(script,new("rock",1,204,new(actor),new(actor^1)),Battlers(),true,new Audio());int direction=actor==0?1:-1;
+            var first=runtime.Tick();var matrix=SourceAffineMatrix.FromScaleRotation(256,256,-(256+128*speed)*direction);
+            Assert.AreEqual((speed+2)*direction,first.Offsets[actor].X);Assert.AreEqual(Math.Abs(matrix.C)>>3,first.Offsets[actor].Y);Assert.AreEqual(matrix.C,first.BattlerAffine[actor].MatrixC);
+            int movement=(8-2*speed)*8;for(int tick=1;tick<movement;tick++)runtime.Tick();
+            Assert.AreEqual(default(PixelPoint),runtime.Snapshot().Offsets[actor]);Assert.IsTrue(runtime.Active);
+            runtime.Tick();Assert.IsTrue(runtime.Active);runtime.Tick();Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.Snapshot().BattlerAffine[actor].DoubleSize);
+        }
+    }
+    [TestMethod][DataRow(0,0)][DataRow(1,0)][DataRow(0,1)][DataRow(1,1)]
+    public void MetallicPaletteModesFollowRestoreFlagThenExplicitOriginalCommand(int keep,int tint)
+    {
+        var script=new SourceAnimationScript(231,"metal",[new("createvisualtask",["AnimTask_MetallicShine","5",keep.ToString(),tint.ToString(),"RGB(24, 6, 23)"],1),new("waitforvisualfinish",[],2),new("createvisualtask",["AnimTask_SetGrayscaleOrOriginalPal","5","ANIM_ATTACKER","1"],3),new("end",[],4)]);
+        var runtime=new SourceBattleAnimation(script,new("metal",1,231,new(0),new(1)),Battlers(),true,new Audio());var first=runtime.Tick();
+        if(tint==0)CollectionAssert.AreEqual(new[]{0},first.GreyscaleSlots);else Assert.AreEqual(11,first.PaletteBlends.Single().Coefficient);
+        for(int i=1;i<64;i++)runtime.Tick();var secondPass=runtime.Snapshot();
+        Assert.AreEqual(keep==1&&tint==0,secondPass.GreyscaleSlots.Contains(0));Assert.AreEqual(keep==1&&tint==1,secondPass.PaletteBlends.Length!=0);
+        Assert.IsFalse(secondPass.Metallic!.BackgroundLoaded);int ticks=0;while(runtime.Active&&ticks++<40)runtime.Tick();
+        Assert.IsFalse(runtime.Active);Assert.AreEqual(0,runtime.Snapshot().GreyscaleSlots.Length);Assert.AreEqual(0,runtime.Snapshot().PaletteBlends.Length);
+    }
+    [TestMethod][DataRow(0)][DataRow(1)]
+    public void FireSoundTaskUsesSetupOnlyInitializerAndTwoSourcePhases(int actor)
+    {
+        var script=new SourceAnimationScript(126,"fire",[new("createsoundtask",["SoundTask_FireBlast","SE_M_FLAME_WHEEL","SE_M_FLAME_WHEEL2"],1),new("waitsound",[],2),new("end",[],3)]);
+        var audio=new Audio();var runtime=new SourceBattleAnimation(script,new("fire",1,126,new(actor),new(actor^1)),Battlers(),true,audio);
+        int ticks=0;while(runtime.Active&&ticks++<140)runtime.Tick();Assert.IsFalse(runtime.Active);
+        CollectionAssert.AreEqual(Enumerable.Range(0,10).Select(x=>x*11).Concat(new[]{111,117}).ToArray(),audio.Sounds.Select(x=>x.Frame).ToArray());
+        Assert.AreEqual(actor==0?-64:63,audio.Sounds[0].Pan);Assert.AreEqual(actor==0?63:-63,audio.Sounds[^1].Pan);
+        Assert.AreEqual(10,audio.Sounds.Count(x=>x.Id=="SE_M_FLAME_WHEEL"));
+    }
+    [TestMethod][DataRow(0)][DataRow(1)][DataRow(2)][DataRow(3)]
+    public void BattlerPaletteCycleUsesIndependentDelayAndRestoresAfterEveryCycle(int participant)
+    {
+        var script=new SourceAnimationScript(172,"color",[new("createvisualtask",["AnimTask_BlendMonInAndOut","3",participant.ToString(),"RGB_RED","3","2","2"],1),new("waitforvisualfinish",[],2),new("end",[],3)]);
+        var runtime=new SourceBattleAnimation(script,new("color",1,172,new(0),new(1)),Battlers(),true,new Audio());
+        var coefficients=new List<int>();for(int i=0;i<24;i++)coefficients.Add(runtime.Tick().PaletteBlends.SingleOrDefault()?.Coefficient??0);
+        CollectionAssert.AreEqual(new[]{0,1,1,2,2,3,3,2,2,1,1,0,0,1,1,2,2,3,3,2,2,1,1,0},coefficients);
+        runtime.Tick();Assert.IsFalse(runtime.Active);
+        var hidden=Battlers().Select(b=>b with{Visible=b.Slot.Value!=participant}).ToArray();
+        var absent=new SourceBattleAnimation(script,new("color",1,172,new(0),new(1)),hidden,true,new Audio());Assert.IsFalse(absent.Tick().Active);
+    }
+    [TestMethod][DataRow(0)][DataRow(1)]
+    public void SoundCallbackInitializesImmediatelyThenAdvancesTwiceInCreationFrame(int actor)
+    {
+        var script=new SourceAnimationScript(58,"sound",[new("createsoundtask",["SoundTask_LoopSEAdjustPanning","SE_M_BUBBLE_BEAM2","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","4","4","0","10"],1),new("waitsound",[],2),new("end",[],3)]);
+        var audio=new Audio();var runtime=new SourceBattleAnimation(script,new("sound",1,58,new(actor),new(actor^1)),Battlers(),true,audio);
+        int ticks=0;while(runtime.Active&&ticks++<100)runtime.Tick();
+        Assert.IsFalse(runtime.Active);CollectionAssert.AreEqual(new[]{0,10,21,32},audio.Sounds.Select(x=>x.Frame).ToArray());
+        CollectionAssert.AreEqual(actor==0?new[]{-64,-20,24,63}:new[]{63,19,-25,-64},audio.Sounds.Select(x=>x.Pan).ToArray());
+    }
+    [TestMethod]
+    public void SoundWaitStopsStuckPlaybackOnNinetyFirstPollThenResumesNextFrame()
+    {
+        var script=new SourceAnimationScript(58,"wait",[new("waitsound",[],1),new("playsewithpan",["SE_M_DOUBLE_SLAP","SOUND_PAN_ATTACKER"],2),new("end",[],3)]);
+        var audio=new Audio{IsPlaying=true};var runtime=new SourceBattleAnimation(script,new("wait",1,58,new(0),new(1)),Battlers(),true,audio);
+        for(int i=0;i<90;i++)runtime.Tick();Assert.AreEqual(0,audio.Stops);Assert.AreEqual(0,audio.Sounds.Count);
+        runtime.Tick();Assert.AreEqual(1,audio.Stops);Assert.AreEqual(0,audio.Sounds.Count);Assert.IsTrue(runtime.Active);
+        runtime.Tick();Assert.AreEqual(91,audio.Sounds.Single().Frame);Assert.IsFalse(runtime.Active);
+    }
     [TestMethod][DataRow(0)][DataRow(1)]
     public void PanSweepUsesSourceCreationFrameStepAndExactAsymmetricEndpoints(int actor)
     {
@@ -155,6 +228,29 @@ public sealed class SharedAnimationCommandTests
             bool moved=false;int ticks=0;
             while(runtime.Active&&ticks++<30){var f=runtime.Tick();moved|=f.Offsets[3]!=default;Assert.IsTrue(f.Offsets.Take(3).All(p=>p==default));}
             Assert.IsFalse(runtime.Active);Assert.AreEqual(visible,moved);Assert.AreEqual(default(PixelPoint),runtime.Snapshot().Offsets[3]);
+        }
+    }
+
+    [TestMethod]
+    public void GeneratedLabelJumpSkipsUnreachableCommandsAndRejectsMissingLabels()
+    {
+        var script=new SourceAnimationScript(20,"jump",[new("goto",["shared"],1),new("delay",["200"],2),new("delay",["1"],3),new("end",[],4)]){Labels=new Dictionary<string,int>{{"shared",2}}};
+        var runtime=new SourceBattleAnimation(script,new("jump",1,20,new(0),new(1)),Battlers(),true,new Audio());
+        int ticks=0;while(runtime.Active&&ticks++<10)runtime.Tick();Assert.IsFalse(runtime.Active);Assert.IsTrue(ticks<6);
+        Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(script with{Labels=new Dictionary<string,int>()},new("bad",1,20,new(0),new(1)),Battlers(),true,new Audio()));
+        var cycle=script with{Commands=[new("goto",["shared"],1),new("end",[],2)],Labels=new Dictionary<string,int>{{"shared",0}}};
+        var loop=new SourceBattleAnimation(cycle,new("bounded",1,20,new(0),new(1)),Battlers(),true,new Audio());Assert.Throws<InvalidDataException>(()=>loop.Tick());
+    }
+    [TestMethod]
+    public void ParameterizedScaleUsesIndependentSignedAxesAndRestoresSelectedBattler()
+    {
+        foreach(int actor in new[]{0,1})foreach(int participant in new[]{0,1})
+        {
+            var script=new SourceAnimationScript(20,"scale",[new("createvisualtask",["AnimTask_ScaleMonAndRestore","5","10","-5","5",participant.ToString(),"0"],1),new("waitforvisualfinish",[],2),new("end",[],3)]);
+            int slot=participant==0?actor:actor^1;var runtime=new SourceBattleAnimation(script,new("scale",1,20,new(actor),new(actor^1)),Battlers(),true,new Audio());
+            SourceAnimationFrame frame=runtime.Tick();Assert.AreEqual(266,frame.BattlerAffine[slot].XScale);Assert.AreEqual(251,frame.BattlerAffine[slot].YScale);
+            for(int tick=1;tick<5;tick++)frame=runtime.Tick();Assert.AreEqual(306,frame.BattlerAffine[slot].XScale);Assert.AreEqual(231,frame.BattlerAffine[slot].YScale);
+            int remaining=0;while(runtime.Active&&remaining++<15)runtime.Tick();Assert.IsFalse(runtime.Active);Assert.AreEqual(256,runtime.Snapshot().BattlerAffine[slot].XScale);Assert.AreEqual(256,runtime.Snapshot().BattlerAffine[slot].YScale);Assert.IsFalse(runtime.Snapshot().BattlerAffine[slot].DoubleSize);
         }
     }
 

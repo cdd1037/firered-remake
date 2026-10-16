@@ -75,13 +75,19 @@ public sealed partial class CampaignSession
     {
         var maps=MapLayoutConnectedMaps(state);
         if(state.MapEdits is not {Count:>0})return maps;
-        var current=maps[state.World.Player.MapId];var cells=current.Cells.ToBuilder();
-        foreach(var edit in state.MapEdits.Values)
+        var result=maps.ToDictionary(x=>x.Key,x=>x.Value);
+        foreach(var group in state.MapEdits.Values.Select(edit=>(Edit:edit,Cell:ConnectedFieldCoordinates.Resolve(maps,state.World.Player.MapId,edit.X,edit.Y)))
+            .Where(pair=>pair.Cell is not null).GroupBy(pair=>pair.Cell!.Value.Map))
         {
-            var definition=_content.MetatileDefinition(state.World.Player.MapId,edit.SourceMetatileId)??throw new InvalidDataException("metatile_definition_missing");
-            cells[edit.Y*current.Width+edit.X]=new(definition.Behavior,edit.Collision,edit.Elevation);
+            var current=maps[group.Key];var cells=current.Cells.ToBuilder();
+            foreach(var (edit,cell) in group)
+            {
+                var definition=_content.MetatileDefinition(current.Id,edit.SourceMetatileId)??throw new InvalidDataException("metatile_definition_missing");
+                cells[cell!.Value.Y*current.Width+cell.Value.X]=new(definition.Behavior,edit.Collision,edit.Elevation);
+            }
+            result[current.Id]=current with{Cells=cells.ToImmutable()};
         }
-        var result=maps.ToDictionary(x=>x.Key,x=>x.Value);result[current.Id]=current with{Cells=cells.ToImmutable()};return result;
+        return result;
     }
     private string? ValidateParcelState(CampaignState state)
     {

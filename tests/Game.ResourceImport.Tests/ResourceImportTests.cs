@@ -51,7 +51,11 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task FieldTilesetRegeneration() => Run("test-field-tilesets.py");
     [TestMethod]
+    public Task CutGrassRegeneration() => Run("test-cut-grass-import.py");
+    [TestMethod]
     public Task FameChecker() => Run("test-fame-checker-importer.py", "--git-dir", TestAssets.Source);
+    [TestMethod]
+    public Task SlotPresentation() => Run("test-slot-machine-presentation.py");
     [TestMethod]
     public Task NationalDex() => Run("test-national-dex-source.py");
     [TestMethod]

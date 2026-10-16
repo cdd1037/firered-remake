@@ -78,6 +78,7 @@ public partial class CampaignView
     private void SelectMachineParty()
     {
         _machineParty = _machineCursor; _machineSlot = -1;
+        CaptureMoveSelection("machine", _session.State.Party[_machineParty], MachineDefinition.Move);
         string compatibility = MachineCompatibility(_session.State.Party[_machineParty]);
         if (compatibility != "gText_Able2")
         { MachineNotice(compatibility == "gText_Learned" ? "gText_PkmnAlreadyKnows" : "gText_PkmnCantLearnMove"); return; }
@@ -127,6 +128,9 @@ public partial class CampaignView
             { if (++_machinePage >= _machinePages.Length) { _machineMode = _machineNoticeReturn; _machineCursor = _machineMode == "party" ? _machineParty : 0; } }
             return true;
         }
+        if (_machineMode is "replace-confirm" or "teach-confirm" or "replacement" &&
+            !MoveSelectionCurrent("machine", _session.State.Party[_machineParty], MachineDefinition.Move))
+        { _machineMode = "party"; _machineCursor = 0; _itemNotice = SummaryChangedNotice; return true; }
         if (_machineMode is "replace-confirm" or "teach-confirm")
         {
             if (key.Keycode == Key.Backspace) { _machineMode = "party"; _machineCursor = _machineParty; return true; }
@@ -227,16 +231,7 @@ public partial class CampaignView
         }
         else if (mode == "replacement")
         {
-            SourceText(_sourceNormal, new(16, 8), _session.State.Party[_machineParty].Nickname);
-            var moves = _session.State.Party[_machineParty].Pokemon.Moves;
-            for (int i = 0; i < moves.Length; i++)
-            {
-                SourceText(_sourceNormal, new(24, 26 + i * 16), MoveName(moves[i].Move));
-                SourceText(_sourceSmall, new(174, 26 + i * 16), $"{moves[i].CurrentPp}/{moves[i].MaximumPp}");
-            }
-            SourceText(_sourceNormal, new(24, 90), _itemSkin.Text("gFameCheckerText_Cancel"));
-            SourceText(_sourceNormal, new(12, 26 + _machineCursor * 16), _itemSkin.Text("gText_SelectorArrow2"));
-            ItemMessageBox(MachineText("gText_WhichMoveToForget"));
+            DrawMoveSelectionSummary("machine", _session.State.Party[_machineParty], MachineDefinition.Move, _machineCursor);
         }
         else
         {

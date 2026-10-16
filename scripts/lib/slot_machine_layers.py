@@ -18,7 +18,7 @@ def bake(outputs, manifest):
     palettes = json.loads(outputs['palettes.json'])['palettes']
     maps = {name: struct.unpack('<640H', outputs[name+'.tilemap']) for name in ('bg','combos_window')}
     tiles = {name: outputs[name+'.indices'] for name in ('bg','combos_window','button_pressed')}
-    def tile(entry, name='bg', light=None):
+    def tile(entry, name='bg', light=None, darken=0):
         number, bank = entry & 1023, entry >> 12
         source = tiles['button_pressed'] if number >= 192 else tiles[name]
         if number >= 192: number -= 192
@@ -26,6 +26,12 @@ def bake(outputs, manifest):
                   palettes['match_lines'] if bank in (5,6) else
                   palettes['payout_lights'][light*16:(light+1)*16] if bank == 1 and light is not None else
                   palettes['bg'][bank*16:(bank+1)*16])
+        if bank == 6:
+            protected = layout['winningUnblendedColorIndices']
+            colors = [rgb if i in protected else tuple(((v >> 3) + ((-(v >> 3) * darken) >> 4)) for v in rgb)
+                      for i, rgb in enumerate(colors)]
+            colors = [rgb if i in protected else tuple((v << 3) | (v >> 2) for v in rgb)
+                      for i, rgb in enumerate(colors)]
         data = bytearray()
         for y in range(8):
             for x in range(8):
@@ -38,20 +44,25 @@ def bake(outputs, manifest):
             for x in range(width//8):result.paste(tile(maps[name][y*32+x],name),(x*8,y*8))
         return result
     images=[]
-    for name in ('reel-icons','clefairy','digits','controls'):
+    for name in ('reel-icons','clefairy','digits','controls','message-quit','message-no-coins'):
         images.append((name,Image.open(io.BytesIO(outputs[name+'.png'])).convert('RGBA')))
     images.extend([('background',layer('bg',240)),('help',layer('combos_window',256))])
     patches={}
-    def patch(name,cells,entries,light=None):
+    def patch(name,cells,entries,light=None,darken=0,shared_geometry=False):
         result=Image.new('RGBA',(len(cells)*8,8))
         rects=[]
         for i,(cell,entry) in enumerate(zip(cells,entries)):
-            result.paste(tile(entry,light=light),(i*8,0))
+            result.paste(tile(entry,light=light,darken=darken),(i*8,0))
             rects.append([i*8, 0, cell%32*8, cell//32*8, 8, 8])
-        images.append((name,result));patches[name]=rects
+        images.append((name,result))
+        if not shared_geometry: patches[name]=rects
     for line in layout['matchLines']:
         for state in (4,5):
             patch('line-%d-%d'%(line['id'],state),line['tileIndices'],[(maps['bg'][cell]&4095)|(state<<12) for cell in line['tileIndices']])
+        # Distinct five-bit coefficients only, using the same compact line strips and source indices.
+        for coefficient in sorted(set([0] + layout['winningFlash']['darkenCoefficients'])):
+            patch('win-%d-%d' % (line['id'], coefficient), line['tileIndices'],
+                  [(maps['bg'][cell] & 4095) | (6 << 12) for cell in line['tileIndices']], darken=coefficient, shared_geometry=True)
     for reel,cells in enumerate(layout['buttonTileIndices']):patch('button-'+str(reel),cells,range(192,196))
     cells=[i for i,entry in enumerate(maps['bg']) if entry>>12==1 and i%32<30]
     for light in range(3):patch('light-'+str(light),cells,[maps['bg'][i] for i in cells],light)

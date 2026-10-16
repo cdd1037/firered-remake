@@ -51,19 +51,23 @@ def convert(lock, sources):
     pal = codec.palette(sources['graphics/battle_interface/textbox1.pal'])
     tiles = codec.tile_list(sources['graphics/battle_interface/textbox.png'])
     arrow = codec.rgba(tiles[1] + tiles[2], pal)
+    codec.require(controller, 'MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 29);')
+    codec.require(controller, 'MoveSelectionCreateCursorAt(gMultiUsePlayerCursor, 27);')
+    swap_source = codec.rgba(tiles[30] + tiles[31], pal)
+    swap_destination = codec.rgba(tiles[28] + tiles[29], pal)
     tilemap = list(struct.unpack('<1024H', sources['graphics/item_pc/bg.bin']))
     for y in range(14, 20):
         for x in range(30): tilemap[y * 32 + x] = (tilemap[y * 32 + x] & 0xFFF) | 0x2000
     pc = items.render_map(sources['graphics/item_pc/bg.png'], struct.pack('<1024H', *tilemap))
     assets = []; outputs = {}
-    for name, width, height, pixels in [('battle-selection-cursor', 8, 16, arrow), ('pc-submenu-background', 240, 160, pc)]:
+    for name, width, height, pixels in [('battle-selection-cursor', 8, 16, arrow), ('battle-swap-source-cursor', 8, 16, swap_source), ('battle-swap-destination-cursor', 8, 16, swap_destination), ('pc-submenu-background', 240, 160, pc)]:
         data = codec.png(width, height, pixels); outputs[name + '.png'] = data
         assets.append(dict(id=name, width=width, height=height))
     pp = codec.palette(sources['graphics/interface/text_pp.pal'])
     catalog = dict(schemaVersion=1,
           assets=assets,
         ppColors=[dict(foreground=pp[i * 2], shadow=pp[i * 2 + 1]) for i in range(4)],
-        menuSeparatorColor=pal[9], sourceCursorTiles=[1, 2],
+        menuSeparatorColor=pal[9], sourceCursorTiles=[1, 2], sourceSwapCursorTiles=[30, 31], destinationSwapCursorTiles=[28, 29],
         scope='Settled selection cursor, PP palette and PC submenu background only. No animation, timing, audio or game-state changes.')
     outputs['ui-corrections.json'] = canonical(catalog)
     outputs['manifest.json'] = canonical(dict( outputs=[dict(path=p) for p, b in sorted(outputs.items())],
@@ -82,6 +86,6 @@ def main():
     lock, sources = inputs(args.lock, args.raw, args.cache); outputs = convert(lock, sources)
     args.output.mkdir(parents=True, exist_ok=True)
     for path, data in outputs.items(): safe(args.output, path).write_bytes(data)
-    print(json.dumps(dict(status='imported', assets=2)))
+    print(json.dumps(dict(status='imported', assets=4)))
 
 if __name__ == '__main__': main()

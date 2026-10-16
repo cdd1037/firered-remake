@@ -11,6 +11,9 @@ namespace Game.Domain.WildBattle;
 public sealed record WildBattleTransformation(PokemonInstance OriginalPokemon, PokemonInstance CopiedPokemon,
     ImmutableArray<int> OriginalPpUps)
 {
+    // SELECT may reorder the live moves without changing either captured Pokemon snapshot.
+    // Each live slot names its slot at Transform time; null is the identity permutation.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<int>? LiveMoveOrder { get; init; }
     // Poke Flute independently tests party ability and copied battle ability.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public uint? PartyStatusOverride { get; init; }
     // Cmd_getexp recalculates every battle stat after a level gain, even under Transform.
@@ -96,14 +99,21 @@ public static class WildBattleTransformationRules
         if (transform.LevelUpStats is not null && transform.LevelUpStats != transform.OriginalPokemon.Stats) return "transform_level_up_stats";
         if (mon.Pokemon.CurrentHp < 0 || mon.Pokemon.CurrentHp > transform.OriginalPokemon.Stats.MaxHp) return "transform_hp";
         if (mon.Pokemon.Moves.IsDefault || mon.Pokemon.Moves.Length != transform.CopiedPokemon.Moves.Length) return "transform_moves";
+        if (!ValidMoveOrder(transform)) return "transform_move_order";
         for (int i = 0; i < mon.Pokemon.Moves.Length; i++)
         {
             var move = mon.Pokemon.Moves[i];
-            int pp = catalog!.Moves[transform.CopiedPokemon.Moves[i].Move].Pp, bonus = transform.OriginalPpUps[i];
-            if (move is null || move.Move != transform.CopiedPokemon.Moves[i].Move || move.PpUps != bonus ||
+            int originalSlot = transform.LiveMoveOrder is { } order ? order[i] : i;
+            var originalMove = transform.CopiedPokemon.Moves[originalSlot].Move;
+            int pp = catalog!.Moves[originalMove].Pp, bonus = transform.OriginalPpUps[originalSlot];
+            if (move is null || move.Move != originalMove || move.PpUps != bonus ||
                 move.MaximumPp != pp + pp * 20 * bonus / 100 || move.CurrentPp < 0 || move.CurrentPp > Math.Min(5, pp)) return "transform_pp";
         }
         var expected = BuildView(catalog!, transform, mon.Pokemon.Moves, mon.Pokemon.CurrentHp);
         return mon.Pokemon != expected ? "transform_view" : null;
     }
+
+    internal static bool ValidMoveOrder(WildBattleTransformation transform) => transform.LiveMoveOrder is not { } order ||
+        !order.IsDefault && order.Length == transform.CopiedPokemon.Moves.Length &&
+        order.All(slot => slot >= 0 && slot < order.Length) && order.Distinct().Count() == order.Length;
 }

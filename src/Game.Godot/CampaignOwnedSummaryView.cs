@@ -7,21 +7,23 @@ using Godot;
 public partial class CampaignView
 {
     private bool _summaryDetails;
+    private SummaryInteractionMode _summaryMode = SummaryInteractionMode.Reorder;
     private int _summaryMoveCursor, _summarySwapSource = -1;
     private long _summaryMoveRevision, _summaryMoveInstanceId;
     private bool _summaryMoveStorage;
     private PokemonStorageMoveLocation? _summaryMoveLocation;
+    private SummaryMoveSelection OwnedMoveSelection => new(_summaryMode, _summaryMoveCursor, _summarySwapSource);
     private const string SummaryChangedNotice = "The selected POKéMON has changed.\nPlease open its moves again.";
 
     private void ResetOwnedSummarySelection()
     {
         _summaryDetails = false; _summaryMoveCursor = 0; _summarySwapSource = -1;
-        _summaryMoveInstanceId = 0; _summaryMoveLocation = null;
+        _summaryMoveInstanceId = 0; _summaryMoveLocation = null; _summaryMode = SummaryInteractionMode.Reorder;
     }
-    private void OpenOwnedMoveDetails(PartyPokemon owned)
+    private void OpenOwnedMoveDetails(PartyPokemon owned, SummaryInteractionMode mode = SummaryInteractionMode.Reorder)
     {
         if (owned.IsEgg || owned.Pokemon.Moves.IsDefaultOrEmpty) return;
-        ResetOwnedSummarySelection(); _summaryDetails = true;
+        ResetOwnedSummarySelection(); _summaryDetails = true; _summaryMode = mode;
         CaptureOwnedSummarySelection(owned);
     }
     private void CaptureOwnedSummarySelection(PartyPokemon owned)
@@ -36,7 +38,8 @@ public partial class CampaignView
             _summaryMoveStorage == (_session.State.Pc?.Summary is not null) &&
             _summaryMoveLocation == _session.State.Pc?.Summary?.Location) return true;
         ResetOwnedSummarySelection();
-        if (_session.State.Pc is not null) _pcNotice = SummaryChangedNotice;
+        if (_battlePartySelection is not null) CloseStaleBattlePartySelection();
+        else if (_session.State.Pc is not null) _pcNotice = SummaryChangedNotice;
         else _fieldMenuNotice = SummaryChangedNotice;
         return false;
     }
@@ -51,11 +54,12 @@ public partial class CampaignView
             else ResetOwnedSummarySelection();
             return true;
         }
-        int count = owned.Pokemon.Moves.Length + (_summarySwapSource < 0 ? 1 : 0);
+        int count = OwnedMoveSelection.RowCount(owned.Pokemon.Moves.Length);
         if (key.Keycode == Key.Up) _summaryMoveCursor = (_summaryMoveCursor + count - 1) % count;
         if (key.Keycode == Key.Down) _summaryMoveCursor = (_summaryMoveCursor + 1) % count;
         if (key.Keycode != Key.Enter) return true;
         if (_summaryMoveCursor == owned.Pokemon.Moves.Length) { ResetOwnedSummarySelection(); return true; }
+        if (!OwnedMoveSelection.CanReorder) return true;
         if (_summarySwapSource < 0) { _summarySwapSource = _summaryMoveCursor; return true; }
         int source = _summarySwapSource; _summarySwapSource = -1;
         if (source == _summaryMoveCursor) return true;
@@ -99,7 +103,7 @@ public partial class CampaignView
             if (!OwnedSummarySelectionIsCurrent(owned)) return true;
             if (new Rect2(208, 0, 32, 16).HasPoint(point)) return MouseKey(Key.Backspace);
             if (new Rect2(152, 0, 56, 16).HasPoint(point)) return MouseKey(Key.Enter);
-            int rows = owned.Pokemon.Moves.Length + (_summarySwapSource < 0 ? 1 : 0);
+            int rows = OwnedMoveSelection.RowCount(owned.Pokemon.Moves.Length);
             return MouseSelect(point, ref _summaryMoveCursor, rows, 120, 18, 120, 28);
         }
         if (!owned.IsEgg && page > 0 && new Rect2(104, 0, 24, 16).HasPoint(point)) return MouseKey(Key.Left);
@@ -113,7 +117,7 @@ public partial class CampaignView
         if (!_summaryDetails) return direction != 0 && new Rect2(8, 26, 224, 110).HasPoint(point) && MouseNavigationKey(direction);
         if (!OwnedSummarySelectionIsCurrent(owned)) return true;
         return PointerRows(point, direction, ref _summaryMoveCursor,
-            owned.Pokemon.Moves.Length + (_summarySwapSource < 0 ? 1 : 0), 120, 18, 120, 28);
+            OwnedMoveSelection.RowCount(owned.Pokemon.Moves.Length), 120, 18, 120, 28);
     }
-    private void DrawOwnedMoveDetails(PartyPokemon owned) => DrawNativeSummary(owned, 2, true, true);
+    private void DrawOwnedMoveDetails(PartyPokemon owned) => DrawNativeSummary(owned, 2, true, OwnedMoveSelection);
 }

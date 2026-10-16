@@ -34,7 +34,7 @@ public partial class CampaignView
         ulong started = Time.GetTicksUsec();
         try
         {
-            return PlayerSaveOperations.Save(EntrySaveStorage(), path, _session.State, _session.Revision,
+            return PlayerSaveOperations.Save(EntrySaveStorage(), path, _session.PrepareFieldSave(), _session.Revision,
                 _session.RulesVersion, _catalog.ContentVersion, _session.ValidatePlayerSave);
         }
         finally { _trainerTowerFrames.ExcludeSaveWrite((Time.GetTicksUsec() - started) / 1_000_000d); }

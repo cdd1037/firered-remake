@@ -662,6 +662,7 @@ public sealed partial class PretCampaignCatalog
         OakRating = oakRating;
         PokedexMenu = oakPokedex;
         SourceMaps = maps;
+        LoadFieldCut(projectRoot);
         Maps = maps.ToImmutableDictionary(x => x.Key, x => (IFieldMap)x.Value);
         EscapeRoutes = CurrentEscapeRoutes.Create(maps, compiled);
         _scripts = compiled;

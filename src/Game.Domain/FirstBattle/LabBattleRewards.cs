@@ -61,10 +61,10 @@ public static class LabBattleRewards
         var before = ownedBefore.Pokemon;
         if (afterBattlePlayer with { CurrentHp = before.CurrentHp, Moves = before.Moves } != before ||
             afterBattlePlayer.Moves.Length != before.Moves.Length ||
-            afterBattlePlayer.Moves.Where((move, i) =>
-                move with { CurrentPp = before.Moves[i].CurrentPp } != before.Moves[i] ||
-                move.CurrentPp > before.Moves[i].CurrentPp).Any())
-            throw new ArgumentException("Only HP and consumed PP may differ from the owned pre-battle instance.", nameof(afterBattlePlayer));
+            afterBattlePlayer.Moves.Any(move => !before.Moves.Any(original =>
+                move with { CurrentPp = original.CurrentPp } == original &&
+                move.CurrentPp <= original.CurrentPp)))
+            throw new ArgumentException("Only HP, consumed PP and move order may differ from the owned pre-battle instance.", nameof(afterBattlePlayer));
         ValidateTrainer(trainer, before, opponent);
         // The source ORs two team-HP checks: Won=1, Lost=2, Draw=3. In this one-member profile
         // the result is derived from BOTH HP values, never from the Won bit on a draw.
@@ -161,8 +161,8 @@ public static class LabBattleRewards
         string status = FirstBattleProfile.StatusMove(pokemon.SourceSpeciesId);
         if (initial.Length != 2 || initial[0].Move.Value != attack ||
             initial[1].Move.Value != status ||
-            pokemon.Moves.Length != initial.Length || pokemon.Moves.Where((m, i) =>
-                m with { CurrentPp = initial[i].CurrentPp } != initial[i]).Any())
+            pokemon.Moves.Length != initial.Length || !FirstBattleProfile.HasStarterMovePair(pokemon) ||
+            pokemon.Moves.Any(m => !initial.Any(original => m with { CurrentPp = original.CurrentPp } == original)))
             throw new NotSupportedException("Only the source two initial moves without PP Ups are supported by settlement.");
     }
 

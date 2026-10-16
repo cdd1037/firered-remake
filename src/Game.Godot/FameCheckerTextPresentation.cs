@@ -18,11 +18,18 @@ public sealed class FameCheckerTextPresentation
     public int VisibleLength => pages.IsEmpty ? 0 : pages[PageIndex].RetainedTextLength + printer.VisibleText.Length;
     public SourceTextProgress Printer => printer;
 
-    public void Reset(ImmutableArray<FameCheckerTextPage> textPages, int configuredSpeed)
+    public void Reset(ImmutableArray<FameCheckerTextPage> textPages, int configuredSpeed, bool immediate = false)
     {
         pages = textPages; PageIndex = ScrollPixels = scrollRemaining = PromptFrames = 0; IsScrolling = false;
-        printer.Reset(pages.IsEmpty ? "" : pages[0].RevealText, configuredSpeed,
+        printer.Reset(pages.IsEmpty ? "" : pages[0].RevealText, immediate ? 1 : configuredSpeed,
             pages.IsEmpty ? [] : pages[0].RepeatControlOffsets);
+        if (immediate)
+        {
+            if (pages.Length != 1 || pages[0].EndAction != FameCheckerTextEndAction.End)
+                throw new ArgumentException("Immediate UI text must be one unprompted source page.", nameof(textPages));
+            printer.AdvanceFrames(0x400, false, false); // AddTextPrinter speed 0 uses this same bounded loop.
+            if (!printer.Complete) throw new InvalidDataException("Immediate source text exceeds the printer bound.");
+        }
     }
 
     /// <returns>True only on the frame accepting a source A/B page prompt (SE_SELECT).</returns>

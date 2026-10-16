@@ -155,7 +155,7 @@ public partial class CampaignView:Node2D
     }
     private void DisposeMapResources()
     {
-        ReleaseMapEdits();_drawMapEditOwner?.Dispose();_drawMapEditOwner=null;
+        _cutGrassParticle?.Dispose();_cutGrassParticle=null;_cutGrassSheet?.Dispose();_cutGrassSheet=null;ReleaseMapEdits();_drawMapEditOwner?.Dispose();_drawMapEditOwner=null;
         _maps?.Dispose();_mapResources.Dispose();_drawMapPins.Clear();_art=null!;
     }
     private void LoadPortraits()
@@ -581,9 +581,9 @@ public partial class CampaignView:Node2D
         foreach(var (id,asset) in entries.OrderBy(e=>_poses[e.Id].Position.Y).ThenBy(e=>e.Id,StringComparer.Ordinal))DrawCityServicesActor(id,asset,_poses[id],camera);
         if(_art.Border is {} borderTop)DrawMapBorder(borderTop.Top,camera);DrawConnectedNeighbors(camera,2);DrawBillMapLayer(_art.Top,camera,2);
         if(hero.Visible&&(CinnabarLanding&&CinnabarFallPose.FixedPriority||SixIslandLandingFixedPriority))DrawCityServicesActor("LOCALID_PLAYER",CurrentPlayerSprite,hero,camera);
-        DrawVsSeekerIcons(camera);DrawEventIslandFragments(camera);DrawPokemonTowerFog(camera);DrawSsAnneSmoke();DrawFieldFlashMask();DrawFieldMoveBanner();DrawFieldFlashBanner();DrawFieldStrengthBanner();DrawFourIslandBanner();DrawFishingDots();
+        DrawVsSeekerIcons(camera);DrawCutGrassParticles(camera);DrawEventIslandFragments(camera);DrawPokemonTowerFog(camera);DrawSsAnneSmoke();DrawFieldFlashMask();DrawFieldMoveBanner();DrawFieldFlashBanner();DrawFieldStrengthBanner();DrawFourIslandBanner();DrawFishingDots();
         DrawCenterHealing();DrawPokemonLeagueRecording();
-        DrawMagikarpMoneyBox();DrawGameCornerCoinsBox();
+        DrawMagikarpMoneyBox();DrawGameCornerCoinsBox();DrawBerryPowderAmount();
         if(_session.State.MonPicture is {} picture&&!DrawBillPcPicture()&&!DrawNamedPokemonPicture(picture))
         {
             var box=new Vector2(picture.X*8,picture.Y*8);DrawRect(new(box,new Vector2(80,80)),new Color("263c48"));DrawRect(new(box+new Vector2(2,2),new Vector2(76,76)),Colors.White);
@@ -657,9 +657,9 @@ public partial class CampaignView:Node2D
             DrawTextureRectRegion(texture,new(new Vector2(x*16,y*16)-camera,new Vector2(16,16)),new(MapBorderPattern.Coordinate(x,border.Width)*16,MapBorderPattern.Coordinate(y,border.Height)*16,16,16));
         }
     }
-    private void DrawActor(SpriteAsset asset,Pose pose,Vector2 camera)
+    private void DrawActor(SpriteAsset asset,Pose pose,Vector2 camera,Texture2D? textureOverride=null)
     {
-        var texture=SixIslandPaletteTexture(asset.Texture,false);
+        var texture=textureOverride??SixIslandPaletteTexture(asset.Texture,false);
         int idle=asset.Inanimate?0:pose.Facing switch{Direction.South=>0,Direction.North=>1,_=>2};int frame=idle;
         if(pose.Frame>0&&asset.Count>=9){var sequence=pose.Facing switch{Direction.South=>new[]{3,0,4,0},Direction.North=>new[]{5,1,6,1},_=>new[]{7,2,8,2}};frame=sequence[(pose.Frame-1)%4];}
         if(pose.Frame<0)frame=-pose.Frame;

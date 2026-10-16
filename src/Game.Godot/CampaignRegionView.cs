@@ -4,6 +4,7 @@ using Game.Domain.World;
 using Godot;
 public partial class CampaignView
 {
+    private Dictionary<Game.Domain.Ids.MapId,MapArt> _borderEditArt=[];
     private string? _mapEditKey;
     private ImmutableSortedDictionary<string,FieldMetatileEdit>? _mapEditState;
     private CampaignResourceCache.Owner? _mapEditOwner;
@@ -11,7 +12,7 @@ public partial class CampaignView
     private void ReleaseMapEdits()
     {
         if(!ReferenceEquals(_mapEditOwner,_drawMapEditOwner))_mapEditOwner?.Dispose();
-        _mapEditOwner=null;_mapEditKey=null;_mapEditState=null;
+        _mapEditOwner=null;_mapEditKey=null;_mapEditState=null;_borderEditArt.Clear();
     }
     private void BeginMapFrame()
     {
@@ -31,25 +32,26 @@ public partial class CampaignView
         if(definitions is null&&!IsSeafoamPatchedMap(state.World.Player.MapId)&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
         using var tiles=_mapResources.CreateOwner("map-edit-tiles");
-        Texture2D Patch(Texture2D texture,int layer)
+        Texture2D Patch(Texture2D texture,int layer,Game.Domain.Ids.MapId map,IEnumerable<FieldMetatileEdit> edits)
         {
             // Dummy/headless GetImage may return the same Image resource. Tower crops
             // read original layers, so their editable canvas must be a separate resource.
-            using var canvas=IsTrainerTowerPresentationMap(state.World.Player.MapId)||IsSeafoamPatchedMap(state.World.Player.MapId)?(Image)texture.GetImage().Duplicate():texture.GetImage();
-            foreach(var edit in state.MapEdits.Values)
+            using var canvas=(Image)texture.GetImage().Duplicate();
+            foreach(var edit in edits)
             {
-                if(TrySeafoamPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryTrainerTowerPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryCelioMachinePatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryFiveIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TrySixIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryFourIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TrySeviiRubyPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryPokemonLeaguePatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryVictoryRoadPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryCinnabarPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TrySilphPatch(canvas,edit,layer,state.World.Player.MapId))continue;
-                if(TryRocketPatch(canvas,edit,layer,state.World.Player.MapId.Value))continue;
+                if(TryCutGrassPatch(canvas,edit,layer,map))continue;
+                if(TrySeafoamPatch(canvas,edit,layer,map))continue;
+                if(TryTrainerTowerPatch(canvas,edit,layer,map))continue;
+                if(TryCelioMachinePatch(canvas,edit,layer,map))continue;
+                if(TryFiveIslandPatch(canvas,edit,layer,map))continue;
+                if(TrySixIslandPatch(canvas,edit,layer,map))continue;
+                if(TryFourIslandPatch(canvas,edit,layer,map))continue;
+                if(TrySeviiRubyPatch(canvas,edit,layer,map))continue;
+                if(TryPokemonLeaguePatch(canvas,edit,layer,map))continue;
+                if(TryVictoryRoadPatch(canvas,edit,layer,map))continue;
+                if(TryCinnabarPatch(canvas,edit,layer,map))continue;
+                if(TrySilphPatch(canvas,edit,layer,map))continue;
+                if(TryRocketPatch(canvas,edit,layer,map.Value))continue;
                 var d=definitions![edit.SourceMetatileId];var path=layer==0?d.BottomTexturePath:layer==1?d.MiddleTexturePath:d.TopTexturePath;
                 using var tile=tiles.Texture(path).GetImage();canvas.BlitRect(tile,new(0,0,16,16),new(edit.X*16,edit.Y*16));
             }
@@ -57,8 +59,17 @@ public partial class CampaignView
         }
         try
         {
-            var patched=original with{Bottom=Patch(original.Bottom,0),Middle=Patch(original.Middle,1),Top=Patch(original.Top,2)};
-            _art=patched;ReleaseMapEdits();_mapEditOwner=replacement;_mapEditKey=key;_mapEditState=state.MapEdits;
+            var projected=state.MapEdits.Values.Select(edit=>(Edit:edit,Cell:ConnectedFieldCoordinates.Resolve(_catalog.ConnectedFieldMaps!,state.World.Player.MapId,edit.X,edit.Y)))
+                .Where(pair=>pair.Cell is not null).GroupBy(pair=>pair.Cell!.Value.Map);
+            var patchedMaps=new Dictionary<Game.Domain.Ids.MapId,MapArt>();
+            foreach(var group in projected)
+            {
+                var art=GetMapArt(group.Key);
+                var edits=group.Select(p=>p.Edit with{X=p.Cell!.Value.X,Y=p.Cell.Value.Y}).ToArray();
+                patchedMaps[group.Key]=art with{Bottom=Patch(art.Bottom,0,group.Key,edits),Middle=Patch(art.Middle,1,group.Key,edits),Top=Patch(art.Top,2,group.Key,edits)};
+            }
+            _art=patchedMaps.GetValueOrDefault(state.World.Player.MapId,original);
+            ReleaseMapEdits();_borderEditArt=patchedMaps;_mapEditOwner=replacement;_mapEditKey=key;_mapEditState=state.MapEdits;
         }
         catch{replacement.Dispose();throw;}
     }
@@ -136,7 +147,7 @@ public partial class CampaignView
     {
         foreach(var neighbor in VisibleMapNeighbors(camera))
         {
-            var art=GetMapArt(neighbor.Id);DrawTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,neighbor.Origin-camera);
+            var art=_borderEditArt.TryGetValue(neighbor.Id,out var patched)?patched:GetMapArt(neighbor.Id);DrawTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,neighbor.Origin-camera);
         }
     }
 }

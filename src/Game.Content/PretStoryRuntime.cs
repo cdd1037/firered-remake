@@ -41,7 +41,7 @@ public sealed record PretStoryRuntime(
             var layout = menu.ListLayout!;
             if (layout.Left is < 0 or > 28 || layout.Top is < 0 or > 18 || layout.VisibleRows < 1 ||
                 layout.VisibleRows > menu.Options.Length || layout.HeightTiles < 1 ||
-                layout.Top + layout.HeightTiles > 18 || layout.VisibleRows * 14 > layout.HeightTiles * 8)
+                layout.Top + layout.HeightTiles > 18 || (layout.VisibleRows-1)*14+12 > layout.HeightTiles*8)
                 throw new InvalidDataException("Invalid native list menu layout: " + menu.Id);
         }
         foreach (var instruction in result.Compilation.Programs.Values.SelectMany(p => p.Instructions))

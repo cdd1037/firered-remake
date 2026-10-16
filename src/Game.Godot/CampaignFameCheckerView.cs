@@ -55,23 +55,23 @@ public partial class CampaignView
         var owner = _session.State.FameChecker;
         if (ReferenceEquals(owner,_fameOwner)) return;
         _fameOwner=owner; _fameHeldDirection=null; _fameTextHeld=_fameTextPress=false; _held=null; _repeat=0;
-        if (owner is null) { _famePages=[]; return; }
+        if (owner is null) { _famePages=[]; _famePrinter.Reset([],4); return; }
         _fameArt ??= PretFameCheckerPresentation.Load(_root);
         _famePeople=_session.FameCheckerPeople; _fameMode=FameMode.List;
         _famePerson=_fameTop=_fameFact=_fameFrame=_fameOffset=_fameSlide=_fameInfoFrames=0;
-        _fameInfo=4;_fameRestored=_fameInfoOpen=false;_fameTime=0;_fameBackgroundKey=null;_famePages=[];
+        _fameInfo=4;_fameRestored=_fameInfoOpen=false;_fameTime=0;_fameBackgroundKey=null;_famePages=[];_famePrinter.Reset([],4);
         if (_famePeople.IsEmpty) SelectFamePerson();
     }
-    private void SetFameText(FameCheckerText? text)
+    private void SetFameText(FameCheckerText? text,bool immediate=false)
     {
         _famePages=text is null?[]:FameCheckerTextPages.Parse(text.EncodedText.EndsWith('$')?text:text with {EncodedText=text.EncodedText+"$"},_session.State.PlayerName,_session.State.RivalName);
-        ResetFamePrinter();
+        ResetFamePrinter(immediate);
     }
-    private void ResetFamePrinter()
+    private void ResetFamePrinter(bool immediate=false)
     {
         _fameTextHeld=_fameTextPress=false;
         _famePrinter.Reset(_famePages,
-            _session.EffectiveOptions.TextSpeed switch {SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1});
+            _session.EffectiveOptions.TextSpeed switch {SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1},immediate);
     }
     private void SetFameInfo(bool opened)
     {
@@ -83,7 +83,7 @@ public partial class CampaignView
         _fameTop=Math.Clamp(_fameTop,0,Math.Max(0,_famePeople.Length+1-5));
         if(_famePerson<_fameTop)_fameTop=_famePerson;
         if(_famePerson>=_fameTop+5)_fameTop=_famePerson-4;
-        if(FamePerson is not {} person) SetFameText(_catalog.FameChecker!.UiTexts.Single(t=>t.Symbol=="gFameCheckerText_FameCheckerWillBeClosed"));
+        if(FamePerson is not {} person) SetFameText(_catalog.FameChecker!.UiTexts.Single(t=>t.Symbol=="gFameCheckerText_FameCheckerWillBeClosed"),immediate:true);
         else SetFameText(_fameMode==FameMode.Pick?person.PickText:null);
     }
     private void MoveFamePerson(int delta)

@@ -16,7 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TARGET_SCRIPTS = {
     'world': ('scripts/imports/maps/import-world.py',),
     'field-rules': ('scripts/imports/story/import-early-field-rules.py',
-                    'scripts/imports/story/import-world-field-rules.py'),
+                    'scripts/imports/story/import-world-field-rules.py',
+                    'scripts/imports/maps/import-cut-grass.py'),
     'field-services': ('scripts/imports/story/import-city-services.py',
                        'scripts/imports/story/import-field-services.py'),
     'audio-cues': ('scripts/imports/audio/build-cue-catalog.py',),

@@ -158,6 +158,8 @@ public partial class CampaignView
                 if(_battlePage+1<_battlePages.Length){_battlePage++;_battleElapsed=0;Write("battlePage",new{key=_battlePresentationKey,page=_battlePage});}else if(!_battlePages.IsEmpty||b.Phase==CampaignBattlePhase.Results)Apply(new("ack"));}
             return true;
         }
+        if(BattleMoveOrderInput(key, _battleMenu, ref _battleCursor, out var swapNotice))
+        { _battleNotice = swapNotice; return true; }
         if(_battleMenu=="bag")
         {
             int entries=(_session.State.Inventory?.BagItems.Length??0)+1;
@@ -284,6 +286,7 @@ public partial class CampaignView
                 _battleSkin.DrawMoveMenu(this);var moves=b.State.Player.Pokemon.Moves;
                 for(int i=0;i<4;i++)SourceText(_battleMoveFont,LabBattleUiSkin.MoveText(i),i<moves.Length?MoveName(moves[i].Move):"-");
                 _uiCorrections.DrawSelectionCursor(this,true,_battleCursor);
+                if (DrawBattleMoveOrder(_battleCursor)) return;
                 var move=moves[_battleCursor];int ppState=SourceUiCorrections.PpPaletteState(move.CurrentPp,move.MaximumPp);SourceText(_battlePpSmallFont[ppState],new(168,122),"PP");SourceText(_battlePpFont[ppState],new(202,122),$"{move.CurrentPp,2}/{move.MaximumPp,2}");
                 SourceText(_battleMoveFont,new(168,138),"TYPE/");
                 // MoveSelectionDisplayMoveType switches to FONT_NORMAL after the small TYPE/ prefix.

@@ -18,12 +18,15 @@
     <Compile Include="../../src/Game.Godot/DiplomaPresentation.cs" Link="DiplomaPresentation.cs" />
     <Compile Include="../../src/Game.Godot/PresentationPackage.cs" Link="PresentationPackage.cs" />
     <Compile Include="../../src/Game.Godot/PresentationDexIndex.cs" Link="PresentationDexIndex.cs" />
+    <Compile Include="../../src/Game.Godot/SourceMenuLabelPresentation.cs" Link="SourceMenuLabelPresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceVerticalMenuPresentation.cs" Link="SourceVerticalMenuPresentation.cs" />
     <Compile Include="../../src/Game.Godot/PokedexDetailPresentation.cs" Link="PokedexDetailPresentation.cs" />
     <Compile Include="../../src/Game.Application/SaveOperationResult.cs" Link="SaveOperationResult.cs" />
     <Compile Include="../../src/Game.Godot/CampaignSaveFeedback.cs" Link="CampaignSaveFeedback.cs" />
     <Compile Include="../../src/Game.Godot/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />
     <Compile Include="../../src/Game.Godot/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
+    <Compile Include="../../src/Game.Godot/FameCheckerTextPresentation.cs" Link="FameCheckerTextPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/SlotMachineVisualPresentation.cs" Link="SlotMachineVisualPresentation.cs" />
     <Compile Include="../../src/Game.Godot/TeachyTvPresentation.cs" Link="TeachyTvPresentation.cs" />
     <Compile Include="../../src/Game.Godot/TeachyTvTextPresentation.cs" Link="TeachyTvTextPresentation.cs" />
   </ItemGroup>

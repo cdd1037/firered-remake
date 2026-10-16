@@ -20,7 +20,7 @@ internal class SourceVerticalMenuPresentation
         if (left is < 0 or > 255 || top is < 0 or > 255) throw new ArgumentOutOfRangeException(nameof(left));
         if (defaultCursor < 0 || defaultCursor >= rows.Length) throw new ArgumentOutOfRangeException(nameof(defaultCursor));
         if (visibleRows is < 1 || visibleRows > rows.Length || visibleRows.HasValue != heightTiles.HasValue ||
-            heightTiles is <= 0 || visibleRows * 14 > heightTiles * 8) throw new ArgumentOutOfRangeException(nameof(visibleRows));
+            heightTiles is <= 0 || (visibleRows-1)*14+12 > heightTiles*8) throw new ArgumentOutOfRangeException(nameof(visibleRows));
         Options = Array.AsReadOnly(rows); _left = left; _top = top;
         VisibleRows = visibleRows ?? rows.Length; _heightTiles = heightTiles;
         Select(defaultCursor);

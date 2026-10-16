@@ -46,9 +46,7 @@ public partial class CampaignView
     private readonly Dictionary<string,SourcePixelAsset> _sourceMoveAssets=[];
     private readonly Dictionary<WildBattleSide,int> _sourceSubstituteHp=[];
     private readonly Dictionary<string,ImageTexture> _sourceSubstituteTextures=[];
-    private JsonDocument? _sourceMoveManifest;
-    private IReadOnlyDictionary<int,SourceAnimationScript>? _sourceStatMoveScripts,_sourceExplosionScripts,_sourceTraceScripts,_sourcePhysicalScripts,_sourceElementalScripts;
-    private SourceMetallicMaterial? _sourceMetallicMaterial;
+    private SourceAnimationResources? _sourceAnimationResources;
     private SourceBattleFrameComposer? _sourceMoveComposer;
     private ImageTexture? _sourceMoveField;
     private SourceBattleAnimationAudioAdapter? _sourceMoveSound;
@@ -64,13 +62,10 @@ public partial class CampaignView
 
     private void EnsureSourceMoveAssets()
     {
-        if(_sourceMoveManifest is not null)return;
-        string folder=System.IO.Path.Combine(_root,"content/generated/battle/animations/hit");
-        _sourceMoveManifest=SourceHitAnimationCatalog.Read(folder);
-        foreach(var row in _sourceMoveManifest.RootElement.GetProperty("assets").EnumerateArray())
-        {string id=row.GetProperty("id").GetString()!;_sourceMoveAssets.Add(id,SourceHitAnimationCatalog.Asset(_sourceMoveManifest,folder,id));}
-        foreach(var asset in SourcePhysicalAnimationCatalog.Assets(System.IO.Path.Combine(_root,"content/generated/battle/animations/physical.json")))_sourceMoveAssets.Add(asset.Key,asset.Value);
-        foreach(var asset in SourceElementalAnimationCatalog.Assets(System.IO.Path.Combine(_root,"content/generated/battle/animations/elemental.json")))_sourceMoveAssets.Add(asset.Key,asset.Value);
+        if(_sourceAnimationResources is not null)return;
+        _sourceAnimationResources=new(System.IO.Path.Combine(_root,"content/generated/battle/animations"));
+        _sourceMoveAssets.Add("impact",_sourceAnimationResources.Asset("impact"));
+        string folder;
         folder=System.IO.Path.Combine(_root,"content/generated/battle/art/campaign-hit-art");
         var bytes=System.IO.File.ReadAllBytes(System.IO.Path.Combine(folder,"manifest.json"));
         using var doc=JsonDocument.Parse(bytes);
@@ -217,21 +212,12 @@ public partial class CampaignView
     }
     private void StartSourceMoveAnimation(CampaignMoveAnimationDispatch dispatch,Dictionary<string,SourcePixelAsset> assets,List<AnimationBattler> battlers,bool doubles)
     {
-        if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceExplosionScripts is null)
-        {
-            var imported=SourceExplosionAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/explosion"));
-            _sourceExplosionScripts=imported.Scripts;_sourceMoveAssets["explosion"]=imported.Explosion;
-        }
-        if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId))assets["explosion"]=_sourceMoveAssets["explosion"];
-        if(SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)&&_sourceStatMoveScripts is null)(_sourceStatMoveScripts,_sourceMetallicMaterial)=SourceStatMoveCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/stat-moves"));
-        if(SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceTraceScripts is null)_sourceTraceScripts=SourceTraceAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/trace.json"),_sourceMoveManifest!);
-        if(SourcePhysicalAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourcePhysicalScripts is null)_sourcePhysicalScripts=SourcePhysicalAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/physical.json"),_sourceMoveManifest!);
-        if(SourceElementalAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceElementalScripts is null)_sourceElementalScripts=SourceElementalAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/battle/animations/elemental.json"),_sourceMoveManifest!);
-        var script=SourceElementalAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceElementalScripts![dispatch.SourceMoveId]:SourcePhysicalAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourcePhysicalScripts![dispatch.SourceMoveId]:SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceTraceScripts![dispatch.SourceMoveId]:SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceExplosionScripts![dispatch.SourceMoveId]:SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
+        var resolved=_sourceAnimationResources!.Resolve(dispatch.SourceMoveId);
+        var script=resolved.Script;foreach(var asset in resolved.Assets)assets[asset.Key]=asset.Value;
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){AcknowledgePresentedSingleBattle();return;}
-        _sourceMoveComposer=new(assets,battlers.ToArray(),metallicMaterial:_sourceMetallicMaterial);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
+        _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();
     }
@@ -283,7 +269,7 @@ public partial class CampaignView
     }
     private void DisposeSourceMoveAnimation()
     {
-        ResetSourceMoveAnimation("exit-tree");_sourceMoveField?.Dispose();_sourceMoveField=null;_sourceMoveManifest?.Dispose();_sourceMoveManifest=null;
+        ResetSourceMoveAnimation("exit-tree");_sourceMoveField?.Dispose();_sourceMoveField=null;_sourceAnimationResources?.Dispose();_sourceAnimationResources=null;
         foreach(var texture in _sourceSubstituteTextures.Values)texture.Dispose();_sourceSubstituteTextures.Clear();_sourceMoveAssets.Clear();_sourceBattlerGeometry.Clear();
     }
 }

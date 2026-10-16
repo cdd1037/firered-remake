@@ -97,6 +97,7 @@ public partial class CampaignView
     }
     private void DrawItemMenu()
     {
+        if(_session.State.ItemMenu is {Origin:"registered",View:"message"}){ItemMessageBox(_session.VisibleItemMessage!);return;}
         if(DrawMailScreen())return;
         if(DrawHeldItemScreen())return;
         var menu=_session.State.ItemMenu!;var view=menu.View=="message"?menu.ReturnView:menu.View;

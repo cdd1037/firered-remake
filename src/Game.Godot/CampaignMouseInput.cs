@@ -63,7 +63,7 @@ public partial class CampaignView
         Vector2 point = GetGlobalTransformWithCanvas().AffineInverse() * position;
         if (!OpeningItemUiSkin.LogicalRect.HasPoint(point)) return true;
         if (_session.State.Nickname is { Submitted: false } || CaptureNamingActive || StorageBoxNaming ||
-            _session.State.OldManTutorial is not null || _session.State.Evolution is not null ||
+            _session.State.OldManTutorial is not null || _session.State.Evolution is { Stage: not CampaignEvolutionStage.LearnMove } ||
             _session.State.Repel?.Phase == CampaignRepelPhase.UseSound) return true;
 
         if (motion || wheel)
@@ -77,7 +77,7 @@ public partial class CampaignView
         }
         if (right)
         {
-            if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
+            if (_session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } || _session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
                 _session.State.SafariBattle is not null || DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
                 _session.State.Battle is not null || FieldDialogueVisible || MoveTutorActive || DaisyGroomingChoosing || SizeRecordChoosing || NameRaterChoosing || NpcTradeChoosing || NpcTradePresenting || TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible || SeagallopMenuActive || SilphElevatorMenuActive || DepartmentElevatorMenuActive || RooftopMenuActive || GameCornerCoinMenuActive || GameCornerPrizeMenuActive || RocketElevatorMenuActive || SourceMenuActive || SourceGridMenuActive || FossilLabMenuActive || BillPcMenuActive || BillPcPictureActive ||
@@ -88,7 +88,7 @@ public partial class CampaignView
             return true;
         }
 
-        bool acted = SourceMenuActive ? MouseSourceMenu(point) : SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : DaisyGroomingChoosing ? MouseDaisyGrooming(point) : SizeRecordChoosing ? MouseSizeRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
+        bool acted = _session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } ? MouseEvolutionLearning(point) : SourceMenuActive ? MouseSourceMenu(point) : SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : DaisyGroomingChoosing ? MouseDaisyGrooming(point) : SizeRecordChoosing ? MouseSizeRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
             : TownMapActive ? MouseTownMap(point)
             : FieldMenuOpen ? MouseFieldMenu(point)
             : _session.State.Shop is not null ? MouseShop(point)
@@ -155,9 +155,10 @@ public partial class CampaignView
         if(RooftopMenuActive)return NavigateRooftopPointer(point,direction);
         if(DepartmentElevatorMenuActive)return NavigateDepartmentPointer(point,direction);
         // Preserve exactly the same top-level owner as the click/drawing routes.
+        if (_session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove }) return NavigateEvolutionLearning(point, direction);
         if (_session.State.RareCandy is {} candy)
-            return _candyNotice is null && candy.Stage == CampaignRareCandyStage.LearnMove && PointerRows(point, direction, ref _candyMoveCursor,
-                _session.State.Party.Single(p => p.InstanceId == candy.Result.Pokemon.InstanceId).Pokemon.Moves.Length + 1, 8, 14, 224);
+            return _candyNotice is null && candy.Stage == CampaignRareCandyStage.LearnMove && NavigateMoveSelectionSummary(point, direction, ref _candyMoveCursor,
+                _session.State.Party.Single(p => p.InstanceId == candy.Result.Pokemon.InstanceId).Pokemon.Moves.Length);
         if (TownMapActive) return false;
         if (FieldMenuOpen) return NavigateFieldMenuPointer(point, direction);
         if (_session.State.Shop is { } shop)
@@ -265,7 +266,7 @@ public partial class CampaignView
                 return _machinePage + 1 == _machinePages.Length && PointerYesNo(point, direction, ref _machineCursor);
             if (_machineMode == "list") return PointerRows(point, direction, ref _machineCursor, MachineListVisibleCount, MachineListX, 40, MachineListWidth, MachineListRowHeight, MachineListStart);
             if (_machineMode == "party") return PointerNativeParty(point, direction, ref _machineCursor, _session.State.Party.Length);
-            if (_machineMode == "replacement") return PointerRows(point, direction, ref _machineCursor, 5, 12, 26, 220);
+            if (_machineMode == "replacement") return NavigateMoveSelectionSummary(point, direction, ref _machineCursor, _session.State.Party[_machineParty].Pokemon.Moves.Length);
             return false;
         }
         if (MailScreen) return MailMouse(point, direction);
@@ -292,6 +293,7 @@ public partial class CampaignView
     {
         var battle = PresentedWildBattle!;
         if (_wildNotice is not null) return false;
+        if (_battlePartySelection is not null) return NavigateBattlePartyInspection(point, direction);
         if (_session.State.ForestTrainerBattle is null && battle.Capture is { } capture)
             return capture.Stage == CampaignCaptureStage.NicknameChoice && PointerYesNo(point, direction, ref _wildCursor);
         if (battle.Phase == CampaignBattlePhase.ChooseMove)
@@ -303,7 +305,7 @@ public partial class CampaignView
                 return _wildPage + 1 == _wildPages.Length && PointerYesNo(point, direction, ref _wildCursor);
         }
         if (battle.Phase == CampaignBattlePhase.ChooseMove && SourceBattleForcedMoveSlot(battle) is {} forced) { _wildCursor=forced; return false; }
-        if (_wildMenu == "learn-moves") return PointerRows(point, direction, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length + 1, 12, 28, 220);
+        if (_wildMenu == "learn-moves") return NavigateMoveSelectionSummary(point, direction, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length);
         if (_wildMenu == "learn-confirm") return PointerYesNo(point, direction, ref _wildCursor);
         if (_wildMenu == "learn-intro" || battle.Phase != CampaignBattlePhase.ChooseMove) return false;
         if (_wildMenu == "bag") return PointerList(point, direction, ref _wildCursor,
@@ -417,7 +419,7 @@ public partial class CampaignView
             return _machinePage + 1 < _machinePages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _machineCursor);
         if (_machineMode == "list") return MouseSelect(point, ref _machineCursor, MachineListVisibleCount, MachineListX, 40, MachineListWidth, MachineListRowHeight, MachineListStart);
         if (_machineMode == "party") return MouseNativeParty(point, ref _machineCursor, _session.State.Party.Length);
-        if (_machineMode == "replacement") return MouseSelect(point, ref _machineCursor, 5, 12, 26, 220);
+        if (_machineMode == "replacement") return MouseMoveSelectionSummary(point, ref _machineCursor, _session.State.Party[_machineParty].Pokemon.Moves.Length);
         return false;
     }
 
@@ -447,6 +449,7 @@ public partial class CampaignView
     {
         var battle = PresentedWildBattle!;
         if (_wildNotice is not null) return MouseConfirm(point, MouseMessage);
+        if (_battlePartySelection is not null) return MouseBattlePartyInspection(point);
         if (_session.State.ForestTrainerBattle is null && battle.Capture is { } capture)
         {
             if (capture.Stage == CampaignCaptureStage.NicknameChoice) return MouseYesNo(point, ref _wildCursor);
@@ -466,7 +469,7 @@ public partial class CampaignView
         if (battle.Phase == CampaignBattlePhase.ChooseMove && SourceBattleForcedMoveSlot(battle) is {} forced)
         { _wildCursor=forced; return MouseConfirm(point,new Rect2(LabBattleUiSkin.MoveText(forced)-new Vector2(8,0),new Vector2(72,16))); }
         if (_wildMenu == "learn-intro") return MouseConfirm(point, MouseMessage);
-        if (_wildMenu == "learn-moves") return MouseSelect(point, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length + 1, 12, 28, 220);
+        if (_wildMenu == "learn-moves") return MouseMoveSelectionSummary(point, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length);
         if (_wildMenu == "learn-confirm") return MouseYesNo(point, ref _wildCursor);
         if (battle.Phase != CampaignBattlePhase.ChooseMove) return MouseConfirm(point, MouseMessage);
         if (_wildMenu == "bag")

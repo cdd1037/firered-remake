@@ -8,14 +8,14 @@ public static class SourcePhysicalAnimationCatalog
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         return doc.RootElement.GetProperty("assets").EnumerateArray().Select(r=>r.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(doc,Path.GetDirectoryName(path)!,id));
     }
-    public static bool Supports(int move) => move is 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
+    public static bool Supports(int move) => move is 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
         var recipes=shared.SpriteRecipes.Concat(SourceHitAnimationCatalog.Recipes(doc.RootElement.GetProperty("spriteRecipes"))).ToDictionary(p=>p.Key,p=>p.Value);
         var subroutines=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray());
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=subroutines}).ToDictionary(s=>s.MoveId);
+        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=subroutines,Labels=r.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()}).ToDictionary(s=>s.MoveId);
         if(scripts.Count==0||scripts.Keys.Any(id=>!Supports(id)))throw new InvalidDataException("Physical script catalog differs.");
         return scripts;
     }
@@ -82,6 +82,8 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly int _vx=((Math.Abs(dx)<<8)/duration&~1)|(dx<0?1:0),_vy=((Math.Abs(dy)<<8)/duration&~1)|(dy<0?1:0);
         private int _x,_y,_remaining=duration;
+        // Some source callbacks overwrite data[0]=1 before each translation step.
+        public void StepContinuing(out PixelPoint offset){_remaining=1;Step(out offset);}
         public bool Step(out PixelPoint offset)
         {
             if(_remaining==0){offset=default;return true;}

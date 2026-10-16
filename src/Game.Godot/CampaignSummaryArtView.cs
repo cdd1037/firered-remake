@@ -16,12 +16,14 @@ public partial class CampaignView
     private string? _summaryExitContext;
     private double _summaryClock;
     private ulong SummaryNow => (ulong)(_summaryClock * 1000);
-    private string? SummaryContext => _session.State.Pc?.Summary is { } pc ? "pc:" + pc.InstanceId
+    private string? SummaryContext => _battlePartySummaryPage >= 0 && _battlePartySelection is { } selected ? "battle:" + selected.Context + ":" + selected.InstanceId
+        : _session.State.Pc?.Summary is { } pc ? "pc:" + pc.InstanceId
         : _fieldMenuMode == "summary" && _fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length ? "field:" + _session.State.Party[_fieldPartyCursor].InstanceId
         : _session.State.DayCareInteraction is not null && _dayCareSummaryPage >= 0 && _tutorCursor >= 0 && _tutorCursor < _session.State.Party.Length
             ? "daycare:" + _session.State.Party[_tutorCursor].InstanceId : null;
     private void ResetSummaryPresentation()
     {
+        CloseBattlePartySelection(); _moveSelectionStamp = null; ResetBattleMoveOrder();
         _summaryExitAction = null; _summaryExitContext = null; _summaryPreviousPokemon = null;
         _summarySlideFrom = null; _summaryClock = 0;
         _summaryLastDraw = _summarySlideStart = _summaryEntryStart = _summaryPortraitStart = _summaryExitStart = 0;
@@ -75,8 +77,9 @@ public partial class CampaignView
     private ulong _summaryLastDraw, _summarySlideStart;
     private (PartyPokemon Pokemon, int Page, bool Details)? _summarySlideFrom;
     private int _summarySlideDirection;
-    private void DrawNativeSummary(PartyPokemon owned, int page, bool interactive, bool details = false)
+    private void DrawNativeSummary(PartyPokemon owned, int page, bool interactive, SummaryMoveSelection? selection = null)
     {
+        bool details = selection is not null;
         ulong now = SummaryNow;
         if (_summaryPreviousPokemon is null || now - _summaryLastDraw >= 120) _summaryEntryStart = now;
         if (_summaryPreviousPokemon?.InstanceId != owned.InstanceId || now - _summaryLastDraw >= 120)
@@ -94,20 +97,21 @@ public partial class CampaignView
         if (_summarySlideFrom is { } previous && offset < 240)
         {
             DrawSetTransform(new Vector2(-offset * _summarySlideDirection, 0));
-            DrawNativeSummaryPage(previous.Pokemon, previous.Page, interactive, previous.Details);
+            DrawNativeSummaryPage(previous.Pokemon, previous.Page, interactive, previous.Details ? selection ?? new(_summaryMode, _summaryMoveCursor, _summarySwapSource) : null);
             DrawSetTransform(new Vector2((240 - offset) * _summarySlideDirection, 0));
-            DrawNativeSummaryPage(owned, page, interactive, details);
+            DrawNativeSummaryPage(owned, page, interactive, selection);
             DrawSetTransform(Vector2.Zero);
             DrawSummaryFade();
             QueueRedraw();
             return;
         }
         _summarySlideFrom = null;
-        DrawNativeSummaryPage(owned, page, interactive, details);
+        DrawNativeSummaryPage(owned, page, interactive, selection);
         DrawSummaryFade();
     }
-    private void DrawNativeSummaryPage(PartyPokemon owned, int page, bool interactive, bool details)
+    private void DrawNativeSummaryPage(PartyPokemon owned, int page, bool interactive, SummaryMoveSelection? selection)
     {
+        bool details = selection is not null;
         LoadSummaryDescriptions();
         var mon = owned.Pokemon;
         int portraitFrame = (int)Math.Min(int.MaxValue, (SummaryNow - _summaryPortraitStart) * 60 / 1000);
@@ -116,7 +120,7 @@ public partial class CampaignView
         string skin = owned.IsEgg ? "egg" : details ? "moves_info" : new[] { "info", "skills", "moves" }[page];
         DrawTexture(SummaryTexture(skin + (mon.IsShiny && !owned.IsEgg ? "-shiny" : "")), Vector2.Zero);
         SourceText(_sourceNormal, new(2, 1), page == 0 || owned.IsEgg ? "POKéMON INFO" : page == 1 ? "POKéMON SKILLS" : "KNOWN MOVES");
-        SourceText(_sourceSmallWhite, new(153, 2), details ? (_summarySwapSource < 0 ? "SWITCH" : "PLACE") : owned.IsEgg ? "" : page == 2 && interactive ? "DETAILS" : "NEXT");
+        SourceText(_sourceSmallWhite, new(153, 2), details ? selection!.Control : owned.IsEgg ? "" : page == 2 && interactive ? "DETAILS" : "NEXT");
         SourceText(_sourceSmallWhite, new(209, 2), "BACK");
         if (owned.IsEgg)
         {
@@ -184,7 +188,23 @@ public partial class CampaignView
         }
         else
         {
-            for (int i = 0; i < mon.Moves.Length; i++)
+            if (selection is { Mode: SummaryInteractionMode.SelectNew } candidates)
+            {
+                int end = Math.Min(candidates.Candidates.Length + 1, candidates.FirstRow + 5);
+                for (int i = candidates.FirstRow; i < end; i++)
+                {
+                    int y = 21 + (i - candidates.FirstRow) * 28;
+                    if (i == candidates.Candidates.Length) SourceText(_sourceNormal, new(163, y), "CANCEL");
+                    else
+                    {
+                        var move = _catalog.PokemonContent.Catalog.Moves[candidates.Candidates[i]];
+                        DrawPokedexVisual(move.Type, 123, y);
+                        SourceText(_sourceNormal, new(163, y), MoveName(move.Id));
+                        SourceText(_sourceSmall, new(187, y + 12), $"PP {move.Pp}/{move.Pp}");
+                    }
+                }
+            }
+            else for (int i = 0; i < mon.Moves.Length; i++)
             {
                 var slot = mon.Moves[i];
                 var move = _catalog.PokemonContent.Catalog.Moves[slot.Move];
@@ -192,14 +212,22 @@ public partial class CampaignView
                 SourceText(_sourceNormal, new(163, 21 + i * 28), MoveName(slot.Move));
                 SourceText(_sourceSmall, new(187, 33 + i * 28), $"PP {slot.CurrentPp}/{slot.MaximumPp}");
             }
-            if (details)
+            if (selection is { } selected)
             {
-                if (_summarySwapSource < 0) SourceText(_sourceNormal, new(163, 21 + mon.Moves.Length * 28), "CANCEL");
-                DrawSummaryMoveCursor(_summaryMoveCursor, false);
-                if (_summarySwapSource >= 0) DrawSummaryMoveCursor(_summarySwapSource, true);
-                if (_summaryMoveCursor < mon.Moves.Length)
+                if (selected.Mode == SummaryInteractionMode.Replace && selected.NewMove is { } newMove)
                 {
-                    var move = _catalog.PokemonContent.Catalog.Moves[mon.Moves[_summaryMoveCursor].Move];
+                    var move = _catalog.PokemonContent.Catalog.Moves[newMove];
+                    int y = 21 + mon.Moves.Length * 28;
+                    DrawPokedexVisual(move.Type, 123, y);
+                    SourceText(_sourceNormal, new(163, y), MoveName(newMove));
+                    SourceText(_sourceSmall, new(187, y + 12), $"PP {move.Pp}/{move.Pp}");
+                }
+                else if (!selected.Swapping && selected.Mode != SummaryInteractionMode.SelectNew) SourceText(_sourceNormal, new(163, 21 + mon.Moves.Length * 28), "CANCEL");
+                DrawSummaryMoveCursor(selected.Cursor - selected.FirstRow, false);
+                if (selected.Swapping) DrawSummaryMoveCursor(selected.SwapSource, true);
+                if (selected.SelectedMove(mon.Moves) is { } moveId)
+                {
+                    var move = _catalog.PokemonContent.Catalog.Moves[moveId];
                     SourceText(_sourceNormal, new(57, 57), move.Power <= 1 ? "---" : move.Power.ToString());
                     SourceText(_sourceNormal, new(57, 71), move.Accuracy == 0 ? "---" : move.Accuracy.ToString());
                     string description = _summaryPresentation.Moves.GetValueOrDefault(move.Id.Value.Replace("pret:", ""), "");

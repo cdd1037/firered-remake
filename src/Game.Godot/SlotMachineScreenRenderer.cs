@@ -12,7 +12,8 @@ internal sealed class SlotMachineScreenRenderer
     private readonly Dictionary<string, byte[]> pixels = new(StringComparer.Ordinal);
     private readonly int[] affine, darken, backdrop;
     private readonly JsonElement layout;
-    private (int Bet, int Buttons, int Lines, int? Light)? backgroundKey;
+    private (int Bet, int Buttons, int Lines, int Normal, int? Light, int Darken)? backgroundKey;
+    private readonly byte[] output = new byte[240 * 160 * 4];
     private byte[]? background;
 
     internal SlotMachineScreenRenderer(SlotMachinePresentationData presentation, SlotMachineRules source)
@@ -64,7 +65,7 @@ internal sealed class SlotMachineScreenRenderer
         return Expand(color - ((color * coefficient) >> 4));
     }
     private void Sprite(byte[] output, byte[] pixels, int width, int height, int centerX, int centerY,
-        bool mirror = false, bool applyAffine = false)
+        bool mirror = false, bool applyAffine = false, int paletteFade = 0)
     {
         for (int dy = 0; dy < height; dy++)
         {
@@ -82,31 +83,35 @@ internal sealed class SlotMachineScreenRenderer
                 int source = (dy * width + sx) * 4;
                 if (pixels[source + 3] == 0) continue;
                 int destination = (y * 240 + x) * 4;
-                for (int c = 0; c < 3; c++) output[destination + c] = Shade(pixels[source + c], coefficient);
+                for (int c = 0; c < 3; c++) output[destination + c] = Shade(SlotMachineVisualPresentation.FadeChannel(pixels[source + c], paletteFade), coefficient);
                 output[destination + 3] = 255;
             }
         }
     }
-    private static void Layer(byte[] output, ReadOnlySpan<byte> pixels, int width, int offsetX = 0, int visibleWidth = 240)
+    private static void Layer(byte[] output, ReadOnlySpan<byte> pixels, int width, int offsetX = 0, int visibleWidth = 240, int paletteFade = 0, int destinationX = 0, int destinationY = 0)
     {
-        for (int y = 0; y < Math.Min(160, pixels.Length / (width * 4)); y++)
-        for (int x = 0; x < Math.Min(240, visibleWidth); x++)
+        for (int y = 0; y < Math.Min(160-destinationY, pixels.Length / (width * 4)); y++)
+        for (int x = 0; x < Math.Min(240-destinationX, visibleWidth); x++)
         {
             int source = (y * width + (x + offsetX) % width) * 4;
-            if (pixels[source + 3] != 0) pixels.Slice(source, 4).CopyTo(output.AsSpan((y * 240 + x) * 4, 4));
+            if (pixels[source + 3] == 0) continue;
+            int destination = ((y+destinationY) * 240 + x+destinationX) * 4;
+            for (int c = 0; c < 3; c++) output[destination + c] = SlotMachineVisualPresentation.FadeChannel(pixels[source + c], paletteFade);
+            output[destination + 3] = 255;
         }
     }
 
-    private byte[] PreparedBackground(int bet, int buttons, int lines, int? light)
+    private byte[] PreparedBackground(int bet, int buttons, int lines, int normalLines, int? light, int darken)
     {
-        if (bet is < 0 or > 3 || buttons is < 0 or > 7 || lines is < 0 or > 31 || light is < 0 or > 2)
+        if (bet is < 0 or > 3 || buttons is < 0 or > 7 || lines is < 0 or > 31 || normalLines is < 0 or > 31 || light is < 0 or > 2 || darken is < 0 or > 8)
             throw new ArgumentOutOfRangeException(nameof(bet), "Slot display state outside source ranges.");
-        byte[] result = (byte[])pixels["background"].Clone();
-        void Patch(string id)
+        byte[] result = background ?? new byte[240 * 160 * 4];
+        pixels["background"].CopyTo(result, 0);
+        void Patch(string id, string? geometry = null)
         {
             int width = art.Textures[id].Width;
             // Rectangle tuples: source x/y, destination x/y, width/height.
-            foreach (var rect in layout.GetProperty("preparedPatches").GetProperty(id).EnumerateArray())
+            foreach (var rect in layout.GetProperty("preparedPatches").GetProperty(geometry ?? id).EnumerateArray())
             {
                 int sx = rect[0].GetInt32(), sy = rect[1].GetInt32();
                 int x = rect[2].GetInt32(), y = rect[3].GetInt32();
@@ -119,8 +124,10 @@ internal sealed class SlotMachineScreenRenderer
         foreach (var line in layout.GetProperty("matchLines").EnumerateArray())
         {
             int id = line.GetProperty("id").GetInt32();
-            bool active = (lines & (1 << id)) != 0 || bet >= line.GetProperty("minimumBet").GetInt32();
-            Patch($"line-{id}-{(active ? 5 : 4)}");
+            bool winning = (lines & (1 << id)) != 0;
+            bool active = (normalLines & (1 << id)) == 0 && bet >= line.GetProperty("minimumBet").GetInt32();
+            if (winning) Patch($"win-{id}-{darken}", $"line-{id}-5");
+            else Patch($"line-{id}-{(active ? 5 : 4)}");
         }
         for (int reel = 0; reel < 3; reel++) if ((buttons & (1 << reel)) != 0) Patch("button-" + reel);
         return result;
@@ -128,19 +135,18 @@ internal sealed class SlotMachineScreenRenderer
 
     internal byte[] Render(SlotReels reels, int coins, int payout, int bet, int pressedButtons,
         int winningLines, int? payoutLightFrame, string fairyAnimation, int animationTicks,
-        int helpWidth = 0, int fade = 0)
+        int helpWidth = 0, int backgroundFade = 0, int objectFade = 0, int lineDarken = 0, int normalLines = 0, string? message = null)
     {
         if (reels.Reels.IsDefault || reels.Reels.Length != 3 || reels.Reels.Any(r => r.Position is < 0 or >= 21 || r.Subpixel is < 0 or > 2) ||
-            coins is < 0 or > 9999 || payout is < 0 or > 9999 || animationTicks < 0 || helpWidth is < 0 or > 256 || fade is < 0 or > 16)
+            coins is < 0 or > 9999 || payout is < 0 or > 9999 || animationTicks < 0 || helpWidth is < 0 or > 256 || backgroundFade is < 0 or > 16 || objectFade is < 0 or > 16)
             throw new ArgumentException("slot_display_snapshot_invalid");
-        byte[] output = new byte[240 * 160 * 4];
         for (int y = 0; y < 160; y++)
         {
             int scan = Scanline(y), coefficient = scan < 0 ? 0 : darken[scan];
             for (int x = 0; x < 240; x++)
             {
                 int p = (y * 240 + x) * 4;
-                for (int c = 0; c < 3; c++) output[p + c] = Shade(Expand(backdrop[c]), coefficient);
+                for (int c = 0; c < 3; c++) output[p + c] = Shade(SlotMachineVisualPresentation.FadeChannel(Expand(backdrop[c]), backgroundFade), coefficient);
                 output[p + 3] = 255;
             }
         }
@@ -150,32 +156,25 @@ internal sealed class SlotMachineScreenRenderer
         {
             var center = centers[reel * 5 + slot]; var state = reels.Reels[reel];
             int icon = rules.Reels[reel][(state.Position + slot) % 21];
-            Sprite(output, icons[icon], 32, 32, center[0].GetInt32(), center[1].GetInt32() + state.Subpixel * 8, applyAffine: true);
+            Sprite(output, icons[icon], 32, 32, center[0].GetInt32(), center[1].GetInt32() + state.Subpixel * 8, applyAffine: true, paletteFade: objectFade);
         }
-        var key = (bet, pressedButtons, winningLines, payoutLightFrame);
-        if (backgroundKey != key) { background = PreparedBackground(bet, pressedButtons, winningLines, payoutLightFrame); backgroundKey = key; }
-        Layer(output, background!, 240);
+        var key = (bet, pressedButtons, winningLines, normalLines, payoutLightFrame, lineDarken);
+        if (backgroundKey != key) { background = PreparedBackground(bet, pressedButtons, winningLines, normalLines, payoutLightFrame, lineDarken); backgroundKey = key; }
+        Layer(output, background!, 240, paletteFade: backgroundFade);
         var animation = layout.GetProperty("clefairy").GetProperty("animations").GetProperty(fairyAnimation);
-        var frames = animation.GetProperty("frames").EnumerateArray().ToArray();
-        int duration = frames.Sum(f => f.GetProperty("durationTicks").GetInt32());
-        int time = animation.GetProperty("loop").GetBoolean() ? animationTicks % duration : Math.Min(animationTicks, duration - 1);
-        var frame = frames[0];
-        foreach (var candidate in frames)
-        { frame = candidate; int ticks = candidate.GetProperty("durationTicks").GetInt32(); if (time < ticks) break; time -= ticks; }
-        int fairy = frame.GetProperty("tileOffset").GetInt32() / 16;
+        int fairy = SlotMachineVisualPresentation.AnimationTile(animation, animationTicks) / 16;
         var fairyCenters = layout.GetProperty("clefairy").GetProperty("centers");
-        for (int i = 0; i < 2; i++) Sprite(output, fairies[fairy], 32, 32, fairyCenters[i][0].GetInt32(), fairyCenters[i][1].GetInt32(), mirror: i == 1);
+        for (int i = 0; i < 2; i++) Sprite(output, fairies[fairy], 32, 32, fairyCenters[i][0].GetInt32(), fairyCenters[i][1].GetInt32(), mirror: i == 1, paletteFade: objectFade);
         void Number(int number, string positions)
         {
             string text = number.ToString("D4", System.Globalization.CultureInfo.InvariantCulture);
             var positionsArray = layout.GetProperty("digits").GetProperty(positions);
-            for (int i = 0; i < 4; i++) Sprite(output, digits[text[i] - '0'], 8, 16, positionsArray[i][0].GetInt32(), positionsArray[i][1].GetInt32());
+            for (int i = 0; i < 4; i++) Sprite(output, digits[text[i] - '0'], 8, 16, positionsArray[i][0].GetInt32(), positionsArray[i][1].GetInt32(), paletteFade: objectFade);
         }
         Number(coins, "creditCenters"); Number(payout, "payoutCenters");
-        if (helpWidth > 0) Layer(output, help, 256, 256 - helpWidth, helpWidth);
-        Layer(output, pixels["controls"].AsSpan(), art.Textures["controls"].Width);
-        if (fade > 0) for (int p = 0; p < output.Length; p += 4)
-            for (int c = 0; c < 3; c++) output[p + c] = Shade(output[p + c], fade);
+        if (helpWidth > 0) Layer(output, help, 256, 256 - helpWidth, helpWidth, backgroundFade);
+        Layer(output, pixels["controls"].AsSpan(), art.Textures["controls"].Width, paletteFade: backgroundFade);
+        if(message is not null) Layer(output,pixels[message],176,visibleWidth:176,paletteFade:backgroundFade,destinationX:32,destinationY:112);
         return output;
     }
 }

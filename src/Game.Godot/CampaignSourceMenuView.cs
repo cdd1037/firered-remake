@@ -12,7 +12,9 @@ public partial class CampaignView
         (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length));
     private bool SourceMenuReady => SourceMenuActive && SourceMenuVisible && _waitElapsed >= _waitDuration && _fade <= 0 &&
         _fanfareRemaining <= 0 && _tracks.All(t => t.Time >= t.Duration);
-    private int SourceMenuWidth => (int)_sourceMenu!.Options.Max(t => _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(t), fontSize: _sourceNormal.Size).X);
+    private int SourceMenuWidth => (int)_sourceMenu!.Options.Select(SourceMenuLabelPresentation.Parse).Max(t =>
+        t.SuffixX is {} offset ? offset+_sourceSmall.Font.GetStringSize(_sourceSmall.PrepareText(t.Suffix!),fontSize:_sourceSmall.Size).X :
+        _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(t.Label),fontSize:_sourceNormal.Size).X);
 
     private void SynchronizeSourceMenu()
     {
@@ -59,8 +61,12 @@ public partial class CampaignView
         if (!SourceMenuVisible || _sourceMenu is not { } menu) return;
         var f = menu.Frame(SourceMenuWidth);
         _battleSkin.DrawUserFrame(this, new(f.X, f.Y, f.Width, f.Height));
-        for (int i = 0; i < menu.VisibleRows; i++)
-            SourceText(_sourceNormal, new(f.X + 16, f.Y + 10 + i * 14), menu.Options[menu.ScrollOffset + i]);
+        for (int i=0;i<menu.VisibleRows;i++)
+        {
+            var text=SourceMenuLabelPresentation.Parse(menu.Options[menu.ScrollOffset+i]);
+            SourceText(_sourceNormal,new(f.X+16,f.Y+10+i*14),text.Label);
+            if(text.SuffixX is {} offset)SourceText(_sourceSmall,new(f.X+16+offset,f.Y+10+i*14),text.Suffix!);
+        }
         SourceText(_sourceNormal, new(f.X + 8, f.Y + 10 + (menu.Cursor - menu.ScrollOffset) * 14), "▶");
         if (SourceMenuActive && menu.IsScrollingList)
         {

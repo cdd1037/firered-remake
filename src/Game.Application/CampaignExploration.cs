@@ -175,6 +175,7 @@ public sealed partial class CampaignSession
             // camera connections enter first, then complete the player-input step.
             if(legacySpecial&&tookStep)moved=ApplyEventIslandWalkingStep(ApplyRenewableHiddenItemWalkingStep(moved),before.MapId.Value);
             moved=EnterSurfConnectionMap(moved,moved.World.Player.Facing,legacySpecial);
+            if(!legacySpecial)moved=CarryGrassAcrossConnection(state,moved);
             if(!legacySpecial&&tookStep)moved=moved with{EntryPrograms=moved.EntryPrograms.Add("@renewable-camera-step")};
             moved=PumpWithCameraStep(moved,()=>preempted=true);
         }

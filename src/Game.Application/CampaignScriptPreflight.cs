@@ -51,6 +51,9 @@ public sealed partial class CampaignSession
                 // are covered by bounded command tests rather than enumerating every wallet/Bag state.
                 if(roofMenu?.Vending==true)continue;
                 var sourceMenu=StoryMenuRules.Pending(probe.Script,_content);
+                // The recurring source vendor is transaction-owned, like rooftop vending.
+                // Every zero-balance selection/cancel is exercised through public commands.
+                if(sourceMenu?.Definition.Id=="LISTMENU_BERRY_POWDER"&&probe.BerryPowderVendor&&InPowderManScript(probe))continue;
                 var gridMenu=StoryGridMenuRules.Pending(probe.Script,_content);
                 bool billMenu=IsBillPreflightMenu(probe);
                 bool finiteLoop=sourceMenu is not null||gridMenu is not null||billMenu||RainbowFerryMenu(probe)||probe.Dialogue?.TextSymbol=="OneIsland_PokemonCenter_1F_Text_PleaseINeedYourHelp";

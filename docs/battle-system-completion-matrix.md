@@ -8,8 +8,8 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本67／354，其余287尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
-- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前67招范围通过Presentation全套179／179、应用分派61／61；这些受控检查不等于原生逐帧或实际扬声器验收。
+- 专属招式脚本90／354，其余264尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前90招范围通过Presentation全套269／269、应用分派110／110；这些受控检查不等于原生逐帧或实际扬声器验收。
 
 ## 当前所有者与维护检查
 
@@ -25,7 +25,7 @@
 
 ## 专属动画范围
 
-当前分派支持：Pound、Karate Chop、Fire Punch、Thunder Punch、Scratch、Vice Grip、Cut、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Take Down、Double Edge、Tail Whip、Supersonic、Acid、Ember、Flamethrower、Water Gun、Hydro Pump、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Poison Powder、Stun Spore、Sleep Powder、Thunder Shock、Thunderbolt、Thunder Wave、Toxic、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Self Destruct、Egg Bomb、Hi Jump Kick、Leech Life、Bubble、Flash、Crabhammer、Explosion、Slash、Octazooka、Zap Cannon、Giga Drain、False Swipe、Vital Throw、Snatch、Metal Sound、Signal Beam、Aerial Ace、Iron Defense、Mud Shot。
+当前分派支持：Pound、Karate Chop、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Bite、Supersonic、Acid、Ember、Flamethrower、Water Gun、Hydro Pump、Ice Beam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Toxic、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Focus Energy、Self Destruct、Egg Bomb、Fire Blast、Clamp、Swift、Hi Jump Kick、Leech Life、Bubble、Flash、Crabhammer、Explosion、Slash、Flame Wheel、Powder Snow、Octazooka、Zap Cannon、Giga Drain、Endure、Charm、False Swipe、Dynamic Punch、Dragon Breath、Iron Tail、Vital Throw、Whirlpool、Snatch、Metal Sound、Signal Beam、Sand Tomb、Aerial Ace、Iron Defense、Mud Shot、Poison Tail、Covet。
 
 其他招式返回 `script-outside-slice`，不启动该专属脚本；普通文字、HP及结果表现仍独立工作。不能因此说招式规则不可用，也不能把通用反馈当原版专属动画。此名单由当前单／双打分派代码核对，JSON逐招标记相同范围。
 

@@ -88,7 +88,7 @@ public sealed partial class SourceBattleAnimation
     private sealed class MinimizeClone(int slot,int priority,AnimationBattler battler,bool doubles,PixelPoint offset,int scale,MinimizeTask task):VisualSprite(slot,priority)
     {
         private int _life=16;private bool _visible;
-        public override SourceVisualSpriteFrame Frame=>new(Slot,"ClonedMinizeSprite_Step",battler.DisplayCenter??battler.Center(doubles),offset,0,_visible,false,true,scale,battler.Asset,Subpriority);
+        public override SourceVisualSpriteFrame Frame=>new(Slot,"ClonedMinizeSprite_Step",battler.DisplayCenter??battler.Center(doubles),offset,0,_visible,false,true,scale,battler.Asset,Subpriority){BattlerCopySlot=battler.Slot.Value};
         public override void Step(SourceBattleAnimation owner){_visible=true;if(--_life==0){task.LiveCopies--;Finished=true;}}
     }
 }

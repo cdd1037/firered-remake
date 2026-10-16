@@ -46,11 +46,13 @@ public sealed partial class CampaignSession
         var questItem = _content.QuestItems?.Items.SingleOrDefault(i => i.Id.Value == id);
         if (item?.Item is not { Registrability: 1, Pocket: "POCKET_KEY_ITEMS" } &&
             (questItem is null || !KeyItemRegistrationRules.CanRegister(questItem))) return false;
+        if (id == PowderJarId.Value) return true;
         if (id == QuestItemRules.TeachyTvId.Value) return TeachyTvEnabled;
         return id == ItemfinderRules.Item.Value ? ItemfinderEnabled : id == VsSeekerItem.Value ? VsSeekerEnabled : id == BillItemRules.FameCheckerId.Value && FameCheckerEnabled;
     }
 
     public string RegisteredKeyItemUseCommand(string id) => id switch {
+        "pret:ITEM_POWDER_JAR" => "field_powder_jar",
         "pret:ITEM_VS_SEEKER" when VsSeekerEnabled => "field_vs_seeker",
         "pret:ITEM_ITEMFINDER" when ItemfinderEnabled => "field_itemfinder",
         "pret:ITEM_FAME_CHECKER" when FameCheckerEnabled => "fame_checker_open",
@@ -71,6 +73,7 @@ public sealed partial class CampaignSession
     }
 
     private Decision<CampaignState> UseRegisteredKeyItem(CampaignState state, CampaignCommand command) =>
+        state.RegisteredItem == PowderJarId.Value ? UsePowderJar(state,command,registered:true) :
         state.RegisteredItem == QuestItemRules.TeachyTvId.Value ? OpenTeachyTv(state, command, registered: true) :
         state.RegisteredItem == VsSeekerItem.Value ? UseVsSeeker(state, command, registered: true) :
         state.RegisteredItem == ItemfinderRules.Item.Value ? UseItemfinder(state, command, registered: true) :

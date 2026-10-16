@@ -67,6 +67,17 @@ public static class PretSlotMachinePresentation
                 throw new InvalidDataException("Slot texture dimensions differ.");
         }
         using var layout = JsonDocument.Parse(files[Base + "layout.json"]);
-        return new(manifest, layout.RootElement, files);
+        var result = new SlotMachinePresentationData(manifest, layout.RootElement, files);
+        var flash = result.Layout.GetProperty("winningFlash");
+        var lights = flash.GetProperty("lightFrames").EnumerateArray().Select(v => v.GetInt32()).ToArray();
+        var shades = flash.GetProperty("darkenCoefficients").EnumerateArray().Select(v => v.GetInt32()).ToArray();
+        if (flash.GetProperty("lightHoldTicks").GetInt32() <= 0 || lights.Length == 0 || shades.Length == 0 ||
+            lights.Any(v => v is < 0 or > 2) || shades.Any(v => v is < 0 or > 8))
+            throw new InvalidDataException("Invalid slot palette animation.");
+        foreach (var line in result.Layout.GetProperty("matchLines").EnumerateArray())
+        foreach (int shade in shades.Append(0).Distinct())
+            if (!result.Textures.ContainsKey($"win-{line.GetProperty("id").GetInt32()}-{shade}"))
+                throw new InvalidDataException("Missing prepared slot winning-line palette.");
+        return result;
     }
 }
