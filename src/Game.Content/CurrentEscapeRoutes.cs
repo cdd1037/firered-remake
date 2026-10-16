@@ -7,7 +7,7 @@ namespace Game.Content;
 
 internal static class CurrentEscapeRoutes
 {
-    public static EscapeRopePolicy Create(IReadOnlyDictionary<MapId, PretWorldMap> sourceMaps)
+    public static EscapeRopePolicy Create(IReadOnlyDictionary<MapId, PretWorldMap> sourceMaps, PretStoryCompilation? scripts = null)
     {
         var maps = sourceMaps.Keys.ToHashSet();
         var exits = ImmutableDictionary.CreateBuilder<MapId, ImmutableArray<EscapeRopeDestination>>();
@@ -59,6 +59,25 @@ internal static class CurrentEscapeRoutes
         Dungeon(["power-plant"], Exit("route-10", 7, 41), Exit("route-10", 2, 38));
         Entrance("route-10", "power-plant", 7, 40); Entrance("route-10", "power-plant", 2, 37, Direction.East);
         AddSourceEntrances(sourceMaps, exits, entrances);
+        foreach (var map in sourceMaps.Values.Where(m => scripts is not null && m.Events.GetProperty("allow_escaping").GetBoolean()))
+        {
+            var path = "data/maps/" + map.SourceMapName + "/scripts.inc";
+            var scripted = scripts!.Programs.Values.SelectMany(p => p.Instructions)
+                .Where(i => i.Source.Path == path && i.Opcode == "setescapewarp")
+                .Select(i =>
+                {
+                    if (i.Args.Length is not (3 or 4) || i.Args.Length == 4 && i.Args[1] != "255")
+                        throw new InvalidDataException("escape_script_shape");
+                    var target = sourceMaps.Values.SingleOrDefault(m => m.SourceMapSymbol == i.Args[0])
+                        ?? throw new InvalidDataException("escape_script_map");
+                    int Number(string value) => int.TryParse(value, out var number) ? number :
+                        scripts.TryConstant(value, out number) ? number : throw new InvalidDataException("escape_script_coordinate");
+                    int x = Number(i.Args[^2]), y = Number(i.Args[^1]);
+                    if (target.GetTile(x, y) is not { Blocked: false }) throw new InvalidDataException("escape_script_tile");
+                    return new EscapeRopeDestination(target.Id, x, y);
+                }).Distinct().ToImmutableArray();
+            if (!scripted.IsEmpty) exits[map.Id] = scripted;
+        }
         return new(exits.ToImmutable(), entrances.ToImmutable());
     }
     // UpdateEscapeWarp records an outdoor -> indoor transition at the actual

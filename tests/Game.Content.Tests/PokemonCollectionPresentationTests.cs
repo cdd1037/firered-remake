@@ -8,9 +8,47 @@ namespace FireRed.Tests.Content;
 [TestClass, TestCategory("Game")]
 public sealed class PokemonCollectionPresentationTests
 {
-    private sealed record Inputs(PokemonCatalog Pokemon, PretPokedexMenu Dex);
+    private sealed record Inputs(GamePokemonCatalog Pokemon, PretPokedexMenu Dex);
     private static readonly Lazy<Inputs> Source = new(() =>
-        new(SharedMachineCatalogTests.Pokemon().Catalog, PretPokedexMenu.Load(TestAssets.Root)));
+        new(SharedMachineCatalogTests.Pokemon(), PretPokedexMenu.Load(TestAssets.Root)));
+
+    [TestMethod]
+    public void TrainerOnlySpeciesHaveBattleArtWithoutOwnershipOrCollectionEntries()
+    {
+        var art = Load(TestAssets.Root);
+        foreach (var symbol in new[] { "SNUBBULL", "PINSIR" })
+        {
+            var species = new SpeciesId("pret:SPECIES_" + symbol);
+            Assert.IsFalse(Source.Value.Pokemon.Catalog.Species.ContainsKey(species));
+            Assert.IsTrue(Source.Value.Pokemon.Opponents.Catalog.Species.ContainsKey(species));
+            Assert.IsFalse(art.Entries.Any(row => row.Species == species));
+            Assert.AreEqual(4, art.Sprites.Count(row => row.Species == species));
+            int id = Source.Value.Pokemon.Opponents.Catalog.Species[species].SourceSpeciesId;
+            var page = art.Present(Source.Value.Dex.BuildPage(id, [id], [], new(true, true, 0xb9, 0x6258)));
+            Assert.IsNotNull(page.Portrait, "A seen opponent reuses its battle portrait in the Pokedex");
+            Assert.IsNull(page.Footprint);
+            Assert.AreEqual(string.Empty, page.Description);
+            Assert.IsFalse(art.CaptureEntries.ContainsKey(id));
+        }
+    }
+
+    [TestMethod]
+    public void NewOwnedFamiliesHaveCompleteMenuAndBattlePresentation()
+    {
+        var art = Load(TestAssets.Root);
+        foreach (var symbol in new[] { "LEDYBA", "LEDIAN", "SPINARAK", "ARIADOS", "HERACROSS" })
+        {
+            var entry = art.Entries.Single(row => row.Species.Value == "pret:SPECIES_" + symbol);
+            Assert.IsTrue(art.Textures.ContainsKey(entry.Icon.TexturePath));
+            Assert.IsTrue(art.CaptureEntries.ContainsKey(entry.SourceSpeciesId));
+            if (symbol is "LEDIAN" or "HERACROSS") continue;
+            var sprites = art.Sprites.Where(row => row.Species == entry.Species).ToArray();
+            Assert.AreEqual(4, sprites.Length);
+            foreach (var side in new[] { "front", "back" })
+                foreach (var shiny in new[] { false, true })
+                    Assert.IsTrue(art.Textures.ContainsKey(sprites.Single(row => row.Side == side && row.Shiny == shiny).Texture.TexturePath));
+        }
+    }
 
     [TestMethod]
     public void SharedCollectionSuppliesOwnedIconsCaptureAndPokedexArtFromGeneratedFiles()

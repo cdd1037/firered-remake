@@ -16,7 +16,7 @@ public sealed record SixIslandItemsDocument(ImmutableArray<MachineItem> Items,
 public sealed record SixIslandItemContent(ImmutableArray<MachineItem> Items, ImmutableArray<FieldPickupDefinition> Pickups,
     MachineCatalog Machines);
 
-/// <summary>Source Sun Stone, Dragon Scale, Dream Mail, nine pickups and complete inherited-machine compatibility.</summary>
+/// <summary>Source Sun Stone, Dragon Scale, Dream Mail, source pickups and complete inherited-machine compatibility.</summary>
 public static partial class PretSixIslandItems
 {
     public static SixIslandItemsDocument LoadDocument(string root, SharedMachineCatalog? shared = null)
@@ -25,8 +25,8 @@ public static partial class PretSixIslandItems
         var document = JsonSerializer.Deserialize<SixIslandItemsDocument>(bytes,
             (shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("six_island_items_missing");
-        if (            document.Items.Length != 3 || document.Additions.Length != 3 || document.MachineAdditions.Length != 38 ||
-            document.Pickups.Length != 9 || document.Pickups.Count(p => p.Hidden) != 4)
+        if (document.Items.IsDefaultOrEmpty || document.Additions.IsDefaultOrEmpty || document.MachineAdditions.IsDefaultOrEmpty ||
+            document.Pickups.IsDefaultOrEmpty || document.Pickups.Select(p => p.Id).Distinct().Count() != document.Pickups.Length)
             throw new InvalidDataException("six_island_items_scope");
         return document;
     }

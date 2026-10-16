@@ -41,10 +41,6 @@ public static partial class PretStoryCompiler
                 throw new InvalidDataException("six_island_double_operands");
             return (StoryOp.TrainerBattle,4,4);
         }
-        // Unsupported adjacent maps never become runnable merely because another source
-        // file references their entry. Preserve explicit fault nodes for deferred services.
-        if (file.Path.StartsWith("data/maps/SixIsland_", StringComparison.Ordinal) &&
-            !SixIslandMapSources.Contains(file.Path)) return (StoryOp.Unsupported,0,int.MaxValue);
         return null;
     }
 }

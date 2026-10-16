@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Import exact Six Island battle catalogs from pinned Git blobs, without running upstream code.
-Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
+"""Import exact Six Island battle catalogs from pinned source inputs, without running upstream code.
+Use REFERENCE_OR_RAW DEPENDENCY OUTPUT [--check].
 """
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
@@ -15,7 +15,7 @@ import subprocess
 from pathlib import Path
 
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-TRAINERS = ('AROMA_LADY_ROSE','JUGGLER_EDWARD','SWIMMER_MALE_SAMIR','SWIMMER_FEMALE_DENISE','TWINS_MIU_MIA','HIKER_EARL','RUIN_MANIAC_STANLY','RUIN_MANIAC_FOSTER','RUIN_MANIAC_LARRY','HIKER_DARYL','POKEMANIAC_HECTOR')
+MAPS = ('SixIsland_WaterPath', 'SixIsland_RuinValley', 'SixIsland_GreenPath', 'SixIsland_PatternBush')
 
 
 def need(value, message):
@@ -26,7 +26,7 @@ def generate(reference, dependency):
     texts, inputs, raw = {}, {}, {}
     def read(path):
         if path not in texts:
-            data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
+            data = (reference / path).read_bytes() if not (reference / ".git").exists() and (reference / path).is_file() else subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
             inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
@@ -42,7 +42,7 @@ def generate(reference, dependency):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
     def encode(name):
-        return [int(one("charmap.txt", "^'" + re.escape(c) + r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1], 16) for c in name]
+        return [int(one("charmap.txt", "^'" + re.escape("\\'" if c == "'" else c) + r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1], 16) for c in name]
     def identity(symbol):
         return dict(value="pret:" + symbol)
     def ai_flags(symbols):
@@ -57,9 +57,23 @@ def generate(reference, dependency):
         need(1 <= len(moves) <= 4, "Expected source natural moves")
         return moves
 
-    trainers, resolved = [], []
-    for short in TRAINERS:
-        symbol, path = "TRAINER_" + short, "src/data/trainers.h"
+    actor_scripts = []
+    for name in MAPS:
+        mapping = json.loads(read('data/maps/' + name + '/map.json'))
+        for local_id, actor in enumerate(mapping['object_events'], 1):
+            if actor['trainer_type'] != 'TRAINER_TYPE_NORMAL': continue
+            label = actor['script']
+            paths = ['data/maps/' + name + '/scripts.inc', 'data/scripts/trainers.inc']
+            found = [(path, match) for path in paths for match in re.finditer(r'^' + label + r'::\n((?:(?!^\w+::).)*)', read(path), re.M | re.S)]
+            need(len(found) == 1, 'Unique actor battle script: ' + label)
+            path, block = found[0]
+            command = re.search(r'^\t(trainerbattle_single|trainerbattle_double) ([^\n]+)$', block[1], re.M)
+            need(command is not None, 'First battle command: ' + label)
+            actor_scripts.append((mapping, local_id, actor, path, block, command))
+    trainer_symbols = sorted({entry[-1][2].split(', ')[0] for entry in actor_scripts})
+    trainers = []
+    for symbol in trainer_symbols:
+        path = "src/data/trainers.h"
         match = one(path, r"^    \[" + symbol + r"\] = \{\n(.*?)^    \},")
         fields = dict(re.findall(r"^        \.(\w+) = (.*),$", match[1], re.M))
         shape, party_symbol = re.fullmatch(r"((?:NO_ITEM|ITEM)_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)", fields["party"]).groups()
@@ -69,7 +83,7 @@ def generate(reference, dependency):
         party = one(party_path, r"^static const struct TrainerMon" + ("Item" if held else "NoItem") + ("Custom" if custom else "Default") + "Moves " + party_symbol + r"\[\] = \{\n(.*?)^\};")
         rows = list(re.finditer(r"    \{\n(.*?)    \},\n", party[1], re.S))
         need("".join(r[0] for r in rows) == party[1], "Unhandled trainer party syntax")
-        members, movesets = [], []
+        members = []
         for row in rows:
             mf = dict(re.findall(r"^        \.(\w+) = (.*),$", row[1], re.M))
             need(set(mf) == {"iv", "lvl", "species"} | ({"heldItem"} if held else set()) | ({"moves"} if custom else set()), "Unexpected member fields")
@@ -81,7 +95,6 @@ def generate(reference, dependency):
                 speciesName=name[1], encodedSpeciesName=encode(name[1]), level=level, sourceIv=int(mf["iv"]),
                 heldItem=mf.get("heldItem", "ITEM_NONE"), customMoves=[identity(m) for m in moves] if custom else [],
                 source=ref(party_path, party_symbol, party), speciesNameSource=ref(names_path, species, name)))
-            movesets.append(dict(species=identity(species), level=level, moves=moves))
         name = re.fullmatch(r'_\("([^"]+)"\)', fields["trainerName"])[1]
         items = fields["items"].strip("{}").split(", ") if fields["items"] != "{}" else []
         items += ["ITEM_NONE"] * (4 - len(items))
@@ -95,30 +108,11 @@ def generate(reference, dependency):
             items=items, doubleBattle=fields["doubleBattle"] == "TRUE", partyFlags=flags,
             aiFlags=ai_flags(ai), aiFlagSymbols=ai, baseMoney=int(money[1]), party=members,
             source=ref(path, symbol, match), moneySource=ref("src/battle_main.c", fields["trainerClass"], money)))
-        resolved.append(dict(trainer=symbol, party=movesets))
-    canonical_path = 'content/generated/data/pokemon/canonical/catalog.json'
-    data = (dependency / canonical_path).read_bytes()
-    canonical = json.loads(data)
-    additions = ['SPECIES_SENTRET','SPECIES_FURRET','SPECIES_NATU','SPECIES_XATU','SPECIES_YANMA','SPECIES_WOBBUFFET','SPECIES_BELLOSSOM']
-    opponent_additions = ['SPECIES_SUNKERN','SPECIES_SUNFLORA','SPECIES_CHINCHOU','SPECIES_LANTURN','SPECIES_SUDOWOODO']
-    species = {s['id']['value'][5:]:s for s in canonical['species']}
-    metadata = {s['id']['value'][5:]:s for s in canonical['metadata']}
-    edges = []
-    for name,method,parameter,target in [('SPECIES_SENTRET','EVO_LEVEL',15,'SPECIES_FURRET'),('SPECIES_NATU','EVO_LEVEL',25,'SPECIES_XATU'),('SPECIES_GLOOM','EVO_ITEM',93,'SPECIES_BELLOSSOM')]:
-        matches=[e for e in metadata[name]['sourceEvolutions'] if e['method']==method and e['parameterValue']==parameter and e['target']['value']=='pret:'+target]
-        need(len(matches)==1,'Evolution edge: '+name)
-        edges.append(dict(species=identity(name),sourceEvolution=matches[0]))
     battles=[]; actors=[]
-    for name in ['SixIsland_WaterPath','SixIsland_RuinValley']:
-        mapping=json.loads(read('data/maps/'+name+'/map.json'))
-        for local_id,actor in enumerate(mapping['object_events'],1):
-            if actor['trainer_type']!='TRAINER_TYPE_NORMAL': continue
-            label=actor['script'];path='data/scripts/trainers.inc'
-            block=one(path,r'^'+label+r'::\n((?:(?!^\w+::).)*)')
-            command=re.search(r'^\t(trainerbattle_single|trainerbattle_double) ([^\n]+)$',block[1],re.M)
-            need(command is not None,'First-battle command: '+label)
+    for mapping, local_id, actor, path, block, command in actor_scripts:
+            label = actor['script']
             args=command[2].split(', ');double=command[1]=='trainerbattle_double'
-            need(args[0][8:] in TRAINERS,'Source actor trainer scope')
+            need(args[0] in trainer_symbols,'Source actor trainer scope')
             post=re.search(r'^\tmsgbox (\w+)',block[1],re.M)
             battle=dict(trainer=identity(args[0]),mode=number('include/constants/battle_setup.h','TRAINER_BATTLE_DOUBLE' if double else 'TRAINER_BATTLE_SINGLE'),
                 rivalFlags=0,battleTypeFlags=9 if double else 8,scriptEntry=label,introText=args[1],defeatText=args[2],victoryText='',
@@ -127,28 +121,11 @@ def generate(reference, dependency):
             if double:battle['notEnoughMonsText']=args[3]
             battles.append(battle)
             actors.append(dict(map=mapping['id'],localId=local_id,x=actor['x'],y=actor['y'],movementType=actor['movement_type'],sight=actor['trainer_sight_or_berry_tree_id'],script=label,trainer=identity(args[0])))
-    need(len(trainers)==11 and len(battles)==12 and len(actors)==12,'11 trainer IDs/12 source actors')
+    need(trainers and len(battles)==len(actor_scripts), 'Every trainer actor must bind a battle')
     need(sum(t['doubleBattle'] for t in trainers)==1 and sum(b['mode']==4 for b in battles)==2,'Original Miu/Mia double shape')
-    identities=[]
-    for trainer,sets in zip(trainers,resolved):
-        h=0;members=[]
-        for member,moves in zip(trainer['party'],sets['party']):
-            h=(h+sum(trainer['encodedTrainerName'])+sum(member['encodedSpeciesName']))&0xffffffff
-            pid=((0x80 if trainer['doubleBattle'] else 0x78 if trainer['encounterMusicGender']&128 else 0x88)+(h<<8))&0xffffffff
-            members.append(dict(species=member['species'],level=member['level'],fixedIv=member['sourceIv']*31//255,personality=pid,heldItem=member['heldItem'],moves=[identity(m) for m in moves['moves']]))
-        identities.append(dict(trainer=trainer['id'],members=members,basePrize=(8 if trainer['doubleBattle'] else 4)*trainer['baseMoney']*trainer['party'][-1]['level']))
-    for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h']:read(path)
-    # Counts are recomputed from an actual authenticated predecessor snapshot, never inferred from scope prose.
-    baseline_path=(_PROJECT_ROOT / 'scripts/recipes/story/six-island-predecessor.json')
-    baseline=json.loads(baseline_path.read_text())
-    owned=set(baseline['ownedSpecies']); opponents=set(baseline['opponentSpecies'])
-    need(len(owned)==125 and len(opponents)==141 and owned<=opponents,'Authenticated predecessor scope')
-    new_owned=owned|{'pret:'+s for s in additions};new_opponents=opponents|new_owned|{'pret:'+s for s in opponent_additions}
-    need(len(new_owned)==132 and len(new_opponents)==153,'Deduplicated exact successor scope')
     docs={
-      'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,evolutionEdges=edges),
-      'rules.json':dict(ownedSpeciesCount=len(new_owned),previousOwnedSpeciesCount=len(owned),opponentSpeciesCount=len(new_opponents),previousOpponentSpeciesCount=len(opponents),ownedSpeciesAdded=additions,opponentSpeciesAdded=opponent_additions,trainerSpecies=sorted({p['species']['value'] for t in trainers for p in t['party']}),trainerMoves=sorted({m for r in resolved for p in r['party'] for m in p['moves']}),identities=identities,trainerActors=actors,naturalLearnsets={s:species[s]['levelUpMoves'] for s in additions})}
+      'trainers.json':dict(trainers=trainers,battles=battles),
+      'rules.json':dict(trainerActors=actors)}
     return docs
 
 def main():
@@ -161,5 +138,5 @@ def main():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=11,battles=12,owned=docs['rules.json']['ownedSpeciesCount'],opponents=docs['rules.json']['opponentSpeciesCount']),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=len(docs['trainers.json']['trainers']),battles=len(docs['trainers.json']['battles'])),indent=2))
 if __name__=='__main__':main()

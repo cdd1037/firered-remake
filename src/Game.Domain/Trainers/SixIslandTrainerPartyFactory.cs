@@ -6,38 +6,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Trainers;
 
-/// <summary>Original eleven first teams, including one Miu/Mia double, through shared source construction.</summary>
+/// <summary>Original first teams, including one Miu/Mia double, through shared source construction.</summary>
 public static class SixIslandTrainerPartyFactory
 {
     public static TrainerId DoubleTrainer { get; } = new("pret:TRAINER_TWINS_MIU_MIA");
-    public static readonly ImmutableHashSet<TrainerId> TrainerIds = ImmutableHashSet.CreateRange<TrainerId>([
-        new("pret:TRAINER_AROMA_LADY_ROSE"),
-        new("pret:TRAINER_JUGGLER_EDWARD"),
-        new("pret:TRAINER_SWIMMER_MALE_SAMIR"),
-        new("pret:TRAINER_SWIMMER_FEMALE_DENISE"),
-        new("pret:TRAINER_TWINS_MIU_MIA"),
-        new("pret:TRAINER_HIKER_EARL"),
-        new("pret:TRAINER_RUIN_MANIAC_STANLY"),
-        new("pret:TRAINER_RUIN_MANIAC_FOSTER"),
-        new("pret:TRAINER_RUIN_MANIAC_LARRY"),
-        new("pret:TRAINER_HIKER_DARYL"),
-        new("pret:TRAINER_POKEMANIAC_HECTOR")]);
-    public static readonly ImmutableHashSet<string> BattleScripts = ImmutableHashSet.Create<string>(StringComparer.Ordinal,
-        "SixIsland_WaterPath_EventScript_Rose",
-        "SixIsland_WaterPath_EventScript_Edward",
-        "SixIsland_WaterPath_EventScript_Samir",
-        "SixIsland_WaterPath_EventScript_Denise",
-        "SixIsland_WaterPath_EventScript_Miu",
-        "SixIsland_WaterPath_EventScript_Mia",
-        "SixIsland_WaterPath_EventScript_Earl",
-        "SixIsland_RuinValley_EventScript_Stanly",
-        "SixIsland_RuinValley_EventScript_Foster",
-        "SixIsland_RuinValley_EventScript_Larry",
-        "SixIsland_RuinValley_EventScript_Daryl",
-        "SixIsland_RuinValley_EventScript_Hector");
-    public static ImmutableArray<TrainerId> AllTrainers { get; } = [new("pret:TRAINER_AROMA_LADY_ROSE"), new("pret:TRAINER_JUGGLER_EDWARD"), new("pret:TRAINER_SWIMMER_MALE_SAMIR"), new("pret:TRAINER_SWIMMER_FEMALE_DENISE"), new("pret:TRAINER_TWINS_MIU_MIA"), new("pret:TRAINER_HIKER_EARL"), new("pret:TRAINER_RUIN_MANIAC_STANLY"), new("pret:TRAINER_RUIN_MANIAC_FOSTER"), new("pret:TRAINER_RUIN_MANIAC_LARRY"), new("pret:TRAINER_HIKER_DARYL"), new("pret:TRAINER_POKEMANIAC_HECTOR")];
-    public static ImmutableArray<TrainerId> SupportedTrainers { get; } = AllTrainers.Where(id => id != DoubleTrainer).ToImmutableArray();
-
     public static int BasePrize(SixIslandTrainerCatalog trainers, TrainerId id)
     {
         ValidateCatalog(trainers);
@@ -67,7 +39,8 @@ public static class SixIslandTrainerPartyFactory
     }
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
-        if (battle is null || !BattleScripts.Contains(battle.ScriptEntry))
+        if (battle is null || string.IsNullOrWhiteSpace(battle.ScriptEntry) ||
+            battle.Mode is not (0 or 4) || battle.Mode == 4 && battle.Trainer != DoubleTrainer)
             throw new NotSupportedException("six_island_trainer_battle_source");
     }
 }

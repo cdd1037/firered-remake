@@ -13,8 +13,8 @@ public sealed class SixIslandWaterEncounterCatalog
     public static SixIslandWaterEncounterCatalog Authenticate(FourIslandWaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> additions)
     {
         ArgumentNullException.ThrowIfNull(predecessor);
-        if (predecessor.Tables.Count != 31 || predecessor.Tables.Values.Any(t => !WaterEncounterCatalog.IsValidDefinition(t) && !CinnabarWaterEncounterCatalog.MatchesDefinition(t) && !FirstSeviiWaterEncounterCatalog.MatchesDefinition(t) && !VictoryRoadWaterEncounterCatalog.MatchesDefinition(t) && !SeviiRubyWaterEncounterCatalog.MatchesDefinition(t) && !FourIslandWaterEncounterCatalog.MatchesDefinition(t)) ||
-            additions.IsDefault || additions.Length != 2 || additions.Any(t => t is null) || additions.Select(t => t.Map).Distinct().Count() != 2)
+        if (predecessor.Tables.Values.Any(t => !WaterEncounterCatalog.IsValidDefinition(t) && !CinnabarWaterEncounterCatalog.MatchesDefinition(t) && !FirstSeviiWaterEncounterCatalog.MatchesDefinition(t) && !VictoryRoadWaterEncounterCatalog.MatchesDefinition(t) && !SeviiRubyWaterEncounterCatalog.MatchesDefinition(t) && !FourIslandWaterEncounterCatalog.MatchesDefinition(t)) ||
+            additions.IsDefault || additions.Length != SourceAdditions.Length || additions.Any(t => t is null) || additions.Select(t => t.Map).Distinct().Count() != additions.Length)
             throw new ArgumentException("six_island_water_scope");
         foreach (var actual in additions)
         {

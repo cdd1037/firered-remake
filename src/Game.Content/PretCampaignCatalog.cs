@@ -522,7 +522,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PokedexMenu = oakPokedex;
         SourceMaps = maps;
         Maps = maps.ToImmutableDictionary(x => x.Key, x => (IFieldMap)x.Value);
-        EscapeRoutes = CurrentEscapeRoutes.Create(maps);
+        EscapeRoutes = CurrentEscapeRoutes.Create(maps, scripts);
         _scripts = scripts;
         _text = text;
         ContentVersion = version;
@@ -612,7 +612,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
         {
             FieldPickups = FieldPickups.AddRange(sixIslandItems.Pickups);
-            LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(SixIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
+            LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(sixIsland.LandEncounters.Select(t => KeyValuePair.Create(t.Map, t)));
             SixIslandWaterEncounters = SixIslandWaterEncounterCatalog.Authenticate(FourIslandWaterEncounters!, SixIslandEncounterTables.Water);
         }
 

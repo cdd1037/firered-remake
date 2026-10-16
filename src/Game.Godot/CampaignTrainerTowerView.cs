@@ -107,8 +107,8 @@ public partial class CampaignView
     private string? TrainerTowerTrainerText(string field) => VisibleTrainerTowerTrainer is {} trainer
         ? field == "name" ? trainer.Name : _trainerTowerBindings[trainer.FacilityClass].GetProperty(field).GetString() : null;
     private Texture2D? TrainerTowerTrainerPortrait => TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraits[id] : null;
-    private Vector2 VisibleTrainerPortraitPosition => VisibleLostCaveTrainer?.Position ?? (TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraitPositions[id] : new(144, 8));
-    private Texture2D VisibleTrainerPortrait => VisibleLostCaveTrainer?.Portrait ?? TrainerTowerTrainerPortrait ?? _forestTrainerPortraits[VisibleTrainerPortraitId];
+    private Vector2 VisibleTrainerPortraitPosition => VisibleSharedTrainer?.Position ?? (TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraitPositions[id] : new(144, 8));
+    private Texture2D VisibleTrainerPortrait => VisibleSharedTrainer?.Portrait ?? TrainerTowerTrainerPortrait ?? _forestTrainerPortraits[VisibleTrainerPortraitId];
     private string? TrainerTowerSpeciesName(int species) => _catalog.TrainerTowerEnabled
         ? _catalog.TrainerTowerOpponents.Catalog.Species.Values.Any(s => s.SourceSpeciesId == species)
             ? (_pokedexMenu ?? throw new InvalidDataException("Tower species names missing.")).Entries[species].Name : null : null;

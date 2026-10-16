@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild bounded Six Island encounter declarations and source move/held-item witnesses.
-Only reads immutable pret Git blobs; never executes upstream programs.
+Reads pinned source inputs; never executes upstream programs.
 """
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
@@ -10,16 +10,16 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-MAPS = ["MAP_SIX_ISLAND_WATER_PATH", "MAP_SIX_ISLAND_RUIN_VALLEY"]
+MAPS = ["MAP_SIX_ISLAND_WATER_PATH", "MAP_SIX_ISLAND_RUIN_VALLEY", "MAP_SIX_ISLAND_GREEN_PATH"]
 def generate(reference):
     inputs = {}
     def read(path):
-        data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
+        data = (reference / path).read_bytes() if not (reference / ".git").exists() and (reference / path).is_file() else subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
         inputs[path] = dict(path=path)
         return data.decode()
     raw = read("src/data/wild_encounters.json")
     encounters = [e for group in json.loads(raw)["wild_encounter_groups"] for e in group["encounters"] if e["map"] in MAPS and e["base_label"].endswith("_FireRed")]
-    assert len(encounters) == 2
+    assert len(encounters) == len(MAPS)
     encounters.sort(key=lambda e: MAPS.index(e["map"]))
     def map_id(symbol): return "map." + symbol[4:].lower().replace("_", "-")
     tables = "using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\n/// <summary>Exact pinned FireRed Six Island tables. Rod subdivisions retain their source indexes.</summary>\npublic static class SixIslandEncounterTables\n{\n"
@@ -61,7 +61,7 @@ def generate(reference):
         dependencies.append(dict(species=species,sourceSpeciesId=number,ability1=a,ability2=b,itemCommon=common,itemRare=rare))
     source += "    ];\n}\n"
     witness=dict(encounters=encounters,initialMoves=move_rows,species=dependencies)
-    return {"src/Game.Domain/Encounters/SixIslandEncounterTables.cs":tables,"src/Game.Domain/Encounters/SixIslandWildSource.cs":source,"tests/Game.SixIslandEncounters.Tests/source-witness.json":json.dumps(witness,indent=2)+"\n"}
+    return {"src/Game.Domain/Encounters/SixIslandEncounterTables.cs":tables,"src/Game.Domain/Encounters/SixIslandWildSource.cs":source}
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("reference",type=Path);p.add_argument("output",type=Path);p.add_argument("--check",action="store_true");a=p.parse_args()
     files=generate(a.reference)

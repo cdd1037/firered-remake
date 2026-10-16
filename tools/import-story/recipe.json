@@ -4039,6 +4039,26 @@
         "Repository": "pret/pokefirered",
         "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
       }
+    },
+    {
+      "path": "data/maps/SixIsland_GreenPath/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/SixIsland_GreenPath/scripts.inc",
+        "Symbol": "MAP_SIX_ISLAND_GREEN_PATH",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
+      "path": "data/maps/SixIsland_PatternBush/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/SixIsland_PatternBush/scripts.inc",
+        "Symbol": "MAP_SIX_ISLAND_PATTERN_BUSH",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
     }
   ],
   "textPaths": [
@@ -4576,7 +4596,9 @@
     "data/maps/FiveIsland_LostCave_Room4/text.inc",
     "data/maps/SaffronCity_PokemonTrainerFanClub/scripts.inc",
     "data/maps/SaffronCity_PokemonTrainerFanClub/text.inc",
-    "data/maps/Route16_NorthEntrance_2F/text.inc"
+    "data/maps/Route16_NorthEntrance_2F/text.inc",
+    "data/maps/SixIsland_GreenPath/text.inc",
+    "data/maps/SixIsland_PatternBush/text.inc"
   ],
   "constantSymbols": [
     "(MAX_COINS + 1) - 10",
@@ -5745,6 +5767,7 @@
     "FLAG_HIDDEN_ITEM_SILPH_CO_8F_NUGGET",
     "FLAG_HIDDEN_ITEM_SILPH_CO_9F_CALCIUM",
     "FLAG_HIDDEN_ITEM_SILPH_CO_9F_MAX_POTION",
+    "FLAG_HIDDEN_ITEM_SIX_ISLAND_GREEN_PATH_ULTRA_BALL",
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_LEPPA_BERRY",
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_WATER_PATH_ASPEAR_BERRY",
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_WATER_PATH_ORAN_BERRY",
@@ -6285,6 +6308,7 @@
     "FLAG_WORLD_MAP_SILPH_CO_1F",
     "FLAG_WORLD_MAP_SIX_ISLAND",
     "FLAG_WORLD_MAP_SIX_ISLAND_DOTTED_HOLE_1F",
+    "FLAG_WORLD_MAP_SIX_ISLAND_PATTERN_BUSH",
     "FLAG_WORLD_MAP_SSANNE_EXTERIOR",
     "FLAG_WORLD_MAP_THREE_ISLAND",
     "FLAG_WORLD_MAP_THREE_ISLAND_BERRY_FOREST",
@@ -11411,6 +11435,8 @@
     "VARS_END",
     "VARS_START",
     "VAR_RESULT",
+    "VAR_TEMP_1",
+    "VAR_TEMP_2",
     "VERSION_DIAMOND",
     "VERSION_EMERALD",
     "VERSION_FIRE_RED",

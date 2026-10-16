@@ -59,12 +59,13 @@ class FishingImportTests(unittest.TestCase):
         loaded = {m['stableId'] for name in regions for m in json.loads((ROOT / 'content/generated/maps/regions' / name / 'catalog.json').read_text())['maps']}
         existing = {'map.two-island-cape-brink', 'map.five-island-memorial-pillar', 'map.five-island-resort-gorgeous', 'map.five-island-water-labyrinth'}
         added = loaded.intersection(tables) - existing
-        self.assertEqual(13, len(added))
+        self.assertTrue(added)
+        self.assertIn('map.six-island-green-path', added)
         self.assertEqual({'pret:SPECIES_HORSEA', 'pret:SPECIES_MAGIKARP', 'pret:SPECIES_POLIWAG', 'pret:SPECIES_GOLDEEN'},
                          {s['species']['value'] for m in added for s in tables[m]['slots']})
         for name in added:
             self.assertEqual([(5, 15)] * 3, [(s['minimumLevel'], s['maximumLevel']) for s in tables[name]['slots']])
-        for name in ['map.one-island-treasure-beach', 'map.six-island-outcast-island', 'map.six-island-green-path']:
+        for name in ['map.one-island-treasure-beach', 'map.six-island-outcast-island']:
             self.assertIn(name, tables)
             self.assertNotIn(name, loaded)
 

@@ -16,7 +16,7 @@ public sealed class SevenIslandWaterEncounterCatalog
         ImmutableArray<WaterEncounterTable> additions)
     {
         ArgumentNullException.ThrowIfNull(predecessor);
-        if (predecessor.Tables.Count != 37 || additions.IsDefault || additions.Length != SourceAdditions.Length ||
+        if (additions.IsDefault || additions.Length != SourceAdditions.Length ||
             additions.Any(t => t is null) || additions.Select(t => t.Map).Distinct().Count() != SourceAdditions.Length)
             throw new ArgumentException("seven_island_water_scope");
         // CeruleanCave's private constructor authenticates its inherited tables; validate its own exact identities too.

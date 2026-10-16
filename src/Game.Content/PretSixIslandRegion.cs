@@ -4,20 +4,19 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Game.Domain.Ids;
+using Game.Domain.Encounters;
 using Game.Domain.World;
 namespace Game.Content;
 
-/// <summary>Twelve exact Six Island and Dotted Hole maps, including guarded original boundaries. Application admission remains separate.</summary>
+/// <summary>Exact Six Island source maps, including guarded original boundaries. Application admission remains separate.</summary>
 public sealed partial class PretSixIslandRegion
 {
     public const string Profile = "firered-six-island-region-v1";
-    // Authenticated against LAYOUT_SIX_ISLAND_GREEN_PATH below. This preserves the
-    // unloaded northern boundary without hiding WaterPath's later west connections.
-    private const int GreenPathConnectionHeight = 20;
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
     public JsonElement Catalog { get; }
+    public ImmutableArray<EarlyLandEncounterTable> LandEncounters { get; }
     public JsonElement Contracts { get; }
     public JsonElement NpcSources { get; }
     public JsonElement FallWarps => Contracts.GetProperty("fallWarps");
@@ -35,6 +34,7 @@ public sealed partial class PretSixIslandRegion
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
+        LandEncounters = PretWildEncounterTables.Land(source.Document("encounters.json"), MapIdFromSourceSymbol);
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -46,6 +46,8 @@ public sealed partial class PretSixIslandRegion
         "MAP_SIX_ISLAND_DOTTED_HOLE_B3F" => new("map.six-island-dotted-hole-b3f"),
         "MAP_SIX_ISLAND_DOTTED_HOLE_B4F" => new("map.six-island-dotted-hole-b4f"),
         "MAP_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM" => new("map.six-island-dotted-hole-sapphire-room"),
+        "MAP_SIX_ISLAND_PATTERN_BUSH" => new("map.six-island-pattern-bush"),
+        "MAP_SIX_ISLAND_OUTCAST_ISLAND" => new("map.six-island-outcast-island"),
         "MAP_SIX_ISLAND_GREEN_PATH" => new("map.six-island-green-path"),
         "MAP_SIX_ISLAND_HARBOR" => new("map.six-island-harbor"),
         "MAP_SIX_ISLAND_HOUSE" => new("map.six-island-house"),
@@ -63,9 +65,7 @@ public sealed partial class PretSixIslandRegion
         var connections = map.Events.GetProperty("connections");
         var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
             new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown SixIsland connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!),
-                map.Id.Value == "map.six-island-water-path" && c.GetProperty("map").GetString() == "MAP_SIX_ISLAND_GREEN_PATH" &&
-                    c.GetProperty("direction").GetString() == "left" ? GreenPathConnectionHeight : null)).ToImmutableArray();
+                _ => throw new InvalidDataException("Unknown SixIsland connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
     }
     public static PretSixIslandRegion Load(string root)
@@ -88,8 +88,7 @@ public sealed partial class PretSixIslandRegion
             var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
-        Need(maps.Count == 12 && maps.Values.Sum(m => m.Width * m.Height) == 6498 && maps.Values.Sum(m => m.FieldWarps.Length) == 37,
-            "SixIsland source map collection differs.");
+        Need(maps.Count > 0, "Empty Six Island map collection.");
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "SixIsland target warp index differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);

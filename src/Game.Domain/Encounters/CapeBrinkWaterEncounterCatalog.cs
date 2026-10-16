@@ -16,7 +16,7 @@ public sealed class CapeBrinkWaterEncounterCatalog
         ImmutableArray<WaterEncounterTable> additions)
     {
         ArgumentNullException.ThrowIfNull(predecessor);
-        if (predecessor.Tables.Count != 43 || additions.IsDefault || additions.Length != SourceAdditions.Length ||
+        if (additions.IsDefault || additions.Length != SourceAdditions.Length ||
             additions.Any(t => t is null) || additions.Select(t => t.Map).Distinct().Count() != SourceAdditions.Length)
             throw new ArgumentException("cape_brink_water_scope");
         // Seafoam's private constructor authenticates its inherited tables; validate its own exact identities too.

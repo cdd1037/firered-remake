@@ -819,6 +819,7 @@ public sealed partial class CampaignSession
             if(TryApplyVictoryRoadFieldEffect(state,effect,out var victoryRoadFieldState)){state=victoryRoadFieldState;continue;}
             if(TryApplyViridianGymEffect(state,effect,out var viridianGymState)){state=viridianGymState;continue;}
             if(TryApplyFirstSeviiBattleEffect(state,effect,out var seviiBattleState)){state=seviiBattleState;continue;}
+            if(TryApplyMapCoordinateEffect(state,effect,out var coordinateState)){state=coordinateState;continue;}
             if(TryApplyFirstSeviiEffect(state,effect,out var seviiState)){state=seviiState;continue;}
             if(TryApplySilphFieldEffect(state,effect,out var silphFieldState)){state=silphFieldState;continue;}
             if(TryApplySilphGiftEffect(state,effect,out var silphGiftState)){state=silphGiftState;continue;}

@@ -33,6 +33,25 @@ class GamePokemonAdmissionsTests(unittest.TestCase):
         generated = json.loads((ROOT / 'content/generated/data/pokemon/game/catalog.json').read_text())
         self.assertEqual(generated, self.policy)
 
+    def test_pattern_bush_families_have_canonical_evolutions_and_breeding(self):
+        owned = {row['id']['value']: row for row in self.policy['owned']}
+        breeding = {row['species']['value']: row for row in compiler.compile_breeding(ROOT, self.policy, self.canonical)['species']}
+        for symbol, base in [('LEDYBA', 'LEDYBA'), ('LEDIAN', 'LEDYBA'), ('SPINARAK', 'SPINARAK'),
+                             ('ARIADOS', 'SPINARAK'), ('HERACROSS', 'HERACROSS')]:
+            identity = 'pret:SPECIES_' + symbol
+            self.assertIn(identity, owned)
+            self.assertEqual(breeding[identity]['baseEggSpecies']['value'], 'pret:SPECIES_' + base)
+        for symbol, target, level in [('LEDYBA', 'LEDIAN', 18), ('SPINARAK', 'ARIADOS', 22)]:
+            self.assertEqual(owned['pret:SPECIES_' + symbol]['evolutions'],
+                [dict(level=level, target=dict(value='pret:SPECIES_' + target))])
+
+    def test_pattern_bush_trainer_species_are_opponents_only(self):
+        for symbol in ('SNUBBULL', 'PINSIR'):
+            identity = 'pret:SPECIES_' + symbol
+            self.assertNotIn(identity, {row['id']['value'] for row in self.policy['owned']})
+            self.assertIn(identity, {row['id']['value'] for row in self.policy['opponents']})
+            self.assertNotIn(identity, {row['species']['value'] for row in compiler.compile_breeding(ROOT, self.policy, self.canonical)['species']})
+
     def test_unknown_species_form_and_incorrect_evolution_rejected(self):
         for field, value in [('id', {'value': 'pret:SPECIES_MISSING'}), ('formScope', 'unknown')]:
             policy = copy.deepcopy(self.policy)

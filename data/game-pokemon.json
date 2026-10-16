@@ -1746,6 +1746,50 @@
       },
       "evolutions": [],
       "formScope": "firered-ordinary-non-link-stat-read"
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_LEDYBA"
+      },
+      "evolutions": [
+        {
+          "level": 18,
+          "target": {
+            "value": "pret:SPECIES_LEDIAN"
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_LEDIAN"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_SPINARAK"
+      },
+      "evolutions": [
+        {
+          "level": 22,
+          "target": {
+            "value": "pret:SPECIES_ARIADOS"
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_ARIADOS"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_HERACROSS"
+      },
+      "evolutions": []
     }
   ],
   "opponents": [
@@ -3595,6 +3639,56 @@
       },
       "evolutions": [],
       "formScope": "firered-ordinary-non-link-stat-read"
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_LEDYBA"
+      },
+      "evolutions": [
+        {
+          "level": 18,
+          "target": {
+            "value": "pret:SPECIES_LEDIAN"
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_LEDIAN"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_SPINARAK"
+      },
+      "evolutions": [
+        {
+          "level": 22,
+          "target": {
+            "value": "pret:SPECIES_ARIADOS"
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_ARIADOS"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_SNUBBULL"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_PINSIR"
+      },
+      "evolutions": []
     }
   ],
   "trainerTowerOpponents": [

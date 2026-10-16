@@ -27,7 +27,7 @@ public sealed partial class PretCampaignCatalog
     // These remain explicit admission boundaries; importing source closure is not runtime support.
     public static ImmutableArray<string> SixIslandUnsupportedInteractions =>
         ["SixIsland_House", "SixIsland_WaterPath_House1", "SixIsland_WaterPath_House2", "SixIsland_PokemonCenter_2F",
-         "SixIsland_GreenPath", "FiveIsland", "SevenIsland", "DreamMail.ComposeAttachSend", "VsSeeker.Rematch"];
+          "FiveIsland", "SevenIsland", "DreamMail.ComposeAttachSend", "VsSeeker.Rematch"];
 
     private static void ValidateSixIslandAnchors(PretSixIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
@@ -54,7 +54,7 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("six_island_twins_double_required");
         }
         ValidateSixIslandStory(scripts);
-        foreach (var symbol in new[] { "MAP_SIX_ISLAND_HOUSE","MAP_SIX_ISLAND_POKEMON_CENTER_2F","MAP_SIX_ISLAND_GREEN_PATH","MAP_SIX_ISLAND_WATER_PATH_HOUSE1","MAP_SIX_ISLAND_WATER_PATH_HOUSE2","MAP_FIVE_ISLAND","MAP_SEVEN_ISLAND" })
+        foreach (var symbol in new[] { "MAP_SIX_ISLAND_HOUSE","MAP_SIX_ISLAND_POKEMON_CENTER_2F","MAP_SIX_ISLAND_WATER_PATH_HOUSE1","MAP_SIX_ISLAND_WATER_PATH_HOUSE2","MAP_FIVE_ISLAND","MAP_SEVEN_ISLAND" })
             if (maps.Values.Any(m => m.SourceMapSymbol == symbol))
                 throw new InvalidDataException("six_island_excluded_map_admitted");
     }

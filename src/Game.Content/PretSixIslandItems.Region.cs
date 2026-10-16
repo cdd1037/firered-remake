@@ -18,8 +18,8 @@ public static partial class PretSixIslandItems
             if (region.Constants[item.SourceItemSymbol] != item.SourceItemId )
                 throw new InvalidDataException("six_island_item_declaration");
         }
-        if (region.Contracts.GetProperty("itemPickups").GetArrayLength() != 5 ||
-            region.Contracts.GetProperty("hiddenItems").GetArrayLength() != 4)
+        if (region.Contracts.GetProperty("itemPickups").GetArrayLength() != document.Pickups.Count(p => !p.Hidden) ||
+            region.Contracts.GetProperty("hiddenItems").GetArrayLength() != document.Pickups.Count(p => p.Hidden))
             throw new InvalidDataException("six_island_pickup_contract_scope");
         foreach (var pickup in content.Pickups)
         {

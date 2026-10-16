@@ -3,6 +3,6 @@ using Game.Domain.Ids;
 
 namespace Game.Domain.Trainers;
 
-/// <summary>Eleven original trainers, including one shared Miu/Mia double, across twelve actor scripts.</summary>
+/// <summary>Original source trainers, including the shared Miu/Mia double actor pair.</summary>
 public sealed record SixIslandTrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
     ImmutableDictionary<string, CeruleanTrainerBattleDefinition> BattlesByScript);

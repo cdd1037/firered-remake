@@ -178,3 +178,34 @@ python scripts/checks/test-pokemon-import.py
 Town Map 位置从原地图 section、布局尺寸及 `sSeviiMapsecs` 页归属生成。
 通路属于地下地图，原作使用逃脱入口的地图与坐标投影玩家标记；因此资源保留
 `requiresEscapeWarp`，不将 section 的占位坐标误当成玩家位置。
+
+### Six Island Green Path / Pattern Bush
+
+The Six Island map importer accepts the retained pinned raw cache directly; it
+indexes source labels without requiring a full reference checkout or executing
+upstream tools. Green Path and Pattern Bush use their original layouts, four
+outdoor entrances/six forest exit tiles, trainers and encounter headers.
+
+```sh
+python scripts/imports/maps/import-six-island-region.py --raw-root content/raw/pokefirered/037335f4
+python scripts/imports/story/import-six-island-rules.py content/raw/pokefirered/037335f4 . .
+python scripts/imports/items/import-six-island-items.py content/raw/pokefirered/037335f4 . .
+python scripts/imports/story/import-six-island-encounters.py content/raw/pokefirered/037335f4 .
+python scripts/imports/maps/import-field-tilesets.py
+python scripts/imports/maps/import-map-atlases.py
+python scripts/imports/story/import-story.py
+```
+
+Each Six Island producer above also supports `--check`. Ordinary land tables
+load from the generated encounter headers. The retained regional water importer
+supplies Green Path Surf/Old Rod source contracts; the shared fishing catalog
+admits all three rods when the map is mounted. Trainer membership is discovered
+from map actors and their local/shared initial-battle scripts. The old predecessor
+species-count projection no longer controls this importer.
+
+Owned additions and breeding remain in the shared `data/game-pokemon.json`
+admissions/import, and collection presentation uses its existing recipe with
+optional source battle sprites when no reusable portrait exists. Source escape
+warp instructions now contribute the allowable exits and select the correct
+entry side through ordinary script execution; no remote map jump is substituted
+for reaching either entrance.

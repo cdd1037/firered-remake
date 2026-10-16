@@ -476,6 +476,7 @@ public static partial class PretStoryCompiler
             "multichoicegrid"=>(StoryOp.Multichoice,5,5),"multichoice"=>(StoryOp.Multichoice,4,4),"msgbox"=>(StoryOp.Dialog,1,2),"message"=>(StoryOp.Message,1,1),"waitmessage"=>(StoryOp.WaitMessage,0,0),"waitbuttonpress"=>(StoryOp.WaitButtonPress,0,0),"closemessage"=>(StoryOp.CloseMessage,0,0),"delay"=>(StoryOp.Delay,1,1),
             "applymovement"=>(StoryOp.ApplyMovement,2,3),"waitmovement"=>(StoryOp.WaitMovement,1,1),"warp"=>(StoryOp.Warp,3,4),"waitstate"=>(StoryOp.WaitState,0,0),
             "setmaplayoutindex"=>(StoryOp.Special,1,1),
+            "getplayerxy"=>(StoryOp.Special,2,2),"setescapewarp"=>(StoryOp.Special,3,4),
             "setobjectxyperm"=>(StoryOp.ObjectPosition,3,3),"setobjectmovementtype"=>(StoryOp.ObjectMovementType,2,2),"addobject" or "removeobject"=>(StoryOp.ObjectVisible,1,2),"turnobject"=>(StoryOp.TurnObject,2,2),
             "setrespawn"=>(StoryOp.Respawn,1,1),"faceplayer"=>(StoryOp.FacePlayer,0,0),"textcolor"=>(StoryOp.TextColor,1,1),"playbgm"=>(StoryOp.Music,2,2),"savebgm"=>(StoryOp.Music,1,1),"fadedefaultbgm"=>(StoryOp.Music,0,0),
             "dofieldeffect" or "incrementgamestat"=>(StoryOp.Special,1,1),"specialvar"=>(StoryOp.Special,2,2),"waitfieldeffect"=>(StoryOp.Sound,1,1),

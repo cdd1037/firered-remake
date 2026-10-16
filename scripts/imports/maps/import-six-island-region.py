@@ -16,12 +16,14 @@ PACKAGE = 'maps/regions/six-island'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 CORE = ['SixIsland', 'SixIsland_Harbor', 'SixIsland_WaterPath', 'SixIsland_RuinValley',
         'SixIsland_DottedHole_1F', 'SixIsland_DottedHole_B1F', 'SixIsland_DottedHole_B2F',
-        'SixIsland_DottedHole_B3F', 'SixIsland_DottedHole_B4F', 'SixIsland_DottedHole_SapphireRoom']
+        'SixIsland_DottedHole_B3F', 'SixIsland_DottedHole_B4F', 'SixIsland_DottedHole_SapphireRoom',
+        'SixIsland_GreenPath', 'SixIsland_PatternBush']
 SUPPORT = ['SixIsland_PokemonCenter_1F', 'SixIsland_Mart']
 ANCHOR = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/building',
             'gTileset_SeviiIslands67':'secondary/sevii_islands_67',
             'gTileset_NavelRock':'secondary/navel_rock',
+            'gTileset_ViridianForest':'secondary/viridian_forest',
             'gTileset_IslandHarbor':'secondary/island_harbor',
             'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart'}
 
@@ -40,7 +42,7 @@ def script_index(src, reader):
        any(p.startswith('data/maps/'+n+'/') for n in CORE+SUPPORT+ANCHOR))]+['data/event_scripts.s']
     blocks={}; aliases={}
     for p in sorted(paths):
-        b=reader.git(src.reference,'cat-file','blob',src.tree[p][2]); current=None; macro=False
+        b=src.peek(p); current=None; macro=False
         for ln,line in enumerate(b.decode().splitlines(),1):
             code=line.split('@')[0].strip()
             if code.startswith('.macro'): macro=True;current=None;continue
@@ -318,16 +320,18 @@ def field_contract(src, worlds, constants, bylabel):
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--reference-root',type=Path,required=True)
+    inputs=ap.add_mutually_exclusive_group(required=True)
+    inputs.add_argument('--reference-root',type=Path)
+    inputs.add_argument('--raw-root',type=Path)
     ap.add_argument('--dependency-root',type=Path,default=ROOT)
     ap.add_argument('--project-root',type=Path,default=ROOT)
     ap.add_argument('--check',action='store_true');args=ap.parse_args()
     safe(args.project_root.absolute())
-    target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve();safe(target)
-    need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
+    target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve() if args.reference_root else None;safe(target)
+    if ref is not None:need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
     reader=module(dep / 'scripts/imports/source/import-cinnabar-source-preparation.py', 'six_island_reader')
     reader.PRODUCT=dep;reader.TILESETS=TILESETS;reader.PROFILE=PROFILE
-    src=reader.Source(ref);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
+    src=reader.Source(ref,raw_root=args.raw_root);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
     for n in ANCHOR:src.read(f'data/maps/{n}/map.json','reused-anchor-events')
     scripts=script_index(src,reader);scripts['profile']=PROFILE
 
@@ -388,6 +392,7 @@ def main():
         docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,
             maps=catalog,tilesets=TILESETS,mapSymbols=mapsymbols,**links),
             'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contract,
+            'encounters.json':data['wildEncounters'],
             'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))
         publish_map_package(stage)

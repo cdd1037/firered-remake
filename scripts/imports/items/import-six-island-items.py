@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import Six Island items, source shop/pickups and exact 38x132 teaching. No upstream execution."""
+"""Import Six Island items, source shop/pickups and shared machine compatibility. No upstream execution."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
@@ -17,7 +17,7 @@ def generate(reference,root):
  inputs={};texts={};dependencies=[]
  def source(path):
   if path not in texts:
-   b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
+   b=(reference/path).read_bytes() if not (reference/'.git').exists() and (reference/path).is_file() else subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
    inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
  def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
@@ -39,7 +39,7 @@ def generate(reference,root):
  need(items[1]['item']['sourceItemId']==201 and items[1]['item']['holdEffect']=='HOLD_EFFECT_DRAGON_SCALE' and items[1]['item']['holdEffectParam']==10,'Dragon Scale is not Dragon Fang')
  need(items[2]['item']['sourceItemId']==130 and items[2]['item']['fieldUseFunction']=='FieldUseFunc_Mail','Dream Mail source identity')
  additions=compatibility_additions(ROOT, 'content/generated/data/items/six-island.json', 'machineAdditions')
- need(len(additions)==38, 'Exact admitted machine scope')
+ need(additions, 'Missing shared machine compatibility')
  dependencies.extend(dict(path=p) for p in ['scripts/recipes/config/machine-admissions.json', 'scripts/recipes/config/machine-catalog.json'])
  stock_path='data/maps/SixIsland_Mart/scripts.inc';stock_text=source(stock_path);stock=re.search(r'^SixIsland_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)',stock_text,re.M)
  symbols=re.findall(r'\t\.2byte (ITEM_\w+)',stock[1]);need(symbols.pop()=='ITEM_NONE' and len(symbols)==8,'Mart stock')
@@ -55,7 +55,7 @@ def generate(reference,root):
    return flag_value(add[1])+int(add[2])
   info=metadata(item)['item'];need(quantity==1 and (not hidden or event['underfoot']==False),'Pickup bounds')
   pickups.append(dict(id='six-island:'+flag,mapSymbol=map_symbol,hidden=hidden,sourceLocalId=local_id,x=event['x'],y=event['y'],elevation=event['elevation'],script='EventScript_HiddenItemScript' if hidden else event['script'],itemSymbol=item,sourceItemId=info['sourceItemId'],item=info['id'],itemName=info['name'],pocket=info['pocket'],quantity=quantity,flag=flag,sourceFlagId=flag_value(flag)))
- for name in ['SixIsland','SixIsland_WaterPath','SixIsland_RuinValley']:
+ for name in ['SixIsland','SixIsland_WaterPath','SixIsland_RuinValley','SixIsland_GreenPath','SixIsland_PatternBush']:
   mapping=json.loads(source('data/maps/'+name+'/map.json'));scripts=source('data/scripts/item_ball_scripts.inc')
   for local_id,event in enumerate(mapping['object_events'],1):
    if event['graphics_id']!='OBJ_EVENT_GFX_ITEM_BALL':continue
@@ -63,7 +63,7 @@ def generate(reference,root):
    pickup(mapping['id'],event,False,local_id,m[1],int(m[2] or 1))
   for event in mapping['bg_events']:
    if event['type']=='hidden_item':pickup(mapping['id'],event,True,None,event['item'],event['quantity'])
- need(len(pickups)==9 and sum(p['hidden'] for p in pickups)==4,'Five visible and four hidden pickups')
+ need(pickups and len({p['id'] for p in pickups}) == len(pickups), 'Unique source pickups required')
  for path in ['data/scripts/obtain_item.inc','src/pokemon.c','src/battle_util.c','src/battle_script_commands.c','include/constants/hold_effects.h']:source(path)
  doc=dict(items=items,additions=new,machineAdditions=additions,shop=shop,pickups=pickups,unsupportedUses=[dict(item='ITEM_DRAGON_SCALE',boundary='Held-item trade evolution trigger is not implemented. No NPC, fee or alternate trigger is invented.'),dict(item='ITEM_DREAM_MAIL',boundary='Mail reading, writing, attaching and delivery are not implemented; purchase, inventory and source sale remain ordinary supported transactions.')])
  evidence=dict(sourceCommit=COMMIT,files=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)

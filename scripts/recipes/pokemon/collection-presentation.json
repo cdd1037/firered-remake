@@ -7,18 +7,185 @@
       "symbol": "DUNSPARCE",
       "graphicsName": "Dunsparce",
       "portraitPath": "content/generated/sprites/pokemon/trainer-tower/dunsparce-front-normal.png"
+    },
+    {
+      "symbol": "LEDYBA",
+      "graphicsName": "Ledyba"
+    },
+    {
+      "symbol": "LEDIAN",
+      "graphicsName": "Ledian",
+      "portraitPath": "content/generated/sprites/pokemon/trainer-tower/ledian-front-normal.png"
+    },
+    {
+      "symbol": "SPINARAK",
+      "graphicsName": "Spinarak"
+    },
+    {
+      "symbol": "ARIADOS",
+      "graphicsName": "Ariados"
+    },
+    {
+      "symbol": "HERACROSS",
+      "graphicsName": "Heracross",
+      "portraitPath": "content/generated/sprites/pokemon/league-rematch/heracross-front-normal.png"
+    },
+    {
+      "symbol": "SNUBBULL",
+      "graphicsName": "Snubbull"
+    },
+    {
+      "symbol": "PINSIR",
+      "graphicsName": "Pinsir"
     }
   ],
   "files": [
-    { "path": "include/constants/species.h" },
-    { "path": "src/data/graphics/pokemon.h" },
-    { "path": "src/pokemon_icon.c" },
-    { "path": "src/data/pokemon_graphics/footprint_table.h" },
-    { "path": "graphics/pokedex/kanto_dex_bgpals.pal" },
-    { "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal" },
-    { "path": "graphics/pokemon/dunsparce/icon.png" },
-    { "path": "graphics/pokemon/dunsparce/footprint.png" },
-    { "path": "graphics/pokemon/dunsparce/front.png" },
-    { "path": "graphics/pokemon/dunsparce/normal.pal" }
+    {
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal"
+    },
+    {
+      "path": "graphics/pokemon/ariados/back.png"
+    },
+    {
+      "path": "graphics/pokemon/ariados/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/ariados/front.png"
+    },
+    {
+      "path": "graphics/pokemon/ariados/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/ariados/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/ariados/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/dunsparce/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/dunsparce/front.png"
+    },
+    {
+      "path": "graphics/pokemon/dunsparce/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/dunsparce/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/heracross/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/heracross/front.png"
+    },
+    {
+      "path": "graphics/pokemon/heracross/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/heracross/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/icon_palettes/icon_palette_0.pal"
+    },
+    {
+      "path": "graphics/pokemon/icon_palettes/icon_palette_1.pal"
+    },
+    {
+      "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal"
+    },
+    {
+      "path": "graphics/pokemon/ledian/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/ledian/front.png"
+    },
+    {
+      "path": "graphics/pokemon/ledian/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/ledian/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/ledyba/back.png"
+    },
+    {
+      "path": "graphics/pokemon/ledyba/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/ledyba/front.png"
+    },
+    {
+      "path": "graphics/pokemon/ledyba/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/ledyba/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/ledyba/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/pinsir/back.png"
+    },
+    {
+      "path": "graphics/pokemon/pinsir/front.png"
+    },
+    {
+      "path": "graphics/pokemon/pinsir/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/pinsir/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/snubbull/back.png"
+    },
+    {
+      "path": "graphics/pokemon/snubbull/front.png"
+    },
+    {
+      "path": "graphics/pokemon/snubbull/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/snubbull/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/spinarak/back.png"
+    },
+    {
+      "path": "graphics/pokemon/spinarak/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/spinarak/front.png"
+    },
+    {
+      "path": "graphics/pokemon/spinarak/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/spinarak/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/spinarak/shiny.pal"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "src/data/graphics/pokemon.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/footprint_table.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h"
+    },
+    {
+      "path": "src/pokemon_icon.c"
+    }
   ]
 }

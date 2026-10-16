@@ -63,6 +63,27 @@ class PokemonCollectionPresentationTests(unittest.TestCase):
         self.assertEqual(self.recipe['species'][0]['portraitPath'], row['portrait']['texturePath'])
         self.assertNotIn('dunsparce-front-normal.png', output)
 
+    def test_new_battle_sprites_match_original_indexed_pixels(self):
+        output = compiler.convert(self.recipe, self.sources, ROOT)
+        sprites = json.loads(output['catalog.json'])['sprites']
+        for selection in self.recipe['species']:
+            if 'portraitPath' in selection:
+                continue
+            symbol = selection['symbol']
+            rows = [row for row in sprites if row['species']['value'] == 'pret:SPECIES_' + symbol]
+            self.assertEqual({(side, shiny) for side in ('front', 'back') for shiny in (False, True)},
+                             {(row['side'], row['shiny']) for row in rows})
+            for row in rows:
+                stem, side = symbol.lower(), row['side']
+                variant = 'shiny' if row['shiny'] else 'normal'
+                colors = [tuple((int(c) // 8) * 255 // 31 for c in line.split()) for line in
+                          self.sources[f'graphics/pokemon/{stem}/{variant}.pal'].decode().splitlines()[3:]]
+                with Image.open(io.BytesIO(self.sources[f'graphics/pokemon/{stem}/{side}.png'])) as original:
+                    indices = original.tobytes()
+                expected = bytes(c for index in indices for c in (*colors[index], 255 if index else 0))
+                with Image.open(io.BytesIO(output[f'{stem}-{side}-{variant}.png'])) as actual:
+                    self.assertEqual(expected, actual.convert('RGBA').tobytes())
+
     def test_empty_duplicate_and_unowned_species_rejected(self):
         for selection in ([], self.recipe['species'] * 2,
                           [dict(symbol='TREECKO', graphicsName='Treecko', portraitPath='unused')]):
