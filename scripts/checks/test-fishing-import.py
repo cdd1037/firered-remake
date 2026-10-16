@@ -65,7 +65,8 @@ class FishingImportTests(unittest.TestCase):
                          {s['species']['value'] for m in added for s in tables[m]['slots']})
         for name in added:
             self.assertEqual([(5, 15)] * 3, [(s['minimumLevel'], s['maximumLevel']) for s in tables[name]['slots']])
-        for name in ['map.one-island-treasure-beach', 'map.six-island-outcast-island']:
+        self.assertIn('map.one-island-treasure-beach', added)
+        for name in ['map.six-island-outcast-island']:
             self.assertIn(name, tables)
             self.assertNotIn(name, loaded)
 

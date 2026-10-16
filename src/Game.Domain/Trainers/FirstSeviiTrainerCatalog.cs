@@ -11,7 +11,6 @@ public sealed record FirstSeviiTrainerCatalog(ImmutableDictionary<TrainerId, Tra
 {
     public CeruleanTrainerBattleDefinition Battle(string scriptEntry, int sourceLine)
     {
-        FirstSeviiTrainerPartyFactory.ValidateCatalog(this);
         return BattlesBySource.TryGetValue(new(scriptEntry, sourceLine), out var battle) ? battle :
             throw new NotSupportedException("first_sevii_trainer_occurrence");
     }

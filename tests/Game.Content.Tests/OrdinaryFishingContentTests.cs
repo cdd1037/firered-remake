@@ -121,7 +121,7 @@ public sealed class OrdinaryFishingContentTests
             foreach (var row in expected)
                 Assert.IsFalse(catalog.FishingTables.EmptyMaps.Contains(new(rod, row.Table.Map)));
             Assert.IsTrue(catalog.FishingTables.HasTable(rod, new("map.fuchsia-city")), "A source header cannot become a no-bite map");
-            Assert.IsFalse(catalog.FishingTables.IsAdmittedMap(rod, new("map.one-island-treasure-beach")));
+            Assert.IsTrue(catalog.FishingTables.IsAdmittedMap(rod, new("map.one-island-treasure-beach")));
         }
     }
 }

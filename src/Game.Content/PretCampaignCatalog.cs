@@ -636,6 +636,12 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         WaterEncounters = CapeBrinkWaterEncounters.Tables.AddRange(
             SourceTableWaterEncounterCatalog.Authenticate(MemorialPillarEncounterTables.Water).Tables)
             .AddRange(SourceTableWaterEncounterCatalog.Authenticate(LostCaveEncounterTables.Water).Tables);
+        // Generated regional headers extend the shared Surf table set. Existing source
+        // tables must agree; adding a map does not change predecessor catalog counts.
+        foreach (var table in firstSevii.WaterEncounters)
+            if (WaterEncounters.TryGetValue(table.Map, out var existing) && !WaterEncounterCatalog.SameDefinition(existing, table))
+                throw new InvalidDataException("water_encounter_header_conflict");
+        WaterEncounters = WaterEncounters.ToImmutableDictionary().SetItems(firstSevii.WaterEncounters.Select(table => KeyValuePair.Create(table.Map, table)));
         if (FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != FieldPickups.Length)
             throw new InvalidDataException("seven_island_pickup_composition");
 

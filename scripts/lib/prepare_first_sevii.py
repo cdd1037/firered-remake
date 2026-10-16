@@ -9,7 +9,7 @@ import base64, collections, json, re, sys
 from pathlib import Path
 sys.dont_write_bytecode = True
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-CORE = ['OneIsland','OneIsland_Harbor','OneIsland_PokemonCenter_1F',
+CORE = ['OneIsland','OneIsland_TreasureBeach','OneIsland_Harbor','OneIsland_PokemonCenter_1F',
         'TwoIsland','TwoIsland_Harbor','TwoIsland_JoyfulGameCorner',
         'ThreeIsland','ThreeIsland_Harbor','ThreeIsland_Port','ThreeIsland_DunsparceTunnel',
         'ThreeIsland_BondBridge','ThreeIsland_BerryForest']

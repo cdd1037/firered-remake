@@ -14,6 +14,7 @@ COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-first-sevii-town-map-v1'
 MAPS={
+ 'OneIsland_TreasureBeach':'map.one-island-treasure-beach',
  'OneIsland':'map.one-island','OneIsland_Harbor':'map.one-island-harbor',
  'OneIsland_PokemonCenter_1F':'map.one-island-pokemon-center-1f',
  'TwoIsland':'map.two-island','TwoIsland_Harbor':'map.two-island-harbor',

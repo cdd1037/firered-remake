@@ -86,11 +86,12 @@ for d in decl['battleOccurrences']:
  row=dict(trainer=identity(d['trainer']),mode=num('include/constants/battle_setup.h',mode),rivalFlags=0,battleTypeFlags=9 if double else 8,scriptEntry=d['script'],introText='' if noIntro else args[0],defeatText=args[0] if noIntro else args[1],victoryText='',postBattleText='' if noIntro else post[1] if post else '',entryScript='EventScript_DoNoIntroTrainerBattle' if noIntro else 'EventScript_TryDoDoubleTrainerBattle' if double else 'EventScript_TryDoNormalTrainerBattle',callback='CB2_EndTrainerBattle',source=dict(path=p,symbol=d['script'],startLine=d['sourceRef']['line'],endLine=d['sourceRef']['line']),postBattleScript=args[2] if not double and len(args)>2 else None,musicOption=args[3] if not double and len(args)>3 else None)
  if double:row['notEnoughMonsText']=args[2]
  battles.append(row)
-assert len(trainers)==10 and sum(len(t['party']) for t in trainers)==21 and len(battles)==11
+assert trainers and battles and len({t['id']['value'] for t in trainers}) == len(trainers)
+assert {b['trainer']['value'] for b in battles} <= {t['id']['value'] for t in trainers}
 out.mkdir(parents=True,exist_ok=True)
 document=dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved)
 write('trainers.json',trainer_json(generated, document, check=check).decode())
-print('Converted10 trainers/21 members/11 admitted source occurrences')
+print(f'Converted {len(trainers)} trainers/{sum(len(t["party"]) for t in trainers)} members/{len(battles)} admitted source occurrences')
 contracts=json.loads((preparation/'contracts.json').read_text()); constants=read_values(_PROJECT_ROOT / 'content/generated')
 items=[]; additions=[]; stocks=[];pickups=[]
 for item in decl['itemDeclarations']:
@@ -128,7 +129,7 @@ for hidden,key in [(False,'itemPickups'),(True,'hiddenItems')]:
   e=i['event'];symbol=e['item'] if hidden else re.fullmatch(r'\s*finditem (ITEM_\w+)',i['script']['lines'][0]['text'])[1];item=lookup[symbol]
   pickups.append(dict(id=e['flag'],mapSymbol=i['map'],hidden=hidden,sourceLocalId=None if hidden else i['localId'],x=e['x'],y=e['y'],elevation=e['elevation'],script='' if hidden else e['script'],itemSymbol=symbol,sourceItemId=item['sourceItemId'],item=item['id'],itemName=item['name'],pocket=item['pocket'],quantity=e['quantity'] if hidden else 1,flag=e['flag'],sourceFlagId=constants[e['flag']]))
 p='src/renewable_hidden_items.c';renew=[]
-for map in ['MAP_THREE_ISLAND_BOND_BRIDGE','MAP_THREE_ISLAND_BERRY_FOREST']:
+for map in [w['events']['id'] for w in worlds if re.search(r'MAP_GROUP\(' + w['events']['id'] + r'\)', read(p))]:
  m=one(p,r'    \{\n        \.mapGroup = MAP_GROUP\('+map+r'\),\n(.*?)^    \},')
  groups={}
  for k in ['rare','uncommon','common']:

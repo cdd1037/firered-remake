@@ -4099,6 +4099,16 @@
         "Repository": "pret/pokefirered",
         "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
       }
+    },
+    {
+      "path": "data/maps/OneIsland_TreasureBeach/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/OneIsland_TreasureBeach/scripts.inc",
+        "Symbol": "MAP_ONE_ISLAND_TREASURE_BEACH",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
     }
   ],
   "textPaths": [
@@ -4638,7 +4648,8 @@
     "data/maps/SaffronCity_PokemonTrainerFanClub/text.inc",
     "data/maps/Route16_NorthEntrance_2F/text.inc",
     "data/maps/SixIsland_GreenPath/text.inc",
-    "data/maps/SixIsland_PatternBush/text.inc"
+    "data/maps/SixIsland_PatternBush/text.inc",
+    "data/maps/OneIsland_TreasureBeach/text.inc"
   ],
   "constantSymbols": [
     "(MAX_COINS + 1) - 10",
@@ -11532,7 +11543,15 @@
     "WONDER_CARD_TEXT_LENGTH",
     "WONDER_NEWS_BODY_TEXT_LINES",
     "WONDER_NEWS_TEXT_LENGTH",
-    "YES"
+    "YES",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_STARDUST",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_STARDUST_2",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_PEARL",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_PEARL_2",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_ULTRA_BALL",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_ULTRA_BALL_2",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_STAR_PIECE",
+    "FLAG_HIDDEN_ITEM_ONE_ISLAND_TREASURE_BEACH_BIG_PEARL"
   ],
   "supplementalTexts": [
     {

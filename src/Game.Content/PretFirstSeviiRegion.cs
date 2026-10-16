@@ -15,6 +15,7 @@ public sealed partial class PretFirstSeviiRegion
     public ImmutableDictionary<string, PretWorldMap> LayoutVariants { get; private init; } = ImmutableDictionary<string, PretWorldMap>.Empty;
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<Game.Domain.Encounters.EarlyLandEncounterTable> LandEncounters { get; private init; }
+    public ImmutableArray<Game.Domain.Encounters.WaterEncounterTable> WaterEncounters { get; private init; }
     public ImmutableArray<FieldItemServiceDefinition> ItemServices { get; private init; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
@@ -107,10 +108,11 @@ public sealed partial class PretFirstSeviiRegion
             }
         using var encounters = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/first-sevii/encounters.json")));
         var land = PretWildEncounterTables.Land(encounters.RootElement.GetProperty("admitted"), MapIdFromSourceSymbol);
-        Need(land.All(t => maps.ContainsKey(t.Map)), "Land encounter map is not mounted.");
+        var water = PretWildEncounterTables.Water(encounters.RootElement.GetProperty("admitted"), MapIdFromSourceSymbol);
+        Need(land.All(t => maps.ContainsKey(t.Map)) && water.All(t => maps.ContainsKey(t.Map)), "Encounter map is not mounted.");
         using var serviceData = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/first-sevii/services.json")));
         var services = PretFieldItemServices.Decode(serviceData.RootElement.GetProperty("serviceBindings"), maps, constants);
-        return new(source, maps.ToImmutable(), constants) { LayoutVariants = variants.ToImmutable(), LandEncounters = land, ItemServices = services };
+        return new(source, maps.ToImmutable(), constants) { LayoutVariants = variants.ToImmutable(), LandEncounters = land, WaterEncounters = water, ItemServices = services };
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
     private static string Safe(string root, string relative) => PretRuntimeMapValidation.SafeFile(root, relative);
