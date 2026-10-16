@@ -30,7 +30,7 @@ class StickerManImportTests(unittest.TestCase):
         self.assertEqual([r['minimumCounts'] for r in actual['categories']],
                          [[1, 40, 100, 200], [1, 100, 200, 300], [1, 20, 50, 100]])
 
-    def test_source_selection_preserves_lines_and_excludes_printer(self):
+    def test_source_selection_preserves_lines_and_printer_is_separately_enabled(self):
         importer = module('sticker_story', 'scripts/imports/story/import-story.py')
         entry = {'path': 'data/scripts/trainer_card.inc', 'labelPrefixes': ['FourIsland_House2_']}
         original = (RAW / entry['path']).read_text().splitlines()
@@ -42,7 +42,7 @@ class StickerManImportTests(unittest.TestCase):
         compiled = json.loads((ROOT / 'content/generated/data/story.json').read_text())['Compilation']
         programs = compiled['Programs']
         self.assertIn('FourIsland_House2_EventScript_StickerMan', programs)
-        self.assertNotIn('CeladonCity_GameCorner_EventScript_PhotoPrinter', programs)
+        self.assertIn('CeladonCity_GameCorner_EventScript_PhotoPrinter', programs)
         self.assertFalse([d for d in compiled['UnsupportedInstructions'] if 'trainer_card.inc' in str(d)])
 
     def test_all_source_brag_menus(self):

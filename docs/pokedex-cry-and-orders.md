@@ -33,7 +33,7 @@
 
 ## 表现与验证边界
 
-仍复用现有列表、资料背景、物种画面及原 small/normal 位图字体。底栏 `Tab CRY`／`R SEARCH` 是当前键鼠提示，没有捏造原 START 图标。排序菜单和原作目录／栖息地层级尚未完全同形；当前排序结果直接进入既有资料页，原 Search→栖息地页→资料页的路径仍缺。分布、栖息地、大小比较不由本切片完成。
+仍复用现有列表、资料背景、物种画面及原 small/normal 位图字体。底栏 `Tab CRY`／`R SEARCH` 是当前键鼠提示，没有捏造原 START 图标。后续的目录、Search→栖息地页→资料页及分布/大小路径见 [栖息地与分布](pokedex-habitats-and-area.md)。本页以下验证记录属于当时的叫声/排序切片，不自动证明后续页面或转场已逐像素验收。
 
 维护测试：`tests/Game.Presentation.Tests/PokedexDetailPresentationTests.cs` 检查已见／未捕获门禁、未见与空选择拒绝、Hoenn内部ID和全国范围、上下跳过空洞、底栏可点击范围；`tests/Game.Content.Tests/PokedexSearchOrderTests.cs` 检查原排序表与列表规则。2026-10-16 在合并后程序集重跑上述表现目标，5/5通过；内容侧 `PokedexSearchOrderTests` 与 `GeneratedPokedexCatalogTests` 共17/17通过，均无失败或跳过。
 

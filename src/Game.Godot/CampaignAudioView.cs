@@ -28,7 +28,7 @@ public partial class CampaignView
             try
             {
                 var synthesized=new SynthSourceAudioPlayer(_root);
-                _sourceAudio=synthesized;AddChild(synthesized);_audioContext=AudioContext(_session.State);
+                _sourceAudio=synthesized;SynchronizeSavedOptions();AddChild(synthesized);_audioContext=AudioContext(_session.State);
                 synthesized.PlaybackEvent+=cue=>
                 {
                     if(cue.Kind=="fault")_audioFaulted=true;

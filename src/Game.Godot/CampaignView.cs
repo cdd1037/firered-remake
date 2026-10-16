@@ -138,6 +138,7 @@ public partial class CampaignView:Node2D
     // These resources are constructed directly, not borrowed from SceneTextures.
     private void DisposeCorePresentation()
     {
+        DisposeTrainerCardPresentation();
         _sourceNormal?.Dispose(); _sourceSmall?.Dispose(); _sourceWhite?.Dispose();
         _sourceSmallWhite?.Dispose(); _sourceInactiveCursor?.Dispose();
         _sourceNormal=_sourceSmall=_sourceWhite=_sourceSmallWhite=_sourceInactiveCursor=null!;
@@ -240,7 +241,8 @@ public partial class CampaignView:Node2D
         if(naming&&!_nicknameEdit.Visible){_nicknameEdit.MaxLength=StorageBoxNaming?8:10;_nicknameEdit.Text="";_nicknameEdit.Visible=true;_nicknameEdit.GrabFocus();_nicknameEdit.Edit();}
         else if(!naming&&_nicknameEdit.Visible){_nicknameEdit.Visible=false;_nicknameEdit.ReleaseFocus();if(after.Nickname?.Submitted==true||before?.WildBattle?.Capture?.Stage==CampaignCaptureStage.Naming||before?.SafariBattle?.Capture?.Stage==CampaignCaptureStage.Naming)_fade=16.0/60;}
         SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
-        SynchronizeOptionFrames();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSourceGridMenu();SynchronizeSourceMenu();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeDaisyGroomingPresentation(before,after);SynchronizeSizeRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);SynchronizeSlotMachine();SynchronizeFameChecker();SynchronizeVsSeekerPresentation(before,after);SynchronizeTeachyTvPresentation();SynchronizeTeachyTvFieldPresentation();SynchronizeTeachyTvBattle();
+        SynchronizeSavedOptions();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSourceGridMenu();SynchronizeSourceMenu();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeDaisyGroomingPresentation(before,after);SynchronizeSizeRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);SynchronizeSlotMachine();SynchronizeFameChecker();SynchronizeVsSeekerPresentation(before,after);SynchronizeTeachyTvPresentation();SynchronizeTeachyTvFieldPresentation();SynchronizeTeachyTvBattle();
+        SynchronizeTrainerCardPhoto(before,after);
         SynchronizeDiplomaPresentation(before,after);
         var wait=after.Script.Wait;
         if(wait?.CorrelationId!=_waitId||wait?.Kind!=_waitKind||before?.Dialogue?.Page!=after.Dialogue?.Page)
@@ -261,6 +263,7 @@ public partial class CampaignView:Node2D
     {
         if(_quitRequested||_startupExited)return;
         if(!_startupReady){ProcessStartup();return;}
+        ProcessTrainerCardPresentation(delta);
         ProcessTrainerTowerTime(delta);
         if(PlayerEntryActive){QueueRedraw();return;}
         if(!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
@@ -603,7 +606,7 @@ public partial class CampaignView:Node2D
         if(FieldMenuOpen)DrawFieldMenu();
         DrawItemfinder();DrawVsSeekerMessage();
         if(_fade>0)DrawRect(new(0,0,240,160),new Color(0,0,0,(float)(_fade/.16)));
-        DrawCinnabarFade();DrawFieldFlyTravelOverlay();DrawDiplomaFieldFade();
+        DrawCinnabarFade();DrawFieldFlyTravelOverlay();DrawTrainerCardPhotoFlash();DrawDiplomaFieldFade();
     }
     private void SourceText(SourceGameFont font,Vector2 topLeft,string text,int letterSpacing=0)
     {

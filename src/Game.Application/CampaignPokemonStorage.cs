@@ -20,6 +20,7 @@ public sealed record CampaignPcState(CampaignPcView View,int StorageMenuSelectio
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStorageSummary? Summary { get; init; }
     // Native cursor ownership is transient: every open PC is already excluded from player saves.
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveCursor? MoveCursor { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageGroupCursor? GroupCursor { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageItemCursor? ItemCursor { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStorageItemPrompt? ItemPrompt { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStorageItemBagTarget? ItemBagTarget { get; init; }
@@ -38,17 +39,20 @@ public sealed partial class CampaignSession
         if (state.FourIslandDayCare?.First is {} first) owned = owned.Add(first.Pokemon);
         if (state.FourIslandDayCare?.Second is {} second) owned = owned.Add(second.Pokemon);
         if (state.Pc?.MoveCursor is {} cursor) owned = owned.Add(cursor.Pokemon);
+        if (state.Pc?.GroupCursor is {} group) owned = owned.AddRange(group.Cells.OfType<PartyPokemon>());
         return owned;
     }
 
     private string? ValidateStorageState(CampaignState state)
     {
+        if(state.Pc?.GroupCursor is not null && (state.Pc.View != CampaignPcView.Move || state.Pc.MoveCursor is not null || state.Pc.Customization is not null || state.Pc.Summary is not null || state.Pc.ReleaseTarget is not null))return "storage_rectangle_context";
         if(state.Pc?.MoveCursor is not null&&state.Pc.View!=CampaignPcView.Move)return "storage_move_cursor_context";
         if(state.Pc is {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} && state.Pc.View!=CampaignPcView.MoveItems)return "storage_item_cursor_context";
         if(state.Pc?.ReleaseTarget is not null&&state.Pc.View is not (CampaignPcView.Deposit or CampaignPcView.Withdraw or CampaignPcView.Move))return "storage_release_context";
         if(ValidateStorageCustomizationState(state) is {} customizationError)return customizationError;
         var error=PokemonStorageMoveRules.Validate(_content.PokemonContent,state.Party,state.Storage,state.Pc?.MoveCursor,state.NextPokemonId);
         if(error is not null)return error.Code;
+        if (state.Pc?.GroupCursor is not null && PokemonStorageRectangleRules.Validate(_content.PokemonContent, state.Party, state.Storage, state.Pc.GroupCursor, state.NextPokemonId) is {} groupError) return groupError.Code;
         if(ValidateStorageSummaryState(state) is {} summaryError)return summaryError;
         var owned=OwnedPokemon(state);
         if(owned.Select(p=>p.InstanceId).Distinct().Count()!=owned.Length)return "storage_duplicate_instance_id";
@@ -102,6 +106,7 @@ public sealed partial class CampaignSession
         Decision<CampaignState> View(CampaignPcView view,int? selection=null)=>new(CommandStatus.Accepted,
             state with{Pc=pc with{View=view,StorageMenuSelection=selection??pc.StorageMenuSelection}});
         if(pc.View==CampaignPcView.HallOfFame)return DecideHallOfFamePc(state,command);
+        if(pc.GroupCursor is not null)return DecideStorageGroupMove(state,command);
         if(pc.Summary is not null)return DecideStorageSummary(state,command);
         if(pc.Customization is not null)return DecideStorageCustomization(state,command);
         if(pc.ReleaseTarget is not null)return DecideStorageRelease(state,command);
@@ -164,7 +169,7 @@ public sealed partial class CampaignSession
         if(state.Pc?.Summary is not null)return new(CommandStatus.Rejected,state,"storage_summary_active");
         if(state.Pc?.Customization is not null)return new(CommandStatus.Rejected,state,"storage_customization_active");
         if(state.Pc?.ReleaseTarget is not null)return new(CommandStatus.Rejected,state,"storage_release_prompt_active");
-        if(state.Pc?.MoveCursor is not null)return new(CommandStatus.Rejected,state,"storage_move_holding");
+        if(state.Pc?.MoveCursor is not null || state.Pc?.GroupCursor is not null)return new(CommandStatus.Rejected,state,"storage_move_holding");
         if(state.Pc?.ItemCursor is not null)return new(CommandStatus.Rejected,state,"storage_item_holding");
         if(state.Pc is null||state.Script.Wait is not {} wait||wait.Kind is not (StoryWaitKind.Presentation or StoryWaitKind.Inventory))
             return new(CommandStatus.Fault,state,"pc_callback_context_invalid");

@@ -78,7 +78,7 @@ public partial class CampaignView
         if (key.Keycode is Key.F5 or Key.F9) { if (key.Pressed) ResetFieldMenu(); return false; }
         _held = null; _repeat = 0;
         if (!key.Pressed || key.Echo || _busy || _fade > 0) return true;
-        if(key.Keycode is Key.Up or Key.Down or Key.Left or Key.Right or Key.Enter or Key.Backspace)SourceSound("SE_SELECT");
+        if(_fieldMenuMode!="trainer-card" && key.Keycode is (Key.Up or Key.Down or Key.Left or Key.Right or Key.Enter or Key.Backspace))SourceSound("SE_SELECT");
         if (_fieldMenuNotice is not null)
         {
             if (key.Keycode is Key.Enter or Key.Backspace)
@@ -240,7 +240,7 @@ public partial class CampaignView
     private bool MouseFieldMenu(Vector2 point)
     {
         if (_fieldMenuNotice is not null) return MouseConfirm(point, MouseMessage);
-        if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order") return MousePokedexMenu(point);
+        if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order" or "pokedex-contents" or "pokedex-habitat" or "pokedex-area") return MousePokedexMenu(point);
         if (_fieldMenuMode == "options") return MouseOptionsMenu(point);
         if (_fieldMenuMode == "trainer-card") return new Rect2(176,140,64,20).HasPoint(point)&&MouseKey(Key.Backspace);
         if (_fieldMenuMode is "save-confirm" or "save-overwrite") return MouseSelect(point, ref _fieldSaveChoice, 2, 192, 73, 40, 16);
@@ -272,7 +272,7 @@ public partial class CampaignView
                 SourceText(_sourceNormal, new(182, 73 + 16 * _fieldSaveChoice), "▶");
             }
         }
-        else if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order") DrawPokedexMenu();
+        else if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order" or "pokedex-contents" or "pokedex-habitat" or "pokedex-area") DrawPokedexMenu();
         else if (_fieldMenuMode == "trainer-card") DrawTrainerCard();
         else if (_fieldMenuMode == "options") DrawOptionsMenu();
         else if (_fieldMenuMode == "summary") DrawFieldSummary();

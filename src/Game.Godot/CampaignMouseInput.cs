@@ -227,6 +227,7 @@ public partial class CampaignView
     private bool NavigateFieldMenuPointer(Vector2 point, int direction)
     {
         if (_fieldMenuNotice is not null) return false;
+        if (_fieldMenuMode is "pokedex-contents" or "pokedex-habitat" or "pokedex-area") return NavigatePokedexExtraPointer(point, direction);
         if (_fieldMenuMode == "pokedex-order") return NavigatePokedexOrderPointer(point, direction);
         if (_fieldMenuMode == "pokedex")
         {

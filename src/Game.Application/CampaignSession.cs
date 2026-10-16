@@ -228,6 +228,8 @@ public sealed record CampaignCommand(string Kind,Direction Direction=Direction.S
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public long? TargetInstanceId{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveLocation? StorageLocation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageRectangle? StorageRectangle{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<long?> StorageIdentities{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? StorageBoxIndex{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public long? HeldInstanceId{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? HeldItemId{get;init;}
@@ -329,6 +331,7 @@ public sealed partial class CampaignSession
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
+        if(ValidateTrainerCardPhoto(s) is {} photoError)return photoError;
         if(ValidateTrainerFanClub(s) is {} fanClubError)return fanClubError;
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         if(ValidateSelphyRequest(s) is {} selphyError)return selphyError;
@@ -484,7 +487,7 @@ public sealed partial class CampaignSession
             if(command.Kind=="play_time_tick")return DecidePlayTime(state,command);
             // MOVE owns a removed creature or held item. All gameplay commands
             // remain behind this native modal.
-            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null} or {Summary:not null})return DecidePc(state,command);
+            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {GroupCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null} or {Summary:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
@@ -779,6 +782,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyTrainerCardPhotoEffect(state,effect,out var photoState)){state=photoState;continue;}
             if(TryApplyStoryRandomEffect(state,effect,out var randomState)){state=randomState;continue;}
             if(TryApplySourceListMenuEffect(state,effect,out var listMenuState)){state=listMenuState;continue;}
             if(TryApplyMuseumPictureEffect(state,effect,out var museumPictureState)){state=museumPictureState;continue;}

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Game.Application;
 using Game.Domain.Pokemon;
 using Godot;
@@ -7,6 +8,9 @@ using Godot;
 public partial class CampaignView
 {
     private bool _storageMovePartyOpen;
+    private bool _storageMultiMode;
+    private int? _storageRectangleAnchor;
+    private bool StorageRectangleActive => _storageRectangleAnchor is not null || _session.State.Pc?.GroupCursor is not null;
     private int _storageMovePartyCursor, _storageMovePreviousPartyCursor = 1;
     private const string StorageMoveBusyNotice = "The PC is busy.\nPlease try again.";
     private static readonly Rect2 StorageMovePartyButton = new(80, 0, 88, 16);
@@ -16,6 +20,7 @@ public partial class CampaignView
     private void ResetStorageMovePresentation()
     {
         _storageMovePartyOpen = false;
+        _storageMultiMode = false; _storageRectangleAnchor = null;
         _storageMovePartyCursor = 0;
         _storageMovePreviousPartyCursor = 1;
     }
@@ -46,13 +51,16 @@ public partial class CampaignView
             error.Contains("storage_move_box_not_selected", StringComparison.Ordinal))
             return "The selected POKéMON has changed.\nPlease choose its current slot.";
         if (error.Contains("storage_move_slot_occupied", StringComparison.Ordinal))
-            return "That slot is occupied.\nChoose the POKéMON to shift.";
+            return _session.State.Pc?.GroupCursor is not null
+                ? "That space is occupied.\nChoose empty slots for the group."
+                : "That slot is occupied.\nChoose the POKéMON to shift.";
         return StorageError(error);
     }
 
     private void ToggleStorageMoveParty()
     {
         _storageTitleSelected = false;
+        if (StorageRectangleActive) { StorageMoveAction(new("storage_move_hide_party")); return; }
         if (_storageMovePartyOpen)
         {
             // Source Task_PokeStorageMain refuses hiding the party with held Mail.
@@ -74,6 +82,7 @@ public partial class CampaignView
 
     private bool StorageMoveInput(InputEventKey key)
     {
+        if (StorageRectangleInput(key)) return true;
         if (!key.Pressed || key.Echo) return true;
         _held = null; _repeat = 0;
         if (_pcNotice is not null)
@@ -129,6 +138,21 @@ public partial class CampaignView
     {
         if (_pcNotice is not null) return MouseConfirm(point, MouseMessage);
         if (StorageCreatureOverlayActive) return MouseStorageCreature(point);
+        if (StorageRectangleActive)
+        {
+            if (new Rect2(88, 32, 144, 120).HasPoint(point))
+            {
+                int slot = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24);
+                if (_session.State.Pc?.GroupCursor is {} group)
+                    _boxCursor = Math.Min(slot / 6, 5 - group.Origin.Height) * 6 + Math.Min(slot % 6, 6 - group.Origin.Width);
+                else _boxCursor = slot;
+                if (_storageRectangleAnchor is not null) { StorageMoveInput(new InputEventKey { Keycode = Key.Enter, Pressed = false }); QueueRedraw(); return true; }
+                return MouseKey();
+            }
+            if (new Rect2(84, 16, 24, 16).HasPoint(point)) return MouseKey(Key.Pageup);
+            if (new Rect2(216, 16, 24, 16).HasPoint(point)) return MouseKey(Key.Pagedown);
+            return true;
+        }
         if (!_storageMovePartyOpen && MouseStorageBoxTitle(point)) return true;
         if (StorageMoveCloseButton.HasPoint(point))
         {
@@ -155,6 +179,7 @@ public partial class CampaignView
     {
         if (_pcNotice is not null) return false;
         if (StorageCreatureOverlayActive) return NavigateStorageCreaturePointer(point, direction);
+        if (StorageRectangleActive) return false;
         if (_storageMovePartyOpen)
         {
             if (StorageMovePartyCancel.HasPoint(point))
@@ -193,7 +218,8 @@ public partial class CampaignView
             DrawRect(heldRect, new Color("f4db88"));
             DrawTextureRectRegion(PresentedOwnedIcon(held), heldRect, new(0, 0, 32, 32));
         }
-        var displayed = held ?? target;
+        DrawStorageRectangle();
+        var displayed = held ?? _session.State.Pc?.GroupCursor?.Cells.OfType<PartyPokemon>().FirstOrDefault() ?? target;
         // Replace the embedded PKMN DATA caption before drawing this thin view's
         // held-state label; never overlay two different words on the same pixels.
         DrawRect(new(4, 1, 72, 13), new Color("b8b8c0"));
@@ -202,10 +228,93 @@ public partial class CampaignView
         string action = _storageMovePartyOpen && _storageMovePartyCursor == 6 ? "CANCEL"
             : held is null ? target is null ? "EMPTY" : PcText("gPCText_Move")
             : target is null ? PcText("gPCText_Place") : PcText("gPCText_Shift");
-        SourceText(_sourceSmall, new(6, 132), "ENTER: " + (action is "EMPTY" or "CANCEL" ? action : "MENU"));
+        SourceText(_sourceSmall, new(6, 132), _storageRectangleAnchor is not null ? "RELEASE ENTER" : StorageRectangleActive ? "ENTER: PLACE" : _storageMultiMode ? "HOLD ENTER" : "ENTER: " + (action is "EMPTY" or "CANCEL" ? action : "MENU"));
+        if (!_storageMovePartyOpen) SourceText(_sourceSmall, new(6, 145), "SPACE: " + (_storageMultiMode ? "MULTI" : "SINGLE"));
         DrawStorageCreatureOverlay();
         DrawStorageCustomizationOverlay();
         if (_pcNotice is not null) ItemMessageBox(_pcNotice);
+    }
+
+
+    // Space is the desktop Select binding. Enter is A: hold while extending, release to grab.
+    private bool StorageRectangleInput(InputEventKey key)
+    {
+        if (_pcNotice is not null || StorageCreatureOverlayActive || _busy) return false;
+        if (_storageRectangleAnchor is {} anchor)
+        {
+            if (!key.Pressed && key.Keycode == Key.Enter)
+            {
+                _storageRectangleAnchor = null;
+                if (anchor == _boxCursor)
+                {
+                    if (StorageMoveTarget is {} mon) StorageMoveAction(new("storage_move_grab") {
+                        StorageLocation = PokemonStorageMoveLocation.Box(_session.State.Storage!.CurrentBox, anchor), TargetInstanceId = mon.InstanceId });
+                    return true;
+                }
+                var rectangle = new PokemonStorageRectangle(_session.State.Storage!.CurrentBox, anchor, _boxCursor);
+                var identities = Enumerable.Range(0, rectangle.Width * rectangle.Height)
+                    .Select(i => _session.State.Storage.Boxes[rectangle.BoxIndex].Slots[rectangle.Slot(i)]?.InstanceId).ToImmutableArray();
+                if (StorageMoveAction(new("storage_group_grab") { StorageRectangle = rectangle, StorageIdentities = identities }))
+                    _boxCursor = rectangle.Top * 6 + rectangle.Left;
+                return true;
+            }
+            if (key.Pressed) MoveRectangleCursor(key.Keycode, 1, 1, false);
+            return true;
+        }
+        if (_session.State.Pc?.GroupCursor is {} group)
+        {
+            if (!key.Pressed || key.Echo) return true;
+            if (key.Keycode == Key.Enter)
+                StorageMoveAction(new("storage_group_place") {
+                    StorageLocation = PokemonStorageMoveLocation.Box(_session.State.Storage!.CurrentBox, _boxCursor),
+                    StorageIdentities = group.Cells.Select(p => p?.InstanceId).ToImmutableArray() });
+            else if (key.Keycode is Key.B or Key.Backspace or Key.Tab) StorageMoveAction(new("pc_back"));
+            else if (key.Keycode is Key.Pageup or Key.Pagedown)
+                StorageMoveAction(new("storage_box", Choice: (_session.State.Storage!.CurrentBox + (key.Keycode == Key.Pagedown ? 1 : 13)) % 14));
+            else MoveRectangleCursor(key.Keycode, group.Origin.Width, group.Origin.Height, true);
+            return true;
+        }
+        if (_storageMovePartyOpen || !key.Pressed || key.Echo) return false;
+        if (key.Keycode == Key.Space) { _storageMultiMode = !_storageMultiMode; _storageTitleSelected = false; return true; }
+        if (_session.State.Pc?.MoveCursor is {} single)
+        {
+            if (!_storageMultiMode || key.Keycode != Key.Enter || _storageTitleSelected) return false;
+            StorageMoveAction(new(StorageMoveTarget is null ? "storage_move_place" : "storage_move_shift") {
+                StorageLocation = PokemonStorageMoveLocation.Box(_session.State.Storage!.CurrentBox, _boxCursor),
+                HeldInstanceId = single.Pokemon.InstanceId, TargetInstanceId = StorageMoveTarget?.InstanceId });
+            return true;
+        }
+        if (_storageMultiMode && key.Keycode == Key.Enter && !_storageTitleSelected && StorageMoveTarget is not null)
+        { _storageRectangleAnchor = _boxCursor; return true; }
+        return false;
+    }
+
+    private void MoveRectangleCursor(Key key, int width, int height, bool crossBox)
+    {
+        int x = _boxCursor % 6, y = _boxCursor / 6;
+        int dx = key == Key.Left ? -1 : key == Key.Right ? 1 : 0;
+        int dy = key == Key.Up ? -1 : key == Key.Down ? 1 : 0;
+        if (crossBox && (x + dx < 0 || x + dx + width > 6))
+        {
+            StorageMoveAction(new("storage_box", Choice: (_session.State.Storage!.CurrentBox + (dx > 0 ? 1 : 13)) % 14));
+            return;
+        }
+        _boxCursor = Math.Clamp(y + dy, 0, 5 - height) * 6 + Math.Clamp(x + dx, 0, 6 - width);
+    }
+
+    private void DrawStorageRectangle()
+    {
+        var group = _session.State.Pc?.GroupCursor;
+        var rectangle = _storageRectangleAnchor is {} anchor
+            ? new PokemonStorageRectangle(_session.State.Storage!.CurrentBox, anchor, _boxCursor) : group?.Origin;
+        if (rectangle is null) return;
+        int origin = group is null ? rectangle.Top * 6 + rectangle.Left : _boxCursor;
+        var first = StorageMoveBoxRect(origin);
+        DrawRect(new(first.Position, new(rectangle.Width * 24, rectangle.Height * 24)), new Color("fff4b8"), filled: false, width: 2);
+        if (group is null) return;
+        for (int i = 0; i < group.Cells.Length; i++)
+            if (group.Cells[i] is {} mon)
+                DrawTexture(PresentedOwnedIcon(mon), first.Position + new Vector2(i % rectangle.Width * 24 - 4, i / rectangle.Width * 24 - 4));
     }
 
     // Shared source workspace pixels for creature MOVE and item MOVE.

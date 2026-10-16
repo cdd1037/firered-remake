@@ -8,7 +8,7 @@ Pinned pret 037335f4 `data/scripts/trainer_card.inc` controls category choice, c
 - Hatched egg tiers: 1–99, 100–199, 200–299, 300+.
 - The native query truncates Hall of Fame counts to ushort and saturates egg counts at 65535, as in source.
 - Link wins remain unavailable and zero. No multiplayer victory or sticker is fabricated.
-- Trainer Card back rendering remains deferred. Award storage and original acknowledgement dialogue are implemented; this does not claim visible stickers on the card back.
+- Trainer Card back now renders the stored Hall of Fame/egg awards with the original category graphics and tier palettes. See [Trainer Card and Photo Printer](trainer-card-and-photo-printer.md) for current scope and verification.
 
 ## Lifetime hatch statistic and old saves
 

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <Compile Include="../../src/Game.Godot/CampaignOptionEditing.cs" Link="CampaignOptionEditing.cs" />
     <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
     <Compile Include="../../src/Game.Godot/*PresentationAssets.cs" Link="PresentationAssets/%(Filename)%(Extension)" />

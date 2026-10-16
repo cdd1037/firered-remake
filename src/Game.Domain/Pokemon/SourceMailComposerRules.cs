@@ -30,16 +30,18 @@ public static class SourceMailComposerRules
         return bytes.ToImmutableArray();
     }
 
+    public const int UnownMailSpeciesBase = 30000;
+    public static bool IsEncodedUnownSpecies(int species) => species >= UnownMailSpeciesBase && species < UnownMailSpeciesBase + UnownFormRules.FormCount;
+
     public static ushort MailSpecies(SourceEasyChatCatalog catalog, int species, uint personality) =>
-        species == catalog.UnownSpecies ? (ushort)(30000 + ((((personality & 0x3000000) >> 18) |
-            ((personality & 0x30000) >> 12) | ((personality & 0x300) >> 6) | (personality & 3)) % 28)) : checked((ushort)species);
+        species == catalog.UnownSpecies ? (ushort)(UnownMailSpeciesBase + UnownFormRules.Form(personality)) : checked((ushort)species);
 
     /// <summary>Persisted/received syntax only: current progression never invalidates an existing letter.</summary>
     public static string? ValidateMessage(SourceEasyChatCatalog catalog, SourceMailMessage message)
     {
         if (SourceMailRules.ValidateMessage(message) is { } invalid) return invalid;
         if (SourceEasyChatRules.ValidateWords(catalog, message.Words) is { } words) return words;
-        return message.Species is >= 30000 and < 30028 || catalog.Words.Values.Any(w =>
+        return IsEncodedUnownSpecies(message.Species) || catalog.Words.Values.Any(w =>
             (w.Group == catalog.SeenPokemonGroup || w.Group == catalog.NationalPokemonGroup) && w.Index == message.Species)
             ? null : "mail_species";
     }

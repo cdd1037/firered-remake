@@ -77,7 +77,7 @@ public sealed class PretMailPresentation
     /// <summary>Source Mail stores Unown form+30000. The reader uses the source first icon frame, including Deoxys normal icon.</summary>
     public static int? IconRenderSpecies(ushort mailSpecies)
     {
-        if (mailSpecies is >= 30000 and < 30028) return mailSpecies == 30000 ? 201 : mailSpecies - 30000 + 412;
+        if (SourceMailComposerRules.IsEncodedUnownSpecies(mailSpecies)) return mailSpecies == SourceMailComposerRules.UnownMailSpeciesBase ? UnownFormRules.SourceSpeciesId : mailSpecies - SourceMailComposerRules.UnownMailSpeciesBase + NameRaterRules.EggSpecies;
         // Raw Unown has undefined uninitialized form data in the source function; canonical authored Mail encodes its form.
         if (mailSpecies == 201) return 201;
         return mailSpecies is > 0 and < 412 ? mailSpecies : null;

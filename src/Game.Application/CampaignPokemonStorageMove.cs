@@ -10,6 +10,7 @@ public sealed partial class CampaignSession
         if (state.Pc is not { View: CampaignPcView.Move } pc || state.Storage is not {} storage)
             return No("storage_move_cursor_context");
         if (ValidateStorageMoveOwnership(state) is {} invalid) return No(invalid);
+        if (command.Kind == "storage_group_grab" || pc.GroupCursor is not null) return DecideStorageGroupMove(state, command);
         var content = _content.PokemonContent;
         PokemonStorageMoveResult result;
         switch (command.Kind)

@@ -84,7 +84,7 @@ public partial class CampaignView
         // The original empty-save branch enters New Game directly. This bounded
         // entry starts identity selection; the original Oak introduction is pending.
         _entryMode=_entryNotice is not null?"notice":_entrySave is not null?"menu":"gender";
-        ApplyOptionFrame(_entrySave?.State.Options?.Frame??0);
+        ApplySavedOptions(_entrySave?.State.Options??Game.Domain.Options.SourceGameOptions.Defaults);
     }
 
     private void ShowEntryName(string mode)

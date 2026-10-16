@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticated static FireRed zero-star Trainer Card and display metadata.
+"""FireRed own-card artwork, earned star colors, stickers and photo metadata.
 
 Only immutable local Git objects or verified raw cache bytes are read. No upstream
 code, ROM, network, runtime shaders, battle effects or evolution executor is used.
@@ -22,7 +22,7 @@ import sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-PROFILE = 'firered-trainer-card-v1'
+PROFILE = 'firered-trainer-card-v2'
 PATHS = frozenset("""src/trainer_card.c
 src/trainer_pokemon_sprites.c
 src/strings.c
@@ -47,7 +47,21 @@ graphics/trainer_card/front.bin
 graphics/trainer_card/back.bin
 graphics/trainer_card/bg.bin
 graphics/trainer_card/tiles.png
+graphics/text_window/stdpal_0.pal
 graphics/trainer_card/blue.pal
+graphics/trainer_card/green.pal
+graphics/trainer_card/bronze.pal
+graphics/trainer_card/silver.pal
+graphics/trainer_card/star.pal
+graphics/trainer_card/stickers.png
+graphics/trainer_card/stickers1.pal
+graphics/trainer_card/stickers2.pal
+graphics/trainer_card/stickers3.pal
+graphics/trainer_card/stickers4.pal
+src/palette.c
+src/field_effect.c
+src/field_specials.c
+data/scripts/trainer_card.inc
 graphics/trainer_card/female_bg.pal
 graphics/trainer_card/badges.png
 graphics/trainers/front_pics/red_front_pic.png
@@ -192,16 +206,31 @@ def convert( sources):
     female = pixels.palette(sources[base+'female_bg.pal'])
     if (len(blue),len(female)) != (48,16):
         raise ValueError('Unexpected Trainer Card palette size')
-    for gender in ('male','female'):
-        palettes = {0:blue[:16],1:blue[16:32] if gender=='male' else female,2:blue[32:48]}
-        background = render_tilemap(tiles,sources[base+'bg.bin'],palettes)
-        for side in ('front','back'):
-            rgba = pixels.canvas(240,160,(*blue[0],255))
-            overlay(rgba,240,background,240,160)
-            overlay(rgba,240,render_tilemap(tiles,sources[base+side+'.bin'],palettes),240,160)
-            paths=[base+'tiles.png',base+'blue.pal',base+'bg.bin',base+side+'.bin']
-            if gender=='female': paths.append(base+'female_bg.pal')
-            add(side+'-'+gender,240,160,rgba,input_paths=paths)
+    for stars, color in enumerate(('blue', 'green', 'bronze', 'silver')):
+        card_palette = pixels.palette(sources[base + color + '.pal'])
+        for gender in ('male','female'):
+            palettes = {0:card_palette[:16],1:card_palette[16:32] if gender=='male' else female,2:card_palette[32:48]}
+            background = render_tilemap(tiles,sources[base+'bg.bin'],palettes)
+            suffix=gender+('' if stars == 0 else '-'+str(stars))
+            backdrop=pixels.canvas(240,160,(*card_palette[0],255))
+            overlay(backdrop,240,background,240,160)
+            add('background-'+suffix,240,160,backdrop)
+            for side in ('front','back'):
+                rgba = pixels.canvas(240,160,(*card_palette[0],255))
+                overlay(rgba,240,background,240,160)
+                panel=render_tilemap(tiles,sources[base+side+'.bin'],palettes)
+                add('panel-'+side+'-'+suffix,240,160,panel)
+                overlay(rgba,240,panel,240,160)
+                add(side+'-'+gender+('' if stars == 0 else '-'+str(stars)),240,160,rgba)
+    add('star',8,8,pixels.rgba(tiles[143],pixels.palette(sources[base+'star.pal'])),120,56)
+    sticker_tiles = pixels.tile_list(sources[base+'stickers.png'])
+    for kind in range(2):  # Hall of Fame and eggs; link wins are unavailable.
+        for tier in range(1,5):
+            pal = pixels.palette(sources[base+'stickers'+str(tier)+'.pal'])
+            rgba = pixels.canvas(16,16)
+            for tile in range(4):
+                pixels.blit(rgba,16,pixels.rgba(sticker_tiles[kind*4+tile],pal),8,8,(tile%2)*8,(tile//2)*8)
+            add('sticker-'+str(kind)+'-'+str(tier),16,16,rgba,16+kind*24,16)
     for trainer in ('red','leaf'):
         path='graphics/trainers/front_pics/'+trainer+'_front_pic.png'
         palette_path='graphics/trainers/palettes/'+trainer+'.pal'
@@ -230,6 +259,8 @@ def convert( sources):
         texts[key]=matches[0]
     point=lambda x,y:dict(x=x,y=y)
     layout=dict(logicalWidth=240,logicalHeight=160,fontId=2,textColor=2,shadowColor=3,
+        statTextRgb=pixels.palette(sources['graphics/text_window/stdpal_0.pal'])[4],
+        statShadowRgb=pixels.palette(sources['graphics/text_window/stdpal_0.pal'])[5],
         textWindow=point(8,8),name=point(28,37),id=point(150,18),moneyLabel=point(28,64),moneyRightX=142,
         pokedexLabel=point(28,80),pokedexRightX=144,timeLabel=point(28,96),timeHours=point(109,96),
         timeColon=point(127,96),timeMinutes=point(132,96),backName=point(146,19),
@@ -237,20 +268,28 @@ def convert( sources):
         badges=[dict(index=i+1,flag='FLAG_BADGE%02d_GET'%(i+1),assetId='badge-'+str(i+1),x=32+i*24,y=128) for i in range(8)])
     rules=dict(trainerIdMask=65535,trainerIdDigits=5,maxMoney=999999,kantoDexCount=151,nationalDexCount=386,
         pokedexVisibleFlag='FLAG_SYS_POKEDEX_GET',nationalDexMagic=185,nationalDexVariable='VAR_NATIONAL_DEX',
-        nationalDexVariableValue=25176,nationalDexFlag='FLAG_SYS_NATIONAL_DEX',starCount=0,
-        playTimePersisted=False,gameStatisticsPersisted=False,
+        nationalDexVariableValue=25176,nationalDexFlag='FLAG_SYS_NATIONAL_DEX',maximumSupportedStars=3,
+        photoX=24,photoY=120,photoSpacing=32,
+        stickerVariables=['VAR_HOF_BRAG_STATE','VAR_EGG_BRAG_STATE'],
         backRows=[dict(id='hallOfFame',x=18,y=43,valueX=172,gate='any HOF debut time component nonzero'),
                   dict(id='linkBattles',x=18,y=59,valueX=152,gate='link wins or losses nonzero'),
                   dict(id='trades',x=18,y=75,valueX=194,gate='trade count nonzero'),
                   dict(id='unionRoom',x=18,y=91,valueX=194,gate='union-room count nonzero'),
                   dict(id='berryCrush',x=18,y=107,valueX=194,gate='berry-crush points nonzero')])
-    for symbol in ['PrintNameOnCardFront','PrintIdOnCard','PrintMoneyOnCard','GetCaughtMonsCount','PrintPokedexOnCard',
+    for needle in ['trainerCard->rse.caughtAllHoenn = HasAllKantoMons();', 'trainerCard->hasAllMons = HasAllMons();',
+                   'i * 3 + 2, 2, 2, 2, palSlots[sticker - 1]', 'xOffsets[i] + 3, 15, 4, 4',
+                   'TintPalette_CustomTone(sTrainerCardDataPtr->monIconPals, 96, 500, 330, 310);']:
+        require('src/trainer_card.c', needle)
+    require('src/field_specials.c', 'species[i] = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG, NULL);')
+    require('src/field_effect.c', 'BeginNormalPaletteFade(PALETTES_ALL, -1, 0x0F, 0x00, RGB_WHITE);')
+    require('data/scripts/trainer_card.inc', 'removemoney 50')
+    for symbol in ['PrintNameOnCardFront' ,'PrintIdOnCard','PrintMoneyOnCard','GetCaughtMonsCount','PrintPokedexOnCard',
                    'PrintTimeOnCard','SetPlayerCardData','SetDataFromTrainerCard','DrawStarsAndBadgesOnCard','CreateTrainerCardTrainerPic']:
         match=re.search(r'^static [^;\n]+ '+symbol+r'\([^;\n]*\)\n\{',code,re.M)
         if match is None: raise ValueError('Missing source function '+symbol)
-    outputs['trainer-card.json']=canonical(dict(schemaVersion=1,
+    outputs['trainer-card.json']=canonical(dict(schemaVersion=2,
         assets=assets,texts=texts,layout=layout,rules=rules))
-    outputs['manifest.json']=canonical(dict(schemaVersion=1,
+    outputs['manifest.json']=canonical(dict(schemaVersion=2,
         inputCount=len(sources),assetCount=len(assets),
         outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs

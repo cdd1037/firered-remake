@@ -21,7 +21,7 @@ public sealed record PokedexMenuOrders(ImmutableArray<int> Alphabetical, Immutab
 public sealed record PokedexMenuDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries,
     CaptureDexLayout EntryLayout, ImmutableArray<PokedexMenuTexture> Assets, PokedexMenuTexture OwnedMarker,
     ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules,
-    PokedexMenuOrders Orders);
+    PokedexMenuOrders Orders, ImmutableArray<PokedexHabitatDefinition> Habitats, ImmutableArray<ImmutableArray<PokedexHabitatSlot>> HabitatLayouts, ImmutableArray<int> SilhouetteRgb, ImmutableDictionary<int,PokedexSizeTransform> Sizes, PokedexAreaDefinition Areas);
 
 public enum PokedexMenuOrder { NumericalKanto, Alphabetical, Type, Lightest, Smallest, NumericalNational }
 
@@ -49,7 +49,7 @@ public readonly record struct PokedexMenuCursor(int ScrollOffset, int Row)
 }
 
 /// <summary>Immutable game metadata and presentation projections, with no acquisition/state mutation.</summary>
-public sealed class PretPokedexMenu
+public sealed partial class PretPokedexMenu
 {
     public const string SourceCommit = PretCaptureDex.SourceCommit;
     public const string Profile = "firered-pokedex-menu-v1";
@@ -83,6 +83,8 @@ public sealed class PretPokedexMenu
                 "gText_AToZMode", "gText_TypeMode", "gText_LightestMode", "gText_SmallestMode", "gText_SearchNoColor" })
             Require(document.UiTexts.TryGetValue(label, out var text) && !string.IsNullOrWhiteSpace(text),
                 "Pokédex order label is missing.");
+        ValidateHabitats();
+        ValidateAreas();
         _textures = document.Entries.SelectMany(e => new[] { e.Portrait,e.Footprint }).OfType<PokedexMenuTexture>()
             .Concat(document.Assets).DistinctBy(a => a.TexturePath)
             .ToImmutableDictionary(a => a.TexturePath, StringComparer.Ordinal);
@@ -94,7 +96,7 @@ public sealed class PretPokedexMenu
         const string directory = "content/generated/sprites/pokemon/pokedex-menu/";
         var bytes = ReadPinned(root,directory + "pokedex-menu.json");
         var document = ContentJson.ParseStrict<PokedexMenuDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 2 && !document.Entries.IsDefaultOrEmpty,
+        Require(document.SchemaVersion == 3 && !document.Entries.IsDefaultOrEmpty,
             "Pokédex menu format is invalid.");
         return new(root, document);
     }

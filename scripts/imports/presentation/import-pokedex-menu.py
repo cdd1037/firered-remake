@@ -19,6 +19,8 @@ import re
 import subprocess
 import sys
 import tempfile
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from pokedex_area_data import AREA_PATHS, area_map_paths, build_areas
 
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
@@ -53,6 +55,7 @@ include/menu.h
 graphics/interface/menu_info.png
 graphics/interface/dex_caught_pokeball.pal
 graphics/pokedex/kanto_dex_bgpals.pal
+graphics/pokedex/silhouette_sprite_pal.pal
 tools/gbagfx/gfx.c
 tools/gbagfx/main.c
 tools/gbagfx/convert_png.c'''.splitlines()) | frozenset('graphics/pokemon/' + n + '/footprint.png' for n in NEW_FOOTPRINTS)
@@ -139,12 +142,14 @@ def safe(root, relative=None):
 
 def read_sources(raw, repository=None):
     sources = {}
-    for relative in sorted(PATHS):
+    for relative in sorted(PATHS | AREA_PATHS):
         if repository is None:
             data = safe(raw, relative).read_bytes()
         else:
             data = subprocess.check_output(['git', '-C', str(repository), 'show', COMMIT + ':' + relative], timeout=30)
         sources[relative] = data
+    for relative in sorted(area_map_paths(sources) - sources.keys()):
+        sources[relative] = safe(raw, relative).read_bytes() if repository is None else subprocess.check_output(['git', '-C', str(repository), 'show', COMMIT + ':' + relative], timeout=30)
     return sources
 
 
@@ -200,8 +205,24 @@ def search_orders(text, national, species):
     return result
 
 
+def habitat_categories(text, species, strings):
+    pages = {name: [species[token] for token in re.findall(r'SPECIES_(\w+)', body)]
+        for name, body in re.findall(r'static const u16 sDexCategory_(\w+)\[\] = \{(.*?)\};', text, re.S)}
+    result = []
+    order = text.split('const gDexCategories[] = {', 1)[1].split('};', 1)[0]
+    for category in re.findall(r'DEX_CATEGORY\((\w+)\)', order):
+        body = re.search(r'static const struct PokedexCategoryPage sDexCategory_' + category + r'\[\] = \{(.*?)\};', text, re.S)[1]
+        groups = [pages[name] for name in re.findall(r'DEX_CATEGORY\((\w+)\)', body)]
+        if any(not 1 <= len(page) <= 4 for page in groups):
+            raise ValueError('Invalid habitat page size')
+        result.append(dict(id=category, title=string(strings, 'gText_DexCategory_' + category), pages=groups))
+    if len(result) != 9 or len([sid for c in result for p in c['pages'] for sid in p]) != 386:
+        raise ValueError('Incomplete habitat partition')
+    return result
+
+
 def convert(sources, old):
-    if set(sources) != PATHS:
+    if set(sources) != PATHS | AREA_PATHS | area_map_paths(sources):
         raise ValueError('Pokédex source set differs')
     texts = {p: b.decode('utf-8') for p, b in sources.items() if p.endswith(('.c', '.h'))}
     screen = texts['src/pokedex_screen.c']
@@ -273,7 +294,10 @@ def convert(sources, old):
         asset = dict(texturePath='content/generated/sprites/pokemon/pokedex-menu/' + filename,  width=16, height=16)
         footprints[sid] = asset
         assets.append(asset)
+    areas, area_outputs, area_assets = build_areas(sources, species, codec)
+    outputs.update(area_outputs); assets.extend(area_assets)
     entries = []
+    sizes = {}
     for number, name in enumerate(national[1:], 1):
         if f'SPECIES_TO_NATIONAL({name})' not in mapping:
             raise ValueError('Species-to-national binding missing: ' + name)
@@ -283,6 +307,8 @@ def convert(sources, old):
             raise ValueError('Missing dex entry: ' + name)
         body = match[1]
         category = json.loads(re.search(r'\.categoryName = _\(("[^"]+")\)', body)[1])
+        size = {field: int(re.search(r"\." + field + r" = (-?\d+)", body)[1]) for field in ("pokemonScale", "pokemonOffset", "trainerScale", "trainerOffset")}
+        sizes[str(sid)] = size
         height, weight = (int(re.search(r'\.' + field + r' = (\d+)', body)[1]) for field in ('height', 'weight'))
         desc = re.search(r'\.description = (\w+),', body)[1]
         english = json.loads(re.search(r'\[SPECIES_' + name + r'\]\s*= _\(("[^"]+")\)', texts['src/data/text/species_names.h'])[1])
@@ -306,11 +332,16 @@ def convert(sources, old):
             for key in ('name', 'category', 'displayCategory', 'heightDecimeters', 'weightHectograms', 'heightDisplay', 'weightDisplay', 'description', 'habitatTitle'):
                 if current[key] != legacy[key]:
                     raise ValueError('Existing capture entry changed: ' + sid + '/' + key)
-    symbols = ['gText_PokedexTableOfContents', 'gText_Seen', 'gText_Owned', 'gText_Kanto', 'gText_National',
+    symbols = ['gText_Area', 'gText_AreaUnknown', 'gText_Size', 'gText_PokedexTableOfContents', 'gText_Seen', 'gText_Owned', 'gText_Kanto', 'gText_National',
         'gText_NumericalModeKanto', 'gText_NumericalModeNational', 'gText_PokemonListNoColor', 'gText_PickOKExit',
         'gText_5Dashes', 'gText_PokedexPokemon', 'gText_HT', 'gText_WT', 'gText_Lbs', 'gText_Cry', 'gText_NextDataCancel', 'gText_PokedexNo', 'gText_ClosePokedex',
         'gText_NumericalMode', 'gText_AToZMode', 'gText_TypeMode', 'gText_LightestMode', 'gText_SmallestMode', 'gText_SearchNoColor', 'gText_Search']
-    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=2, entries=entries, orders=orders,
+    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=3, entries=entries, orders=orders, areas=areas, sizes=sizes,
+        silhouetteRgb=list(codec.legacy.codec.palette(sources['graphics/pokedex/silhouette_sprite_pal.pal'])[1][:3]),
+        habitats=habitat_categories(texts['src/data/pokemon/pokedex_categories.h'], species, texts['src/strings.c']),
+        habitatLayouts=[[dict(portraitX=int(x)*8, portraitY=int(y)*8, infoX=int(ix)*8, infoY=int(iy)*8)
+            for x,y,ix,iy in re.findall(r'\{\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*\}', body)]
+            for body in re.findall(r'static const u8 sPageIconCoords_\w+\[\d+\]\[4\] = \{(.*?)\};', screen, re.S)],
         entryLayout=old_pages[0]['layout'], assets=assets, ownedMarker=owned_marker,
         uiTexts={n:string(texts['src/strings.c'], n) for n in symbols},
         listLayout=dict(width=240,height=160,x=16,y=16,windowWidth=184,windowHeight=128,visibleRows=9,
@@ -357,7 +388,7 @@ def main():
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/sprites/pokemon/pokedex-menu')
     args=parser.parse_args()
     outputs=run(args.raw,args.out,args.reference_repo)
-    print(json.dumps(dict(status='verified',inputs=len(PATHS),entries=386,portraits=29,outputs=len(outputs))))
+    print(json.dumps(dict(status='verified',entries=386,portraits=29,outputs=len(outputs))))
 
 
 if __name__=='__main__':

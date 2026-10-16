@@ -47,3 +47,7 @@ python scripts/imports/rebuild-resources.py diploma --check
 ```
 
 The isolated Kanto/National visual-check branches also passed current save validation, full serialization roundtrip, designer interaction, native-screen callback, and return to idle field. They use explicit synthetic collection/hatch/Tanoby facts and live outside the project. The historic generation57604 player checkpoint was byte-checked unchanged. Those branches are test evidence only and are not normal-play completion or a migrated player save.
+
+## Bounded native window check
+
+2026-10-16 13:07–13:14 UTC: the cloud X11 Godot 4.7.2 window loaded the labelled Kanto test branch and entered the certificate through the designer's ordinary dialogue. The complete original background, player name, four-line Kanto text and GAME FREAK signature were visible without clipping. Backspace left the certificate open; a fresh Enter faded back to the field, with an accepted `diploma_complete` in the native log. Reopening also reached the same certificate. Dummy audio emitted the expected fanfare start/finish events; this is not audible verification. The National variant's generated pixels and application selection were checked separately, not visually in this native run. No normal player save was changed. Native screenshots and observed command events are retained in the tool transcript; the reusable launch log was subsequently overwritten by the settings check.

@@ -5,6 +5,12 @@
       "path": "Makefile"
     },
     {
+      "path": "data/scripts/trainer_card.inc"
+    },
+    {
+      "path": "graphics/text_window/stdpal_0.pal"
+    },
+    {
       "path": "graphics/trainer_card/back.bin"
     },
     {
@@ -17,10 +23,37 @@
       "path": "graphics/trainer_card/blue.pal"
     },
     {
+      "path": "graphics/trainer_card/bronze.pal"
+    },
+    {
       "path": "graphics/trainer_card/female_bg.pal"
     },
     {
       "path": "graphics/trainer_card/front.bin"
+    },
+    {
+      "path": "graphics/trainer_card/green.pal"
+    },
+    {
+      "path": "graphics/trainer_card/silver.pal"
+    },
+    {
+      "path": "graphics/trainer_card/star.pal"
+    },
+    {
+      "path": "graphics/trainer_card/stickers.png"
+    },
+    {
+      "path": "graphics/trainer_card/stickers1.pal"
+    },
+    {
+      "path": "graphics/trainer_card/stickers2.pal"
+    },
+    {
+      "path": "graphics/trainer_card/stickers3.pal"
+    },
+    {
+      "path": "graphics/trainer_card/stickers4.pal"
     },
     {
       "path": "graphics/trainer_card/tiles.png"
@@ -71,7 +104,16 @@
       "path": "src/event_data.c"
     },
     {
+      "path": "src/field_effect.c"
+    },
+    {
+      "path": "src/field_specials.c"
+    },
+    {
       "path": "src/graphics.c"
+    },
+    {
+      "path": "src/palette.c"
     },
     {
       "path": "src/pokedex.c"
@@ -96,7 +138,7 @@
     }
   ],
   "gameEdition": "FIRERED",
-  "profile": "firered-trainer-card-v1",
+  "profile": "firered-trainer-card-v2",
   "repository": "pret/pokefirered",
   "romRevision": 0,
   "schemaVersion": 1

@@ -4300,7 +4300,8 @@
         "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
       },
       "labelPrefixes": [
-        "FourIsland_House2_"
+        "FourIsland_House2_",
+        "CeladonCity_GameCorner_"
       ]
     },
     {
@@ -11780,7 +11781,11 @@
     "VAR_0x8008",
     "VAR_EGG_BRAG_STATE",
     "VAR_HOF_BRAG_STATE",
-    "VAR_LINK_WIN_BRAG_STATE"
+    "VAR_LINK_WIN_BRAG_STATE",
+    "MON_ICON_TINT_NORMAL",
+    "MON_ICON_TINT_BLACK",
+    "MON_ICON_TINT_PINK",
+    "MON_ICON_TINT_SEPIA"
   ],
   "supplementalTexts": [
     {

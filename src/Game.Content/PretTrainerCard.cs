@@ -6,13 +6,19 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-/// <summary>Authenticated FRLG own-card zero-star art and source display metadata. No campaign state or invented statistics.</summary>
+/// <summary>FRLG own-card art and source display metadata; achievement inputs belong to the campaign.</summary>
 public sealed class PretTrainerCard
 {
-    public const string Profile = "firered-trainer-card-v1";
+    public const string Profile = "firered-trainer-card-v2";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    private static readonly string[] AssetIds = ["front-male","front-female","back-male","back-female",
-        "portrait-red","portrait-leaf","badge-1","badge-2","badge-3","badge-4","badge-5","badge-6","badge-7","badge-8"];
+    private static readonly string[] AssetIds =
+        (from stars in Enumerable.Range(0,4) from side in new[] { "front", "back" } from gender in new[] { "male", "female" }
+         select side+"-"+gender+(stars==0?"":"-"+stars))
+        .Concat(from stars in Enumerable.Range(0,4) from layer in new[] { "background", "panel-front", "panel-back" } from gender in new[] { "male", "female" }
+            select layer+"-"+gender+(stars==0?"":"-"+stars))
+        .Concat(new[] { "portrait-red", "portrait-leaf", "star" })
+        .Concat(Enumerable.Range(1,8).Select(i=>"badge-"+i))
+        .Concat(from kind in Enumerable.Range(0,2) from tier in Enumerable.Range(1,4) select "sticker-"+kind+"-"+tier).ToArray();
     private readonly ImmutableDictionary<string, byte[]> outputBytes;
     public ImmutableArray<TrainerCardAsset> Assets { get; }
     public TrainerCardLayout Layout { get; }
@@ -34,7 +40,7 @@ public sealed class PretTrainerCard
         Rules=ContentJson.ParseStrict<TrainerCardRules>(document.GetProperty("rules").GetRawText(),options);
     }
 
-    /// <summary>Verifies both manifests, reviewed lock, every source blob and every generated payload before use.</summary>
+    /// <summary>Loads and validates generated runtime presentation resources without reading original source.</summary>
     public static PretTrainerCard Load(string projectRoot)
     {
         var project=Path.GetFullPath(projectRoot);
@@ -46,7 +52,7 @@ public sealed class PretTrainerCard
         }
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m=manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==14,
+        Require(m.GetProperty("schemaVersion").GetInt32()==2 && m.GetProperty("assetCount").GetInt32()==AssetIds.Length,
             "Trainer Card generated manifest identity differs.");
 
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
@@ -58,10 +64,10 @@ public sealed class PretTrainerCard
         Require(outputs.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds.Select(s => s + ".png")
             .Append("trainer-card.json")),"Trainer Card output inventory differs.");
         using var document=JsonDocument.Parse(outputs["trainer-card.json"]);var a=document.RootElement;
-        Require(a.GetProperty("schemaVersion").GetInt32()==1 ,
+        Require(a.GetProperty("schemaVersion").GetInt32()==2 ,
             "Trainer Card document profile differs.");
         var assets=ContentJson.ParseStrict<ImmutableArray<TrainerCardAsset>>(a.GetProperty("assets").GetRawText(),ContentJson.CreateOptions());
-        Require(assets.Length==14 && assets.Select(v=>v.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds),
+        Require(assets.Length==AssetIds.Length && assets.Select(v=>v.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds),
             "Trainer Card asset inventory differs.");
         foreach(var asset in assets)
         {
@@ -71,11 +77,32 @@ public sealed class PretTrainerCard
         }
         var result=new PretTrainerCard(directory,assets,a.Clone(),outputs.ToImmutable());
         Require(result.Layout.LogicalWidth==240 && result.Layout.LogicalHeight==160 && result.Layout.FontId==2 &&
-            result.Layout.Badges.Length==8 && result.Rules.StarCount==0 && !result.Rules.PlayTimePersisted &&
-            !result.Rules.GameStatisticsPersisted,"Trainer Card bounded display profile differs.");
+            result.Layout.Badges.Length==8 && result.Layout.StatTextRgb.Length==3 && result.Layout.StatShadowRgb.Length==3 && result.Rules.MaximumSupportedStars==3 &&
+            result.Rules.StickerVariables.SequenceEqual(new[] { "VAR_HOF_BRAG_STATE", "VAR_EGG_BRAG_STATE" }) &&
+            result.Rules.PhotoX==24 && result.Rules.PhotoY==120 && result.Rules.PhotoSpacing==32,"Trainer Card bounded display profile differs.");
         return result;
     }
 
+    public string BackgroundId(bool back,int gender,int stars)
+    {
+        if(gender is <0 or >1 || stars<0 || stars>Rules.MaximumSupportedStars)throw new ArgumentOutOfRangeException(nameof(stars));
+        return (back?"back":"front")+"-"+(gender==0?"male":"female")+(stars==0?"":"-"+stars);
+    }
+    public static string FormatHallOfFameTime(int packed) => $"{packed >> 16,3}:{(packed >> 8) & 255:D2}:{packed & 255:D2}";
+    /// <summary>Original 5-bit palette math, with fixed-point constants truncated exactly as Q_8_8.</summary>
+    public static (byte R,byte G,byte B) TintPhoto(byte red,byte green,byte blue,int tint)
+    {
+        if(tint is <0 or >3)throw new ArgumentOutOfRangeException(nameof(tint));
+        int r=red>>3,g=green>>3,b=blue>>3;
+        if(tint!=0)
+        {
+            int gray=(r*76+g*151+b*29)>>8;
+            (int rt,int gt,int bt)=tint switch {1=>(0,0,0),2=>(500,330,310),_=>(307,256,240)};
+            r=Math.Min(31,rt*gray>>8);g=Math.Min(31,gt*gray>>8);b=Math.Min(31,bt*gray>>8);
+        }
+        static byte Expand(int value)=>(byte)((value<<3)|(value>>2));
+        return(Expand(r),Expand(g),Expand(b));
+    }
     public TrainerCardAsset Asset(string id) => Assets.Single(a=>a.Id==id);
     public byte[] ReadAssetTexture(string id) => [..outputBytes[Asset(id).TexturePath]];
 
@@ -110,8 +137,8 @@ public sealed record TrainerCardLayout(int LogicalWidth,int LogicalHeight,int Fo
     TrainerCardPoint TextWindow,TrainerCardPoint Name,TrainerCardPoint Id,TrainerCardPoint MoneyLabel,int MoneyRightX,
     TrainerCardPoint PokedexLabel,int PokedexRightX,TrainerCardPoint TimeLabel,TrainerCardPoint TimeHours,
     TrainerCardPoint TimeColon,TrainerCardPoint TimeMinutes,TrainerCardPoint BackName,TrainerCardRect PortraitWindow,
-    int DecimalCellWidth,ImmutableArray<TrainerCardBadge> Badges);
+    int DecimalCellWidth,ImmutableArray<TrainerCardBadge> Badges,ImmutableArray<byte> StatTextRgb,ImmutableArray<byte> StatShadowRgb);
 public sealed record TrainerCardBackRow(string Id,int X,int Y,int ValueX,string Gate);
 public sealed record TrainerCardRules(int TrainerIdMask,int TrainerIdDigits,int MaxMoney,int KantoDexCount,int NationalDexCount,
     string PokedexVisibleFlag,int NationalDexMagic,string NationalDexVariable,int NationalDexVariableValue,string NationalDexFlag,
-    int StarCount,bool PlayTimePersisted,bool GameStatisticsPersisted,ImmutableArray<TrainerCardBackRow> BackRows);
+    int MaximumSupportedStars,int PhotoX,int PhotoY,int PhotoSpacing,ImmutableArray<string> StickerVariables,ImmutableArray<TrainerCardBackRow> BackRows);

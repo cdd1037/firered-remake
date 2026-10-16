@@ -12,6 +12,7 @@ public partial class CampaignView
     private PokedexMenuOrder _pokedexOrder;
     private PokedexMenuOrder[] _pokedexOrders=[];
     private int _pokedexOrderCursor;
+    private string _pokedexOrderReturn="pokedex-contents";
     private readonly Dictionary<string,Texture2D> _pokedexTextures=new(StringComparer.Ordinal);
     // Read the actual source grant. Loading the successor profile or importing metadata
     // never grants National mode or adds seen/caught species.
@@ -30,14 +31,17 @@ public partial class CampaignView
     {
         if(_pokedexMenu is null||!_pokedexMenu.CanOpen(PokedexAccess,_session.State.SeenSpecies))
         {_fieldMenuNotice="The POKéDEX cannot be opened\nhere.";return;}
+        _pokedexPresentedPages.Clear();
         _pokedexOrder=_session.NationalPokedexEnabled?PokedexMenuOrder.NumericalNational:PokedexMenuOrder.NumericalKanto;
         _pokedexList=_pokedexMenu.BuildOrderedList(_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess,_pokedexOrder);
         _pokedexCursor=_pokedexList.Rows.Length==0?default:
             PretPokedexMenu.CenterDetailCursor(_pokedexList.Rows.Length,Math.Clamp(_pokedexCursor.SelectedIndex,0,_pokedexList.Rows.Length-1));
-        _fieldMenuMode="pokedex";
+        _pokedexHabitats=_pokedexMenu.BuildHabitats(_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess).ToArray();
+        _pokedexContentsCursor=0;_fieldMenuMode="pokedex-contents";
     }
     private void OpenPokedexOrderMenu()
     {
+        _pokedexOrderReturn=_fieldMenuMode;
         _pokedexOrders=[.._pokedexMenu!.AvailableOrders(PokedexAccess)];
         _pokedexOrderCursor=Math.Max(0,Array.IndexOf(_pokedexOrders,_pokedexOrder));
         _fieldMenuMode="pokedex-order";
@@ -57,11 +61,13 @@ public partial class CampaignView
     private void OpenPokedexEntry()
     {
         if(_pokedexList is null||PokedexDetailPresentation.CrySpecies(_pokedexList,_pokedexCursor) is null)return;
-        _fieldMenuMode="pokedex-entry";PlayPokedexCry();
+        if(_pokedexOrder is not (PokedexMenuOrder.NumericalKanto or PokedexMenuOrder.NumericalNational))
+        {OpenPokedexHabitatForSpecies(_pokedexList.Rows[_pokedexCursor.SelectedIndex].SourceSpeciesId);return;}
+        _pokedexDetailReturn="pokedex";_fieldMenuMode="pokedex-entry";PlayPokedexCry();
     }
     private void PlayPokedexCry()
     {
-        if(_fieldMenuMode!="pokedex-entry"||_pokedexList is null||
+        if(_fieldMenuMode is not ("pokedex-entry" or "pokedex-area")||_pokedexList is null||
             PokedexDetailPresentation.CrySpecies(_pokedexList,_pokedexCursor) is not {} species||
             _sourceAudio is not SynthSourceAudioPlayer synthesized)return;
         var symbol=synthesized.CrySymbol(species);
@@ -78,25 +84,28 @@ public partial class CampaignView
     }
     private bool TryPokedexCryStart(bool pressed)
     {
-        if(_fieldMenuMode!="pokedex-entry")return false;
+        if(_fieldMenuMode is not ("pokedex-entry" or "pokedex-area"))return false;
         if(pressed&&!_busy&&_fade<=0&&_fieldMenuNotice is null)PlayPokedexCry();
         return true;
     }
     private bool PokedexMenuInput(InputEventKey key)
     {
+        if(PokedexExtraInput(key))return true;
         if(_fieldMenuMode is not ("pokedex" or "pokedex-entry" or "pokedex-order"))return false;
         if(!key.Pressed)return true;
         if(_fieldMenuMode=="pokedex-order")
         {
-            if(key.Keycode==Key.Backspace)_fieldMenuMode="pokedex";
+            if(key.Keycode==Key.Backspace)_fieldMenuMode=_pokedexOrderReturn;
             else if(key.Keycode==Key.Up)_pokedexOrderCursor=Math.Max(0,_pokedexOrderCursor-1);
             else if(key.Keycode==Key.Down)_pokedexOrderCursor=Math.Min(_pokedexOrders.Length-1,_pokedexOrderCursor+1);
             else if(key.Keycode==Key.Enter)SelectPokedexOrder();
             return true;
         }
-        if(key.Keycode==Key.Backspace){CancelPokedexCry();_fieldMenuMode=_fieldMenuMode=="pokedex-entry"?"pokedex":"start";return true;}
+        if(key.Keycode==Key.Backspace){CancelPokedexCry();_fieldMenuMode=_fieldMenuMode=="pokedex-entry"?_pokedexDetailReturn:"pokedex-contents";return true;}
+        if(_fieldMenuMode=="pokedex-entry"&&key.Keycode==Key.Enter){OpenPokedexArea();return true;}
         if(key.Keycode==Key.Tab){TryPokedexCryStart(true);return true;}
         if(_fieldMenuMode=="pokedex"&&key.Keycode==Key.R){OpenPokedexOrderMenu();return true;}
+        if(_fieldMenuMode=="pokedex-entry"&&_pokedexDetailReturn=="pokedex-habitat")return true;
         var previous=_pokedexCursor;
         if(key.Keycode is Key.Up or Key.Down)
             _pokedexCursor=_fieldMenuMode=="pokedex-entry"?_pokedexMenu!.MoveDetail(_pokedexList!,_pokedexCursor,key.Keycode==Key.Up?-1:1)
@@ -109,6 +118,7 @@ public partial class CampaignView
     }
     private bool MousePokedexMenu(Vector2 point)
     {
+        if(MousePokedexExtra(point))return true;
         if(_fieldMenuMode is not ("pokedex" or "pokedex-entry" or "pokedex-order"))return false;
         if(_fieldMenuMode=="pokedex-order")
         {
@@ -117,6 +127,7 @@ public partial class CampaignView
         }
         if(_fieldMenuMode=="pokedex-entry")
         {
+            if(new Rect2(0,0,240,144).HasPoint(point))return MouseKey(Key.Enter);
             return PokedexDetailPresentation.HitTest(point.X,point.Y) switch
             {
                 PokedexDetailPresentation.Action.Previous=>MouseKey(Key.Up),
@@ -152,6 +163,7 @@ public partial class CampaignView
     }
     private void DrawPokedexMenu()
     {
+        if(DrawPokedexExtra())return;
         if(_fieldMenuMode=="pokedex-entry"){DrawPokedexEntry();return;}
         if(_fieldMenuMode=="pokedex-order")
         {
@@ -192,12 +204,12 @@ public partial class CampaignView
     private void DrawPokedexEntry()
     {
         var row=_pokedexList!.Rows[_pokedexCursor.SelectedIndex];
-        var page=PresentedPokedexPage(row.SourceSpeciesId);
+        var page=CachedPokedexPage(row.SourceSpeciesId);
         var layout=_pokedexMenu!.EntryLayout;var background=_captureDex!.Assets.Single(x=>x.Id=="capture-dex-background");
         DrawTexture(_captureTextures[background.Id],new(background.X,background.Y));
         if(page.Portrait is {} portrait)DrawTexture(PokedexTexture(portrait),new(layout.FrontX,layout.FrontY));
         if(page.Footprint is {} footprint)DrawTexture(PokedexTexture(footprint),new(layout.FootprintX,layout.FootprintY));
-        const string title="POKéMON DATA";float titleWidth=_captureDexTitle.Font.GetStringSize(_captureDexTitle.PrepareText(title),fontSize:_captureDexTitle.Size).X;
+        const string title="DATA / ENTER AREA";float titleWidth=_captureDexTitle.Font.GetStringSize(_captureDexTitle.PrepareText(title),fontSize:_captureDexTitle.Size).X;
         SourceText(_captureDexTitle,new((int)((layout.HeaderCenterWidth-titleWidth)/2),layout.HeaderY),title);
         SourceText(_captureDexSmall,new(layout.NumberX,layout.NumberY),page.NationalNumber.ToString("D3"));
         SourceText(_captureDexNormal,new(layout.NameX,layout.NameY),page.Name,layout.NameLetterSpacing);
