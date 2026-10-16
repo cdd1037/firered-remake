@@ -63,8 +63,7 @@ public partial class CampaignView
         if(_doubleMenu=="medicine-target")
         {
             int count=_session.State.Party.Length;
-            if(key.Keycode is Key.Up or Key.Left)_doubleCursor=Math.Max(0,_doubleCursor-1);
-            if(key.Keycode is Key.Down or Key.Right)_doubleCursor=Math.Min(count,_doubleCursor+1);
+            NativePartyMove(key.Keycode,ref _doubleCursor,count,layout:NativePartyLayout.Double);
             if(back||confirm&&_doubleCursor==count)
             {_doubleMenu="bag";_doubleCursor=Math.Min(_doubleBagCursor,DoubleBagStacks.Length);_doubleMedicineItem=null;return true;}
             if(confirm&&_doubleMedicineItem is {} item)
@@ -145,28 +144,20 @@ public partial class CampaignView
         bool playerTarget=medicine is not null&&(medicine.TargetSide??BattleSide.Player)==BattleSide.Player;
         bool partyMedicine=playerTarget&&_catalog.PresetDoubleItems?.Find(medicine!.Item)?.BattleUsage!=2;
         if(_doubleMenu!="medicine-target"&&!partyMedicine)return false;
-        _battleSkin.DrawBackground(this);_battleSkin.DrawBattleMessage(this);
-        _battleSkin.DrawStandardFrame(this,new(0,0,240,112));
-        for(int i=0;i<_session.State.Party.Length;i++)
+        DrawNativeParty(_session.State.Party,medicine is null?_doubleCursor:-1,"Use on which POKéMON?",
+            cancel:medicine is null,layout:NativePartyLayout.Double,displayed:i=>
+            {
+                var owned=_session.State.Party[i];var member=battle.Frame.Party(BattleSide.Player).Members[i];
+                owned=PartyPresentationAssets.Displayed(owned,member.Pokemon,member.Status);
+                return medicine is not null && owned.InstanceId==medicine.TargetInstanceId
+                    ? PartyPresentationAssets.Displayed(owned,owned.Pokemon with { CurrentHp=DoubleMedicineHp(medicine) },DoubleMedicineStatus(medicine))
+                    : owned;
+            });
+        if(medicine is not null || _doubleNotice is not null)
         {
-            var owned=_session.State.Party[i];
-            if(medicine is not null&&owned.InstanceId==medicine.TargetInstanceId)
-                owned=owned with{Pokemon=owned.Pokemon with{CurrentHp=DoubleMedicineHp(medicine)},Status=DoubleMedicineStatus(medicine)};
-            bool active=battle.Frame.Slots.Any(s=>s.Member==new PartyMemberKey(BattleSide.Player,i));
-            SourceText(_battleMoveFont,new(24,7+14*i),(active?">":" ")+PresentedOwnedName(owned));
-            if(!owned.IsEgg) SourceText(_sourceSmall,new(122,8+14*i),$"L{owned.Pokemon.Level} {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");
-            DrawForestPartyStatus(owned,new(198,10+14*i));
-        }
-        if(medicine is null)
-        {
-            SourceText(_battleMoveFont,new(24,7+14*_session.State.Party.Length),"CANCEL");
-            SourceText(_battleMenuFont,new(10,7+14*_doubleCursor),">");
-            DoubleLines(_doubleNotice??"Use on which POKéMON?");
-        }
-        else
-        {
-            DoubleLines(_doubleNotice??_doublePages[_doublePage]);
-            if(_doubleNotice is null)DrawTextCursor(_battleWhite,LabBattleUiSkin.BattleMessageText,_doublePages[_doublePage].Split('\n'),16,_doubleElapsed,true);
+            string text=_doubleNotice??_doublePages[_doublePage];
+            DrawNativePartyMessage(text);
+            if(medicine is not null&&_doubleNotice is null)DrawTextCursor(_sourceNormal,new(8,120),text.Split('\n'),16,_doubleElapsed,true);
         }
         return true;
     }

@@ -4,6 +4,8 @@ namespace Game.Presentation.BattleAnimations;
 // renderer's opacity bit, independent of the GBA palette's unused high bit.
 public static class SourcePaletteMath
 {
+    public static ushort Apply(ushort original,SourcePaletteBlend? blend,bool inverted)
+    {ushort pixel=blend is null?original:Blend(original,blend.Coefficient,blend.Color);return inverted?(ushort)(pixel^0x7fff):pixel;}
     public static ushort Blend(ushort original,int coefficient,ushort color)
     {
         if(coefficient is <0 or >16)throw new ArgumentOutOfRangeException(nameof(coefficient));
@@ -19,12 +21,20 @@ public static class SourcePaletteMath
 
 public sealed partial class SourceBattleAnimation
 {
+    private readonly HashSet<int> _invertedPalettes=[];
+    private void InvertSelectedPalettes(int background,int actor,int target)
+    {
+        uint mask=(background&256)!=0?0xeu:0;
+        if((actor&256)!=0)mask|=1u<<(16+_cue.Actor.Value);
+        if((target&256)!=0)mask|=1u<<(16+_cue.Target.Value);
+        for(int bank=0;bank<32;bank++)if((mask&(1u<<bank))!=0&&!_invertedPalettes.Add(bank))_invertedPalettes.Remove(bank);
+    }
     private readonly Dictionary<int,SourcePaletteBlend> _paletteBlends=[];
     private readonly List<SoundTask> _soundTasks=[];
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
-        {if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
+        {_invertedPalettes.Remove(i);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
     }
     // Source AnimTask_Flash / AnimTask_Flash_Step. Only BG palettes 1..3
     // and currently visible battler OBJ palettes are selected; HUD/text stay separate.

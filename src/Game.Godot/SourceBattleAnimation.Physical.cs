@@ -8,13 +8,14 @@ public static class SourcePhysicalAnimationCatalog
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         return doc.RootElement.GetProperty("assets").EnumerateArray().Select(r=>r.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(doc,Path.GetDirectoryName(path)!,id));
     }
-    public static bool Supports(int move) => move is 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
+    public static bool Supports(int move) => move is 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
         var recipes=shared.SpriteRecipes.Concat(SourceHitAnimationCatalog.Recipes(doc.RootElement.GetProperty("spriteRecipes"))).ToDictionary(p=>p.Key,p=>p.Value);
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=recipes}).ToDictionary(s=>s.MoveId);
+        var subroutines=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray());
+        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=subroutines}).ToDictionary(s=>s.MoveId);
         if(scripts.Count==0||scripts.Keys.Any(id=>!Supports(id)))throw new InvalidDataException("Physical script catalog differs.");
         return scripts;
     }
@@ -42,13 +43,13 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=8)Fail(c,"Simple palette argument count differs.");var p=a.Skip(3).Select(PaletteNumber).ToArray();
             if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127||p[0] is <0 or >31||p[1] is < -128 or >127||p[2] is <0 or >16||p[3] is <0 or >16)Fail(c,"Simple palette operands differ.");return true;
         }
-        if(c.Op=="createsprite"&&a.FirstOrDefault()=="gComplexPaletteBlendSpriteTemplate"&&SourcePhysicalAnimationCatalog.Supports(_script.MoveId))
+        if(c.Op=="createsprite"&&a.FirstOrDefault()=="gComplexPaletteBlendSpriteTemplate")
         {
             if(a.Length!=10||a[1] is not ("ANIM_ATTACKER" or "ANIM_TARGET"))Fail(c,"Palette callback shape differs.");
             var p=a.Skip(3).Select(PaletteNumber).ToArray();
             if(p[0] is <0 or >31||p[1] is <0 or >255||p[2] is <0 or >255||p[4] is <0 or >16||p[6] is <0 or >16)Fail(c,"Palette callback range differs.");return true;
         }
-        int count=c.Op=="createsprite"?a.FirstOrDefault() switch{"gBowMonSpriteTemplate"=>4,"gFlashingHitSplatSpriteTemplate"=>7,"gViceGripSpriteTemplate"=>4,"gVerticalDipSpriteTemplate"=>6,"gStompFootSpriteTemplate"=>6,"gJumpKickSpriteTemplate"=>11,"gSlidingKickSpriteTemplate"=>9,_=>0}:c.Op=="createvisualtask"?a.FirstOrDefault() switch{"AnimTask_ShakeAndSinkMon" or "AnimTask_ShakeMonInPlace"=>7,"AnimTask_WindUpLunge"=>9,"AnimTask_RotateMonToSideAndRestore" or "AnimTask_RotateMonSpriteToSide"=>6,_=>0}:0;
+        int count=c.Op=="createsprite"?a.FirstOrDefault() switch{"gBowMonSpriteTemplate"=>4,"gFlashingHitSplatSpriteTemplate"=>7,"gViceGripSpriteTemplate"=>4,"gVerticalDipSpriteTemplate"=>6,"gStompFootSpriteTemplate"=>6,"gJumpKickSpriteTemplate" or "gKarateChopSpriteTemplate"=>11,"gSlidingKickSpriteTemplate"=>9,_=>0}:c.Op=="createvisualtask"?a.FirstOrDefault() switch{"AnimTask_ShakeAndSinkMon" or "AnimTask_ShakeMonInPlace"=>7,"AnimTask_WindUpLunge"=>9,"AnimTask_RotateMonToSideAndRestore" or "AnimTask_RotateMonSpriteToSide"=>6,_=>0}:0;
         if(count==0)return false;
         if(a.Length!=count)Fail(c,"Physical callback operand count differs.");
         for(int i=1;i<a.Length;i++)
@@ -65,7 +66,7 @@ public sealed partial class SourceBattleAnimation
             if(a[0]!="gVerticalDipSpriteTemplate"&&(Number(a[3]) is < -64 or >64||Number(a[4]) is < -64 or >64))Fail(c,"Physical sprite coordinate range differs.");
             if(a[0]=="gVerticalDipSpriteTemplate"&&(Number(a[3]) is <1 or >255||Number(a[5]) is <0 or >1))Fail(c,"Vertical dip operands differ.");
             if(a[0]=="gStompFootSpriteTemplate"&&Number(a[5]) is <0 or >255)Fail(c,"Stomp delay differs.");
-            if(a[0]=="gJumpKickSpriteTemplate"&&(Number(a[7]) is <1 or >255||Number(a[8]) is <0 or >1||Number(a[9]) is <0 or >4||Number(a[10]) is <0 or >1))Fail(c,"Jump kick translation differs.");
+            if(a[0] is "gJumpKickSpriteTemplate" or "gKarateChopSpriteTemplate"&&(Number(a[7]) is <1 or >255||Number(a[8]) is <0 or >1||Number(a[9]) is <0 or >4||Number(a[10]) is <0 or >1))Fail(c,"Jump kick translation differs.");
             if(a[0]=="gSlidingKickSpriteTemplate"&&(Number(a[6]) is <1 or >255||_script.SineTable.Length!=320))Fail(c,"Sliding kick translation/sine table differs.");
         }
         else if(a[0]=="AnimTask_WindUpLunge")
@@ -97,7 +98,7 @@ public sealed partial class SourceBattleAnimation
         {
             _template=template;if(!owner._loaded.Contains("ANIM_TAG_HANDS_AND_FEET"))throw new InvalidDataException("Physical foot graphics have not been loaded.");var target=owner._battlers[owner._cue.Target.Value];var center=target.Center(owner._doubles,true);
             int x=a[0],y=a[1],anim=1;
-            if(template=="gJumpKickSpriteTemplate")
+            if(template is "gJumpKickSpriteTemplate" or "gKarateChopSpriteTemplate")
             {
                 if(a[7]==1&&!owner._cue.Actor.IsPlayer)y=-y;
                 // AnimTravelDiagonally calls target initialization twice for arg5=1.
@@ -115,7 +116,7 @@ public sealed partial class SourceBattleAnimation
                 else{_destination=new(_position.X+(owner._cue.Actor.IsPlayer?a[2]:-a[2]),_position.Y);_linear=new(_destination.X-_position.X,0,a[3]);_amplitude=a[5];_angleStep=a[4];_state=2;}
             }
             _image=owner._script.SpriteRecipes["gFistFootSpriteTemplate"].Animations[anim][0];
-            if(template=="gJumpKickSpriteTemplate")_state=1;
+            if(template is "gJumpKickSpriteTemplate" or "gKarateChopSpriteTemplate")_state=1;
         }
         public override SourceVisualSpriteFrame Frame=>new(Slot,_template,_position,_offset,_image.Tile,true,_image.HFlip,false,256,"hands-and-feet",Subpriority);
         public override void Step(SourceBattleAnimation owner)

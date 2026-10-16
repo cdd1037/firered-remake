@@ -61,19 +61,7 @@ public sealed partial class CampaignSession
         if (state.EscapeRope is not { } escape ||
             state.ItemMenu is not { Origin: "bag", View: "message", MessageSymbol: "gText_PlayerUsedVar2" })
             throw new InvalidDataException("escape_rope_context_invalid");
-        var flags = state.Script.Flags;
-        foreach (string flag in new[] { "FLAG_SYS_ON_CYCLING_ROAD", "FLAG_SYS_CRUISE_MODE", "FLAG_SYS_SAFARI_MODE",
-            "FLAG_SYS_USE_STRENGTH", "FLAG_SYS_FLASH_ACTIVE", "FLAG_SYS_QL_DEPARTED" }) flags = flags.SetItem(flag, false);
-        var variables = state.Script.Variables;
-        foreach (string variable in new[] { "VAR_MAP_SCENE_ROUTE16", "VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE",
-            "VAR_QL_ENTRANCE" }) variables = variables.SetItem(variable, 0);
-        var next = state with
-        {
-            EscapeRope = null, ItemMenu = null,
-            Script = state.Script with { Flags = flags, Variables = variables },
-            World = state.World with { Revision = checked(state.World.Revision + 1), Player = escape.Arrival },
-            Exploration = ResetEncounterModifiers(state.Exploration!)
-        };
+        var next = WarpFieldTravel(state with { EscapeRope = null, ItemMenu = null }, escape.Arrival);
         return new(CommandStatus.Accepted, Pump(EnterMap(next, escape.Arrival.Facing)));
     }
 }

@@ -431,8 +431,7 @@ public partial class CampaignView
         if (_wildMenu == "party")
         {
             int cancel = _session.State.Party.Length;
-            if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
-            if (key.Keycode == Key.Down) _wildCursor = Math.Min(cancel, _wildCursor + 1);
+            NativePartyMove(key.Keycode,ref _wildCursor,cancel);
             if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _wildCursor == cancel)
             { _wildMenu = "actions"; _wildCursor = 2; }
             else if (key.Keycode == Key.Enter)
@@ -499,6 +498,7 @@ public partial class CampaignView
         if(SourceAnimationPresented)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool portrait = DrawForestTrainerPortrait(b);
         bool defeatedTrainer = DrawForestTrainerDefeatPortrait(b);
+        var healthForeground=new List<Action>();
         foreach (var (side, mon) in new[] { (WildBattleSide.Opponent, b.DisplayOpponent), (WildBattleSide.Player, WildDisplayPlayer(b)) })
         {
             if (side == WildBattleSide.Opponent && TeachyTvHidesCaughtOpponent) continue;
@@ -514,12 +514,20 @@ public partial class CampaignView
                 if(!(side==WildBattleSide.Opponent && DrawCapturedTarget(b,asset.Texture,asset.Position)) && !SourceAnimationPresented && !DrawSourceSubstitute(side) && (side!=WildBattleSide.Opponent||!DrawPokemonTowerOpponent(b)))DrawTexture(asset.Texture, asset.Position);
             }
             int hp = WildDisplayedHp(b, mon, side);
-            DrawWildHealth(mon, side, hp);
+            healthForeground.Add(()=>DrawWildHealth(mon,side,hp));
         }
+        DrawSourceResidualMoveSprites();
+        foreach(var drawHealth in healthForeground)drawHealth();
         DrawWildCaptureBall(b);
         bool selecting = b.Phase == CampaignBattlePhase.ChooseMove && _wildNotice is null && _wildMenu is "actions" or "moves";
         if (selecting) _uiCorrections.ClearBattleMenu(this); else _battleSkin.DrawBattleMessage(this);
-        if (_wildMenu is "party" or "medicine-target") DrawWildParty(b);
+        if (_wildMenu is "party" or "medicine-target")
+        {
+            DrawWildParty(b);
+            if(_wildNotice is not null)DrawNativePartyMessage(_wildNotice);
+            else if(!_wildPages.IsEmpty)DrawNativePartyMessage(_wildPages[_wildPage]);
+            return;
+        }
         if (_wildNotice is not null) { WildLines(_wildNotice); return; }
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) { DrawWildLearning(b); return; }
         if (WildStatsPage(b)) { DrawWildStats(b, (WildRewardLevelEvent)b.Pages[b.PageIndex].Reward!); return; }

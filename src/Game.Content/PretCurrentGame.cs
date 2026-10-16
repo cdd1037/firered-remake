@@ -20,6 +20,7 @@ public sealed partial class PretCampaignCatalog
     private PretCampaignCatalog(string projectRoot)
     {
         var world = PretCurrentWorld.Load(projectRoot);
+        QuestLogSource = PretQuestLogSource.Load(projectRoot);
         var canonicalPokemon = PretCanonicalPokemonCatalog.Load(projectRoot, projectRoot);
         var sharedItems = SharedItemCatalog.LoadProject(projectRoot);
         var sharedMachines = SharedMachineCatalog.LoadProject(projectRoot, sharedItems);

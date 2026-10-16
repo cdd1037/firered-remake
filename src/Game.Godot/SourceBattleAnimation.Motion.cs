@@ -36,9 +36,9 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="setalpha"){Range(0,0,16);Range(1,0,16);}
         if(c.Op=="createvisualtask")
         {
-            Range(1,2,5);Range(2,0,1);Range(3,-127,127);Range(4,-127,127);Range(5,1,32767);
-            Range(6,0,c.Args[0]=="AnimTask_TranslateMonEllipticalRespectSide"?5:16);
-            if(c.Args[0]=="AnimTask_TranslateMonEllipticalRespectSide"&&(_script.SineTable.Length!=320||_script.SineTable.Any(x=>x is < -256 or >256)))Fail(c,"Authenticated sine table is missing or malformed.");
+            Range(1,2,5);Range(2,0,c.Args[0]=="AnimTask_ShakeMon2"?8:c.Args[0]=="AnimTask_ShakeMon"?3:1);Range(3,-127,127);Range(4,-127,127);Range(5,1,32767);
+            Range(6,0,c.Args[0] is "AnimTask_TranslateMonEllipticalRespectSide" or "AnimTask_TranslateMonElliptical"?5:16);
+            if(c.Args[0] is "AnimTask_TranslateMonEllipticalRespectSide" or "AnimTask_TranslateMonElliptical"&&(_script.SineTable.Length!=320||_script.SineTable.Any(x=>x is < -256 or >256)))Fail(c,"Authenticated sine table is missing or malformed.");
         }
         if(c.Op!="createsprite")return;
         Range(1,0,1);Range(2,0,127);

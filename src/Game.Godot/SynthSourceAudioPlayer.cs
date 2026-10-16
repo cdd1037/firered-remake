@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FireRedAudio;
@@ -90,17 +91,36 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     }
 
     private static string CryId(string symbol, int mode) =>
-        "CRY_" + symbol["SPECIES_".Length..] + (mode == SourceEncounterCry.Mode ? "_ENCOUNTER" : "_NORMAL");
+        "CRY_" + symbol["SPECIES_".Length..] + (mode switch
+        {
+            0 => "_NORMAL", SourceDoublesCry.Mode => "_DOUBLES", SourceEncounterCry.Mode => "_ENCOUNTER",
+            _ => throw new NotSupportedException("Unsupported source cry mode")
+        });
 
     public string? CryCueId(string symbol, int mode) =>
-        mode is 0 or SourceEncounterCry.Mode && symbol.StartsWith("SPECIES_", StringComparison.Ordinal) &&
-        _catalog.TryGetValue(CryId(symbol, mode), out var cue) && cue.SourcePlayer == 4 && cue.CryMode == mode
+        mode is 0 or SourceDoublesCry.Mode or SourceEncounterCry.Mode && symbol.StartsWith("SPECIES_", StringComparison.Ordinal) &&
+        TryFindCue(CryId(symbol, mode), out var cue) && cue!.SourcePlayer == 4 && cue.CryMode == mode
             ? cue.Id : null;
 
-    public SourceAudioMetadata Metadata(string id) => _catalog.TryGetValue(id, out var cue)
-        ? cue.Metadata : throw new InvalidDataException("Unknown synth cue: " + id);
+    // Mode presets reuse the existing species binding; asking for a short cry must
+    // neither duplicate the stored catalog nor mutate its registered entries.
+    private bool TryFindCue(string id, [NotNullWhen(true)] out SynthCue? cue)
+    {
+        if (_catalog.TryGetValue(id, out cue)) return true;
+        const string suffix = "_DOUBLES";
+        if (id.StartsWith("CRY_", StringComparison.Ordinal) && id.EndsWith(suffix, StringComparison.Ordinal) &&
+            _catalog.TryGetValue(id[..^suffix.Length] + "_NORMAL", out var normal) && normal.SourcePlayer == 4 && normal.CryMode == 0)
+        {
+            cue = normal with { Id = id, CryMode = SourceDoublesCry.Mode };
+            return true;
+        }
+        return false;
+    }
+
+    public SourceAudioMetadata Metadata(string id) => TryFindCue(id, out var cue)
+        ? cue!.Metadata : throw new InvalidDataException("Unknown synth cue: " + id);
     public string? CrySymbol(int species) => _catalog.Values.FirstOrDefault(c => c.Species == species)?.SourceSymbol;
-    public bool HasClip(string id) => !_faulted && !_shutdown && _catalog.ContainsKey(id);
+    public bool HasClip(string id) => !_faulted && !_shutdown && TryFindCue(id, out _);
 
     public long PlayMusic(string id, bool restart = false)
     {
@@ -139,7 +159,21 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public long PlayCry(string id, bool duckBgm = true)
     {
         if (!TryCue(id, 4, out var cue)) return 0;
-        if (cue!.CryMode == 2) _synth.StartEncounterCry(cue.Species, duckBgm: false);
+        return StartCry(cue!, duckBgm);
+    }
+
+    // PlayCry_ByMode(mode 1) preserves BGM volume and accepts the source signed pan.
+    public long PlayDoublesCry(string id, int pan = 0)
+    {
+        if (!TryCue(id, 4, out var cue)) return 0;
+        if (cue!.CryMode != SourceDoublesCry.Mode) throw new InvalidOperationException("Not a doubles cry: " + id);
+        return StartCry(cue, duckBgm: false, pan);
+    }
+
+    private long StartCry(SynthCue cue, bool duckBgm, int pan = 0)
+    {
+        if (cue.CryMode == SourceDoublesCry.Mode) _synth.StartDoublesCry(cue.Species, pan, duckBgm: false);
+        else if (cue.CryMode == SourceEncounterCry.Mode) _synth.StartEncounterCry(cue.Species, duckBgm: false);
         else _synth.StartNormalCry(cue.Species, duckBgm: false);
         _cry = new ActiveCue(cue, ++_nextToken, _pushedFrames, _synth.GameFrames);
         _cryDucking = _renderCryDucking = duckBgm; _cryGrace = duckBgm ? 2 : 0; ApplyMusicGain();
@@ -339,7 +373,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     private bool TryCue(string id, int? expectedPlayer, out SynthCue? cue)
     {
         if (!IsInsideTree()) throw new InvalidOperationException("Attach synth backend before playback.");
-        if (_faulted || _shutdown || !_catalog.TryGetValue(id, out cue))
+        if (_faulted || _shutdown || !TryFindCue(id, out cue))
         { cue = null; PlaybackEvent?.Invoke(new("missing", id, 0, expectedPlayer ?? -1, "No admitted synthesized cue", false)); return false; }
         if (expectedPlayer.HasValue && cue.SourcePlayer != expectedPlayer)
             throw new InvalidOperationException("Wrong source player for " + id);

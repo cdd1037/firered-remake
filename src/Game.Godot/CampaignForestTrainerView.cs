@@ -162,7 +162,7 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
         if (battle.Replacement == CampaignReplacementStage.Select)
-        { DrawCaptureParty(battle, true); _battleSkin.DrawBattleMessage(this); WildLines("Choose a POKéMON."); }
+        { DrawCaptureParty(battle, true); if(_wildNotice is not null)DrawNativePartyMessage(_wildNotice); }
         else
         {
             var mon = WildDisplayPlayer(battle); var appearance = FuchsiaBattleAppearance(battle, WildBattleSide.Player, mon); var asset = _battleArt[(appearance.Species, "back", appearance.Shiny)];

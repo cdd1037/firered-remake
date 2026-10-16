@@ -33,8 +33,7 @@ def convert(raw,out):
         rgba=Image.new('RGBA',im.size);rgba.putdata([(*colors[v],255 if v else 0) for v in (im.getpixel((x,y)) for y in range(im.height) for x in range(im.width))]);images[name]=rgba
     # Signal palettes are only sixteen source states per direction, packed in two sheets.
     signal=Image.open(art/'wireless_signal.png')
-    if signal.mode=='L':
-        indexed=Image.new('P',signal.size);indexed.putdata([v//17 for v in (signal.getpixel((x,y)) for y in range(signal.height) for x in range(signal.width))]);signal=indexed
+    signal=pixels.gba_4bpp_indices(signal)
     params=[list(map(int,re.findall(r'-?\d+',row))) for row in re.findall(r'\{([^{}]+)\}',src.split('static const u8 sWirelessSignalAnimParams[][2] = {')[1].split('};')[0])]
     for direction in ['send','receive']:
         pal=pixels.palette((art/f'wireless_signal_{direction}.pal').read_bytes(),floor=True)

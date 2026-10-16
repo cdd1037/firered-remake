@@ -18,7 +18,7 @@ public sealed class PhysicalMoveAnimationTests
     }
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
     [TestMethod]
-    [DataRow(77)][DataRow(78)][DataRow(79)][DataRow(289)][DataRow(29)][DataRow(64)][DataRow(38)][DataRow(21)][DataRow(22)][DataRow(11)][DataRow(23)][DataRow(26)][DataRow(27)][DataRow(70)][DataRow(34)][DataRow(36)][DataRow(67)][DataRow(136)]
+    [DataRow(2)][DataRow(66)][DataRow(77)][DataRow(78)][DataRow(79)][DataRow(289)][DataRow(29)][DataRow(64)][DataRow(38)][DataRow(21)][DataRow(22)][DataRow(11)][DataRow(23)][DataRow(26)][DataRow(27)][DataRow(70)][DataRow(34)][DataRow(36)][DataRow(67)][DataRow(136)]
     public void ImportedPhysicalRootsCompleteInEveryCanonicalPosition(int move)
     {
         foreach(bool doubles in new[]{false,true})

@@ -36,7 +36,7 @@ public partial class CampaignView
     {
         CancelPokedexCry();
         _fieldMenuMode = "closed"; _fieldMenuNotice = null; _fieldNoticeCloses = false;
-        _fieldSwapSource = -1; ResetOwnedSummarySelection(); _held = null; _repeat = 0;
+        _fieldSwapSource = -1; ResetFieldHealingSelection(); ResetOwnedSummarySelection(); _held = null; _repeat = 0;
     }
 
     // Called before the key-only guard so an actual joypad Start works too.
@@ -90,6 +90,7 @@ public partial class CampaignView
         }
         if (PokedexMenuInput(key)||TrainerCardInput(key)||OptionsInput(key)) return true;
         if (_fieldMenuMode == "summary") return FieldSummaryInput(key);
+        if (TryFieldHealingInput(key)) return true;
         if (key.Keycode == Key.Backspace)
         {
             if (_fieldMenuMode == "start") ResetFieldMenu();
@@ -138,6 +139,7 @@ public partial class CampaignView
             else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
             else if(actions[_fieldPartyAction] == "SURF") UseFieldPartySurf();
             else if(actions[_fieldPartyAction] == "WATERFALL") UseFieldPartyWaterfall();
+            else if(TryNoncombatFieldAction(actions[_fieldPartyAction])) { }
             else _fieldMenuMode = "party";
             return true;
         }
@@ -177,6 +179,7 @@ public partial class CampaignView
                 else if(move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
                 else if(move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
                 else if(_catalog.FieldRockSmash is not null&&move.Move.Value=="pret:MOVE_ROCK_SMASH")actions.Add("ROCK SMASH");
+                else if(NoncombatFieldActionLabel(move.Move.Value) is {} fieldMoveLabel)actions.Add(fieldMoveLabel);
         actions.Add("SWITCH");
         if(_catalog.EarlyShop is not null)actions.Add(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&
             SourceMailRules.IsMailItem(_session.State.Party[_fieldPartyCursor].HeldItem)?"MAIL":"ITEM");
@@ -239,6 +242,8 @@ public partial class CampaignView
     // Only visibly drawn row rectangles are actionable; the field remains inert.
     private bool MouseFieldMenu(Vector2 point)
     {
+        if (_fieldMenuMode == "field-heal-animation") return true;
+        if (_fieldMenuMode == "field-move-confirm") return MouseSelect(point, ref _fieldMoveConfirmChoice, 2, 176, 72, 64, 16);
         if (_fieldMenuNotice is not null) return MouseConfirm(point, MouseMessage);
         if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order" or "pokedex-contents" or "pokedex-habitat" or "pokedex-area") return MousePokedexMenu(point);
         if (_fieldMenuMode == "options") return MouseOptionsMenu(point);
@@ -281,8 +286,9 @@ public partial class CampaignView
     private void DrawFieldParty()
     {
         DrawNativeParty(_session.State.Party, _fieldPartyCursor,
-            _fieldMenuMode == "switch" ? "Move to which position?" : _fieldMenuMode == "actions" ? "Do what with this POKéMON?" : "Choose a POKéMON.",
-            _fieldMenuMode == "switch" ? _fieldSwapSource : -1);
+            _fieldMenuMode is "field-heal" or "field-heal-animation" ? "Use on which POKéMON?" : _fieldMenuMode == "switch" ? "Move to which position?" : _fieldMenuMode == "actions" ? "Do what with this POKéMON?" : "Choose a POKéMON.",
+            _fieldMenuMode == "switch" ? _fieldSwapSource : _fieldHealingSource, displayed: DisplayedFieldHealingMember);
+        DrawNoncombatPartyPrompt();
         if (_fieldMenuMode == "actions")
         {
             var actions=FieldPartyActions();

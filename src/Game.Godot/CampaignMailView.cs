@@ -26,7 +26,7 @@ public partial class CampaignView
             $"{pending.Origin}:{pending.Phase}:{pending.PartyIndex}:{pending.TargetInstanceId}:{pending.MailboxSlot}";
         if (key != _mailScreenKey)
         {
-            _mailScreenKey = key; _mailCursor = 0;
+            _mailScreenKey = key; _mailCursor = 0; _partyLastRightSlot = 1;
             _mailPartyIds = pending?.Phase == CampaignMailPhase.MailboxGive ? _session.State.Party.Select(p => p.InstanceId).ToArray() : [];
         }
         if (MailScreen) { _held = null; _repeat = 0; }
@@ -70,7 +70,8 @@ public partial class CampaignView
             CampaignMailPhase.MailboxGive => _mailPartyIds.Length + 1,
             CampaignMailPhase.SendToPc or CampaignMailPhase.EraseAttached or CampaignMailPhase.EraseMailbox => 2,
             _ => 3 };
-        FieldMenuMoveCursor(key, ref _mailCursor, count);
+        if(pending?.Phase==CampaignMailPhase.MailboxGive)NativePartyMove(key.Keycode,ref _mailCursor,count-1);
+        else FieldMenuMoveCursor(key, ref _mailCursor, count);
         if (key.Keycode != Key.Enter) return true;
         switch (pending?.Phase)
         {
@@ -148,9 +149,7 @@ public partial class CampaignView
     {
         if (pending.Phase == CampaignMailPhase.MailboxGive)
         {
-            _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-            DrawMailRows([.. _session.State.Party.Select(PresentedOwnedName), MailText("gFameCheckerText_Cancel")], 24, 8, 14);
-            ItemMessageBox(MailText("gText_GiveToWhichPokemon")); return;
+            DrawNativeParty(_session.State.Party,_mailCursor,MailText("gText_GiveToWhichPokemon"));return;
         }
         var slots = MailboxSlots;
         _battleSkin.DrawStandardFrame(this, new(0, 0, 96, 32));
@@ -180,7 +179,7 @@ public partial class CampaignView
         {
             case CampaignMailPhase.MailboxList: count = Math.Min(8, MailboxSlots.Length + 1); x = 148; y = 18; width = 84; start = Math.Max(0, _mailCursor - 7); break;
             case CampaignMailPhase.MailboxActions: count = 4; x = 8; y = 10; width = 120; break;
-            case CampaignMailPhase.MailboxGive: count = _mailPartyIds.Length + 1; x = 12; y = 8; width = 220; step = 14; break;
+            case CampaignMailPhase.MailboxGive: return direction is {} d ? PointerNativeParty(point,d,ref _mailCursor,_mailPartyIds.Length) : MouseNativeParty(point,ref _mailCursor,_mailPartyIds.Length);
             case CampaignMailPhase.SendToPc:
             case CampaignMailPhase.EraseAttached:
             case CampaignMailPhase.EraseMailbox: count = 2; x = 164; y = 62; width = 68; break;

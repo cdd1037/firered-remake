@@ -20,12 +20,11 @@ public sealed partial class SourceBattleAnimation
 {
     private void ValidateSubroutines()
     {
-        foreach(var (name,commands) in _script.Subroutines)
-        {
-            int count=name switch{"GrowthEffect"=>4,"SelfDestructExplode" or "Explosion1"=>16,"EmberFireHit"=>3,"FireSpreadEffect"=>8,"FlamethrowerCreateFlames"=>5,_=>0};
-            if(count==0||commands.Length!=count||commands[^1].Op!="return"||commands.Any(c=>c.Op=="call"))throw new InvalidDataException("Unadmitted source subroutine.");
-        }
+        foreach(var commands in _script.Subroutines.Values)
+            if(commands.Length is <1 or >128||commands[^1].Op!="return"||commands.Take(commands.Length-1).Any(c=>c.Op is "call" or "return" or "end"))
+                throw new InvalidDataException("Source subroutine must be bounded, nonrecursive and return exactly once.");
     }
+
     private bool ValidateExplosionOperand(SourceAnimationCommand c)
     {
         if(!SourceExplosionAnimationCatalog.Supports(_script.MoveId))return false;

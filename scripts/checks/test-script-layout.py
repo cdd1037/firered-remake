@@ -142,12 +142,18 @@ class ResourceEntryTests(unittest.TestCase):
         targets = {'opening': ('--out', 'ui/opening'), 'summary': ('--target', 'ui/summary-screen'),
                    'evolution': ('--out', 'ui/evolution-scene'), 'capture-balls': ('--out', 'battle/capture-balls'),
                    'overworld-art': ('--generated', ''), 'party': ('--out', 'ui/party-screen'),
-                   'npc-trade': ('--out', 'ui/npc-trade-scene')}
+                   'npc-trade': ('--out', 'ui/npc-trade-scene'), 'intro-movie': ('--out', 'ui/intro-movie')}
         for target, (flag, folder) in targets.items():
             with self.subTest(target=target):
                 commands = self.module.build_commands([target], self.raw, self.out, check=True)
                 self.assertEqual(1, len(commands))
                 self.assertEqual(['--raw', str(self.raw), flag, str(self.out / folder), '--check'], commands[0][2:])
+
+    def test_quest_log_uses_selected_generated_world(self):
+        commands = self.module.build_commands(['quest-log'], self.raw, self.out, check=True)
+        self.assertEqual(1, len(commands))
+        self.assertEqual(['--raw', str(self.raw), '--world', str(self.out / 'maps/world.json'),
+                          '--out', str(self.out / 'data/quest-log.json'), '--check'], commands[0][2:])
 
     def test_animation_producers_use_selected_dependencies(self):
         commands = self.module.build_commands(['move-animations'], self.raw, self.out, check=True)

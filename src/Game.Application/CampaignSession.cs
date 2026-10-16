@@ -32,6 +32,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     string PlayerName,string RivalName,int Money,string SavedMusic,ImmutableArray<CampaignPresentation> PresentationEffects,bool PlayerVisible)
 {
     [JsonRequired] public CampaignPlayTime PlayTime{get;init;}=CampaignPlayTime.NewGame;
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignQuestLog? QuestLog{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RegisteredItem{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignTeachyTv? TeachyTv{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFameChecker? FameChecker{get;init;}
@@ -127,6 +128,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     public CampaignTownMap? TownMap{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public CampaignFlyEffect? FlyEffect{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignNoncombatFieldEffect? NoncombatFieldEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public string? OakRatingHelpContextBackup{get;init;}
     public ImmutableSortedSet<int> SeenSpecies{get;init;}=ImmutableSortedSet<int>.Empty;
@@ -319,7 +321,7 @@ public sealed partial class CampaignSession
     public static CampaignSession CreateCurrent(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindCurrentCatalog(content));
     public static CampaignSession RestoreCurrent(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindCurrentCatalog(content));
     public CommandOutcome<CampaignState> Execute(string id,long revision,CampaignCommand command)=>
-        _commands.Execute(new(id,revision,RulesVersion,_content.ContentVersion,command),DecideWithWildHistoryRetention);
+        _commands.Execute(new(id,revision,RulesVersion,_content.ContentVersion,command),DecideWithQuestLogRecording);
     public string? ValidatePlayerSave(CampaignState s) => ValidatePlayerSave(s, layoutResolved: false);
     private string? ValidatePlayerSave(CampaignState s, bool layoutResolved)
     {
@@ -329,6 +331,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(ValidatePlayTime(s) is {} playTimeError)return playTimeError;
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
+        if(CampaignQuestLogRecorder.Validate(s.QuestLog, (_content as ICampaignQuestLogCatalog)?.QuestLogSource) is {} questLogError)return questLogError;
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
         if(ValidateTrainerCardPhoto(s) is {} photoError)return photoError;
@@ -336,7 +339,7 @@ public sealed partial class CampaignSession
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         if(ValidateSelphyRequest(s) is {} selphyError)return selphyError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
-        if(s.DaisyGrooming is not null||s.Diploma is not null||s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.SizeRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Script.ListMenu is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.NoncombatFieldEffect is not null||s.DaisyGrooming is not null||s.Diploma is not null||s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.SizeRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Script.ListMenu is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         if(s.MailComposer is not null||s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null||s.EggHatch is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
@@ -492,6 +495,7 @@ public sealed partial class CampaignSession
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(command.Kind.StartsWith("bag_toss_",StringComparison.Ordinal)&&command.Kind!="bag_toss_open")return new(CommandStatus.Rejected,state,"bag_toss_context_invalid");
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
+            if(TryDecideNoncombatFieldMove(state,command,out var noncombatDecision))return noncombatDecision;
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
             if(command.Kind=="field_fly")return StartFieldFly(state,command);
             if(TryDecideFourIslandDayCare(state,command,out var fourDaycareDecision))return fourDaycareDecision;

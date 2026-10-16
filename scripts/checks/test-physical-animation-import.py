@@ -11,7 +11,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,289},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,289},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),32)
  def test_generated_slam_and_whip_pixels_match_source_indices_and_palettes(self):

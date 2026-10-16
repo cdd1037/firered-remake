@@ -34,7 +34,7 @@ public sealed partial class CampaignSession
     {
         if (!CelioCompleted(state) || state.Roamer is not {} roamer ||
             candidate.Individual != roamer.Individual || roamer.Runtime.Location != CelioSourceMap(state.World.Player.MapId) ||
-            method is not (RoamerEncounterMethod.Land or RoamerEncounterMethod.Surfing) ||
+            method is not (RoamerEncounterMethod.Land or RoamerEncounterMethod.Surfing or RoamerEncounterMethod.SweetScentLand or RoamerEncounterMethod.SweetScentWater) ||
             state.SafariVisit is { Active: true } || long.MaxValue - Revision < 4096)
             throw new InvalidDataException("celio_roamer_field_origin");
         state = ResetFieldPoisonCounterForBattle(state);
@@ -101,8 +101,8 @@ public sealed partial class CampaignSession
             var origin = receipt.Encounter;
             var initial = initialization.InitialState.Individual!;
             if (origin.Individual with { CurrentHp = initial.CurrentHp, Status = initial.Status, Active = initial.Active } != initial ||
-                origin.OriginalTrainerId != state.TrainerId || origin.Method is not (RoamerEncounterMethod.Land or RoamerEncounterMethod.Surfing) ||
-                (origin.Method == RoamerEncounterMethod.Land ? !_content.LandEncounters!.ContainsKey(origin.Map) : !_content.WaterEncounters!.ContainsKey(origin.Map)) ||
+                origin.OriginalTrainerId != state.TrainerId || origin.Method is not (RoamerEncounterMethod.Land or RoamerEncounterMethod.Surfing or RoamerEncounterMethod.SweetScentLand or RoamerEncounterMethod.SweetScentWater) ||
+                (origin.Method is RoamerEncounterMethod.Land or RoamerEncounterMethod.SweetScentLand ? !_content.LandEncounters!.ContainsKey(origin.Map) : !_content.WaterEncounters!.ContainsKey(origin.Map)) ||
                 receipt.Before.Individual != origin.Individual || receipt.Before.Runtime.Location != CelioSourceMap(origin.Map) ||
                 receipt.Battle.EncounteredIndividual != origin.Individual || history.Level != SourceRoamerRules.Level ||
                 history.SourceSpeciesId != SourceRoamerRules.SourceSpeciesId(origin.Individual.Species) ||

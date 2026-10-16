@@ -28,6 +28,12 @@ public sealed partial class CampaignSession
         var result=WaterEncounterRules.Check(_binding.Ownership,tables,WaterProcess(shared),table,
             new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
             state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),extendedRepel:true);
+        return CompleteWaterEncounter(state, shared, table, result);
+    }
+    private CampaignState CompleteWaterEncounter(CampaignState state, EarlyLandEncounterState shared,
+        WaterEncounterTable table, WaterEncounterResult result)
+    {
+        var p=state.World.Player;var exploration=state.Exploration!;var tables=_content.WaterEncounters!;
         var next=state with{Exploration=exploration with{EarlyEncounter=SharedWaterProcess(shared,result.State)},World=state.World with{Rng=result.GlobalRng}};
         if(result.RoamerCandidate is {} roamer)
         {

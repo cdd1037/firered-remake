@@ -68,7 +68,7 @@ public partial class CampaignView
         };
         AddChild(_entryNameEdit);
         ReadEntrySave();
-        _entryMode="title";
+        BeginIntroMovie();
         Write("playerEntryReady",new{mode=_entryMode,hasContinue=_entrySave is not null,backup=_entrySave?.Source.EndsWith(".bak",StringComparison.Ordinal)==true,
         oakSpeechImplemented=true,fullTitleIntroImplemented=false});
         return true;
@@ -85,7 +85,7 @@ public partial class CampaignView
         else if(!attempt.Result.Succeeded)SetEntryLoadFailure(attempt.Result);
         else if(attempt.Result.FromBackup)_entryNotice="The primary save could not be read.\nA verified backup is available.";
         _entryMode=_entryNotice is not null?"notice":"menu";
-        if(_entryNotice is null&&_entrySave is null)BeginOakIntroduction();
+        if(_entryNotice is null&&_entrySave is null)BeginNewGameGuide();
         ApplySavedOptions(_entrySave?.State.Options??Game.Domain.Options.SourceGameOptions.Defaults);
     }
 
@@ -97,7 +97,7 @@ public partial class CampaignView
     private void CancelEntryName()
     {
         bool player=_entryMode=="player-name";_entryNameEdit!.Visible=false;_entryNameEdit.ReleaseFocus();_entryNotice=null;
-        if(player){_entryMode="gender";_entryCursor=_entryGender;}else ShowEntryName("player-name");QueueRedraw();
+        if(player){_entryMode="gender";_entryCursor=_entryGender;}else BeginRivalNameChoices();QueueRedraw();
     }
     private void SubmitPlayerEntryName(string text)
     {
@@ -129,6 +129,7 @@ public partial class CampaignView
         if(!attempt.Result.Succeeded){_entrySave=null;_entryMode="notice";SetEntryLoadFailure(attempt.Result);return;}
         var saved=attempt.Saved!;
         EnterPlayerSession(CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation));_entryOverwritePending=false;
+        StartQuestLogPlayback();
         Write("playerContinue",_diagnostics.Payload(new{saved.Source,saved.Generation},
             ()=>new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(_session.State)}));
         if(attempt.Result.FromBackup)ShowPlayerSaveResult(attempt.Result);
@@ -140,6 +141,7 @@ public partial class CampaignView
     }
     private void EnterPlayerSession(CampaignSession session)
     {
+        ResetQuestLogPlayback();
         _entryMode="closed";_entryNotice=null;_entryNameEdit!.Visible=false;_entryNameEdit.ReleaseFocus();
         _entryFreshFieldFrame=Engine.GetProcessFrames();
         _session=session;ResetPlayTimeHost();_sequence=session.Revision;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;
@@ -147,6 +149,9 @@ public partial class CampaignView
     }
     private void EntryKey(Key key)
     {
+        if(key != Key.Escape && TryIntroMovieKey(key))return;
+        if(OpeningGuideKey(key) && key != Key.Escape)return;
+        if(key != Key.Escape && OpeningRivalChoiceKey(key))return;
         if(key==Key.Escape)
         {
             if(_entryMode is "player-name" or "rival-name")CancelEntryName();
@@ -154,25 +159,38 @@ public partial class CampaignView
             else RequestQuit();return;
         }
         if(_entryMode=="title")
-        {if(key==Key.Enter&&_entryActionFrame!=Engine.GetProcessFrames()){_entryActionFrame=Engine.GetProcessFrames();ReadEntrySave();}return;}
+        {
+            if(!_openingTitleReveal.Complete && key is Key.Enter or Key.Tab or Key.Backspace)
+            { _openingTitleReveal.Skip(); _entryActionFrame=Engine.GetProcessFrames(); return; }
+            if(key is Key.Enter or Key.Tab&&_entryActionFrame!=Engine.GetProcessFrames())
+            {_entryActionFrame=Engine.GetProcessFrames();BeginTitleExit();}return;
+        }
+        if(_entryMode is "title-exit" or "oak-exit" or "oak-return" or "guide-exit")return;
         if(_entryMode=="notice")
         {
             if(_entryLoadCanRetry&&key==Key.Enter){ReadEntrySave();return;}
-            if(key is Key.Enter or Key.Backspace){_entryNotice=null;_entryLoadCanRetry=false;_entryMode="menu";if(_entrySave is null)BeginOakIntroduction();}
+            if(key is Key.Enter or Key.Backspace){_entryNotice=null;_entryLoadCanRetry=false;_entryMode="menu";if(_entrySave is null)BeginNewGameGuide();}
             return;
         }
         if(_entryMode is "player-name" or "rival-name")return;
         if(_entryMode=="oak-speech")
         {
             if(key==Key.Enter&&_entryActionFrame!=Engine.GetProcessFrames()){_entryActionFrame=Engine.GetProcessFrames();AdvanceOpeningSpeech();}
-            else if(key==Key.Backspace&&_openingPage>0)_openingPage--;
+            else if(key==Key.Backspace&&_openingPage>0)
+            {
+                _openingPage--; ResetOpeningPrinter();
+                if(_openingPages[_openingPage].Portrait=="nidoran-f")
+                { _openingNidoran=new(false,_captureBallAssets.Sine); for(int i=0;i<96;i++)_openingNidoran.AdvanceFrame(); }
+                else _openingNidoran=null;
+            }
             return;
         }
         if(key is Key.Up or Key.Down)_entryCursor=_entryMode=="menu"
             ?Math.Clamp(_entryCursor+(key==Key.Up?-1:1),0,1):_entryCursor^1;
         if(key==Key.Backspace)
         {
-            if(_entryMode is "confirm" or "rival-confirm")ShowEntryName("rival-name");
+            if(_entryMode=="rival-confirm")BeginRivalNameChoices();
+            else if(_entryMode=="confirm")ShowEntryName("rival-name");
             else if(_entryMode=="player-confirm")ShowEntryName("player-name");
             else if(_entryMode=="gender"&&_entrySave is not null){_entryMode="menu";_entryCursor=0;}
             return;
@@ -180,12 +198,12 @@ public partial class CampaignView
         if(key!=Key.Enter)return;
         if(_entryActionFrame==Engine.GetProcessFrames())return;_entryActionFrame=Engine.GetProcessFrames();
         if(_entryMode=="menu")
-        {if(_entryCursor==0)ContinueChosenGame();else BeginOakIntroduction();}
+        {if(_entryCursor==0)ContinueChosenGame();else BeginNewGameGuide();}
         else if(_entryMode=="gender"){_entryGender=_entryCursor;_entryPlayerName=_entryGender==0?"RED":"LEAF";BeginOpeningSpeech("player-name",("YourNameWhatIsIt",OpeningPlayerPortrait));}
         else if(_entryMode=="player-confirm")
         {if(_entryCursor==0)BeginOpeningSpeech("rival-name",("WhatWasHisName","rival"));else ShowEntryName("player-name");}
         else if(_entryMode=="rival-confirm")
-        {if(_entryCursor==0)BeginOpeningSpeech("start",("RememberRivalsName","rival"),("LetsGo",OpeningPlayerPortrait));else ShowEntryName("rival-name");}
+        {if(_entryCursor==0)BeginOpeningSpeech("start",("RememberRivalsName","rival"),("LetsGo",OpeningPlayerPortrait));else BeginRivalNameChoices();}
         else if(_entryMode=="confirm"){if(_entryCursor==0)StartChosenGame();else ShowEntryName("player-name");}
     }
     private bool TryPlayerEntryInput(InputEvent input)
@@ -232,6 +250,8 @@ public partial class CampaignView
                 foreach(var (name,index) in new[]{(PretMainMenuSource.ContinueWindow,0),(PretMainMenuSource.NewGameWindow,1)})
                 {var region=_entrySource!.SelectionRegions[name];if(new Rect2(region.Left,region.Top,region.Width,region.Height).HasPoint(point)){selected=index;break;}}
             }
+            else if(_entryMode=="rival-choice"&&_openingVisualFrame>=30&&new Rect2(8,8,112,88).HasPoint(point))
+                selected=Math.Clamp((int)((point.Y-16)/16),0,4);
             else if(_entryMode is "player-confirm" or "rival-confirm"&&new Rect2(8,8,64,48).HasPoint(point))
                 selected=Math.Clamp((int)((point.Y-16)/16),0,1);
             else if(_entryMode=="gender"&&new Rect2(136,64,88,48).HasPoint(point))
@@ -249,7 +269,7 @@ public partial class CampaignView
                 }
                 return true;
             }
-            bool confirm=_entryMode=="title"||selected>=0||_entryMode is "notice" or "oak-speech"&&MouseMessage.HasPoint(point);
+            bool confirm=_entryMode is "intro-movie" or "title" or "controls-guide" or "pikachu-guide"||selected>=0||_entryMode is "notice" or "oak-speech"&&MouseMessage.HasPoint(point);
             if(selected>=0)_entryCursor=selected;
             if(confirm){_menuMouseActionFrame=Engine.GetProcessFrames();EntryKey(Key.Enter);}
             QueueRedraw();GetViewport().SetInputAsHandled();return true;

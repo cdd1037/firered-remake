@@ -8,7 +8,7 @@ public partial class CampaignView
         SaveOperationResult result;
         try
         {
-            if (_quitRequested || _busy || _tracks.Any(t => t.Time < t.Duration))
+            if (QuestLogPlaybackActive || _quitRequested || _busy || _tracks.Any(t => t.Time < t.Duration))
                 return new(SaveOperation.Save, SaveOperationStatus.Blocked, DiagnosticDetail: "presentation_active");
             string? blocked = _session.ValidatePlayerSave(_session.State);
             if (blocked is not null)
@@ -22,7 +22,7 @@ public partial class CampaignView
             // Observation and clock preparation happen before the storage transaction.
             return SaveOperationResult.Failure(SaveOperation.Save, error);
         }
-        if (result.Succeeded) EntrySaveSucceeded();
+        if (result.Succeeded) { _session.StopQuestLogRecording(); EntrySaveSucceeded(); }
         return result;
     }
 
@@ -49,7 +49,7 @@ public partial class CampaignView
 
     private SaveOperationResult AttemptPlayerLoad()
     {
-        if (_quitRequested || _busy || _tracks.Any(t => t.Time < t.Duration) ||
+        if (QuestLogPlaybackActive || _quitRequested || _busy || _tracks.Any(t => t.Time < t.Duration) ||
             _session.ValidatePlayerSave(_session.State) is not null)
             return new(SaveOperation.Load, SaveOperationStatus.Blocked, DiagnosticDetail: "current_event_or_presentation_active");
         var attempt = ReadPlayerSave();

@@ -168,12 +168,7 @@ public sealed class CaptureBallPresentation
             switch(Ball)
             {
                 case CaptureBall.Poke:
-                    for(int i=0;i<16;i++)
-                    {
-                        int t=age-i-1;
-                        if(t is >=0 and <25)
-                            output.Add(new(ox+Sin(i%8*32,t*2),oy+Cos(i%8*32,t*2),new[]{0,1,2,0,2,1}[(t+1)%6],(t+1)%6==3));
-                    }
+                    output.AddRange(PokeBallBurst(age, ox, oy, _sine));
                     break;
                 case CaptureBall.Great:case CaptureBall.Luxury:
                     for(int wave=0;wave<2;wave++)for(int i=0;i<8;i++)Particle(wave*9,i*32,8,2,2);
@@ -209,6 +204,23 @@ public sealed class CaptureBallPresentation
             }
         }
         return output.ToImmutable();
+    }
+
+    /// <summary>Shared source Pokéball particle burst for battle, Oak and trade presentation.</summary>
+    public static ImmutableArray<CaptureBallParticle> PokeBallBurst(int age, int x, int y, ImmutableArray<int> sine)
+    {
+        var particles = ImmutableArray.CreateBuilder<CaptureBallParticle>();
+        for (int i = 0; i < 16; i++)
+        {
+            int t = age - i - 1;
+            if (t is >= 0 and < 25)
+            {
+                int angle = i % 8 * 32;
+                particles.Add(new(x + (sine[angle] * t * 2 >> 8), y + (sine[angle + 64] * t * 2 >> 8),
+                    new[] { 0, 1, 2, 0, 2, 1 }[(t + 1) % 6], (t + 1) % 6 == 3));
+            }
+        }
+        return particles.ToImmutable();
     }
 
 }

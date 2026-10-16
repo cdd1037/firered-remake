@@ -110,12 +110,13 @@ public partial class CampaignView
         _audioSequence=_session.State.Script.EffectSequence;_audioTrainerOneShots.Clear();
     }
 
-    private static string AudioContext(CampaignState s)=>s.TeachyTv is {} tv?tv.Battle?.Ticket??"teachy-tv":s.NpcTrade is {Phase:CampaignNpcTradePhase.Presenting}?"npc-trade":s.Evolution is not null?"evolution":s.EggHatch is not null?"egg-hatch":s.OldManTutorial is not null?"old-man":
+    private string AudioContext(CampaignState s) => OpeningAudioContext ?? (s.TeachyTv is {} tv?tv.Battle?.Ticket??"teachy-tv":s.NpcTrade is {Phase:CampaignNpcTradePhase.Presenting}?"npc-trade":s.Evolution is not null?"evolution":s.EggHatch is not null?"egg-hatch":s.OldManTutorial is not null?"old-man":
         s.SafariBattle is {} safari?safari.Id:s.DoubleBattle is {Stage:not CampaignDoubleBattleStage.Intro} pair?pair.Id:s.Battle is {} lab?lab.Id:s.WildBattle is {} wild?wild.Id:
-        s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer?trainer.Id:"field";
+        s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer?trainer.Id:"field");
 
     private string DesiredSourceMusic(CampaignState s)
     {
+        if (OpeningSourceMusic is {} openingMusic) return openingMusic;
         if(s.TeachyTv is not null)return s.Music;
         if(s.NpcTrade is {Phase:CampaignNpcTradePhase.Presenting})return "MUS_EVOLUTION";
         if(s.Evolution is not null)return _evolutionAnimation?.Phase == EvolutionScenePhase.Intro ? "MUS_EVOLUTION_INTRO" : "MUS_EVOLUTION";

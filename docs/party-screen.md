@@ -14,7 +14,15 @@ python scripts/checks/test-party-screen.py
 dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --filter FullyQualifiedName~PartyPresentationTests
 ```
 
-Battle-specific selectors still use their existing compact geometry and event-time HP paths. Their battle message overlay and native party bottom panel need a coordinated transition before reusing the full-screen skin. This change does not claim battle-screen parity, full-game completion or actual-audio acceptance.
+## Target and battle adoption
+
+Field medicine, evolution stones, TM/HM compatibility, held-item targets, Mailbox GIVE, Move Tutor, Reminder and Deleter party selection now use this same renderer. Description-bearing slots reuse the no-HP panel: TM/HM shows the existing ABLE / NOT ABLE / LEARNED result. Following `DisplayPartyPokemonDataForMoveTutorOrEvolutionItem`, evolution stones keep HP for eligible members and show NO USE for ineligible members. Existing commands and stale-target checks remain authoritative.
+
+First-rival tutorial party/medicine, single battle replacement/switch/medicine and the Teachy TV demonstration share the single layout. Double battle switch/medicine uses the source double layout: two 80x56 left panels and four 144x24 right panels. The renderer does not reorder party indices. Directional navigation and pointer hit regions use the same layout object; forced replacement has no selectable CANCEL.
+
+Displayed body/status snapshots preserve owned identity, held mail and acquisition metadata. Single battle uses the current displayed active body/status; doubles use the current frame party, with existing interpolated medicine HP/status overriding only the affected member. Native prompt and dialog frames replace battle-text overlays while a party selector is visible. Move-PP rows and move-forgetting screens retain their separate layouts.
+
+The expanded batch passed a full serial solution build and all six Party presentation tests. The bounded transaction suite passed 66 tests plus two public trainer/double-flow tests. The later Mailbox/Tutor/first-rival additions passed the 15:36 integration solution build (zero warnings/errors), six Party tests and 18 FirstBattleCurrentCatalog tests. No dedicated public Mailbox/Tutor command suite was found; expanded representative native checks remain pending. This does not claim full-game completion or actual-audio acceptance.
 
 ## Actual window check
 

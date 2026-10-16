@@ -176,7 +176,8 @@ public partial class CampaignView
         }
         if(_battleMenu=="medicine-target")
         {
-            if(key.Keycode==Key.Backspace){_battleMenu="bag";_battleCursor=0;}
+            NativePartyMove(key.Keycode,ref _battleCursor,1);
+            if(key.Keycode==Key.Backspace || key.Keycode==Key.Enter&&_battleCursor==1){_battleMenu="bag";_battleCursor=0;}
             else if(key.Keycode==Key.Enter)
             {
                bool accepted = Apply(new("battle_potion",PartyIndex:0));
@@ -186,7 +187,7 @@ public partial class CampaignView
             return true;
         }
         if(_battleMenu=="party")
-        {if(key.Keycode is Key.Backspace or Key.Enter){_battleMenu="actions";_battleCursor=0;}return true;}
+        {NativePartyMove(key.Keycode,ref _battleCursor,1);if(key.Keycode is Key.Backspace or Key.Enter){_battleMenu="actions";_battleCursor=0;}return true;}
         if(key.Keycode==Key.Backspace){_battleMenu="actions";_battleCursor=0;return true;}
         int count=_battleMenu=="actions"?4:FirstBattleRules.RequiresStruggle(b.State.Player)?1:b.State.Player.Pokemon.Moves.Length;
         if(_battleMenu=="actions"&&key.Keycode is Key.Left or Key.Right)_battleCursor^=1;
@@ -201,7 +202,7 @@ public partial class CampaignView
             {
                 case 0:_battleMenu="moves";_battleCursor=Math.Min(_lastMoveCursor,Math.Max(0,b.State.Player.Pokemon.Moves.Length-1));break;
                 case 1:_battleMenu="bag";_battleCursor=0;Apply(new("battle_menu",Text:"bag"));break;
-                case 2:_battleMenu="party";Apply(new("battle_menu",Text:"party"));break;
+                case 2:_battleMenu="party";_battleCursor=0;Apply(new("battle_menu",Text:"party"));break;
                 case 3:Apply(new("battle_menu",Text:"run"));_oakNotice=true;_battleNotice=string.Join("\n",BattleSourcePages("gText_OakNoRunningFromATrainer"));break;
             }
         }
@@ -235,10 +236,19 @@ public partial class CampaignView
         bool partyPresentation=_battleMenu=="medicine-target"||b.Phase==CampaignBattlePhase.Events&&b.Events[b.EventIndex] is FirstBattlePotionRecoveredEvent or FirstBattleTutorialEvent{Flag:FirstBattleTutorialFlags.PartyMenu};
         if(partyPresentation||_battleMenu=="party")
         {
-            // Temporary party adapter; its original full-screen art is a separate presentation gate.
-            _battleSkin.DrawStandardFrame(this,new(0,0,240,112));var p=b.DisplayPlayer;
-            SourceText(_sourceNormal,new(12,8),$"{b.OwnedBefore.Nickname} {p.CurrentHp}/{p.Stats.MaxHp} HP");
-            for(int i=0;i<p.Moves.Length;i++)SourceText(_sourceNormal,new(12,29+i*16),$"{MoveName(p.Moves[i].Move)} {p.Moves[i].CurrentPp}/{p.Moves[i].MaximumPp}");
+            var shown=b.DisplayPlayer;
+            if(b.Phase==CampaignBattlePhase.Events&&b.Events[b.EventIndex] is FirstBattlePotionRecoveredEvent medicine)
+                shown=shown with { CurrentHp=(int)Math.Round(Mathf.Lerp(medicine.HpBefore,medicine.HpAfter,(float)Math.Clamp(_battleElapsed/.4,0,1))) };
+            DrawNativeParty([PartyPresentationAssets.Displayed(b.OwnedBefore,shown,b.OwnedBefore.Status)],
+                b.Phase==CampaignBattlePhase.ChooseMove?_battleCursor:0,
+                _battleMenu=="medicine-target"?"Use on which POKéMON?":"Choose a POKéMON.",cancel:b.Phase==CampaignBattlePhase.ChooseMove);
+            if(_battleNotice is not null)DrawNativePartyMessage(_battleNotice);
+            else if(!_battlePages.IsEmpty)
+            {
+                DrawNativePartyMessage(_battlePages[_battlePage]);
+                if(_battleArrowPages.Contains(_battlePage))DrawTextCursor(_sourceNormal,new(8,120),_battlePages[_battlePage].Split('\n'),16,_battleElapsed,true);
+            }
+            return;
         }
         if(_battleNotice is not null)Lines(_battleNotice);
         else if(b.Phase==CampaignBattlePhase.Results&&b.Pages[b.PageIndex] is {Kind:"stats",Reward:LabBattleLevelEvent level})

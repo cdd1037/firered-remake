@@ -104,8 +104,7 @@ public partial class CampaignView
         if (!_mtMoonMoveSlotOpen)
         {
             int cancel = _session.State.Party.Length;
-            if (key.Keycode == Key.Up) _fieldMedicineTarget = Math.Max(0, _fieldMedicineTarget - 1);
-            if (key.Keycode == Key.Down) _fieldMedicineTarget = Math.Min(cancel, _fieldMedicineTarget + 1);
+            NativePartyMove(key.Keycode,ref _fieldMedicineTarget,cancel);
             if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _fieldMedicineTarget == cancel)
             { _fieldMedicineTargetOpen = false; return true; }
             if (key.Keycode != Key.Enter) return true;

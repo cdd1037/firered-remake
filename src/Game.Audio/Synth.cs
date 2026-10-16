@@ -220,26 +220,28 @@ public sealed partial class Synth
         var (song, sequence) = cryCatalog is null
             ? NormalCharmanderCry.Build(Resources, species, mode)
             : NormalCharmanderCry.BuildForTone(Resources, cryCatalog.Get(species).ToneAddress);
-        PrepareNormalCry(species);
-        Stop(2);
-        players[2] = new Player(Resources, this, song, 2, sequence);
-        if (duckBgm)
-        {
-            duckActive = true;
-            duckFrames = 2;
-            SetBgmExternalVolume(21);
-            if (EnableTrace)
-                Trace.Add($"frame={GameFrames} sample={OutputFrames} duck=on externalVolume=21");
-        }
+        StartCry(species, song, sequence, duckBgm);
     }
 
-    // This separate entrypoint cannot silently reinterpret historical mode0 calls.
+    // Separate entrypoints cannot silently reinterpret historical mode0 calls.
+    public void StartDoublesCry(int species, int pan = 0, bool duckBgm = false)
+    {
+        if (cryCatalog is null) throw new NotSupportedException("Doubles cry requires a normal cry catalog");
+        var (song, sequence) = SourceDoublesCry.Build(Resources, cryCatalog, species, pan);
+        StartCry(species, song, sequence, duckBgm);
+    }
+
     public void StartEncounterSnorlaxCry(bool duckBgm = true) => StartEncounterCry(EncounterSnorlaxCry.Species, duckBgm);
 
     public void StartEncounterCry(int species, bool duckBgm = true)
     {
         if (cryCatalog is null) throw new NotSupportedException("Encounter cry requires a normal cry catalog");
         var (song, sequence) = SourceEncounterCry.Build(Resources, cryCatalog, species);
+        StartCry(species, song, sequence, duckBgm);
+    }
+
+    private void StartCry(int species, Song song, byte[] sequence, bool duckBgm)
+    {
         PrepareNormalCry(species);
         Stop(2);
         players[2] = new Player(Resources, this, song, 2, sequence);

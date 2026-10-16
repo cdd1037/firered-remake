@@ -8,14 +8,22 @@ public sealed partial class CampaignSession
         get{var state=State;return state.Party.Length>1&&IsStableFieldForParty(state);}
     }
 
+    // One modal-free boundary shared by party changes and field-move entrypoints.
     private static bool IsStableFieldForParty(CampaignState state)=>
-        state.MailComposer is null&&state.TeachyTv is null&&state.VsSeekerEffect is null&&state.FameChecker is null&&state.FlyEffect is null&&state.Script.Completed&&!state.Script.Locked&&state.Script.Wait is null&&state.Script.Stack.IsEmpty&&state.Script.QuestLogState==0&&
+        state.MailComposer is null&&state.TeachyTv is null&&state.VsSeekerEffect is null&&state.FameChecker is null&&state.FlyEffect is null&&state.NoncombatFieldEffect is null&&state.Script.Completed&&!state.Script.Locked&&state.Script.Wait is null&&state.Script.Stack.IsEmpty&&state.Script.QuestLogState==0&&
         state.SeafoamMovement is null&&state.RuinValleyCut is null&&state.DottedHoleFall is null&&state.FourIslandMovement is null&&state.EntryPrograms.IsEmpty&&state.Dialogue is null&&state.SignMessage is null&&
         state.MoveTutor is null&&state.MoveReminder is null&&state.MoveDeleter is null&&state.SizeRecord is null&&state.NameRater is null&&state.Nickname is null&&state.MonPicture is null&&!state.ScreenIsBlack&&state.PlayerVisible&&
         state.PresentationTicks==0&&state.Motions.IsEmpty&&state.ArrivalFacing is null&&
         state.Battle is null&&state.WildBattle is null&&state.ForestTrainerBattle is null&&state.DoubleBattle is null&&state.SafariBattle is null&&
         state.OldManTutorial is null&&state.FieldPoison is null&&state.Evolution is null&&state.RareCandy is null&&state.EscapeRope is null&&
-        state.HealingEffect is null&&state.Shop is null&&state.ItemMenu is null&&!state.PcPoweredOn&&state.HelpContext=="map";
+        state.HealingEffect is null&&state.Shop is null&&state.ItemMenu is null&&!state.PcPoweredOn&&state.HelpContext=="map"&&
+        state.Pc is null&&state.TownMap is null&&state.SurfEffect is null&&state.FlashEffect is null&&state.StrengthEffect is null&&
+        state.CutEffect is null&&state.RockSmashEffect is null&&state.Fishing is null&&state.PokeFlute is null&&state.Itemfinder is null&&state.Repel is null&&
+        state.FieldPickup is null&&state.FieldEffectArguments is null&&state.Seagallop is null&&state.SeagallopMenu is null&&state.SilphPad is null&&
+        state.RocketSpin is null&&state.CinnabarFall is null&&state.PokemonLeagueCompletion is null&&state.TrainerTowerMenu is null&&!state.TrainerTowerRecordsVisible&&
+        state.TanobyCompletion is null&&state.DeoxysRockEffect is null&&state.MailInteraction is null&&state.FossilMenu is null&&state.NpcTrade is null&&
+        state.UltimateTutor is null&&state.GiftDelivery is null&&state.PrizeExchange is null&&state.CoinsBox is null&&state.MoneyBox is null&&
+        !state.SafariExitPending&&!state.ScreenIsWhite;
 
     private Decision<CampaignState> DecideFieldParty(CampaignState state,CampaignCommand command)
     {

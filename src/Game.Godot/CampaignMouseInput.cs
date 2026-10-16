@@ -204,6 +204,7 @@ public partial class CampaignView
             if (_battleNotice is not null || battle.Phase != CampaignBattlePhase.ChooseMove) return false;
             if (_battleMenu == "bag") return PointerList(point, direction, ref _battleCursor, _session.State.Inventory?.BagItems.Length ?? 0);
             if (_battleMenu == "bag-actions") return PointerRows(point, direction, ref _battleCursor, 2, 168, 130, 72);
+            if (_battleMenu is "party" or "medicine-target") return PointerNativeParty(point,direction,ref _battleCursor,1);
             return _battleMenu is "actions" or "moves" && PointerGrid(point, direction, ref _battleCursor, _battleMenu == "moves",
                 _battleMenu == "actions" ? 4 : FirstBattleRules.RequiresStruggle(battle.State.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
         }
@@ -227,6 +228,8 @@ public partial class CampaignView
     }
     private bool NavigateFieldMenuPointer(Vector2 point, int direction)
     {
+        if (_fieldMenuMode == "field-heal-animation") return false;
+        if (_fieldMenuMode == "field-move-confirm") return PointerRows(point, direction, ref _fieldMoveConfirmChoice, 2, 176, 72, 64);
         if (_fieldMenuNotice is not null) return false;
         if (_fieldMenuMode is "pokedex-contents" or "pokedex-habitat" or "pokedex-area") return NavigatePokedexExtraPointer(point, direction);
         if (_fieldMenuMode == "pokedex-order") return NavigatePokedexOrderPointer(point, direction);
@@ -261,14 +264,14 @@ public partial class CampaignView
             if (_machineMode is "teach-confirm" or "replace-confirm")
                 return _machinePage + 1 == _machinePages.Length && PointerYesNo(point, direction, ref _machineCursor);
             if (_machineMode == "list") return PointerRows(point, direction, ref _machineCursor, MachineListVisibleCount, MachineListX, 40, MachineListWidth, MachineListRowHeight, MachineListStart);
-            if (_machineMode == "party") return PointerRows(point, direction, ref _machineCursor, _session.State.Party.Length + 1, 12, 8, 220, 14);
+            if (_machineMode == "party") return PointerNativeParty(point, direction, ref _machineCursor, _session.State.Party.Length);
             if (_machineMode == "replacement") return PointerRows(point, direction, ref _machineCursor, 5, 12, 26, 220);
             return false;
         }
         if (MailScreen) return MailMouse(point, direction);
         if (MtMoonTargetActive && (PpBoostSelectionStale || VitaminSelectionStale || EvolutionSelectionStale)) return MouseKey();
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return PointerRows(point, direction, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
-        if (_fieldMedicineTargetOpen) return PointerRows(point, direction, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
+        if (_fieldMedicineTargetOpen) return PointerNativeParty(point, direction, ref _fieldMedicineTarget, _session.State.Party.Length);
         if (QuestPocketEnabled && _questPocket > 0)
         {
             if (_questPocketNotice is not null) return false;
@@ -294,7 +297,7 @@ public partial class CampaignView
         if (battle.Phase == CampaignBattlePhase.ChooseMove)
         {
             if (battle.Replacement == CampaignReplacementStage.Select)
-                return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length, 8, 8, 224);
+                return PointerNativeParty(point, direction, ref _wildCursor, _session.State.Party.Length,cancel:false);
             if (battle.Replacement == CampaignReplacementStage.UseNext) return PointerYesNo(point, direction, ref _wildCursor);
             if (ForestTrainerShiftPending)
                 return _wildPage + 1 == _wildPages.Length && PointerYesNo(point, direction, ref _wildCursor);
@@ -309,7 +312,7 @@ public partial class CampaignView
         if (_wildMenu == "bag-actions") return PointerRows(point, direction, ref _wildCursor, _captureBerries ? 3 : 2, 168, _captureBerries ? 106 : 130, 72);
         if (_wildMenu == "medicine-move") return PointerRows(point,direction,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
         if (_wildMenu is "party" or "medicine-target")
-            return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
+            return PointerNativeParty(point, direction, ref _wildCursor, _session.State.Party.Length);
         return _wildMenu is "actions" or "moves" && PointerGrid(point, direction, ref _wildCursor, _wildMenu == "moves",
             _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(battle) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }
@@ -388,7 +391,7 @@ public partial class CampaignView
         if (menu.View == "message") return MouseConfirm(point, MouseMessage);
         if (MtMoonTargetActive && (PpBoostSelectionStale || VitaminSelectionStale || EvolutionSelectionStale)) return MouseKey();
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return MouseSelect(point, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
-        if (_fieldMedicineTargetOpen) return MouseSelect(point, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
+        if (_fieldMedicineTargetOpen) return MouseNativeParty(point, ref _fieldMedicineTarget, _session.State.Party.Length);
         if (QuestPocketEnabled && _questPocket > 0)
         {
             if (_questPocketNotice is not null) return MouseConfirm(point, MouseMessage);
@@ -413,7 +416,7 @@ public partial class CampaignView
         if (_machineMode is "teach-confirm" or "replace-confirm")
             return _machinePage + 1 < _machinePages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _machineCursor);
         if (_machineMode == "list") return MouseSelect(point, ref _machineCursor, MachineListVisibleCount, MachineListX, 40, MachineListWidth, MachineListRowHeight, MachineListStart);
-        if (_machineMode == "party") return MouseSelect(point, ref _machineCursor, _session.State.Party.Length + 1, 12, 8, 220, 14);
+        if (_machineMode == "party") return MouseNativeParty(point, ref _machineCursor, _session.State.Party.Length);
         if (_machineMode == "replacement") return MouseSelect(point, ref _machineCursor, 5, 12, 26, 220);
         return false;
     }
@@ -435,7 +438,7 @@ public partial class CampaignView
         if (_battleNotice is not null || battle.Phase != CampaignBattlePhase.ChooseMove) return MouseConfirm(point, MouseMessage);
         if (_battleMenu == "bag") return MouseList(point, ref _battleCursor, _session.State.Inventory?.BagItems.Length ?? 0);
         if (_battleMenu == "bag-actions") return MouseSelect(point, ref _battleCursor, 2, 168, 130, 72);
-        if (_battleMenu is "party" or "medicine-target") return MouseConfirm(point, new Rect2(8, 8, 224, 16));
+        if (_battleMenu is "party" or "medicine-target") return MouseNativeParty(point,ref _battleCursor,1);
         return _battleMenu is "actions" or "moves" && MouseGrid(point, ref _battleCursor, _battleMenu == "moves",
             _battleMenu == "actions" ? 4 : FirstBattleRules.RequiresStruggle(battle.State.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }
@@ -455,7 +458,7 @@ public partial class CampaignView
         if (battle.Phase == CampaignBattlePhase.ChooseMove)
         {
             if (battle.Replacement == CampaignReplacementStage.Select)
-                return MouseSelect(point, ref _wildCursor, _session.State.Party.Length, 8, 8, 224);
+                return MouseNativeParty(point, ref _wildCursor, _session.State.Party.Length,cancel:false);
             if (battle.Replacement == CampaignReplacementStage.UseNext) return MouseYesNo(point, ref _wildCursor);
             if (ForestTrainerShiftPending)
                 return _wildPage + 1 < _wildPages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _wildCursor);
@@ -474,7 +477,7 @@ public partial class CampaignView
         if (_wildMenu == "bag-actions") return MouseSelect(point, ref _wildCursor, _captureBerries ? 3 : 2, 168, _captureBerries ? 106 : 130, 72);
         if (_wildMenu == "medicine-move") return MouseSelect(point,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
         if (_wildMenu is "party" or "medicine-target")
-            return MouseSelect(point, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
+            return MouseNativeParty(point, ref _wildCursor, _session.State.Party.Length);
         return _wildMenu is "actions" or "moves" && MouseGrid(point, ref _wildCursor, _wildMenu == "moves",
             _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(battle) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }

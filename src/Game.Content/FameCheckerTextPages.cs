@@ -22,11 +22,13 @@ public sealed record FameCheckerTextPage(string Text, ImmutableArray<FameChecker
     int RetainedTextLength, FameCheckerTextEndAction EndAction)
 {
     public string RevealText => Text[RetainedTextLength..];
+    /// <summary>Zero-width source formatting commands, in RevealText UTF-16 offsets; duplicates matter.</summary>
+    public ImmutableArray<int> RepeatControlOffsets { get; init; } = [];
 }
 
 /// <summary>Bounded layout decoder for the authenticated English Fame Checker bodies, not a general
-/// source-text engine. Handles prompt boundaries and color/font state; does not animate scrolling
-/// or reproduce the extra printer frames consumed by formatting controls.</summary>
+/// source-text engine. Preserves prompt boundaries, color/font state and zero-width printer commands.
+/// Frame progression and scrolling belong to the presentation layer.</summary>
 public static class FameCheckerTextPages
 {
     public const int MaximumEncodedLength = 16384;
@@ -53,6 +55,7 @@ public static class FameCheckerTextPages
         var style = new FameCheckerTextStyle(FameCheckerTextColor.DarkGray, FameCheckerTextColor.LightGray,
             FameCheckerTextFont.Normal);
         int retainedLength = 0;
+        var repeatControls = ImmutableArray.CreateBuilder<int>();
 
         void Append(string value, int offset)
         {
@@ -81,8 +84,9 @@ public static class FameCheckerTextPages
                 start += line.Text.Length + 1;
             }
             var page = new FameCheckerTextPage(string.Join('\n', output.Select(l => l.Text)),
-                output.ToImmutable(), retainedLength, action);
+                output.ToImmutable(), retainedLength, action) { RepeatControlOffsets = repeatControls.ToImmutable() };
             pages.Add(page);
+            repeatControls.Clear();
             return page;
         }
 
@@ -138,6 +142,8 @@ public static class FameCheckerTextPages
                     case "{RIVAL}": Append(rivalName, start); break;
                     default: throw Error(source, start, "unsupported control " + control);
                 }
+                if (control is not ("{PLAYER}" or "{RIVAL}"))
+                    repeatControls.Add(lines.Sum(line => line.Text.Length) + lines.Count - 1 - retainedLength);
                 offset = end + 1;
                 continue;
             }

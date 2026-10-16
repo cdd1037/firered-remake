@@ -22,6 +22,19 @@ public sealed class SourceBattleFrameComposer
         foreach(var b in battlers)if(_assets[b.Asset].Width!=64||_assets[b.Asset].Height!=64)throw new InvalidDataException("Battler canvas differs.");
     }
     public SourcePixelAsset Asset(string id)=>_assets[id];
+    public byte[] ComposeResidualSprites(SourceAnimationFrame frame)
+    {
+        if(frame.Active)throw new InvalidOperationException("Residual overlay requires a retired script.");
+        var pixels=new ushort[Width*112];
+        foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).OrderByDescending(s=>s.OamRank))
+        {
+            if(sprite.Blend)throw new InvalidDataException("Residual source blend needs destination layer sampling.");
+            BlitSprite(pixels,_assets[sprite.Asset!],sprite,0,0,false);
+        }
+        var rgba=new byte[pixels.Length*4];
+        for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=(byte)((p&0x8000)!=0?255:0);}
+        return rgba;
+    }
     public byte[] ComposeField(SourceAnimationFrame frame)
     {
         var pixels=new ushort[Width*112];
@@ -33,14 +46,14 @@ public sealed class SourceBattleFrameComposer
         if(new[]{2,3}.Any(bank=>palettes.GetValueOrDefault(bank) is {} other
             ?backgroundBlend is null||other.Coefficient!=backgroundBlend.Coefficient||other.Color!=backgroundBlend.Color
             :backgroundBlend is not null))throw new InvalidDataException("Terrain palette banks require source membership data.");
-        Blit(pixels,_assets["background"],0,0,palettes.GetValueOrDefault(1));
+        Blit(pixels,_assets["background"],0,0,palettes.GetValueOrDefault(1),inverted:frame.InvertedPalettes.Contains(1));
         void Battler(AnimationBattler b)
         {
             if(!b.Visible)return;
             var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];
             var palette=palettes.GetValueOrDefault(16+b.Slot.Value);bool grey=frame.GreyscaleSlots.Contains(b.Slot.Value);
-            if(frame.BattlerAffine.Length>b.Slot.Value&&frame.BattlerAffine[b.Slot.Value].DoubleSize)AffineBattler(pixels,_assets[b.Asset],center.X+offset.X,center.Y+offset.Y,frame.BattlerAffine[b.Slot.Value],palette);
-            else Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y,palette,grey);
+            if(frame.BattlerAffine.Length>b.Slot.Value&&frame.BattlerAffine[b.Slot.Value].DoubleSize)AffineBattler(pixels,_assets[b.Asset],center.X+offset.X,center.Y+offset.Y,frame.BattlerAffine[b.Slot.Value],palette,frame.InvertedPalettes.Contains(16+b.Slot.Value));
+            else Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y,palette,grey,frame.InvertedPalettes.Contains(16+b.Slot.Value));
         }
         void Sprite(SourceVisualSpriteFrame sprite)
         {
@@ -161,12 +174,12 @@ public sealed class SourceBattleFrameComposer
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;
     }
-    private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null,bool greyscale=false)
+    private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null,bool greyscale=false,bool inverted=false)
     {
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
-        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0){if(greyscale){int average=((p&31)+((p>>5)&31)+((p>>10)&31))/3;p=(ushort)(0x8000|average|(average<<5)|(average<<10));}dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);}}
+        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0){if(greyscale){int average=((p&31)+((p>>5)&31)+((p>>10)&31))/3;p=(ushort)(0x8000|average|(average<<5)|(average<<10));}dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted);}}
     }
-    private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette)
+    private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette,bool inverted=false)
     {
         // SetSpriteRotScale supplies the inverse sampling matrix directly to the
         // GBA BIOS. Signed products use arithmetic shifts, including the off-diagonal terms.
@@ -175,7 +188,7 @@ public sealed class SourceBattleFrameComposer
             int sx=((x*affine.XScale+y*affine.MatrixB)>>8)+32,sy=((x*affine.MatrixC+y*affine.YScale)>>8)+32,dx=centerX+x,dy=centerY+y;
             if(sx<0||sx>=64||sy<0||sy>=64||dx<0||dx>=240||dy<0||dy>=112)continue;
             ushort p=source.Pixels[sy*64+sx];if((p&0x8000)==0)continue;
-            dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);
+            dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted);
         }
     }
     private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)
@@ -185,6 +198,19 @@ public sealed class SourceBattleFrameComposer
         if(width is not (8 or 16 or 32 or 64)||height is not (8 or 16 or 32 or 64)||sheet.Width!=width||sprite.Tile<0||sprite.Tile*64%sheet.Width!=0)throw new InvalidDataException("Source sprite frame shape differs.");
         int top=sprite.Tile*64/sheet.Width;
         if(top+height>sheet.Height)throw new InvalidDataException("Source sprite tile frame exceeds sheet.");
+        if(sprite.Affine)
+        {
+            int halfWidth=width*(sprite.DoubleSize?2:1)/2,halfHeight=height*(sprite.DoubleSize?2:1)/2;
+            for(int y=-halfHeight;y<halfHeight;y++)for(int x=-halfWidth;x<halfWidth;x++)
+            {
+                int sx=((x*sprite.MatrixA+y*sprite.MatrixB)>>8)+width/2,sy=((x*sprite.MatrixC+y*sprite.MatrixD)>>8)+height/2;
+                int dx=sprite.Position.X+sprite.Offset.X+x,dy=sprite.Position.Y+sprite.Offset.Y+y;
+                if(sx<0||sx>=width||sy<0||sy>=height||dx<0||dx>=240||dy<0||dy>=112)continue;
+                ushort p=sheet.Pixels[(top+sy)*sheet.Width+sx];if((p&0x8000)==0)continue;
+                int at=dy*240+dx;dest[at]=sprite.Blend&&blendEnabled?Blend(p,dest[at],eva,evb):p;
+            }
+            return;
+        }
         for(int y=0;y<height;y++)for(int x=0;x<width;x++)
         {
             int dx=sprite.Position.X+sprite.Offset.X-width/2+x,dy=sprite.Position.Y+sprite.Offset.Y-height/2+y;

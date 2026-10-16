@@ -50,7 +50,7 @@ Core 只依赖 .NET 标准库。游戏 cue 选择、场景路由、fanfare 等�
 - `SetPlayerPan` 对选中的有效轨道设置外部 pan，不改变序列 PAN，也不复活已结束轨道。
 - `Ended` 包括序列、声道及有效效果尾音；不能把 FINE、硬停止和效果自然衰减混为一谈。
 
-未加载目录时正常叫声 API 只支持 Charmander；有目录时通过公开物种 API 播放普通 mode 0。当前 encounter mode 2 的独立入口保留原作固定参数，并按已加载的 canonical 叫声目录校验物种能力；游戏侧共享注册普通/遭遇叫声，不再逐物种放行。这不是所有特殊 cry mode 的支持声明。不支持的物种/模式在改变现有播放前失败。
+未加载目录时正常叫声 API 只支持 Charmander；有目录时通过公开物种 API 播放普通 mode 0。encounter mode 2 的独立入口保留原作固定参数，并按已加载的 canonical 叫声目录校验物种能力。新增 doubles mode 1 的独立入口仅将普通叫声的长度改为 20、release 改为 225，保留 pitch 15360、chorus 0 和 volume 120，接受原作有符号 pan；默认不压低 BGM。三个入口共享播放控制，不改变正常/遭遇模式原有契约，也不逐物种放行。这不是所有特殊 cry mode 的支持声明。不支持的物种/模式在改变现有播放前失败。
 
 ### 输出配置
 
@@ -96,7 +96,7 @@ python3 scripts/imports/audio/build-cue-catalog.py --check
 
 入口默认读取固定 raw 版本中的 songs.h、song_table.inc、species.h、sound.c，以及现有 pack 和 normal-cries.bin。歌曲 ID/播放器来自源常量/表并与 pack 对照；地址/优先级来自包内歌曲头；fanfare 计数直接来自 sound.c。循环标记通过包内 M4A 指令控制流、running status 和 pattern 栈推导，现有 MIDI 的循环 marker 另行交叉核对。raw 缺少部分 MIDI，不影响完整歌曲控制流检查。
 
-目前输出 345 首歌曲与 386 个物种各两种叫声，共 1117 个 cue。MUS_DUMMY 是停止哨兵；MUS_RS_VS_TRAINER 含当前 Core 未实现的 MEMACC 指令，明确不注册。其它未知指令、越界地址或缺失来源会失败，不猜测循环。该入口不读取任何旧 cue JSON，也不以复制旧中间目录作为权威输入。
+目前输出 345 首歌曲与 386 个物种各两种叫声，共 1117 个 cue。mode 1 的 CRY_<species>_DOUBLES 在宿主按需从已有普通物种 binding 派生，不另存重复元数据、不修改目录；PlayDoublesCry 遵循原作 PlayCry_ByMode 的无 BGM ducking 语义。开场 Nidorino 使用 pan 63，详见 [开场电影](intro-movie.md)。MUS_DUMMY 是停止哨兵；MUS_RS_VS_TRAINER 含当前 Core 未实现的 MEMACC 指令，明确不注册。其它未知指令、越界地址或缺失来源会失败，不猜测循环。该入口不读取任何旧 cue JSON，也不以复制旧中间目录作为权威输入。
 
 地区音频 CLI、配方及累加 manifests 已删除。normal-cries.bin 的独立原始样本再生边界仍见下节；此入口不重建 pack 或修改 DSP。
 

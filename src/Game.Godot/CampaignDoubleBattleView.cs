@@ -333,7 +333,7 @@ public partial class CampaignView
         if(_doubleMenu=="party")
         {
             if(back){if(b.ReplacementSlot is null){_doubleMenu="actions";_doubleCursor=2;}return true;}
-            int count=_session.State.Party.Length;if(direction!=0)_doubleCursor=(_doubleCursor+direction+count+1)%(count+1);
+            int count=_session.State.Party.Length;NativePartyMove(key.Keycode,ref _doubleCursor,count,cancel:b.ReplacementSlot is null,layout:NativePartyLayout.Double);
             if(confirm){if(_doubleCursor==count){if(b.ReplacementSlot is null){_doubleMenu="actions";_doubleCursor=2;}}else DoubleSubmit(new("double_switch",PartyIndex:actor,Choice:_doubleCursor));}return true;
         }
         if(_doubleMenu=="targets")
@@ -381,6 +381,7 @@ public partial class CampaignView
         bool portrait=entry&&_doublePage==0||b.Stage==CampaignDoubleBattleStage.Finished&&b.Frame.Outcome==WildBattleOutcome.Won&&(b.FinishPageIndex>0||b.Frame.TrainerTowerEncounter is not null);
         if(portrait)DrawTexture(DoubleTrainerPortrait,VisibleTrainerPortraitPosition);
         if(entry&&_doublePage==0)DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender==0?"red-back":"leaf-back"],new(48,48));
+        var healthForeground=new List<Action>();
         foreach(int i in new[]{3,1,0,2})
         {
             var body=DoubleDisplayedBody(i);var mon=body.Pokemon;
@@ -393,8 +394,10 @@ public partial class CampaignView
                 if(body.CalledVolatile?.SubstituteHp>0)DrawDoubleSubstitute(i);
                 else DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
             }
-            DrawDoubleHealth(i,body);
+            healthForeground.Add(()=>DrawDoubleHealth(i,body));
         }
+        DrawSourceResidualMoveSprites();
+        foreach(var drawHealth in healthForeground)drawHealth();
         bool choosing=b.SelectingSlot is not null&&_doubleNotice is null&&_doublePages.IsEmpty;
         if(choosing)_uiCorrections.ClearBattleMenu(this);else _battleSkin.DrawBattleMessage(this);
         if(_doubleMenu is "party" or "learn-moves"){DrawDoublePartyOrMoves(b);return;}
@@ -482,23 +485,20 @@ public partial class CampaignView
             SourceText(_battleMenuFont,new(24,12+16*moves.Length),"CANCEL");SourceText(_battleMenuFont,new(10,12+16*_doubleCursor),">");
             DoubleLines("Which move should\nbe forgotten?");return;
         }
-        for(int i=0;i<_session.State.Party.Length;i++)
-        {
-            var member=b.Frame.Party(BattleSide.Player).Members[i];bool active=b.Frame.Slots.Any(s=>s.Member==new PartyMemberKey(BattleSide.Player,i));
-            SourceText(_battleMoveFont,new(24,7+14*i),PresentedOwnedName(_session.State.Party[i]));
-            if(!_session.State.Party[i].IsEgg) SourceText(_battleMoveFont,new(124,7+14*i),$"Lv{member.Pokemon.Level} {member.Pokemon.CurrentHp}/{member.Pokemon.Stats.MaxHp}"+(active?" IN":""));
-        }
-        SourceText(_battleMoveFont,new(24,7+14*_session.State.Party.Length),"CANCEL");SourceText(_battleMenuFont,new(10,7+14*_doubleCursor),">");
-        DoubleLines(_doubleNotice??(b.ReplacementSlot is not null?"Choose the next\nPOKéMON.":"Choose a POKéMON\nto switch in."));
+        DrawNativeParty(_session.State.Party,_doubleCursor,"Choose a POKéMON.",
+            cancel:b.ReplacementSlot is null,layout:NativePartyLayout.Double,
+            displayed:i=>PartyPresentationAssets.Displayed(_session.State.Party[i],b.Frame.Party(BattleSide.Player).Members[i].Pokemon,
+                b.Frame.Party(BattleSide.Player).Members[i].Status));
+        if(_doubleNotice is not null)DrawNativePartyMessage(_doubleNotice);
     }
     private bool NavigateDoublePointer(Vector2 point,int direction)
     {
         var b=_session.State.DoubleBattle!;if(_doubleNotice is not null)return false;
         if(_doubleMenu=="bag-actions")return PointerRows(point,direction,ref _doubleCursor,3,168,106,72);
         if(_doubleMenu=="bag")return PointerList(point,direction,ref _doubleCursor,DoubleBagStacks.Length);
-        if(_doubleMenu=="medicine-target")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
+        if(_doubleMenu=="medicine-target")return PointerNativeParty(point,direction,ref _doubleCursor,_session.State.Party.Length,cancel:true,layout:NativePartyLayout.Double);
         if(_doubleMenu=="medicine-move")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length+1,8,10,224,16);
-        if(_doubleMenu=="party")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
+        if(_doubleMenu=="party")return PointerNativeParty(point,direction,ref _doubleCursor,_session.State.Party.Length,cancel:b.ReplacementSlot is null,layout:NativePartyLayout.Double);
         if(_doubleMenu=="learn-moves")return PointerRows(point,direction,ref _doubleCursor,b.Frame.Party(BattleSide.Player).Members[b.Frame.Rewards!.Pending!.Recipient.Index].Pokemon.Moves.Length+1,8,10,224);
         if(_doubleMenu=="learn-choice")return PointerYesNo(point,direction,ref _doubleCursor);
         if(b.SelectingSlot is not {} actor)return false;
@@ -516,9 +516,9 @@ public partial class CampaignView
         if(_doubleNotice is not null)return MouseMessage.HasPoint(point)&&MouseKey();
         if(_doubleMenu=="bag-actions")return MouseSelect(point,ref _doubleCursor,3,168,106,72);
         if(_doubleMenu=="bag")return (!_doubleBerries&&MouseBagArrows(point,_doubleBagPocket))||MouseList(point,ref _doubleCursor,DoubleBagStacks.Length);
-        if(_doubleMenu=="medicine-target")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
+        if(_doubleMenu=="medicine-target")return MouseNativeParty(point,ref _doubleCursor,_session.State.Party.Length,cancel:true,layout:NativePartyLayout.Double);
         if(_doubleMenu=="medicine-move")return MouseSelect(point,ref _doubleCursor,_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length+1,8,10,224,16);
-        if(_doubleMenu=="party")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
+        if(_doubleMenu=="party")return MouseNativeParty(point,ref _doubleCursor,_session.State.Party.Length,cancel:b.ReplacementSlot is null,layout:NativePartyLayout.Double);
         if(_doubleMenu=="learn-moves")return MouseSelect(point,ref _doubleCursor,b.Frame.Party(BattleSide.Player).Members[b.Frame.Rewards!.Pending!.Recipient.Index].Pokemon.Moves.Length+1,8,10,224);
         if(_doubleMenu=="learn-choice")return MouseSelect(point,ref _doubleCursor,2,184,72,56);
         if(_doublePages.Length>0)return MouseMessage.HasPoint(point)&&MouseKey();

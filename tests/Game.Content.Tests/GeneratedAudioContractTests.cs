@@ -20,6 +20,26 @@ public sealed class GeneratedAudioContractTests
         foreach (var cue in cues.EnumerateArray()) ValidateCue(cue, ids, path);
     }
 
+    [TestMethod]
+    public void EveryCatalogSpeciesKeepsOnlyStoredNormalAndEncounterBindings()
+    {
+        using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, "content/generated/audio/cues.json")));
+        var groups = json.RootElement.GetProperty("cues").EnumerateArray()
+            .Where(c => c.GetProperty("sourcePlayer").GetInt32() == 4)
+            .GroupBy(c => c.GetProperty("species").GetInt32()).ToArray();
+        Assert.IsTrue(groups.Length > 0);
+        foreach (var group in groups)
+        {
+            CollectionAssert.AreEqual(new[] { 0, 2 }, group.Select(c => c.GetProperty("cryMode").GetInt32()).Order().ToArray());
+            foreach (var cue in group)
+            {
+                string suffix = cue.GetProperty("cryMode").GetInt32() switch { 0 => "NORMAL", 2 => "ENCOUNTER", _ => throw new InvalidDataException() };
+                string species = cue.GetProperty("sourceSymbol").GetString()!;
+                Assert.AreEqual("CRY_" + species["SPECIES_".Length..] + "_" + suffix, cue.GetProperty("id").GetString());
+            }
+        }
+    }
+
     private static void ValidateCue(JsonElement cue, HashSet<string> ids, string path)
     {
         string[] required = ["id", "sourceSymbol", "sourcePlayer", "priority", "sourceCounter", "songAddress", "species", "looping"];

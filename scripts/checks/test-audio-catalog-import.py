@@ -118,6 +118,8 @@ class CueCatalogTests(unittest.TestCase):
             cries = b'FRCN0001' + struct.pack('<IHHIIB3x', 1, 1, 0, 2, 2, 0)
             result = cue_importer.build_catalog(root, data, cries)
             self.assertEqual(['CRY_BULBASAUR_ENCOUNTER', 'CRY_BULBASAUR_NORMAL', 'SE_SELECT'], [c['id'] for c in result['cues']])
+            self.assertEqual([2, 0], [c['cryMode'] for c in result['cues'][:-1]])
+            self.assertTrue(all(c['sourcePlayer'] == 4 and c['species'] == 1 and c['priority'] == 10 for c in result['cues'][:-1]))
             self.assertEqual(5, result['cues'][-1]['priority'])
             data[cue_importer.SONG_TABLE - base + 12] = 1
             with self.assertRaisesRegex(ValueError, 'Packed song table differs'):

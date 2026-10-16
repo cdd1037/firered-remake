@@ -39,6 +39,24 @@ public static class NormalCharmanderCry
     }
 }
 
+// pret sound.c CRY_MODE_DOUBLES shortens the ordinary cry without changing pitch,
+// chorus or volume. Pan is the signed source argument to SetPokemonCryPanpot.
+public static class SourceDoublesCry
+{
+    public const int Mode = 1;
+    public const int Length = 20, Release = 225, Pitch = 15360, Chorus = 0, Volume = 120;
+
+    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog, int species, int pan = 0)
+    {
+        if (pan is < -128 or > 127) throw new ArgumentOutOfRangeException(nameof(pan));
+        var (song, bytes) = NormalCharmanderCry.BuildForTone(resources, catalog.Get(species).ToneAddress);
+        bytes[0x26] = Release;
+        bytes[0x28] = (byte)((pan + 64) & 0x7f);
+        BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(0x2e), Length);
+        return (song, bytes);
+    }
+}
+
 // pret sound.c CRY_MODE_ENCOUNTER uses the same fixed parameters for each
 // species with a loaded canonical cry. Normal mode stays intact.
 public static class SourceEncounterCry

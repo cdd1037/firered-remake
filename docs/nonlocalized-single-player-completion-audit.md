@@ -28,6 +28,24 @@ Chinese, player communication/wireless games, external e-Reader, original-ROM sa
 
 Pinned `src/pokemon.c:5339` genuinely applies PID-derived front spots. No implementation was found in the current C# source. However, direct searches found no `SPECIES_SPINDA` in default wild encounters, normal trainer parties, trainer-tower sets, NPC trades, evolution entries or map scripts. Current generated admission lists contain 196 owned, 220 opponent and 204 tower identities, and **none contains Spinda**. Canonical/machine/tutor/mail identity data is not a reachable encounter. Keep PID spots as broader presentation debt unless a real in-scope route/opponent is demonstrated; do not add Spinda or label ordinary single-player incomplete solely for this reason.
 
+### Follow-up finding: noncombat party moves (2026-10-16 15:36 UTC)
+
+A later source-to-menu check found five genuine functional omissions: Dig, Teleport,
+Sweet Scent, Soft-Boiled and Milk Drink outside battle. `CampaignFieldMenuView.FieldPartyActions`
+currently exposes seven HM actions, but not these five; existing battle-move handlers
+are not field implementations. These are now assigned for completion, not closed.
+
+The pinned source supplies shared mechanisms, which the remake should reuse rather than
+create per-map exceptions:
+
+- `src/fldeff_dig.c`: same map eligibility and escape task as Escape Rope, without consuming an item.
+- `src/fldeff_teleport.c`: source Teleport/Fly map-type eligibility and the saved healing destination.
+- `src/fldeff_sweetscent.c`: field presentation followed by `SweetScentWildEncounter`; encounter eligibility and modifiers must be traced separately from walking encounters.
+- `src/fldeff_softboiled.c`: donor HP must exceed one fifth of its maximum; transfer costs that amount and heals a different living, injured party member, capped at its maximum. Trace the party-menu table for the shared Milk Drink action.
+
+This follow-up does not revise the historical findings above into claims about current
+completion. Public command tests, menu wiring and representative presentation remain required.
+
 ## 2. Static world and interaction inventory actually checked
 
 Compared `content/raw/pokefirered/037335f4/data/maps/*/map.json`, `content/generated/maps/world.json` and `content/generated/data/story.json` directly, using local Python read-only inspection. Raw map files total 425; the runtime index contains 395 distinct non-variant source maps. The 30 absent raw maps consist of:

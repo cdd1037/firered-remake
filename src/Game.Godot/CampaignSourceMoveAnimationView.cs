@@ -9,6 +9,38 @@ using Godot;
 
 public partial class CampaignView
 {
+    private sealed class ResidualMoveSprites(SourceBattleAnimation runtime,SourceBattleFrameComposer composer,ImageTexture texture)
+    { public SourceBattleAnimation Runtime{get;}=runtime;public SourceBattleFrameComposer Composer{get;}=composer;public ImageTexture Texture{get;}=texture;public double Remainder{get;set;} }
+    private readonly List<ResidualMoveSprites> _sourceResidualMoveSprites=[];
+    // Cmd_end releases source graphics allocations, but raw sprites remain globally
+    // alive. Retain owned immutable textures until their callbacks expire; do not
+    // emulate freed-VRAM reuse artifacts or prolong the gameplay continuation.
+    private void RetainResidualMoveSprites()
+    {
+        if(_sourceMoveAnimationGate.Current is not {HasResidualSprites:true} runtime)return;
+        using var image=Image.CreateFromData(240,112,false,Image.Format.Rgba8,_sourceMoveComposer!.ComposeResidualSprites(runtime.Snapshot()));
+        _sourceResidualMoveSprites.Add(new(runtime,_sourceMoveComposer,ImageTexture.CreateFromImage(image)){Remainder=_sourceMoveRemainder});
+        ProcessResidualMoveSprites(0);
+    }
+    private void ProcessResidualMoveSprites(double delta)
+    {
+        foreach(var residual in _sourceResidualMoveSprites.ToArray())
+        {
+            residual.Remainder+=delta;
+            while(residual.Runtime.HasResidualSprites&&residual.Remainder>=SourceBattleAnimation.SourceFrameSeconds)
+            {
+                residual.Remainder-=SourceBattleAnimation.SourceFrameSeconds;
+                var frame=residual.Runtime.TickResidualSprites();
+                using var image=Image.CreateFromData(240,112,false,Image.Format.Rgba8,residual.Composer.ComposeResidualSprites(frame));residual.Texture.Update(image);
+            }
+            if(!residual.Runtime.HasResidualSprites){residual.Texture.Dispose();_sourceResidualMoveSprites.Remove(residual);}
+            QueueRedraw();
+        }
+    }
+    private void DrawSourceResidualMoveSprites()
+    {foreach(var residual in _sourceResidualMoveSprites)DrawTexture(residual.Texture,Vector2.Zero);}
+    private void ClearResidualMoveSprites()
+    {foreach(var residual in _sourceResidualMoveSprites){residual.Runtime.Cancel();residual.Texture.Dispose();}_sourceResidualMoveSprites.Clear();}
     private readonly SourceBattleAnimationGate _sourceMoveAnimationGate=new();
     private readonly Dictionary<(int,string),AnimationBattler> _sourceBattlerGeometry=[];
     private readonly Dictionary<string,SourcePixelAsset> _sourceMoveAssets=[];
@@ -218,6 +250,7 @@ public partial class CampaignView
     }
     private bool ProcessCommittedMoveAnimation(double delta)
     {
+        ProcessResidualMoveSprites(delta);
         if(ProcessCommittedStatAnimation(delta))return true;
         if(_sourceMoveContinuation is not {} pending)return false;
         if(!SourceMoveContextMatches())
@@ -229,22 +262,24 @@ public partial class CampaignView
         {
             // Retire the continuation before executing the sole original ACK. Reentrant Sync/input
             // sees no pending continuation; the gameplay move transaction is never replayed.
+            int finishedFrame=_sourceMoveAnimationGate.Current!.Snapshot().Frame;
+            RetainResidualMoveSprites();
             _sourceMoveContinuation=null;_sourceMoveSession=null;_sourceMoveComposer=null;_sourceMoveSound=null;
-            Write("sourceMoveAnimationFinished",new{pending.BattleId,pending.Sequence,sourceFrame=_sourceMoveAnimationGate.Current!.Snapshot().Frame});
+            Write("sourceMoveAnimationFinished",new{pending.BattleId,pending.Sequence,sourceFrame=finishedFrame});
             AcknowledgePresentedSingleBattle();
         }
         QueueRedraw();return true;
     }
     private void CancelSourceMoveAnimation(string reason)
     {
-        CancelSourceStatAnimation(reason);
+        ClearResidualMoveSprites();CancelSourceStatAnimation(reason);
         var pending=_sourceMoveContinuation;_sourceMoveContinuation=null;_sourceMoveSession=null;
         _sourceMoveAnimationGate.Current?.Cancel();_sourceMoveSound=null;_sourceMoveComposer=null;_sourceMoveRemainder=0;
         if(pending is not null)Write("sourceMoveAnimationCancelled",new{pending.BattleId,pending.Sequence,reason});
     }
     private void ResetSourceMoveAnimation(string reason)
     {
-        CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceStatAnimationGate.Reset();_sourceVisualBattle=null;_sourceVisualSequence=0;_sourceSubstituteHp.Clear();
+        ClearResidualMoveSprites();CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceStatAnimationGate.Reset();_sourceVisualBattle=null;_sourceVisualSequence=0;_sourceSubstituteHp.Clear();
     }
     private void DisposeSourceMoveAnimation()
     {

@@ -57,7 +57,7 @@ public partial class CampaignView
                 { if (_heldChoice == 0) CompleteGiveItem(true); else { _heldGiveItem = null; _heldExchange = false; } }
                 return true;
             }
-            FieldMenuMoveCursor(key, ref _heldTarget, _heldTargetIds.Length + 1);
+            NativePartyMove(key.Keycode, ref _heldTarget, _heldTargetIds.Length);
             if (key.Keycode == Key.Enter)
             { if (_heldTarget == _heldTargetIds.Length) _heldGiveItem = null; else ConfirmHeldTarget(); }
             return true;
@@ -107,11 +107,7 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         if (_heldGiveItem is not null && !_heldExchange)
         {
-            for (int i = 0; i < _session.State.Party.Length; i++)
-            { SourceText(_sourceNormal, new(24, 8 + i * 17), PresentedOwnedName(_session.State.Party[i])); }
-            SourceText(_sourceNormal, new(24, 8 + _session.State.Party.Length * 17), "CANCEL");
-            SourceText(_sourceNormal, new(12, 8 + _heldTarget * 17), "▶");
-            ItemMessageBox("Give to which POKéMON?");
+            DrawNativeParty(_session.State.Party,_heldTarget,"Give to which POKéMON?");
         }
         else
         {
@@ -132,8 +128,8 @@ public partial class CampaignView
         if (_itemNotice is not null) return direction is null && MouseConfirm(point, MouseMessage);
         bool targets = _heldGiveItem is not null && !_heldExchange;
         int count = targets ? _heldTargetIds.Length + 1 : _heldExchange ? 2 : 3;
-        if (targets) return direction is {} d ? PointerRows(point, d, ref _heldTarget, count, 12, 8, 216, 17)
-            : MouseSelect(point, ref _heldTarget, count, 12, 8, 216, 17);
+        if (targets) return direction is {} d ? PointerNativeParty(point, d, ref _heldTarget, count-1)
+            : MouseNativeParty(point, ref _heldTarget, count-1);
         return direction is {} move ? PointerRows(point, move, ref _heldChoice, count, 164, 58, 68, 17)
             : MouseSelect(point, ref _heldChoice, count, 164, 58, 68, 17);
     }

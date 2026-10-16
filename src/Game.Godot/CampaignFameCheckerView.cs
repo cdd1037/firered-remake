@@ -13,12 +13,13 @@ public partial class CampaignView
     private FameCheckerPresentationData? _fameArt;
     private readonly Dictionary<string, Texture2D> _fameTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<(int,int), SourceGameFont> _fameFonts = [];
-    private readonly SourceTextProgress _famePrinter = new();
+    private readonly FameCheckerTextPresentation _famePrinter = new();
+    private readonly Dictionary<SourceGameFont, ImageTexture> _fameFontAtlases = [];
     private ImmutableArray<FameCheckerPersonView> _famePeople = [];
     private ImmutableArray<FameCheckerTextPage> _famePages = [];
     private CampaignFameChecker? _fameOwner;
     private FameMode _fameMode;
-    private int _famePerson, _fameTop, _fameFact, _famePage, _fameFrame, _fameOffset, _fameSlide, _fameInfo = 4, _fameInfoFrames;
+    private int _famePerson, _fameTop, _fameFact, _fameFrame, _fameOffset, _fameSlide, _fameInfo = 4, _fameInfoFrames;
     private bool _fameRestored, _fameInfoOpen, _fameTextHeld, _fameTextPress;
     private Key? _fameHeldDirection;
     private int _fameRepeat;
@@ -57,19 +58,19 @@ public partial class CampaignView
         if (owner is null) { _famePages=[]; return; }
         _fameArt ??= PretFameCheckerPresentation.Load(_root);
         _famePeople=_session.FameCheckerPeople; _fameMode=FameMode.List;
-        _famePerson=_fameTop=_fameFact=_famePage=_fameFrame=_fameOffset=_fameSlide=_fameInfoFrames=0;
+        _famePerson=_fameTop=_fameFact=_fameFrame=_fameOffset=_fameSlide=_fameInfoFrames=0;
         _fameInfo=4;_fameRestored=_fameInfoOpen=false;_fameTime=0;_fameBackgroundKey=null;_famePages=[];
         if (_famePeople.IsEmpty) SelectFamePerson();
     }
     private void SetFameText(FameCheckerText? text)
     {
         _famePages=text is null?[]:FameCheckerTextPages.Parse(text.EncodedText.EndsWith('$')?text:text with {EncodedText=text.EncodedText+"$"},_session.State.PlayerName,_session.State.RivalName);
-        _famePage=0;ResetFamePrinter();
+        ResetFamePrinter();
     }
     private void ResetFamePrinter()
     {
         _fameTextHeld=_fameTextPress=false;
-        _famePrinter.Reset(_famePages.IsEmpty?"":_famePages[_famePage].RevealText,
+        _famePrinter.Reset(_famePages,
             _session.EffectiveOptions.TextSpeed switch {SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1});
     }
     private void SetFameInfo(bool opened)
@@ -129,7 +130,8 @@ public partial class CampaignView
                 _fameInfoFrames--;if(_fameInfoFrames==4)_fameInfo=0;
                 if(_fameInfoFrames==0)_fameInfo=_fameInfoOpen?1:4;
             }
-            _famePrinter.AdvanceFrames(1,_fameTextHeld,_fameTextPress);_fameTextPress=false;
+            if(_famePrinter.AdvanceFrame(_fameTextHeld,_fameTextPress))SourceSound("SE_SELECT");
+            _fameTextPress=false;
             if(_fameHeldDirection is {} held&&_fameMode!=FameMode.Facts&&_fameInfoFrames==0&&--_fameRepeat<=0)
             {MoveFamePerson(held==Key.Up?-1:1);_fameRepeat=5;}
         }
@@ -145,7 +147,6 @@ public partial class CampaignView
         if(a&&!_famePages.IsEmpty)
         {
             if(!_famePrinter.Complete)return;
-            if(_famePage+1<_famePages.Length){_famePage++;ResetFamePrinter();return;}
         }
         if(_fameMode==FameMode.Facts)
         {
@@ -254,21 +255,47 @@ public partial class CampaignView
         _battleSkin.DrawUserFrame(this,new(8,112,224,48));
         if(!_famePages.IsEmpty)
         {
-            var page=_famePages[_famePage];int visible=page.RetainedTextLength+_famePrinter.VisibleText.Length;
+            var page=_famePages[_famePrinter.PageIndex];int visible=_famePrinter.VisibleLength;
             foreach(var line in page.Lines)foreach(var run in line.Runs)
             {
                 int count=Math.Clamp(visible-run.CharacterStart,0,run.Text.Length);if(count==0)continue;
                 var font=FameFont((int)run.Style.Foreground,(int)run.Style.Shadow);
                 float x=font.Font.GetStringSize(font.PrepareText(line.Text[..run.Column]),fontSize:font.Size).X;
-                SourceText(font,new(16+x,120+line.LineIndex*15),run.Text[..count]);
+                DrawFameMessageText(font,new(16+x,121+line.LineIndex*FameCheckerTextPresentation.LineStep-_famePrinter.ScrollPixels),run.Text[..count]);
             }
-            if(_famePrinter.Complete&&_famePage+1<_famePages.Length)_textCursor.Draw(this,new(216,140),_fameFrame);
+            if(_famePrinter.WaitingForPrompt&&_famePrinter.PromptFrames>0)
+            {
+                var last=page.Lines[^1];
+                float width=normal.Font.GetStringSize(normal.PrepareText(last.Text),fontSize:normal.Size).X;
+                _textCursor.Draw(this,new(16+width,121+last.LineIndex*FameCheckerTextPresentation.LineStep),_famePrinter.PromptFrames-1);
+            }
         }
         return true;
+    }
+    // The source scrolls the 208x32 window pixels. Clip glyphs, including a partly scrolled top row,
+    // without a viewport or a new texture per frame. All admitted gender fonts share this atlas.
+    private void DrawFameMessageText(SourceGameFont font,Vector2 position,string text)
+    {
+        var size=new Vector2I(font.Size,0);
+        if(!_fameFontAtlases.TryGetValue(font,out var atlas))
+        {
+            using var image=font.Font.GetTextureImage(0,size,0);
+            atlas=ImageTexture.CreateFromImage(image);_fameFontAtlases.Add(font,atlas);
+        }
+        var window=new Rect2(16,120,208,32);
+        foreach(var glyph in font.PrepareText(text).EnumerateRunes())
+        {
+            var uv=font.Font.GetGlyphUVRect(0,size,glyph.Value);
+            var destination=new Rect2(position,uv.Size);
+            var clipped=destination.Intersection(window);
+            if(clipped.HasArea())DrawTextureRectRegion(atlas,clipped,new Rect2(uv.Position+clipped.Position-position,clipped.Size));
+            position.X+=font.Font.GetGlyphAdvance(0,font.Size,glyph.Value).X;
+        }
     }
     private void DisposeFameCheckerPresentation()
     {
         _fameTextures.Clear();_fameImages?.Dispose();_fameImages=null;
+        foreach(var atlas in _fameFontAtlases.Values)atlas.Dispose();_fameFontAtlases.Clear();
         foreach(var font in _fameFonts.Values)font.Dispose();_fameFonts.Clear();
         _fameBase=_fameOverlay=null;_fameArt=null;_fameOwner=null;
     }

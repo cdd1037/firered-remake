@@ -48,8 +48,12 @@ public partial class CampaignView
         if(_wildMedicineItem is not {} item||_wildMenu is not ("medicine-target" or "medicine-move"))return false;
         bool move=_wildMenu=="medicine-move";
         int count=move?_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length:_session.State.Party.Length;
-        if(key.Keycode is Key.Up or Key.Left)_wildCursor=Math.Max(0,_wildCursor-1);
-        if(key.Keycode is Key.Down or Key.Right)_wildCursor=Math.Min(count,_wildCursor+1);
+        if(!move)NativePartyMove(key.Keycode,ref _wildCursor,count);
+        else
+        {
+            if(key.Keycode is Key.Up or Key.Left)_wildCursor=Math.Max(0,_wildCursor-1);
+            if(key.Keycode is Key.Down or Key.Right)_wildCursor=Math.Min(count,_wildCursor+1);
+        }
         if(key.Keycode==Key.Backspace||key.Keycode==Key.Enter&&_wildCursor==count)
         {_wildMenu=move?"medicine-target":"bag";_wildCursor=move?_singleMedicinePartyIndex:_captureBagSelected;return true;}
         if(key.Keycode==Key.Enter)

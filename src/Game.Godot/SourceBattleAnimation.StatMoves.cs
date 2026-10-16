@@ -118,14 +118,17 @@ public sealed partial class SourceBattleAnimation
     }
     private sealed class BlendCycleTask:VisualTask
     {
-        private readonly uint _mask;private int _remaining=1;
-        public BlendCycleTask(SourceBattleAnimation owner)
-        {_mask=1u<<(16+owner._cue.Actor.Value);owner._fade=new(_mask,0,8,0x7fff);owner._fade.Update(owner);}
+        private readonly uint _mask;private readonly int _delay,_initial,_target;private readonly ushort _color;
+        private int _remaining;private bool _restore;
+        public BlendCycleTask(SourceBattleAnimation owner,int[] args)
+        {_mask=owner.SelectPalettes(args[0]);_delay=args[1];_remaining=args[2];_initial=args[3];_target=args[4];_color=(ushort)args[5];Begin(owner,0,_target);}
+        private void Begin(SourceBattleAnimation owner,int from,int to)
+        {if(owner._fade?.Active!=true){owner._fade=new(_mask,from,to,_color,_delay);owner._fade.Update(owner);}_remaining--;_restore=!_restore;}
         public override void Step(SourceBattleAnimation owner)
         {
             if(owner._fade?.Active==true)return;
-            if(_remaining--==0){Finished=true;return;}
-            owner._fade=new(_mask,8,0,0x7fff);owner._fade.Update(owner);
+            if(_remaining<=0){Finished=true;return;}
+            Begin(owner,_restore?_target:_initial,_remaining==1?0:_restore?_initial:_target);
         }
     }
     private sealed class ComplexPaletteSprite:VisualSprite

@@ -17,7 +17,9 @@ public static class CampaignMoveAnimationPresentation
     private static int SupportedSourceMoveId(string move)=>move switch
     {
         "pret:MOVE_POUND" => 1,
+        "pret:MOVE_KARATE_CHOP" => 2,
         "pret:MOVE_FIRE_PUNCH" => 7,
+        "pret:MOVE_THUNDER_PUNCH" => 9,
         "pret:MOVE_SCRATCH" => 10,
         "pret:MOVE_VICE_GRIP" => 11,
         "pret:MOVE_CUT" => 15,
@@ -32,31 +34,55 @@ public static class CampaignMoveAnimationPresentation
         "pret:MOVE_TAKE_DOWN" => 36,
         "pret:MOVE_DOUBLE_EDGE" => 38,
         "pret:MOVE_TAIL_WHIP" => 39,
+        "pret:MOVE_SUPERSONIC" => 48,
+        "pret:MOVE_ACID" => 51,
         "pret:MOVE_EMBER" => 52,
         "pret:MOVE_FLAMETHROWER" => 53,
+        "pret:MOVE_WATER_GUN" => 55,
+        "pret:MOVE_HYDRO_PUMP" => 56,
+        "pret:MOVE_BUBBLE_BEAM" => 61,
         "pret:MOVE_PECK" => 64,
+        "pret:MOVE_SUBMISSION" => 66,
         "pret:MOVE_LOW_KICK" => 67,
         "pret:MOVE_COUNTER" => 68,
         "pret:MOVE_STRENGTH" => 70,
+        "pret:MOVE_ABSORB" => 71,
+        "pret:MOVE_MEGA_DRAIN" => 72,
         "pret:MOVE_GROWTH" => 74,
         "pret:MOVE_POISON_POWDER" => 77,
         "pret:MOVE_STUN_SPORE" => 78,
         "pret:MOVE_SLEEP_POWDER" => 79,
+        "pret:MOVE_THUNDER_SHOCK" => 84,
+        "pret:MOVE_THUNDERBOLT" => 85,
+        "pret:MOVE_THUNDER_WAVE" => 86,
+        "pret:MOVE_TOXIC" => 92,
         "pret:MOVE_AGILITY" => 97,
         "pret:MOVE_QUICK_ATTACK" => 98,
+        "pret:MOVE_SCREECH" => 103,
+        "pret:MOVE_RECOVER" => 105,
         "pret:MOVE_HARDEN" => 106,
         "pret:MOVE_MINIMIZE" => 107,
         "pret:MOVE_WITHDRAW" => 110,
         "pret:MOVE_SELF_DESTRUCT" => 120,
+        "pret:MOVE_EGG_BOMB" => 121,
         "pret:MOVE_HI_JUMP_KICK" => 136,
+        "pret:MOVE_LEECH_LIFE" => 141,
+        "pret:MOVE_BUBBLE" => 145,
         "pret:MOVE_FLASH" => 148,
+        "pret:MOVE_CRABHAMMER" => 152,
         "pret:MOVE_EXPLOSION" => 153,
         "pret:MOVE_SLASH" => 163,
+        "pret:MOVE_OCTAZOOKA" => 190,
+        "pret:MOVE_ZAP_CANNON" => 192,
+        "pret:MOVE_GIGA_DRAIN" => 202,
         "pret:MOVE_FALSE_SWIPE" => 206,
         "pret:MOVE_VITAL_THROW" => 233,
         "pret:MOVE_SNATCH" => 289,
+        "pret:MOVE_METAL_SOUND" => 319,
+        "pret:MOVE_SIGNAL_BEAM" => 324,
         "pret:MOVE_AERIAL_ACE" => 332,
         "pret:MOVE_IRON_DEFENSE" => 334,
+        "pret:MOVE_MUD_SHOT" => 341,
         _=>0
     };
 
@@ -99,9 +125,9 @@ public static class CampaignMoveAnimationPresentation
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 77 or 78 or 79)
+        if(move is 77 or 78 or 79 or 86 or 92)
         {
-            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,78=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
+            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<WildBattleStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
             if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
@@ -119,9 +145,21 @@ public static class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-self-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
-        if(move is 39 or 148)
+        if(move==48)
         {
-            var stat=move==39?WildBattleStat.Defense:WildBattleStat.Accuracy;
+            var results=action.OfType<WildBattleConfusionChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&e.After is >=2 and <=5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+            if(results.Length!=1)return new(null,"unmatched-source-confusion-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
+        if(move==105)
+        {
+            var results=action.OfType<WildBattleRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
+            if(results.Length!=1)return new(null,"unmatched-source-recovery-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
+        if(move is 39 or 148 or 103 or 319)
+        {
+            var stat=move is 39 or 103?WildBattleStat.Defense:move==319?WildBattleStat.SpecialDefense:WildBattleStat.Accuracy;
             var results=action.OfType<WildBattleStatChangedEvent>().Where(e=>e.Actor==used.Actor&&e.Target==used.Target&&e.Stat==stat&&e.After<e.Before).ToArray();
             if(results.Length!=1||results[0].Sequence<=pp[0].Sequence)return new(null,"unmatched-source-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,
@@ -154,6 +192,27 @@ public static class CampaignMoveAnimationPresentation
             battle.Events[end] is not (SourceAttackStringEvent or SourceMoveUsedEvent or SourceOrderEvent or SourceTurnReadyEvent)) end++;
         var action = battle.Events.Skip(battle.EventIndex + 1).Take(end - battle.EventIndex - 1).ToArray();
         var pp = action.OfType<SourcePpCommandEvent>().ToArray();
+        if(move is 51 or 145)
+        {
+            // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
+            // One visible attack page owns both PP-command visits and one visual invocation.
+            if(pp.Length is <1 or >2||pp[0].Target!=used.Target||pp.Select(p=>p.Target).Distinct().Count()!=pp.Length||
+                pp.Any(p=>p.Actor!=used.Actor||p.CurrentMove!=used.Move||p.ChosenMove!=attack.ChosenMove||p.PpSlot!=used.Slot||p.Sequence<=used.Sequence||
+                    p.Target.Side==used.Actor.Side||p.Target!=used.Target&&p.Target!=used.Target.Partner)||
+                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||pp.Skip(1).Any(p=>p.Before!=pp[0].After||p.After!=p.Before))
+                return new(null,"unmatched-source-spread-pp");
+            var spreadHits=action.Where(e=>e is SourceHpChangedEvent h&&h.Actor==used.Actor&&h.Move==used.Move||e is SourceSubstituteDamagedEvent d&&d.Actor==used.Actor&&d.Move==used.Move)
+                .Select(e=>e switch{SourceHpChangedEvent h=>(h.Target,h.Sequence,Substitute:false),SourceSubstituteDamagedEvent d=>(d.Target,d.Sequence,Substitute:true),_=>throw new InvalidOperationException()}).ToArray();
+            if(spreadHits.Length==0)return new(null,"source-no-animation-result");
+            if(spreadHits.Length>2||spreadHits.Select(h=>h.Target).Distinct().Count()!=spreadHits.Length||spreadHits.Any(h=>!pp.Any(p=>p.Target==h.Target&&p.Sequence<h.Sequence)))
+                return new(null,"unmatched-source-spread-hit");
+            var hit=spreadHits[0];var hitPp=pp.Single(p=>p.Target==hit.Target);
+            if(action.Any(e=>e is SourceMoveMissedEvent m&&m.Actor==used.Actor&&m.Target==hit.Target&&m.Move==used.Move||
+                e is SourceMoveFailedEvent f&&f.Actor==used.Actor&&f.Target==hit.Target&&f.Move==used.Move||
+                e is SourceAbilityPreventedEvent a&&a.Actor==used.Actor&&a.Target==hit.Target&&a.Move==used.Move))
+                return new(null,"source-no-animation-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,hitPp.Sequence,hit.Sequence,move,used.Actor,hit.Target,hit.Substitute),"committed-source-animation");
+        }
         if(move==39)
         {
             // The original BOTH-target stat script revisits ppreduce without spending
@@ -193,9 +252,9 @@ public static class CampaignMoveAnimationPresentation
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 77 or 78 or 79)
+        if(move is 77 or 78 or 79 or 86 or 92)
         {
-            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,78=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
+            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<SourceStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
             if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
@@ -213,9 +272,21 @@ public static class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-self-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 39 or 148)
+        if(move==48)
         {
-            var stat=move==39?WildBattleStat.Defense:WildBattleStat.Accuracy;
+            var results=action.OfType<SourceConfusionChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&e.After is >=2 and <=5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+            if(results.Length!=1)return new(null,"unmatched-source-confusion-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(move==105)
+        {
+            var results=action.OfType<SourceRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
+            if(results.Length!=1)return new(null,"unmatched-source-recovery-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(move is 39 or 148 or 103 or 319)
+        {
+            var stat=move is 39 or 103?WildBattleStat.Defense:move==319?WildBattleStat.SpecialDefense:WildBattleStat.Accuracy;
             var results=action.OfType<SourceStatChangedEvent>().Where(e=>e.Actor==used.Actor&&e.Target==used.Target&&e.Stat==stat&&e.After<e.Before).ToArray();
             if(results.Length!=1||results[0].Sequence<=pp[0].Sequence)return new(null,"unmatched-source-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,

@@ -4,6 +4,15 @@ import struct
 from PIL import Image
 
 
+def gba_4bpp_indices(image):
+    """Match gbagfx !hasPalette: grayscale white is index 0, black is 15."""
+    if image.mode != 'L':
+        return image
+    indexed = Image.new('P', image.size)
+    indexed.putdata([15 - value // 17 for value in image.getdata()])
+    return indexed
+
+
 def palette(data, floor=False):
     lines = data.decode('ascii').splitlines()
     if len(lines) < 3 or lines[:2] != ['JASC-PAL', '0100'] or len(lines) != int(lines[2]) + 3:

@@ -27,17 +27,7 @@ public sealed partial class CampaignSession
     private string? FieldFlyCommandError(CampaignState state, int partyIndex)
     {
         if (_content.FieldFly is null) return "field_fly_not_enabled";
-        if (!IsStableFieldForParty(state) || state.FlyEffect is not null || state.TownMap is not null || state.Pc is not null ||
-            state.SurfEffect is not null || state.FlashEffect is not null || state.StrengthEffect is not null || state.CutEffect is not null ||
-            state.Fishing is not null || state.PokeFlute is not null || state.Itemfinder is not null || state.Repel is not null ||
-            state.FieldPickup is not null || state.FieldEffectArguments is not null || state.Seagallop is not null || state.SeagallopMenu is not null ||
-            state.SilphPad is not null ||
-            state.RocketSpin is not null || state.CinnabarFall is not null || state.PokemonLeagueCompletion is not null ||
-            state.TrainerTowerMenu is not null || state.TrainerTowerRecordsVisible ||
-            state.TanobyCompletion is not null || state.DeoxysRockEffect is not null || state.MailInteraction is not null || state.FossilMenu is not null ||
-            state.NpcTrade is not null || state.UltimateTutor is not null || state.GiftDelivery is not null || state.PrizeExchange is not null ||
-            state.CoinsBox is not null || state.MoneyBox is not null || state.SafariExitPending || state.ScreenIsWhite)
-            return "field_fly_event_active";
+        if (!IsStableFieldForParty(state)) return "field_fly_event_active";
         if (partyIndex < 0 || partyIndex >= state.Party.Length) return "field_fly_party_index_invalid";
         if (!FieldFlySourceRules.KnowsFly(state.Party[partyIndex])) return "field_fly_move_missing";
         if (!state.Script.Flags.GetValueOrDefault(FieldFlySourceRules.BadgeFlag)) return "field_fly_badge_required";
@@ -115,19 +105,10 @@ public sealed partial class CampaignSession
             if (state.World.Player != fly.Origin || _content.MapDefinition(fly.Origin.MapId).RegionMapSection != fly.OriginSection ||
                 !FieldFlySourceRules.MapTypeAllowsFly(_content.MapDefinition(fly.Origin.MapId).MapType))
                 return No("field_fly_origin_changed");
-            var flags = state.Script.Flags;
-            foreach (string flag in FieldFlySourceRules.ClearedFlags) flags = flags.SetItem(flag, false);
-            var variables = state.Script.Variables;
-            foreach (string variable in FieldFlySourceRules.ResetVariables) variables = variables.SetItem(variable, 0);
-            var next = state with
+            var next = WarpFieldTravel(state with
             {
-                FlyEffect = fly with { Phase = FieldFlySourcePresentation.In, WaitId = "field-fly:" + checked(Revision + 1) + ":in" },
-                Script = state.Script with { Flags = flags, Variables = variables },
-                World = state.World with { Revision = checked(state.World.Revision + 1), Player = landing },
-                IsSurfing = false, IsCycling = false, SafariVisit = null, SafariExitPending = false,
-                Music = _content.MapDefinition(landing.MapId).Music, SavedMusic = "MUS_DUMMY",
-                Exploration = state.Exploration is null ? null : ResetEncounterModifiers(state.Exploration)
-            };
+                FlyEffect = fly with { Phase = FieldFlySourcePresentation.In, WaitId = "field-fly:" + checked(Revision + 1) + ":in" }
+            }, landing);
             // LoadMapFromWarp clears saved music; FlyIntoMap plays the destination map theme.
             // The ordinary entry owner handles actors, temp state, visited flags and the roamer RNG transition.
             // Flight neither heals nor registers a Pokemon Center; only source entry programs may change those values.

@@ -11,6 +11,8 @@ public sealed class SourceTextProgress
     private string _text = string.Empty;
     private int[] _elementOffsets = [];
     private int _nextElement;
+    private int[] _repeatControlOffsets = [];
+    private int _nextControl;
     private int _visibleLength;
 
     public string VisibleText => _text[.._visibleLength];
@@ -28,22 +30,41 @@ public sealed class SourceTextProgress
     /// Unicode text elements keep surrogate pairs and combining sequences intact.
     /// Only LF is a supported control character; source markup must already be expanded.
     /// </summary>
-    public void Reset(string text, int configuredSpeed)
+    public void Reset(string text, int configuredSpeed, IReadOnlyList<int>? repeatControlOffsets = null)
     {
         ArgumentNullException.ThrowIfNull(text);
         if (configuredSpeed is not (8 or 4 or 1))
             throw new ArgumentOutOfRangeException(nameof(configuredSpeed), "Supported configured source speeds are 8, 4 and 1.");
-        ValidatePage(text);
-        var offsets = StringInfo.ParseCombiningCharacters(text);
-        _text = text;
-        _elementOffsets = offsets;
-        _nextElement = 0;
-        _visibleLength = 0;
-        VisibleGlyphs = 0;
+        StartPage(text, repeatControlOffsets);
         ConfiguredSpeed = configuredSpeed;
         DelayCounter = 0;
         HasPrintBeenSpedUp = false;
         Complete = false;
+    }
+
+    /// <summary>Continue after a clear/scroll prompt without resetting source delay or speed-up latch.</summary>
+    public void ContinuePage(string text, IReadOnlyList<int>? repeatControlOffsets = null)
+    {
+        if (!Complete) throw new InvalidOperationException("The current source page is still printing.");
+        StartPage(text, repeatControlOffsets);
+        Complete = false;
+    }
+
+    private void StartPage(string text, IReadOnlyList<int>? repeatControlOffsets)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ValidatePage(text);
+        var offsets = StringInfo.ParseCombiningCharacters(text);
+        int[] controls = repeatControlOffsets?.ToArray() ?? [];
+        int previous = 0;
+        foreach (int offset in controls)
+        {
+            if (offset < previous || offset > text.Length || (offset != text.Length && Array.BinarySearch(offsets, offset) < 0))
+                throw new ArgumentException("Formatting steps must be ordered Unicode element boundaries.", nameof(repeatControlOffsets));
+            previous = offset;
+        }
+        _text = text; _elementOffsets = offsets; _repeatControlOffsets = controls;
+        _nextElement = _nextControl = _visibleLength = VisibleGlyphs = 0;
     }
 
     /// <summary>
@@ -80,6 +101,11 @@ public sealed class SourceTextProgress
             }
 
             DelayCounter = textSpeed;
+            if (_nextControl < _repeatControlOffsets.Length && _repeatControlOffsets[_nextControl] == _visibleLength)
+            {
+                _nextControl++;
+                continue; // COLOR/SHADOW/FONT return RENDER_REPEAT, exactly like LF.
+            }
             if (_nextElement == _elementOffsets.Length)
             {
                 Complete = true; // Implicit EOS: RENDER_FINISH, not another game command.

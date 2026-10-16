@@ -112,8 +112,7 @@ public partial class CampaignView
             }
             else
             {
-                if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
-                if (key.Keycode == Key.Down) _wildCursor = Math.Min(_session.State.Party.Length - 1, _wildCursor + 1);
+                NativePartyMove(key.Keycode,ref _wildCursor,_session.State.Party.Length,cancel:false);
                 if (key.Keycode == Key.Enter)
                 {
                     var selected = _session.State.Party[_wildCursor];
@@ -200,7 +199,7 @@ public partial class CampaignView
             DrawRect(new(0, 0, 240, 160), Colors.Black);
             _battleSkin.DrawBattleMessage(this);
             if (replacement == CampaignReplacementStage.Select)
-            { DrawCaptureParty(battle, true); WildLines("Choose a POKéMON."); }
+            { DrawCaptureParty(battle, true); }
             else
             {
                 _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
@@ -266,25 +265,11 @@ public partial class CampaignView
 
     private void DrawCaptureParty(CampaignWildBattle battle, bool selecting, bool cancellable = false)
     {
-        // All six persistent slots fit; names/HP come from their own member. Active HP
-        // uses the event-time display so an acknowledged hit never jumps ahead.
-        _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
-        int rowHeight = cancellable ? 14 : 16;
-        for (int i = 0; i < PresentedBattlePlayerParty.Length; i++)
-        {
-            var owned = PresentedBattlePlayerParty[i]; var pokemon = i == battle.ActivePartyIndex ? battle.DisplayPlayer : owned.Pokemon;
-            string prefix = i == battle.ActivePartyIndex ? ">" : " ";
-            SourceText(_sourceNormal, new(20, 8 + i * rowHeight), prefix + PresentedOwnedName(owned));
-            if (!owned.IsEgg) SourceText(_sourceSmall, new(130, 9 + i * rowHeight), $"L{pokemon.Level} {pokemon.CurrentHp}/{pokemon.Stats.MaxHp}");
-            DrawForestPartyStatus(owned, new(198, 11 + i * rowHeight));
-            if (selecting && i == _wildCursor) SourceText(_sourceNormal, new(8, 8 + i * rowHeight), "▶");
-        }
-        if (cancellable)
-        {
-            int y = 8 + PresentedBattlePlayerParty.Length * rowHeight;
-            SourceText(_sourceNormal, new(20, y), "CANCEL");
-            if (_wildCursor == PresentedBattlePlayerParty.Length) SourceText(_sourceNormal, new(8, y), "▶");
-        }
+        var party=PresentedBattlePlayerParty;
+        DrawNativeParty(party,selecting?_wildCursor:-1,_wildMenu=="medicine-target"?"Use on which POKéMON?":"Choose a POKéMON.",
+            cancel:cancellable,displayed:i=>i==battle.ActivePartyIndex
+                ? PartyPresentationAssets.Displayed(party[i],battle.DisplayPlayer,ForestDisplayedStatus(battle,WildBattleSide.Player))
+                : party[i]);
     }
 
     private void DrawCaptureNamingPanel()

@@ -18,9 +18,21 @@ public sealed class OpeningPresentationContentTests
         Assert.AreEqual("ABCDEF .", opening.Keyboard[0][0]);
         Assert.AreEqual("abcdef .", opening.Keyboard[1][0]);
         Assert.AreEqual("!?♂♀/-", opening.Keyboard[2][2]);
-        foreach (string name in new[] { "title", "background", "oak", "red", "leaf", "rival", "platform", "nidoran-f" })
+        foreach (string name in PretOpeningPresentation.TextureNames)
             CollectionAssert.AreEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, opening.ReadTexture(name).Take(8).ToArray());
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => opening.ReadTexture("../outside"));
+    }
+
+    [TestMethod]
+    public void SourceGuideAndCompactAnimationTracksArePresent()
+    {
+        var opening = PretOpeningPresentation.Load(TestAssets.Root);
+        Assert.AreEqual("The various buttons will be explained in\nthe order of their importance.", opening.Texts["gControlsGuide_Text_Intro"]);
+        Assert.IsTrue(opening.Texts["gPikachuIntro_Text_Page3"].EndsWith("adventure begin!", StringComparison.Ordinal));
+        CollectionAssert.AreEqual(new[] { 3, 6, 6, 6, 6, 6, 6, 6, 6, 6 }, opening.Animations["flames"].Select(f => f.Duration).ToArray());
+        Assert.AreEqual(60, opening.Animations["pikachu-body"].Sum(f => f.Duration));
+        Assert.AreEqual(15, opening.Animations["pikachu-ears"].Length);
+        CollectionAssert.AreEqual(new[] { "GREEN", "GARY", "KAZ", "TORU" }, opening.RivalNames.ToArray());
     }
 
     [TestMethod]

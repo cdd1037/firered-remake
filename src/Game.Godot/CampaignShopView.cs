@@ -175,8 +175,7 @@ public partial class CampaignView
     private bool FieldMedicineTargetInput(InputEventKey key)
     {
         int cancel = _session.State.Party.Length;
-        if (key.Keycode == Key.Up) _fieldMedicineTarget = Math.Max(0, _fieldMedicineTarget - 1);
-        if (key.Keycode == Key.Down) _fieldMedicineTarget = Math.Min(cancel, _fieldMedicineTarget + 1);
+        NativePartyMove(key.Keycode,ref _fieldMedicineTarget,cancel);
         if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _fieldMedicineTarget == cancel) { _fieldMedicineTargetOpen = false; return true; }
         if (key.Keycode == Key.Enter)
         {
@@ -191,23 +190,9 @@ public partial class CampaignView
     }
     private void DrawFieldMedicineTargets()
     {
-        _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
-        for (int i = 0; i <= _session.State.Party.Length; i++)
-        {
-            if (i == _session.State.Party.Length)
-            {
-                ItemLabel(new(20, 8 + 14 * i), _itemSkin.Text("gFameCheckerText_Cancel"));
-                continue;
-            }
-            var member = _session.State.Party[i];
-            ItemLabel(new(20, 8 + 14 * i), PresentedOwnedName(member));
-            if (MtMoonTargetActive && IsFieldEvolution(_mtMoonTargetItem))
-                ItemLabel(new(142,8+14*i),MachineText(_session.FieldEvolutionPartyTarget(member,
-                    _mtMoonTargetItem) is not null ? "gText_Able2" : "gText_NotAble"));
-            else if (!member.IsEgg) ItemLabel(new(112, 8 + 14 * i), member.Pokemon.CurrentHp + "/" + member.Pokemon.Stats.MaxHp);
-            DrawForestPartyStatus(member, new(198, 11 + 14 * i));
-        }
-        ItemLabel(new(8, 8 + 14 * _fieldMedicineTarget), "▶");
-        ItemMessageBox("Use on which POKéMON?");
+        DrawNativeParty(_session.State.Party,_fieldMedicineTarget,"Use on which POKéMON?",
+            description: MtMoonTargetActive && IsFieldEvolution(_mtMoonTargetItem)
+                ? i => _session.FieldEvolutionPartyTarget(_session.State.Party[i],_mtMoonTargetItem) is null ? "NO USE" : null
+                : null);
     }
 }

@@ -16,9 +16,9 @@ def read_sources(reference):
         'graphics/battle_anims/sprites/sleep_powder.pal','graphics/battle_anims/sprites/stun_spore.pal')
  return {path:(subprocess.check_output(['git','-C',str(reference),'show',hit.COMMIT+':'+path])
                if (reference/'.git').exists() else (reference/path).read_bytes()) for path in paths}
-SPRITES={'gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSimplePaletteBlendSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gBasicHitSplatSpriteTemplate','gHorizontalLungeSpriteTemplate','gSlideMonToOffsetSpriteTemplate','gSlideMonToOriginalPosSpriteTemplate','gComplexPaletteBlendSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate'}
-TASKS={'AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
-NEW= {'gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+SPRITES={'gKarateChopSpriteTemplate','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSimplePaletteBlendSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gBasicHitSplatSpriteTemplate','gHorizontalLungeSpriteTemplate','gSlideMonToOffsetSpriteTemplate','gSlideMonToOriginalPosSpriteTemplate','gComplexPaletteBlendSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate'}
+TASKS={'AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+NEW= {'gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
 def sprite_recipe(source,template,asset,expected_callback):
  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
  if match is None:raise ValueError('Missing sprite recipe '+template)
@@ -60,7 +60,7 @@ def build_assets(reference):
 def build(reference):
  raw=read_sources(reference);source=raw['data/battle_anim_scripts.s'].decode()
  fight=raw['src/battle_anim_fight.c'].decode()
- for template,callback,table in [('gStompFootSpriteTemplate','AnimStompFoot','&sAnims_HandsAndFeet[1]'),('gJumpKickSpriteTemplate','AnimJumpKick','sAnims_HandsAndFeet'),('gSlidingKickSpriteTemplate','AnimSlidingKick','&sAnims_HandsAndFeet[1]')]:
+ for template,callback,table in [('gKarateChopSpriteTemplate','AnimSlideHandOrFootToTarget','sAnims_HandsAndFeet'),('gStompFootSpriteTemplate','AnimStompFoot','&sAnims_HandsAndFeet[1]'),('gJumpKickSpriteTemplate','AnimJumpKick','sAnims_HandsAndFeet'),('gSlidingKickSpriteTemplate','AnimSlidingKick','&sAnims_HandsAndFeet[1]')]:
   match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',fight,re.S)
   if match is None:raise ValueError('Missing physical sprite template: '+template)
   fields=dict(re.findall(r'\.(\w+) = ([^,]+),',match[1]))
@@ -68,7 +68,20 @@ def build(reference):
   if any(fields.get(k)!=v for k,v in expected.items()):raise ValueError('Physical source recipe differs: '+template)
 
  ids={m:int(n) for m,n in re.findall(r'^#define (MOVE_\w+)\s+(\d+)\s*$',raw['include/constants/moves.h'].decode(),re.M)}
- scripts=[];blocked=[]
+ scripts=[];blocked=[];subroutines={}
+ def subcommands(label):
+  match=re.search(r'^'+re.escape(label)+r':\n',source,re.M)
+  if not match:raise ValueError('Missing source subroutine '+label)
+  result=[]
+  for offset,line in enumerate(source[match.end():].splitlines()):
+   text=line.split('@',1)[0].strip()
+   if not text:continue
+   if text.endswith(':'):raise ValueError('Unterminated source subroutine')
+   op,*tail=text.split(None,1);args=[a.strip() for a in tail[0].split(',')] if tail else []
+   if op in {'call','end'}:raise ValueError('Unsupported nested subroutine')
+   result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
+   if op=='return':return result
+  raise ValueError('Unterminated source subroutine')
  for match in re.finditer(r'^(Move_(\w+)):\n',source,re.M):
   commands=[];gaps=set();symbols=set()
   for offset,line in enumerate(source[match.end():].splitlines()):
@@ -77,7 +90,7 @@ def build(reference):
    if text.endswith(':'):gaps.add('control-flow:label');break
    op,*tail=text.split(None,1);args=[a.strip() for a in tail[0].split(',')] if tail else []
    commands.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
-   if op not in hit.OPS|{'waitplaysewithpan'}:gaps.add('command:'+op)
+   if op not in hit.OPS|{'waitplaysewithpan','call','splitbgprio'}:gaps.add('command:'+op)
    if op in ('createsprite','createvisualtask'):
     symbols.add(args[0]);allowed=SPRITES if op=='createsprite' else TASKS
     if args[0] not in allowed:gaps.add('callback:'+args[0])
@@ -85,13 +98,22 @@ def build(reference):
    if op=='end':break
   if not symbols & NEW:continue
   if not commands or commands[-1]['op']!='end':gaps.add('control-flow:unterminated')
-  if len(commands)>32:gaps.add('command-bound')
+  if len(commands)>128:gaps.add('command-bound')
+  local_subs={}
+  for command in commands:
+   if command['op']!='call':continue
+   try:sub=subcommands(command['args'][0])
+   except ValueError:gaps.add('control-flow:subroutine');continue
+   for row in sub:
+    if row['op'] not in hit.OPS|{'return','waitplaysewithpan'}:gaps.add('command:'+row['op'])
+    if row['op'] in {'createsprite','createvisualtask'} and row['args'][0] not in (SPRITES if row['op']=='createsprite' else TASKS):gaps.add('callback:'+row['args'][0])
+   local_subs[command['args'][0]]=sub
   move=ids.get('MOVE_'+match[2])
   if not move or move>354:continue
   if gaps:blocked.append(dict(moveId=move,missing=sorted(gaps)));continue
-  scripts.append(dict(moveId=move,label=match[1],commands=commands))
+  scripts.append(dict(moveId=move,label=match[1],commands=commands));subroutines.update(local_subs)
  if not scripts:raise ValueError('No supported physical roots')
- return (json.dumps(dict(schemaVersion=1,scripts=scripts,assets=[dict(id=id,path='physical-'+id+'.rgb555') for id in build_assets(reference)],spriteRecipes=[sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gViceGripSpriteTemplate','cut','AnimViceGripPincer'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSlamHitSpriteTemplate','slam-hit','AnimWhipHit'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gVineWhipSpriteTemplate','whip-hit','AnimWhipHit')]+[sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),template,asset,'AnimMovePowderParticle') for template,asset in [('gPoisonPowderParticleSpriteTemplate','poison-powder'),('gSleepPowderParticleSpriteTemplate','sleep-powder'),('gStunSporeParticleSpriteTemplate','stun-spore')]]),indent=2)+'\n').encode(),blocked
+ return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subroutines,assets=[dict(id=id,path='physical-'+id+'.rgb555') for id in build_assets(reference)],spriteRecipes=[sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gViceGripSpriteTemplate','cut','AnimViceGripPincer'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSlamHitSpriteTemplate','slam-hit','AnimWhipHit'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gVineWhipSpriteTemplate','whip-hit','AnimWhipHit')]+[sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),template,asset,'AnimMovePowderParticle') for template,asset in [('gPoisonPowderParticleSpriteTemplate','poison-powder'),('gSleepPowderParticleSpriteTemplate','sleep-powder'),('gStunSporeParticleSpriteTemplate','stun-spore')]]),indent=2)+'\n').encode(),blocked
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/physical.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,blocked=build(a.reference);assets=build_assets(a.reference)
  if a.check:

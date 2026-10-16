@@ -210,6 +210,7 @@ public partial class CampaignView
     {
         if(DrawVsSeekerActor(id,asset,pose,camera))return;
         if(DrawFieldFlyTravelActor(id,asset,pose,camera))return;
+        if(DrawNoncombatFieldActor(id,asset,pose,camera))return;
         if(DrawEventIslandActor(id,asset,pose,camera))return;
         if(id=="LOCALID_PLAYER"&&FishingPlayerFrame is {} frame)
         {

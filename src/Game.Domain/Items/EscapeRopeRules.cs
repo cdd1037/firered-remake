@@ -19,6 +19,18 @@ public sealed class EscapeRopePolicy
     { Exits = exits; Entrances = entrances; }
     public string? ValidateDestination(EscapeRopeDestination? destination) => destination is null ||
         Exits.Values.Any(values => values.Contains(destination)) ? null : "escape_rope_destination_invalid";
+    // Dig and Escape Rope use the same saved entrance and dungeon eligibility.
+    public string? ResolveArrival(MapId currentMap, EscapeRopeDestination? destination, out TilePosition? arrival)
+    {
+        arrival = null;
+        if (!Exits.TryGetValue(currentMap, out var exits)) return "escape_rope_map_not_allowed";
+        if (destination is null) return "escape_rope_destination_missing";
+        if (ValidateDestination(destination) is {} invalid) return invalid;
+        if (!exits.Contains(destination)) return "escape_rope_destination_mismatch";
+        arrival = new(destination.MapId, destination.X, destination.Y, 3,
+            destination.MapId.Value == "map.route-2" && destination.Y == 13 ? Direction.North : Direction.South);
+        return null;
+    }
     public EscapeRopeDestination? RecordWarp(EscapeRopeDestination? previous, TilePosition source, MapId destination)
     {
         if (ValidateDestination(previous) is {} error) throw new ArgumentException(error, nameof(previous));
@@ -43,17 +55,12 @@ public static class EscapeRopeRules
         EscapeRopeUseResult Fail(string error) => new(inventory, null, false, 0, error);
         if (items.Validate(inventory) is {} error) return Fail(error);
         if (context != PotionUseContext.Field) return Fail("escape_rope_field_only");
-        if (!policy.Exits.TryGetValue(currentMap, out var exits)) return Fail("escape_rope_map_not_allowed");
-        if (destination is null) return Fail("escape_rope_destination_missing");
-        if (policy.ValidateDestination(destination) is {} invalid) return Fail(invalid);
-        if (!exits.Contains(destination)) return Fail("escape_rope_destination_mismatch");
+        if (policy.ResolveArrival(currentMap, destination, out var arrival) is {} invalid) return Fail(invalid);
         if (!items.Items.TryGetValue(Item, out var definition) || definition.Pocket != "POCKET_ITEMS" ||
             definition.FieldUseFunction != "ItemUseOutOfBattle_EscapeRope") return Fail("escape_rope_item_unsupported");
         int quantity = OpeningInventoryRules.Quantity(inventory.BagItems, Item);
         if (quantity == 0) return Fail("escape_rope_not_in_bag");
         var changed = inventory with { BagItems = OpeningInventoryRules.SetQuantity(inventory.BagItems, Item, quantity - 1) };
-        var arrival = new TilePosition(destination.MapId, destination.X, destination.Y, 3,
-            destination.MapId.Value == "map.route-2" && destination.Y == 13 ? Direction.North : Direction.South);
         return new(changed, arrival, true, 1, null);
     }
 }

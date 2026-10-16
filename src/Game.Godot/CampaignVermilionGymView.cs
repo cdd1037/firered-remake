@@ -32,7 +32,7 @@ public partial class CampaignView
             return blink<0 || blink<FieldCutSourcePresentation.TreeBlinkFrames && (blink&1)==1;
         }
     }
-    private int FieldMoveBannerAge => (FieldFlyShowMonFrame ?? (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:_session.State.RockSmashEffect is {Phase:FieldRockSmashSourcePresentation.ShowMon}?FieldRockSmashFrame:FieldCutFrame))-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
+    private int FieldMoveBannerAge => ((NoncombatOutdoors ? NoncombatShowMonFrame : null) ?? FieldFlyShowMonFrame ?? (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:_session.State.RockSmashEffect is {Phase:FieldRockSmashSourcePresentation.ShowMon}?FieldRockSmashFrame:FieldCutFrame))-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
     private Rect2 FieldMoveBannerWindow
     {
         get
@@ -126,7 +126,7 @@ public partial class CampaignView
 
     private void DrawFieldMoveBanner()
     {
-        int partyIndex = FieldFlyShowMonPartyIndex >= 0 ? FieldFlyShowMonPartyIndex : _session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon} surf ? surf.PartyIndex :
+        int partyIndex = NoncombatOutdoorParty >= 0 ? NoncombatOutdoorParty : FieldFlyShowMonPartyIndex >= 0 ? FieldFlyShowMonPartyIndex : _session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon} surf ? surf.PartyIndex :
             _session.State.CutEffect is {Phase:FieldCutSourcePresentation.ShowMon} cut ? cut.PartyIndex :
             _session.State.RockSmashEffect is {Phase:FieldRockSmashSourcePresentation.ShowMon} rock ? rock.PartyIndex : _session.State.RuinValleyCut is not null ? SixIslandCutPartyIndex() : -1;
         if(partyIndex < 0)return;

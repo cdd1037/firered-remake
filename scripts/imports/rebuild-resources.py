@@ -22,6 +22,8 @@ TARGET_SCRIPTS = {
     'audio-cues': ('scripts/imports/audio/build-cue-catalog.py',),
     'diploma': ('scripts/imports/presentation/import-diploma.py',),
     'help': ('scripts/imports/presentation/import-help-system.py',),
+    'quest-log': ('scripts/imports/presentation/import-quest-log.py',),
+    'intro-movie': ('scripts/imports/presentation/import-intro-movie.py',),
     'opening': ('scripts/imports/presentation/import-opening-presentation.py',),
     'summary': ('scripts/imports/presentation/import-summary-screen.py',),
     'evolution': ('scripts/imports/presentation/import-evolution-scene.py',),
@@ -59,11 +61,14 @@ def build_commands(targets, raw, out, *, pack=None, cries=None, check=False):
                     raise ValueError('Audio cue output overlaps an audio input')
                 arguments = ['--reference', str(raw), '--pack', str(pack), '--cries', str(cries),
                              '--output', str(output)]
+            elif target == 'quest-log':
+                arguments = ['--raw', str(raw), '--world', str(out / 'maps/world.json'),
+                             '--out', str(out / 'data/quest-log.json')]
             elif target == 'move-animations':
                 name = 'physical' if 'physical' in script else 'elemental'
                 arguments = ['--reference', str(raw), '--output', str(out / ('battle/animations/' + name + '.json'))]
-            elif target in ('opening', 'evolution', 'capture-balls', 'party', 'npc-trade'):
-                folder = {'opening': 'ui/opening', 'evolution': 'ui/evolution-scene',
+            elif target in ('opening', 'intro-movie', 'evolution', 'capture-balls', 'party', 'npc-trade'):
+                folder = {'intro-movie': 'ui/intro-movie', 'opening': 'ui/opening', 'evolution': 'ui/evolution-scene',
                           'capture-balls': 'battle/capture-balls', 'party': 'ui/party-screen',
                           'npc-trade': 'ui/npc-trade-scene'}[target]
                 arguments = ['--raw', str(raw), '--out', str(out / folder)]
@@ -114,6 +119,8 @@ def main(argv=None):
                '  audio-cues     Cue catalog from source + existing pack and normal-cries.\n'
                '  diploma        Original Kanto/National certificate artwork, text and layout.\n'
                '  help           Original contextual HELP texts, ordered tables and unlock predicates.\n'
+               '  quest-log      Source recap captions and bounded recording metadata.\n'
+               '  intro-movie    Copyright, studio logo and opening battle movie.\n'
                '  opening        Source title, Oak introduction and naming presentation.\n'
                '  summary        Native summary artwork and text.\n'
                '  evolution      Evolution atlases and hatch background.\n'

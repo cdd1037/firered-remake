@@ -240,8 +240,8 @@ public partial class CampaignView
     {
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         DrawCaptureParty(_session.TeachyTvBattlePresentation!, true, true);
-        _battleSkin.DrawBattleMessage(this);
-        WildLines(b.Stage == CampaignTeachyTvBattleStage.MedicineTarget ? "Use on which POKéMON?" : "Choose a POKéMON.");
+        if(b.Stage==CampaignTeachyTvBattleStage.MedicineTarget)
+            DrawNativeParty(PresentedBattlePlayerParty,_wildCursor,"Use on which POKéMON?");
         if (b.ContextMenu)
         {
             _battleSkin.DrawStandardFrame(this, new(152, 40, 88, 64));

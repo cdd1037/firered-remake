@@ -46,9 +46,8 @@ public partial class CampaignView
     private bool MoveTutorActive => Teaching is not null || DayCareChoosing;
     private MoveReminderCatalog ReminderCatalog => ((ICampaignCatalog)_catalog).MoveReminder!;
     private MoveDeleterCatalog DeleterCatalog => ((ICampaignCatalog)_catalog).MoveDeleter!;
-    private static Rect2 TutorPartyRow(int index) => new(8, 6 + index * 18, 224, 18);
+    private static Rect2 TutorPartyRow(int index) => NativePartySlot(index);
     private static Rect2 TutorMoveRow(int index) => new(8, 12 + index * 18, 224, 18);
-    private static Rect2 TutorCancelRow => new(8, 116, 224, 18);
     private static Rect2 TutorChoiceRow(int index) => new(182, 73 + index * 16, 50, 16);
     private static Rect2 TutorPaymentRow(int index) => new(8, 32 + index * 24, 224, 22);
     private static Rect2 TutorMessageRect => new(0, 112, 240, 48);
@@ -91,7 +90,8 @@ public partial class CampaignView
         int count = TutorRowCount;
         if (count > 0)
         {
-            if (key.Keycode is Key.Up or Key.Left) _tutorCursor = (_tutorCursor + count - 1) % count;
+            if(scene.Party)NativePartyMove(key.Keycode,ref _tutorCursor,count-1);
+            else if (key.Keycode is Key.Up or Key.Left) _tutorCursor = (_tutorCursor + count - 1) % count;
             else if (key.Keycode is Key.Down or Key.Right) _tutorCursor = (_tutorCursor + 1) % count;
             TutorKeepCursorVisible();
         }
@@ -124,7 +124,7 @@ public partial class CampaignView
     private Rect2 TutorRow(int index)
     {
         var scene = Teaching!;
-        return scene.Party ? index == _session.State.Party.Length ? TutorCancelRow : TutorPartyRow(index)
+        return scene.Party ? index == _session.State.Party.Length ? NativePartyCancel : TutorPartyRow(index)
             : scene.Replace ? TutorMoveRow(index) : scene.Payment ? TutorPaymentRow(index)
             : scene.Moves ? new(8, 6 + (index - _tutorScroll) * 16, 224, 16) : TutorChoiceRow(index);
     }
@@ -163,27 +163,16 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         if (scene.Party)
         {
-            for (int i = 0; i < state.Party.Length; i++)
+            string? Description(int i)
             {
-                var mon = state.Party[i]; var row = TutorPartyRow(i); float y = row.Position.Y;
-                if (_tutorCursor == i) DrawRect(row, new Color("e4e4c8"));
-                DrawTextureRectRegion(PresentedOwnedIcon(mon), new(18, y, 16, 16), new(0, 0, 32, 32));
-                SourceText(_sourceSmall, new(36, y), PresentedOwnedName(mon));
-                if (!mon.IsEgg) SourceText(_sourceSmall, new(113, y), "Lv" + mon.Pokemon.Level);
-                if (state.MoveTutor is { } tutor)
-                {
-                    var catalog = _catalog.MoveTutors!;
-                    string label = MoveTutorRules.Eligibility(catalog.Definitions[tutor.TutorIndex], mon) switch
-                    { MoveTutorEligibility.Able => "gText_Able2", MoveTutorEligibility.AlreadyKnown => "gText_Learned", _ => "gText_NotAble" };
-                    SourceText(_sourceSmall, new(157, y), catalog.Texts[label]);
-                }
-                else if (state.MoveReminder is not null && !mon.IsEgg)
-                    SourceText(_sourceSmall, new(158, y), MoveReminderRules.Candidates(ReminderCatalog, mon).Moves.Length + " MOVES");
+                if(state.MoveTutor is not {} tutor)return null;
+                var catalog=_catalog.MoveTutors!;
+                string symbol=MoveTutorRules.Eligibility(catalog.Definitions[tutor.TutorIndex],state.Party[i]) switch
+                { MoveTutorEligibility.Able=>"gText_Able2",MoveTutorEligibility.AlreadyKnown=>"gText_Learned",_=>"gText_NotAble" };
+                return catalog.Texts[symbol];
             }
-            SourceText(_sourceNormal, new(20, 116), "CANCEL");
-            SourceText(_sourceNormal, new(8, TutorRow(_tutorCursor).Position.Y), "▶");
-            SourceText(_sourceSmall, new(8, 140), state.MoveDeleter is not null ? DeleterCatalog.Texts["gText_ChoosePokemon"]
-                : (state.MoveTutor is null ? ReminderCatalog.Texts : _catalog.MoveTutors!.Texts)["gText_TeachWhichPokemon"]);
+            DrawNativeParty(state.Party,_tutorCursor,state.MoveDeleter is not null ? DeleterCatalog.Texts["gText_ChoosePokemon"]
+                : (state.MoveTutor is null ? ReminderCatalog.Texts : _catalog.MoveTutors!.Texts)["gText_TeachWhichPokemon"],description:Description);
         }
         else
         {

@@ -161,8 +161,12 @@ public partial class CampaignView
         int count = _machineMode == "list" ? MachineStacks.Length
             : _machineMode == "party" ? _session.State.Party.Length : 4;
         _machineCursor = Math.Clamp(_machineCursor, 0, count);
-        if (key.Keycode == Key.Up) _machineCursor = Math.Max(0, _machineCursor - 1);
-        if (key.Keycode == Key.Down) _machineCursor = Math.Min(count, _machineCursor + 1);
+        if (_machineMode == "party") NativePartyMove(key.Keycode,ref _machineCursor,count);
+        else
+        {
+            if (key.Keycode == Key.Up) _machineCursor = Math.Max(0, _machineCursor - 1);
+            if (key.Keycode == Key.Down) _machineCursor = Math.Min(count, _machineCursor + 1);
+        }
         if (key.Keycode == Key.Enter)
         {
             if (_machineCursor == count)
@@ -236,22 +240,12 @@ public partial class CampaignView
         }
         else
         {
-            for (int i = 0; i < _session.State.Party.Length; i++)
+            DrawNativeParty(_session.State.Party,mode == "party" ? _machineCursor : _machineParty,
+                mode == "party" ? MachineText("gText_TeachWhichPokemon") : "",
+                description:i=>MachineText(MachineCompatibility(_session.State.Party[i])));
+            if (mode != "party")
             {
-                SourceText(_sourceNormal, new(24, 8 + i * 14), PresentedOwnedName(_session.State.Party[i]));
-                SourceText(_sourceSmall, new(148, 8 + i * 14), MachineText(MachineCompatibility(_session.State.Party[i])));
-            }
-            SourceText(_sourceNormal, new(24, 8 + _session.State.Party.Length * 14), _itemSkin.Text("gFameCheckerText_Cancel"));
-            if (mode == "party")
-            {
-                SourceText(_sourceNormal, new(12, 8 + _machineCursor * 14), _itemSkin.Text("gText_SelectorArrow2"));
-                ItemMessageBox(MachineText("gText_TeachWhichPokemon"));
-            }
-            else
-            {
-                if (!_session.State.Party.IsEmpty)
-                    SourceText(_sourceNormal, new(12, 8 + _machineParty * 14), _itemSkin.Text("gText_SelectorArrow2"));
-                ItemMessageBox(_machinePages[_machinePage]);
+                DrawNativePartyMessage(_machinePages[_machinePage]);
                 if (mode is "replace-confirm" or "teach-confirm" && _machinePage == _machinePages.Length - 1)
                 {
                     _battleSkin.DrawStandardFrame(this, new(184, 64, 56, 48));
