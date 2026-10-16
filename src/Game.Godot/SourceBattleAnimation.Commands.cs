@@ -2,7 +2,15 @@ namespace Game.Presentation.BattleAnimations;
 
 public sealed partial class SourceBattleAnimation
 {
-    private bool _splitBackgroundPriority;
+    // Hardware BG1/BG2 priority registers start at the battle template values.
+    private readonly int[] _battlerBackgroundPriorities=[0,1];
+    private int BattlerBackgroundPriority(int slot)=>_battlerBackgroundPriorities[_battlers[slot].BackgroundRank-1];
+    private void SetBackgroundPriority(int bgId,int priority)
+    {
+        if(bgId is <1 or >2||priority is <0 or >3)throw new InvalidDataException("Battler background priority exceeds source hardware fields.");
+        _battlerBackgroundPriorities[bgId-1]=priority;
+    }
+    private void SplitBackgroundPriority(){SetBackgroundPriority(1,1);SetBackgroundPriority(2,2);}
     private bool ValidateSharedCommand(SourceAnimationCommand c)
     {
         var a=c.Args;

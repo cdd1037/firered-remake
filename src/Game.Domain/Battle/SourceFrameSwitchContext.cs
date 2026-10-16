@@ -22,7 +22,7 @@ internal sealed partial class FrameRecipeContext
     internal override void ForceSwitch(PokemonCatalog catalog, BattlerSlot target, MoveId move)
     {
         int index = SourceSwitchRules.ChooseForcedReserve(SourceBattleIdentityRules.LegalReserveIndices(Frame,target.Side),Draw);
-        var result = SourceFourActionTurns.BindActionSwitch(catalog,Frame,target,new(target.Side,index),WildBattleCalledSwitchKind.Forced);
+        var result = SourceFourActionTurns.BindActionSwitch(catalog,Frame,target,new(target.Side,index),WildBattleCalledSwitchKind.Forced, invocation.Actor);
         if (!result.Succeeded) throw new SourceRecipeUnsupported(result.Fault!);
         Frame = result.State; Events.AddRange(result.Events); Trace.AddRange(result.Trace);
         invocation = invocation with { CurrentMove = new("pret:MOVE_NONE") };

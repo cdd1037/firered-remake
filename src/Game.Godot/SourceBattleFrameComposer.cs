@@ -72,6 +72,7 @@ public sealed class SourceBattleFrameComposer
         }
         // BG copies retain their original 64x64 tiles. PrepareBattlerSpriteForRotScale
         // can expose a distinct affine OBJ while this copy continues scrolling.
+        if(frame.BattlerBackgroundPriorities.Length!=2||frame.BattlerBackgroundPriorities.Any(p=>p is <0 or >3))throw new InvalidDataException("Battler background priorities exceed source registers.");
         var backgroundPriority=_backgroundPriorities;Array.Fill(backgroundPriority,(byte)3);
         var layer=_objectLayer;
         foreach(var b in _battlers.Where(b=>b.Visible&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
@@ -80,7 +81,7 @@ public sealed class SourceBattleFrameComposer
             var copy=frame.StaticBackgroundCopies.SingleOrDefault(c=>c.Slot==b.Slot.Value);
             if(copy is not null)offset=copy.Offset;
             Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,copy is null?palettes.GetValueOrDefault(16+b.Slot.Value):copy.Palette,copy?.Greyscale??frame.GreyscaleSlots.Contains(b.Slot.Value),copy?.Inverted??frame.InvertedPalettes.Contains(16+b.Slot.Value));
-            int priority=frame.ForegroundBackgroundSlots.Contains(b.Slot.Value)?1:2;
+            int priority=frame.BattlerBackgroundPriorities[b.BackgroundRank-1];
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0&&priority<=backgroundPriority[i]){pixels[i]=layer[i];backgroundPriority[i]=(byte)priority;}
         }
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ

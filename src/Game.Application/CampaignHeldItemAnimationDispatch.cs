@@ -41,6 +41,12 @@ public static class CampaignHeldItemAnimationPresentation
         if(Previous(r=>r.Kind=="confusion"&&(r.Reason is "held-berry" or "persim-berry"&&r.Before>0&&r.After==0||r.Reason=="flavor-berry"&&item.Flavor is not null&&r.Before==0&&r.After>0)))start--;
         return start==end&&item.Restored==0&&item.Pp is null?-1:start;
     }
+    // Pure receipt boundaries are shared by direct-effect presentation. Visibility
+    // and animation admission remain owned by AtResult below.
+    internal static int ConsumedGroupStart(IReadOnlyList<SourceBattleEvent> events,int end)=>
+        end>=0&&end<events.Count?GroupStart(events.Select(Read).ToArray(),end):-1;
+    internal static int ConsumedGroupStart(IReadOnlyList<WildBattleEvent> events,int end)=>
+        end>=0&&end<events.Count?GroupStart(events.Select(Read).ToArray(),end):-1;
     private static bool VisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)
     {
         var charge=entry.ToArray();var known=Enumerable.Repeat(true,entry.Count).ToArray();
@@ -80,13 +86,13 @@ public static class CampaignHeldItemAnimationPresentation
     public static CampaignHeldItemAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene,IReadOnlyList<MoveId?> entryChargeMoves,bool affectedBehindSubstitute=false)
     {
         ValidateEntry(entryChargeMoves,2);
-        if(!sourceRules||scene!=SourceBattleScene.On||affectedBehindSubstitute||battle.Phase!=CampaignBattlePhase.Events)return null;
+        if(!sourceRules||!CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.HeldItem,scene)||affectedBehindSubstitute||battle.Phase!=CampaignBattlePhase.Events)return null;
         return Match(battle.Id,battle.Events.Select(Read).ToArray(),battle.EventIndex,entryChargeMoves);
     }
     public static CampaignHeldItemAnimationDispatch? AtResult(CampaignDoubleBattle battle,SourceBattleScene scene,IReadOnlyList<MoveId?> entryChargeMoves,bool affectedBehindSubstitute=false)
     {
         ValidateEntry(entryChargeMoves,4);
-        if(scene!=SourceBattleScene.On||affectedBehindSubstitute||battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
+        if(!CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.HeldItem,scene)||affectedBehindSubstitute||battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
         return Match(battle.Id,battle.Events.Select(Read).ToArray(),battle.EventIndex,entryChargeMoves);
     }
     private static Row Read(SourceBattleEvent e)=>e switch

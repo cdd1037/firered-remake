@@ -166,7 +166,7 @@ public static partial class CampaignQuestLogRecorder
     private static bool MayStart(CampaignQuestLogEvent kind,CampaignState state,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainers)
     {
         if(kind is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.PokemonCenter)return false;
-        if(kind==CampaignQuestLogEvent.TrainerWon&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")&&state.ForestTrainerHistory?.LastOrDefault() is {} history&&trainers?.Invoke(history.TrainerId)?.TrainerClass is {} trainerClass&&trainerClass is not ("TRAINER_CLASS_RIVAL_EARLY" or "TRAINER_CLASS_RIVAL_LATE" or "TRAINER_CLASS_CHAMPION" or "TRAINER_CLASS_BOSS"))return false;
+        if(kind==CampaignQuestLogEvent.TrainerWon&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")&&(state.DoubleBattle is {Stage:CampaignDoubleBattleStage.Finished} finishedDouble?finishedDouble.Trainer.Value:state.ForestTrainerHistory?.LastOrDefault()?.TrainerId) is {} trainerId&&trainers?.Invoke(trainerId)?.TrainerClass is {} trainerClass&&trainerClass is not ("TRAINER_CLASS_RIVAL_EARLY" or "TRAINER_CLASS_RIVAL_LATE" or "TRAINER_CLASS_CHAMPION" or "TRAINER_CLASS_BOSS"))return false;
         if(!state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")&&kind is CampaignQuestLogEvent.PartyOrder or CampaignQuestLogEvent.WildWon)return false;
         if(!state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS")&&kind is CampaignQuestLogEvent.UsedItem or CampaignQuestLogEvent.GaveHeldItem or CampaignQuestLogEvent.GaveHeldItemBag or CampaignQuestLogEvent.GaveHeldItemPc or CampaignQuestLogEvent.TookHeldItem or CampaignQuestLogEvent.SwappedHeldItem or CampaignQuestLogEvent.SwappedHeldItemPc or CampaignQuestLogEvent.SwitchedPartyPc or CampaignQuestLogEvent.WithdrewPokemon or CampaignQuestLogEvent.DepositedPokemon)return false;
         return true;
@@ -226,6 +226,17 @@ public static partial class CampaignQuestLogRecorder
                 _=>Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,definition.SourceTrainerName,loser,victor,flavor)
             };
         }
+        var pairHistory=after.DoubleBattleHistory?.LastOrDefault();
+        if(pairHistory is not null&&pairHistory!=before.DoubleBattleHistory?.LastOrDefault()&&pairHistory.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Won&&
+            after.DoubleBattle is {} pair&&pair.Id==pairHistory.Id&&pair.Frame.LastOpponentFaint is {ScriptAttacker:{} attacker} last&&
+            trainerLookup?.Invoke(pairHistory.TrainerId) is {} pairTrainer)
+        {
+            var left=pair.Frame.Get(new(0)).Body!.Pokemon;var right=pair.Frame.Get(new(2)).Body!.Pokemon;
+            var victor=attacker.Side==Game.Domain.Battle.BattleSide.Player?pair.Frame.Get(attacker).Body!.Pokemon:left.CurrentHp!=0?left:right;
+            int hp=left.CurrentHp+right.CurrentHp,maxHp=left.Stats.MaxHp+right.Stats.MaxHp;
+            string flavor=source?.Texts[hp<maxHp/3?"Somehow":hp<maxHp/3*2?"Tenaciously":"Handily"]??"handily";
+            return Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,pairTrainer.SourceTrainerName,SpeciesId(last.Species),SpeciesId(victor.SourceSpeciesId),flavor);
+        }
         if(command.Kind=="machine_teach"&&command.PartyIndex>=0&&command.PartyIndex<before.Party.Length&&command.PartyIndex<after.Party.Length&&catalog is not null)
         {
             var old=before.Party[command.PartyIndex];var mon=after.Party[command.PartyIndex];
@@ -247,19 +258,20 @@ public static partial class CampaignQuestLogRecorder
         if(before.FameChecker is null&&after.FameChecker is not null)return Event(CampaignQuestLogEvent.UsedItem,"UsedTheKeyItem",Item("ITEM_FAME_CHECKER"));
         if(before.CoinsBox is null&&after.CoinsBox is not null)return Event(CampaignQuestLogEvent.UsedItem,"UsedTheKeyItem",Item("ITEM_COIN_CASE"));
         if(before.EscapeRope is null&&after.EscapeRope is not null)return Event(CampaignQuestLogEvent.UsedItem,"UsedEscapeRope",Item("ITEM_ESCAPE_ROPE"),source?.MapName(before.World.Player.MapId.Value)??map);
-        foreach(var mon in after.Party)
+        var heldUse=CampaignQuestLogHeldItemCapture.Observe(before,after,command);
+        foreach(var mon in after.Party.Where(p=>p.InstanceId==heldUse?.InstanceId))
         {
             var old=before.Party.FirstOrDefault(p=>p.InstanceId==mon.InstanceId);
             if(old is null||old.HeldItem==mon.HeldItem)continue;
             bool oldEmpty=old.HeldItem is "" or "ITEM_NONE" or "item.none" or "none";bool newEmpty=mon.HeldItem is "" or "ITEM_NONE" or "item.none" or "none";
             if(oldEmpty)
             {
-                if(command.Kind=="pc_give")return Event(CampaignQuestLogEvent.GaveHeldItemPc,"GaveMonHeldItemFromPC",Item(mon.HeldItem),Species(mon));
-                bool bag=before.ItemMenu?.Origin=="bag";
+                if(heldUse!.Origin==CampaignQuestLogHeldItemOrigin.Pc)return Event(CampaignQuestLogEvent.GaveHeldItemPc,"GaveMonHeldItemFromPC",Item(mon.HeldItem),Species(mon));
+                bool bag=heldUse!.Origin==CampaignQuestLogHeldItemOrigin.Bag;
                 return Event(bag?CampaignQuestLogEvent.GaveHeldItemBag:CampaignQuestLogEvent.GaveHeldItem,bag?"GaveMonHeldItem2":"GaveMonHeldItem",Species(mon),Item(mon.HeldItem));
             }
             if(newEmpty)return Event(CampaignQuestLogEvent.TookHeldItem,"TookHeldItemFromMon",Species(mon),Item(old.HeldItem));
-            return command.Kind=="pc_give"?Event(CampaignQuestLogEvent.SwappedHeldItemPc,"SwappedHeldItemFromPC",Item(mon.HeldItem),Species(mon),Item(old.HeldItem)):
+            return heldUse!.Origin==CampaignQuestLogHeldItemOrigin.Pc?Event(CampaignQuestLogEvent.SwappedHeldItemPc,"SwappedHeldItemFromPC",Item(mon.HeldItem),Species(mon),Item(old.HeldItem)):
                 Event(CampaignQuestLogEvent.SwappedHeldItem,"SwappedHeldItemsOnMon",Species(mon),Item(old.HeldItem),Item(mon.HeldItem));
         }
         if(before.Party.Length==after.Party.Length&&before.Party.Select(p=>p.InstanceId).Order().SequenceEqual(after.Party.Select(p=>p.InstanceId).Order())&&!before.Party.Select(p=>p.InstanceId).SequenceEqual(after.Party.Select(p=>p.InstanceId)))
@@ -277,9 +289,7 @@ public static partial class CampaignQuestLogRecorder
                 if(stack.Quantity>bi.PcItems.Where(x=>x.Item==stack.Item).Sum(x=>x.Quantity))return Event(CampaignQuestLogEvent.DepositedItem,"StoredItemInPC",Item(stack.Item.Value));
             foreach(var stack in bi.PcItems)
                 if(stack.Quantity>ai.PcItems.Where(x=>x.Item==stack.Item).Sum(x=>x.Quantity))return Event(CampaignQuestLogEvent.WithdrewItem,"WithdrewItemFromPC",Item(stack.Item.Value));
-            if(command.Kind.StartsWith("item_",StringComparison.Ordinal)||command.Kind.StartsWith("bag_",StringComparison.Ordinal)||command.Kind.StartsWith("field_",StringComparison.Ordinal))
-                foreach(var stack in bi.BagItems)
-                    if(stack.Quantity>ai.BagItems.Where(x=>x.Item==stack.Item).Sum(x=>x.Quantity)&&!command.Kind.Contains("toss",StringComparison.Ordinal))return command.Kind!="field_repel"&&command.PartyIndex>=0&&command.PartyIndex<after.Party.Length?Event(CampaignQuestLogEvent.UsedItem,"UsedItemOnMonAtThisLocation",Item(stack.Item.Value),Species(after.Party[command.PartyIndex])):Event(CampaignQuestLogEvent.UsedItem,"UsedTheItem",Item(stack.Item.Value));
+
         }
         if(before.Pc?.GroupCursor is {} group&&after.Pc?.GroupCursor is null&&command.Kind=="storage_group_place"&&after.Storage is {} gs&&command.StorageLocation is {} groupTarget)
             return Event(CampaignQuestLogEvent.MovedGroup,"SwitchedMultipleMons",gs.Boxes[group.Origin.BoxIndex].Name??"BOX "+(group.Origin.BoxIndex+1),gs.Boxes[groupTarget.BoxIndex].Name??"BOX "+(groupTarget.BoxIndex+1));
@@ -377,6 +387,14 @@ public sealed class CampaignQuestLogPlayback
 
 public sealed partial class CampaignSession
 {
+    private Game.Domain.Trainers.TrainerDefinition? QuestLogTrainer(string id)
+    {
+        var key=new Game.Domain.Ids.TrainerId(id);
+        if(OrdinaryTrainerBindings.TryGetValue(key,out var ordinary))return ordinary.Definition;
+        if(DoubleTrainers.Trainers.TryGetValue(key,out var pair))return pair;
+        return _content.VsSeekerTrainers?.Trainers.GetValueOrDefault(key);
+    }
+
     private bool _questLogRecordingOpen;
     private CampaignQuestLogStartGate? _questLogStartGate;
     private CampaignQuestLogShopCapture? _questLogShop;
@@ -392,7 +410,7 @@ public sealed partial class CampaignSession
             CampaignQuestLogDepartureCapture.Observe(state,result.State,departureSource,_questLogPlayedSlots):(result.State,(CampaignQuestLogAction?)null,false);
         result=result with{State=departure.Item1};
         var log=CampaignQuestLogRecorder.Record(state.QuestLog,state,result.State,command,_content,
-            id=>OrdinaryTrainerBindings.TryGetValue(new Game.Domain.Ids.TrainerId(id),out var binding)?binding.Definition:null,_questLogRecordingOpen,suppliedEvent:departure.Item2,playedSlots:_questLogPlayedSlots,recordingFrame:_questLogFieldClock.Frame,startGate:_questLogStartGate);
+            id=>QuestLogTrainer(id),_questLogRecordingOpen,suppliedEvent:departure.Item2,playedSlots:_questLogPlayedSlots,recordingFrame:_questLogFieldClock.Frame,startGate:_questLogStartGate);
         if(departure.Item3)_questLogPlayedSlots=false;
         var shop=CampaignQuestLogShopCapture.Observe(_questLogShop,state,result.State,_content);
         bool recordingOpen=ReferenceEquals(log,state.QuestLog)?_questLogRecordingOpen:log is not null&&!log.Scenes[^1].Closed;

@@ -3,7 +3,7 @@ namespace Game.Presentation.BattleAnimations;
 
 public static class SourceElementalAnimationCatalog
 {
-    public static bool Supports(int move)=>move is 7 or 52 or 53 or 56 or 190 or 324 or 341 or 84 or 86 or 9 or 55 or 85 or 121 or 152 or 192 or 48 or 103 or 319 or 71 or 72 or 202 or 105 or 51 or 61 or 92 or 141 or 145 or 83 or 250 or 328 or 44 or 128 or 116 or 203 or 8 or 58 or 181 or 82 or 126 or 172 or 225 or 204 or 343 or 231 or 342 or 223 or 75 or 129 or 200;
+    public static bool Supports(int move)=>move is 7 or 52 or 53 or 56 or 190 or 324 or 341 or 84 or 86 or 9 or 55 or 85 or 121 or 152 or 192 or 48 or 103 or 319 or 71 or 72 or 202 or 105 or 51 or 61 or 92 or 141 or 145 or 83 or 250 or 328 or 44 or 128 or 116 or 203 or 8 or 58 or 181 or 82 or 126 or 172 or 225 or 204 or 343 or 231 or 342 or 223 or 75 or 129 or 200 or 235 or 147 or 178;
     public static IReadOnlyDictionary<string,SourcePixelAsset> Assets(string path)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
@@ -32,6 +32,7 @@ public sealed partial class SourceBattleAnimation
         "gSupersonicRingSpriteTemplate" or "gScreechRingSpriteTemplate" or "gMetalSoundSpriteTemplate" or "gEmberSpriteTemplate"=>"TranslateAnimSpriteToTargetMonLocation",
         "gEmberFlareSpriteTemplate"=>"AnimEmberFlare",
         "gGrantingStarsSpriteTemplate"=>"AnimGrantingStars",
+        "gSporeParticleSpriteTemplate"=>"AnimSporeParticle",
         "gThinRingExpandingSpriteTemplate"=>"AnimSpriteOnMonPos",
         "gFireSpiralInwardSpriteTemplate"=>"AnimFireSpiralInward",
         "gFireSpreadSpriteTemplate"=>"AnimFireSpread",
@@ -52,17 +53,19 @@ public sealed partial class SourceBattleAnimation
         if(SourceExplosionAnimationCatalog.Supports(_script.MoveId))return false;
         if(ValidateElectricOperand(c))return true;
         var a=c.Args;
-        if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR" or "ANIM_TAG_BLUE_RING" or "ANIM_TAG_SPARKLE_2" or "ANIM_TAG_THIN_RING")return true;
+        if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR" or "ANIM_TAG_BLUE_RING" or "ANIM_TAG_SPARKLE_2" or "ANIM_TAG_THIN_RING" or "ANIM_TAG_SPORE")return true;
         if(c.Op is "playsewithpan" or "loopsewithpan" or "waitplaysewithpan"&&a.FirstOrDefault() is "SE_M_EMBER" or "SE_M_FLAME_WHEEL" or "SE_M_FIRE_PUNCH" or "SE_M_SELF_DESTRUCT" or "SE_M_CRABHAMMER" or "SE_M_BUBBLE" or "SE_M_HYPER_BEAM" or "SE_M_TRI_ATTACK2" or "SE_M_ABSORB" or "SE_M_ABSORB_2" or "SE_M_BUBBLE3" or "SE_M_GIGA_DRAIN" or "SE_M_SCREECH" or "SE_M_SUPERSONIC" or "SE_M_MEGA_KICK" or "SE_M_TOXIC" or "SE_M_BUBBLE2" or "SE_M_SACRED_FIRE2" or "SE_M_SAND_TOMB" or "SE_M_WHIRLPOOL" or "SE_M_BITE" or "SE_M_VICEGRIP" or "SE_M_DRAGON_RAGE" or "SE_M_STRING_SHOT" or "SE_M_ICY_WIND" or "SE_M_GUST2" or "SE_M_FLAME_WHEEL2" or "SE_M_CHARM" or "SE_M_DIZZY_PUNCH" or "SE_M_HARDEN" or "SE_M_SWIFT" or "SE_M_POISON_POWDER" or "SE_M_RAZOR_WIND" or "SE_M_RAZOR_WIND2" or "SE_M_PSYBEAM" or "SE_M_PSYBEAM2" or "SE_M_TELEPORT" or "SE_M_MORNING_SUN")
         {
             if(a.Length!=(c.Op=="loopsewithpan"?4:c.Op=="waitplaysewithpan"?3:2)||a[1] is not ("SOUND_PAN_TARGET" or "SOUND_PAN_ATTACKER"))Fail(c,"Elemental sound shape differs.");
             if(a.Length==3&&Number(a[2]) is <0 or >255)Fail(c,"Elemental delayed sound differs.");
             if(a.Length==4&&(Number(a[2]) is <0 or >255||Number(a[3]) is <2 or >255))Fail(c,"Elemental sound loop differs.");return true;
         }
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_SporeDoubleBattle")
+        {if(a.Length!=2||Number(a[1]) is <0 or >255)Fail(c,"Spore background task operands differ.");return true;}
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_StartSinAnimTimer")
         {if(a.Length!=3||Number(a[1]) is <0 or >255||Number(a[2]) is <1 or >32767)Fail(c,"Sine timer operands differ.");return true;}
         if(c.Op!="createsprite"||a.Length==0||ElementalCallback(a[0]) is not string callback)return false;
-        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame" or "AnimGrantingStars"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
+        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimSporeParticle" or "AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame" or "AnimGrantingStars"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
         if(a.Length!=count||!_script.SpriteRecipes.TryGetValue(a[0],out var recipe)||recipe.Callback!=callback||recipe.Width is not (8 or 16 or 32 or 64)||recipe.Height is not (8 or 16 or 32 or 64)||_script.SineTable.Length!=320)Fail(c,"Elemental sprite recipe/operands differ.");
         if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127)Fail(c,"Elemental sprite participant/priority differs.");
         foreach(var arg in a.Skip(3))if(Number(arg) is < -32768 or >32767)Fail(c,"Elemental source argument outside s16.");
@@ -77,6 +80,7 @@ public sealed partial class SourceBattleAnimation
         if(callback=="AnimLeechLifeNeedle"&&Number(a[5]) is <1 or >32767)Fail(c,"Needle duration differs.");
         if(callback=="AnimBubbleEffect"&&Number(a[5]) is <0 or >1)Fail(c,"Bubble target grouping differs.");
         if(callback=="AnimWaterBubbleProjectile"&&Number(a[9]) is <2 or >255)Fail(c,"Water bubble timer differs.");
+        if(callback=="AnimSporeParticle"&&(Number(a[5]) is <0 or >255||Number(a[6]) is <0 or >32767||Number(a[7]) is <0 or >1))Fail(c,"Spore angle/lifetime/mode differs.");
         if(callback=="AnimGrantingStars"&&(Number(a[5]) is <0 or >1||Number(a[8]) is <0 or >32767))Fail(c,"Granting star participant/lifetime differs.");
         if(callback=="AnimOutrageFlame"&&(Number(a[5]) is <1 or >32767||Number(a[8]) is <1 or >32767))Fail(c,"Outrage lifetime/flicker divisor differs.");
         if(callback=="AnimTranslateLinearSingleSineWave"&&(Number(a[7]) is <1 or >32767||Number(a[9]) is <0 or >1))Fail(c,"Sine projectile duration/grouping differs.");
@@ -115,12 +119,15 @@ public sealed partial class SourceBattleAnimation
             var center=_battlers[Resolve(c.Args[5]).Value].Center(_doubles,true);
             _sprites.Add(new HitSplat(slot,priority,new(center.X+InitialXDirection()*Number(c.Args[3]),center.Y+Number(c.Args[4])),Number(c.Args[6]),recipe.Asset));return true;
         }
+        if(recipe.Callback=="AnimSporeParticle"){_sprites.Add(new SporeParticle(slot,priority,recipe,c.Args.Skip(3).Select(Number).ToArray(),this));return true;}
         if(recipe.Callback=="AnimWaterBubbleProjectile"){_sprites.Add(new WaterBubbleProjectile(slot,priority,recipe,c.Args.Skip(3).Select(Number).ToArray(),this));return true;}
         _sprites.Add(new ElementalSprite(slot,priority,_script.SpriteRecipes[c.Args[0]],Resolve(c.Args[1]),c.Args.Skip(3).Select(Number).ToArray(),this));return true;
     }
     private bool TryCreateElementalTask(SourceAnimationCommand c)
     {
         if(TryCreateElectricTask(c))return true;
+        if(c.Args[0]=="AnimTask_SporeDoubleBattle")
+        {if(_doubles){if(_battlers[_cue.Target.Value].BackgroundRank==1)SetBackgroundPriority(2,3);else SetBackgroundPriority(1,1);}return true;}
         if(c.Args[0]!="AnimTask_StartSinAnimTimer")return false;
         _elementalSinTimer=0;_tasks.Add(new ElementalSinTimer(Number(c.Args[2])));return true;
     }

@@ -6,10 +6,17 @@ namespace Game.Application;
 /// the dedicated move root and completes without acknowledging the result event.</summary>
 public sealed record CampaignStatAnimationDispatch(string BattleId,long Sequence,long AttackSequence,long PpSequence,
     int SourceMoveId,BattlerSlot Affected,int AnimationArgument);
-public static class CampaignStatAnimationPresentation
+public static partial class CampaignStatAnimationPresentation
 {
     private sealed record Row(long Sequence,int Turn,string Kind,int Actor=-1,int Target=-1,string Move="",string Chosen="",
         int Owner=-1,WildBattleStat Stat=default,int Before=0,int After=0);
+    private static int AnimationArgument(WildBattleStat stat,int delta)
+    {
+        int statIndex=stat switch{WildBattleStat.Attack=>0,WildBattleStat.Defense=>1,WildBattleStat.Speed=>2,WildBattleStat.SpecialAttack=>3,WildBattleStat.SpecialDefense=>4,WildBattleStat.Accuracy=>5,WildBattleStat.Evasion=>6,_=>throw new ArgumentOutOfRangeException(nameof(stat))};
+        // Cmd_setgraphicalstatchangevalues uses the requested change, even when
+        // the resulting stage was clamped at zero.
+        return (delta switch{1=>15,2=>39,-1=>22,-2=>46,_=>throw new ArgumentOutOfRangeException(nameof(delta))})+statIndex;
+    }
     private static CampaignStatAnimationDispatch? Match(string battleId,Row[] rows,int index,bool substitute)
     {
         if(substitute||index<3||index>=rows.Length)return null;
@@ -27,7 +34,11 @@ public static class CampaignStatAnimationPresentation
         var stat=rows[index];var pp=rows[index-1];
         if(stat.Kind!="stat"||stat.Before is <0 or >12||stat.After is <0 or >12||stat.After==stat.Before||
             pp.Kind!="pp"||pp.Actor!=stat.Actor||pp.Target!=stat.Target||pp.Owner!=stat.Actor||pp.Move!=pp.Chosen||pp.Turn!=stat.Turn||pp.Sequence>=stat.Sequence)return null;
-        var spec=pp.Move switch
+        int sourceMove=CampaignMoveAnimationPresentation.SupportedSourceMoveId(pp.Move);
+        var reduction=CampaignMoveAnimationPresentation.ReductionAnimation(sourceMove);
+        var spec=reduction is {} lowered
+            ? (Move:sourceMove,Stat:lowered.Stat,Delta:lowered.Delta,Arg:AnimationArgument(lowered.Stat,lowered.Delta))
+            : pp.Move switch
         {
             "pret:MOVE_AGILITY"=>(Move:97,Stat:WildBattleStat.Speed,Delta:2,Arg:41),
             "pret:MOVE_GROWTH"=>(Move:74,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
@@ -37,8 +48,6 @@ public static class CampaignStatAnimationPresentation
             "pret:MOVE_HARDEN"=>(Move:106,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_BARRIER"=>(Move:112,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
             "pret:MOVE_IRON_DEFENSE"=>(Move:334,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
-            "pret:MOVE_TAIL_WHIP"=>(Move:39,Stat:WildBattleStat.Defense,Delta:-1,Arg:23),
-            "pret:MOVE_FLASH"=>(Move:148,Stat:WildBattleStat.Accuracy,Delta:-1,Arg:27),
             _=>default
         };
         if(spec.Move==0||spec.Stat!=stat.Stat||stat.After!=Math.Clamp(stat.Before+spec.Delta,0,12)||
@@ -67,6 +76,7 @@ public static class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,bool affectedBehindSubstitute=false)
     {
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
+        if(Grouped(battle,true) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute);
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
             WildBattleDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_DEFENSE_CURL"),
@@ -83,6 +93,7 @@ public static class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignDoubleBattle battle,bool affectedBehindSubstitute=false)
     {
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
+        if(Grouped(battle) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute);
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
             SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),

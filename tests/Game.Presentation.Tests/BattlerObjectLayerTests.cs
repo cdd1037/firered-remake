@@ -9,7 +9,7 @@ public sealed class BattlerObjectLayerTests
     {
         var battlers=new[]{new AnimationBattler(new(0),"b0",8,0,64,64){Visible=false},new AnimationBattler(new(1),"b1",8,0,64,64){DisplayCenter=new(80,50)}};
         var assets=new Dictionary<string,SourcePixelAsset>{{"background",new(240,112,Enumerable.Repeat((ushort)0xfc00,240*112).ToArray())},{"impact",Solid(32,0x83e0)},{"b0",Solid(64,0x83e0)},{"b1",Solid(64,0x801f)}};
-        return(new(assets,battlers),new(0,true,new PixelPoint[2],[1],8,8,[],[]){BlendEnabled=true,BattlerOamRanks=[1,0],ObjectOffsets=[default,new(32,0)],BattlerAffine=[new(false,256,256),new(true,512,512)],RestoredObjectSlots=[1],BlendedObjectSlots=[1]});
+        return(new(assets,battlers),new(0,true,new PixelPoint[2],[1],8,8,[],[]){BlendEnabled=true,BattlerBackgroundPriorities=[2,2],BattlerOamRanks=[1,0],ObjectOffsets=[default,new(32,0)],BattlerAffine=[new(false,256,256),new(true,512,512)],RestoredObjectSlots=[1],BlendedObjectSlots=[1]});
     }
     private static void Pixel(byte[] rgba,int x,int y,int r,int g,int b)
     {int at=(y*240+x)*4;Assert.AreEqual((byte)r,rgba[at]);Assert.AreEqual((byte)g,rgba[at+1]);Assert.AreEqual((byte)b,rgba[at+2]);}
@@ -30,7 +30,7 @@ public sealed class BattlerObjectLayerTests
     [TestMethod]
     public void HardwarePriorityPrecedesOamOrderAndPromotedBackground()
     {
-        var (composer,frame)=Scene();frame=frame with{ForegroundBackgroundSlots=[1],Sprites=[new(4,"test",new(80,50),default,0,true,false,false,256,"impact",1){OamRank=0,OamPriority=2}]};
+        var (composer,frame)=Scene();frame=frame with{BattlerBackgroundPriorities=[1,2],Sprites=[new(4,"test",new(80,50),default,0,true,false,false,256,"impact",1){OamRank=0,OamPriority=2}]};
         Pixel(composer.ComposeField(frame),80,50,255,0,0);
         Pixel(composer.ComposeField(frame with{Sprites=[frame.Sprites[0] with{OamPriority=0}]}),80,50,0,255,0);
     }

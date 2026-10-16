@@ -13,7 +13,7 @@ public sealed class BackgroundMoveAnimationTests
         public void StopAnimationEffects(){}
     }
     [TestMethod]
-    [DataRow(168,1)][DataRow(242,1)][DataRow(60,3)][DataRow(95,3)][DataRow(149,3)][DataRow(93,3)][DataRow(94,3)]
+    [DataRow(168,1)][DataRow(242,1)][DataRow(60,3)][DataRow(95,3)][DataRow(149,3)][DataRow(93,3)][DataRow(94,3)][DataRow(138,3)]
     public void SourceBackgroundRootsFadeHitAndRestoreForEveryBattlePosition(int move,int background)
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
@@ -34,7 +34,7 @@ public sealed class BackgroundMoveAnimationTests
         }
     }
     [TestMethod]
-    [DataRow(93)][DataRow(94)]
+    [DataRow(93)][DataRow(94)][DataRow(138)]
     public void PsychicScalingRestoresBlendedObjectOverIndependentMonBackground(int move)
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));

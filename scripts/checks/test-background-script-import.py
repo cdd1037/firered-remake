@@ -6,7 +6,7 @@ spec=importlib.util.spec_from_file_location('background_scripts', ROOT/'scripts/
 REFERENCE=imp.ROOT/'content/raw/pokefirered/037335f4'
 class BackgroundScriptImportTests(unittest.TestCase):
  def test_dependency_discovery_and_source_symbols(self):
-  pack=json.loads(imp.build(REFERENCE));self.assertEqual({60,93,94,95,149,168,242},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_DARK':1,'BG_PSYCHIC':3},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
+  pack=json.loads(imp.build(REFERENCE));self.assertEqual({60,93,94,95,138,149,168,242},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_DARK':1,'BG_PSYCHIC':3},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
   for script in pack['scripts']:
    commands=script['commands']+[c for name in dict.fromkeys(c['args'][0] for c in script['commands'] if c['op']=='call') for c in pack['subroutines'][name]];ops=[c['op'] for c in commands];self.assertEqual(2,ops.count('waitbgfadein'));self.assertEqual(1,ops.count('restorebg'))
  def test_uncovered_background_and_sprite_fail_closed(self):

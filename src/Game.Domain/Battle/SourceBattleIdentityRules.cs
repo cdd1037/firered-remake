@@ -38,6 +38,8 @@ public static class SourceBattleIdentityRules
             frame.Rng.AlgorithmId != Gen3Rng.AlgorithmId) return "source_frame_counters";
         if (frame.Parties.IsDefault || frame.Parties.Length != 2 || frame.Sides.IsDefault || frame.Sides.Length != 2 ||
             frame.Slots.IsDefault || frame.Slots.Length != 4 || frame.Field is null) return "source_frame_shape";
+        if (frame.LastOpponentFaint is {} faint && (faint.Species <= 0 || faint.ScriptAttacker is {} attacker && attacker.Value >= frame.BattlerCount))
+            return "source_frame_faint_result";
         int outside = frame.Layout == SourceBattleLayout.Singles ? 12 : 0;
         if ((frame.SourceAbsentMask & ~15) != 0 || (frame.TurnStartAbsentMask & ~15) != 0 ||
             (frame.DeferredKoVacancyMask & ~15) != 0 || (frame.SourceAbsentMask & outside) != outside ||

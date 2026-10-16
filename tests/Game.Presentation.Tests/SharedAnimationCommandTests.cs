@@ -100,9 +100,36 @@ public sealed class SharedAnimationCommandTests
     {
         var script=new SourceAnimationScript(53,"priority",[new("monbg",["ANIM_TARGET"],1),new("splitbgprio",["ANIM_TARGET"],2),new("delay",["2"],3),new("end",[],4)]);
         var runtime=new SourceBattleAnimation(script,new("priority",1,53,new(target^1),new(target)),Battlers(),true,new Audio());
-        var frame=runtime.Tick();CollectionAssert.AreEqual(target is 0 or 3?new[]{target^2}:Array.Empty<int>(),frame.ForegroundBackgroundSlots);
-        runtime.Cancel();Assert.AreEqual(0,runtime.Snapshot().ForegroundBackgroundSlots.Length);
+        var frame=runtime.Tick();CollectionAssert.AreEqual(target is 0 or 3?new[]{1,2}:new[]{2,2},frame.BattlerBackgroundPriorities);
+        runtime.Cancel();CollectionAssert.AreEqual(new[]{0,1},runtime.Snapshot().BattlerBackgroundPriorities);
     }
+    [TestMethod][DataRow(0)][DataRow(1)][DataRow(2)][DataRow(3)]
+    public void BackgroundCopyWritesOnlyVisibleBankAndClearRetainsHardwarePriorities(int target)
+    {
+        var battlers=Battlers().Select(b=>b with{Visible=b.Slot.Value==target}).ToArray();
+        var script=new SourceAnimationScript(53,"registers",[new("monbg",["ANIM_TARGET"],1),new("delay",["2"],2),new("clearmonbg",["ANIM_TARGET"],3),new("delay",["4"],4),new("end",[],5)]);
+        var runtime=new SourceBattleAnimation(script,new("registers",1,53,new(target^1),new(target)),battlers,true,new Audio());
+        CollectionAssert.AreEqual(new[]{0,1},runtime.Snapshot().BattlerBackgroundPriorities);
+        var first=runtime.Tick();CollectionAssert.AreEqual(new[]{target},first.BackgroundSlots);
+        var expected=target is 0 or 3?new[]{0,2}:new[]{2,1};
+        CollectionAssert.AreEqual(expected,first.BattlerBackgroundPriorities);
+        for(int ticks=0;runtime.Active&&ticks<20;ticks++)runtime.Tick();
+        Assert.IsFalse(runtime.Active);Assert.AreEqual(0,runtime.Snapshot().BackgroundSlots.Length);
+        CollectionAssert.AreEqual(expected,runtime.Snapshot().BattlerBackgroundPriorities);
+        runtime.Cancel();CollectionAssert.AreEqual(new[]{0,1},runtime.Snapshot().BattlerBackgroundPriorities);
+    }
+    [TestMethod][DataRow(0,2,false)][DataRow(1,2,false)][DataRow(2,2,true)][DataRow(3,2,true)][DataRow(3,3,true)][DataRow(2,3,false)]
+    public void NumericBackgroundPriorityUsesHardwareObjectTieRule(int backgroundPriority,int objectPriority,bool objectWins)
+    {
+        var battlers=Battlers().Select(b=>b with{Visible=b.Slot.Value==1,DisplayCenter=new PixelPoint(40,40)}).ToArray();
+        var assets=new Dictionary<string,SourcePixelAsset>{{"background",new(240,112,new ushort[240*112])},{"impact",new(32,32,Enumerable.Repeat((ushort)0x83e0,1024).ToArray())}};
+        foreach(var b in battlers)assets.Add(b.Asset,new(64,64,Enumerable.Repeat((ushort)0x801f,4096).ToArray()));
+        var composer=new SourceBattleFrameComposer(assets,battlers);
+        var frame=new SourceAnimationFrame(0,true,new PixelPoint[4],[1],0,0,[],[]){BattlerBackgroundPriorities=[backgroundPriority,1],Sprites=[new(4,"test",new(40,40),default,0,true,false,false,256,"impact",1){OamPriority=objectPriority}]};
+        var pixels=composer.ComposeField(frame);int at=(40*240+40)*4;
+        Assert.AreEqual((byte)(objectWins?0:255),pixels[at]);Assert.AreEqual((byte)(objectWins?255:0),pixels[at+1]);
+    }
+
     [TestMethod]
     public void PromotedBackgroundOccludesPriorityTwoEffectPixels()
     {
@@ -110,9 +137,9 @@ public sealed class SharedAnimationCommandTests
         var assets=new Dictionary<string,SourcePixelAsset>{{"background",new(240,112,new ushort[240*112])},{"impact",new(32,32,Enumerable.Repeat((ushort)0x83e0,1024).ToArray())}};
         foreach(var b in battlers)assets.Add(b.Asset,new(64,64,Enumerable.Repeat((ushort)0x801f,4096).ToArray()));
         var composer=new SourceBattleFrameComposer(assets,battlers);
-        var frame=new SourceAnimationFrame(0,true,new PixelPoint[4],[1],0,0,[],[]){Doubles=true,BattlerOamRanks=[0,1,2,3],Sprites=[new(4,"test",new(40,40),default,0,true,false,false,256,"impact",1){OamRank=4}]};
+        var frame=new SourceAnimationFrame(0,true,new PixelPoint[4],[1],0,0,[],[]){Doubles=true,BattlerBackgroundPriorities=[2,2],BattlerOamRanks=[0,1,2,3],Sprites=[new(4,"test",new(40,40),default,0,true,false,false,256,"impact",1){OamRank=4}]};
         int at=(40*240+40)*4;var ordinary=composer.ComposeField(frame);Assert.AreEqual((byte)255,ordinary[at+1]);
-        var promoted=composer.ComposeField(frame with{ForegroundBackgroundSlots=[1]});Assert.AreEqual((byte)255,promoted[at]);Assert.AreEqual((byte)0,promoted[at+1]);
+        var promoted=composer.ComposeField(frame with{BattlerBackgroundPriorities=[1,2]});Assert.AreEqual((byte)255,promoted[at]);Assert.AreEqual((byte)0,promoted[at+1]);
     }
 
     [TestMethod]
@@ -173,7 +200,7 @@ public sealed class SharedAnimationCommandTests
         {
             var script=new SourceAnimationScript(48,"foes",[new("monbg",["ANIM_ATK_PARTNER"],1),new("splitbgprio_foes",["ANIM_ATTACKER"],2),new("delay",["2"],3),new("end",[],4)]);
             var runtime=new SourceBattleAnimation(script,new("foes",1,48,new(0),new(target)),Battlers(),true,new Audio());
-            var frame=runtime.Tick();CollectionAssert.AreEqual(new[]{0,2},frame.BackgroundSlots);CollectionAssert.AreEqual(target==3?new[]{2}:Array.Empty<int>(),frame.ForegroundBackgroundSlots);runtime.Cancel();
+            var frame=runtime.Tick();CollectionAssert.AreEqual(new[]{0,2},frame.BackgroundSlots);CollectionAssert.AreEqual(target==3?new[]{1,2}:new[]{2,2},frame.BattlerBackgroundPriorities);runtime.Cancel();
         }
     }
     [TestMethod]

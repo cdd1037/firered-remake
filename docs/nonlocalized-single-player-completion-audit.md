@@ -103,3 +103,25 @@ The non-localized completion statement is justified only when:
 - Chinese and deferred external functionality remain disclosed, without widening the game to make 386 species or multiplayer stars obtainable in one ordinary save.
 
 This audit itself ran **no builds, tests, native windows, uploads or asset changes**. It supports prioritization and the verification method; it does not certify those exit conditions.
+
+## 6. Bounded mounted-script callback follow-up — 2026-10-16
+
+Static inspection: **18:59–19:03 UTC**, working tree based on `88cfbae74bda9c5cea74d20b3147155e1e86be06`, with concurrent animation and Quest Log changes. This follow-up establishes **no confirmed new single-player functional gap** within the inspected paths. It does not update the historical findings above into a current all-game pass.
+
+### Closure actually inspected
+
+- Matched the 395 mounted, distinct source maps to pinned original map events. All **2,247** script references resolve in generated story Programs: 1,512 object, 216 coordinate and 519 background references.
+- Added actual `<map name>_MapScripts` headers and their conditional tables. Header rows comprise 113 transition, 46 resume, 42 frame-table, 18 warp-table, 40 load and 2 return-to-field entries. Runtime binding retains all six categories in `PretCampaignCatalog.cs:164–169`; entry queues and field-pump conditions are implemented in `CampaignSession.cs:711–731, 754–764`.
+- A conservative traversal following operands that name generated programs reaches **3,991 programs and 180 special names**. These totals include external branches and referenced data tables; they are not counts of proven legal paths or successfully executed callbacks. Unsupported IR encountered in that graph belongs to shop-stock `.2byte` data or cable-club/Mystery Gift operations, rather than a demonstrated ordinary executable path.
+- Inspected source/dispatch context for Four Island daycare deposit, withdrawal and egg callbacks; the Water Labyrinth Togepi gift; Daisy grooming; Magikarp/Heracross record services; Selphy requests; and representative Sevii map-edit, movement and warp callbacks. No concrete unsupported or silently skipped functional route was established.
+
+### False positives resolved against runtime
+
+- `UpdateLoreleiDollCollection` and `StickerManGetBragFlags` need not appear as literals in Application dispatch. Their source callbacks are bound through `StatFlagUnlocks` and `FieldMilestones`: `CampaignStatFlagUnlocks.cs:7–16`, `CampaignFieldMilestones.cs:7–18`, `PretCurrentGame.cs:505` and `PretFourIslandRegion.cs`.
+- Daisy's source actor starts with a wandering movement type, but the transition sets `MOVEMENT_TYPE_FACE_RIGHT` before the initial dialogue branch that uses `face_original_direction` (`data/maps/PalletTown_RivalsHouse/scripts.inc:7–34`). The generic movement restriction alone is not a reachable failure.
+- Cape Brink's jump-in-place commands have a dedicated tutor handler (`CampaignUltimateTutor.cs:86–109`) before generic movement dispatch. The generic fallback alone is not evidence of a missing tutor path.
+- Missing-name candidates in wireless/link, e-Reader and Mystery Gift branches remain outside the requested single-player audit. Already assigned Quest Log gaps and deferred trade-evolution service placement were not counted as new findings.
+
+### Limits
+
+No failing reproduction route is justified by this inspection. Symbol closure and selected handler inspection do **not** prove physical reachability, every legal precondition partition, correct durable deltas, callback continuation, repeat/cancel/full-capacity behavior, save/reload behavior or presentation parity. Those require the bounded executable cases described in section 4. This follow-up ran **no builds, tests, game commands, native windows, downloads or uploads** and changed only this document after the inspection. It leaves whole-game acceptance and actual audio-output gates unchanged.

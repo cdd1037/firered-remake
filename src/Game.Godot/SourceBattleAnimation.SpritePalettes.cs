@@ -18,6 +18,7 @@ public sealed partial class SourceBattleAnimation
     private void MoveBattlerToBackground(int slot,bool follow)
     {
         if(!_battlers[slot].Visible)return;
+        SetBackgroundPriority(_battlers[slot].BackgroundRank,2);
         _backgrounds.Add(slot);_restoredObject[slot]=false;
         if(follow)_staticBackgroundCopies.Remove(slot);
         // MoveBattlerSpriteToBG copies the unfaded source palette. Only its

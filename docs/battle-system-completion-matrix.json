@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 110,
-    "missingDedicatedMoveScripts": 244,
+    "dedicatedMoveScripts": 114,
+    "missingDedicatedMoveScripts": 240,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -22,7 +22,7 @@
   "boundaries": {
     "rules": "Ordinary singles and preset doubles share the current battle frame and execution lifecycle. All move identities have recipe admission and controlled public-turn test rows.",
     "specialModes": "Safari, roaming, scripted/tutorial encounters and Trainer Tower have separate application owners; ordinary-core coverage does not establish all of their outcomes. Dynamic Enigma payloads, player communication and external e-Reader inputs are not ordinary-core completion.",
-    "presentation": "110 source move scripts are dispatched in bounded tested contexts. Other moves retain ordinary text/HP/result presentation; no generic-animation parity is claimed.",
+    "presentation": "114 source move scripts are dispatched in bounded tested contexts. Other moves retain ordinary text/HP/result presentation; no generic-animation parity is claimed.",
     "verification": "Maintained tests contain controlled states. Neither their count nor this inventory proves natural full-game travel, original-frame parity or real-speaker audio.",
     "userDeferrals": "Chinese is deferred. The user resumed remaining single-player content, including animation and presentation, on 2026-10-16; completion still requires explicit evidence.",
     "approvedRules": "Keep the existing approved project differences, including end-of-turn doubles KO replacement; this inventory grants no new rule changes.",
@@ -1438,7 +1438,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_POISON_GAS",
@@ -1528,7 +1528,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_FLASH",
@@ -1838,7 +1838,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_REVERSAL",
@@ -2408,7 +2408,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_MOONLIGHT",

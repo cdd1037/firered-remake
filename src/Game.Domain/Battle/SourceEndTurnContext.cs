@@ -36,6 +36,7 @@ internal abstract partial class SourceEndTurnContext
     internal abstract void RecordAbility(BattlerSlot slot, string ability);
     internal abstract void ChangeStatus(BattlerSlot slot, uint status, string reason);
     internal abstract void Faint(BattlerSlot slot);
+    internal virtual void FaintAs(BattlerSlot slot, BattlerSlot? scriptAttacker) => Faint(slot);
     internal abstract void DamageOutcome();
     internal abstract void CheckTeamsLost();
     internal abstract void Prepare();

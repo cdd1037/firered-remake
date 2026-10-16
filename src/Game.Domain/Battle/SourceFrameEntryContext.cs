@@ -45,13 +45,13 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame, PokemonCatalog?
         var entry = Frame.EntryAbilities ?? throw new SourceRecipeUnsupported("source_entry_lifecycle_required");
         Frame = Frame with { EntryAbilities = entry with { PendingIntimidateMask = (byte)(entry.PendingIntimidateMask | slot.Mask) } };
     }
-    internal void Spikes(PokemonCatalog catalog, BattlerSlot slot)
+    internal void Spikes(PokemonCatalog catalog, BattlerSlot slot, BattlerSlot? scriptAttacker)
     {
         if (Frame.Sides[(int)slot.Side].Spikes == 0) return;
         // Reuse the residual owner's permanent synchronization and actual-occupant faint command.
         var hazard = new FrameEndTurnContext(Frame);
         SourceSpikesRules.Enter(catalog, slot, Frame.Sides[(int)slot.Side].Spikes, Turn,
-            hazard.Get, hazard.Set, hazard.Add, hazard.Faint,
+            hazard.Get, hazard.Set, hazard.Add, fainted => hazard.FaintAs(fainted, scriptAttacker),
             () => hazard.Add(n => new SourceMtMoonVolatileEvent(n, Turn, slot, "spikes", 0, 1, "entry")));
         hazard.CheckTeamsLost();
         Frame = hazard.Frame; Events.AddRange(hazard.Events);

@@ -20,6 +20,19 @@ internal static class SourceTrainerPresentationModel
         _ when source.StartsWith("ABILITY_", StringComparison.Ordinal) => source[8..].Replace('_', ' '),
         _ => throw new InvalidDataException("Unknown source ability symbol.")
     };
+    internal static string? AbilityPreventionSymbol(string ability)=>ability switch {
+            "ABILITY_LEVITATE"=>"sText_PkmnMakesGroundMiss","ABILITY_WONDER_GUARD"=>"sText_AvoidedDamage",
+            "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB"=>"sText_PkmnsXMadeYUseless","ABILITY_FLASH_FIRE"=>"sText_PkmnRaisedFirePowerWith",
+            "ABILITY_DAMP"=>"sText_PkmnPreventsUsage","ABILITY_SUCTION_CUPS"=>"sText_PkmnAnchorsItselfWith",
+            "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT"=>"sText_PkmnStayedAwakeUsing","ABILITY_LIMBER"=>"sText_PkmnPreventsParalysisWith",
+            "ABILITY_IMMUNITY"=>"sText_PkmnPreventsPoisoningWith","ABILITY_WATER_VEIL"=>"sText_PkmnsXPreventsBurns",
+            "ABILITY_OWN_TEMPO"=>"sText_PkmnPreventsConfusionWith","ABILITY_OBLIVIOUS"=>"sText_PkmnPreventsRomanceWith",
+            "ABILITY_CLEAR_BODY" or "ABILITY_WHITE_SMOKE"=>"sText_PkmnPreventsStatLossWith",
+            "ABILITY_HYPER_CUTTER" or "ABILITY_KEEN_EYE"=>"sText_PkmnsXPreventsYLoss",
+            "ABILITY_INNER_FOCUS"=>"sText_PkmnsXPreventsFlinching",_=>null};
+
+    internal static string AbilityPreventionStat(string ability)=>ability switch{"ABILITY_HYPER_CUTTER"=>"ATTACK","ABILITY_KEEN_EYE"=>"accuracy",_=>""};
+
     private static WildBattleSide Other(WildBattleSide side) => side == WildBattleSide.Player ? WildBattleSide.Opponent : WildBattleSide.Player;
     private static SourceTrainerEventDisplay Text(string symbol, params (string Key, string Value)[] fields) => new([new(symbol, fields)]);
 
@@ -78,16 +91,22 @@ internal static class SourceTrainerPresentationModel
             case WildBattleStatusChangedEvent { Reason: "flame-body", After: WildBattleStatus.Burn } burned:
                 return Text("sText_PkmnBurnedBy", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(Other(burned.Side))),
                     ("B_SCR_ACTIVE_ABILITY", "FLAME BODY"), ("B_EFF_NAME_WITH_PREFIX", name(burned.Side)));
-            case WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" } absorb:
+            case WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB" } absorb:
                 return index + 1 < events.Count && events[index + 1] is WildBattleRecoveredEvent nextRecovery &&
                     nextRecovery.Side == absorb.Target && nextRecovery.Move == absorb.Move ? Silent :
                     Text("sText_PkmnsXMadeYUseless", ("B_DEF_NAME_WITH_PREFIX", name(absorb.Target)),
-                        ("B_DEF_ABILITY", "VOLT ABSORB"), ("B_CURRENT_MOVE", moveName(absorb.Move)));
+                        ("B_DEF_ABILITY", AbilityName(absorb.Ability)), ("B_CURRENT_MOVE", moveName(absorb.Move)));
             case WildBattleRecoveredEvent recovery when index > 0 &&
-                events[index - 1] is WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" } absorb &&
+                events[index - 1] is WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB" } absorb &&
                 absorb.Target == recovery.Side && absorb.Move == recovery.Move:
                 return Text("sText_PkmnRestoredHPUsing", ("B_DEF_NAME_WITH_PREFIX", name(recovery.Side)),
-                    ("B_DEF_ABILITY", "VOLT ABSORB"));
+                    ("B_DEF_ABILITY", AbilityName(absorb.Ability)));
+            case WildBattleAbilityPreventedEvent prevented when AbilityPreventionSymbol(prevented.Ability) is {} symbol:
+                string preventionAbility=AbilityName(prevented.Ability);
+                return Text(symbol,("B_DEF_NAME_WITH_PREFIX",name(prevented.Target)),("B_DEF_ABILITY",preventionAbility),
+                    ("B_EFF_NAME_WITH_PREFIX",name(prevented.Target)),("B_EFF_ABILITY",preventionAbility),
+                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",name(prevented.Target)),("B_SCR_ACTIVE_ABILITY",preventionAbility),
+                    ("B_ATK_NAME_WITH_PREFIX",name(prevented.Actor)),("B_CURRENT_MOVE",moveName(prevented.Move)),("B_BUFF1",AbilityPreventionStat(prevented.Ability)));
             case WildBattleAttackStringEvent attack:
                 return PairedMoveUsed(events, index, attack) ? Silent : Text("sText_AttackerUsedX",
                     ("B_ATK_NAME_WITH_PREFIX", name(attack.Actor)), ("B_BUFF2", moveName(attack.CurrentMove) + "!"));

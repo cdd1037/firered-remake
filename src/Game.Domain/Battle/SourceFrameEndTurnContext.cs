@@ -102,11 +102,13 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
         Set(slot, before with { Status = status, Nightmare = WildBattleStatus.IsSleeping(status) && before.Nightmare, SourcePartyStatusOverride = null });
         if (before.Status != status) Add(n => new SourceStatusChangedEvent(n, Turn, slot, before.Status, status, reason));
     }
-    internal override void Faint(BattlerSlot slot)
+    internal override void Faint(BattlerSlot slot) => FaintAs(slot, slot);
+    internal override void FaintAs(BattlerSlot slot, BattlerSlot? scriptAttacker)
     {
         var occupant = Frame.Get(slot).Occupant!.Value;
         if (Get(slot).Pokemon.CurrentHp != 0 || Frame.FourTurn!.Defeats.Any(d => d.Occupant == occupant))
             throw new SourceRecipeUnsupported("source_end_turn_faint_contract");
+        Frame = SourceOpponentFaintResults.Record(Frame, slot, scriptAttacker);
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
         Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         ChangeStatus(slot, WildBattleStatus.None, "faint");
@@ -219,7 +221,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
             new(Frame.Get(future.Attacker).Occupant!.Value, Frame.Revision, 0, slot), catalog.Moves[future.Move]);
         hit.RunFutureHit(future, slot);
         Frame = hit.Frame; Events.AddRange(hit.Events); Trace.AddRange(hit.Trace);
-        if (Get(slot).Pokemon.CurrentHp == 0) Faint(slot);
+        if (Get(slot).Pokemon.CurrentHp == 0) FaintAs(slot, future.Attacker);
         int priorEvents = hit.Events.Count, priorTrace = hit.Trace.Count;
         hit.CompleteFutureHitItems(Frame);
         Frame = hit.Frame; Events.AddRange(hit.Events.Skip(priorEvents)); Trace.AddRange(hit.Trace.Skip(priorTrace));

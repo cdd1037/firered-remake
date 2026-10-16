@@ -12,12 +12,12 @@ public static class CampaignQuestLogItemUseCapture
 {
     public static CampaignQuestLogItemUse? Observe(CampaignState before,CampaignState after,ICampaignCatalog catalog,CampaignCommand? command=null)
     {
-        if(command is {Kind:"field_medicine" or "field_potion",PartyIndex:>=0} && command.PartyIndex<before.Party.Length &&
+        if(command is {Kind:"field_medicine" or "field_potion" or "field_rare_candy",PartyIndex:>=0} && command.PartyIndex<before.Party.Length &&
             command.PartyIndex<after.Party.Length && (command.Kind=="field_potion"||command.Text is not null) && before.Inventory is {} fieldBefore && after.Inventory is {} fieldAfter)
         {
             var id=new ItemId(command.Kind=="field_potion"?"pret:ITEM_POTION":command.Text!);
             if(catalog.Inventory.Items.TryGetValue(id,out var definition)&&
-                definition.FieldUseFunction is "FieldUseFunc_Medicine" or "FieldUseFunc_Ether" &&
+                definition.FieldUseFunction is "FieldUseFunc_Medicine" or "FieldUseFunc_Ether" or "FieldUseFunc_PpUp" or "FieldUseFunc_RareCandy" &&
                 before.Party[command.PartyIndex].InstanceId==after.Party[command.PartyIndex].InstanceId)
             {
                 var previousPocket=definition.Pocket=="POCKET_BERRY_POUCH"?fieldBefore.Berries??[]:fieldBefore.BagItems;
@@ -25,6 +25,29 @@ public static class CampaignQuestLogItemUseCapture
                 if(previousPocket.Where(s=>s.Item==id).Sum(s=>s.Quantity)-currentPocket.Where(s=>s.Item==id).Sum(s=>s.Quantity)==1)
                     return new(id,after.Party[command.PartyIndex].Pokemon.SourceSpeciesId);
             }
+        }
+        if(before.Evolution is null && after.Evolution?.ItemUse?.Eligibility is {} evolution &&
+            command is {Kind:"field_evolution",Text:not null} &&
+            catalog.Inventory.Items.TryGetValue(new ItemId(command.Text),out var stone) && stone.FieldUseFunction=="FieldUseFunc_EvoItem" &&
+            stone.SourceItemSymbol==evolution.Item && before.Party.FirstOrDefault(p=>p.InstanceId==evolution.InstanceId&&p.Pokemon.Species==evolution.PreviousSpecies) is {} recipient &&
+            before.Inventory is {} stoneBefore && after.Inventory is {} stoneAfter &&
+            stoneBefore.BagItems.Where(s=>s.Item==stone.Id).Sum(s=>s.Quantity)-stoneAfter.BagItems.Where(s=>s.Item==stone.Id).Sum(s=>s.Quantity)==1)
+            return new(stone.Id,recipient.Pokemon.SourceSpeciesId);
+        if(before.Repel is {Phase:CampaignRepelPhase.UseSound} repel && after.Repel is null &&
+            command is {Kind:"repel_presented"} && command.Text==repel.WaitId &&
+            catalog.Inventory.Items.GetValueOrDefault(repel.Item)?.FieldUseFunction=="FieldUseFunc_Repel" &&
+            before.Inventory is {} repelBefore && after.Inventory is {} repelAfter &&
+            repelBefore.BagItems.Where(s=>s.Item==repel.Item).Sum(s=>s.Quantity)-repelAfter.BagItems.Where(s=>s.Item==repel.Item).Sum(s=>s.Quantity)==1)
+            return new(repel.Item);
+        if(command is {Kind:"field_sacred_ash" or "field_medicine",Text:not null} &&
+            catalog.Inventory.Items.TryGetValue(new ItemId(command.Text),out var partyItem) &&
+            partyItem.FieldUseFunction=="FieldUseFunc_SacredAsh" && before.Inventory is {} ashBefore && after.Inventory is {} ashAfter &&
+            ashBefore.BagItems.Where(s=>s.Item==partyItem.Id).Sum(s=>s.Quantity)-ashAfter.BagItems.Where(s=>s.Item==partyItem.Id).Sum(s=>s.Quantity)==1)
+        {
+            // Original sSacredAshQuestLogMonBackup keeps the first successful party-loop target.
+            var revived=before.Party.FirstOrDefault(p=>p.Pokemon.CurrentHp==0 &&
+                after.Party.Any(a=>a.InstanceId==p.InstanceId&&a.Pokemon.CurrentHp>0));
+            if(revived is not null)return new(partyItem.Id,revived.Pokemon.SourceSpeciesId);
         }
         if(before.PokeFlute is null&&after.PokeFlute is not null)
             return new(new("pret:ITEM_POKE_FLUTE"),KeyItem:true);

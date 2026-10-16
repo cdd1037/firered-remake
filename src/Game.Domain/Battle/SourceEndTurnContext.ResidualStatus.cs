@@ -36,7 +36,7 @@ internal abstract partial class SourceEndTurnContext
         // gHpDealt clips the transfer to donor HP. Both updates finish before either faint;
         // the source script then runs donor tryfaintmon before receiver tryfaintmon.
         if (after == 0 && !IsAbsent(slot)) Faint(slot);
-        if (receiverAfter == 0 && !IsAbsent(source)) Faint(source);
+        if (receiverAfter == 0 && !IsAbsent(source)) FaintAs(source, slot);
         if (after == 0 || receiverAfter == 0) DamageOutcome();
     }
 }

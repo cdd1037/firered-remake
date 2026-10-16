@@ -38,6 +38,7 @@ public partial class CampaignView
     {
         SourceTrainerEventDisplay Atk(string symbol,BattlerSlot slot)=>DoubleText(symbol,("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(slot)));
         SourceTrainerEventDisplay Def(string symbol,BattlerSlot slot)=>DoubleText(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(slot)));
+        if(CampaignStatAnimationPresentation.IsSilentResultReceipt(b))return DoubleSilent;
         if(DoubleItemEventDisplay(b,e) is {} item)return item;
         var invocation=DoubleInvocation(b,e);
         switch(e)
@@ -158,19 +159,11 @@ public partial class CampaignView
     private SourceTrainerEventDisplay DoubleAbilityPrevention(CampaignDoubleBattle b,SourceAbilityPreventedEvent x)
     {
         if(x.Ability is "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB"&&b.Events.Any(e=>e.Sequence==x.Sequence+1&&e is SourceRecoveredEvent r&&r.Side==x.Target))return DoubleSilent;
-        string symbol=x.Ability switch {
-            "ABILITY_LEVITATE"=>"sText_PkmnMakesGroundMiss","ABILITY_WONDER_GUARD"=>"sText_AvoidedDamage",
-            "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB"=>"sText_PkmnsXMadeYUseless","ABILITY_FLASH_FIRE"=>"sText_PkmnRaisedFirePowerWith",
-            "ABILITY_DAMP"=>"sText_PkmnPreventsUsage","ABILITY_SUCTION_CUPS"=>"sText_PkmnAnchorsItselfWith",
-            "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT"=>"sText_PkmnStayedAwakeUsing","ABILITY_LIMBER"=>"sText_PkmnPreventsParalysisWith",
-            "ABILITY_IMMUNITY"=>"sText_PkmnPreventsPoisoningWith","ABILITY_WATER_VEIL"=>"sText_PkmnsXPreventsBurns",
-            "ABILITY_OWN_TEMPO"=>"sText_PkmnPreventsConfusionWith","ABILITY_OBLIVIOUS"=>"sText_PkmnPreventsRomanceWith",
-            "ABILITY_CLEAR_BODY" or "ABILITY_WHITE_SMOKE" or "ABILITY_HYPER_CUTTER" or "ABILITY_KEEN_EYE"=>"sText_PkmnPreventsStatLossWith",
-            "ABILITY_INNER_FOCUS"=>"sText_PkmnsXPreventsFlinching",_=>"sText_PkmnsXMadeYIneffective"};
+        string symbol=SourceTrainerPresentationModel.AbilityPreventionSymbol(x.Ability)??"sText_PkmnsXMadeYIneffective";
         string ability=DoubleAbility(x.Ability);
         return DoubleText(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_DEF_ABILITY",ability),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),
             ("B_EFF_ABILITY",ability),("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_SCR_ACTIVE_ABILITY",ability),
-            ("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_CURRENT_MOVE",MoveName(x.Move)));
+            ("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_CURRENT_MOVE",MoveName(x.Move)),("B_BUFF1",SourceTrainerPresentationModel.AbilityPreventionStat(x.Ability)));
     }
     private SourceTrainerEventDisplay? DoubleOverlayMessage(CampaignDoubleBattle b,SourceCalledOverlayChangedEvent x)
     {

@@ -98,14 +98,14 @@ public static class SourceFourEntryAbilities
 
     // M06 is the sole replacement owner. It calls this after binding the actual reserve,
     // before committing any callbacks, events or RNG from the replacement transaction.
-    internal static SourceFourActionResult OnReplacement(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot slot)
+    internal static SourceFourActionResult OnReplacement(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot slot, BattlerSlot? scriptAttacker = null)
     {
         var prior = frame.EntryAbilities ?? new(frame.Slots.Select(c => c.Slot == slot ? (OccupantToken?)null : c.Occupant).ToImmutableArray());
         if (prior.AppliedEntries[slot.Value] == frame.Get(slot).Occupant) return Fail(frame, "source_entry_already_applied");
         var next = frame with { EntryAbilities = prior with { AppliedEntries = prior.AppliedEntries.SetItem(slot.Value, frame.Get(slot).Occupant),
             PendingIntimidateMask = (byte)(prior.PendingIntimidateMask & ~slot.Mask) } };
         var execution = new FrameEntryContext(next, catalog);
-        execution.Spikes(catalog, slot);
+        execution.Spikes(catalog, slot, scriptAttacker);
         execution.ReplacementAbilities(slot);
         return new(execution.Frame, execution.Events.ToImmutable(), execution.Trace.ToImmutable(), null);
     }

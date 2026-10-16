@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/imports/battle/import-source-hit-animations.py');hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
 TEMPLATES={
+ 'gSporeParticleSpriteTemplate':('battle_anim_effects_1.c','AnimSporeParticle'),
  'gGoldRingSpriteTemplate':('battle_anim_psychic.c','TranslateAnimSpriteToTargetMonLocation'),
  'gPsywaveRingSpriteTemplate':('battle_anim_water.c','AnimToTargetInSinWave'),
  'gOutrageFlameSpriteTemplate':('battle_anim_dragon.c','AnimOutrageFlame'),
@@ -120,7 +121,7 @@ def recipe(source,name,callback):
    if not commands or commands[-1]['op'] not in ('jump','end'):raise ValueError('Unterminated affine animation')
    affine.append(commands)
  return dict(template=name,asset=asset,callback=callback,blend=shape[2]=='Blend',width=int(shape[3]),height=int(shape[4]),animations=animations,loopStarts=loops,affineAnimations=affine,affineDoubleSize=shape[1]=='Double')
-SHARED_SPRITES={'gSimplePaletteBlendSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate', 'gComplexPaletteBlendSpriteTemplate', 'gFistFootSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gBasicHitSplatSpriteTemplate'}
+SHARED_SPRITES={'gGrantingStarsSpriteTemplate', 'gSimplePaletteBlendSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate', 'gComplexPaletteBlendSpriteTemplate', 'gFistFootSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gBasicHitSplatSpriteTemplate'}
 TASKS={'AnimTask_ShakeMon', 'AnimTask_InvertScreenColor', 'AnimTask_BlendBattleAnimPal', 'AnimTask_StartSinAnimTimer', 'AnimTask_SwayMon', 'AnimTask_BlendColorCycle', 'AnimTask_ElectricBolt', 'AnimTask_ShakeMon2'}
 SOUNDS={'SE_M_MEGA_KICK2', 'SE_M_CRABHAMMER', 'SE_M_VITAL_THROW2', 'SE_M_HYDRO_PUMP', 'SE_M_FLAME_WHEEL', 'SE_M_HYPER_BEAM', 'SE_M_SCREECH', 'SE_M_ABSORB_2', 'SE_M_COMET_PUNCH', 'SE_M_SUPERSONIC', 'SE_M_TAIL_WHIP', 'SE_M_THUNDERBOLT2', 'SE_M_ABSORB', 'SE_M_GIGA_DRAIN', 'SE_M_EMBER', 'SE_M_TRI_ATTACK2', 'SE_M_FLAMETHROWER', 'SE_M_BUBBLE_BEAM', 'SE_M_THUNDERBOLT', 'SE_M_THUNDER_WAVE', 'SE_M_FIRE_PUNCH', 'SE_M_SELF_DESTRUCT', 'SE_M_BUBBLE3', 'SE_M_BUBBLE', 'SE_M_WHIRLPOOL', 'SE_M_MEGA_KICK'}
 GFX={'ANIM_TAG_SPARK', 'ANIM_TAG_METAL_SOUND_WAVES', 'ANIM_TAG_BROWN_ORB', 'ANIM_TAG_LIGHTNING', 'ANIM_TAG_SPARK_2', 'ANIM_TAG_LARGE_FRESH_EGG', 'ANIM_TAG_ICE_CRYSTALS', 'ANIM_TAG_DUCK', 'ANIM_TAG_PURPLE_RING', 'ANIM_TAG_GLOWY_RED_ORB', 'ANIM_TAG_IMPACT', 'ANIM_TAG_SPARK_H', 'ANIM_TAG_BLACK_BALL_2', 'ANIM_TAG_SMALL_EMBER', 'ANIM_TAG_GLOWY_GREEN_ORB', 'ANIM_TAG_WATER_IMPACT', 'ANIM_TAG_BLUE_STAR', 'ANIM_TAG_WATER_ORB', 'ANIM_TAG_HANDS_AND_FEET', 'ANIM_TAG_GRAY_SMOKE', 'ANIM_TAG_SMALL_BUBBLES', 'ANIM_TAG_ORBS', 'ANIM_TAG_BLACK_BALL', 'ANIM_TAG_GOLD_RING', 'ANIM_TAG_EXPLOSION', 'ANIM_TAG_SHOCK_3'}
@@ -145,7 +146,9 @@ SOUNDS|={'SE_M_HARDEN'}
 GFX|={'ANIM_TAG_EXPLOSION_6','ANIM_TAG_LEAF','ANIM_TAG_RAZOR_LEAF','ANIM_TAG_YELLOW_STAR'}
 SOUNDS|={'SE_M_SWIFT','SE_M_POISON_POWDER','SE_M_RAZOR_WIND','SE_M_RAZOR_WIND2'}
 TASKS|={'AnimTask_TranslateMonEllipticalRespectSide'}
-GFX|={'ANIM_TAG_BLUE_RING'}
+GFX|={'ANIM_TAG_BLUE_RING','ANIM_TAG_SPARKLE_2','ANIM_TAG_SPORE'}
+TASKS|={'AnimTask_SporeDoubleBattle'}
+SOUNDS|={'SE_M_SWAGGER','SE_M_MINIMIZE'}
 SOUNDS|={'SE_M_PSYBEAM','SE_M_PSYBEAM2','SE_M_TELEPORT'}
 def sound_effects(reference,commands):
  definitions={name:int(value) for name,value in re.findall(r'^#define (SE_\w+)\s+(\d+)\b',read(reference,'include/constants/songs.h').decode(),re.M)}
@@ -223,6 +226,7 @@ def build(reference):
   image=Image.new('P',(8,8*len(tiles)));image.putpalette(palette(asset.replace('-','_')))
   for i,tile in enumerate(tiles):image.paste(tile,(0,8*i))
   buffer=io.BytesIO();image.save(buffer,format='PNG');pixels[asset]=hit.rgb555(buffer.getvalue(),image.size)
+ pixels['spore']=hit.rgb555(read(reference,'graphics/battle_anims/sprites/spore.png'),(16,32))
  return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subs,spriteRecipes=recipes,assets=[dict(id=id,path='elemental-'+id+'.rgb555') for id in pixels]),indent=2)+'\n').encode(),pixels
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/elemental.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,pixels=build(a.reference)

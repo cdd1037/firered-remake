@@ -19,7 +19,7 @@ public static partial class SourceFourActionTurns
     // still fail capability validation. All voluntary and move-triggered entries happen
     // inside the current action, independently of the approved end-turn KO-entry policy.
     internal static SourceFourActionResult BindActionSwitch(PokemonCatalog catalog, SourceBattleFrame frame,
-        BattlerSlot slot, PartyMemberKey incoming, WildBattleCalledSwitchKind kind)
+        BattlerSlot slot, PartyMemberKey incoming, WildBattleCalledSwitchKind kind, BattlerSlot? scriptAttacker = null)
     {
         var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
         var next = frame; var previous = frame.Get(slot); var departing = previous.Body!;
@@ -58,7 +58,7 @@ public static partial class SourceFourActionTurns
         var switched = SourceBattleEventHooks.Publish(bound.State, (n,t) => new SourceCalledPartySwitchedEvent(n,t,slot,
             previous.Member!.Value.Index,incoming.Index,kind) { Replacement = new(body, registers) });
         events.Add(switched.Event);
-        var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot);
+        var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot, scriptAttacker ?? slot);
         if (!entry.Succeeded) return Fail(frame, entry.Fault!);
         if (ValidateCapability(catalog, entry.State) is { } invalid) return Fail(frame, invalid);
         return new(entry.State, [.. events, .. entry.Events], entry.Trace, null);

@@ -122,8 +122,13 @@ public sealed class FieldGrassAndPowderTests:WildBattleFixture
         var before=grass.State;var wrong=grass.Execute("wrong-cut-ack",grass.Revision,new("field_cut_grass_ack",Text:"stale"));
         Assert.AreEqual("field_cut_callback_mismatch",wrong.Error);Assert.AreSame(before,grass.State);
         var locked=grass.Execute("cut-walk",grass.Revision,new("move",Direction.South));Assert.AreEqual("field_cut_event_active",locked.Error);
-        var tree=content.SourceMaps.Values.SelectMany(m=>content.MapDefinition(m.Id).Actors.Select(a=>(m,a)))
-            .First(v=>v.a.GraphicsId=="OBJ_EVENT_GFX_CUT_TREE"&&v.m.GetTile(v.a.X,v.a.Y+1) is {Blocked:false});
+        // Route 2 has ordinary authored Cut trees and no story-driven metatile setup.
+        // Dictionary-first selection can choose Five Island's unlocked-warehouse edits,
+        // which this deliberately plain field fixture does not synthesize.
+        var treeMap=content.SourceMaps[new("map.route-2")];
+        var tree=(m:treeMap,a:content.MapDefinition(treeMap.Id).Actors
+            .Where(a=>a.GraphicsId=="OBJ_EVENT_GFX_CUT_TREE"&&treeMap.GetTile(a.X,a.Y+1) is {Blocked:false})
+            .OrderBy(a=>a.LocalId,StringComparer.Ordinal).First());
         var s=Cutter(At(tree.m.Id.Value,tree.a.X,tree.a.Y+1,Direction.North));
         s=s with{Script=s.Script with{Flags=s.Script.Flags.SetItem(tree.a.HideFlag,false)}};
         s=(CampaignState)typeof(CampaignSession).GetMethod("RefreshActors",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(validator,[s])!;

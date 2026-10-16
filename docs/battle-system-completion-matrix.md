@@ -8,8 +8,8 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本110／354，其余244尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
-- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前110招范围通过Presentation全套430／430、应用分派165／165；这些受控检查不等于原生逐帧或实际扬声器验收。
+- 专属招式脚本114／354，其余240尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前114招范围通过Presentation全套464／464、应用分派173／173；这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
 
@@ -27,9 +27,13 @@
 
 持物触发另属通用演出，不计入354招：`General_HeldItemEffect`已接入普通单／双打的真实持物结果，播放原版三次摆动、星光、扩环及完整声音命令，替换首声占位。与能力变化结果共用播放／取消生命周期；在首个效果回执之前播放，使用最终消耗回执去重，结束不提交ACK、RNG或游戏规则命令。按Battle Scene、替身和事件时刻的半无敌状态跳过，跨命令只保留有界的前态快照。23个分派用例通过，包括真实四位置Lum治疗及Dig／Leftovers两回合；六个单／双打位置的脚本／材质检查通过。原生持物调用路径尚未抽查。
 
+能力变化通用波纹与专属招式分开排程：直接Bulk Up、Tickle、Swagger已按原脚本把双能力合为一次波纹，保留封顶／特性阻挡的部分成功顺序及后续White Herb、Lum等独立持物效果；33个分组分派用例通过。能力封顶文字仅按这三条源路径静默，阻挡／无变化不生成波纹。原作能力波纹在Battle Scene关闭时仍播放，持物演出仍受该选项控制，5个独立策略用例通过。单／双打共用Own Tempo、Clear Body、White Smoke及Hyper Cutter／Keen Eye的正确能力／具体能力值文字映射，7个表现用例通过。
+
+这不覆盖其他多能力招式、入场／道具／次要效果的全部波纹时序。Cosmic Power、Calm Mind、Dragon Dance、Memento、Superpower、Overheat、全能力次要提升、Curse、Belly Drum、Flatter等仍需各自真实结果脚本闭包；调用／复制／Snatch／反射结果也须满足明确调用上下文，不能由最终Frame推断。通用渲染器支持组合参数不等于这些调用路径已完成。
+
 ## 专属动画范围
 
-当前分派支持：Pound、Karate Chop、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Bite、Supersonic、Acid、Ember、Flamethrower、Water Gun、Hydro Pump、Ice Beam、Psybeam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Toxic、Confusion、Psychic、Hypnosis、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Defense Curl、Barrier、Light Screen、Reflect、Focus Energy、Self Destruct、Egg Bomb、Fire Blast、Clamp、Swift、Hi Jump Kick、Leech Life、Bubble、Flash、Psywave、Splash、Crabhammer、Explosion、Slash、Thief、Flame Wheel、Powder Snow、Octazooka、Zap Cannon、Outrage、Giga Drain、Endure、Charm、False Swipe、Swagger、Dynamic Punch、Dragon Breath、Iron Tail、Vital Throw、Crunch、Mirror Coat、Whirlpool、Magic Coat、Snatch、Mud Sport、Slack Off、Metal Sound、Tickle、Signal Beam、Sand Tomb、Aerial Ace、Iron Defense、Bulk Up、Mud Shot、Poison Tail、Covet。
+当前分派支持：Pound、Karate Chop、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Bite、Supersonic、Acid、Ember、Flamethrower、Water Gun、Hydro Pump、Ice Beam、Psybeam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Toxic、Confusion、Psychic、Hypnosis、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Defense Curl、Barrier、Light Screen、Reflect、Focus Energy、Self Destruct、Egg Bomb、Fire Blast、Clamp、Swift、Hi Jump Kick、Dream Eater、Leech Life、Bubble、Spore、Flash、Psywave、Splash、Crabhammer、Explosion、Slash、Thief、Flame Wheel、Cotton Spore、Powder Snow、Octazooka、Zap Cannon、Outrage、Giga Drain、Endure、Charm、False Swipe、Swagger、Dynamic Punch、Dragon Breath、Iron Tail、Synthesis、Vital Throw、Crunch、Mirror Coat、Whirlpool、Magic Coat、Snatch、Mud Sport、Slack Off、Metal Sound、Tickle、Signal Beam、Sand Tomb、Aerial Ace、Iron Defense、Bulk Up、Mud Shot、Poison Tail、Covet。
 
 其他招式返回 `script-outside-slice`，不启动该专属脚本；普通文字、HP及结果表现仍独立工作。不能因此说招式规则不可用，也不能把通用反馈当原版专属动画。此名单由当前单／双打分派代码核对，JSON逐招标记相同范围。
 
