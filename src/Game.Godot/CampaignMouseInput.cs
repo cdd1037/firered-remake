@@ -260,11 +260,11 @@ public partial class CampaignView
         if (HeldItemScreen) return HeldItemMouse(point, direction);
         if (MachineActive)
         {
-            if (_machineMode == "actions") return PointerRows(point, direction, ref _machineCursor, 3, 164, 98, 68, 17);
+            if (_machineMode == "actions") return PointerRows(point, direction, ref _machineCursor, 3, 168, 104, 72, 16);
             if (_machineMode == "notice") return false;
             if (_machineMode is "teach-confirm" or "replace-confirm")
                 return _machinePage + 1 == _machinePages.Length && PointerYesNo(point, direction, ref _machineCursor);
-            if (_machineMode == "list") return PointerRows(point, direction, ref _machineCursor, MachineListVisibleCount, MachineListX, 40, MachineListWidth, MachineListRowHeight, MachineListStart);
+            if (_machineMode == "list") return PointerRows(point, direction, ref _machineCursor, MachineListVisibleCount, MachineListX, MachineListY, MachineListWidth, MachineListRowHeight, MachineListStart);
             if (_machineMode == "party") return PointerNativeParty(point, direction, ref _machineCursor, _session.State.Party.Length);
             if (_machineMode == "replacement") return NavigateMoveSelectionSummary(point, direction, ref _machineCursor, _session.State.Party[_machineParty].Pokemon.Moves.Length);
             return false;
@@ -413,11 +413,11 @@ public partial class CampaignView
 
     private bool MouseMachines(Vector2 point)
     {
-        if (_machineMode == "actions") return MouseSelect(point, ref _machineCursor, 3, 164, 98, 68, 17);
+        if (_machineMode == "actions") return MouseSelect(point, ref _machineCursor, 3, 168, 104, 72, 16);
         if (_session.State.ItemMenu!.View == "message" || _machineMode == "notice") return MouseConfirm(point, MouseMessage);
         if (_machineMode is "teach-confirm" or "replace-confirm")
             return _machinePage + 1 < _machinePages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _machineCursor);
-        if (_machineMode == "list") return MouseSelect(point, ref _machineCursor, MachineListVisibleCount, MachineListX, 40, MachineListWidth, MachineListRowHeight, MachineListStart);
+        if (_machineMode == "list") return MouseSelect(point, ref _machineCursor, MachineListVisibleCount, MachineListX, MachineListY, MachineListWidth, MachineListRowHeight, MachineListStart);
         if (_machineMode == "party") return MouseNativeParty(point, ref _machineCursor, _session.State.Party.Length);
         if (_machineMode == "replacement") return MouseMoveSelectionSummary(point, ref _machineCursor, _session.State.Party[_machineParty].Pokemon.Moves.Length);
         return false;

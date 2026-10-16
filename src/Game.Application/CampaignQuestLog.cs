@@ -115,18 +115,19 @@ public static partial class CampaignQuestLogRecorder
     {
         if(recordingFrame is <0 or >CampaignQuestLogFieldClock.FrameLimit)throw new ArgumentOutOfRangeException(nameof(recordingFrame));
         if(command.Kind=="play_time_tick")return log;
-        if(log is not null&&after.PresentationEffects.Any(e=>e.Sequence>before.Script.EffectSequence&&e.Opcode=="special"&&e.Args.Contains("QuestLog_CutRecording")))return Close(log);
+        if(log is not null&&after.PresentationEffects.Any(e=>e.Sequence>before.Script.EffectSequence&&e.Opcode=="special"&&e.Args.Contains("QuestLog_CutRecording"))){startGate?.EndRecording();return Close(log);}
         var source=(catalog as ICampaignQuestLogCatalog)?.QuestLogSource;
-        if(source?.DisabledMaps.Contains(after.World.Player.MapId.Value)==true)return log;
+        if(source?.DisabledMaps.Contains(after.World.Player.MapId.Value)==true){startGate?.EndRecording();return Close(log);}
         var caption=suppliedEvent??Describe(before,after,command,catalog,source,trainerLookup,playedSlots);
         if(recordingOpen&&log is not null&&!log.Scenes[^1].Closed&&caption?.Event==CampaignQuestLogEvent.StoryItem)caption=null;
         bool changedMap=before.World.Player.MapId!=after.World.Player.MapId;
+        if(changedMap)startGate?.EndRecording();
         var scenes=log?.Scenes??[];
         // Source retains one wild-battle record pointer across movement overflow, but
         // a different semantic event, map boundary, save/restore or explicit cut ends it.
-        if(recordingOpen&&!changedMap&&!scenes.IsEmpty&&!scenes[^1].Closed&&scenes[^1].Map==after.World.Player.MapId.Value&&caption?.Event==CampaignQuestLogEvent.WildWon)
+        if((recordingOpen&&!scenes.IsEmpty&&!scenes[^1].Closed||startGate?.WildRecordRetained==true)&&!changedMap&&!scenes.IsEmpty&&scenes[^1].Map==after.World.Player.MapId.Value&&caption?.Event==CampaignQuestLogEvent.WildWon)
         {
-            if(!TryRecordAppearance(scenes[^1],before,after,source,out var wildVisual,recordingFrame))return Close(log);
+            if(!TryRecordAppearance(scenes[^1],before,after,source,out var wildVisual,recordingFrame)){startGate?.EndRecording();return Close(log);}
             var merged=CampaignQuestLogWildCapture.Merge(wildVisual.Actions,caption);
             if(merged!=wildVisual.Actions)return new(scenes.SetItem(scenes.Length-1,wildVisual with{Actions=merged}));
         }
@@ -135,14 +136,16 @@ public static partial class CampaignQuestLogRecorder
             if(caption is null||!MayStart(caption.Event,after,trainerLookup))return log;
             var scene=new CampaignQuestLogScene(after.World.Player.MapId.Value,Actors(after,source),[caption]){Closed=caption.Event is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.GymWon or CampaignQuestLogEvent.EliteFourWon or CampaignQuestLogEvent.ChampionWon or CampaignQuestLogEvent.TrainerWon};
             var appearance=CaptureAppearance(scene,after);
-            if(appearance is null)return Close(log);
+            if(appearance is null){startGate?.EndRecording();return Close(log);}
             if((!recordingOpen||scenes.IsEmpty||scenes[^1].Closed)&&startGate?.Admit(caption)==false)return log;
+            startGate?.NoteEvent(caption);
             return new(scenes.Add(appearance).TakeLast(SceneLimit).ToImmutableArray());
         }
         var current=scenes[^1];
-        if(!TryRecordAppearance(current,before,after,source,out var visual,recordingFrame))return Close(log);
+        if(!TryRecordAppearance(current,before,after,source,out var visual,recordingFrame)){startGate?.EndRecording();return Close(log);}
         var timed=AppendTimed(visual,before,after,source,caption,out bool captionRecorded,recordingFrame);
-        if(!captionRecorded)return Record(new(scenes.SetItem(scenes.Length-1,timed with{Closed=true})),before,after,command,catalog,trainerLookup,false,caption,playedSlots,recordingFrame,startGate);
+        if(!captionRecorded){startGate?.EndRecording();return Record(new(scenes.SetItem(scenes.Length-1,timed with{Closed=true})),before,after,command,catalog,trainerLookup,false,caption,playedSlots,recordingFrame,startGate);}
+        if(caption is not null)startGate?.NoteEvent(caption);
         return ReferenceEquals(timed,current)?log:new(scenes.SetItem(scenes.Length-1,timed));
     }
 
@@ -236,6 +239,10 @@ public static partial class CampaignQuestLogRecorder
                     Event(CampaignQuestLogEvent.UsedItem,hm?"MonReplacedMoveWithHM":"MonReplacedMoveWithTM",Species(mon),move,catalog.BattleContent.MoveNames[forgotten.Move.Value]);
             }
         }
+        if(catalog is not null&&CampaignQuestLogItemUseCapture.Observe(before,after,catalog,command) is {} used)
+            return used.KeyItem?Event(CampaignQuestLogEvent.UsedItem,"UsedTheKeyItem",Item(used.Item.Value)):
+                used.TargetSpeciesId is {} targetSpecies?Event(CampaignQuestLogEvent.UsedItem,"UsedItemOnMonAtThisLocation",Item(used.Item.Value),SpeciesId(targetSpecies)):
+                Event(CampaignQuestLogEvent.UsedItem,"UsedTheItem",Item(used.Item.Value));
         if(before.TeachyTv is null&&after.TeachyTv is not null)return Event(CampaignQuestLogEvent.UsedItem,"UsedTheKeyItem",Item("ITEM_TEACHY_TV"));
         if(before.FameChecker is null&&after.FameChecker is not null)return Event(CampaignQuestLogEvent.UsedItem,"UsedTheKeyItem",Item("ITEM_FAME_CHECKER"));
         if(before.CoinsBox is null&&after.CoinsBox is not null)return Event(CampaignQuestLogEvent.UsedItem,"UsedTheKeyItem",Item("ITEM_COIN_CASE"));
@@ -374,7 +381,7 @@ public sealed partial class CampaignSession
     private CampaignQuestLogStartGate? _questLogStartGate;
     private CampaignQuestLogShopCapture? _questLogShop;
     private bool _questLogPlayedSlots;
-    public void StopQuestLogRecording(){_questLogRecordingOpen=false;_questLogFieldClock.Reset();}
+    public void StopQuestLogRecording(){_questLogRecordingOpen=false;_questLogFieldClock.Reset();_questLogStartGate?.EndRecording();}
     private Decision<CampaignState> DecideWithQuestLogRecording(CampaignState state,CampaignCommand command)
     {
         var result=DecideWithWildHistoryRetention(state,command);

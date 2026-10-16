@@ -10,9 +10,11 @@ public sealed record SourceResolvedAnimation(SourceAnimationScript Script,IReadO
 public sealed class SourceAnimationResources:IDisposable
 {
     private readonly Dictionary<int,SourceAnimationScript> _scripts=[];
+    private readonly Dictionary<string,SourceAnimationScript> _generalScripts=[];
     private readonly Dictionary<string,SourceSpriteRecipe> _recipes=[];
     private readonly Dictionary<string,List<(string Folder,JsonDocument Manifest)>> _assetFiles=[];
     private readonly Dictionary<string,SourcePixelAsset> _pixels=[];
+    private readonly Dictionary<string,int> _spriteTags=[];
     private readonly List<JsonDocument> _documents=[];
     private readonly Dictionary<string,string> _materials=[];
     private SourceMetallicMaterial? _metallic;
@@ -23,16 +25,18 @@ public sealed class SourceAnimationResources:IDisposable
     private readonly Dictionary<int,ushort[]> _terrainPixels=[];
     private SourceAnimationBackgroundCatalog BackgroundCatalog=>_backgroundCatalog??=new(Path.Combine(_folder,"backgrounds"));
     public IReadOnlyDictionary<int,SourceAnimationScript> Scripts=>_scripts;
+    public IReadOnlyDictionary<string,SourceAnimationScript> GeneralScripts=>_generalScripts;
     public int CachedAssetCount=>_pixels.Count;
     public SourceAnimationResources(string folder)
     {
         _folder=folder;
         try
         {
-            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
                 ReadPack(Path.Combine(folder,file));
             int[] sine=_documents[0].RootElement.GetProperty("sineTable").EnumerateArray().Select(x=>x.GetInt32()).ToArray();
             foreach(var (id,script) in _scripts.ToArray())_scripts[id]=script with{SpriteRecipes=_recipes,SineTable=sine};
+            foreach(var (label,script) in _generalScripts.ToArray())_generalScripts[label]=script with{SpriteRecipes=_recipes,SineTable=sine};
             if(_scripts.Count==0)throw new InvalidDataException("Empty source animation resources.");
         }
         catch{Dispose();throw;}
@@ -47,7 +51,8 @@ public sealed class SourceAnimationResources:IDisposable
             if(_recipes.TryGetValue(name,out var previous)){if(RecipeValue(previous)!=RecipeValue(recipe))throw new InvalidDataException($"Conflicting source sprite recipe {name}.");}
             else _recipes.Add(name,recipe);
         }
-        if(root.TryGetProperty("assets",out var assets))foreach(var row in assets.EnumerateArray())
+        foreach(string assetKey in new[]{"assets","indexedAssets"})
+        if(root.TryGetProperty(assetKey,out var assets))foreach(var row in assets.EnumerateArray())
         {
             string id=row.GetProperty("id").GetString()!;
             if(!_assetFiles.TryGetValue(id,out var files))_assetFiles.Add(id,files=[]);
@@ -63,9 +68,12 @@ public sealed class SourceAnimationResources:IDisposable
         var taskAffinePrograms=root.TryGetProperty("taskAffinePrograms",out var affinePrograms)?SourceTaskAffineProgram.Read(affinePrograms):new Dictionary<string,SourceTaskAffineCommand[]>();
         var backgroundSymbols=root.TryGetProperty("backgroundSymbols",out var bgSymbols)?bgSymbols.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>();
         var subs=root.TryGetProperty("subroutines",out var subRows)?subRows.EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value)):new Dictionary<string,SourceAnimationCommand[]>();
-        var rows=root.TryGetProperty("scripts",out var scripts)?scripts.EnumerateArray().ToArray():[root.GetProperty("script")];
+        bool general=root.TryGetProperty("generalScripts",out var generalRows);
+        var rows=general?generalRows.EnumerateArray().ToArray():root.TryGetProperty("scripts",out var scripts)?scripts.EnumerateArray().ToArray():[root.GetProperty("script")];
         foreach(var row in rows)
         {
+            var spriteTags=row.TryGetProperty("spriteTags",out var tags)?tags.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>();
+            foreach(var (symbol,tag) in spriteTags){if(_spriteTags.TryGetValue(symbol,out int previous)&&previous!=tag)throw new InvalidDataException("Conflicting source sprite palette tag.");_spriteTags[symbol]=tag;}
             int id=row.TryGetProperty("moveId",out var move)?move.GetInt32():0;var commands=Commands(row.GetProperty("commands"));
             var required=new Dictionary<string,SourceAnimationCommand[]>();
             void AddSubroutines(IEnumerable<SourceAnimationCommand> program)
@@ -74,7 +82,8 @@ public sealed class SourceAnimationResources:IDisposable
                 {string name=c.Args[0];if(required.ContainsKey(name))continue;if(!subs.TryGetValue(name,out var body))throw new InvalidDataException($"Missing source subroutine {name}.");required.Add(name,body);AddSubroutines(body);}
             }
             AddSubroutines(commands);
-            _scripts.Add(id,new(id,row.GetProperty("label").GetString()!,commands){SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()});
+            var script=new SourceAnimationScript(id,row.GetProperty("label").GetString()!,commands){SpriteTags=spriteTags,SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()};
+            if(general)_generalScripts.Add(script.Label,script);else _scripts.Add(id,script);
         }
     }
     public SourcePixelAsset Asset(string id)
@@ -85,12 +94,15 @@ public sealed class SourceAnimationResources:IDisposable
         SourcePixelAsset? result=null;
         foreach(var file in files)
         {
-            var asset=SourceHitAnimationCatalog.Asset(file.Manifest,file.Folder,id);
-            if(result is not null&&(result.Width!=asset.Width||result.Height!=asset.Height||!result.Pixels.SequenceEqual(asset.Pixels)))throw new InvalidDataException($"Conflicting source sprite pixels {id}.");
+            var indexed=file.Manifest.RootElement.TryGetProperty("indexedAssets",out var indexedRows)?indexedRows.EnumerateArray().Where(r=>r.GetProperty("id").GetString()==id).ToArray():[];
+            var asset=indexed.Length==0?SourceHitAnimationCatalog.Asset(file.Manifest,file.Folder,id):SourceIndexedSpriteAssets.Read(file.Folder,indexed.Single(),_spriteTags);
+            if(result is not null&&(result.Width!=asset.Width||result.Height!=asset.Height||!result.Pixels.SequenceEqual(asset.Pixels)||result.PaletteTag!=asset.PaletteTag||!result.PaletteIndices.SequenceEqual(asset.PaletteIndices)||!result.Palette.SequenceEqual(asset.Palette)))throw new InvalidDataException($"Conflicting source sprite pixels {id}.");
             result=asset;
         }
         _pixels.Add(id,result!);return result!;
     }
+    public SourceResolvedAnimation ResolveGeneral(string label)
+    {ObjectDisposedException.ThrowIf(_disposed,this);return Resolve(_generalScripts[label]);}
     public SourceResolvedAnimation Resolve(int move)
     {ObjectDisposedException.ThrowIf(_disposed,this);return Resolve(_scripts[move]);}
     public SourceResolvedAnimation Resolve(SourceAnimationScript script)
@@ -113,7 +125,10 @@ public sealed class SourceAnimationResources:IDisposable
         if(metallic)_metallic??=new(File.ReadAllBytes(_materials["AnimTask_MetallicShine"]));
         if(stats)_statMask??=new(File.ReadAllBytes(_materials["AnimTask_StatsChange"]));
         var backgrounds=commands.Where(c=>c.Op=="fadetobg").Select(c=>script.BackgroundSymbols[c.Args[0]]).Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Move(id));
-        return new(script with{BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},names.ToDictionary(id=>id,Asset),metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds};
+        var pixels=names.ToDictionary(id=>id,Asset);
+        var spritePalettes=new Dictionary<int,ushort[]>();
+        foreach(var asset in pixels.Values.Where(a=>a.PaletteTag>=0)){if(spritePalettes.TryGetValue(asset.PaletteTag,out var previous)&&!previous.SequenceEqual(asset.Palette))throw new InvalidDataException("Conflicting source palette bank.");spritePalettes[asset.PaletteTag]=asset.Palette;}
+        return new(script with{SpritePalettes=spritePalettes,BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},pixels,metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds};
     }
     public SourceAnimationBackgroundSurface CreateBackgroundSurface(int terrainId)
     {ObjectDisposedException.ThrowIf(_disposed,this);return BackgroundCatalog.CreateSurface(terrainId);}
@@ -141,6 +156,6 @@ public sealed class SourceAnimationResources:IDisposable
     }
     public void Dispose()
     {
-        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_recipes.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();
+        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_generalScripts.Clear();_recipes.Clear();_spriteTags.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();
     }
 }

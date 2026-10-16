@@ -32,6 +32,10 @@ public sealed class OpeningPresentationContentTests
         CollectionAssert.AreEqual(new[] { 3, 6, 6, 6, 6, 6, 6, 6, 6, 6 }, opening.Animations["flames"].Select(f => f.Duration).ToArray());
         Assert.AreEqual(60, opening.Animations["pikachu-body"].Sum(f => f.Duration));
         Assert.AreEqual(15, opening.Animations["pikachu-ears"].Length);
+        CollectionAssert.AreEqual(new[] { 0, 12, 24, 56, 68, 80, 92, 123 }, opening.NamingColumnOffsets[0].ToArray());
+        CollectionAssert.AreEqual(new[] { 0, 22, 44, 66, 88, 110 }, opening.NamingColumnOffsets[2].ToArray());
+        CollectionAssert.AreEqual(new[] { 3, 0, 4, 0 }, opening.Animations["naming-player"].Select(f => f.Frame).ToArray());
+        CollectionAssert.AreEqual(new[] { 0, 3, 0, 4 }, opening.Animations["naming-rival"].Select(f => f.Frame).ToArray());
         CollectionAssert.AreEqual(new[] { "GREEN", "GARY", "KAZ", "TORU" }, opening.RivalNames.ToArray());
     }
 
@@ -47,6 +51,10 @@ public sealed class OpeningPresentationContentTests
             Assert.AreEqual(3, PretOpeningPresentation.Load(root).Keyboard.Length);
             string pathToJson = Path.Combine(directory, "opening.json");
             var json = JsonNode.Parse(File.ReadAllText(pathToJson))!;
+            json["namingColumnOffsets"]![0]![1] = 0;
+            File.WriteAllText(pathToJson, json.ToJsonString());
+            Assert.ThrowsExactly<InvalidDataException>(() => PretOpeningPresentation.Load(root));
+            json["namingColumnOffsets"]![0]![1] = 12;
             json["keyboard"]![0]![0] = "";
             File.WriteAllText(pathToJson, json.ToJsonString());
             Assert.ThrowsExactly<InvalidDataException>(() => PretOpeningPresentation.Load(root));

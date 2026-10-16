@@ -47,9 +47,9 @@ def build(reference):
     pal=struct.pack('<16H',*[(palette[i*3]>>3)|((palette[i*3+1]>>3)<<5)|((palette[i*3+2]>>3)<<10) for i in range(16)])
     material=indices+tilemap+pal
     manifest=dict(schemaVersion=1,scripts=scripts,subroutines=subs,material=dict(path='metal-shine.bin',sheetWidth=64,sheetHeight=64,tilemapSize=32))
-    return (json.dumps(manifest,indent=2)+'\n').encode(),material
+    return (json.dumps(manifest,separators=(',',':'))+'\n').encode(),material
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,default=Path((ROOT/'.tools/reference-root').read_text().strip()));p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/stat-moves');p.add_argument('--check',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/stat-moves');p.add_argument('--check',action='store_true');a=p.parse_args()
     manifest,material=build(a.reference)
     for name,data in [('manifest.json',manifest),('metal-shine.bin',material)]:
         if a.check:

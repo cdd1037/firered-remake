@@ -35,6 +35,7 @@ public static class CampaignStatAnimationPresentation
             "pret:MOVE_WITHDRAW"=>(Move:110,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_DEFENSE_CURL"=>(Move:111,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_HARDEN"=>(Move:106,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
+            "pret:MOVE_BARRIER"=>(Move:112,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
             "pret:MOVE_IRON_DEFENSE"=>(Move:334,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
             "pret:MOVE_TAIL_WHIP"=>(Move:39,Stat:WildBattleStat.Defense,Delta:-1,Arg:23),
             "pret:MOVE_FLASH"=>(Move:148,Stat:WildBattleStat.Accuracy,Delta:-1,Arg:27),

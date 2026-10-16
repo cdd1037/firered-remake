@@ -411,7 +411,7 @@ public partial class CampaignView
         if(choosing)_uiCorrections.ClearBattleMenu(this);else _battleSkin.DrawBattleMessage(this);
         if(_doubleMenu is "party" or "learn-moves"){DrawDoublePartyOrMoves(b);return;}
         if(_doubleNotice is not null){DoubleLines(_doubleNotice);return;}
-        if(_sourceStatContinuation is not null)return;
+        if(_sourceResultContinuation is not null)return;
         if(_doublePages.Length>0)
         {
             if(_doubleRewardStats.TryGetValue(_doublePage,out var stats)){DrawDoubleRewardStats(stats.Level,stats.Totals);return;}
@@ -559,8 +559,6 @@ public partial class CampaignView
         if(b.CurrentEvent is SourceCalledPartySwitchedEvent sw&&DoubleSwitchSending(sw))SourceCry((sw.Replacement?.Body??throw new InvalidDataException("Doubles switch snapshot missing.")).Pokemon);
         if(b.CurrentEvent is SourcePlayerSwitchedEvent x&&_doublePage==1)SourceCry(x.Replacement.Body.Pokemon);
         if(b.CurrentEvent is SourcePlayerReplacedEvent y&&_doublePage==0)SourceCry(y.Replacement.Body.Pokemon);
-        // First source cue of General_HeldItemEffect; its motion and remaining cues are not yet ported.
-        if(b.CurrentEvent is SourceHeldItemConsumedEvent&&_doublePage==0)SourceSound("SE_M_TAKE_DOWN");
         if(b.CurrentEvent is SourceMedicineAppliedEvent&&_doublePage==0)SourceSound("SE_USE_ITEM");
     }
 }

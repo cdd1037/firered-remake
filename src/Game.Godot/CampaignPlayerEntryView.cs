@@ -49,8 +49,20 @@ public partial class CampaignView
         string fontDirectory=Path.Combine(_root,"content/generated/ui/font");
         _entryHeadingFont=SourceGameFont.Load(fontDirectory,foreground:Rgb(palette[colors.Foreground]),shadow:Rgb(palette[colors.Shadow]));
         foreach(var gender in _entrySource.GenderColors)_entryGenderFonts.Add(gender.Key,SourceGameFont.Load(fontDirectory,foreground:Rgb(gender.Value.Rgb8),shadow:Rgb(palette[colors.Shadow])));
-        _entryNameEdit=new LineEdit{Position=new(24,32),Size=new(192,24),MaxLength=7,Visible=false,KeepEditingOnTextSubmit=true};
+        _entryNameEdit=new LineEdit{Position=new(94,47),MaxLength=7,Visible=false,KeepEditingOnTextSubmit=true};
         _entryNameEdit.AddThemeFontOverride("font",_sourceNormal.Font);_entryNameEdit.AddThemeFontSizeOverride("font_size",_sourceNormal.Size);
+        var namingStyle=new StyleBoxFlat{BgColor=Colors.Transparent,ContentMarginLeft=4,ContentMarginRight=0,ContentMarginTop=0,ContentMarginBottom=0};
+        _entryNameEdit.AddThemeStyleboxOverride("normal",namingStyle);
+        // LineEdit measures both normal and read_only styles, even while editable.
+        // Override both before assigning Size so the default 31px minimum cannot
+        // stick and cover the keyboard. The source panel owns its white fill.
+        _entryNameEdit.AddThemeStyleboxOverride("read_only",namingStyle);
+        _entryNameEdit.AddThemeStyleboxOverride("focus",new StyleBoxEmpty());
+        _entryNameEdit.AddThemeColorOverride("font_color",Colors.White);
+        _entryNameEdit.AddThemeColorOverride("font_selected_color",Colors.White);
+        _entryNameEdit.AddThemeColorOverride("caret_color",Color.Color8(66,66,66));
+        _entryNameEdit.AddThemeColorOverride("selection_color",Color.Color8(173,206,247));
+        _entryNameEdit.AddThemeConstantOverride("outline_size",0);
         _entryNameEdit.TextSubmitted+=SubmitPlayerEntryName;
         _entryNameEdit.GuiInput+=input=>
         {
@@ -67,6 +79,7 @@ public partial class CampaignView
             }
         };
         AddChild(_entryNameEdit);
+        _entryNameEdit.Size=new(104,18);
         ReadEntrySave();
         BeginIntroMovie();
         Write("playerEntryReady",new{mode=_entryMode,hasContinue=_entrySave is not null,backup=_entrySave?.Source.EndsWith(".bak",StringComparison.Ordinal)==true,
@@ -154,6 +167,7 @@ public partial class CampaignView
         if(key != Key.Escape && OpeningRivalChoiceKey(key))return;
         if(key==Key.Escape)
         {
+            _openingPortraitTransition=null;_openingPortraitCompleted=null;
             if(_entryMode is "player-name" or "rival-name")CancelEntryName();
             else if(_entryMode is "gender" or "confirm" or "oak-speech" or "player-confirm" or "rival-confirm"&&_entrySave is not null){_entryMode="menu";_entryCursor=0;}
             else RequestQuit();return;
@@ -172,6 +186,7 @@ public partial class CampaignView
             if(key is Key.Enter or Key.Backspace){_entryNotice=null;_entryLoadCanRetry=false;_entryMode="menu";if(_entrySave is null)BeginNewGameGuide();}
             return;
         }
+        if(_openingPortraitTransition is {Complete:false})return;
         if(_entryMode is "player-name" or "rival-name")return;
         if(_entryMode=="oak-speech")
         {

@@ -9,7 +9,9 @@ public partial class CampaignView
     private int _openingPage;
     private OpeningNamingPresentation? _namingGrid;
     private bool _namingGridActive;
-    private int _namingPage => _namingGrid!.Page;
+    private OpeningPortraitTransition? _openingPortraitTransition;
+    private Action? _openingPortraitCompleted;
+    private SourceGameFont? _openingNamingFont;
     private string _openingNext = "gender";
     private readonly OpeningTitlePresentation _openingTitle = new();
     private readonly OpeningTitleRevealPresentation _openingTitleReveal = new();
@@ -42,10 +44,22 @@ public partial class CampaignView
     { _entryMode = "controls-guide"; _guidePage = 0; _openingVisualFrame = 0; }
     private void ProcessOpeningPresentation(double delta)
     {
+        if (_entryMode != "oak-speech") { _openingPortraitTransition = null; _openingPortraitCompleted = null; }
         if (OpeningSourceMusic is {} music) SourceMusic(music);
         _openingFrameRemainder += delta * 60;
         int frames = (int)_openingFrameRemainder; _openingFrameRemainder -= frames;
         _openingVisualFrame += frames;
+        if (_entryMode is "player-name" or "rival-name") _namingGrid!.AdvanceFrames(frames);
+        if (_openingPortraitTransition is { Complete: false } transition)
+        {
+            transition.AdvanceFrames(frames);
+            if (transition.Complete)
+            {
+                _openingPortraitTransition = null;
+                var completed = _openingPortraitCompleted; _openingPortraitCompleted = null; completed?.Invoke();
+            }
+            return;
+        }
         if (_entryMode == "intro-movie") { ProcessIntroMoviePresentation(delta); return; }
         if (_entryMode == "title" && _openingVisualFrame >= 2700) { BeginIntroMovie(); return; }
         if (_entryMode == "title")
@@ -212,6 +226,7 @@ public partial class CampaignView
         InitializeIntroMoviePresentation();
         _opening = PretOpeningPresentation.Load(_root);
         _namingGrid = new(_opening);
+        _openingNamingFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/ui/font"), foreground: Colors.White, shadow: Color.Color8(98, 98, 98));
         _openingGuideFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/ui/font"), foreground: Colors.White, shadow: Color.Color8(74, 82, 107));
         foreach (string name in PretOpeningPresentation.TextureNames)
         {
@@ -223,12 +238,16 @@ public partial class CampaignView
     private string OpeningPlayerPortrait => _entryGender == 0 ? "red" : "leaf";
     private void BeginOpeningSpeech(string next, params (string Symbol, string Portrait)[] messages)
     {
-        _openingNidoran = null;
+        string? previous = _entryMode == "player-confirm" ? OpeningPlayerPortrait : null;
+        bool showPlayer = _entryMode == "gender";
+        _openingNidoran = null; _openingPortraitTransition = null; _openingPortraitCompleted = null;
         _openingPages.Clear(); _openingPage = 0; _openingNext = next; _entryMode = "oak-speech"; _entryCursor = 0;
         foreach (var (symbol, portrait) in messages)
             foreach (string text in _opening!.Pages(symbol, _entryPlayerName, _entryRivalName)) _openingPages.Add((text, portrait));
         if (_openingPages.Count == 0) throw new InvalidDataException("Opening speech has no pages.");
         ResetOpeningPrinter();
+        if (previous is not null || showPlayer)
+            _openingPortraitTransition = new(previous, _openingPages[0].Portrait, previous is null ? 0 : 40);
         QueueRedraw();
     }
     private void BeginOakIntroduction() => BeginOpeningSpeech("gender",
@@ -236,6 +255,7 @@ public partial class CampaignView
         ("IStudyPokemon", "nidoran-f"), ("TellMeALittleAboutYourself", "oak"));
     private void AdvanceOpeningSpeech()
     {
+        if (_openingPortraitTransition is { Complete: false }) return;
         if (!_openingPrinter.Complete) { _openingSpeedUp = true; return; }
         if (_openingNidoran is { Returning: false, Complete: false }) return;
         if (_openingNidoran is { Returning: false } && _sourceAudio?.Snapshot().Cry is { Playing: true }) return;
@@ -248,11 +268,19 @@ public partial class CampaignView
                 _openingNidoran = new(false, _captureBallAssets.Sine);
             else if (previousPortrait == "nidoran-f" && nextPortrait != "nidoran-f")
             { _openingNidoran = new(true, _captureBallAssets.Sine); _entryMode = "oak-return"; }
+            else if (previousPortrait != nextPortrait)
+                _openingPortraitTransition = new(previousPortrait, nextPortrait, 40);
             return;
         }
         if (_openingNext == "start") { _openingExit = new(); _entryMode = "oak-exit"; }
         else if (_openingNext == "rival-name") BeginRivalNameChoices();
         else if (_openingNext == "player-name") ShowEntryName(_openingNext);
+        else if (_openingNext == "gender")
+        {
+            _openingPage = _openingPages.Count - 1;
+            _openingPortraitTransition = new("oak", null, 48);
+            _openingPortraitCompleted = () => { _entryMode = "gender"; _entryCursor = 0; };
+        }
         else { _entryMode = _openingNext; _entryCursor = 0; }
     }
     private void DrawOpeningPortrait(string portrait, float offset = 0)
@@ -264,6 +292,14 @@ public partial class CampaignView
     private bool DrawOpeningEntry()
     {
         if (DrawIntroMoviePresentation()) return true;
+        if (_openingPortraitTransition is { Complete: false } transition)
+        {
+            DrawTexture(_openingTextures["background"], Vector2.Zero);
+            if (transition.PlatformVisible) DrawTexture(_openingTextures["platform"], new(72, 96));
+            if (transition.Portrait is { } portrait && transition.Alpha > 0)
+                DrawTexture(_openingTextures[portrait], new(88, 16), new Color(1, 1, 1, transition.Alpha));
+            return true;
+        }
         if (_entryMode == "title-exit")
         {
             DrawOpeningTitle();
@@ -305,7 +341,7 @@ public partial class CampaignView
         }
         if (_entryMode == "gender")
         {
-            DrawOpeningPortrait(_entryCursor == 0 ? "red" : "leaf");
+            DrawTexture(_openingTextures["background"], Vector2.Zero);
             _battleSkin.DrawStandardFrame(this, new(136, 64, 88, 48));
             SourceText(_sourceNormal, new(152, 72), "BOY"); SourceText(_sourceNormal, new(152, 88), "GIRL");
             SourceText(_sourceNormal, new(138, 72 + _entryCursor * 16), "▶");
@@ -334,24 +370,52 @@ public partial class CampaignView
         }
         if (_entryMode is "player-name" or "rival-name")
         {
-            DrawRect(new(0, 0, 240, 160), Color.Color8(232, 240, 248));
-            SourceText(_sourceNormal, new(16, 8), _entryMode == "player-name" ? "YOUR NAME?" : "RIVAL's NAME?");
-            _battleSkin.DrawStandardFrame(this, new(8, 64, 224, 88));
-            for (int row = 0; row < 4; row++)
-                for (int col = 0; col < _opening!.Keyboard[_namingPage][row].Length; col++)
-                    SourceText(_sourceNormal, new(18 + col * 20, 72 + row * 18), _opening.Keyboard[_namingPage][row][col].ToString());
-            SourceText(_sourceSmall, new(184, 74), _namingPage == 0 ? "abc" : _namingPage == 1 ? "123" : "ABC");
-            SourceText(_sourceSmall, new(184, 98), "BACK"); SourceText(_sourceSmall, new(184, 122), "OK");
-            if (_namingGridActive)
-            {
-                var cursor = _namingGrid!;
-                DrawRect(cursor.OnAction ? new Rect2(178, 68 + cursor.Row * 24, 44, 21) : new Rect2(14 + cursor.Column * 20, 69 + cursor.Row * 18, 18, 17), Color.Color8(72, 112, 192), false, 1);
-            }
-            SourceText(_sourceSmall, new(12, 151), "Tab: type/keys  Enter: OK  Esc: back");
+            DrawOpeningNaming();
             if (_entryNotice is not null) ItemMessageBox(_entryNotice);
             return true;
         }
         return false;
+    }
+    private void DrawOpeningNaming()
+    {
+        var grid = _namingGrid!;
+        DrawRect(new(0, 0, 240, 160), Colors.White);
+        DrawTexture(_openingTextures["naming-background"], Vector2.Zero);
+        SourceText(_sourceNormal, new(73, 33), _entryMode == "player-name" ? "YOUR NAME?" : "RIVAL's NAME?");
+        string icon = _entryMode == "rival-name" ? "rival" : OpeningPlayerPortrait;
+        int iconFrame = OpeningTitlePresentation.AnimationFrame(_opening!.Animations[icon == "rival" ? "naming-rival" : "naming-player"], grid.VisualFrame);
+        DrawTextureRectRegion(_openingTextures["naming-" + icon], new(48, 21, 16, 32), icon == "rival" ? new(0, iconFrame * 32, 16, 32) : new(iconFrame * 16, 0, 16, 32));
+        DrawTexture(_openingTextures["naming-input-arrow"], new(89 + grid.ArrowOffsetX, 52));
+        for (int i = 0; i < 7; i++)
+            DrawTexture(_openingTextures["naming-underscore"], new(97 + i * 8, 56 + (i == _entryNameEdit!.CaretColumn ? grid.UnderscoreOffsetY : 0)));
+        foreach (var layer in grid.Layers(_captureBallAssets.Sine)) DrawNamingKeyboardLayer(layer.Page, layer.OffsetY);
+        string button = new[] { "upper", "lower", "others" }[grid.PageButtonPage];
+        DrawTexture(_openingTextures["naming-page-button-" + button], new(188, 75));
+        if (grid.PageButtonTextVisible)
+            DrawTexture(_openingTextures["naming-page-swap-" + button], new(192, 80 + grid.PageButtonOffsetY));
+        DrawTexture(_openingTextures["naming-page-swap-frame"], new(184, 72));
+        DrawTexture(_openingTextures["naming-back-button"], new(184, 104));
+        DrawTexture(_openingTextures["naming-ok-button"], new(184, 128));
+        if (_namingGridActive && !grid.Swapping)
+        {
+            if (grid.OnAction) DrawRect(new(184, grid.Row == 0 ? 72 : grid.Row == 1 ? 104 : 128, 40, grid.Row == 0 ? 32 : 24), Color.Color8(255, 66, 82), false, 1);
+            else DrawTexture(_openingTextures["naming-cursor"], new(grid.CursorX - 8, 80 + grid.Row * 16));
+        }
+        DrawRect(new(0, 0, 240, 16), Color.Color8(74, 82, 107));
+        SourceText(_openingGuideFont!, new(4, 1), "Tab: type/keys  Enter: OK  Esc: back");
+    }
+    private void DrawNamingKeyboardLayer(int page, int offsetY)
+    {
+        string name = new[] { "upper", "lower", "symbols" }[page];
+        int top = Math.Max(16, offsetY), bottom = Math.Min(160, 160 + offsetY);
+        DrawTextureRectRegion(_openingTextures["naming-keyboard-" + name], new(0, top, 240, bottom - top), new(0, top - offsetY, 240, bottom - top));
+        for (int row = 0; row < 4; row++)
+        {
+            int y = 81 + row * 16 + offsetY;
+            if (y < 16 || y > 145) continue;
+            for (int col = 0; col < _opening!.Keyboard[page][row].Length; col++)
+                SourceText(_openingNamingFont!, new(35 + _opening.NamingColumnOffsets[page][col], y), _opening.Keyboard[page][row][col].ToString());
+        }
     }
     private void DrawOpeningNidoran()
     {
@@ -372,6 +436,8 @@ public partial class CampaignView
     }
     private void ApplyOpeningNameKey(OpeningNameKey key)
     {
+        if (key.Action == OpeningNameAction.None) return;
+        if (key.Action == OpeningNameAction.ChangePage) SourceSound("SE_WIN_OPEN");
         var edit = _entryNameEdit!;
         if (key.Action is OpeningNameAction.Insert or OpeningNameAction.Delete)
         {
@@ -390,6 +456,12 @@ public partial class CampaignView
         {
             if (key.Keycode == Key.Tab) { _namingGridActive = !_namingGridActive; QueueRedraw(); return true; }
             if (!_namingGridActive) return false;
+            if (_namingGrid!.Swapping)
+            {
+                if (key.Unicode > 0 && key.Keycode is not (Key.Enter or Key.KpEnter or Key.Backspace))
+                { _namingGridActive = false; return false; }
+                return key.Keycode != Key.Escape;
+            }
             switch (key.Keycode)
             {
                 case Key.Left: _namingGrid!.Move(-1, 0); break;
@@ -406,6 +478,7 @@ public partial class CampaignView
         {
             if (!joy.Pressed) return true;
             _namingGridActive = true;
+            if (_namingGrid!.Swapping) return true;
             switch (joy.ButtonIndex)
             {
                 case JoyButton.DpadLeft: _namingGrid!.Move(-1, 0); break;
@@ -424,12 +497,13 @@ public partial class CampaignView
     private bool OpeningNamePointer(Vector2 point)
     {
         if (_entryMode is not ("player-name" or "rival-name")) return false;
-        if (new Rect2(176, 68, 48, 72).HasPoint(point))
-            _namingGrid!.Select((int)((point.Y - 68) / 24), _namingGrid.Columns);
-        else if (new Rect2(12, 68, 160, 72).HasPoint(point))
+        if (_namingGrid!.Swapping) return true;
+        if (new Rect2(184, 72, 40, 80).HasPoint(point))
+            _namingGrid.Select(point.Y < 104 ? 0 : point.Y < 128 ? 1 : 2, _namingGrid.Columns);
+        else if (new Rect2(24, 80, 152, 64).HasPoint(point))
         {
-            int col = (int)((point.X - 12) / 20), row = (int)((point.Y - 68) / 18);
-            if (col >= _namingGrid!.Columns) return true;
+            int row = (int)((point.Y - 80) / 16);
+            int col = Enumerable.Range(0, _namingGrid.Columns).MinBy(i => Math.Abs(point.X - 38 - _opening!.NamingColumnOffsets[_namingGrid.Page][i]));
             _namingGrid.Select(row, col);
         }
         else return false;
@@ -438,5 +512,5 @@ public partial class CampaignView
         QueueRedraw(); return true;
     }
     private void DisposeOpeningPresentation()
-    { DisposeIntroMoviePresentation(); foreach (var texture in _openingTextures.Values) texture.Dispose(); _openingTextures.Clear(); _openingGuideFont?.Dispose(); }
+    { DisposeIntroMoviePresentation(); foreach (var texture in _openingTextures.Values) texture.Dispose(); _openingTextures.Clear(); _openingGuideFont?.Dispose(); _openingNamingFont?.Dispose(); }
 }

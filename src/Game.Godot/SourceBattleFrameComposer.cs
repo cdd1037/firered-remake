@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 namespace Game.Presentation.BattleAnimations;
-public sealed record SourcePixelAsset(int Width,int Height,ushort[] Pixels);
+public sealed record SourcePixelAsset(int Width,int Height,ushort[] Pixels)
+{ public byte[] PaletteIndices{get;init;}=[]; public ushort[] Palette{get;init;}=[]; public int PaletteTag{get;init;}=-1; }
 
 /// <summary>Bounded 240x112 source RGB555 field. Existing HUD/text remain later layers.</summary>
 public sealed class SourceBattleFrameComposer
@@ -35,7 +36,7 @@ public sealed class SourceBattleFrameComposer
         foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).OrderByDescending(s=>s.OamRank))
         {
             if(sprite.Blend)throw new InvalidDataException("Residual source blend needs destination layer sampling.");
-            BlitSprite(pixels,_assets[sprite.Asset!],sprite,0,0,false);
+            BlitSprite(pixels,_assets[sprite.Asset!],sprite,0,0,false,frame.SpritePalettes.GetValueOrDefault(_assets[sprite.Asset!].PaletteTag));
         }
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=(byte)((p&0x8000)!=0?255:0);}
@@ -76,7 +77,9 @@ public sealed class SourceBattleFrameComposer
         foreach(var b in _battlers.Where(b=>b.Visible&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
         {
             Array.Clear(layer);var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.Offsets[b.Slot.Value];
-            Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,palettes.GetValueOrDefault(16+b.Slot.Value),frame.GreyscaleSlots.Contains(b.Slot.Value),frame.InvertedPalettes.Contains(16+b.Slot.Value));
+            var copy=frame.StaticBackgroundCopies.SingleOrDefault(c=>c.Slot==b.Slot.Value);
+            if(copy is not null)offset=copy.Offset;
+            Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,copy is null?palettes.GetValueOrDefault(16+b.Slot.Value):copy.Palette,copy?.Greyscale??frame.GreyscaleSlots.Contains(b.Slot.Value),copy?.Inverted??frame.InvertedPalettes.Contains(16+b.Slot.Value));
             int priority=frame.ForegroundBackgroundSlots.Contains(b.Slot.Value)?1:2;
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0&&priority<=backgroundPriority[i]){pixels[i]=layer[i];backgroundPriority[i]=(byte)priority;}
         }
@@ -106,7 +109,7 @@ public sealed class SourceBattleFrameComposer
                     AffineBattler(layer,_assets[sprite.Asset!],center.X,center.Y,matrix,palettes.GetValueOrDefault(16+slot),frame.InvertedPalettes.Contains(16+slot),frame.GreyscaleSlots.Contains(slot));
                 }
                 else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,_assets[sprite.Asset!],new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
-                else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false);
+                else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false,frame.SpritePalettes.GetValueOrDefault(_assets[sprite.Asset!].PaletteTag));
             }
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Item1;}
         }
@@ -163,7 +166,7 @@ public sealed class SourceBattleFrameComposer
             dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted,greyscale);
         }
     }
-    private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)
+    private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled,ushort[]? palette=null)
     {
         // OBJ 1D addressing uses the sprite's width to advance tile rows. The
         // generated sheet is only storage: shared graphics can mix 8x8 and 16x16
@@ -176,9 +179,10 @@ public sealed class SourceBattleFrameComposer
         int top=sprite.Tile*64/sheet.Width;
         ushort Sample(int x,int y)
         {
-            if(aligned)return sheet.Pixels[(top+y)*sheet.Width+x];
             int tile=sprite.Tile+(y>>3)*frameTilesWide+(x>>3);
-            return sheet.Pixels[((tile/sheetTilesWide)*8+(y&7))*sheet.Width+(tile%sheetTilesWide)*8+(x&7)];
+            int at=aligned?(top+y)*sheet.Width+x:((tile/sheetTilesWide)*8+(y&7))*sheet.Width+(tile%sheetTilesWide)*8+(x&7);
+            if(palette is null||sheet.PaletteIndices.Length==0)return sheet.Pixels[at];
+            int index=sheet.PaletteIndices[at];return index==0?(ushort)0:(ushort)(0x8000|palette[index]);
         }
         if(sprite.Affine)
         {

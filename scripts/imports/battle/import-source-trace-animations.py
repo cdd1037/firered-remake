@@ -13,7 +13,7 @@ hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
 COMMIT=hit.COMMIT
 ROOTS=[(97,'AGILITY'),(98,'QUICK_ATTACK'),(332,'AERIAL_ACE')]
 def build(reference):
- raw=hit.authenticated(reference);source=raw['data/battle_anim_scripts.s'].decode();scripts=[]
+ raw=hit.read_sources(reference);source=raw['data/battle_anim_scripts.s'].decode();scripts=[]
  for move,name in ROOTS:
   match=re.search(r'^Move_'+name+r':\n',source,re.M);rows=[]
   for offset,line in enumerate(source[match.end():].splitlines()):
@@ -27,13 +27,11 @@ def build(reference):
   if not rows or len(rows)>32 or rows[-1]['op']!='end':raise ValueError('Unbounded trace root')
   scripts.append(dict(moveId=move,label='Move_'+name,commands=rows,dependencies=dict(commands=sorted({r['op'] for r in rows}),sprites=sorted({r['args'][0] for r in rows if r['op']=='createsprite'}),tasks=sorted({r['args'][0] for r in rows if r['op']=='createvisualtask'}),sounds=sorted({r['args'][0] for r in rows if r['op']=='playsewithpan'}))))
  manifest=dict(schemaVersion=1,scripts=scripts)
- # Bind the original imported assets and sine table, including their per-file hashes.
- return (json.dumps(manifest,indent=2)+'\n').encode()
+ return (json.dumps(manifest,separators=(',',':'))+'\n').encode()
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/trace.json');p.add_argument('--check',action='store_true');a=p.parse_args();data=build(a.reference);out=a.output
  if a.check:
   if out.read_bytes()!=data:raise SystemExit('Trace animation pack differs')
  else:
-  if out.exists():raise SystemExit('Refuse existing generated pack')
   a.output.parent.mkdir(parents=True,exist_ok=True);out.write_bytes(data)
  print(json.dumps(dict(passed=True,sourceCommit=COMMIT,roots=3,bytes=len(data))))

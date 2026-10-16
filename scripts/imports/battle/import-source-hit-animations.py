@@ -112,26 +112,37 @@ def build(reference):
    geometry.append({'species':species[name],'side':side,'sourceWidth':int(w),'sourceHeight':int(h),'yOffset':int(y),'elevation':elevation.get(name,0) if side=='front' else 0})
  if len(geometry)!=880:raise ValueError('Expected exact pinned 880 geometry records')
  if len({(x['species'],x['side']) for x in geometry})!=880:raise ValueError('Duplicate geometry')
- def asset(id,data):return {'id':id,'path':id+'.rgb555','bytes':len(data)}
+ def asset(id,data):return {'id':id,'path':id+'.rgb555'}
  sines=[int(float(x)*256) for x in re.findall(r'Q_8_8\((-?[\d.]+)\)',raw['src/trig.c'].decode().split('};',1)[0])]
  if len(sines)!=320:raise ValueError('Original sine table differs')
  anim={'sineTable':sines,'schemaVersion':1,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
  art={'schemaVersion':1,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back)]}
- def encode(x):return (json.dumps(x,indent=2)+'\n').encode()
+ def encode(x):return (json.dumps(x,separators=(',',':'))+'\n').encode()
  return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back}}
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('new_output_root',type=Path);a=p.parse_args()
- out=a.new_output_root
- if any((out/name).exists() for name in ['source-hit-animations','campaign-hit-art']):raise SystemExit('Refuse existing generated output')
- data=build(a.reference)
- out.mkdir(parents=True,exist_ok=True)
- # Authenticate and construct all bounded bytes before creating either published directory.
- with tempfile.TemporaryDirectory(prefix='.hit-import-',dir=out) as temp:
-  temp=Path(temp)
-  for name,files in data.items():
-   (temp/name).mkdir()
-   for filename,blob in files.items():(temp/name/filename).write_bytes(blob)
-  for name in data:(temp/name).rename(out/name)
- print(json.dumps({'passed':True,'sourceCommit':COMMIT,'resources':[{'path':folder+'/'+name,'bytes':len(data)} for folder,files in data.items() for name,data in files.items()]}))
+ p=argparse.ArgumentParser();p.add_argument('legacy_reference',type=Path,nargs='?');p.add_argument('legacy_output',type=Path,nargs='?');p.add_argument('--reference',type=Path);p.add_argument('--output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()
+ if a.reference is not None or a.output is not None:
+  if a.reference is None or a.output is None or a.legacy_reference is not None or a.legacy_output is not None:p.error('Use --reference and --output together without positional arguments')
+  data=build(a.reference)
+  folders={'source-hit-animations':'battle/animations/hit','campaign-hit-art':'battle/art/campaign-hit-art'}
+  for folder,files in data.items():
+   for name,blob in files.items():
+    path=a.output/folders[folder]/name
+    if a.check:
+     if path.read_bytes()!=blob:raise SystemExit('Hit runtime output differs: '+str(path))
+    else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(blob)
+ else:
+  if a.legacy_reference is None or a.legacy_output is None or a.check:p.error('Use --reference and --output; legacy positional generation also remains supported')
+  out=a.legacy_output
+  if any((out/name).exists() for name in ['source-hit-animations','campaign-hit-art']):raise SystemExit('Refuse existing generated output')
+  data=build(a.legacy_reference)
+  out.mkdir(parents=True,exist_ok=True)
+  with tempfile.TemporaryDirectory(prefix='.hit-import-',dir=out) as temp:
+   temp=Path(temp)
+   for name,files in data.items():
+    (temp/name).mkdir()
+    for filename,blob in files.items():(temp/name/filename).write_bytes(blob)
+   for name in data:(temp/name).rename(out/name)
+ print(json.dumps({'passed':True,'resources':sum(len(files) for files in data.values())}))
 if __name__=='__main__':main()

@@ -76,8 +76,7 @@ public partial class CampaignView
     private void TutorKeepCursorVisible()
     {
         if (Teaching?.Moves != true) return;
-        if (_tutorCursor < _tutorScroll) _tutorScroll = _tutorCursor;
-        if (_tutorCursor >= _tutorScroll + 5) _tutorScroll = _tutorCursor - 4;
+        _tutorScroll = SourceVerticalMenuPresentation.KeepSelectionVisible(_tutorCursor, _tutorScroll, TutorRowCount, 5);
     }
 
     private bool MoveTutorInput(InputEventKey key)

@@ -43,9 +43,9 @@ def build(reference):
             r,g,b=map(int,line.split());palettes.append((r>>3)|((g>>3)<<5)|((b>>3)<<10))
     material=indices+maps+struct.pack('<128H',*palettes)
     manifest=dict(schemaVersion=1,script=dict(moveId=0,label='General_StatsChange',commands=commands),material=dict(path='stat-mask.bin',sheetWidth=128,sheetHeight=32,tilemapSize=32,paletteCount=8),dedicatedMoveScriptsAdded=0)
-    return json.dumps(manifest,indent=2).encode()+b'\n',material
+    return json.dumps(manifest,separators=(',',':')).encode()+b'\n',material
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,default=Path((ROOT/'.tools/reference-root').read_text().strip()));p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/stat-mask');p.add_argument('--check',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/stat-mask');p.add_argument('--check',action='store_true');a=p.parse_args()
     manifest,material=build(a.reference)
     for name,data in [('manifest.json',manifest),('stat-mask.bin',material)]:
         if a.check:

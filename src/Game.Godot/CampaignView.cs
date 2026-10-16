@@ -141,6 +141,7 @@ public partial class CampaignView:Node2D
     // These resources are constructed directly, not borrowed from SceneTextures.
     private void DisposeCorePresentation()
     {
+        DisposeInventoryPresentation();
         DisposeTrainerCardPresentation();
         _leagueCreditHeader?.Dispose(); _leagueCreditHeader=null!;
         DisposePokedexVisualPresentation();
@@ -197,6 +198,7 @@ public partial class CampaignView:Node2D
     private void Synchronize(CampaignState? before,CampaignState after)
     {
         if(BeginSilphPadPresentation(before,after))return;
+        SynchronizeSourceResultState(before,after);
         SynchronizeSourceMovePresentation();
         bool changed=before is not null&&before.World.Player.MapId!=after.World.Player.MapId;
         if(changed)LoadMap(after.World.Player.MapId);
@@ -274,6 +276,7 @@ public partial class CampaignView:Node2D
         if(TickQuestLogPlayback(delta))return;
         if(!PlayerEntryActive&&!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
         if(ProcessHelpPresentation(delta))return;
+        AdvanceInventoryPresentation(delta);
         ProcessCampaignButtonRepeats(delta);
         if(PlayerEntryActive){ProcessOpeningPresentation(delta);QueueRedraw();return;}
         if(ProcessSummaryPresentation(delta))return;

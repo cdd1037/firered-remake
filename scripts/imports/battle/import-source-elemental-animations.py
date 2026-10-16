@@ -115,7 +115,7 @@ def recipe(source,name,callback):
     if f:
      x,y,rotation,duration=[int(v.strip(),0) for v in f[1].split(',')];commands.append(dict(op='frame',x=x,y=y,rotation=rotation&255,duration=duration&255,target=0))
     elif j:commands.append(dict(op='jump',x=0,y=0,rotation=0,duration=0,target=int(j[1])))
-    elif row=='AFFINEANIMCMD_END':commands.append(dict(op='end',x=0,y=0,rotation=0,duration=0,target=0))
+    elif row=='AFFINEANIMCMD_END' or re.fullmatch(r'AFFINEANIMCMD_END_ALT\(\d+\)',row):commands.append(dict(op='end',x=0,y=0,rotation=0,duration=0,target=0))
     else:raise ValueError('Unsupported affine operation '+row)
    if not commands or commands[-1]['op'] not in ('jump','end'):raise ValueError('Unterminated affine animation')
    affine.append(commands)

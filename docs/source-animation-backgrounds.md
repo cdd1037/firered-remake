@@ -15,10 +15,10 @@ The shared VM owns source fade timing, background load revisions and scrolling. 
 
 ## Rebuild and checks
 
-Run the importer with the pinned local source directory and a new output directory, then compare the two generated files before replacing the pack:
+Rebuild the two generated files from the pinned local source directory, or use `--check` to compare without writing:
 
 ```
-python scripts/imports/battle/import-source-animation-backgrounds.py content/raw/pokefirered/037335f4 NEW_OUTPUT
+python scripts/imports/battle/import-source-animation-backgrounds.py --reference content/raw/pokefirered/037335f4 --output content/generated/battle/animations/backgrounds --check
 python scripts/checks/test-animation-background-import.py
 dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --filter FullyQualifiedName~SourceAnimationBackgroundTests
 ```

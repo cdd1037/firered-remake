@@ -6,6 +6,12 @@ public sealed partial class SourceBattleAnimation
     private bool ValidateSharedCommand(SourceAnimationCommand c)
     {
         var a=c.Args;
+        if(c.Op=="loadspritegfx"&&a.Length==1&&_script.SpriteTags.ContainsKey(a[0]))return true;
+        if(c.Op is "playsewithpan" or "waitplaysewithpan" or "loopsewithpan"&&a.Length>0&&_script.SoundEffects.ContainsKey(a[0]))
+        {
+            if(a.Length!=(c.Op=="playsewithpan"?2:c.Op=="waitplaysewithpan"?3:4)||SoundPan(a[1]) is < -64 or >63||a.Skip(2).Any(v=>Number(v) is <0 or >255))Fail(c,"Source sound operand width differs.");
+            return true;
+        }
         if(c.Op=="waitsound")
         {if(a.Length!=0)Fail(c,"Sound wait takes no operands.");return true;}
         if(c.Op=="createsoundtask")

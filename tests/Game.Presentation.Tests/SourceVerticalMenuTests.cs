@@ -70,4 +70,24 @@ public sealed class SourceVerticalMenuTests
         Assert.IsFalse(menu.Move(1));
         menu.Move(-1); Assert.AreEqual((1, 1), (menu.Cursor, menu.ScrollOffset));
     }
+
+    [TestMethod]
+    public void EdgeOnlyViewportKeepsVisibleRowsFixedAndClampsAfterRemoval()
+    {
+        int first = 0;
+        for (int cursor = 0; cursor < 5; cursor++)
+        {
+            first = SourceVerticalMenuPresentation.KeepSelectionVisible(cursor, first, 10, 5);
+            Assert.AreEqual(0, first);
+        }
+        first = SourceVerticalMenuPresentation.KeepSelectionVisible(5, first, 10, 5);
+        Assert.AreEqual(1, first);
+        Assert.AreEqual(1, SourceVerticalMenuPresentation.KeepSelectionVisible(4, first, 10, 5));
+        Assert.AreEqual(1, SourceVerticalMenuPresentation.KeepSelectionVisible(1, first, 10, 5));
+        Assert.AreEqual(0, SourceVerticalMenuPresentation.KeepSelectionVisible(0, first, 10, 5));
+        Assert.AreEqual(3, SourceVerticalMenuPresentation.KeepSelectionVisible(7, 5, 8, 5));
+        Assert.AreEqual(0, SourceVerticalMenuPresentation.KeepSelectionVisible(9, 5, 1, 5));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => SourceVerticalMenuPresentation.KeepSelectionVisible(0, 0, 0, 5));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => SourceVerticalMenuPresentation.KeepSelectionVisible(0, 0, 1, 0));
+    }
 }

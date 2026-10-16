@@ -31,6 +31,8 @@ public sealed partial class SourceBattleAnimation
     {
         "gSupersonicRingSpriteTemplate" or "gScreechRingSpriteTemplate" or "gMetalSoundSpriteTemplate" or "gEmberSpriteTemplate"=>"TranslateAnimSpriteToTargetMonLocation",
         "gEmberFlareSpriteTemplate"=>"AnimEmberFlare",
+        "gGrantingStarsSpriteTemplate"=>"AnimGrantingStars",
+        "gThinRingExpandingSpriteTemplate"=>"AnimSpriteOnMonPos",
         "gFireSpiralInwardSpriteTemplate"=>"AnimFireSpiralInward",
         "gFireSpreadSpriteTemplate"=>"AnimFireSpread",
         "gFlamethrowerFlameSpriteTemplate" or "gHydroPumpOrbSpriteTemplate" or "gMudShotOrbSpriteTemplate" or "gSignalBeamRedOrbSpriteTemplate" or "gSignalBeamGreenOrbSpriteTemplate"=>"AnimToTargetInSinWave",
@@ -50,8 +52,8 @@ public sealed partial class SourceBattleAnimation
         if(SourceExplosionAnimationCatalog.Supports(_script.MoveId))return false;
         if(ValidateElectricOperand(c))return true;
         var a=c.Args;
-        if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR" or "ANIM_TAG_BLUE_RING")return true;
-        if(c.Op is "playsewithpan" or "loopsewithpan" or "waitplaysewithpan"&&a.FirstOrDefault() is "SE_M_EMBER" or "SE_M_FLAME_WHEEL" or "SE_M_FIRE_PUNCH" or "SE_M_SELF_DESTRUCT" or "SE_M_CRABHAMMER" or "SE_M_BUBBLE" or "SE_M_HYPER_BEAM" or "SE_M_TRI_ATTACK2" or "SE_M_ABSORB" or "SE_M_ABSORB_2" or "SE_M_BUBBLE3" or "SE_M_GIGA_DRAIN" or "SE_M_SCREECH" or "SE_M_SUPERSONIC" or "SE_M_MEGA_KICK" or "SE_M_TOXIC" or "SE_M_BUBBLE2" or "SE_M_SACRED_FIRE2" or "SE_M_SAND_TOMB" or "SE_M_WHIRLPOOL" or "SE_M_BITE" or "SE_M_VICEGRIP" or "SE_M_DRAGON_RAGE" or "SE_M_STRING_SHOT" or "SE_M_ICY_WIND" or "SE_M_GUST2" or "SE_M_FLAME_WHEEL2" or "SE_M_CHARM" or "SE_M_DIZZY_PUNCH" or "SE_M_HARDEN" or "SE_M_SWIFT" or "SE_M_POISON_POWDER" or "SE_M_RAZOR_WIND" or "SE_M_RAZOR_WIND2" or "SE_M_PSYBEAM" or "SE_M_PSYBEAM2" or "SE_M_TELEPORT")
+        if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR" or "ANIM_TAG_BLUE_RING" or "ANIM_TAG_SPARKLE_2" or "ANIM_TAG_THIN_RING")return true;
+        if(c.Op is "playsewithpan" or "loopsewithpan" or "waitplaysewithpan"&&a.FirstOrDefault() is "SE_M_EMBER" or "SE_M_FLAME_WHEEL" or "SE_M_FIRE_PUNCH" or "SE_M_SELF_DESTRUCT" or "SE_M_CRABHAMMER" or "SE_M_BUBBLE" or "SE_M_HYPER_BEAM" or "SE_M_TRI_ATTACK2" or "SE_M_ABSORB" or "SE_M_ABSORB_2" or "SE_M_BUBBLE3" or "SE_M_GIGA_DRAIN" or "SE_M_SCREECH" or "SE_M_SUPERSONIC" or "SE_M_MEGA_KICK" or "SE_M_TOXIC" or "SE_M_BUBBLE2" or "SE_M_SACRED_FIRE2" or "SE_M_SAND_TOMB" or "SE_M_WHIRLPOOL" or "SE_M_BITE" or "SE_M_VICEGRIP" or "SE_M_DRAGON_RAGE" or "SE_M_STRING_SHOT" or "SE_M_ICY_WIND" or "SE_M_GUST2" or "SE_M_FLAME_WHEEL2" or "SE_M_CHARM" or "SE_M_DIZZY_PUNCH" or "SE_M_HARDEN" or "SE_M_SWIFT" or "SE_M_POISON_POWDER" or "SE_M_RAZOR_WIND" or "SE_M_RAZOR_WIND2" or "SE_M_PSYBEAM" or "SE_M_PSYBEAM2" or "SE_M_TELEPORT" or "SE_M_MORNING_SUN")
         {
             if(a.Length!=(c.Op=="loopsewithpan"?4:c.Op=="waitplaysewithpan"?3:2)||a[1] is not ("SOUND_PAN_TARGET" or "SOUND_PAN_ATTACKER"))Fail(c,"Elemental sound shape differs.");
             if(a.Length==3&&Number(a[2]) is <0 or >255)Fail(c,"Elemental delayed sound differs.");
@@ -60,7 +62,7 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_StartSinAnimTimer")
         {if(a.Length!=3||Number(a[1]) is <0 or >255||Number(a[2]) is <1 or >32767)Fail(c,"Sine timer operands differ.");return true;}
         if(c.Op!="createsprite"||a.Length==0||ElementalCallback(a[0]) is not string callback)return false;
-        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
+        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame" or "AnimGrantingStars"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
         if(a.Length!=count||!_script.SpriteRecipes.TryGetValue(a[0],out var recipe)||recipe.Callback!=callback||recipe.Width is not (8 or 16 or 32 or 64)||recipe.Height is not (8 or 16 or 32 or 64)||_script.SineTable.Length!=320)Fail(c,"Elemental sprite recipe/operands differ.");
         if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127)Fail(c,"Elemental sprite participant/priority differs.");
         foreach(var arg in a.Skip(3))if(Number(arg) is < -32768 or >32767)Fail(c,"Elemental source argument outside s16.");
@@ -75,6 +77,7 @@ public sealed partial class SourceBattleAnimation
         if(callback=="AnimLeechLifeNeedle"&&Number(a[5]) is <1 or >32767)Fail(c,"Needle duration differs.");
         if(callback=="AnimBubbleEffect"&&Number(a[5]) is <0 or >1)Fail(c,"Bubble target grouping differs.");
         if(callback=="AnimWaterBubbleProjectile"&&Number(a[9]) is <2 or >255)Fail(c,"Water bubble timer differs.");
+        if(callback=="AnimGrantingStars"&&(Number(a[5]) is <0 or >1||Number(a[8]) is <0 or >32767))Fail(c,"Granting star participant/lifetime differs.");
         if(callback=="AnimOutrageFlame"&&(Number(a[5]) is <1 or >32767||Number(a[8]) is <1 or >32767))Fail(c,"Outrage lifetime/flicker divisor differs.");
         if(callback=="AnimTranslateLinearSingleSineWave"&&(Number(a[7]) is <1 or >32767||Number(a[9]) is <0 or >1))Fail(c,"Sine projectile duration/grouping differs.");
         if(callback=="AnimRazorLeafParticle"&&Number(a[5]) is <0 or >32767)Fail(c,"Leaf rise duration differs.");
@@ -149,6 +152,14 @@ public sealed partial class SourceBattleAnimation
             var center=target.Center(owner._doubles,true);_position=center;
             switch(recipe.Callback)
             {
+                case "AnimGrantingStars":
+                    center=a[2]==0?actor.Center(owner._doubles,true):center;_position=new(center.X+direction*a[0],center.Y+a[1]);_vx=a[3];_vy=a[4];_remaining=a[5];break;
+                case "AnimEyeSparkle":
+                    center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);break;
+                case "AnimAngerMark":
+                    var angerBattler=a[0]==0?actor:target;
+                    if(!angerBattler.Slot.IsPlayer)owner._animationArgs[1]=unchecked((short)-owner._animationArgs[1]);
+                    center=angerBattler.Center(owner._doubles,true);_position=new(center.X+owner._animationArgs[1],Math.Max(8,center.Y+a[2]));break;
                 case "AnimSpriteOnMonPos":
                     var placed=a[2]==0?actor:target;center=a[3]==0?placed.Center(owner._doubles,true):placed.Base(owner._doubles);
                     _position=new(center.X+direction*a[0],center.Y+a[1]);break;
@@ -297,10 +308,12 @@ public sealed partial class SourceBattleAnimation
             if(_state==2){Finished=true;return;}
             switch(_recipe.Callback)
             {
+                case "AnimEyeSparkle":if(_animationEnded)Finished=true;break;
+                case "AnimAngerMark":if(_affine!.Ended)_state=2;break;
                 case "AnimLightning":case "AnimSpriteOnMonPos":if(_animationEnded||_affine?.Ended==true)Finished=true;break;
                 case "AnimIcePunchSwirlingParticle":case "AnimFireSpiralInward":if(_remaining>0)MoveSpiral(owner);else _state=2;break;
                 case "AnimOutrageFlame":if(_remaining>0){--_remaining;_offset=new(_fx>>8,_fy>>8);_fx=(short)(_fx+_vx);_fy=(short)(_fy+_vy);if(_remaining%_phase==0)_hidden=!_hidden;}else _state=2;break;
-                case "AnimFireSpread":if(_remaining-->0){_fx=(short)(_fx+_vx);_fy=(short)(_fy+_vy);_offset=new(_fx>>8,_fy>>8);}else _state=2;break;
+                case "AnimGrantingStars":case "AnimFireSpread":if(_remaining-->0){_fx=(short)(_fx+_vx);_fy=(short)(_fy+_vy);_offset=new(_fx>>8,_fy>>8);}else _state=2;break;
                 case "AnimToTargetInSinWave":MoveWave(owner);break;
                 case "AnimTranslateLinearSingleSineWave":
                     _linear!.StepContinuing(out var sineLinear);int oldAngle=_angle;_angle=(short)(_angle+_waveStep);_offset=new(sineLinear.X,sineLinear.Y+((owner._script.SineTable[(_angle>>8)&255]*_amplitude)>>8));

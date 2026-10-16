@@ -119,7 +119,7 @@ public partial class CampaignView
             var current=_session.State.DoubleBattle!;
             if(_sourceVisualBattle!=current.Id){ResetSourceMoveAnimation("battle-replaced");_sourceVisualBattle=current.Id;}
             if(_sourceMoveContinuation is not null&&!SourceMoveContextMatches())CancelSourceMoveAnimation("context-changed");
-            SynchronizeSourceStatPresentation();return;
+            SynchronizeSourceResultPresentation();return;
         }
         var b=PresentedWildBattle;
         if(b is null||!SourceTrainerPresentationActive(b))
@@ -147,7 +147,7 @@ public partial class CampaignView
             else if(e is WildBattleFaintedEvent faint)_sourceSubstituteHp[faint.Side]=0;
             _sourceVisualSequence=e.Sequence;
         }
-        SynchronizeSourceStatPresentation();
+        SynchronizeSourceResultPresentation();
     }
     private bool DrawSourceSubstitute(WildBattleSide side)
     {
@@ -246,7 +246,7 @@ public partial class CampaignView
     private bool ProcessCommittedMoveAnimation(double delta)
     {
         ProcessResidualMoveSprites(delta);
-        if(ProcessCommittedStatAnimation(delta))return true;
+        if(ProcessCommittedResultAnimation(delta))return true;
         if(_sourceMoveContinuation is not {} pending)return false;
         if(!SourceMoveContextMatches())
         {CancelSourceMoveAnimation("context-changed");return false;}
@@ -267,18 +267,18 @@ public partial class CampaignView
     }
     private void CancelSourceMoveAnimation(string reason)
     {
-        ClearResidualMoveSprites();CancelSourceStatAnimation(reason);
+        ClearResidualMoveSprites();CancelSourceResultAnimation(reason);
         var pending=_sourceMoveContinuation;_sourceMoveContinuation=null;_sourceMoveSession=null;
         _sourceMoveAnimationGate.Current?.Cancel();_sourceMoveSound=null;_sourceMoveComposer=null;_sourceMoveRemainder=0;
         if(pending is not null)Write("sourceMoveAnimationCancelled",new{pending.BattleId,pending.Sequence,reason});
     }
     private void ResetSourceMoveAnimation(string reason)
     {
-        ClearResidualMoveSprites();CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceStatAnimationGate.Reset();_sourceVisualBattle=null;_sourceVisualSequence=0;_sourceSubstituteHp.Clear();
+        ClearResidualMoveSprites();CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceResultAnimationGate.Reset();_sourceVisualBattle=null;_sourceVisualSequence=0;_sourceSubstituteHp.Clear();
     }
     private void DisposeSourceMoveAnimation()
     {
-        ResetSourceMoveAnimation("exit-tree");_sourceMoveField?.Dispose();_sourceMoveField=null;_sourceAnimationResources?.Dispose();_sourceAnimationResources=null;_sourceTerrainIds.Clear();
+        ClearSourceResultState();ResetSourceMoveAnimation("exit-tree");_sourceMoveField?.Dispose();_sourceMoveField=null;_sourceAnimationResources?.Dispose();_sourceAnimationResources=null;_sourceTerrainIds.Clear();
         foreach(var texture in _sourceSubstituteTextures.Values)texture.Dispose();_sourceSubstituteTextures.Clear();_sourceMoveAssets.Clear();_sourceBattlerGeometry.Clear();
     }
 }

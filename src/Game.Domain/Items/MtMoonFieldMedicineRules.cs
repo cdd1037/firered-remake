@@ -53,7 +53,7 @@ public static class MtMoonFieldMedicineRules
         {
             if (moveSlot is null || moveSlot < 0 || moveSlot >= before.Moves.Length) return Fail("medicine_invalid_slot");
             var slot = before.Moves[moveSlot.Value];
-            pp = Math.Min(10, slot.MaximumPp - slot.CurrentPp);
+            pp = Math.Min(definition.EffectBytes[6], slot.MaximumPp - slot.CurrentPp);
             if (pp == 0) return Fail("medicine_no_effect");
             after = before with { Moves = before.Moves.SetItem(moveSlot.Value, slot with { CurrentPp = slot.CurrentPp + pp }) };
         }

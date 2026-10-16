@@ -11,7 +11,7 @@ public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequenc
     bool HitsSubstitute);
 public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch? Dispatch, string Reason);
 
-public static class CampaignMoveAnimationPresentation
+public static partial class CampaignMoveAnimationPresentation
 {
     private static bool MatchesSelfStatIncrease(WildBattleStat stat,int before,int after)=>
         stat is WildBattleStat.Attack or WildBattleStat.Defense && before is >=0 and <12 && after==before+1;
@@ -19,6 +19,13 @@ public static class CampaignMoveAnimationPresentation
     // Shared by single/double projections; zero means no implemented source renderer.
     private static int SupportedSourceMoveId(string move)=>move switch
     {
+        "pret:MOVE_SWAGGER" => 207,
+        "pret:MOVE_TICKLE" => 321,
+        "pret:MOVE_BARRIER" => 112,
+        "pret:MOVE_LIGHT_SCREEN" => 113,
+        "pret:MOVE_REFLECT" => 115,
+        "pret:MOVE_MIRROR_COAT" => 243,
+        "pret:MOVE_MAGIC_COAT" => 277,
         "pret:MOVE_CONFUSION" => 93,
         "pret:MOVE_PSYCHIC" => 94,
         "pret:MOVE_DEFENSE_CURL" => 111,
@@ -159,11 +166,32 @@ public static class CampaignMoveAnimationPresentation
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
                 new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
+        if(move is 207 or 321)
+        {
+            var result=MixedEffectResult(move,(int)used.Actor,(int)used.Target,used.Move.Value,pp[0].Sequence,action.Select(EffectRow));
+            if(result is null)return new(null,"unmatched-source-mixed-effect-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Value,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
         if (action.Any(e => e is WildBattleMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is WildBattleMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
+        if(move is 113 or 115 or 277)
+        {
+            long result=0;
+            if(move==277)
+            {
+                if(battle.EventIndex>=2&&battle.Events[battle.EventIndex-2] is WildBattleMtMoonVolatileEvent coat&&coat.Side==used.Actor&&coat.Turn==used.Turn&&coat.Volatile=="magic-coat"&&coat.Before is 0 or 1&&coat.After==1&&coat.Reason=="move"&&coat.Sequence<attack.Sequence)result=coat.Sequence;
+            }
+            else
+            {
+                var changed=action.OfType<WildBattleMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==(move==113?"light-screen":"reflect")&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+                if(changed.Length==1)result=changed[0].Sequence;
+            }
+            if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
         if(move is 150 or 300)
         {
             // Splash's source animation precedes its intentional nothing-happened
@@ -205,7 +233,7 @@ public static class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-self-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
-        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111)
+        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111 or 112)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is WildBattleStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=resultIndices[0]},true) is not {} result||result.SourceMoveId!=move)
@@ -314,11 +342,32 @@ public static class CampaignMoveAnimationPresentation
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
                 used.Actor,used.Target,false),"committed-source-animation");
         }
+        if(move is 207 or 321)
+        {
+            var result=MixedEffectResult(move,used.Actor.Value,used.Target.Value,used.Move.Value,pp[0].Sequence,action.Select(EffectRow));
+            if(result is null)return new(null,"unmatched-source-mixed-effect-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Value,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if (action.Any(e => e is SourceMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is SourceMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
+        if(move is 113 or 115 or 277)
+        {
+            long result=0;
+            if(move==277)
+            {
+                if(battle.EventIndex>=2&&battle.Events[battle.EventIndex-2] is SourceMtMoonVolatileEvent coat&&coat.Side==used.Actor&&coat.Turn==used.Turn&&coat.Volatile=="magic-coat"&&coat.Before is 0 or 1&&coat.After==1&&coat.Reason=="move"&&coat.Sequence<attack.Sequence)result=coat.Sequence;
+            }
+            else
+            {
+                var changed=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==(move==113?"light-screen":"reflect")&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+                if(changed.Length==1)result=changed[0].Sequence;
+            }
+            if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if(move is 150 or 300)
         {
             // Splash's source animation precedes its intentional nothing-happened
@@ -360,7 +409,7 @@ public static class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-self-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111)
+        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111 or 112)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is SourceStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=resultIndices[0]}) is not {} result||result.SourceMoveId!=move)

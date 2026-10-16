@@ -32,8 +32,18 @@ TARGET_SCRIPTS = {
     'overworld-art': ('scripts/imports/presentation/import-shared-overworld.py',),
     'party': ('scripts/imports/presentation/import-party-screen.py',),
     'npc-trade': ('scripts/imports/presentation/import-npc-trade-scene.py',),
-    'move-animations': ('scripts/imports/battle/import-source-physical-animations.py',
-                        'scripts/imports/battle/import-source-elemental-animations.py'),
+    'inventory': ('scripts/imports/presentation/import-inventory-presentation.py',),
+    'move-animations': ('scripts/imports/battle/import-source-hit-animations.py',
+                        'scripts/imports/battle/import-source-physical-animations.py',
+                        'scripts/imports/battle/import-source-elemental-animations.py',
+                        'scripts/imports/battle/import-source-trace-animations.py',
+                        'scripts/imports/battle/import-source-explosion-animations.py',
+                        'scripts/imports/battle/import-source-stat-mask.py',
+                        'scripts/imports/battle/import-source-stat-moves.py',
+                        'scripts/imports/battle/import-source-background-scripts.py',
+                        'scripts/imports/battle/import-source-animation-backgrounds.py',
+                        'scripts/imports/battle/import-source-wall-animations.py',
+                        'scripts/imports/battle/import-source-general-animations.py'),
 }
 
 
@@ -66,12 +76,24 @@ def build_commands(targets, raw, out, *, pack=None, cries=None, check=False):
                 arguments = ['--raw', str(raw), '--world', str(out / 'maps/world.json'),
                              '--out', str(out / 'data/quest-log.json')]
             elif target == 'move-animations':
-                name = 'physical' if 'physical' in script else 'elemental'
-                arguments = ['--reference', str(raw), '--output', str(out / ('battle/animations/' + name + '.json'))]
-            elif target in ('opening', 'intro-movie', 'evolution', 'capture-balls', 'party', 'npc-trade'):
+                output = {
+                    'import-source-hit-animations.py': None,
+                    'import-source-physical-animations.py': 'physical.json',
+                    'import-source-trace-animations.py': 'trace.json',
+                    'import-source-explosion-animations.py': 'explosion',
+                    'import-source-stat-mask.py': 'stat-mask',
+                    'import-source-stat-moves.py': 'stat-moves',
+                    'import-source-elemental-animations.py': 'elemental.json',
+                    'import-source-background-scripts.py': 'background-scripts.json',
+                    'import-source-animation-backgrounds.py': 'backgrounds',
+                    'import-source-wall-animations.py': 'walls.json',
+                    'import-source-general-animations.py': 'general.json',
+                }[Path(script).name]
+                arguments = ['--reference', str(raw), '--output', str(out if output is None else out / 'battle/animations' / output)]
+            elif target in ('opening', 'intro-movie', 'evolution', 'capture-balls', 'party', 'npc-trade', 'inventory'):
                 folder = {'intro-movie': 'ui/intro-movie', 'opening': 'ui/opening', 'evolution': 'ui/evolution-scene',
                           'capture-balls': 'battle/capture-balls', 'party': 'ui/party-screen',
-                          'npc-trade': 'ui/npc-trade-scene'}[target]
+                          'npc-trade': 'ui/npc-trade-scene', 'inventory': 'ui/inventory'}[target]
                 arguments = ['--raw', str(raw), '--out', str(out / folder)]
             elif target == 'summary':
                 arguments = ['--raw', str(raw), '--target', str(out / 'ui/summary-screen')]
@@ -129,7 +151,8 @@ def main(argv=None):
                '  overworld-art  Shared field actors and Itemfinder sprite sheet.\n'
                '  party          Native party panel atlas and geometry.\n'
                '  npc-trade      Native NPC wireless trade scene assets.\n'
-               '  move-animations Supported physical/elemental source animation packs.\n'
+               '  inventory      Original TM Case layers/discs and PC hand sprites.\n'
+               '  move-animations Source animation scripts, indexed backgrounds and walls.\n'
                '\nThere is no implicit all target or best-effort skipping. A failed step stops the run.\n'
                '--check is read-only for every target; world recompiles in a temporary directory.')
     parser.add_argument('targets', nargs='+', choices=tuple(TARGET_SCRIPTS))

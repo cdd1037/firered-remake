@@ -538,7 +538,7 @@ public partial class CampaignView
         if (_wildNotice is not null) { WildLines(_wildNotice); return; }
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) { DrawWildLearning(b); return; }
         if (WildStatsPage(b)) { DrawWildStats(b, (WildRewardLevelEvent)b.Pages[b.PageIndex].Reward!); return; }
-        if(_sourceStatContinuation is not null)return;
+        if(_sourceResultContinuation is not null)return;
         if (!_wildPages.IsEmpty)
         {
             if(WildCaptureBallBlocking(b))return;

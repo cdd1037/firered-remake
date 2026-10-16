@@ -8,7 +8,7 @@ public static class SourcePhysicalAnimationCatalog
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         return doc.RootElement.GetProperty("assets").EnumerateArray().Select(r=>r.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(doc,Path.GetDirectoryName(path)!,id));
     }
-    public static bool Supports(int move) => move is 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
+    public static bool Supports(int move) => move is 207 or 321 or 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
@@ -179,15 +179,17 @@ public sealed partial class SourceBattleAnimation
         private readonly int _slot,_duration;private readonly bool _offsetBoth;private int _rotation,_speed,_mode,_count;
         public RotateToSide(SourceBattleAnimation owner,int duration,int speed,AnimationSlot slot,int mode,bool offsetBoth=false)
         {
-            _offsetBoth=offsetBoth;_slot=slot.Value;_duration=duration;_speed=slot.IsPlayer?-speed:speed;_mode=mode;_rotation=mode==1?duration*_speed:0;owner.PrepareBattlerRotScale(_slot,0);
+            _offsetBoth=offsetBoth;_slot=slot.Value;_duration=duration;
+            if(offsetBoth&&!slot.IsPlayer)owner._animationArgs[1]=unchecked((short)-owner._animationArgs[1]);
+            _speed=unchecked((short)(slot.IsPlayer?-speed:speed));_mode=mode;_rotation=unchecked((short)(mode==1?duration*_speed:0));owner.PrepareBattlerRotScale(_slot,0);
         }
         public override void Step(SourceBattleAnimation owner)
         {
             _rotation=(short)(_rotation+_speed);owner.SetBattlerRotScale(_slot,256,256,_rotation);
             if(_offsetBoth||(_slot&1)==0){var p=owner._offsets[_slot];owner._offsets[_slot]=new(p.X,Math.Abs(owner._matrixC[_slot])>>3);}
             if(++_count<_duration)return;
-            if(_mode==2){_count=0;_speed=-_speed;_mode=1;return;}
-            if(_mode==1){owner.SetBattlerRotScale(_slot,256,256,0);owner.ResetBattlerRotScale(_slot);var p=owner._offsets[_slot];owner._offsets[_slot]=new(p.X,0);}
+            if(_mode==2){_count=0;_speed=unchecked((short)-_speed);_mode=1;return;}
+            if(_mode==1)owner.ResetBattlerRotScale(_slot);
             Finished=true;
         }
     }

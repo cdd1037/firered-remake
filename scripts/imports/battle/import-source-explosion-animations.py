@@ -71,11 +71,10 @@ def build(reference):
     material = struct.pack('<HH', 32, 128) + struct.pack('<4096H', *[colors[i] | (0x8000 if i else 0) for i in indices])
     recipe = dict(template='gExplosionSpriteTemplate', asset='explosion', callback='AnimSpriteOnMonPos', blend=False, animations=[frames], sourcePath='src/battle_anim_effects_2.c', sourceLine=source.count('\n', 0, template.start())+1)
     manifest = dict(schemaVersion=1,   revision=0, scripts=scripts, subroutines=subs, assets=[dict(id='explosion', path='explosion.rgb555')], spriteRecipes=[recipe])
-    return (json.dumps(manifest, indent=2)+'\n').encode(), material
+    return (json.dumps(manifest,separators=(',',':'))+'\n').encode(), material
 
 if __name__ == '__main__':
-    p = argparse.ArgumentParser(); p.add_argument('--reference', type=Path, default=Path((ROOT/'.tools/reference-root').read_text().strip()) if (ROOT/'.tools/reference-root').exists() else None); p.add_argument('--output', type=Path, default=ROOT/'content/generated/battle/animations/explosion'); p.add_argument('--check', action='store_true'); a = p.parse_args()
-    if a.reference is None: p.error('--reference is required without .tools/reference-root')
+    p = argparse.ArgumentParser(); p.add_argument('--reference', type=Path, required=True); p.add_argument('--output', type=Path, default=ROOT/'content/generated/battle/animations/explosion'); p.add_argument('--check', action='store_true'); a = p.parse_args()
     manifest, material = build(a.reference)
     for name, data in [('manifest.json', manifest), ('explosion.rgb555', material)]:
         if a.check:

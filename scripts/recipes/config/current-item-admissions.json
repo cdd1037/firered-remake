@@ -150,7 +150,7 @@
     },
     {
       "item": "pret:ITEM_MAX_ETHER",
-      "useSupport": "noFieldUse",
+      "useSupport": "fieldEther",
       "effects": true
     },
     {
@@ -190,7 +190,7 @@
     },
     {
       "item": "pret:ITEM_LEPPA_BERRY",
-      "useSupport": "noFieldUse",
+      "useSupport": "fieldEther",
       "effects": true
     },
     {

@@ -115,7 +115,9 @@ public sealed class CampaignQuestLogTests
         Assert.AreEqual("ArrivedInLocation",recorded.Scenes.Single().Actions.Single().TextKey);
         Assert.IsNull(CampaignQuestLogRecorder.Validate(recorded,catalog.QuestLogSource));
         var disabled=visited with{World=visited.World with{Player=visited.World.Player with{MapId=new MapId("map.trainer-tower-lobby")}}};
-        Assert.AreSame(recorded,CampaignQuestLogRecorder.Record(recorded,moved,disabled,new("move"),catalog));
+        var stopped=CampaignQuestLogRecorder.Record(recorded,moved,disabled,new("move"),catalog)!;
+        Assert.IsTrue(stopped.Scenes.Single().Closed);
+        Assert.AreEqual(recorded.Scenes.Single().Actions,stopped.Scenes.Single().Actions);
     }
 
     [TestMethod]

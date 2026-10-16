@@ -164,12 +164,14 @@ public partial class CampaignView
 
     private void DrawEvolutionBackground()
     {
-        if (_evolutionAnimation is not { } a || a.Phase is EvolutionScenePhase.Intro or EvolutionScenePhase.Cancelled or EvolutionScenePhase.Complete) return;
+        if (_evolutionAnimation is not { } a || !a.MovingBackgroundVisible) return;
         _evolutionSceneAssets ??= PretEvolutionScene.Load(_root);
         int palette = _evolutionSceneAssets.PaletteAt(a.BackgroundFrame);
-        double angle = ((a.BackgroundFrame * 5) & 255) * Math.PI / 128;
-        int dx = (int)(Math.Cos(angle) * 4), dy = (int)(Math.Sin(angle) * 4);
-        DrawTexture(EvolutionSceneTexture($"background-1-{palette}"), new(-8 + dx, -16 + dy));
+        int angle = (a.BackgroundFrame * 5) & 255;
+        int dx = _captureBallAssets.Sine[angle + 64] * 4 >> 8, dy = _captureBallAssets.Sine[angle] * 4 >> 8;
+        int outerAngle = (angle + 128) & 255;
+        int outerX = _captureBallAssets.Sine[outerAngle + 64] * 4 >> 8, outerY = _captureBallAssets.Sine[outerAngle] * 4 >> 8;
+        DrawTexture(EvolutionSceneTexture($"background-1-{palette}"), new(-8 - outerX, -16 - outerY));
         DrawTexture(EvolutionSceneTexture($"background-0-{palette}"), new(-8 - dx, -16 - dy), new Color(1,1,1,.5f));
     }
 
@@ -191,44 +193,17 @@ public partial class CampaignView
         Portrait(previous,a.PreviousScale);
         if (a.Phase is EvolutionScenePhase.Morph or EvolutionScenePhase.Circle or EvolutionScenePhase.Reveal) Portrait(target,a.TargetScale);
         DrawEvolutionSparkles(a);
-        if (a.Phase == EvolutionScenePhase.Reveal)
-        {
-            float flash = a.PhaseFrame < 16 ? a.PhaseFrame / 16f : a.PhaseFrame < 32 ? 1 : Math.Clamp(1-(a.PhaseFrame-32)/272f,0,1);
-            DrawRect(new(0,0,240,112),new Color(1,1,1,flash));
-        }
     }
 
     private void DrawEvolutionSparkles(EvolutionScenePresentation a)
     {
-        if (a.Phase is not (EvolutionScenePhase.Spiral or EvolutionScenePhase.Arc or EvolutionScenePhase.Circle)) return;
-        var texture=EvolutionSceneTexture("sparkle");
-        int count=a.Phase==EvolutionScenePhase.Circle?16: a.Phase==EvolutionScenePhase.Arc?9:4;
-        int interval=a.Phase==EvolutionScenePhase.Spiral?8:1;
-        int last=a.Phase==EvolutionScenePhase.Spiral?56:a.Phase==EvolutionScenePhase.Arc?5:32;
-        for(int spawn=0;spawn<=last;spawn+=a.Phase==EvolutionScenePhase.Circle?32:interval)
-        for(int i=0;i<count;i++)
+        var particles = a.Sparkles(_captureBallAssets.Sine);
+        if (particles.IsEmpty) return;
+        var texture = EvolutionSceneTexture("sparkle");
+        foreach (var particle in particles.OrderByDescending(p => p.Subpriority))
         {
-            int age=a.PhaseFrame-spawn;if(age<0)continue;
-            double angle;float x,y;
-            if(a.Phase==EvolutionScenePhase.Spiral)
-            {
-                y=88-age*age/80; if(y<=8)continue;
-                int radius=48-age/2;angle=((spawn*2+i*64+age*4)&255)*Math.PI/128;
-                x=120+(float)Math.Cos(angle)*radius;y+=(float)Math.Sin(angle)*radius/4;
-            }
-            else if(a.Phase==EvolutionScenePhase.Arc)
-            {
-                y=8+age*age/5;if(y>=88)continue;
-                int radius=(int)(Math.Sin(((age*4)&255)*Math.PI/128)*40)+8;angle=i*16*Math.PI/128;
-                x=120+(float)Math.Cos(angle)*radius;y+=(float)Math.Sin(angle)*radius/4;
-            }
-            else
-            {
-                int radius=120-age*(spawn==0?4:8);if(radius<=8)continue;
-                angle=((i*16+age*4)&255)*Math.PI/128;
-                x=120+(float)Math.Cos(angle)*radius;y=56+(float)Math.Sin(angle)*radius;
-            }
-            DrawTexture(texture,new(x-4,y-4));
+            float size = 8 * particle.Scale;
+            DrawTextureRect(texture, new(particle.X - size / 2, particle.Y - size / 2, size, size), false);
         }
     }
 
@@ -246,6 +221,8 @@ public partial class CampaignView
         var owned = _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId);
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         DrawEvolutionBackground();
+        if (_evolutionAnimation is { BackgroundWhiteAmount: > 0 } flash)
+            DrawRect(new(0, 0, 240, 112), new Color(1, 1, 1, flash.BackgroundWhiteAmount));
         if (scene.Stage == CampaignEvolutionStage.LearnMove)
         {
             DrawMoveSelectionSummary("evolution", owned, scene.PendingMoves[0].Move, _evolutionMoveCursor);
@@ -265,7 +242,7 @@ public partial class CampaignView
         };
         var lines = text.Split('\n');
         for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(10, 119 + i * 16), lines[i]);
-        if (scene.Stage == CampaignEvolutionStage.Proposal)
+        if (scene.Stage == CampaignEvolutionStage.Proposal && _evolutionAnimation?.CanCancel == true)
             SourceText(_sourceSmall, new(14, 94), "B/Backspace: stop evolution");
         if (_wildNotice is not null) ItemMessageBox(_wildNotice);
     }

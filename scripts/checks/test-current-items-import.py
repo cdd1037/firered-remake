@@ -39,6 +39,18 @@ class CurrentItemTests(unittest.TestCase):
             self.assertEqual({'item', 'description', 'healHp', 'cureStatus', 'effectBytes', 'useSupport'}, set(item))
         self.assertTrue(all(set(shop) == {'id', 'items'} for shop in catalog['shops']))
 
+    def test_selected_pp_capability_is_source_callback_and_effect_checked(self):
+        items = {item['item'].identity: item for item in compiler.compile_catalog(ROOT)['items']}
+        for symbol, amount in [('ETHER', 10), ('MAX_ETHER', 127), ('LEPPA_BERRY', 10)]:
+            row = items['pret:ITEM_' + symbol]
+            self.assertEqual('fieldEther', row['useSupport'])
+            self.assertEqual([0, 0, 0, 0, 24, 0, amount], row['effectBytes'])
+        recipe = copy.deepcopy(compiler.read_recipe(ROOT))
+        row = next(row for row in recipe['items'] if row['item'] == 'pret:ITEM_POTION')
+        row['useSupport'] = 'fieldEther'
+        with self.assertRaisesRegex(ValueError, 'Selected PP restoration callback/effect mismatch'):
+            compiler.compile_catalog(ROOT, recipe)
+
     def test_fuchsia_mart_stock_is_parsed_from_its_original_ordered_table(self):
         catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
         shop, = [shop for shop in catalog['shops'] if shop['id'] == 'FuchsiaCity_Mart_Items']

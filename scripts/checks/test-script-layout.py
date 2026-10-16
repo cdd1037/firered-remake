@@ -142,7 +142,8 @@ class ResourceEntryTests(unittest.TestCase):
         targets = {'opening': ('--out', 'ui/opening'), 'summary': ('--target', 'ui/summary-screen'),
                    'evolution': ('--out', 'ui/evolution-scene'), 'capture-balls': ('--out', 'battle/capture-balls'),
                    'overworld-art': ('--generated', ''), 'party': ('--out', 'ui/party-screen'),
-                   'npc-trade': ('--out', 'ui/npc-trade-scene'), 'intro-movie': ('--out', 'ui/intro-movie')}
+                   'npc-trade': ('--out', 'ui/npc-trade-scene'), 'intro-movie': ('--out', 'ui/intro-movie'),
+                   'inventory': ('--out', 'ui/inventory')}
         for target, (flag, folder) in targets.items():
             with self.subTest(target=target):
                 commands = self.module.build_commands([target], self.raw, self.out, check=True)
@@ -157,10 +158,11 @@ class ResourceEntryTests(unittest.TestCase):
 
     def test_animation_producers_use_selected_dependencies(self):
         commands = self.module.build_commands(['move-animations'], self.raw, self.out, check=True)
-        self.assertEqual(2, len(commands))
-        for command, name in zip(commands, ('physical', 'elemental')):
+        self.assertEqual(11, len(commands))
+        outputs = (None, 'physical.json', 'elemental.json', 'trace.json', 'explosion', 'stat-mask', 'stat-moves', 'background-scripts.json', 'backgrounds', 'walls.json', 'general.json')
+        for command, name in zip(commands, outputs):
             self.assertEqual(['--reference', str(self.raw), '--output',
-                              str(self.out / ('battle/animations/' + name + '.json')), '--check'], command[2:])
+                              str(self.out if name is None else self.out / 'battle/animations' / name), '--check'], command[2:])
 
     def test_missing_audio_input_fails_before_other_targets_write(self):
         with patch.object(self.module.subprocess, 'run') as run:

@@ -11,9 +11,10 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> UseMtMoonFieldMedicine(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
+        if (state.ItemMenu is not { Origin: "bag", View: "bag" or "berries" } menu ||
             state.Inventory is null || string.IsNullOrEmpty(command.Text))
             return No("field_medicine_context_invalid");
+        if (!IsFieldMedicineContainer(menu,new ItemId(command.Text))) return No("berry_item_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length)
             return No("item_party_index_invalid");
         var inventoryError = ValidateCampaignInventory(state.Inventory);
@@ -24,7 +25,7 @@ public sealed partial class CampaignSession
         if (!result.Succeeded)
             return result.Error == "medicine_no_effect"
                 ? new(CommandStatus.Accepted, state with { ItemMenu = menu with
-                    { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = "bag" } })
+                    { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = menu.View } })
                 : No(result.Error!);
         string symbol = result.PpRestored > 0 ? "gText_PPWasRestored" : "gText_PkmnHPRestoredByVar2";
         _ = _content.TextPages(symbol); // Fail before consuming if presentation data is missing.
@@ -35,7 +36,7 @@ public sealed partial class CampaignSession
             TextBuffers = result.HpRestored > 0 ? state.TextBuffers
                 .SetItem("STR_VAR_1", result.Pokemon.Nickname)
                 .SetItem("STR_VAR_2", result.HpRestored.ToString(CultureInfo.InvariantCulture)) : state.TextBuffers,
-            ItemMenu = menu with { View = "message", MessageSymbol = symbol, ReturnView = "bag" }
+            ItemMenu = menu with { View = "message", MessageSymbol = symbol, ReturnView = menu.View }
         });
     }
 }

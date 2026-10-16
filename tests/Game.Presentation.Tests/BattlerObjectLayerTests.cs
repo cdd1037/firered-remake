@@ -43,4 +43,13 @@ public sealed class BattlerObjectLayerTests
         runtime.Tick();var reset=runtime.Tick();CollectionAssert.AreEqual(new[]{1},reset.RestoredObjectSlots);Assert.AreEqual(0,reset.BlendedObjectSlots.Length);Assert.IsTrue(reset.BackgroundSlots.Contains(1));
         runtime.Cancel();Assert.AreEqual(0,runtime.Snapshot().RestoredObjectSlots.Length);
     }
+    [TestMethod]
+    public void StaticBackgroundCopyRetainsPositionAndPaletteWhileObjectStateChanges()
+    {
+        var (composer,frame)=Scene();
+        frame=frame with{RestoredObjectSlots=[],BlendedObjectSlots=[],Offsets=[default,new(100,0)],PaletteBlends=[new(17,16,0x03e0)],StaticBackgroundCopies=[new(1,default,null,false,false)]};
+        var pixels=composer.ComposeField(frame);Pixel(pixels,60,50,255,0,0);Pixel(pixels,180,50,0,0,255);
+        frame=frame with{StaticBackgroundCopies=[]};pixels=composer.ComposeField(frame);Pixel(pixels,60,50,0,0,255);Pixel(pixels,180,50,0,255,0);
+    }
+
 }

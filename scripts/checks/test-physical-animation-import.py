@@ -11,7 +11,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
@@ -136,4 +136,26 @@ class PhysicalImportTests(unittest.TestCase):
   raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createvisualtask AnimTask_SetGrayscaleOrOriginalPal',b'createvisualtask MissingGrayscale')
   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
   self.assertNotIn(111,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('callback:MissingGrayscale',next(b for b in blocked if b['moveId']==111)['missing'])
+ def test_attached_callbacks_reuse_frame_and_affine_recipes_without_admitting_unclosed_roots(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={s['moveId'] for s in pack['scripts']}
+  self.assertTrue({207,321}<=roots);self.assertFalse(roots&{99,137,184,218,259,269})
+  eye=next(r for r in pack['spriteRecipes'] if r['template']=='gEyeSparkleSpriteTemplate');anger=next(r for r in pack['spriteRecipes'] if r['template']=='gAngerMarkSpriteTemplate')
+  self.assertEqual([0,4,8,4,0],[f['tile'] for f in eye['animations'][0]]);self.assertEqual([4]*5,[f['duration'] for f in eye['animations'][0]])
+  self.assertEqual('AnimAngerMark',anger['callback']);self.assertFalse(anger['affineDoubleSize'])
+  self.assertEqual([(11,11,8),(-11,-11,8),(0,0,0)],[(c['x'],c['y'],c['duration']) for c in anger['affineAnimations'][0]])
+ def test_sprite_sheet_registration_limits_loaded_tiles_instead_of_loading_unused_png_art(self):
+  assets=imp.build_assets(REFERENCE)
+  self.assertEqual((16,48),struct.unpack_from('<HH',assets['eye-sparkle']));self.assertEqual((16,16),struct.unpack_from('<HH',assets['anger']))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/eye_sparkle.png') as image:
+   indices=list(image.tobytes());palette=image.getpalette();self.assertEqual((16,64),image.size);self.assertTrue(any(indices[16*48:]))
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices[:16*48]]
+  self.assertEqual(expected,list(struct.unpack_from('<768H',assets['eye-sparkle'],4)))
+  for name in ['eye-sparkle','anger']:self.assertEqual(assets[name],(ROOT/('content/generated/battle/animations/physical-'+name+'.rgb555')).read_bytes())
+  raw=imp.read_sources(REFERENCE);raw['src/data/battle_anim.h']=raw['src/data/battle_anim.h'].replace(b'gBattleAnimSpriteGfx_EyeSparkle, 0x0180',b'gBattleAnimSpriteGfx_EyeSparkle, 0x0190')
+  with self.assertRaises(ValueError):imp.registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_EyeSparkle','eye_sparkle')
+ def test_attached_move_closures_are_rejected_when_other_required_callbacks_are_missing(self):
+  raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createsprite gAngerMarkSpriteTemplate',b'createsprite MissingAnger').replace(b'createvisualtask AnimTask_RockMonBackAndForth',b'createvisualtask MissingRock')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertFalse({207,321}&{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertIn('callback:MissingAnger',next(b for b in blocked if b['moveId']==207)['missing']);self.assertIn('callback:MissingRock',next(b for b in blocked if b['moveId']==321)['missing'])
 if __name__=='__main__':unittest.main()

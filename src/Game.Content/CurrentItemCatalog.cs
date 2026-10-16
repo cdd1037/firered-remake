@@ -36,6 +36,8 @@ public static class CurrentItemCatalog
             throw new InvalidDataException("current_item_catalog_admission");
         foreach (var item in catalog.Items)
         {
+            if (item.UseSupport == EarlyShopUseSupport.FieldEther && !AuthenticatedFieldMedicine.IsSelectedPpEffect(item))
+                throw new InvalidDataException("current_item_pp_effect");
             if (item.UseSupport == EarlyShopUseSupport.Potion &&
                 (item.FieldUseFunction != "FieldUseFunc_Medicine" || item.EffectBytes.Length < 7 ||
                  item.EffectBytes[4] != 4 || item.HealHp == 0 || item.HealHp != item.EffectBytes[6]))

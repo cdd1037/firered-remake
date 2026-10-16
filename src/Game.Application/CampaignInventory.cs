@@ -61,11 +61,15 @@ public sealed partial class CampaignSession
             : SourcePotionGiftRules.CheckSpace(Items, view, OpeningInventoryRules.PotionId, quantity);
         return result with { State = result.Succeeded && add ? MergePotionView(inventory, result.State) : inventory };
     }
+    private bool IsFieldMedicineContainer(CampaignItemMenu menu,ItemId item) =>
+        menu.Origin=="bag" && _content.Inventory.Items.TryGetValue(item,out var definition) &&
+        (menu.View=="berries" ? definition.Pocket=="POCKET_BERRY_POUCH" : menu.View=="bag" && definition.Pocket=="POCKET_ITEMS");
+
     private Decision<CampaignState> UseFieldMedicine(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (_content.EarlyShop is not { } shop || state.ItemMenu is not { Origin: "bag", View: "bag" or "berries" } menu || string.IsNullOrEmpty(command.Text)) return No("field_medicine_context_invalid");
-        if (menu.View=="berries" && (shop.Items.SingleOrDefault(i=>i.Id==new ItemId(command.Text))?.Pocket!="POCKET_BERRY_POUCH")) return No("berry_item_context_invalid");
+        if (!IsFieldMedicineContainer(menu,new ItemId(command.Text))) return No("berry_item_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");
         var item = new ItemId(command.Text);
         var result = _content.PresetDoubleItems is {} sourceHpItems && SourceFieldHpMedicineRules.Supports(shop, sourceHpItems, item)

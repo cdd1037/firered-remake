@@ -33,6 +33,8 @@ not generic runtime JSON transformations.
 
 ## Resources and presentation
 
+The shared five-row TM Case uses original male/female layers, type-tinted TM/HM discs, move information and source cursor geometry from `ui/inventory`. Teachy TV reuses the renderer with temporary inventory. Import and lifecycle details are in [inventory presentation](inventory-presentation.md).
+
 The early presentation files `data/machine-learning/{pewter,bill,cerulean,route11}.json`
 contain only `{schemaVersion, icons}`. Rock Tunnel uses the same icon shape in its
 existing item directory. `ItemIconAssets` reads these without loading machine

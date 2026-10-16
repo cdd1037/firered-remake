@@ -105,11 +105,8 @@ public partial class CampaignView
         var inventory = field.Inventory ?? (field.Screen == TeachyTvFieldScreen.TmCase ? field.Data.TmInventory : field.Data.BagInventory);
         if (field.Screen == TeachyTvFieldScreen.TmCase)
         {
-            _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-            DrawMachineList((inventory.Machines ?? []).OrderBy(s => s.Item.Value, StringComparer.Ordinal).ToArray(), field.Cursor, 0, 5);
-            if (field.SelectedMachine is {} machine)
-                SourceText(_sourceSmall, new(8, 67), "TYPE/" + machine.Move.Type.Replace("TYPE_", "", StringComparison.Ordinal));
-            if (field.DescriptionShaded) DrawRect(new(0, 78, 108, 82), new Color(0, 0, 0, 6f / 16));
+            DrawMachineList((inventory.Machines ?? []).OrderBy(s => s.Item.Value, StringComparer.Ordinal).ToArray(),
+                field.Cursor, 0, 5, shaded: field.DescriptionShaded, tutorial: true);
         }
         else if (field.Pocket == TeachyTvBagPocket.Items) DrawItemList(inventory, "bag", field.Cursor);
         else DrawTeachyTvKeyPocket(field, inventory);

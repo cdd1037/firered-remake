@@ -1,6 +1,48 @@
-/// <summary>Read-only 60 Hz evolution scene. Ports the source reciprocal sprite scaling;
-/// never owns a Pokemon, inventory, RNG or an evolution decision.</summary>
+using System.Collections.Immutable;
+
+/// <summary>Read-only 60 Hz evolution scene. Never owns a Pokemon, inventory,
+/// gameplay RNG or an evolution decision.</summary>
 public enum EvolutionScenePhase { Intro, Spiral, Arc, Morph, Circle, Reveal, Complete, Cancelled }
+public readonly record struct EvolutionSparkle(int X, int Y, int MatrixIndex, int Subpriority)
+{
+    // evolution_graphics.c: reciprocal OAM matrices 0x3C0 through 0x100.
+    public float Scale => 256f / (960 - 64 * MatrixIndex);
+}
+
+/// <summary>palette.c normal fade: separate BG/OBJ passes, delta 2, delay only
+/// before BG, then five finishing callbacks. Coefficients are GBA 0..16.</summary>
+public sealed class EvolutionPaletteFade
+{
+    public int BackgroundBlend { get; private set; }
+    public int ObjectBlend { get; private set; }
+    public bool Active { get; private set; } = true;
+    private readonly int _target, _delay;
+    private int _value, _timer, _finish = -1;
+    private bool _objects;
+    public EvolutionPaletteFade(int start, int target, int delay)
+    {
+        if (start is < 0 or > 16 || target is < 0 or > 16 || delay < 0)
+            throw new ArgumentOutOfRangeException(nameof(start));
+        BackgroundBlend = ObjectBlend = _value = start; _target = target; _timer = _delay = delay;
+        AdvanceFrame(); // BeginNormalPaletteFade calls UpdatePaletteFade immediately.
+    }
+    public void AdvanceFrame()
+    {
+        if (!Active) return;
+        if (_finish >= 0) { if (_finish++ == 4) Active = false; return; }
+        if (!_objects)
+        {
+            if (_timer < _delay) { _timer++; return; }
+            _timer = 0; BackgroundBlend = _value;
+        }
+        else ObjectBlend = _value;
+        _objects = !_objects;
+        if (_objects) return;
+        if (_value == _target) _finish = 0;
+        else _value += Math.Sign(_target - _value) * Math.Min(2, Math.Abs(_target - _value));
+    }
+}
+
 public sealed class EvolutionScenePresentation
 {
     public EvolutionScenePhase Phase { get; private set; } = EvolutionScenePhase.Intro;
@@ -8,17 +50,42 @@ public sealed class EvolutionScenePresentation
     public int BackgroundFrame { get; private set; }
     public int PreviousScale { get; private set; } = 256;
     public int TargetScale { get; private set; } = 16;
-    public bool CanCancel { get; }
+    public bool CanCancel => _allowCancellation && Phase == EvolutionScenePhase.Morph;
     public bool Animating => Phase is not (EvolutionScenePhase.Complete or EvolutionScenePhase.Cancelled);
+    public bool MovingBackgroundVisible => Phase is EvolutionScenePhase.Spiral or EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle;
     public bool Silhouette => Phase is EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle;
+    public float WhiteAmount => Phase switch
+    {
+        EvolutionScenePhase.Spiral => (_fade?.ObjectBlend ?? 0) / 16f,
+        EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle => 1,
+        EvolutionScenePhase.Reveal => PhaseFrame < 33 ? 1 : (_fade?.ObjectBlend ?? 0) / 16f,
+        _ => 0
+    };
+    public float BackgroundWhiteAmount => Phase == EvolutionScenePhase.Reveal ? (_fade?.BackgroundBlend ?? 0) / 16f : 0;
+    private readonly bool _allowCancellation;
+    private readonly ImmutableArray<(int Spawn, int Velocity, int Height)> _spray;
+    private EvolutionPaletteFade? _fade;
     private double _fraction;
     private int _speed = 8;
     private bool _direction, _choose = true;
-    public EvolutionScenePresentation(bool canCancel) => CanCancel = canCancel;
-
+    public EvolutionScenePresentation(bool canCancel, uint visualSeed = 0x45564F)
+    {
+        _allowCancellation = canCancel;
+        // Source Random() recurrence, privately seeded: no domain RNG reads or writes.
+        int Random() { visualSeed = unchecked(visualSeed * 1103515245 + 24691); return (int)(visualSeed >> 16); }
+        var spray = ImmutableArray.CreateBuilder<(int, int, int)>();
+        for (int frame = 0; frame < 50; frame++)
+        {
+            if (frame == 32) continue; // The fade callback replaces this frame's spawn.
+            if (frame != 0) Random(); // Unused argument in CreatePostEvoSparkleSet2 still consumes a draw.
+            for (int i = 0; i < (frame == 0 ? 8 : 1); i++) spray.Add((frame, 3 - Random() % 7, 48 + (Random() & 63)));
+        }
+        _spray = spray.ToImmutable();
+    }
     public bool Cancel()
     {
-        if (!CanCancel || !Animating) return false;
+        // Task_EvolutionScene accepts B only during WAIT_CYCLE_MON_SPRITE.
+        if (!CanCancel) return false;
         Phase = EvolutionScenePhase.Cancelled; PhaseFrame = 0;
         PreviousScale = 256; TargetScale = 0;
         return true;
@@ -26,7 +93,6 @@ public sealed class EvolutionScenePresentation
     public void Advance(double seconds)
     {
         if (!double.IsFinite(seconds) || seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
-        // A stalled host never skips the user's whole cancellation window.
         _fraction += Math.Min(seconds, .25) * 60;
         int frames = (int)(_fraction + 1e-9); _fraction -= frames;
         AdvanceFrames(frames);
@@ -34,40 +100,92 @@ public sealed class EvolutionScenePresentation
     public void AdvanceFrames(int frames)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(frames);
-        for (int i=0; i<frames && Animating; i++)
+        for (int i = 0; i < frames && Animating; i++)
         {
             PhaseFrame++;
-            if (Phase is not EvolutionScenePhase.Intro) BackgroundFrame++;
+            if (MovingBackgroundVisible) BackgroundFrame++;
+            _fade?.AdvanceFrame();
             switch (Phase)
             {
                 case EvolutionScenePhase.Intro: if (PhaseFrame >= 90) Enter(EvolutionScenePhase.Spiral); break;
                 case EvolutionScenePhase.Spiral: if (PhaseFrame >= 162) Enter(EvolutionScenePhase.Arc); break;
                 case EvolutionScenePhase.Arc: if (PhaseFrame >= 99) Enter(EvolutionScenePhase.Morph); break;
                 case EvolutionScenePhase.Morph:
-                    // evolution_graphics.c EvoTask_ChooseNextEvoSpriteAnim and
-                    // EvoTask_ShrinkOrExpandEvoSprites. One callback per frame.
+                    // One choose/shrink callback per frame, reciprocal scales 256/16.
                     if (_choose)
                     {
-                        if (_speed == 128) { PreviousScale=0; TargetScale=256; Enter(EvolutionScenePhase.Circle); }
-                        else { _speed += 2; _direction = !_direction; _choose=false; }
+                        if (_speed == 128) { PreviousScale = 0; TargetScale = 256; Enter(EvolutionScenePhase.Circle); }
+                        else { _speed += 2; _direction = !_direction; _choose = false; }
                     }
                     else
                     {
-                        PreviousScale = Math.Clamp(PreviousScale + (_direction ? -_speed : _speed),16,256);
-                        TargetScale = Math.Clamp(TargetScale + (_direction ? _speed : -_speed),16,256);
-                        _choose = _direction ? PreviousScale==16 && TargetScale==256 : PreviousScale==256 && TargetScale==16;
+                        PreviousScale = Math.Clamp(PreviousScale + (_direction ? -_speed : _speed), 16, 256);
+                        TargetScale = Math.Clamp(TargetScale + (_direction ? _speed : -_speed), 16, 256);
+                        _choose = _direction ? PreviousScale == 16 && TargetScale == 256 : PreviousScale == 256 && TargetScale == 16;
                     }
                     break;
-                case EvolutionScenePhase.Circle: if (PhaseFrame>=51) Enter(EvolutionScenePhase.Reveal); break;
-                case EvolutionScenePhase.Reveal: if (PhaseFrame>=306) Enter(EvolutionScenePhase.Complete); break;
+                case EvolutionScenePhase.Circle: if (PhaseFrame >= 51) Enter(EvolutionScenePhase.Reveal); break;
+                case EvolutionScenePhase.Reveal:
+                    if (PhaseFrame == 33) _fade = new(16, 0, 16);
+                    if (PhaseFrame >= 130 && _fade is { Active: false }) Enter(EvolutionScenePhase.Complete);
+                    break;
             }
         }
     }
-    private void Enter(EvolutionScenePhase phase) { Phase=phase; PhaseFrame=0; }
-    public float WhiteAmount => Phase switch {
-        EvolutionScenePhase.Spiral => Math.Clamp(PhaseFrame / 176f,0,1),
-        EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle => 1,
-        EvolutionScenePhase.Reveal => Math.Clamp(1-(PhaseFrame-32)/272f,0,1),
-        _ => 0
-    };
+    private void Enter(EvolutionScenePhase phase)
+    {
+        Phase = phase; PhaseFrame = 0;
+        if (phase == EvolutionScenePhase.Spiral) _fade = new(0, 16, 10);
+        if (phase == EvolutionScenePhase.Reveal) _fade = new(0, 16, 0);
+    }
+    public ImmutableArray<EvolutionSparkle> Sparkles(ImmutableArray<int> sine)
+    {
+        if (sine.Length != 320) throw new ArgumentException("Native sine table required.", nameof(sine));
+        int Sin(int angle, int radius) => sine[angle & 255] * radius >> 8;
+        int Cos(int angle, int radius) => sine[(angle & 255) + 64] * radius >> 8;
+        var result = ImmutableArray.CreateBuilder<EvolutionSparkle>();
+        if (Phase == EvolutionScenePhase.Reveal)
+        {
+            foreach (var (spawn, velocity, height) in _spray)
+            {
+                int age = PhaseFrame - 1 - spawn;
+                if (age is < 0 or >= 128) continue;
+                result.Add(new(120 + velocity * age / 3, 57 + age / 4 - Sin(age, height),
+                    Math.Max(0, 11 - (age + 1) * 12 / 128), age + 1 > 64 ? 1 : 20));
+            }
+        }
+        else if (Phase is EvolutionScenePhase.Spiral or EvolutionScenePhase.Arc or EvolutionScenePhase.Circle)
+        {
+            int count = Phase == EvolutionScenePhase.Circle ? 16 : Phase == EvolutionScenePhase.Arc ? 9 : 4;
+            int step = Phase == EvolutionScenePhase.Circle ? 32 : Phase == EvolutionScenePhase.Spiral ? 8 : 1;
+            int last = Phase == EvolutionScenePhase.Spiral ? 56 : Phase == EvolutionScenePhase.Arc ? 5 : 32;
+            for (int spawn = 0; spawn <= last; spawn += step)
+            for (int i = 0; i < count; i++)
+            {
+                int age = PhaseFrame - 1 - spawn;
+                if (age < 0) continue;
+                if (Phase == EvolutionScenePhase.Spiral)
+                {
+                    if (age > 80) continue;
+                    int radius = 48 - age / 2, angle = spawn * 2 + i * 64 + age * 4;
+                    int y2 = Sin(angle, radius) / 4;
+                    result.Add(new(120 + Cos(angle, radius), 88 - age * age / 80 + y2,
+                        Math.Min(11, (48 - (age + 1) / 2) / 4), y2 > 0 ? 1 : 20));
+                }
+                else if (Phase == EvolutionScenePhase.Arc)
+                {
+                    if (age > 20) continue;
+                    int radius = age == 0 ? 8 : Sin((age - 1) * 4, 40) + 8;
+                    result.Add(new(120 + Cos(i * 16, radius), 8 + age * age / 5 + Sin(i * 16, radius) / 4, 5, 1));
+                }
+                else
+                {
+                    int radius = 120 - age * (spawn == 0 ? 4 : 8), angle = i * 16 + age * 4;
+                    if (radius <= 8) continue;
+                    result.Add(new(120 + Cos(angle, radius), 56 + Sin(angle, radius), 11, 1));
+                }
+            }
+        }
+        return result.ToImmutable();
+    }
 }

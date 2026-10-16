@@ -5,13 +5,13 @@ using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Godot;
 
-/// <summary>Functional source-authenticated TM presentation using existing source fonts/frames. The original TM CASE background is not imported.</summary>
+/// <summary>Source TM Case presentation; teaching and inventory changes remain authoritative commands.</summary>
 public partial class CampaignView
 {
     private const string MachineIcon = "pewter-tm39", MachineCaseIcon = "pewter-tm-case";
     private bool _machineWasActive;
     private string _machineMode = "list", _machineNoticeReturn = "party";
-    private int _machineCursor, _machineListCursor, _machineParty, _machineSlot = -1, _machinePage;
+    private int _machineCursor, _machineListCursor, _machineScrollOffset, _machineParty, _machineSlot = -1, _machinePage;
     private ImmutableArray<string> _machinePages = [];
     private bool MachineActive => _catalog.Machines is not null && _session.State.ItemMenu is { Origin: "bag" } menu
         && (menu.View == "machines" || menu.View == "message" && menu.ReturnView == "machines");
@@ -21,11 +21,12 @@ public partial class CampaignView
         ?? throw new InvalidDataException("Selected machine is not in this profile.");
     private string MachineMoveName => MoveName(MachineDefinition.Move);
     private int MachineQuantity => OpeningInventoryRules.Quantity(_session.State.Inventory!.Machines ?? [], _machineSelected);
-    private int MachineListX => 106;
-    private int MachineListWidth => 134;
-    private int MachineListRowHeight => 16;
-    private int MachineListStart => Math.Max(0, _machineCursor - 6);
-    private int MachineListVisibleCount => Math.Min(7, MachineStacks.Length + 1 - MachineListStart);
+    private int MachineListX => MachineCaseLayout.ListX;
+    private int MachineListY => MachineCaseLayout.ListY;
+    private int MachineListWidth => MachineCaseLayout.ListWidth;
+    private int MachineListRowHeight => MachineCaseLayout.RowHeight;
+    private int MachineListStart => _machineScrollOffset = MachineCaseLayout.KeepCursorVisible(_machineCursor, _machineScrollOffset, MachineStacks.Length);
+    private int MachineListVisibleCount => MachineCaseLayout.VisibleRows(MachineStacks.Length, MachineListStart);
 
     partial void ExtendMachineQuestPocket(ref QuestItemUiDocument document)
     {
@@ -57,7 +58,7 @@ public partial class CampaignView
     {
         bool active = MachineActive;
         if (active && !_machineWasActive)
-        { _machineMode = "list"; _machineSelected = MachineStacks.FirstOrDefault()?.Item ?? MachineRules.Tm39Id; _machineCursor = 0; _machineParty = 0; _machineSlot = -1; _machinePages = []; _machinePage = 0; }
+        { _machineDisc.Reset(); _machineScrollOffset = 0; _machineMode = "list"; _machineSelected = MachineStacks.FirstOrDefault()?.Item ?? MachineRules.Tm39Id; _machineCursor = 0; _machineParty = 0; _machineSlot = -1; _machinePages = []; _machinePage = 0; }
         if (!active && _machineWasActive && _session.State.ItemMenu is { Origin: "bag", View: "bag" })
         {
             _questPocket = 1;
@@ -201,33 +202,19 @@ public partial class CampaignView
     private bool DrawMachines()
     {
         if (!MachineActive || HeldItemScreen) return false;
-        // Reuse authenticated source menu frames/fonts; this is deliberately not the original case skin.
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         string mode = _session.State.ItemMenu!.View == "message" ? "list" : _machineMode;
         if (mode == "list") DrawMtMoonMachineList();
-        else if (mode == "list")
-        {
-            DrawTexture(_questPocketTextures[MachineCaseIcon], new(8, 8));
-            SourceText(_sourceNormal, new(40, 12), MachineText("gText_TMCase"));
-            int count = MachineQuantity > 0 ? 1 : 0;
-            if (count > 0)
-            {
-                DrawTexture(_questPocketTextures[MachineIcon], new(8, 40));
-                SourceText(_sourceNormal, new(48, 40), MachineDefinition.Machine.Item.Name + " " + MachineMoveName);
-                SourceText(_sourceSmall, new(184, 57), _itemSkin.FormatText("gText_TimesStrVar1", MachineQuantity.ToString()));
-            }
-            SourceText(_sourceNormal, new(48, 40 + count * 32), MachineText("gText_Close"));
-            SourceText(_sourceNormal, new(36, 40 + Math.Min(_machineCursor, count) * 32), _itemSkin.Text("gText_SelectorArrow2"));
-            if (_machineCursor < count) ItemLines(_sourceSmall, new(16, 92), MachineDefinition.Machine.Description, 13);
-            else ItemLines(_sourceNormal, new(16, 112), MachineText("gText_TMCaseWillBePutAway"));
-        }
         else if (mode == "actions")
         {
-            SourceText(_sourceNormal, new(16, 12), MachineDefinition.Machine.Item.Name + " " + MachineMoveName);
-            ItemLines(_sourceSmall, new(16, 38), MachineDefinition.Machine.Description, 13);
-            string[] options = ["USE", "GIVE", "CANCEL"];
-            for (int i = 0; i < options.Length; i++) SourceText(_sourceNormal, new(176, 98 + i * 17), options[i]);
-            SourceText(_sourceNormal, new(164, 98 + _machineCursor * 17), _itemSkin.Text("gText_SelectorArrow2"));
+            int start = _machineScrollOffset = MachineCaseLayout.KeepCursorVisible(_machineListCursor, _machineScrollOffset, MachineStacks.Length);
+            DrawMachineList(MachineStacks, _machineListCursor, start, Math.Min(5, MachineStacks.Length + 1 - start), shaded: true);
+            _battleSkin.DrawStandardFrame(this, new(32, 112, 136, 48));
+            ItemLines(_sourceNormal, new(40, 120), _itemSkin.FormatText("gText_Var1IsSelected", MachineDefinition.Machine.Item.Name));
+            _battleSkin.DrawStandardFrame(this, new(168, 96, 72, 64));
+            string[] options = ["USE", "GIVE", "EXIT"];
+            for (int i = 0; i < options.Length; i++) SourceText(_sourceNormal, new(184, 104 + i * 16), options[i]);
+            SourceText(_sourceNormal, new(176, 104 + _machineCursor * 16), _itemSkin.Text("gText_SelectorArrow2"));
         }
         else if (mode == "replacement")
         {

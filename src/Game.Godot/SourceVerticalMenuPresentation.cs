@@ -3,6 +3,17 @@ internal class SourceVerticalMenuPresentation
 {
     internal readonly record struct Layout(int X, int Y, int Width, int Height);
     internal const int Cancel = 127;
+    // Edge-scrolling lists retain their viewport when a visible row is hovered
+    // or clicked. Centered source menus retain their separate Move policy below.
+    internal static int KeepSelectionVisible(int cursor, int firstRow, int totalRows, int visibleRows)
+    {
+        if (totalRows < 1) throw new ArgumentOutOfRangeException(nameof(totalRows));
+        if (visibleRows < 1) throw new ArgumentOutOfRangeException(nameof(visibleRows));
+        cursor = Math.Clamp(cursor, 0, totalRows - 1);
+        firstRow = Math.Clamp(firstRow, 0, Math.Max(0, totalRows - visibleRows));
+        return cursor < firstRow ? cursor : cursor >= firstRow + visibleRows ? cursor - visibleRows + 1 : firstRow;
+    }
+
     private readonly int _left;
     private readonly int _top;
     internal IReadOnlyList<string> Options { get; }

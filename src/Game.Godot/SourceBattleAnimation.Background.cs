@@ -40,6 +40,8 @@ public sealed partial class SourceBattleAnimation
     }
     private int AnimationArgument(string value)
     {
+        if(value=="TRUE")return 1;if(value=="FALSE")return 0;
+        if(_script.SpriteTags.TryGetValue(value,out int tag))return tag;
         if(_script.SoundEffects.TryGetValue(value,out int song))return song;
         if(value.StartsWith("SOUND_PAN_",StringComparison.Ordinal))return SoundPan(value);
         if(value.StartsWith("0x",StringComparison.OrdinalIgnoreCase))return Convert.ToInt32(value[2..],16);

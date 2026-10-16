@@ -118,15 +118,19 @@ def build(reference):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('reference', type=Path)
-    parser.add_argument('output', type=Path)
+    parser.add_argument('--reference', type=Path, required=True)
+    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[3] / 'content/generated/battle/animations/backgrounds')
+    parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     files = build(args.reference)
-    if args.output.exists():
-        raise SystemExit('Refuse existing output directory')
-    args.output.mkdir(parents=True)
     for name, data in files.items():
-        (args.output / name).write_bytes(data)
+        path = args.output / name
+        if args.check:
+            if path.read_bytes() != data:
+                raise SystemExit('Background runtime output differs: ' + str(path))
+        else:
+            args.output.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
     print(json.dumps({'passed': True, 'files': len(files), 'bytes': sum(map(len, files.values()))}))
 
 

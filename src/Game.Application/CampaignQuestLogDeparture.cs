@@ -59,6 +59,11 @@ public static class CampaignQuestLogDepartureCapture
 public sealed class CampaignQuestLogStartGate
 {
     private int? _lastDeparture;
+    // The original wild-event pointer survives action-buffer overflow, but not
+    // explicit finish/cut, save/restore, another event or a map projection boundary.
+    public bool WildRecordRetained{get;private set;}
+    public void EndRecording()=>WildRecordRetained=false;
+    public void NoteEvent(CampaignQuestLogAction action)=>WildRecordRetained=action.Event==CampaignQuestLogEvent.WildWon;
     public CampaignQuestLogStartGate(CampaignQuestLog? restored=null)
     {
         var first=restored?.Scenes.LastOrDefault()?.Actions.FirstOrDefault(CampaignQuestLogRecorder.IsCaption);

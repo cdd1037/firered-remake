@@ -70,6 +70,11 @@ def compile_catalog(root, recipe=None):
         require(type(entry.get('effects', False)) is bool, 'Invalid effect admission')
         effect = effects[item['sourceItemSymbol']] if entry.get('effects', False) else []
         require(support not in ('potion', 'statusCure') or bool(effect), 'Medicine effects missing')
+        if support == 'fieldEther':
+            require(item['fieldUseFunction'] == 'FieldUseFunc_Ether' and
+                    item['pocket'] in ('POCKET_ITEMS', 'POCKET_BERRY_POUCH') and
+                    len(effect) == 7 and effect[:6] == [0, 0, 0, 0, 24, 0] and effect[6] in (10, 127),
+                    'Selected PP restoration callback/effect mismatch')
         heal = effect[6] if support == 'potion' else 0
         cure = cure_bits[effect[3]] if support == 'statusCure' else 0
         description = source[item['sourceItemSymbol']]['description_english'].replace('\\n', '\n')

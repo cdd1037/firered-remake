@@ -80,6 +80,13 @@ public sealed class CampaignQuestLogFieldClockTests
         for(int i=0;session.State.World.Player.MapId.Value=="map.pallet-town";i++){Assert.IsTrue(i<4);Run(new("move",Direction.North));Drain();}
         var map=catalog.Maps[session.State.World.Player.MapId];var exit=map.FieldWarps.First(w=>map.SourceBehaviorAt(w.X,w.Y)==0x65);WalkTo(exit.X,exit.Y);
         for(int i=0;session.State.World.Player.MapId.Value!="map.pallet-town";i++){Assert.IsTrue(i<4);Run(new("move",Direction.South));Drain();}
+        Assert.AreSame(saved,session.State.QuestLog); // Same home departure stays suppressed after Continue.
+        var lab=catalog.Maps[session.State.World.Player.MapId].FieldWarps.Single(w=>w.DestinationMapId.Value=="map.professor-oaks-lab");
+        WalkTo(lab.X,lab.Y+1);
+        for(int i=0;session.State.World.Player.MapId.Value=="map.pallet-town";i++){Assert.IsTrue(i<4);Run(new("move",Direction.North));Drain();}
+        var labMap=catalog.Maps[session.State.World.Player.MapId];var labExit=labMap.FieldWarps.First(w=>labMap.SourceBehaviorAt(w.X,w.Y)==0x65);WalkTo(labExit.X,labExit.Y);
+        for(int i=0;session.State.World.Player.MapId.Value!="map.pallet-town";i++){Assert.IsTrue(i<4);Run(new("move",Direction.South));Drain();}
+        Assert.AreNotSame(saved,session.State.QuestLog);Assert.IsFalse(session.State.QuestLog!.Scenes[^1].Closed);
         var full=session.State.QuestLog;
         for(ulong i=200;i<66_000;i++)session.ObserveQuestLogFieldFrame(i);
         Run(new("move",Direction.South));Assert.AreSame(full,session.State.QuestLog);

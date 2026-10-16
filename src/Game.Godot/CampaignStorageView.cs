@@ -71,6 +71,7 @@ public partial class CampaignView
         if (_session.State.Pc?.View == CampaignPcView.Move && StorageRectangleActive && key.Keycode is not (Key.F5 or Key.F9 or Key.F12 or Key.Escape)) return StorageMoveInput(key);
         if(StorageBoxNaming&&key.Keycode==Key.Escape)return true;
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
+        if(_session.State.Pc?.View==CampaignPcView.Move&&_storageHand.Active)return true;
         if(_session.State.Pc?.Summary is not null)return StorageSummaryInput(key);
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
         if(StorageCustomizationInput(key))return true;

@@ -19,6 +19,7 @@ public partial class CampaignView
 
     private void ResetStorageMovePresentation()
     {
+        ResetStorageHandPresentation();
         _storageMovePartyOpen = false;
         _storageMultiMode = false; _storageRectangleAnchor = null;
         _storageMovePartyCursor = 0;
@@ -35,8 +36,10 @@ public partial class CampaignView
     private bool StorageMoveAction(CampaignCommand command)
     {
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return false; }
+        if (_storageHand.Active) return false;
+        var before = _session.State;
         bool accepted = Apply(command);
-        if (accepted) return true;
+        if (accepted) { BeginStorageHandPresentation(command, before); return true; }
         _pcNotice = StorageMoveError(_status);
         return false;
     }
@@ -82,6 +85,7 @@ public partial class CampaignView
 
     private bool StorageMoveInput(InputEventKey key)
     {
+        if (_storageHand.Active) return true;
         if (StorageRectangleInput(key)) return true;
         if (!key.Pressed || key.Echo) return true;
         _held = null; _repeat = 0;
@@ -136,6 +140,7 @@ public partial class CampaignView
 
     private bool MouseStorageMove(Vector2 point)
     {
+        if (_storageHand.Active) return true;
         if (_pcNotice is not null) return MouseConfirm(point, MouseMessage);
         if (StorageCreatureOverlayActive) return MouseStorageCreature(point);
         if (StorageRectangleActive)
@@ -177,6 +182,7 @@ public partial class CampaignView
 
     private bool NavigateStorageMovePointer(Vector2 point, int direction)
     {
+        if (_storageHand.Active) return false;
         if (_pcNotice is not null) return false;
         if (StorageCreatureOverlayActive) return NavigateStorageCreaturePointer(point, direction);
         if (StorageRectangleActive) return false;
@@ -208,17 +214,9 @@ public partial class CampaignView
     {
         var held = _session.State.Pc!.MoveCursor?.Pokemon;
         var target = StorageMoveTarget;
-        Rect2 cursor = DrawStorageWorkspace();
-        if (!_storageTitleSelected) DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
-        if (held is not null)
-        {
-            // A deliberately simple held marker, using the same authenticated icon
-            // as its party/box slot. The original animated hand is not yet restored.
-            var heldRect = new Rect2(cursor.Position + new Vector2(cursor.Size.X - 12, -7), new(16, 16));
-            DrawRect(heldRect, new Color("f4db88"));
-            DrawTextureRectRegion(PresentedOwnedIcon(held), heldRect, new(0, 0, 32, 32));
-        }
+        DrawStorageWorkspace();
         DrawStorageRectangle();
+        DrawStorageHand();
         var displayed = held ?? _session.State.Pc?.GroupCursor?.Cells.OfType<PartyPokemon>().FirstOrDefault() ?? target;
         // Replace the embedded PKMN DATA caption before drawing this thin view's
         // held-state label; never overlay two different words on the same pixels.
@@ -311,20 +309,23 @@ public partial class CampaignView
         int origin = group is null ? rectangle.Top * 6 + rectangle.Left : _boxCursor;
         var first = StorageMoveBoxRect(origin);
         DrawRect(new(first.Position, new(rectangle.Width * 24, rectangle.Height * 24)), new Color("fff4b8"), filled: false, width: 2);
-        if (group is null) return;
+        if (group is null || _storageHand.Active) return;
         for (int i = 0; i < group.Cells.Length; i++)
             if (group.Cells[i] is {} mon)
-                DrawTexture(PresentedOwnedIcon(mon), first.Position + new Vector2(i % rectangle.Width * 24 - 4, i / rectangle.Width * 24 - 4));
+                DrawTexture(PresentedOwnedIcon(mon), first.Position + new Vector2(i % rectangle.Width * 24 - 4, i / rectangle.Width * 24 - 12));
     }
 
     // Shared source workspace pixels for creature MOVE and item MOVE.
     private Rect2 DrawStorageWorkspace()
     {
         var storage = _session.State.Storage!;
+        var shownBox = _storageHand.Active ? _storageHandBox : storage.Boxes[storage.CurrentBox].Slots;
+        var shownParty = _storageHand.Active ? _storageHandParty : _session.State.Party;
         DrawTexture(_storageAssets["box-background"], Vector2.Zero);
         DrawStorageWallpaperAndTitle();
+        DrawStorageHandShadow();
         for (int i = 0; i < 30; i++)
-            if (storage.Boxes[storage.CurrentBox].Slots[i] is { } mon)
+            if (!StorageHandHidesSlot(false, i) && shownBox[i] is { } mon)
                 DrawTexture(PresentedOwnedIcon(mon), new(84 + i % 6 * 24, 28 + i / 6 * 24));
         if (_storageMovePartyOpen)
         {
@@ -332,8 +333,8 @@ public partial class CampaignView
             for (int i = 0; i < 6; i++)
             {
                 var rect = StorageMovePartyRect(i);
-                DrawTexture(_storageAssets[i < _session.State.Party.Length ? "party-slot-filled" : "party-slot-empty"], rect.Position);
-                if (i < _session.State.Party.Length) DrawTexture(PresentedOwnedIcon(_session.State.Party[i]), StorageMovePartyIconPosition(i));
+                DrawTexture(_storageAssets[i < shownParty.Length ? "party-slot-filled" : "party-slot-empty"], rect.Position);
+                if (i < shownParty.Length && !StorageHandHidesSlot(true, i)) DrawTexture(PresentedOwnedIcon(shownParty[i]), StorageMovePartyIconPosition(i));
             }
         }
         return _storageMovePartyOpen

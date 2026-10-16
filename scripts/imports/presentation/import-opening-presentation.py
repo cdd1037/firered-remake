@@ -12,7 +12,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
-from presentation_pixels import gba_4bpp_indices
+from presentation_pixels import gba_4bpp_indices, tilemap as decode_tilemap, palette as decode_palette
 RAW = ROOT / 'content/raw/pokefirered/037335f4'
 OUTPUT = ROOT / 'content/generated/ui/opening'
 
@@ -37,7 +37,7 @@ def generate(raw=RAW):
     naming = (raw / 'src/naming_screen.c').read_text()
     keyboard = []
     for name in ['UPPER', 'LOWER', 'SYMBOLS']:
-        body = re.search(r'\[KEYBOARD_' + ('SYMBOLS' if name == 'SYMBOLS' else 'LETTERS_' + name) + r'\] = \{(.*?)\}', naming, re.S)[1]
+        body = re.search(r'\[KEYBOARD_' + ('SYMBOLS' if name == 'SYMBOLS' else 'LETTERS_' + name) + r'\]\s*=\s*\{(.*?)\}', naming, re.S)[1]
         rows = re.findall(r'__\("(.*?)"\)', body)
         columns = 6 if name == 'SYMBOLS' else 8
         keyboard.append([s.ljust(columns) for s in rows])
@@ -57,7 +57,17 @@ def generate(raw=RAW):
     rival_block = rival_block.split('#elif')[0]
     rival_names = [texts[name] for name in re.findall(r'gNameChoice_\w+', rival_block)]
     if len(rival_names) != 4: raise ValueError('Rival suggestions incomplete')
-    value = dict(schemaVersion=1, texts=texts, keyboard=keyboard, animations=tracks, rivalNames=rival_names)
+    # The source cursor uses deliberately uneven letter groups and wider symbols.
+    offsets_body = re.search(r'sPageColumnXPos\[KBPAGE_COUNT\]\[KBCOL_COUNT\] =\s*\{(.*?)\};', naming, re.S)[1]
+    column_offsets = []
+    for page in ['LETTERS_UPPER', 'LETTERS_LOWER', 'SYMBOLS']:
+        row = re.search(r'\[KEYBOARD_' + page + r'\]\s*=\s*\{([^}]+)\}', offsets_body)[1]
+        column_offsets.append([int(n) for n in re.findall(r'\d+', row)])
+    object_anims = (raw / 'src/data/object_events/object_event_anims.h').read_text()
+    for key, symbol, code, tiles in [('naming-player', 'sAnim_GoSouth', object_anims, 1), ('naming-rival', 'sAnim_Rival', naming, 8)]:
+        body = re.search(r'\b' + symbol + r'\[\] =\s*\{(.*?)\};', code, re.S)[1]
+        tracks[key] = [dict(frame=int(a) // tiles, duration=int(b)) for a, b in re.findall(r'ANIMCMD_FRAME\(\s*(\d+),\s*(\d+)\)', body)]
+    value = dict(schemaVersion=1, texts=texts, keyboard=keyboard, animations=tracks, rivalNames=rival_names, namingColumnOffsets=column_offsets)
     files = {'opening.json': (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()}
     def png(name, image):
         buffer = io.BytesIO(); image.save(buffer, format='PNG'); files[name + '.png'] = buffer.getvalue()
@@ -156,6 +166,30 @@ def generate(raw=RAW):
                 hidden.paste(crop, (index % 32 * 8, index // 32 * 8))
             png('title-lettering-hidden', hidden.crop((0, 0, 240, 160)))
     png('title', title.crop((0, 0, 240, 160)))
+    naming_root = raw / 'graphics/naming_screen'
+    naming_tiles = gba_4bpp_indices(Image.open(naming_root / 'menu.png'))
+    naming_colors = []
+    for name in ['menu', 'page_swap_upper', 'page_swap_lower', 'page_swap_others', 'buttons', 'cursor']:
+        naming_colors.extend(decode_palette((naming_root / (name + '.pal')).read_bytes()))
+    for name in ['background', 'keyboard_upper', 'keyboard_lower', 'keyboard_symbols']:
+        data = bytearray((naming_root / (name + '.bin')).read_bytes())
+        if name == 'background':
+            # The source draws its separate controls banner over these first two rows.
+            data[:128] = bytes(128)
+        layer = decode_tilemap(naming_tiles, data, naming_colors, width=256, height=160, transparent=True)
+        png('naming-' + name.replace('_', '-'), layer.crop((0, 0, 240, 160)))
+    for name, pal in [('back_button', 'buttons'), ('ok_button', 'buttons'), ('page_swap_frame', 'buttons'),
+                      ('page_swap_upper', 'buttons'), ('page_swap_lower', 'buttons'), ('page_swap_others', 'buttons'),
+                      ('cursor', 'cursor'), ('input_arrow', 'menu'), ('underscore', 'menu'), ('rival', 'rival')]:
+        image = rgba(Image.open(naming_root / (name + '.png')), palette=palette(naming_root / (pal + '.pal')))
+        # Page-swap label sprites consume only the first three source tiles.
+        if name.startswith('page_swap_') and name != 'page_swap_frame': image = image.crop((0, 0, 24, 8))
+        if name == 'cursor': image = image.crop((0, 0, 16, 16))
+        png('naming-' + name.replace('_', '-'), image)
+    for name in ['upper', 'lower', 'others']:
+        png('naming-page-button-' + name, rgba(Image.open(naming_root / 'page_swap_button.png'), palette=palette(naming_root / ('page_swap_' + name + '.pal'))))
+    for name, path in [('red', 'red_normal'), ('leaf', 'green_normal')]:
+        png('naming-' + name, rgba(Image.open(raw / ('graphics/object_events/pics/people/' + path + '.png')), palette=palette(raw / 'graphics/object_events/palettes/player.pal')))
     return files
 
 
