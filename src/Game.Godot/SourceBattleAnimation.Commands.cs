@@ -20,10 +20,12 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=(c.Op=="playsewithpan"?2:c.Op=="waitplaysewithpan"?3:4)||SoundPan(a[1]) is < -64 or >63||a.Skip(2).Any(v=>Number(v) is <0 or >255))Fail(c,"Source sound operand width differs.");
             return true;
         }
+        if(c.Op=="playse")
+        {if(a.Length!=1||!_script.SoundEffects.ContainsKey(a[0]))Fail(c,"Source unpanned sound needs one generated song identity.");return true;}
         if(c.Op=="waitsound")
         {if(a.Length!=0)Fail(c,"Sound wait takes no operands.");return true;}
-        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="SoundTask_PlaySE1WithPanning")
-        {if(a.Length!=4||Number(a[1]) is <0 or >255||!_script.SoundEffects.ContainsKey(a[2])||SoundPan(a[3]) is < -64 or >63)Fail(c,"Source visual SE1 wrapper operands differ.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault() is "SoundTask_PlaySE1WithPanning" or "SoundTask_PlaySE2WithPanning")
+        {if(a.Length!=4||Number(a[1]) is <0 or >255||!_script.SoundEffects.ContainsKey(a[2])||SoundPan(a[3]) is < -64 or >63)Fail(c,"Source visual sound-player wrapper operands differ.");return true;}
         if(c.Op=="createsoundtask")
         {
             if(a.FirstOrDefault()=="SoundTask_FireBlast")

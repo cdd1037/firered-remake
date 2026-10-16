@@ -11,7 +11,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
@@ -291,4 +291,22 @@ class PhysicalImportTests(unittest.TestCase):
    changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
    with patch.object(imp,'read_sources',return_value=changed):data,_=imp.build(REFERENCE)
    self.assertFalse(expected&{s['moveId'] for s in json.loads(data)['scripts']})
+ def test_shared_stinger_callback_closes_exact_three_roots_with_existing_materials(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);scripts={s['moveId']:s for s in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  stinger=recipes['gLinearStingerSpriteTemplate'];self.assertEqual(('needle','AnimTranslateStinger',16,16,False,False,[]),(stinger['asset'],stinger['callback'],stinger['width'],stinger['height'],stinger['blend'],stinger['affineDoubleSize'],stinger['affineAnimations']))
+  for move,particles in [(40,1),(41,2),(131,3)]:
+   script=scripts[move];self.assertEqual(particles,sum(c['op']=='createsprite' and c['args'][0]=='gLinearStingerSpriteTemplate' for c in script['commands']))
+   self.assertIn('ANIM_TAG_NEEDLE',script['spriteTags']);self.assertIn('SE_M_RAZOR_WIND2',script['soundEffects'])
+  self.assertEqual({'needle':'elemental-needle.rgb555','poison-bubble':'elemental-poison-bubble.rgb555'},{a['id']:a['path'] for a in pack['assets'] if a['id'] in {'needle','poison-bubble'}})
+  poison=pack['subroutines']['PoisonBubblesEffect'];self.assertEqual(6,sum(c['op']=='createsprite' for c in poison));self.assertEqual(6,sum(c['op']=='playsewithpan' and c['args'][0]=='SE_M_TOXIC' for c in poison))
+  hit=recipes['gHandleInvertHitSplatSpriteTemplate'];self.assertEqual('AnimHitSplatHandleInvert',hit['callback']);self.assertEqual(4,len(hit['affineAnimations']));self.assertTrue(hit['blend']);self.assertFalse(hit['affineDoubleSize'])
+ def test_missing_stinger_wrapper_or_poison_callback_cannot_admit_partial_roots(self):
+  for callback,blocked_roots in [('gLinearStingerSpriteTemplate',{40,41,131}),('gHandleInvertHitSplatSpriteTemplate',{41,131}),('gPoisonBubbleSpriteTemplate',{40})]:
+   raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(('createsprite '+callback).encode(),b'createsprite MissingNeedleDependency')
+   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+   self.assertFalse(blocked_roots&{s['moveId'] for s in json.loads(data)['scripts']})
+ def test_stinger_and_inverted_hit_recipes_reject_unauthenticated_callbacks(self):
+  for file,template,callback in [('battle_anim_bug.c','gLinearStingerSpriteTemplate','AnimTranslateStinger'),('battle_anim_normal.c','gHandleInvertHitSplatSpriteTemplate','AnimHitSplatHandleInvert')]:
+   source=imp.read_sources(REFERENCE)['src/'+file].decode()
+   with self.assertRaises(ValueError):imp.elemental.recipe(source.replace('.callback = '+callback, '.callback = UnknownNeedleCallback'),template,callback)
 if __name__=='__main__':unittest.main()

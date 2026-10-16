@@ -7,7 +7,7 @@ def module(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/imports/battle'/file);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
 elemental=module('background_elemental','import-source-elemental-animations.py')
 physical=module('background_physical','import-source-physical-animations.py')
-BACKGROUND_SYMBOLS={'BG_DARK','BG_PSYCHIC'}
+BACKGROUND_SYMBOLS={'BG_DARK','BG_PSYCHIC','BG_THUNDER','BG_COSMIC'}
 BACKGROUND_OPS={'fadetobg','restorebg','waitbgfadein','waitbgfadeout','setarg'}
 def build(reference):
  source=elemental.read(reference,'data/battle_anim_scripts.s').decode()
@@ -28,8 +28,8 @@ def build(reference):
    if op==end:return rows
   raise ValueError('Unterminated source label '+label)
  sprites=set(elemental.TEMPLATES)|elemental.SHARED_SPRITES|physical.SPRITES
- tasks=elemental.TASKS|physical.TASKS|{'AnimTask_SetPsychicBackground'}
- sounds=elemental.SOUNDS|{'SE_M_VITAL_THROW'}
+ tasks=elemental.TASKS|physical.TASKS|{'AnimTask_SetPsychicBackground','AnimTask_StartSlidingBg','AnimTask_ShakeTargetInPattern','AnimTask_BlendNonAttackerPalettes','SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning'}
+ sounds=elemental.SOUNDS|{'SE_M_VITAL_THROW','SE_M_COSMIC_POWER'}
  gfx=elemental.GFX|{'ANIM_TAG_IMPACT'}
  scripts=[];subs={};symbols={}
  for name in re.findall(r'^Move_(\w+):\n',source,re.M):

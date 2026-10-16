@@ -45,7 +45,8 @@ TARGET_SCRIPTS = {
                         'scripts/imports/battle/import-source-wall-animations.py',
                         'scripts/imports/battle/import-source-general-animations.py',
                         'scripts/imports/battle/import-source-flying-animations.py',
-                        'scripts/imports/battle/import-source-fog-animations.py'),
+                        'scripts/imports/battle/import-source-fog-animations.py',
+                        'scripts/imports/battle/import-source-horn-animations.py'),
 }
 
 
@@ -92,6 +93,7 @@ def build_commands(targets, raw, out, *, pack=None, cries=None, check=False):
                     'import-source-general-animations.py': 'general.json',
                     'import-source-flying-animations.py': 'flying.json',
                     'import-source-fog-animations.py': 'fog.json',
+                    'import-source-horn-animations.py': 'horn.json',
                 }[Path(script).name]
                 arguments = ['--reference', str(raw), '--output', str(out if output is None else out / 'battle/animations' / output)]
             elif target in ('opening', 'intro-movie', 'evolution', 'capture-balls', 'party', 'npc-trade', 'inventory'):

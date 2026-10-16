@@ -43,9 +43,10 @@ internal abstract partial class SourceRecipeContext
                 SourceStatRecoveryFail(actor, actor, move, "stats-at-maximum");
             else
             {
-                // Cosmic Power skips each capped message while visiting DEF then SPDEF.
-                if (body.DefenseStage < 12) BasicStatChange(actor, actor, WildBattleStat.Defense, 1, move);
-                if (body.SpecialDefenseStageDelta < 6) BasicStatChange(actor, actor, WildBattleStat.SpecialDefense, 1, move);
+                // Both statbuffchange commands execute in source order. Their
+                // typed cap receipts remain available; presentation skips cap text.
+                BasicStatChange(actor, actor, WildBattleStat.Defense, 1, move);
+                BasicStatChange(actor, actor, WildBattleStat.SpecialDefense, 1, move);
             }
             return;
         }

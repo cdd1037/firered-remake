@@ -3,7 +3,7 @@ namespace Game.Presentation.BattleAnimations;
 
 public static class SourcePhysicalAnimationCatalog
 {
-    public static bool Supports(int move) => move is 232 or 306 or 337 or 3 or 4 or 125 or 198 or 167 or 207 or 321 or 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
+    public static bool Supports(int move) => move is 40 or 41 or 131 or 232 or 306 or 337 or 3 or 4 or 125 or 198 or 167 or 207 or 321 or 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
@@ -76,7 +76,7 @@ public sealed partial class SourceBattleAnimation
     // unsigned 16-bit accumulators, and report completion on the next callback.
     private sealed class PhysicalLinear(int dx,int dy,int duration)
     {
-        private readonly int _vx=((Math.Abs(dx)<<8)/duration&~1)|(dx<0?1:0),_vy=((Math.Abs(dy)<<8)/duration&~1)|(dy<0?1:0);
+        private readonly int _vx=(((Math.Abs(dx)<<8)&65535)/duration&~1)|(dx<0?1:0),_vy=(((Math.Abs(dy)<<8)&65535)/duration&~1)|(dy<0?1:0);
         private int _x,_y,_remaining=duration;
         // Some source callbacks overwrite data[0]=1 before each translation step.
         public void StepContinuing(out PixelPoint offset){_remaining=1;Step(out offset);}

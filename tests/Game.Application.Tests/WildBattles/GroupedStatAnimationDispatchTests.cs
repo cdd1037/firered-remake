@@ -23,7 +23,7 @@ public sealed class GroupedStatAnimationDispatchTests
 
     private static MoveId Move(int id) => new(id switch
     {
-        339 => "pret:MOVE_BULK_UP", 321 => "pret:MOVE_TICKLE", 207 => "pret:MOVE_SWAGGER",
+        322 => "pret:MOVE_COSMIC_POWER", 339 => "pret:MOVE_BULK_UP", 321 => "pret:MOVE_TICKLE", 207 => "pret:MOVE_SWAGGER",
         _ => throw new ArgumentOutOfRangeException(nameof(id))
     });
 
@@ -51,6 +51,10 @@ public sealed class GroupedStatAnimationDispatchTests
         SourceBattleEvent Confused() => new SourceConfusionChangedEvent(5, 1, new(target), 0, 3, "move");
         SourceBattleEvent[] results = (id, branch) switch
         {
+            (322, "both") => [Stat(WildBattleStat.Defense, 6, 7), Stat(WildBattleStat.SpecialDefense, 6, 7, 5)],
+            (322, "clamped") => [Stat(WildBattleStat.Defense, 11, 12), Stat(WildBattleStat.SpecialDefense, 11, 12, 5)],
+            (322, "defense-cap") => [Cap(WildBattleStat.Defense), Stat(WildBattleStat.SpecialDefense, 6, 7, 5)],
+            (322, "spdef-cap") => [Stat(WildBattleStat.Defense, 6, 7), Cap(WildBattleStat.SpecialDefense, 5)],
             (339, "both") => [Stat(WildBattleStat.Attack, 6, 7), Stat(WildBattleStat.Defense, 6, 7, 5)],
             (339, "clamped") => [Stat(WildBattleStat.Attack, 11, 12), Stat(WildBattleStat.Defense, 11, 12, 5)],
             (339, "attack-cap") => [Cap(WildBattleStat.Attack), Stat(WildBattleStat.Defense, 6, 7, 5)],
@@ -130,6 +134,8 @@ public sealed class GroupedStatAnimationDispatchTests
     }
 
     [TestMethod]
+    [DataRow(322, "both", 3, 55)] [DataRow(322, "clamped", 3, 55)]
+    [DataRow(322, "defense-cap", 3, 19)] [DataRow(322, "spdef-cap", 3, 16)]
     [DataRow(339, "both", 3, 55)] [DataRow(339, "clamped", 3, 55)]
     [DataRow(339, "attack-cap", 3, 16)] [DataRow(339, "defense-cap", 3, 15)]
     [DataRow(321, "both", 3, 57)] [DataRow(321, "attack-cap", 4, 23)]
@@ -145,9 +151,9 @@ public sealed class GroupedStatAnimationDispatchTests
     {
         for (int actor = 0; actor < 4; actor++)
         {
-            int target = id == 339 ? actor : actor ^ 1;
+            int target = id is 322 or 339 ? actor : actor ^ 1;
             AssertValid(Scenario(id, branch, actor, target), id, target, trigger, argument, actor < 2);
-            if (id != 339)
+            if (id is not (322 or 339))
                 AssertValid(Scenario(id, branch, actor, actor ^ 2), id, actor ^ 2, trigger, argument, false);
         }
     }
@@ -175,10 +181,10 @@ public sealed class GroupedStatAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(339)] [DataRow(321)] [DataRow(207)]
+    [DataRow(322)] [DataRow(339)] [DataRow(321)] [DataRow(207)]
     public void InvocationCannotBorrowSwitchedForeignDuplicateOrIncompleteReceipts(int id)
     {
-        int target = id == 339 ? 0 : 1;
+        int target = id is 322 or 339 ? 0 : 1;
         var good = Scenario(id, id == 207 ? "confusion" : "both", 0, target);
         var attack = (SourceAttackStringEvent)good[0];
         var used = (SourceMoveUsedEvent)good[1];
@@ -228,6 +234,13 @@ public sealed class GroupedStatAnimationDispatchTests
     [TestMethod]
     public void CapsAndProtectionMustFollowTheirOwnSourcePreconditions()
     {
+        AssertRejected(Invocation(322, 0, 0,
+            new SourceStatAtMaximumEvent(4, 1, new(0), new(0), WildBattleStat.Defense),
+            new SourceStatAtMaximumEvent(5, 1, new(0), new(0), WildBattleStat.SpecialDefense)), "Cosmic Power both capped must fail earlier");
+        AssertRejected(Scenario(322, "both", 0, 1), "Cosmic Power is self-only");
+        AssertRejected(Scenario(322, "both", 0, 2), "Cosmic Power cannot target its ally", false);
+        foreach(string blocked in new[]{"ABILITY_CLEAR_BODY","ABILITY_WHITE_SMOKE","ABILITY_HYPER_CUTTER"})
+            AssertRejected(Scenario(322, "both", 0, 0).SetItem(3,new SourceAbilityPreventedEvent(4,1,new(0),new(0),Move(322),blocked)), "Self stat increases do not use prevention receipts");
         AssertRejected(Invocation(339, 0, 0,
             new SourceStatAtMaximumEvent(4, 1, new(0), new(0), WildBattleStat.Attack),
             new SourceStatAtMaximumEvent(5, 1, new(0), new(0), WildBattleStat.Defense)), "Bulk Up both capped must fail earlier");
@@ -239,9 +252,9 @@ public sealed class GroupedStatAnimationDispatchTests
             new SourceMoveFailedEvent(5, 1, new(0), new(1), Move(207), "already-confused")), "Swagger cap plus existing confusion must fail earlier");
         AssertRejected(Scenario(339, "both", 0, 1), "Bulk Up is self-only");
         AssertRejected(Scenario(339, "both", 0, 2), "Bulk Up cannot target its ally", false);
-        foreach (int id in new[] { 339, 321, 207 })
+        foreach (int id in new[] { 322, 339, 321, 207 })
         {
-            int target = id == 339 ? 0 : 1;
+            int target = id is 322 or 339 ? 0 : 1;
             foreach (string failure in new[] { "accuracy", "substitute", "stats-at-maximum", "stats-at-minimum", "confused-and-stat-maxed" })
                 AssertRejected(Invocation(id, 0, target,
                     new SourceMoveFailedEvent(4, 1, new(0), new(target), Move(id), failure)), $"{id}: {failure}");
@@ -301,6 +314,24 @@ public sealed class GroupedStatAnimationDispatchTests
             AssertRejected(events.RemoveAt(4), "the later held cure is not Swagger's confusion result", actor < 2);
             AssertRejected(events.SetItem(4, new SourceConfusionChangedEvent(5, 1, new(target), 0, 3, "held-berry")),
                 "a held reason cannot establish primary confusion", actor < 2);
+        }
+    }
+
+    [TestMethod]
+    public void CosmicPowerCannotBorrowHeldItemStatsForItsRequiredSecondDirectCommand()
+    {
+        for(int actor=0;actor<4;actor++)
+        {
+            var first = new SourceStatChangedEvent(4,1,new(actor),new(actor),WildBattleStat.Defense,6,7);
+            var restoration = new SourceStatChangedEvent(5,1,new(actor),new(actor),WildBattleStat.SpecialDefense,5,6);
+            var consumed = new SourceHeldItemConsumedEvent(6,1,new(actor),"ITEM_WHITE_HERB",10,10,0)
+                {StatChanges=[new(WildBattleStat.SpecialDefense,5,6)]};
+            AssertRejected(Invocation(322,actor,actor,first,restoration,consumed),
+                "An authenticated item restoration cannot stand in for Cosmic Power's SPDEF command",actor<2);
+            var complete=Scenario(322,"both",actor,actor);
+            AssertRejected(complete.Add(restoration with{Sequence=6}),"An unauthenticated later stat cannot enter the direct pair",actor<2);
+            AssertRejected(complete.Add(restoration with{Sequence=6}).Add(consumed with{Sequence=7,StatChanges=[new(WildBattleStat.SpecialDefense,4,6)]}),
+                "Malformed held metadata cannot authorize a foreign result suffix",actor<2);
         }
     }
 
@@ -438,7 +469,7 @@ public sealed class GroupedStatAnimationDispatchTests
     public void PublicKernelNaturallyLearnedMovesDispatchAtAllFourPositionsAndSelectedAllies(int id, int argument)
     {
         for (int actor = 0; actor < 4; actor++)
-        foreach (int target in id == 339 ? new[] { actor } : new[] { actor ^ 1, actor ^ 2 })
+        foreach (int target in id is 322 or 339 ? new[] { actor } : new[] { actor ^ 1, actor ^ 2 })
         {
             var events = NaturalKernelGroup(id, actor, target);
             var used = events.OfType<SourceMoveUsedEvent>().Single(e => e.Actor.Value == actor && e.Move == Move(id));

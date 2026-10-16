@@ -29,11 +29,19 @@ public static partial class CampaignMoveAnimationPresentation
 
     internal static int SupportedSourceMoveId(string move)=>move switch
     {
+        "pret:MOVE_HORN_ATTACK" => 30,
+        "pret:MOVE_FURY_ATTACK" => 31,
+        "pret:MOVE_HORN_DRILL" => 32,
         "pret:MOVE_DOUBLE_SLAP" => 3,
         "pret:MOVE_COMET_PUNCH" => 4,
+        "pret:MOVE_POISON_STING" => 40,
+        "pret:MOVE_TWINEEDLE" => 41,
+        "pret:MOVE_SPIKE_CANNON" => 131,
         "pret:MOVE_TRIPLE_KICK" => 167,
         "pret:MOVE_BONE_CLUB" => 125,
         "pret:MOVE_BONE_RUSH" => 198,
+        "pret:MOVE_THUNDER" => 87,
+        "pret:MOVE_COSMIC_POWER" => 322,
         "pret:MOVE_METAL_CLAW" => 232,
         "pret:MOVE_CRUSH_CLAW" => 306,
         "pret:MOVE_DRAGON_CLAW" => 337,
@@ -173,7 +181,7 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
-        if(move is 3 or 4 or 167 or 198)return new(null,"source-per-hit-animation");
+        if(move is 3 or 4 or 31 or 41 or 131 or 167 or 198)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
             attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
@@ -202,7 +210,7 @@ public static partial class CampaignMoveAnimationPresentation
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
                 new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
-        if(move is 207 or 321 or 339)
+        if(move is 207 or 321 or 322 or 339)
         {
             var result=CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,sourceRules);
             if(result is null)return new(null,action.Any(e=>e is WildBattleMoveMissedEvent miss&&miss.Actor==used.Actor&&miss.Move==used.Move)?"source-no-animation-result":"unmatched-source-mixed-effect-result");
@@ -304,7 +312,7 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
-        if(move is 3 or 4 or 167 or 198)return new(null,"source-per-hit-animation");
+        if(move is 3 or 4 or 31 or 41 or 131 or 167 or 198)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
             attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
@@ -374,7 +382,7 @@ public static partial class CampaignMoveAnimationPresentation
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
                 used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 207 or 321 or 339)
+        if(move is 207 or 321 or 322 or 339)
         {
             var result=CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle);
             if(result is null)return new(null,action.Any(e=>e is SourceMoveMissedEvent miss&&miss.Actor==used.Actor&&miss.Move==used.Move)?"source-no-animation-result":"unmatched-source-mixed-effect-result");

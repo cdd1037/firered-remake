@@ -87,8 +87,9 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly uint _mask;private readonly int _delay,_target;private readonly ushort _color;
         private int _counter,_coefficient;
-        public BlendPaletteTask(int[] args,SourceBattleAnimation owner)
-        {_mask=owner.SelectPalettes(args[0]);_delay=args[1];_coefficient=args[2];_target=args[3];_color=(ushort)args[4];}
+        public BlendPaletteTask(int[] args,SourceBattleAnimation owner):this(owner.SelectPalettes(args[0]),args[1],args[2],args[3],(ushort)args[4]){}
+        public BlendPaletteTask(uint mask,int delay,int from,int to,ushort color)
+        {_mask=mask;_delay=delay;_coefficient=from;_target=to;_color=color;}
         public override void Step(SourceBattleAnimation owner)
         {
             if(_counter==_delay)

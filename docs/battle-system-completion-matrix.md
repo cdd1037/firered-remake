@@ -8,8 +8,8 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本129／354，其余225尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
-- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前129招范围通过Presentation全套540／540、应用专属分派249／249；这些受控检查不等于原生逐帧或实际扬声器验收。
+- 专属招式脚本137／354，其余217尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前137招范围通过Presentation全套581／581、应用专属分派316／316；这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
 
@@ -35,7 +35,7 @@
 
 ## 专属动画范围
 
-当前分派支持：Pound、Karate Chop、Double Slap、Comet Punch、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Gust、Wing Attack、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Bite、Supersonic、Acid、Ember、Flamethrower、Mist、Water Gun、Hydro Pump、Ice Beam、Psybeam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Rock Throw、Toxic、Confusion、Psychic、Hypnosis、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Defense Curl、Barrier、Light Screen、Reflect、Focus Energy、Self Destruct、Egg Bomb、Smog、Bone Club、Fire Blast、Clamp、Swift、Hi Jump Kick、Dream Eater、Leech Life、Bubble、Spore、Flash、Psywave、Splash、Crabhammer、Explosion、Rock Slide、Slash、Triple Kick、Thief、Flame Wheel、Cotton Spore、Powder Snow、Octazooka、Zap Cannon、Bone Rush、Outrage、Giga Drain、Endure、Charm、False Swipe、Swagger、Steel Wing、Dynamic Punch、Dragon Breath、Iron Tail、Metal Claw、Synthesis、Vital Throw、Crunch、Mirror Coat、Whirlpool、Magic Coat、Snatch、Mud Sport、Slack Off、Crush Claw、Metal Sound、Tickle、Signal Beam、Sand Tomb、Aerial Ace、Dragon Claw、Iron Defense、Bulk Up、Mud Shot、Poison Tail、Covet。
+当前分派支持：Pound、Karate Chop、Double Slap、Comet Punch、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Gust、Wing Attack、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Horn Attack、Fury Attack、Horn Drill、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Poison Sting、Twineedle、Bite、Supersonic、Acid、Ember、Flamethrower、Mist、Water Gun、Hydro Pump、Ice Beam、Psybeam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Thunder、Rock Throw、Toxic、Confusion、Psychic、Hypnosis、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Defense Curl、Barrier、Light Screen、Reflect、Focus Energy、Self Destruct、Egg Bomb、Smog、Bone Club、Fire Blast、Clamp、Swift、Spike Cannon、Hi Jump Kick、Dream Eater、Leech Life、Bubble、Spore、Flash、Psywave、Splash、Crabhammer、Explosion、Rock Slide、Slash、Triple Kick、Thief、Flame Wheel、Cotton Spore、Powder Snow、Octazooka、Zap Cannon、Bone Rush、Outrage、Giga Drain、Endure、Charm、False Swipe、Swagger、Steel Wing、Dynamic Punch、Dragon Breath、Iron Tail、Metal Claw、Synthesis、Vital Throw、Crunch、Mirror Coat、Whirlpool、Magic Coat、Snatch、Mud Sport、Slack Off、Crush Claw、Metal Sound、Tickle、Cosmic Power、Signal Beam、Sand Tomb、Aerial Ace、Dragon Claw、Iron Defense、Bulk Up、Mud Shot、Poison Tail、Covet。
 
 Double Slap／Comet Punch按每个真实HP或替身命中回执播放，使用明确的零起始命中序号选择源分支；结束保留同一回执，不再提交ACK。18个应用用例含原版随机向量、提前KO、Rough Skin接触截断、替身破裂后的本体命中及零伤害命中；8个表现用例含全部256字节分支输入和缺失上下文拒绝。Triple Kick另以固定三次计划命中契约接入相同逐回执生命周期，13个应用用例验证逐击命中检查、提前截断及10／20／30威力；4个表现用例含1,024个原C条件分支向量。Beat Up等不同调用上下文未据此准入。
 
@@ -43,9 +43,19 @@ Rock Throw／Rock Slide共用原版落石与地形摇动回调；BG3纵向寄存
 
 Metal Claw／Crush Claw／Dragon Claw复用共享爪击帧播放器及原版地形／OBJ坐标偏移控制器；全局偏移仅投影到启用的OBJ，不移动monbg副本或HUD。528组原C向量覆盖爪击与四种寄存器摇动模式，显式SE1包装器保留即时播放、参数前缀写入及零视觉任务计数。共享素材读取器支持原版128像素宽图块存储，取消与自然结束分别验证；禁用的金属背景寄存器快照不被误当活动图层。
 
+Thunder／Cosmic Power复用保留索引地图的滑动背景任务；摇动读取实时共享参数，非攻击者调色覆盖四个OBJ调色板组并保留原参数移位。SE1／SE2包装器使用源歌曲播放器身份校验；测试覆盖即刻执行、无视觉任务计数、TRUE／FALSE及非法标志。该批通过完整Battle 1,709／1,709及应用组合494／494；最后一次完整Application 1,202／1,202仍属于此前129招快照，未扩大为本批的全套应用证据。
+
+Poison Sting／Twineedle／Spike Cannon共用整数BIOS角度、既有线性平移和命中图元；Twineedle按固定两次计划、Spike Cannon按2–5次计划逐真实回执播放。角度检查器可复现786,440次对照，仅保留60个紧凑边界向量；104组提取原C回调覆盖位置、友方目标、生命周期及255／256／257位移的16位分子截断。现有图块复用，无新增像素素材。
+
+Horn Attack／Fury Attack／Horn Drill共用原版7位定点Horn回调，保留signed16累加溢出、持续帧夹限和倒数第二帧定位。Fury按真实2–5击回执继续；OHKO检查涵盖命中阈值、Sturdy、等级、Protect及Ghost阻断。导入器核对FireRed的`jumpifcontest`函数仅前进5字节后，折叠零时间死分支并重定位可执行标签；不导入比赛背景、不保留死分支运行时元数据。当前应用组合542／542通过；完整Application与Battle证据仍按各自快照限定。
+
 其他招式返回 `script-outside-slice`，不启动该专属脚本；普通文字、HP及结果表现仍独立工作。不能因此说招式规则不可用，也不能把通用反馈当原版专属动画。此名单由当前单／双打分派代码核对，JSON逐招标记相同范围。
 
 用户于2026-10-16要求完成除汉化外的单机内容，专属动画与剩余原生表现重新进入当前工作范围。采用共享实现与代表性检查，保持实现范围和已验证范围分开。[Options玩家入口](../src/Game.Godot/CampaignOptionsView.cs)已开放Battle Scene和Sound编辑并接入保存与运行时应用，见[设置说明](battle-scene-sound-options.md)。
+
+Cosmic Power的规则修正限定在现有`EFFECT_COSMIC_POWER`分支：保留双项封顶的提前失败，按原作执行Defense再SpDef两条命令。单项封顶现在产生真实最大值回执，表现层跳过该文字；这也经现有历史归约使`LastLandedMove`无效，并保留既有`LastHitByType`，不是仅表现改动。HP、PP、最终能力阶级及RNG保持既定结果。依据固定源`battle_scripts_1.s:2679–2702`与`battle_script_commands.c:6809`，没有新增招式专用历史例外。公共回合检查含两种部分封顶顺序、四个出战位置及非空既有类型历史。
+
+调用者复核：BasicStats还接入Swords Dance、Sand Attack、Tail Whip、Leer、Growl、Growth、String Shot、Agility、Screech、Double Team、Harden、Smokescreen、Withdraw、Focus Energy、Kinesis、Flash、Sweet Scent；这17个其他分支及共享`BasicStatChange`均未修改，未将Cosmic的两命令顺序推广到它们。
 
 ## 验证与规则决定
 

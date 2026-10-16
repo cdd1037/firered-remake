@@ -32,7 +32,7 @@ public sealed class SourceAnimationResources:IDisposable
         _folder=folder;
         try
         {
-            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","flying.json","fog.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","flying.json","fog.json","horn.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
                 ReadPack(Path.Combine(folder,file));
             int[] sine=_documents[0].RootElement.GetProperty("sineTable").EnumerateArray().Select(x=>x.GetInt32()).ToArray();
             foreach(var (id,script) in _scripts.ToArray())_scripts[id]=script with{SpriteRecipes=_recipes,SineTable=sine};

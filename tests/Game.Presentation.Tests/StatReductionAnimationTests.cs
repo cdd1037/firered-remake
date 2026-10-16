@@ -6,7 +6,7 @@ public sealed class StatReductionAnimationTests
     private sealed class Audio:ISourceAnimationAudio
     {public bool IsPlaying=>false;public void Play(SourceAnimationSound cue){}public void StopAnimationEffects(){}}
     [TestMethod][DataRow(46,2)][DataRow(47,1)][DataRow(48,4)][DataRow(50,8)]
-    [DataRow(55,5)][DataRow(57,5)][DataRow(39,2)][DataRow(15,2)][DataRow(16,1)][DataRow(22,2)][DataRow(23,1)]
+    [DataRow(55,5)][DataRow(57,5)][DataRow(39,2)][DataRow(15,2)][DataRow(16,1)][DataRow(19,8)][DataRow(22,2)][DataRow(23,1)]
     public void StatArgumentUsesSourcePaletteAndCompletesSharedMaskLifecycle(int argument,int palette)
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));

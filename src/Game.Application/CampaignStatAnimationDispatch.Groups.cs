@@ -25,7 +25,7 @@ public static partial class CampaignStatAnimationPresentation
         if(battle.Stage!=CampaignDoubleBattleStage.Combat||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length)return null;
         int invocation=battle.EventIndex;
         while(invocation>=0&&battle.Events[invocation] is not (SourceMoveUsedEvent or SourceAttackStringEvent))invocation--;
-        if(invocation<0||battle.Events[invocation] is not SourceMoveUsedEvent {Move.Value:"pret:MOVE_BULK_UP" or "pret:MOVE_TICKLE" or "pret:MOVE_SWAGGER"})return null;
+        if(invocation<0||battle.Events[invocation] is not SourceMoveUsedEvent {Move.Value:"pret:MOVE_COSMIC_POWER" or "pret:MOVE_BULK_UP" or "pret:MOVE_TICKLE" or "pret:MOVE_SWAGGER"})return null;
         var itemReceipts=new HashSet<long>();
         for(int end=0;end<battle.Events.Length;end++)if(battle.Events[end] is SourceHeldItemConsumedEvent)
         {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,end);if(start>=0)for(int i=start;i<=end;i++)itemReceipts.Add(battle.Events[i].Sequence);}
@@ -36,7 +36,7 @@ public static partial class CampaignStatAnimationPresentation
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length)return null;
         int invocation=battle.EventIndex;
         while(invocation>=0&&battle.Events[invocation] is not (WildBattleMoveUsedEvent or WildBattleAttackStringEvent))invocation--;
-        if(invocation<0||battle.Events[invocation] is not WildBattleMoveUsedEvent {Move.Value:"pret:MOVE_BULK_UP" or "pret:MOVE_TICKLE" or "pret:MOVE_SWAGGER"})return null;
+        if(invocation<0||battle.Events[invocation] is not WildBattleMoveUsedEvent {Move.Value:"pret:MOVE_COSMIC_POWER" or "pret:MOVE_BULK_UP" or "pret:MOVE_TICKLE" or "pret:MOVE_SWAGGER"})return null;
         var itemReceipts=new HashSet<long>();
         for(int end=0;end<battle.Events.Length;end++)if(battle.Events[end] is WildBattleHeldItemConsumedEvent)
         {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,end);if(start>=0)for(int i=start;i<=end;i++)itemReceipts.Add(battle.Events[i].Sequence);}
@@ -49,10 +49,10 @@ public static partial class CampaignStatAnimationPresentation
         while(usedIndex>=0&&!GroupBoundary(rows[usedIndex]))usedIndex--;
         if(usedIndex<1||rows[usedIndex].Kind!="used")return null;
         var used=rows[usedIndex];var attack=rows[usedIndex-1];
-        int move=used.Move switch{"pret:MOVE_BULK_UP"=>339,"pret:MOVE_TICKLE"=>321,"pret:MOVE_SWAGGER"=>207,_=>0};
+        int move=used.Move switch{"pret:MOVE_COSMIC_POWER"=>322,"pret:MOVE_BULK_UP"=>339,"pret:MOVE_TICKLE"=>321,"pret:MOVE_SWAGGER"=>207,_=>0};
         if(move==0||attack.Kind!="attack"||attack.Actor!=used.Actor||attack.Move!=used.Move||attack.Chosen!=used.Move||attack.Turn!=used.Turn||
             used.Actor<0||used.Actor>=slots||used.Target<0||used.Target>=slots||used.Slot is <0 or >3||
-            (move==339?used.Actor!=used.Target:used.Actor==used.Target))return null;
+            (move is 322 or 339?used.Actor!=used.Target:used.Actor==used.Target))return null;
         int end=usedIndex+1;
         while(end<rows.Length&&rows[end].Turn==used.Turn&&!GroupBoundary(rows[end]))end++;
         if(index>=end||end-usedIndex<3)return null;
@@ -71,10 +71,14 @@ public static partial class CampaignStatAnimationPresentation
             if(first+1>=end)return null;var b=rows[first+1];
             switch(move)
             {
-                case 339:
-                    bool upA=Changed(a,WildBattleStat.Attack,1),upD=Changed(b,WildBattleStat.Defense,1);
-                    if(!(upA||Cap(a,WildBattleStat.Attack,"maximum"))||!(upD||Cap(b,WildBattleStat.Defense,"maximum"))||!(upA||upD))return null;
-                    animation=a.Sequence;argument=upA&&upD?55:upA?15:16;break;
+                case 322:case 339:
+                    var firstStat=move==339?WildBattleStat.Attack:WildBattleStat.Defense;
+                    var secondStat=move==339?WildBattleStat.Defense:WildBattleStat.SpecialDefense;
+                    bool upFirst=Changed(a,firstStat,1),upSecond=Changed(b,secondStat,1);
+                    if(!(upFirst||Cap(a,firstStat,"maximum"))||!(upSecond||Cap(b,secondStat,"maximum"))||!(upFirst||upSecond))return null;
+                    // Both source scripts choose the wave before visiting either
+                    // stat command, including an individually capped first stat.
+                    animation=a.Sequence;argument=upFirst&&upSecond?55:AnimationArgument(upFirst?firstStat:secondStat,1);break;
                 case 321:
                     bool downA=Changed(a,WildBattleStat.Attack,-1),downD=Changed(b,WildBattleStat.Defense,-1);
                     bool hyper=Protection(a,"ability","ABILITY_HYPER_CUTTER");
