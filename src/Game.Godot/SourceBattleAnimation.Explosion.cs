@@ -21,7 +21,7 @@ public sealed partial class SourceBattleAnimation
     private void ValidateSubroutines()
     {
         foreach(var commands in _script.Subroutines.Values)
-            if(commands.Length is <1 or >128||commands[^1].Op!="return"||commands.Take(commands.Length-1).Any(c=>c.Op is "call" or "return" or "end" or "goto"))
+            if(commands.Length is <1 or >128||commands[^1].Op!="return"||commands.Take(commands.Length-1).Any(c=>c.Op is "call" or "return" or "end" or "goto" or "choosetwoturnanim" or "jumpifmoveturn"))
                 throw new InvalidDataException("Source subroutine must be bounded, nonrecursive and return exactly once.");
     }
 

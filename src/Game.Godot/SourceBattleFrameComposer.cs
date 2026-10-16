@@ -60,7 +60,7 @@ public sealed class SourceBattleFrameComposer
         }
         else
         {
-            if(frame.MoveBackground is {Id:not null} or {Darkening:>0})throw new InvalidDataException("Move background requires its indexed source surface.");
+            if(frame.MoveBackground is {Id:not null} or {Darkening:>0} or {ScrollX:not 0} or {ScrollY:not 0})throw new InvalidDataException("Move background requires its indexed source surface.");
         // The flattened terrain contains source BG palette banks 1..3 only. Every
         // admitted selector transforms all three identically. Fail closed if a later
         // script requests distinct banks; it then needs per-pixel bank provenance.

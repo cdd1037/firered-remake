@@ -20,7 +20,7 @@ public sealed class ElementalMoveAnimationTests
     }
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
     [TestMethod]
-    [DataRow(7)][DataRow(52)][DataRow(53)][DataRow(56)][DataRow(190)][DataRow(324)][DataRow(341)][DataRow(84)][DataRow(86)][DataRow(9)][DataRow(55)][DataRow(85)][DataRow(121)][DataRow(152)][DataRow(192)][DataRow(48)][DataRow(103)][DataRow(319)][DataRow(71)][DataRow(72)][DataRow(202)][DataRow(105)][DataRow(51)][DataRow(61)][DataRow(92)][DataRow(141)][DataRow(145)][DataRow(83)][DataRow(250)][DataRow(328)][DataRow(44)][DataRow(128)][DataRow(116)][DataRow(203)][DataRow(8)][DataRow(58)][DataRow(181)][DataRow(82)][DataRow(126)][DataRow(172)][DataRow(225)][DataRow(204)][DataRow(343)][DataRow(231)][DataRow(342)][DataRow(75)][DataRow(129)][DataRow(223)][DataRow(200)][DataRow(235)][DataRow(147)][DataRow(178)]
+    [DataRow(7)][DataRow(52)][DataRow(53)][DataRow(56)][DataRow(190)][DataRow(324)][DataRow(341)][DataRow(84)][DataRow(86)][DataRow(9)][DataRow(55)][DataRow(85)][DataRow(121)][DataRow(152)][DataRow(192)][DataRow(48)][DataRow(103)][DataRow(319)][DataRow(71)][DataRow(72)][DataRow(202)][DataRow(105)][DataRow(51)][DataRow(61)][DataRow(92)][DataRow(141)][DataRow(145)][DataRow(83)][DataRow(250)][DataRow(328)][DataRow(44)][DataRow(128)][DataRow(116)][DataRow(203)][DataRow(8)][DataRow(58)][DataRow(181)][DataRow(82)][DataRow(126)][DataRow(172)][DataRow(225)][DataRow(204)][DataRow(343)][DataRow(231)][DataRow(342)][DataRow(75)][DataRow(129)][DataRow(223)][DataRow(200)][DataRow(235)][DataRow(147)][DataRow(178)][DataRow(88)][DataRow(157)]
     public void SourceElementalRootsCompleteForEveryCanonicalActor(int move)
     {
         foreach(bool doubles in new[]{false,true})for(int actor=0;actor<(doubles?4:2);actor++)
@@ -43,7 +43,7 @@ public sealed class ElementalMoveAnimationTests
             var resolved=resources.Resolve(script.MoveId);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
             assets.Add("background",new(240,112,new ushort[240*112]));
             foreach(var b in Battlers(true))assets.Add(b.Asset,new(64,64,new ushort[4096]));
-            var composer=new SourceBattleFrameComposer(assets,Battlers(true),resolved.StatMask,resolved.Metallic);
+            var composer=new SourceBattleFrameComposer(assets,Battlers(true),resolved.StatMask,resolved.Metallic,resources.CreateBackgroundSurface(0),resolved.Backgrounds);
             var runtime=new SourceBattleAnimation(resolved.Script,new("pixels",1,script.MoveId,new(2),new(3)),Battlers(true),true,new Audio());
             int frames=0;while(runtime.Active&&frames++<1500)Assert.AreEqual(240*112*4,composer.ComposeField(runtime.Tick()).Length);
             Assert.IsFalse(runtime.Active,script.Label);

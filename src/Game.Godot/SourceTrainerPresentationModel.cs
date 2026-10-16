@@ -113,7 +113,7 @@ internal static class SourceTrainerPresentationModel
             case WildBattleMoveUsedEvent used when used.Move.Value is "pret:MOVE_HEAL_BELL" or "pret:MOVE_AROMATHERAPY":
                 return new([new("sText_AttackerUsedX", ("B_ATK_NAME_WITH_PREFIX", name(used.Actor)), ("B_BUFF2", moveName(used.Move) + "!")),
                     new(used.Move.Value == "pret:MOVE_HEAL_BELL" ? "sText_BellChimed" : "sText_SoothingAroma")]);
-            case WildBattlePpCommandEvent or WildBattleCalledMoveTransitionEvent or WildBattleCalledPartySwitchRequiredEvent or WildBattleCalledPartySwitchedEvent:
+            case WildBattlePpCommandEvent or WildBattleDamageAdjustedEvent or WildBattleCalledMoveTransitionEvent or WildBattleCalledPartySwitchRequiredEvent or WildBattleCalledPartySwitchedEvent:
                 return Silent;
             case WildBattleCallerSelectionEvent selection:
                 return selection.Caller.Value == "pret:MOVE_NATURE_POWER" && selection.Result is { } selected

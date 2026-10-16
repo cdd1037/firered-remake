@@ -31,7 +31,7 @@ public sealed class SourceAnimationResourceTests
             var resolved=resources.Resolve(script.MoveId);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
             assets.Add("background",new(240,112,new ushort[240*112]));foreach(var battler in battlers)assets.Add(battler.Asset,new(64,64,Enumerable.Repeat((ushort)0x801f,4096).ToArray()));
             var surface=resources.CreateBackgroundSurface(0);
-            var runtime=new SourceBattleAnimation(resolved.Script,new("resources",1,script.MoveId,new(0),new(1)),battlers,true,new Silent(),Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray());
+            var runtime=new SourceBattleAnimation(resolved.Script,new("resources",1,script.MoveId,new(0),new(1)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null},battlers,true,new Silent(),Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray());
             var composer=new SourceBattleFrameComposer(assets,battlers,resolved.StatMask,resolved.Metallic,surface,resolved.Backgrounds);int ticks=0;
             while(runtime.Active&&ticks++<2048)
             {
@@ -81,7 +81,7 @@ public sealed class SourceAnimationResourceTests
         string folder=Path.Combine(Path.GetTempPath(),"animation-recipes-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
         try
         {
-            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","flying.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
             {string target=Path.Combine(folder,file);Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(Path.Combine(Folder,file),target);}
             string path=Path.Combine(folder,"explosion/manifest.json");var json=JsonNode.Parse(File.ReadAllText(path))!;json["spriteRecipes"]![0]!["blend"]=true;File.WriteAllText(path,json.ToJsonString());
             Assert.Throws<InvalidDataException>(()=>new SourceAnimationResources(folder));

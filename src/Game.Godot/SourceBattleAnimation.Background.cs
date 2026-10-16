@@ -10,13 +10,14 @@ public sealed record SourceMoveBackgroundFrame(int? Id,int ScrollX,int ScrollY,i
 public sealed partial class SourceBattleAnimation
 {
     private int? _moveBackground;
+    private ushort BackgroundScrollY {get;set;}
     private int _backgroundFadeState,_backgroundRevision,_hardwareDarkening;
     private HardwarePaletteFade? _hardwareFade;
     private long _nextTaskOrder;
     private readonly short[] _animationArgs=new short[8];
     private readonly ushort[]? _initialBackgroundPalette;
     private ushort[]? _unfadedBackgroundPalette,_fadedBackgroundPalette;
-    private SourceMoveBackgroundFrame BackgroundFrame=>new(_moveBackground,0,0,_hardwareDarkening){Revision=_backgroundRevision,FadedPalette=_fadedBackgroundPalette is null?[]:(ushort[])_fadedBackgroundPalette.Clone()};
+    private SourceMoveBackgroundFrame BackgroundFrame=>new(_moveBackground,0,BackgroundScrollY,_hardwareDarkening){Revision=_backgroundRevision,FadedPalette=_fadedBackgroundPalette is null?[]:(ushort[])_fadedBackgroundPalette.Clone()};
     private bool ValidateBackgroundCommand(SourceAnimationCommand command)
     {
         if(command.Op=="setarg")

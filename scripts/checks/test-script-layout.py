@@ -158,8 +158,8 @@ class ResourceEntryTests(unittest.TestCase):
 
     def test_animation_producers_use_selected_dependencies(self):
         commands = self.module.build_commands(['move-animations'], self.raw, self.out, check=True)
-        self.assertEqual(11, len(commands))
-        outputs = (None, 'physical.json', 'elemental.json', 'trace.json', 'explosion', 'stat-mask', 'stat-moves', 'background-scripts.json', 'backgrounds', 'walls.json', 'general.json')
+        self.assertEqual(12, len(commands))
+        outputs = (None, 'physical.json', 'elemental.json', 'trace.json', 'explosion', 'stat-mask', 'stat-moves', 'background-scripts.json', 'backgrounds', 'walls.json', 'general.json', 'flying.json')
         for command, name in zip(commands, outputs):
             self.assertEqual(['--reference', str(self.raw), '--output',
                               str(self.out if name is None else self.out / 'battle/animations' / name), '--check'], command[2:])

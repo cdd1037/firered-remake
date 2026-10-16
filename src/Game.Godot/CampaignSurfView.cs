@@ -100,18 +100,22 @@ public partial class CampaignView
     {
         if (id != "LOCALID_PLAYER" || !FieldSurfRiding) return false;
         var effect = _session.State.SurfEffect;
-        int direction = pose.Facing switch { Direction.South => 0, Direction.North => 1, _ => 2 };
         int phase = FieldSurfBlobPhase;
         bool jumping = effect is not null || SeafoamDismountOrigin is not null;
         var blobTile = SeafoamDismountOrigin ?? (effect is null ? pose.Position : new Vector2(
             (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.X : effect.Origin.X) * 16,
             (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.Y : effect.Origin.Y) * 16));
-        DrawSurfSheet(_fieldSurfBlob!, blobTile.Floor() + new Vector2(-8, -8) - camera, 32, direction * 2 + phase, pose.Facing == Direction.East);
-        if (!drawPlayer) return true;
-        // The source blob's direction is zero: no sinusoidal bob. Its second animation command adds one to player y2.
-        var player = pose.Position.Floor() + new Vector2(0, -16 + (jumping ? pose.DrawYOffset : phase)) - camera;
-        DrawSurfSheet(_session.State.PlayerGender == 0 ? _fieldSurfRed! : _fieldSurfGreen!, player, 16, direction, pose.Facing == Direction.East);
+        DrawSurfPose(pose,camera,_session.State.PlayerGender,phase,blobTile,jumping?pose.DrawYOffset:phase,drawPlayer);
         return true;
+    }
+    private void DrawSurfPose(Pose pose,Vector2 camera,int gender,int phase,Vector2 blobTile,float playerYOffset,bool drawPlayer=true)
+    {
+        int direction=pose.Facing switch{Direction.South=>0,Direction.North=>1,_=>2};
+        DrawSurfSheet(_fieldSurfBlob!, blobTile.Floor() + new Vector2(-8, -8) - camera, 32, direction * 2 + phase, pose.Facing == Direction.East);
+        if (!drawPlayer) return;
+        // The source blob's direction is zero: no sinusoidal bob. Its second animation command adds one to player y2.
+        var player = pose.Position.Floor() + new Vector2(0, -16 + playerYOffset) - camera;
+        DrawSurfSheet(gender == 0 ? _fieldSurfRed! : _fieldSurfGreen!, player, 16, direction, pose.Facing == Direction.East);
     }
     private void DrawFieldSurfLanding(Vector2 camera)
     {

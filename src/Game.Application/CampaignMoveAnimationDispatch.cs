@@ -8,7 +8,7 @@ namespace Game.Application;
 /// It adds no Domain event, command, RNG draw, saved field or authoritative acknowledgement.</summary>
 public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequence, long AttackSequence,
     long PpSequence, long ResultSequence, int SourceMoveId, BattlerSlot Actor, BattlerSlot Target,
-    bool HitsSubstitute);
+    bool HitsSubstitute) { public byte? MoveTurn {get;init;} public bool AcknowledgesCurrentReceipt=>MoveTurn is null; }
 public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch? Dispatch, string Reason);
 
 public static partial class CampaignMoveAnimationPresentation
@@ -28,6 +28,14 @@ public static partial class CampaignMoveAnimationPresentation
 
     internal static int SupportedSourceMoveId(string move)=>move switch
     {
+        "pret:MOVE_DOUBLE_SLAP" => 3,
+        "pret:MOVE_COMET_PUNCH" => 4,
+        "pret:MOVE_TRIPLE_KICK" => 167,
+        "pret:MOVE_GUST" => 16,
+        "pret:MOVE_WING_ATTACK" => 17,
+        "pret:MOVE_STEEL_WING" => 211,
+        "pret:MOVE_ROCK_THROW" => 88,
+        "pret:MOVE_ROCK_SLIDE" => 157,
         "pret:MOVE_SPORE" => 147,
         "pret:MOVE_COTTON_SPORE" => 178,
         "pret:MOVE_SYNTHESIS" => 235,
@@ -157,6 +165,7 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
+        if(move is 3 or 4 or 167)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
             return new(null, "unmatched-source-attack-string");
@@ -281,6 +290,7 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
+        if(move is 3 or 4 or 167)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
             return new(null, "unmatched-source-attack-string");
@@ -289,7 +299,7 @@ public static partial class CampaignMoveAnimationPresentation
             battle.Events[end] is not (SourceAttackStringEvent or SourceMoveUsedEvent or SourceOrderEvent or SourceTurnReadyEvent)) end++;
         var action = battle.Events.Skip(battle.EventIndex + 1).Take(end - battle.EventIndex - 1).ToArray();
         var pp = action.OfType<SourcePpCommandEvent>().ToArray();
-        if(move is 51 or 75 or 129 or 145 or 181)
+        if(move is 51 or 75 or 129 or 145 or 157 or 181)
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
             // One visible attack page owns both PP-command visits and one visual invocation.

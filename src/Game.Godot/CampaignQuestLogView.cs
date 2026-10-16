@@ -72,14 +72,22 @@ public partial class CampaignView
         DrawQuestLogLayer(art,camera,0);DrawQuestLogLayer(art,camera,1);
         foreach(var actor in actors.Where(a=>a.Visible).OrderBy(a=>a.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
         {
-            SpriteAsset? asset=actor.Id==CampaignQuestLogRecorder.PlayerId?(_session.State.PlayerGender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
+            bool player=actor.Id==CampaignQuestLogRecorder.PlayerId;
+            int gender=CampaignQuestLogAvatar.Gender(actor.Graphics,_session.State.PlayerGender);
+            SpriteAsset? asset=player?(CampaignQuestLogAvatar.IsBike(actor.Graphics)?_cityCycleSprites.GetValueOrDefault(gender):gender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
             if(asset is null)throw new InvalidDataException("quest_log_actor_art_missing:"+actor.Graphics);
             // Local pose only; the actual saved scene's _poses remain untouched.
             var position=new Vector2(actor.X*16,actor.Y*16);
             var movement=playback.Movement(actor.Id);
             if(movement is {} active)position=new Vector2(active.From.X*16,active.From.Y*16).Lerp(position,(float)active.Fraction);
             var pose=new Pose{Position=position,Facing=actor.Facing,Visible=true,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0};
-            DrawActor(asset,pose,camera,playback.SavedGameVisible?null:asset.Texture);
+            if(player&&CampaignQuestLogAvatar.IsSurf(actor.Graphics))
+            {
+                // Shared source sheet placement; replay owns no live Surf effect or field clock.
+                int phase=(int)Math.Floor(playback.Frame+1e-7)/48%2;
+                DrawSurfPose(pose,camera,gender,phase,pose.Position,phase);
+            }
+            else DrawActor(asset,pose,camera,playback.SavedGameVisible?null:asset.Texture);
         }
         DrawQuestLogLayer(art,camera,2);
         DrawRect(new(0,0,240,16),QuestLogColor(15));

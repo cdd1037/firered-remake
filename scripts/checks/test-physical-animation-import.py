@@ -11,7 +11,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,3,4,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
@@ -158,4 +158,54 @@ class PhysicalImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
   self.assertFalse({207,321}&{s['moveId'] for s in json.loads(data)['scripts']})
   self.assertIn('callback:MissingAnger',next(b for b in blocked if b['moveId']==207)['missing']);self.assertIn('callback:MissingRock',next(b for b in blocked if b['moveId']==321)['missing'])
+ def test_ordinary_multihit_keeps_both_source_branches_and_shared_callbacks(self):
+  data,_=imp.build(REFERENCE);roots={s['moveId']:s for s in json.loads(data)['scripts']}
+  for move,name in [(3,'DoubleSlap'),(4,'CometPunch')]:
+   root=roots[move];choice=next(c for c in root['commands'] if c['op']=='choosetwoturnanim')
+   self.assertEqual([name+'Left',name+'Right'],choice['args'])
+   for side,x in [('Left','-8'),('Right','8')]:
+    first=root['commands'][root['labels'][name+side]]
+    self.assertEqual('gBasicHitSplatSpriteTemplate',first['args'][0]);self.assertEqual(x,first['args'][3])
+   self.assertEqual(2,sum(c['op']=='goto' and c['args']==[name+'Continue'] for c in root['commands']))
+   self.assertEqual(2 if move==4 else 0,sum(c['op']=='createsprite' and c['args'][0]=='gFistFootSpriteTemplate' for c in root['commands']))
+ def test_multihit_rejects_an_unclosed_branch_or_cycle_instead_of_using_the_other_side(self):
+  raw=imp.read_sources(REFERENCE)
+  for old,new in [(b'choosetwoturnanim DoubleSlapLeft, DoubleSlapRight',b'choosetwoturnanim DoubleSlapLeft, MissingRight'),
+                  (b'choosetwoturnanim DoubleSlapLeft, DoubleSlapRight',b'choosetwoturnanim DoubleSlapLeft'),
+                  (b'goto DoubleSlapContinue',b'goto DoubleSlapLeft')]:
+   changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):data,blocked=imp.build(REFERENCE)
+   self.assertNotIn(3,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn(4,{s['moveId'] for s in json.loads(data)['scripts']})
+   self.assertTrue(any(x.startswith('control-flow:') for x in next(b for b in blocked if b['moveId']==3)['missing']))
+ def test_complete_pixels_do_not_admit_an_unsupported_move_turn_invocation(self):
+  data,blocked=imp.build(REFERENCE);self.assertNotIn(251,{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==251)['missing'])
+  raw=imp.read_sources(REFERENCE);raw['src/data/battle_moves.h']=raw['src/data/battle_moves.h'].replace(b'[MOVE_DOUBLE_SLAP] =\n    {\n        .effect = EFFECT_MULTI_HIT,',b'[MOVE_DOUBLE_SLAP] =\n    {\n        .effect = EFFECT_BEAT_UP,')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertNotIn(3,{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==3)['missing'])
+ def test_conditional_move_turn_retains_three_kick_branches_and_fallthrough(self):
+  data,_=imp.build(REFERENCE);roots={s['moveId']:s for s in json.loads(data)['scripts']};root=roots[167]
+  self.assertEqual([['0','TripleKickLeft'],['1','TripleKickRight']],[c['args'] for c in root['commands'] if c['op']=='jumpifmoveturn'])
+  self.assertEqual(['TripleKickCenter'],root['commands'][7]['args'])
+  for label,x,y,affine in [('Left','-16','-16','2'),('Right','8','0','2'),('Center','0','-8','1')]:
+   index=root['labels']['TripleKick'+label];fist,hit=root['commands'][index:index+2]
+   self.assertEqual('gFistFootSpriteTemplate',fist['args'][0]);self.assertEqual(['20','1','1'],fist['args'][5:])
+   self.assertEqual(['gBasicHitSplatSpriteTemplate','ANIM_TARGET','3',x,y,'ANIM_TARGET',affine],hit['args'])
+  self.assertEqual(3,sum(c['op']=='goto' and c['args']==['TripleKickContinue'] for c in root['commands']))
+ def test_conditional_branch_rejects_unknown_targets_cycles_and_nonbyte_checks(self):
+  raw=imp.read_sources(REFERENCE)
+  for old,new in [(b'jumpifmoveturn 0, TripleKickLeft',b'jumpifmoveturn 0, MissingKickLeft'),
+                  (b'jumpifmoveturn 0, TripleKickLeft',b'jumpifmoveturn 256, TripleKickLeft'),
+                  (b'jumpifmoveturn 0, TripleKickLeft',b'jumpifmoveturn -1, TripleKickLeft'),
+                  (b'jumpifmoveturn 0, TripleKickLeft',b'jumpifmoveturn 0'),
+                  (b'goto TripleKickContinue',b'goto TripleKickLeft')]:
+   changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):data,blocked=imp.build(REFERENCE)
+   roots={s['moveId'] for s in json.loads(data)['scripts']};self.assertNotIn(167,roots);self.assertTrue({3,4}<=roots)
+   self.assertTrue(any(x.startswith('control-flow:') for x in next(b for b in blocked if b['moveId']==167)['missing']))
+ def test_conditional_move_turn_requires_its_exact_source_invocation_effect(self):
+  raw=imp.read_sources(REFERENCE);raw['src/data/battle_moves.h']=raw['src/data/battle_moves.h'].replace(b'[MOVE_TRIPLE_KICK] =\n    {\n        .effect = EFFECT_TRIPLE_KICK,',b'[MOVE_TRIPLE_KICK] =\n    {\n        .effect = EFFECT_MULTI_HIT,')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertNotIn(167,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==167)['missing'])
 if __name__=='__main__':unittest.main()

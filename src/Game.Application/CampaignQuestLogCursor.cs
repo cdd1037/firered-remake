@@ -42,6 +42,10 @@ public static partial class CampaignQuestLogRecorder
         if(frame is <0 or >CampaignQuestLogFieldClock.FrameLimit)throw new ArgumentOutOfRangeException(nameof(frame));
         if(!recordingOpen||log is null||log.Scenes[^1].Closed)return log;
         var scene=log.Scenes[^1];
+        // A map boundary may be placed after the last movement while the observed
+        // controllable-field clock is paused. A new-map modal input belongs to that
+        // segment, never to the previous map. Load validation still rejects bad times.
+        frame=Math.Max(frame,scene.Actions.LastOrDefault(a=>a.Transition is not null)?.StartFrame??0);
         var input=new CampaignQuestLogAction(-1,0,0,Direction.South,false,CampaignQuestLogEvent.Input,1){StartFrame=frame};
         if(!FitsActions(scene.Actions.Add(input),source))return Close(log);
         return new(log.Scenes.SetItem(log.Scenes.Length-1,scene with{Actions=scene.Actions.Add(input)}));

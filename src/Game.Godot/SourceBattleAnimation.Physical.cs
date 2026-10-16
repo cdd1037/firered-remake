@@ -8,7 +8,7 @@ public static class SourcePhysicalAnimationCatalog
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         return doc.RootElement.GetProperty("assets").EnumerateArray().Select(r=>r.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(doc,Path.GetDirectoryName(path)!,id));
     }
-    public static bool Supports(int move) => move is 207 or 321 or 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
+    public static bool Supports(int move) => move is 3 or 4 or 167 or 207 or 321 or 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));

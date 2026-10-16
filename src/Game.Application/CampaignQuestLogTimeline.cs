@@ -6,7 +6,8 @@ namespace Game.Application;
 // Pure presentation timeline. Captions never block independent actor tracks.
 internal sealed class CampaignQuestLogTimeline
 {
-    private readonly CampaignQuestLogScene _scene;
+    private ImmutableArray<CampaignQuestLogActor> _segmentActors;
+    public string Map{get;private set;}
     private readonly ImmutableArray<CampaignQuestLogAction> _moves;
     private readonly ImmutableArray<(int Start,int End,string Text)> _captions;
     private readonly Dictionary<string,CampaignQuestLogActor> _actors;
@@ -16,6 +17,7 @@ internal sealed class CampaignQuestLogTimeline
     private double _frame;
     public IEnumerable<CampaignQuestLogActor> Actors=>_actors.Values;
     public int ArtRevision{get;private set;}
+    public double Frame=>_frame;
     public string? Layout{get;private set;}
     public ImmutableArray<FieldMetatileEdit> Tiles{get;private set;}
     public string? Caption=>_captions.Where(c=>c.Start<=_frame&&c.End>_frame).Select(c=>c.Text).FirstOrDefault();
@@ -24,7 +26,7 @@ internal sealed class CampaignQuestLogTimeline
     public CampaignQuestLogTimeline(CampaignQuestLogScene scene,string player,QuestLogSource? source,bool savedScene=false)
     {
         Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;
-        _scene=scene;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
+        Map=scene.Map;_segmentActors=scene.Actors;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
         _moves=scene.Actions.Where(a=>a.Event==CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame).ToImmutableArray();
         var captions=ImmutableArray.CreateBuilder<(int Start,int End,string Text)>();int captionEnd=0;
         foreach(var action in scene.Actions.Where(a=>CampaignQuestLogRecorder.IsCaption(a)).OrderBy(a=>a.StartFrame))
@@ -51,10 +53,16 @@ internal sealed class CampaignQuestLogTimeline
         while(_move<_moves.Length&&_moves[_move].StartFrame<=_frame)
         {
             var action=_moves[_move++];
+            if(action.Transition is {} transition)
+            {
+                Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;
+                _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
+                _moving.Clear();ArtRevision++;continue;
+            }
             if(action.Layout is {} layout){ArtRevision++;Layout=layout.Length==0?null:layout;continue;}
             if(action.Tile is {} tile){ArtRevision++;Tiles=Tiles.Where(t=>t.X!=tile.X||t.Y!=tile.Y).ToImmutableArray();if(tile.SourceMetatileId>=0)Tiles=Tiles.Add(tile);continue;}
             if(action.Graphics is not null||action.Spawn is not null)ArtRevision++;
-            var initial=action.Spawn??_scene.Actors[action.ActorIndex];
+            var initial=action.Spawn??_segmentActors[action.ActorIndex];
             var prior=_actors.GetValueOrDefault(initial.Id)??initial;
             _moving[initial.Id]=(prior,action.StartFrame,action.Frames);
             _actors[initial.Id]=prior with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible,Graphics=action.Graphics??prior.Graphics};

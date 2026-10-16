@@ -25,7 +25,7 @@ public sealed record AnimationBattler(AnimationSlot Slot, string Asset, int YOff
     }
 }
 public sealed record CommittedMoveAnimation(string BattleId, long Sequence, int MoveId, AnimationSlot Actor, AnimationSlot Target)
-{ public int? StatAnimationArgument {get;init;} public string? GeneralAnimationLabel {get;init;} }
+{ public int? StatAnimationArgument {get;init;} public string? GeneralAnimationLabel {get;init;} public byte? MoveTurn {get;init;} }
 public sealed record SourceAnimationCommand(string Op, string[] Args, int Line);
 public sealed record SourceSpriteAnimFrame(int Tile,int Duration,bool HFlip,bool VFlip);
 public sealed record SourceSpriteFrameLoop(int At,int Start,int Count);
@@ -109,7 +109,7 @@ public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] O
 public sealed partial class SourceBattleAnimation
 {
     public const double SourceFrameSeconds=280896d/16777216;
-    public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"setarg","fadetobg","restorebg","waitbgfadein","waitbgfadeout","createsoundtask","waitsound","goto","panse","splitbgprio","splitbgprio_foes","waitplaysewithpan","call","return","loadspritegfx","monbg","setalpha","playsewithpan","loopsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
+    public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"setarg","fadetobg","restorebg","waitbgfadein","waitbgfadeout","createsoundtask","waitsound","choosetwoturnanim","jumpifmoveturn","goto","panse","splitbgprio","splitbgprio_foes","waitplaysewithpan","call","return","loadspritegfx","monbg","setalpha","playsewithpan","loopsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
     private readonly SourceAnimationScript _script;
     private readonly bool _doubles;
     private readonly int _battlerCount;
@@ -149,7 +149,7 @@ public sealed partial class SourceBattleAnimation
     private void Validate(SourceAnimationCommand c)
     {
         if(!SupportedCommands.Contains(c.Op))Fail(c,"No accepted source adapter.");
-        if(ValidateWallCommand(c)||ValidateBackgroundCommand(c)||ValidateSharedCommand(c)||ValidateTaskAffineOperand(c)||ValidateAttachedSpriteOperand(c)||ValidateElementalOperand(c)||ValidatePhysicalOperand(c)||ValidateTraceOperand(c)||ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
+        if(ValidateFlyingCommand(c)||ValidateWallCommand(c)||ValidateBackgroundCommand(c)||ValidateSharedCommand(c)||ValidateTaskAffineOperand(c)||ValidateAttachedSpriteOperand(c)||ValidateElementalOperand(c)||ValidatePhysicalOperand(c)||ValidateTraceOperand(c)||ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
         int count=c.Op switch{"loadspritegfx" or "monbg" or "clearmonbg" or "delay"=>1,"setalpha" or "playsewithpan"=>2,"createsprite"=>c.Args.FirstOrDefault() switch
         {"gBasicHitSplatSpriteTemplate" or "gScratchSpriteTemplate"=>7,"gHorizontalLungeSpriteTemplate"=>5,"gCuttingSliceSpriteTemplate" or "gSlashSliceSpriteTemplate"=>6,"gFalseSwipeSliceSpriteTemplate"=>3,"gFalseSwipePositionedSliceSpriteTemplate"=>4,"gSlideMonToOffsetSpriteTemplate" or "gFistFootSpriteTemplate"=>8,"gSlideMonToOriginalPosSpriteTemplate"=>6,_=>-1},"createvisualtask"=>c.Args.FirstOrDefault() is "AnimTask_Flash" or "AnimTask_StatsChange"?2:7,"loopsewithpan"=>4,_=>0};
         if(c.Args.Length!=count)Fail(c,"Command argument shape differs.");
@@ -244,6 +244,13 @@ public sealed partial class SourceBattleAnimation
                 case "restorebg":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(null));break;
                 case "waitbgfadeout":if(_backgroundFadeState!=2)return;break;
                 case "waitbgfadein":if(_backgroundFadeState!=0)return;break;
+                case "jumpifmoveturn":
+                    if(_subroutine is not null)Fail(c,"Branch inside subroutine requires separate source control-flow support.");
+                    if(_cue.MoveTurn!.Value==Number(a[0])){_pc=_script.Labels[a[1]];continue;}
+                    break;
+                case "choosetwoturnanim":
+                    if(_subroutine is not null)Fail(c,"Branch inside subroutine requires separate source control-flow support.");
+                    _pc=_script.Labels[a[_cue.MoveTurn!.Value&1]];continue;
                 case "goto":
                     if(_subroutine is not null)Fail(c,"Goto inside subroutine requires separate source control-flow support.");
                     _pc=_script.Labels[a[0]];continue;
@@ -268,7 +275,7 @@ public sealed partial class SourceBattleAnimation
                     int slot=Enumerable.Range(0,64).First(i=>(!_battlers.TryGetValue(i,out var reserved)||!reserved.Visible)&&_sprites.All(s=>s.Slot!=i));
                     _oamY[slot]=a[0] is "gHorizontalLungeSpriteTemplate" or "gSlideMonToOffsetSpriteTemplate" or "gSlideMonToOriginalPosSpriteTemplate"?160:0;
                     int modifier=Number(a[2]);int priority=Math.Max(3,_battlers[Resolve(a[1]).Value].Subpriority+(modifier>=64?modifier-64:-modifier));
-                    if(TryCreateWallSprite(c,slot,priority)||TryCreateTaskAffineSprite(c,slot,priority)||TryCreateAttachedSprite(c,slot,priority)||TryCreateElementalSprite(c,slot,priority))break;
+                    if(TryCreateFlyingSprite(c,slot,priority)||TryCreateWallSprite(c,slot,priority)||TryCreateTaskAffineSprite(c,slot,priority)||TryCreateAttachedSprite(c,slot,priority)||TryCreateElementalSprite(c,slot,priority))break;
                     if(a[0]=="gBowMonSpriteTemplate")_sprites.Add(new BowMon(slot,priority,Number(a[3])));
                     else if(a[0]=="gFlashingHitSplatSpriteTemplate")_sprites.Add(new FlashingHit(slot,priority,a.Skip(3).Select(Number).ToArray(),this));
                     else if(a[0]=="gSimplePaletteBlendSpriteTemplate")_sprites.Add(new SimplePaletteSprite(slot,priority,a.Skip(3).Select(PaletteNumber).ToArray(),this));
@@ -301,7 +308,7 @@ public sealed partial class SourceBattleAnimation
                     if(a[0]=="AnimTask_BlendMonInAndOut")
                     {var blendSlot=ResolveShakeParticipant(Number(a[2]),false);if(blendSlot is {} selected)_tasks.Add(new BlendMonInAndOutTask(selected,(ushort)PaletteNumber(a[3]),Number(a[4]),Number(a[5]),Number(a[6])));break;}
                     if(a[0]=="AnimTask_InvertScreenColor"){InvertSelectedPalettes(Number(a[2]),Number(a[3]),Number(a[4]));break;}
-                    if(TryCreateTaskAffineTask(c)||TryCreateElementalTask(c))break;
+                    if(TryCreateFlyingTask(c)||TryCreateTaskAffineTask(c)||TryCreateElementalTask(c))break;
                     if(a[0]=="AnimTask_SwayMon"){_tasks.Add(new SwayMonTask(this,a.Skip(2).Select(Number).ToArray()));break;}
                     if(a[0]=="AnimTask_WindUpLunge"){_tasks.Add(new WindUpLunge(this,a.Skip(2).Select(Number).ToArray()));break;}
                     if(a[0] is "AnimTask_RotateMonSpriteToSide" or "AnimTask_RotateMonToSideAndRestore"){_tasks.Add(new RotateToSide(this,Number(a[2]),Number(a[3]),Resolve(a[4]),Number(a[5]),a[0]=="AnimTask_RotateMonToSideAndRestore"));break;}
@@ -356,7 +363,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(_cancelled)return;_cancelled=true;Active=false;_loaded.Clear();_spritePalettes.Clear();
         Array.Clear(_restoredObject);Array.Clear(_restoredObjectOam);Array.Clear(_blendedObject);Array.Clear(_blendedObjectOam);Array.Clear(_animationArgs);_unfadedBackgroundPalette=_fadedBackgroundPalette=null;
-        _hardwareFade=null;_hardwareDarkening=0;_moveBackground=null;_backgroundFadeState=0;_backgroundRevision=0;
+        _hardwareFade=null;_hardwareDarkening=0;BackgroundScrollY=0;_moveBackground=null;_backgroundFadeState=0;_backgroundRevision=0;
         _invertedPalettes.Clear();SetBackgroundPriority(1,0);SetBackgroundPriority(2,1);_metallic=null;_greyscale.Clear();_fade=null;Array.Clear(_affineMode);Array.Clear(_affineOamMode);Array.Fill(_xScale,256);Array.Fill(_yScale,256);Array.Clear(_matrixB);Array.Clear(_matrixC);_statMask=null;_audio.StopAnimationEffects();_soundTasks.Clear();_paletteBlends.Clear();_sprites.Clear();_tasks.Clear();ClearBattlerBackgrounds();Array.Clear(_offsets);Array.Clear(_objectOffsets);_alphaA=_alphaB=0;_blendEnabled=false;_clearTicks=-1;
     }
     private abstract class VisualSprite(int slot,int subpriority)

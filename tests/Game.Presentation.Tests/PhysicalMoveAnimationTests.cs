@@ -48,7 +48,7 @@ public sealed class PhysicalMoveAnimationTests
         var composer=new SourceBattleFrameComposer(assets,Battlers(true));
         foreach(var script in SourcePhysicalAnimationCatalog.Read(Path.Combine(folder,"physical.json"),hit).Values)
         {
-            var runtime=new SourceBattleAnimation(script,new("pixels",1,script.MoveId,new(2),new(3)),Battlers(true),true,new Audio());
+            var runtime=new SourceBattleAnimation(script,new("pixels",1,script.MoveId,new(2),new(3)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null},Battlers(true),true,new Audio());
             int frames=0;while(runtime.Active&&frames++<1000)Assert.AreEqual(240*112*4,composer.ComposeField(runtime.Tick()).Length);
             Assert.IsFalse(runtime.Active,script.Label);
         }

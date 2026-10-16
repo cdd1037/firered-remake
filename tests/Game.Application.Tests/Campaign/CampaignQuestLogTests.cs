@@ -47,7 +47,8 @@ public sealed class CampaignQuestLogTests
         {
             var next=state with{World=state.World with{Player=state.World.Player with{MapId=new MapId("scene-"+i)}},Script=state.Script with{Flags=state.Script.Flags.SetItem("FLAG_WORLD_MAP_VIRIDIAN_CITY",true)}};
             state=state with{Script=state.Script with{Flags=state.Script.Flags.SetItem("FLAG_WORLD_MAP_VIRIDIAN_CITY",false)}};
-            log=CampaignQuestLogRecorder.Record(log,state,next,new("move"),catalog);state=next;
+            // Explicit scene end exercises the ring; ordinary map changes now remain in the same scene.
+            log=CampaignQuestLogRecorder.Record(CampaignQuestLogRecorder.Close(log),state,next,new("move"),catalog);state=next;
         }
         Assert.AreEqual(4,log!.Scenes.Length);Assert.AreEqual("scene-16",log.Scenes[0].Map);
         for(int i=0;i<100;i++)

@@ -11,10 +11,12 @@ public static partial class CampaignQuestLogRecorder
         var actions=scene.Actions;
         int start=actions.Where(a=>a.Event==CampaignQuestLogEvent.None&&a.Tile is null&&a.Layout is null).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max();
         start=Math.Max(start,recordingFrame??0);
-        var previous=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
-        foreach(var a in actions.Where(a=>a.Event==CampaignQuestLogEvent.None&&a.Tile is null&&a.Layout is null).OrderBy(a=>a.StartFrame))
+        var segment=CurrentProjection(scene);
+        int transitionIndex=Array.FindLastIndex(actions.ToArray(),a=>a.Transition is not null);
+        var previous=segment.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
+        foreach(var a in actions.Skip(transitionIndex+1).Where(a=>a.Event==CampaignQuestLogEvent.None&&a.Tile is null&&a.Layout is null).OrderBy(a=>a.StartFrame))
         {
-            var initial=a.Spawn??scene.Actors[a.ActorIndex];var old=previous.GetValueOrDefault(initial.Id)??initial;
+            var initial=a.Spawn??segment.Actors[a.ActorIndex];var old=previous.GetValueOrDefault(initial.Id)??initial;
             previous[initial.Id]=old with{X=a.X,Y=a.Y,Facing=a.Facing,Visible=a.Visible,Graphics=a.Graphics??old.Graphics};
         }
         var latest=Actors(after,source).ToDictionary(a=>a.Id,StringComparer.Ordinal);
@@ -49,7 +51,7 @@ public static partial class CampaignQuestLogRecorder
         {
             if(overflow)return false;
             if(at>ushort.MaxValue-frames){overflow=true;return false;}
-            int index=Array.FindIndex(scene.Actors.ToArray(),a=>a.Id==actor.Id);
+            int index=Array.FindIndex(segment.Actors.ToArray(),a=>a.Id==actor.Id);
             previous.TryGetValue(actor.Id,out var prior);
             var action=new CampaignQuestLogAction(index,actor.X,actor.Y,actor.Facing,actor.Visible,CampaignQuestLogEvent.None,frames)
             {StartFrame=at,SourceAction=opcode,Graphics=actor.Graphics!=prior?.Graphics?actor.Graphics:null,Spawn=index<0?prior??actor:null};

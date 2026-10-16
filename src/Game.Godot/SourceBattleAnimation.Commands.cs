@@ -38,6 +38,10 @@ public sealed partial class SourceBattleAnimation
         }
         if(c.Op=="waitplaysewithpan")
         {if(a.Length!=3||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[2]) is <0 or >255||a[0] is not ("SE_M_DOUBLE_TEAM" or "SE_M_COMET_PUNCH"))return false;return true;}
+        if(c.Op=="jumpifmoveturn")
+        {if(_cue.MoveTurn is null||a.Length!=2||Number(a[0]) is <0 or >255||!_script.Labels.TryGetValue(a[1],out int target)||target<0||target>=_script.Commands.Length)Fail(c,"Move-turn branch needs committed turn, byte comparison and valid source label.");return true;}
+        if(c.Op=="choosetwoturnanim")
+        {if(_cue.MoveTurn is null||a.Length!=2||a.Any(label=>!_script.Labels.TryGetValue(label,out int target)||target<0||target>=_script.Commands.Length))Fail(c,"Two-turn branch needs committed turn and two valid source labels.");return true;}
         if(c.Op=="goto")
         {if(a.Length!=1||!_script.Labels.TryGetValue(a[0],out int target)||target<0||target>=_script.Commands.Length)Fail(c,"Missing or invalid source label target.");return true;}
         if(c.Op=="playsewithpan"&&a.FirstOrDefault()=="SE_M_BIND")

@@ -11,7 +11,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -142,4 +142,9 @@ class ElementalImportTests(unittest.TestCase):
    return data.replace(b'.callback = AnimEmberFlare,',b'.callback = UnsupportedFlare,') if path=='src/battle_anim_fire.c' else data
   with patch.object(imp,'read',side_effect=read):
    with self.assertRaises(ValueError):imp.build(REFERENCE)
+ def test_rock_sheet_and_intrinsic_controller_dependencies(self):
+  data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']};rock=recipes['gFallingRockSpriteTemplate']
+  self.assertEqual((32,32),(rock['width'],rock['height']));self.assertEqual([32,48,64],[a[0]['tile'] for a in rock['animations']]);self.assertEqual(struct.unpack('<HH',assets['rocks'][:4]),(32,192));self.assertNotIn('gShakeMonOrTerrainSpriteTemplate',recipes)
+  for move in (88,157):
+   root=next(r for r in pack['scripts'] if r['moveId']==move);self.assertIn('SE_M_ROCK_THROW',root['soundEffects']);controller=next(c for c in root['commands'] if c['op']=='createsprite' and c['args'][0]=='gShakeMonOrTerrainSpriteTemplate');self.assertEqual('1',controller['args'][-1])
 if __name__=='__main__':unittest.main()
