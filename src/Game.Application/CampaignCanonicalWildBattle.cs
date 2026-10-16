@@ -164,6 +164,9 @@ public sealed partial class CampaignSession
         if(four is null&&(FourIslandEncounterTables.Land.Any(t=>t.Map==map)||FourIslandEncounterTables.Water.Any(t=>t.Map==map)))throw new InvalidDataException("four_island_wild_missing_field_origin");
         if(ruby is null&&(SeviiRubyEncounterTables.Land.Any(t=>t.Map==map)||SeviiRubyEncounterTables.Water.Any(t=>t.Map==map)))throw new InvalidDataException("sevii_ruby_wild_missing_field_origin");
         if(hypno is not null&&!FirstSeviiHypnoBattleContract.SourceInitialInstance(pokemon))throw new InvalidDataException("first_sevii_hypno_source_identity");
+        if (origins == 0 && kind == FirstSeviiEncounterKind.Land && OrdinaryLandDefinition(map) is { } ordinary)
+            return new() { OrdinaryLand = ordinary.BindBattle(state.Exploration?.EarlyEncounter ??
+                throw new InvalidDataException("canonical_ordinary_land_pending")) };
         if(origins==0&&IsFirstSeviiWildMap(map))
         {
             bool Match(Game.Domain.Ids.SpeciesId species,byte min,byte max)=>species==pokemon.Species&&pokemon.Level>=min&&pokemon.Level<=max;

@@ -22,9 +22,13 @@ public partial class CampaignView
         {
             _townMapPage = _townMapPlayerPage = _firstSeviiTownMap.RegionForMap(mapId) ?? 0;
             if (_firstSeviiTownMap.TryPositionForMap(mapId, x, y, out var point)) return point;
-            // A known indoor multi-cell section needs a general source escapeWarp, which
-            // this campaign does not retain. Keep the correct page, omit the marker, and
-            // park on an actual source button rather than fabricating a player position.
+            if (_firstSeviiTownMap.RequiresEscapeWarpForMap(mapId) && _session.State.EscapeDestination is {} escape &&
+                _firstSeviiTownMap.TryPositionForMap(escape.MapId.Value, escape.X, escape.Y, out var entrancePoint))
+            {
+                _townMapPage = _townMapPlayerPage = _firstSeviiTownMap.RegionForMap(escape.MapId.Value) ?? _townMapPage;
+                return entrancePoint;
+            }
+            // Without a recorded entrance, retain the correct page and omit the marker.
             if (_firstSeviiTownMap.RegionForMap(mapId) is not null)
             { _townMapPlayerKnown = false; return new(21, TownMapSwitchAvailable ? 11 : 13); }
         }

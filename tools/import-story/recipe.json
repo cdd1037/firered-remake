@@ -2301,6 +2301,16 @@
       }
     },
     {
+      "path": "data/maps/ThreeIsland_DunsparceTunnel/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/ThreeIsland_DunsparceTunnel/scripts.inc",
+        "Symbol": "MAP_THREE_ISLAND_DUNSPARCE_TUNNEL",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
       "path": "data/maps/ThreeIsland_Port/scripts.inc",
       "sourceRef": {
         "Kind": 1,
@@ -4230,6 +4240,7 @@
     "data/maps/ThreeIsland_BondBridge/text.inc",
     "data/maps/ThreeIsland_Mart/text.inc",
     "data/maps/ThreeIsland_PokemonCenter_1F/text.inc",
+    "data/maps/ThreeIsland_DunsparceTunnel/text.inc",
     "data/maps/ThreeIsland_Port/text.inc",
     "data/maps/TwoIsland/text.inc",
     "data/maps/TwoIsland_JoyfulGameCorner/text.inc",
@@ -4338,6 +4349,7 @@
     "data/maps/ThreeIsland_Harbor/scripts.inc",
     "data/maps/ThreeIsland_Mart/scripts.inc",
     "data/maps/ThreeIsland_PokemonCenter_1F/scripts.inc",
+    "data/maps/ThreeIsland_DunsparceTunnel/scripts.inc",
     "data/maps/ThreeIsland_Port/scripts.inc",
     "data/maps/TwoIsland/scripts.inc",
     "data/maps/TwoIsland_Harbor/scripts.inc",
@@ -5758,6 +5770,7 @@
     "FLAG_HIDDEN_ITEM_THREE_ISLAND_BOND_BRIDGE_MAX_REPEL",
     "FLAG_HIDDEN_ITEM_THREE_ISLAND_BOND_BRIDGE_PEARL",
     "FLAG_HIDDEN_ITEM_THREE_ISLAND_BOND_BRIDGE_STARDUST",
+    "FLAG_HIDDEN_ITEM_THREE_ISLAND_DUNSPARCE_TUNNEL_NUGGET",
     "FLAG_HIDDEN_ITEM_THREE_ISLAND_PP_UP",
     "FLAG_HIDDEN_ITEM_TWO_ISLAND_CAPE_BRINK_PP_MAX",
     "FLAG_HIDDEN_ITEM_TWO_ISLAND_CAPE_BRINK_RARE_CANDY",
@@ -6275,6 +6288,7 @@
     "FLAG_WORLD_MAP_SSANNE_EXTERIOR",
     "FLAG_WORLD_MAP_THREE_ISLAND",
     "FLAG_WORLD_MAP_THREE_ISLAND_BERRY_FOREST",
+    "FLAG_WORLD_MAP_THREE_ISLAND_DUNSPARCE_TUNNEL",
     "FLAG_WORLD_MAP_TRAINER_TOWER_LOBBY",
     "FLAG_WORLD_MAP_TWO_ISLAND",
     "FLAG_WORLD_MAP_UNDERGROUND_PATH_EAST_WEST_TUNNEL",
@@ -11396,6 +11410,7 @@
     "USING_UNION_ROOM",
     "VARS_END",
     "VARS_START",
+    "VAR_RESULT",
     "VERSION_DIAMOND",
     "VERSION_EMERALD",
     "VERSION_FIRE_RED",

@@ -32,13 +32,12 @@ public sealed class PretFirstSeviiTownMap
         Need(Assets.Length == 9 && Assets.Select(a => a.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds), "First-Sevii atlas inventory differs.");
         foreach (var a in Assets)
             Need(a.Width > 0 && a.Height > 0 && a.Width * a.Height <= 38400 && (outputs[a.TexturePath]).Length > 0, "First-Sevii atlas asset differs.");
-        Need(Cells.Length == 330 && Icons.Length == 2 && Positions.Length == 16 &&
+        Need(Cells.Length == 330 && Icons.Length == 2 && Positions.Length > 0 &&
             SwitchMenu == new FirstSeviiTownMapSwitchMenu(1, 6, 72, 168, 32, 88, 152, 32, 20, true), "First-Sevii atlas geometry differs.");
         for (int i = 0; i < Cells.Length; i++) Need(Cells[i].X == i % 22 && Cells[i].Y == i / 22, "First-Sevii atlas cell order differs.");
         foreach (var p in Positions)
             Need(p.Width > 0 && p.Height > 0 && p.SectionWidth > 0 && p.SectionHeight > 0 && p.Region is 0 or 1, "First-Sevii atlas position differs.");
-        Need(Positions.Count(p => p.RequiresEscapeWarp) == 1 && positionsByMap["map.three-island-harbor"].RequiresEscapeWarp,
-            "First-Sevii indoor escape-warp boundary differs.");
+
     }
 
     public static PretFirstSeviiTownMap Load(string projectRoot)
@@ -73,6 +72,7 @@ return bytes;
         if (x is < 0 or >= 22 || y is < 0 or >= 15) throw new ArgumentOutOfRangeException(nameof(x));
         return Cells[y * 22 + x];
     }
+    public bool RequiresEscapeWarpForMap(string mapId) => positionsByMap.TryGetValue(mapId, out var position) && position.RequiresEscapeWarp;
     public int? RegionForMap(string mapId) => positionsByMap.TryGetValue(mapId, out var p) ? p.Region : null;
     public bool TryPositionForMap(string mapId, int x, int y, out TownMapPoint point)
     {

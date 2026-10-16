@@ -15,7 +15,6 @@ public static partial class PretStoryCompiler
             if(opcode=="setwildbattle")return args.SequenceEqual(new[]{"SPECIES_ARTICUNO","50"})?(StoryOp.Special,2,2):(StoryOp.Unsupported,0,int.MaxValue);
             return (StoryOp.TrainerBattle,1,1);
         }
-        if(opcode=="setmaplayoutindex")return (StoryOp.Special,1,1);
         if(opcode=="getplayerxy"||opcode=="addvar")return (StoryOp.Special,2,2);
         return null;
     }

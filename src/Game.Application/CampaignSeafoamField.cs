@@ -13,23 +13,14 @@ public sealed partial class CampaignSession
     public bool SeafoamCurrentStopped(MapId map) => SeafoamCurrentStopped(State, map);
     private static bool SeafoamCurrentStopped(CampaignState state, MapId map) =>
         state.Script.Flags.GetValueOrDefault(map == SeafoamFieldRules.B3F ? SeafoamFieldRules.B3FStopped : SeafoamFieldRules.B4FStopped);
-    private IReadOnlyDictionary<MapId, ConnectedFieldMap> SeafoamConnectedMaps(CampaignState state)
-    {
-        var maps = TrainerTowerConnectedMaps(state);
-        if (!_content.SeafoamEnabled) return maps;
-        var result = maps.ToDictionary(pair => pair.Key, pair => pair.Value);
-        foreach (var id in new[] { SeafoamFieldRules.B3F, SeafoamFieldRules.B4F })
-            result[id] = _content.SeafoamConnectedMap(id, SeafoamCurrentStopped(state, id))!;
-        return result;
-    }
     private IReadOnlyDictionary<MapId, IFieldMap> SeafoamRawMaps(CampaignState state)
     {
-        var maps = TrainerTowerMovementMaps(state);
-        if (!_content.SeafoamEnabled) return maps;
+        var maps = MapLayoutRawMaps(state);
+        var id = state.World.Player.MapId;
+        if (!_content.SeafoamEnabled || !SeafoamFieldRules.IsCave(id)) return maps;
         var result = maps.ToDictionary(pair => pair.Key, pair => pair.Value);
-        foreach (var id in new[] { SeafoamFieldRules.B3F, SeafoamFieldRules.B4F })
-            result[id] = new SeafoamEditedMap(_content.SeafoamMap(id, SeafoamCurrentStopped(state, id))!,
-                id == state.World.Player.MapId ? state.MapEdits : null, _content);
+        if (_content.SeafoamEnabled && SeafoamFieldRules.IsCave(id))
+            result[id] = new SeafoamEditedMap(result[id], state.MapEdits, _content);
         return result;
     }
     private sealed class SeafoamEditedMap(IFieldMap source, ImmutableSortedDictionary<string,FieldMetatileEdit>? edits, ICampaignCatalog content) : IFieldMap
@@ -146,11 +137,6 @@ public sealed partial class CampaignSession
             int count=state.Script.Variables.GetValueOrDefault("VAR_TEMP_2");
             if(count is <0 or >=2||!effect.Source.Symbol.EndsWith("_EventScript_AddBoulderPresent",StringComparison.Ordinal))throw new InvalidDataException("seafoam_boulder_count_context");
             next=state with {Script=state.Script with {Variables=state.Script.Variables.SetItem("VAR_TEMP_2",count+1)}};return true;
-        }
-        if(effect.Opcode=="setmaplayoutindex")
-        {
-            if(a.Length!=1||a[0]!=SeafoamFieldRules.Layout(map,state.Script.Flags)||!SeafoamCurrentStopped(state,map))throw new InvalidDataException("seafoam_layout_context");
-            return true;
         }
         if(effect.Opcode=="setmetatile")
         {

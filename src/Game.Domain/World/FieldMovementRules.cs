@@ -12,7 +12,7 @@ public sealed record FieldMovementTransition(TransitionStatus Status,WorldSnapsh
 /// <summary>Bounded door, arrow and directional stair rules. Entry scripts are applied by Application.</summary>
 public static class FieldMovementRules
 {
-    public static FieldMovementTransition Move(WorldSnapshot state,MoveIntent intent,IReadOnlyDictionary<MapId,IFieldMap> maps,bool enableCaveDoors=false,bool enableLadders=false,bool enableSand=false)
+    public static FieldMovementTransition Move(WorldSnapshot state,MoveIntent intent,IReadOnlyDictionary<MapId,IFieldMap> maps,bool enableCaveDoors=false,bool enableLadders=false,bool enableSand=false,Func<IFieldMap,IFieldMap>? destinationLayout=null)
     {
         FieldMovementTransition Fail(string code,string message)=>new(TransitionStatus.Fault,state,[],false,new(code,message));
         if(!maps.TryGetValue(state.Player.MapId,out var map))return Fail("map_missing",state.Player.MapId.Value);
@@ -47,6 +47,10 @@ public static class FieldMovementRules
         if(warp is not null)
         {
             if(!maps.TryGetValue(warp.DestinationMapId,out var destination))return Fail("warp_destination_missing",warp.DestinationMapId.Value);
+            // Layout selection precedes source arrival-tile/facing resolution.
+            // Application supplies a pure projection of the destination's entry script.
+            if (destinationLayout is not null) destination = destinationLayout(destination);
+            if (destination is null || destination.Id != warp.DestinationMapId) return Fail("warp_destination_layout_invalid", warp.DestinationMapId.Value);
             if(warp.DestinationWarpId<0||warp.DestinationWarpId>=destination.FieldWarps.Length)return Fail("warp_index_invalid",warp.DestinationWarpId.ToString());
             var arrival=destination.FieldWarps[warp.DestinationWarpId];int x=arrival.X,y=arrival.Y;var behavior=destination.SourceBehaviorAt(x,y);var facing=caveStep?intent.Direction:state.Player.Facing;
             // From source initial avatar transition and door/stair exit tasks. Sprite offsets are presentation-only.

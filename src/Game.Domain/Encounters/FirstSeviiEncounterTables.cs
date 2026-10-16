@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 namespace Game.Domain.Encounters;
-/// <summary>Original first-visit tables; disconnected post-National-Dex port grass is deliberately unadmitted.</summary>
+/// <summary>Legacy typed first-Sevii encounter contracts. Current composition loads converted source land headers.</summary>
 public static class FirstSeviiEncounterTables
 {
     public static ImmutableArray<EarlyLandEncounterTable> Land { get; } = [

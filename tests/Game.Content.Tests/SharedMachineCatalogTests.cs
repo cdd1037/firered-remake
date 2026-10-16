@@ -90,7 +90,7 @@ public sealed class SharedMachineCatalogTests
         {
             Assert.AreSame(shared.Definition(definition.Machine.Item.Id).Machine, definition.Machine);
             Assert.AreEqual(pokemon.Catalog.Moves[definition.Move].Pp, definition.MovePp);
-            Assert.AreEqual(189, definition.Compatibility.Length);
+            Assert.AreEqual(pokemon.Catalog.Species.Count, definition.Compatibility.Length);
             Assert.IsTrue(definition.Compatibility.Select(row => row.Species).ToHashSet().SetEquals(pokemon.Catalog.Species.Keys));
             foreach (var cell in definition.Compatibility)
                 Assert.AreSame(shared.Compatibility(definition.Machine.Item.Id, cell.Species), cell);

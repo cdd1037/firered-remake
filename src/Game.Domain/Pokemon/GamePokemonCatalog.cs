@@ -36,8 +36,8 @@ public sealed class GamePokemonCatalog
         return new(mechanics, owned, opponents, trainerTower);
     }
 
-    // Ordinary grass/water entry has its own reviewed roster. Other fishing, cave, static,
-    // roaming and island encounters require their explicit encounter-origin contracts.
+    // Unbound legacy grass/water entry keeps its reviewed roster. Catalog-bound ordinary land
+    // and special encounters supply validated encounter contracts to the shared battle policy.
     internal bool AdmitsWildOpponent(PokemonInstance pokemon) =>
         Catalog.Species.ContainsKey(pokemon.Species) &&
         (PokemonFactory.FuchsiaSupportedSpecies.Contains(pokemon.Species) ||
@@ -59,6 +59,7 @@ public sealed class GamePokemonCatalog
             data.SpeciesMechanics.Count != mechanics.Data.SpeciesMechanics.Count || data.SpeciesMechanics.Any(pair =>
                 !mechanics.Data.SpeciesMechanics.TryGetValue(pair.Key, out var expected) ||
                 pair.Value.Species != expected.Species || pair.Value.WeightHectograms != expected.WeightHectograms ||
+                pair.Value.ItemCommon != expected.ItemCommon || pair.Value.ItemRare != expected.ItemRare ||
                 !pair.Value.SourceEvolutions.SequenceEqual(expected.SourceEvolutions)))
             throw new ArgumentException("campaign_pokemon_mechanics");
         if (catalog.Species is null || catalog.Moves is null || catalog.Moves.Count != mechanics.Catalog.Moves.Count ||

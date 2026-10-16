@@ -89,33 +89,10 @@ public sealed class PretOriginalTmAcquisition
     /// <summary>Authenticate typed shared-service bindings against the actual imported event and source label inventory.</summary>
     public ImmutableArray<FieldItemServiceDefinition> ServiceDefinitions()
     {
-        var results = ImmutableArray.CreateBuilder<FieldItemServiceDefinition>();
-        foreach (var binding in ServiceBindings.EnumerateArray())
-        {
-            var mapId = new MapId(binding.GetProperty("mapId").GetString()!);
-            string id = binding.GetProperty("id").GetString()!, script = binding.GetProperty("scriptId").GetString()!;
-            string group = binding.GetProperty("eventGroup").GetString()!;
-            int index = binding.GetProperty("eventIndex").GetInt32();
-            Need(NewMaps.TryGetValue(mapId, out var map) && group is "object_events" or "bg_events", "Original TM service map/group differs.");
-            var events = map!.Events.GetProperty(group);
-            Need(index >= 0 && index < events.GetArrayLength(), "Original TM service event index differs.");
-            var e = events[index];
-            Need(JsonElement.DeepEquals(e, binding.GetProperty("sourceEvent")) && e.GetProperty("script").GetString() == script,
-                "Original TM service event binding differs.");
-            int? Optional(string name) => binding.GetProperty(name).ValueKind == JsonValueKind.Null ? null : binding.GetProperty(name).GetInt32();
-            int? local = Optional("sourceLocalId"), x = Optional("backgroundX"), y = Optional("backgroundY");
-            Need(group == "object_events" ? local == index + 1 && x is null && y is null :
-                local is null && x == e.GetProperty("x").GetInt32() && y == e.GetProperty("y").GetInt32(), "Original TM service interaction position differs.");
-            var programs = binding.GetProperty("programIds").EnumerateArray().Select(p => p.GetString()!).ToImmutableArray();
-            var items = binding.GetProperty("itemSymbols").EnumerateArray().Select(p => p.GetString()!).ToImmutableArray();
-            Need(programs.Contains(script) && programs.Distinct(StringComparer.Ordinal).Count() == programs.Length &&
-                !items.IsEmpty && items.Distinct(StringComparer.Ordinal).Count() == items.Length && items.All(Constants.ContainsKey),
-                "Original TM service call graph or item scope differs.");
-            results.Add(new(id, mapId, script, local, x, y, programs, items));
-        }
-        Need(results.Count == 4 && results.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count() == 4 &&
+        var results = PretFieldItemServices.Decode(ServiceBindings, NewMaps, Constants);
+        Need(results.Length == 4 && results.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count() == 4 &&
             results.Select(r => (r.Map, r.ScriptId)).Distinct().Count() == 4, "Original TM service identity collection differs.");
-        return results.ToImmutable();
+        return results;
     }
 
     public ImmutableArray<FieldPickupDefinition> MemorialPickups(EarlyShopCatalog shop) =>

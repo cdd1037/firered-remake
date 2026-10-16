@@ -71,7 +71,18 @@ python3 scripts/imports/maps/import-map-atlases.py --check
 
 区域入口为 `scripts/imports/pokemon/import-<区域>-pokemon.py`，初始物种入口为 `scripts/imports/pokemon/import-pokemon.py`；Celadon/Rocket 的综合目录也调用同一转换核心。共享实现位于 `scripts/lib/pokemon_import.py` 与 `scripts/lib/pokemon_import_io.py`，区域以显式参数提供物种/地图选择，不通过修改另一区域模块的全局变量继承配置。区域的真实数据选择与规则仍由对应入口拥有。
 
+当前可持有／对手物种由 `data/game-pokemon.json` 声明，运行目录直接引用共享 canonical
+定义；繁殖、成长、捕获率和招式兼容性不在地区代码中复制。新增收藏展示资源由
+`scripts/recipes/pokemon/collection-presentation.json` 选择源图标／脚印及可复用的
+战斗正面图，写入 `content/generated/sprites/pokemon/collection/`。导入器验证固定
+raw 绑定与完整 RGBA 像素；运行时名称和图鉴文字继续使用共享图鉴目录。
+
 ```sh
+python3 scripts/imports/pokemon/import-game-pokemon.py
+python3 scripts/imports/presentation/import-pokemon-collection-presentation.py
+python3 scripts/imports/presentation/import-pokemon-collection-presentation.py --check
+python3 scripts/checks/test-game-pokemon.py
+python3 scripts/checks/test-pokemon-collection-presentation.py
 python3 scripts/checks/test-pokemon-import.py
 ```
 
@@ -115,3 +126,55 @@ python scripts/imports/items/import-current-items.py --check
 
 物品图标检查在收进图集后仍比较完整RGBA像素；不要求PNG压缩字节一致。
 新增原始输入仍只保存在本地raw中，不进入Git或公开站点。
+
+## 三之岛土龙弟弟通路
+
+First-Sevii 地图与规则入口支持显式 `--raw-root`，可直接使用工程内的固定版本
+原始输入。该模式全程离线；它信任调用者选定的 pinned raw 缓存，不将目录冒充
+Git checkout，也不声称验证了不存在的 Git 对象。缺失文件、越界路径或符号链接
+会报错。`--reference-root` 仍用于实际固定版本 Git checkout，两种模式不能混用。
+规则入口也保留原来的 `reference preparation output` 三个位置参数。
+
+地图布局变体由 `scripts/lib/layout_variants.py` 共享导入，Seafoam 与通路均使用
+同一渲染器和紧凑地图编码器。变体改变网格和图像，保留原地图事件头、NPC 与
+warp。通路的 National Dex 条件由原脚本选择 dug-out 布局；Port 遇敌表正常导入，
+首访限制来自实际地图连通性。NPC 赠送及隐藏 Nugget 使用源脚本、事件与共享物品定义。
+赠送服务绑定生成到 `data/regions/first-sevii/services.json` 的 `serviceBindings`，
+保留原 NPC 事件身份；`scripts/lib/field_item_services.py` 与 Lost Cave 共用脚本图遍历，
+从源脚本推导物品及可达程序，并展开 `giveitem` 等宏的共享标准程序依赖。
+
+在工程根目录执行：
+
+```sh
+python scripts/imports/maps/import-first-sevii-region.py --raw-root content/raw/pokefirered/037335f4
+python scripts/imports/story/import-first-sevii-rules.py --raw-root content/raw/pokefirered/037335f4 --preparation content/generated/maps/regions/first-sevii --out content/generated/data/regions/first-sevii
+python scripts/imports/maps/import-field-tilesets.py
+python scripts/imports/presentation/import-shared-overworld.py
+python scripts/imports/presentation/import-first-sevii-town-map.py --raw content/raw/pokefirered/037335f4
+python scripts/imports/story/import-story.py
+python scripts/imports/maps/import-map-atlases.py
+
+python scripts/imports/maps/import-first-sevii-region.py --raw-root content/raw/pokefirered/037335f4 --check
+python scripts/imports/story/import-first-sevii-rules.py --raw-root content/raw/pokefirered/037335f4 --preparation content/generated/maps/regions/first-sevii --out content/generated/data/regions/first-sevii --check
+python scripts/imports/maps/import-field-tilesets.py --check
+python scripts/imports/presentation/import-shared-overworld.py --check
+python scripts/imports/presentation/import-first-sevii-town-map.py --raw content/raw/pokefirered/037335f4 --check
+python scripts/imports/story/import-story.py --check
+python scripts/imports/maps/import-map-atlases.py --check
+python scripts/checks/verify-map-importer-unification.py
+python scripts/checks/test-pokemon-import.py
+```
+
+`import-story.py` 使用 PATH 中的 .NET，也支持 `--dotnet <可执行文件>`。
+`tools/import-story/recipe.json` 必须包含通路脚本、文本及隐藏物品旗标，才能重建
+运行时故事 IR；只更新地图资源不足以启用交互。
+
+需要移除重新生成的独立地图 PNG 时，使用现有
+`python scripts/imports/maps/import-map-atlases.py --prune` 流程；工具会先验证像素，
+再备份到工程外并更新文件清单。First-Sevii 的 `--check` 同时支持独立 PNG 与已打包
+图集，比较完整 RGBA；不依赖 PNG 压缩字节相等。共享变体检查还验证原事件头未变、
+来源字节未被改写、东西出口连通性、隐藏物品可交互位置以及无效布局被拒绝。
+
+Town Map 位置从原地图 section、布局尺寸及 `sSeviiMapsecs` 页归属生成。
+通路属于地下地图，原作使用逃脱入口的地图与坐标投影玩家标记；因此资源保留
+`requiresEscapeWarp`，不将 section 的占位坐标误当成玩家位置。

@@ -175,6 +175,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     public string? MessagePointer{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public ImmutableSortedDictionary<string,FieldMetatileEdit>? MapEdits{get;init;}
+    // Reconstructed from generated transition IR on restore, never a second save authority.
+    [JsonIgnore] public string? MapLayout { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]
     public ushort GcnLinkFlags{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
@@ -315,7 +317,7 @@ public sealed partial class CampaignSession
     }
     private CampaignSession(ICampaignCatalog content,CampaignState state,long revision,CampaignCatalogBinding binding)
     {
-        _content=content;_binding=binding;_ = TrainerOccurrences;state=BindBattleContext(state);var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
+        _content=content;_binding=binding;_ = TrainerOccurrences;state=BindBattleContext(state);state=state with {MapLayout=RestoreMapLayout(state)};var error=ValidatePlayerSave(state, layoutResolved: true);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
     // Runtime catalog context is deliberately not persisted; restoration supplies the current
@@ -332,7 +334,8 @@ public sealed partial class CampaignSession
     public static CampaignSession RestoreCurrent(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindCurrentCatalog(content));
     public CommandOutcome<CampaignState> Execute(string id,long revision,CampaignCommand command)=>
         _commands.Execute(new(id,revision,RulesVersion,_content.ContentVersion,command),DecideWithWildHistoryRetention);
-    public string? ValidatePlayerSave(CampaignState s)
+    public string? ValidatePlayerSave(CampaignState s) => ValidatePlayerSave(s, layoutResolved: false);
+    private string? ValidatePlayerSave(CampaignState s, bool layoutResolved)
     {
         if(s is null||s.World is null||s.World.Player is null||s.Script is null||s.Actors is null||s.PlayerName is null||s.RivalName is null||s.EntryPrograms.IsDefault||s.Motions.IsDefault||s.PresentationEffects.IsDefault||s.Party.IsDefault||s.SeenSpecies is null||s.CaughtSpecies is null||s.TextBuffers is null||s.SettledBattles is null||s.BattledTrainers is null||s.BattleHistory.IsDefault)return "save_structure_invalid";
         if(ValidatePlayTime(s) is {} playTimeError)return playTimeError;
@@ -369,6 +372,15 @@ public sealed partial class CampaignSession
         var trainerTowerError=ValidateTrainerTowerProgress(s);if(trainerTowerError is not null)return trainerTowerError;
         var parcelError=ValidateParcelState(s);if(parcelError is not null)return parcelError;
         if(!_content.Maps.TryGetValue(s.World.Player.MapId,out var map))return "save_map_missing";
+        if (_content.HasMapLayouts(map.Id))
+        {
+            string? expectedLayout;
+            try { expectedLayout = layoutResolved ? s.MapLayout : RestoreMapLayout(s); }
+            catch (InvalidDataException) { return "save_map_layout_invalid"; }
+            if (s.MapLayout is not null && s.MapLayout != expectedLayout) return "save_map_layout_inconsistent";
+            s = s with { MapLayout = expectedLayout };
+            if (expectedLayout is not null) map = _content.MapLayout(map.Id, expectedLayout)!;
+        }
         var surfError=ValidateFieldSurfState(s);if(surfError is not null)return surfError;
         var victoryRoadFieldError=ValidateVictoryRoadFieldProgress(s);if(victoryRoadFieldError is not null)return victoryRoadFieldError;
         var eventIslandError=ValidateEventIslandField(s);if(eventIslandError is not null)return eventIslandError;
@@ -704,7 +716,7 @@ public sealed partial class CampaignSession
         if(_content.EventIslandsEnabled&&definition.Programs.OnReturnToField is {} onReturn)queue.Add(onReturn);
         // Markers evaluate conditional tables after transition flags/vars have committed.
         if(definition.Programs.OnWarpTable is {} onWarp)queue.Add("@table:"+onWarp);
-        return state with{BicycleSlope=false,IsSurfing=false,SurfEffect=null,Music=state.IsSurfing?definition.Music:state.Music,IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=_content.FiveIslandEnabled&&FiveIslandEditedMap(state.World.Player.MapId)?FiveIslandExpectedEdits(state):_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId)?CinnabarExpectedEdits(state):_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
+        return state with{MapLayout=null,BicycleSlope=false,IsSurfing=false,SurfEffect=null,Music=state.IsSurfing?definition.Music:state.Music,IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=_content.FiveIslandEnabled&&FiveIslandEditedMap(state.World.Player.MapId)?FiveIslandExpectedEdits(state):_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId)?CinnabarExpectedEdits(state):_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
     }
     private CampaignState Pump(CampaignState state) => PumpWithCameraStep(state, null);
 
@@ -796,6 +808,7 @@ public sealed partial class CampaignSession
             if(TryApplyFieldItemServiceEffect(state,effect,out var fieldItemServiceState)){state=fieldItemServiceState;continue;}
             if(TryApplySelphyRequestEffect(state,effect,out var selphyState)){state=selphyState;continue;}
             if(TryApplyFiveIslandItemEffect(state,effect,out var fiveItemState)){state=fiveItemState;continue;}
+            if(TryApplyMapLayoutEffect(state,effect,out var layoutState)){state=layoutState;continue;}
             if(TryApplySeafoamFieldEffect(state,effect,out var seafoamFieldState)){state=seafoamFieldState;continue;}
             if(TryApplySevenIslandFieldEffect(state,effect,out var sevenFieldState)){state=sevenFieldState;continue;}
             if(TryApplySixIslandEffect(state,effect,out var sixIslandState)){state=sixIslandState;continue;}

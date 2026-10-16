@@ -523,7 +523,7 @@ public sealed partial class PretCampaignCatalog
         // Validate the original Celio composition before extending the sole current game.
         var celioMaps = maps;
         maps = maps.AddRange(ceruleanCave.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendCeruleanCave(mapNumbers, maps, celioRoamerMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, ceruleanCave.NewMaps);
         var ceruleanCavePokemon = new CeruleanCavePokemonContent(gamePokemon, gamePokemon.Opponents, machines);
 
         ValidateCeruleanCaveComposition(ceruleanCave, maps, celioMaps, compiled, pokemonContent, ceruleanCavePokemon, celioPokemon);
@@ -534,7 +534,7 @@ public sealed partial class PretCampaignCatalog
         ValidateLeagueRematchComposition(leagueRematchTrainers, gamePokemon.Opponents, ceruleanCavePokemon, compiled, bank);
 
         maps = maps.AddRange(sevenIsland.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendSevenIsland(mapNumbers, maps, celioRoamerMaps, sevenIsland.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, sevenIsland.NewMaps);
 
         var sevenTrainers = PretSevenIslandRules.LoadTrainers(projectRoot, shared: sharedMachines);
 
@@ -543,20 +543,20 @@ public sealed partial class PretCampaignCatalog
         ValidateSevenIslandComposition(sevenIsland, sevenTrainers, sevenItems, compiled);
 
         maps = maps.AddRange(eventIsland.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendEventIslands(mapNumbers, maps, celioRoamerMaps, eventIsland.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, eventIsland.NewMaps);
 
         maps=maps.AddRange(powerPlant.NewMaps);
-        celioRoamerMaps=PretCelioMapNumbers.ExtendPowerPlant(mapNumbers,maps,celioRoamerMaps,powerPlant.NewMaps);
+        celioRoamerMaps=PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers,maps,celioRoamerMaps,powerPlant.NewMaps);
 
         maps = maps.AddRange(trainerTower.Maps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendTrainerTower(mapNumbers, maps, celioRoamerMaps, trainerTower.Maps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, trainerTower.Maps);
         var trainerTowerCatalog = PretTrainerTowerRules.Load(projectRoot);
 
         ValidateTrainerTowerComposition(trainerTower, compiled, trainerTowerCatalog, earlyShop.Catalog);
 
         var dojoPreviousMaps = maps;
         maps = maps.AddRange(fightingDojo.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendFightingDojo(mapNumbers, maps, celioRoamerMaps, fightingDojo.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, fightingDojo.NewMaps);
 
         var dojoTrainers = PretFightingDojoRules.LoadTrainers(projectRoot);
 
@@ -564,7 +564,7 @@ public sealed partial class PretCampaignCatalog
 
         var fossilLabPreviousMaps = maps;
         maps = maps.AddRange(fossilLab.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendFossilLab(mapNumbers, maps, celioRoamerMaps, fossilLab.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, fossilLab.NewMaps);
 
         ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
         maps = maps.AddRange(npcTradeElyssa.NewMaps);

@@ -20,9 +20,14 @@ public sealed class CurrentPokemonAdmissionTests
         var (canonical, mechanics) = Definitions();
         var game = PretGamePokemonCatalog.LoadContent(File.ReadAllText(Path.Combine(TestAssets.Root,
             PretGamePokemonCatalog.RelativePath)), canonical, mechanics);
-        Assert.AreEqual(189, game.Catalog.Species.Count);
-        Assert.AreEqual(212, game.Opponents.Catalog.Species.Count);
-        Assert.AreEqual(204, game.TrainerTowerOpponents.Catalog.Species.Count);
+        var admissionOptions = ContentJson.CreateOptions();
+        admissionOptions.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
+        var admissions = ContentJson.ParseStrict<GamePokemonAdmissions>(File.ReadAllText(Path.Combine(TestAssets.Root,
+            PretGamePokemonCatalog.RelativePath)), admissionOptions);
+        Assert.IsTrue(game.Catalog.Species.Keys.ToHashSet().SetEquals(admissions.Owned.Select(row => row.Id)));
+        Assert.IsTrue(game.Opponents.Catalog.Species.Keys.ToHashSet().SetEquals(admissions.Opponents.Select(row => row.Id)));
+        Assert.IsTrue(game.TrainerTowerOpponents.Catalog.Species.Keys.ToHashSet().SetEquals(admissions.TrainerTowerOpponents.Select(row => row.Id)));
+        Assert.IsTrue(game.Catalog.Species.Keys.All(game.Opponents.Catalog.Species.ContainsKey));
         Assert.IsTrue(canonical.Catalog.Species.ContainsKey(new("pret:SPECIES_TREECKO")));
         Assert.IsFalse(game.Catalog.Species.ContainsKey(new("pret:SPECIES_TREECKO")));
         Assert.AreEqual(42, game.Catalog.Species[new("pret:SPECIES_RHYHORN")].Evolutions.Single().Level);
@@ -59,7 +64,6 @@ public sealed class CurrentPokemonAdmissionTests
         var trades = PretNpcTrades.Load(TestAssets.Root, mechanics.Catalog).Trades;
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics, trades);
         var breeding = game.Catalog.BreedingData!;
-        Assert.AreEqual(189, breeding.Species.Count);
         Assert.IsTrue(breeding.Species.Keys.ToHashSet().SetEquals(game.Catalog.Species.Keys));
         Assert.AreEqual(58, breeding.AllMachineMoves.Length);
         Assert.AreEqual(new MoveId("pret:MOVE_DIVE"), breeding.AllMachineMoves[^1]);

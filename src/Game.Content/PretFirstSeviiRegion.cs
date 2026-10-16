@@ -6,18 +6,20 @@ using Game.Domain.Ids;
 using Game.Domain.World;
 namespace Game.Content;
 
-/// <summary>Fourteen exact first-Sevii maps, including guarded original boundaries. Application admission remains separate.</summary>
+/// <summary>Original first-Sevii maps and script-selected layouts. Application admission remains separate.</summary>
 public sealed partial class PretFirstSeviiRegion
 {
     public const string Profile = "firered-first-sevii-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
+    public ImmutableDictionary<string, PretWorldMap> LayoutVariants { get; private init; } = ImmutableDictionary<string, PretWorldMap>.Empty;
     public ImmutableDictionary<string, int> Constants { get; }
+    public ImmutableArray<Game.Domain.Encounters.EarlyLandEncounterTable> LandEncounters { get; private init; }
+    public ImmutableArray<FieldItemServiceDefinition> ItemServices { get; private init; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
-    public JsonElement ExcludedEncounterGates => Contracts.GetProperty("excludedEncounterGates");
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretFirstSeviiRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
@@ -92,7 +94,23 @@ public sealed partial class PretFirstSeviiRegion
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "FirstSevii target warp index differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);
 
-        return new(source, maps.ToImmutable(), constants);
+        var variants = ImmutableDictionary.CreateBuilder<string, PretWorldMap>(StringComparer.Ordinal);
+        if (catalog.TryGetProperty("layoutVariants", out var layouts))
+            foreach (var spec in layouts.EnumerateArray())
+            {
+                var id = spec.GetProperty("stableId").GetString()!;
+                var relative = spec.GetProperty("mapPath").GetString()!;
+                var runtime = PretRuntimeMapData.Decode(source.Read(relative), id, MapIdFromSourceSymbol);
+                Need(maps.ContainsKey(new(id)) && MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Alternate layout map binding differs.");
+                variants.Add(spec.GetProperty("layoutSymbol").GetString()!, PretWorldMap.FromRuntime(runtime, metadata,
+                    Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
+            }
+        using var encounters = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/first-sevii/encounters.json")));
+        var land = PretWildEncounterTables.Land(encounters.RootElement.GetProperty("admitted"), MapIdFromSourceSymbol);
+        Need(land.All(t => maps.ContainsKey(t.Map)), "Land encounter map is not mounted.");
+        using var serviceData = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/first-sevii/services.json")));
+        var services = PretFieldItemServices.Decode(serviceData.RootElement.GetProperty("serviceBindings"), maps, constants);
+        return new(source, maps.ToImmutable(), constants) { LayoutVariants = variants.ToImmutable(), LandEncounters = land, ItemServices = services };
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
     private static string Safe(string root, string relative) => PretRuntimeMapValidation.SafeFile(root, relative);

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "species": [
+    {
+      "symbol": "DUNSPARCE",
+      "graphicsName": "Dunsparce",
+      "portraitPath": "content/generated/sprites/pokemon/trainer-tower/dunsparce-front-normal.png"
+    }
+  ],
+  "files": [
+    { "path": "include/constants/species.h" },
+    { "path": "src/data/graphics/pokemon.h" },
+    { "path": "src/pokemon_icon.c" },
+    { "path": "src/data/pokemon_graphics/footprint_table.h" },
+    { "path": "graphics/pokedex/kanto_dex_bgpals.pal" },
+    { "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal" },
+    { "path": "graphics/pokemon/dunsparce/icon.png" },
+    { "path": "graphics/pokemon/dunsparce/footprint.png" },
+    { "path": "graphics/pokemon/dunsparce/front.png" },
+    { "path": "graphics/pokemon/dunsparce/normal.pal" }
+  ]
+}

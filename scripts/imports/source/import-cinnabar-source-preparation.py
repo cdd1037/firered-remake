@@ -36,20 +36,43 @@ class LazyBlobs(dict):
     def __missing__(self, path): return self.owner.read(path)
 
 class Source:
-    def __init__(self, reference):
+    """Pinned Git blobs or an explicitly selected, offline raw source cache.
+
+    Raw mode trusts the caller's pinned input selection; it never pretends the
+    directory is a Git checkout or verifies a commit that is not present.
+    """
+    def __init__(self, reference=None, *, raw_root=None):
+        if (reference is None) == (raw_root is None):
+            raise ValueError('Select exactly one source Git checkout or raw root')
         self.reference=reference
-        if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
+        self.raw_root=Path(raw_root).absolute() if raw_root is not None else None
         self.tree={}
-        for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
-            if row:
-                fields,path=row.split(b'\t'); self.tree[path.decode()]=tuple(fields.decode().split())
+        if self.raw_root is not None:
+            from pokemon_import_io import safe
+            safe(self.raw_root)
+            if not self.raw_root.is_dir(): raise ValueError('Missing raw source root: '+str(self.raw_root))
+            for path in sorted(self.raw_root.rglob('*')):
+                safe(path)
+                if path.is_file(): self.tree[path.relative_to(self.raw_root).as_posix()]=None
+        else:
+            if git(reference, 'rev-parse', 'HEAD').decode().strip() != COMMIT: raise ValueError('Source HEAD/tree differs')
+            for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
+                if row:
+                    fields,path=row.split(b'\t'); self.tree[path.decode()]=tuple(fields.decode().split())
         self.data=LazyBlobs(self);self.entries={};self.roles=collections.defaultdict(set)
-    def read(self,path,role='source-dependency'):
+    def peek(self,path):
+        """Index source text without turning every scanned file into a dependency."""
+        if self.raw_root is not None:
+            from pokemon_import_io import safe
+            target=safe(self.raw_root,path)
+            if not target.is_file(): raise FileNotFoundError('Missing pinned raw source input: '+str(target))
+            return target.read_bytes()
         if path not in self.tree or self.tree[path][:2]!=('100644','blob'): raise ValueError('Not a regular source blob: '+path)
+        return git(self.reference,'cat-file','blob',self.tree[path][2])
+    def read(self,path,role='source-dependency'):
         self.roles[path].add(role)
         if path not in self.data:
-            b=git(self.reference,'cat-file','blob',self.tree[path][2])
-            self.data[path]=b;self.entries[path]=dict(path=path)
+            self.data[path]=self.peek(path);self.entries[path]=dict(path=path)
         return self.data[path]
     def text(self,path):return self.read(path).decode()
     def json(self,path):return json.loads(self.read(path))
@@ -63,7 +86,9 @@ class Source:
         if line is not None:v['line']=line
         return v
     def lock(self):
-        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
+        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,
+            inputMode='offline-raw-cache' if self.raw_root is not None else 'pinned-git',
+            files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
 def add_metatile_constants(src, constants, contract):
     # The shared inventory accepts uppercase identifiers only. These source
@@ -98,7 +123,7 @@ def scripts(src,maps):
     paths=[p for p in src.tree if p.endswith('.inc') and (p.startswith(('data/scripts/','data/text/')) or p.endswith('/text.inc') or any(p.startswith('data/maps/'+n+'/') for n in CORE+OPTIONAL))]+['data/event_scripts.s']
     scanned={}
     for p in paths:
-        b=git(src.reference,'cat-file','blob',src.tree[p][2]);scanned[p]=b;current=None;macro=False
+        b=src.peek(p);scanned[p]=b;current=None;macro=False
         for ln,line in enumerate(b.decode().splitlines(),1):
             code=line.split('@')[0].strip()
             if code.startswith('.macro'):macro=True;current=None;continue

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Import the bounded first-Sevii atlas from pinned Git blobs or its authenticated cache."""
+"""Import the first-Sevii atlas from pinned Git blobs or an explicit offline raw cache."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from generated_output_compare import generated_output_matches
 
 
 import argparse,importlib.util,json,pathlib,re,struct,subprocess,sys
@@ -21,6 +22,7 @@ MAPS={
  'ThreeIsland':'map.three-island','ThreeIsland_Harbor':'map.three-island-harbor',
  'ThreeIsland_Port':'map.three-island-port','ThreeIsland_BondBridge':'map.three-island-bond-bridge',
  'ThreeIsland_BerryForest':'map.three-island-berry-forest',
+ 'ThreeIsland_DunsparceTunnel':'map.three-island-dunsparce-tunnel',
  'ThreeIsland_PokemonCenter_1F':'map.three-island-pokemon-center-1f','ThreeIsland_Mart':'map.three-island-mart',
  'CinnabarIsland':'map.cinnabar-island','CinnabarIsland_PokemonCenter_1F':'map.cinnabar-pokemon-center-1f'
 }
@@ -55,8 +57,29 @@ def load_sources(lock,raw,repo):
   b=safe(safe(raw, e['path'])).read_bytes() if repo is None else subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+e['path']],timeout=30)
   out[e['path']]=b
  return out
+def section_regions(code):
+ """Decode the source page enum and section membership, without name heuristics."""
+ match=re.search(r'enum\s*\{\s*(REGIONMAP_KANTO,.*?)\};',code,re.S)
+ if match is None:raise ValueError('Region page enum missing')
+ names=re.findall(r'\bREGIONMAP_[A-Z0-9_]+\b',match[1])
+ if names[-1]!='REGIONMAP_COUNT' or len(set(names))!=len(names):raise ValueError('Region page enum differs')
+ pages={name:i for i,name in enumerate(names[:-1])}
+ table=re.search(r'static const u8 sSeviiMapsecs\[\d+\]\[\d+\] = \{(.*?)^\};',code,re.M|re.S)
+ if table is None:raise ValueError('Sevii page membership missing')
+ result={}
+ for page,body in re.findall(r'\[(REGIONMAP_\w+) - 1\] =\s*\{([^}]+)\}',table[1]):
+  if page not in pages:raise ValueError('Unknown region page: '+page)
+  sections=re.findall(r'\bMAPSEC_\w+\b',body)
+  if not sections or sections[-1]!='MAPSEC_NONE':raise ValueError('Unterminated region page: '+page)
+  for section in sections[:-1]:
+   if section in result:raise ValueError('Duplicate region section: '+section)
+   result[section]=pages[page]
+ if not result:raise ValueError('Empty region page membership')
+ return pages['REGIONMAP_KANTO'],result
+
 def convert(s):
  code=s['src/region_map.c'].decode();outputs={};assets=[]
+ kanto,regions=section_regions(code)
  for needle in ['#define SWITCH_BUTTON_X 21','#define SWITCH_BUTTON_Y 11',
   'sSwitchMapMenu->maxSelection = 1;','sSwitchMapMenu->yOffset = 6;',
   'sSwitchMapMenu->chosenRegion = GetRegionMapPlayerIsOn();',
@@ -67,6 +90,8 @@ def convert(s):
   'WriteSequenceToBgTilemapBuffer(0, 0x110, 0x18, 16, 3, 1, 0x3, 0x001);',
   'case MAPSEC_BERRY_FOREST:\n        sMapCursor->x = 14;\n        sMapCursor->y = 12;',
   'case MAP_TYPE_INDOOR:', 'warp = &gSaveBlock1Ptr->escapeWarp;',
+  'case MAP_TYPE_UNDERGROUND:\n    case MAP_TYPE_UNKNOWN:\n        mapHeader = Overworld_GetMapHeaderByGroupAndId(gSaveBlock1Ptr->escapeWarp.mapGroup, gSaveBlock1Ptr->escapeWarp.mapNum);',
+  'x = gSaveBlock1Ptr->escapeWarp.x;', 'y = gSaveBlock1Ptr->escapeWarp.y;',
   'divisor = width / sMapSectionDimensions[sMapCursor->selectedMapsec][0];',
   'divisor = height / sMapSectionDimensions[sMapCursor->selectedMapsec][1];']:
   if needle not in code:raise ValueError('Source semantics differ: '+needle)
@@ -113,8 +138,8 @@ def convert(s):
  for name,id in MAPS.items():
   path='data/maps/'+name+'/map.json';m=json.loads(s[path]);l=layouts[m['layout']];sec=by[m['region_map_section']]
   override=dict(x=14,y=12) if sec['id']=='MAPSEC_BERRY_FOREST' else None
-  requires_escape=m['map_type']=='MAP_TYPE_INDOOR' and (sec['width'],sec['height'])!=(1,1)
-  positions.append(dict(stableMapId=id,sourceName=name,sourceMap=m['id'],sectionId=sec['id'],width=l['width'],height=l['height'],sectionX=sec['x'],sectionY=sec['y'],sectionWidth=sec['width'],sectionHeight=sec['height'],mapType=m['map_type'],override=override,region=0 if name.startswith('Cinnabar') else 1,requiresEscapeWarp=requires_escape))
+  requires_escape=m['map_type'] in ('MAP_TYPE_UNDERGROUND','MAP_TYPE_UNKNOWN') or (m['map_type']=='MAP_TYPE_INDOOR' and (sec['width'],sec['height'])!=(1,1))
+  positions.append(dict(stableMapId=id,sourceName=name,sourceMap=m['id'],sectionId=sec['id'],width=l['width'],height=l['height'],sectionX=sec['x'],sectionY=sec['y'],sectionWidth=sec['width'],sectionHeight=sec['height'],mapType=m['map_type'],override=override,region=regions.get(sec['id'],kanto),requiresEscapeWarp=requires_escape))
  for symbol in ['InitRegionMapType','BufferRegionMapBg','InitSwitchMapMenu','HandleSwitchMapInput','SnapToIconOrButton','GetPlayerPositionOnRegionMap','GetPlayerPositionOnRegionMap_HandleOverrides']:
   m=re.search(r'^static [^;\n]+ '+symbol+r'\([^;\n]*\)\n\{',code,re.M)
   if m is None:raise ValueError('Source function missing: '+symbol)
@@ -122,7 +147,7 @@ def convert(s):
  outputs['town-map.json']=canonical(dict(schemaVersion=1,assets=assets,cells=cells,icons=icons,positions=positions,uiTexts=texts,unlockFlag='FLAG_SYS_SEVII_MAP_123',switchMenu=dict(maxSelection=1,yOffset=6,highlightLeft=72,highlightRight=168,highlightHeight=32,leftArrowX=88,rightArrowX=152,arrowSize=32,arrowFrameTicks=20,cancelRestoresPlayerRegion=True)))
  outputs['manifest.json']=canonical(dict(schemaVersion=1,inputCount=len(s),assetCount=len(assets),outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
-def import_content(raw,out,repo=None,lock_path=None):
+def import_content(raw,out,repo=None,lock_path=None,check=False):
  raw=safe(raw);out=safe(out)
  if raw.is_relative_to(out) or out.is_relative_to(raw):raise ValueError('Overlapping directories')
  if repo is not None and any(p.resolve().is_relative_to(pathlib.Path(repo).resolve()) or pathlib.Path(repo).resolve().is_relative_to(p.resolve()) for p in (raw,out)):raise ValueError('Output overlaps source repository')
@@ -133,8 +158,13 @@ def import_content(raw,out,repo=None,lock_path=None):
  material=[(raw,p,b) for p,b in s.items()]+[] if repo is not None else []
  material += [(out,p,b) for p,b in outfiles.items()]
  for root,p,b in material:
-  target=safe(root,p);stage=safe(root,p+'.tmp');target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
- return dict(profile=PROFILE,inputCount=len(s),assetCount=9,outputCount=len(outfiles))
+  target=safe(root,p)
+  if check:
+   matches=target.is_file() and target.read_bytes()==b if root==raw else generated_output_matches(target,b)
+   if not matches:raise ValueError('Regeneration differs: '+str(target))
+  else:
+   stage=safe(root,p+'.tmp');target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
+ return dict(profile=PROFILE,inputCount=len(s),assetCount=9,outputCount=len(outfiles),checked=check)
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/ui/first-sevii-town-map');p.add_argument('--lock',type=pathlib.Path);a=p.parse_args();print(json.dumps(import_content(a.raw,a.out,a.reference_repo,a.lock),sort_keys=True))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/ui/first-sevii-town-map');p.add_argument('--lock',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(import_content(a.raw,a.out,a.reference_repo,a.lock,a.check),sort_keys=True))
 if __name__=='__main__':main()

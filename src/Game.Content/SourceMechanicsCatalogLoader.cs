@@ -22,7 +22,8 @@ public static class SourceMechanicsCatalogLoader
         var mechanics = SourceMechanicsCatalog.Create(content.Catalog,
             content.Metadata.Values.Select(m => new SourceSpeciesMechanics(m.Id, m.WeightHectograms,
                 m.SourceEvolutions.Select(e => new SourceMechanicsEvolution(e.Method, e.SourceMethodId,
-                    e.Parameter, e.ParameterValue, e.Target)).ToImmutableArray())).ToImmutableArray(),
+                    e.Parameter, e.ParameterValue, e.Target)).ToImmutableArray()) {
+                    ItemCommon = m.ItemCommon, ItemRare = m.ItemRare }).ToImmutableArray(),
             content.Abilities.Values.Select(a => new SourceAbilityIdentity(a.Symbol, a.SourceAbilityId)).ToImmutableArray(),
             content.GenerationContract.MaximumHpOneSpecies,
             content.GenerationContract.FormStatOverrides.Select(f => new SourceFormStatOverride(f.Species,

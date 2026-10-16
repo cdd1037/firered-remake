@@ -11,7 +11,7 @@ sys.dont_write_bytecode = True
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 CORE = ['OneIsland','OneIsland_Harbor','OneIsland_PokemonCenter_1F',
         'TwoIsland','TwoIsland_Harbor','TwoIsland_JoyfulGameCorner',
-        'ThreeIsland','ThreeIsland_Harbor','ThreeIsland_Port',
+        'ThreeIsland','ThreeIsland_Harbor','ThreeIsland_Port','ThreeIsland_DunsparceTunnel',
         'ThreeIsland_BondBridge','ThreeIsland_BerryForest']
 SUPPORT = ['TwoIsland_PokemonCenter_1F','ThreeIsland_PokemonCenter_1F','ThreeIsland_Mart']
 ANCHOR = ['CinnabarIsland','CinnabarIsland_PokemonCenter_1F']
@@ -19,18 +19,21 @@ PROFILE = 'firered-first-sevii-source-preparation-v1'
 TILESETS = {'gTileset_General':'primary/general','gTileset_Building':'primary/building',
  'gTileset_SeviiIslands123':'secondary/sevii_islands_123','gTileset_IslandHarbor':'secondary/island_harbor',
  'gTileset_PokemonCenter':'secondary/pokemon_center','gTileset_GameCorner':'secondary/game_corner',
- 'gTileset_BerryForest':'secondary/berry_forest','gTileset_Mart':'secondary/mart'}
+ 'gTileset_BerryForest':'secondary/berry_forest','gTileset_Mart':'secondary/mart',
+ 'gTileset_Cave':'secondary/cave'}
+LAYOUT_VARIANTS = {'ThreeIsland_DunsparceTunnel': ['LAYOUT_THREE_ISLAND_DUNSPARCE_TUNNEL_DUG_OUT']}
 def canonical(d): return (json.dumps(d,sort_keys=True,indent=2)+'\n').encode()
 def need(v,m):
     if not v: raise ValueError(m)
 
 def script_index(src, reader):
+    from field_item_services import implicit_script_targets
     paths=[p for p in src.tree if p.endswith('.inc') and
       (p.startswith(('data/scripts/','data/text/')) or p.endswith('/text.inc') or
        any(p.startswith('data/maps/'+n+'/') for n in CORE+SUPPORT+ANCHOR))]+['data/event_scripts.s']
     blocks={}; aliases={}
     for p in sorted(paths):
-        b=reader.git(src.reference,'cat-file','blob',src.tree[p][2]); current=None; macro=False
+        b=src.peek(p); current=None; macro=False
         for ln,line in enumerate(b.decode().splitlines(),1):
             code=line.split('@')[0].strip()
             if code.startswith('.macro'): macro=True;current=None;continue
@@ -57,6 +60,7 @@ def script_index(src, reader):
         if label in selected:continue
         need(label in blocks,'missing label '+label);selected.add(label)
         for row in blocks[label]['lines']:
+            pending.extend(implicit_script_targets(row['text']))
             for tok in re.findall(r'\b[A-Za-z_]\w*\b',row['text'].split('@')[0]):
                 tok=aliases.get(tok,tok)
                 if tok in blocks and tok not in selected:pending.append(tok)
@@ -175,7 +179,7 @@ def item_declarations(src, doc, worlds, data):
 
 
 def encounter_gates(src):
-    """Retain the first-visit exclusion only while the source layout gate agrees."""
+    """Verify the source geometry gate without excluding the encounter table."""
     path='data/maps/ThreeIsland_DunsparceTunnel/scripts.inc'
     text=src.text(path)
     for instruction in ('specialvar VAR_RESULT, IsNationalPokedexEnabled',
@@ -202,7 +206,7 @@ def prepare(src, reader, canonical_pokemon):
     for ts in TILESETS.values():
         for p in src.tree:
             if p.startswith('data/tilesets/'+ts+'/'):src.read(p,'deferred-map-art-dependency')
-    excluded_encounter_gates=encounter_gates(src)
+    encounter_gates(src)
     bylabel,items,hidden,tokens = item_declarations(src, doc, worlds, data)
     data['gifts']=[dict(item=i,quantity=1,label=l,bagFull=f) for i,l,f in [
        ('ITEM_METEORITE','OneIsland_PokemonCenter_1F_EventScript_MeetCelioScene','source additem has no alternate branch'),
@@ -210,7 +214,8 @@ def prepare(src, reader, canonical_pokemon):
        ('ITEM_TOWN_MAP','OneIsland_PokemonCenter_1F_EventScript_ReceiveTownMap','only when Pallet rival house scene <2'),
        ('ITEM_IAPAPA_BERRY','ThreeIsland_BerryForest_EventScript_Lostelle','continues rescue with no deferred reward'),
        ('ITEM_MOON_STONE','TwoIsland_JoyfulGameCorner_EventScript_ReceiveMoonStone','deferred reward flag; Meteorite handoff remains complete'),
-       ('ITEM_FULL_RESTORE','ThreeIsland_EventScript_GiveFullRestore','receipt flag remains unset, allowing retry')]]
+       ('ITEM_FULL_RESTORE','ThreeIsland_EventScript_GiveFullRestore','receipt flag remains unset, allowing retry'),
+       ('ITEM_NUGGET','ThreeIsland_DunsparceTunnel_EventScript_ProspectorStruckGold','receipt flag remains unset, allowing retry')]]
     data['healLocations']=[x for x in src.json('src/data/heal_locations.json')['heal_locations'] if x['id'] in ['HEAL_LOCATION_ONE_ISLAND','HEAL_LOCATION_TWO_ISLAND','HEAL_LOCATION_THREE_ISLAND']]
     data['initialSetFlags']=[s for s in re.findall(r'\bsetflag\s+(FLAG_\w+)', '\n'.join(r['text'] for r in bylabel['EventScript_ResetAllMapFlags']['lines'])) if any(x in s for x in ['ONE_ISLAND','TWO_ISLAND','THREE_ISLAND','LOSTELLE'])]
     # Reuse the reviewed constant parser, retaining only symbols in this inventory.
@@ -219,14 +224,13 @@ def prepare(src, reader, canonical_pokemon):
     wanted=set(re.findall(r'\b[A-Z][A-Z0-9_]+\b',json.dumps(doc)+json.dumps([w['events'] for w in worlds])+json.dumps(data)))
     const['values']={k:v for k,v in const['values'].items() if k in wanted}
     contract=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,coreMaps=CORE,supportMaps=SUPPORT,reusedAnchorMaps=ANCHOR,
-      excludedEncounterGates=excluded_encounter_gates,
       mapTopology=links,itemPickups=items,hiddenItems=hidden,flags=sorted(set(re.findall(r'\bFLAG_\w+',tokens))),variables=sorted(set(re.findall(r'\bVAR_\w+',tokens))),
       ferryDestinations=[dict(origin=s,destination=d,destinationMap=m,x=x,y=y) for s,d,m,x,y in [
        ('SEAGALLOP_CINNABAR_ISLAND','SEAGALLOP_ONE_ISLAND','MAP_ONE_ISLAND_HARBOR',8,5),
        ('SEAGALLOP_ONE_ISLAND','SEAGALLOP_CINNABAR_ISLAND','MAP_CINNABAR_ISLAND',21,7)]],
       ferryIslandDestinations=[dict(destination='SEAGALLOP_'+n+'_ISLAND',destinationMap='MAP_'+n+'_ISLAND_HARBOR',x=8,y=5) for n in ['ONE','TWO','THREE']],
       initialTiming=dict(badge='FLAG_BADGE07_GET',requiresGameClear=False,requiresNationalDex=False,scopeEndsAtCinnabarScene=4),
-      limitations=['Preparation only; none of the14 new maps is admitted in the current Cinnabar profile.',
+      limitations=['Preparation only; runtime admission is owned by application composition.',
         'Full script inventory includes postgame and multiplayer dependencies; those branches are guarded/outside this bounded route.',
         'Map data contains authentic blocks, metatile attributes and events; no rendered resources or compiled runtime profile is produced.',
         'No runtime, GUI, battle, save/load or physical audio validation was run.'])

@@ -18,6 +18,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task MapAtlases() => Run("test-map-atlases.py");
     [TestMethod]
+    public Task MapImporterUnification() => Run("verify-map-importer-unification.py");
+    [TestMethod]
     public Task CeladonApproachEncounters() => Run("test-celadon-approach-encounters.py");
     [TestMethod]
     public Task RegionalEncounters() => Run("test-regional-encounter-imports.py");
@@ -29,6 +31,12 @@ public sealed class ResourceImportTests
     public Task NationalDex() => Run("test-national-dex-source.py");
     [TestMethod]
     public Task Learnsets() => Run("test-learnset-import.py");
+    [TestMethod]
+    public async Task PokemonCollection()
+    {
+        await Run("test-game-pokemon.py");
+        await Run("test-pokemon-collection-presentation.py");
+    }
     [TestMethod]
     public Task CompactUiJson() => Run("test-compact-ui-json.py");
     [TestMethod]

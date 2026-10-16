@@ -202,27 +202,9 @@ def source_declaration(src, path, symbol):
 
 
 def alternate_world(src, reader, shared, base, stage):
-    """Render the original alternate layout without modifying any original source bytes."""
-    name = base['sourceName']; symbol = base['events']['layout']+'_CURRENT_STOPPED'
-    layout = next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id') == symbol)
-    original_json = src.json
-    def selected(path):
-        value = original_json(path)
-        if path == 'data/maps/'+name+'/map.json': value = dict(value, layout=symbol)
-        return value
-    src.json = selected
-    try:
-        world = reader.decode(src, name)
-        rich = shared.import_map(src, name, base['stableId'], stage)
-    finally: src.json = original_json
-    # The map header is still original. SetMapLayoutIndex selects the separate
-    # layout at runtime; it does not rewrite the map's stored event/header data.
-    world['events'] = base['events']; rich['events'] = base['events']
-    (stage/'runtime-map.json').write_bytes(shared._encode_runtime(shared._compact_world(rich, src.data)))
-    return world, dict(layoutSymbol=symbol, mapId=base['stableId'], sourceLayout=layout,
-        sourceRef=src.ref('data/layouts/layouts.json', symbol),
-        changes=[dict(x=old['x'], y=old['y'], beforeRawBlock=old['rawBlock'], afterRawBlock=new['rawBlock'])
-                 for old, new in zip(base['cells'], world['cells'], strict=True) if old['rawBlock'] != new['rawBlock']])
+    from layout_variants import import_layout_variant
+    return import_layout_variant(src, reader, shared, base,
+        base['events']['layout']+'_CURRENT_STOPPED', stage)
 
 
 def compact_variant(base, rich, world, src):

@@ -9,6 +9,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from map_runtime import publish_map_package, generated_root
+from field_item_services import service_script_graph
 
 from shared_constants import package_documents
 import argparse,  importlib.util, json, os, re, sys, tempfile
@@ -33,25 +34,8 @@ def module(path, name):
     spec.loader.exec_module(result); return result
 
 def selphy_service(src, worlds, inventory):
-    blocks={b['label']:b for b in inventory['blocks']};aliases=inventory['aliases']
-    implicit={'giveitem':'Std_ObtainItem','giveitem_msg':'Std_ReceivedItem',
-        'msgreceiveditem':'Std_ReceivedItem','putitemaway':'Std_PutItemAway','finditem':'Std_FindItem'}
-    messages={'MSGBOX_DEFAULT':'Std_MsgboxDefault','MSGBOX_YESNO':'Std_MsgboxYesNo',
-        'MSGBOX_SIGN':'Std_MsgboxSign','MSGBOX_NPC':'Std_MsgboxNPC','MSGBOX_AUTOCLOSE':'Std_MsgboxAutoclose'}
-    root='FiveIsland_ResortGorgeous_House_EventScript_Selphy';pending=[root];selected=set()
-    while pending:
-        label=aliases.get(pending[-1],pending[-1]);pending.pop()
-        if label in selected:continue
-        need(label in blocks,'Missing Selphy service call target '+label);selected.add(label)
-        for row in blocks[label]['lines']:
-            code=row['text'].split('@')[0].strip()
-            if not code:continue
-            op=code.split()[0]
-            if op in implicit:pending.append(implicit[op])
-            if op=='msgbox':pending.append(messages[code.split(',')[-1].strip()] if ',' in code else 'Std_MsgboxDefault')
-            pending += [aliases.get(t,t) for t in re.findall(r'\b\w+\b',re.sub(r'"[^"\n]*"','',code))
-                        if aliases.get(t,t) in blocks and aliases.get(t,t) not in selected]
-    programs=sorted(b for b in selected if '_Movement_' not in b and not any(r['text'].strip().startswith('.string') for r in blocks[b]['lines']))
+    root='FiveIsland_ResortGorgeous_House_EventScript_Selphy'
+    graph=service_script_graph(inventory,root)
     text=src.text('src/field_specials.c')
     reward_body=re.search(r'static const u16 sResortGorgeousDeluxeRewards\[\] = \{(.*?)\};',text,re.S)[1]
     items=['ITEM_LUXURY_BALL']+re.findall(r'ITEM_\w+',reward_body)
@@ -61,7 +45,7 @@ def selphy_service(src, worlds, inventory):
     need(event['script']==root and event['local_id']=='LOCALID_RESORT_GORGEOUS_HOUSE_SELPHY','Original Selphy actor binding differs')
     return dict(id='lost-cave-region:selphy-request-reward',mapId=world['stableId'],scriptId=root,
         sourceLocalId=1,backgroundX=None,backgroundY=None,eventGroup='object_events',eventIndex=0,sourceEvent=event,
-        programIds=programs,itemSymbols=items,otherReachableLabels=sorted(selected-set(programs)),
+        programIds=graph['programIds'],itemSymbols=items,otherReachableLabels=graph['otherReachableLabels'],
         rewardSource=src.ref('src/field_specials.c','sResortGorgeousDeluxeRewards'),
         standardRewardSource=src.ref('src/field_specials.c','SampleResortGorgeousReward'))
 

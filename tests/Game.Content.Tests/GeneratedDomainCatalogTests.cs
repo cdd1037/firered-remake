@@ -107,9 +107,11 @@ public sealed class GeneratedDomainCatalogTests
             Assert.IsNotNull(PretSuperRodService.Load(root));
             Assert.IsNotNull(PretTrainerFanClub.Load(root));
             Assert.AreEqual(4, PretSafariEncounters.Load(PretSafariRegion.Load(root)).Tables.Count);
-            var currentMachines = SharedMachineCatalog.LoadProject(root).LoadCurrent(SharedMachineCatalogTests.Pokemon(root));
+            var pokemon = SharedMachineCatalogTests.Pokemon(root);
+            var currentMachines = SharedMachineCatalog.LoadProject(root).LoadCurrent(pokemon);
             Assert.AreEqual(57, currentMachines.Machines.Length);
-            Assert.IsTrue(currentMachines.Machines.All(machine => machine.Compatibility.Length == 189));
+            Assert.IsTrue(currentMachines.Machines.All(machine => machine.Compatibility.Select(row => row.Species)
+                .ToHashSet().SetEquals(pokemon.Catalog.Species.Keys)));
             CollectionAssert.AreEquivalent(CurrentItemCatalog.Load(TestAssets.Root).Items.Select(i => i.Id).ToArray(),
                 CurrentItemCatalog.Load(root).Items.Select(i => i.Id).ToArray());
             Assert.IsNotNull(PretSafariItems.LoadProject(root));

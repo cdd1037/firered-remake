@@ -25,10 +25,11 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("field_item_service_definition_invalid");
         if (service.SourceLocalId is { } local)
         {
+            // Source transitions may relocate an actor template; identity is stable across those moves.
             var source = map.Actors.SingleOrDefault(a => a.SourceLocalId == local);
             if (source is null || source.IsClone || source.ScriptId != program || state.LastTalked is not { } id ||
                 !state.Actors.TryGetValue(id, out var actor) || actor.SourceLocalId != local || actor.ScriptId != program ||
-                !actor.Active || actor.Invisible || actor.TemplateX != source.X || actor.TemplateY != source.Y)
+                !actor.Active || actor.Invisible)
                 throw new InvalidDataException("field_item_service_actor_context");
         }
         else

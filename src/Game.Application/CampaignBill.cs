@@ -233,6 +233,11 @@ public sealed partial class CampaignSession
         bool nugget=item.Id==BillItemRules.NuggetId,ticket=item.Id==BillItemRules.SsTicketId;
         string map=nugget?"map.route-24":ticket?BillSourcePresentation.Cottage:"map.cerulean-city";
         string path=nugget?BillRoute24Source:ticket?BillCottageSource:BillRivalSource;
+        // A shared item (for example a Nugget) does not identify its giver. This
+        // handler owns only Bill/Bridge/Rival source callers, including their macros.
+        bool caller = effect.Source.Path == path || state.Script.Stack.Any(frame =>
+            _content.FindProgram(frame.ProgramId)?.Instructions.Any(i => i.Source.Path == path) == true);
+        if (!caller) return false;
         if(state.World.Player.MapId.Value!=map||effect.Source.Path!=path&&effect.Source.Path is not ("data/scripts/obtain_item.inc" or "data/event_scripts.s"))
             throw new InvalidDataException("bill_reward_source_context");
         if(buffer)
@@ -313,8 +318,9 @@ public sealed partial class CampaignSession
         if(bridgeScene is <0 or >1||rocketWon!=(bridgeScene==1)||rocketWon&&!received||
             history.Any(h=>h.TrainerId==BillTrainerPartyFactory.Rocket.Value)&&!received)return "save_bill_bridge_progress";
         var inventory=state.Inventory;
-        int nuggets=OpeningInventoryRules.Quantity(inventory?.BagItems??[],BillItemRules.NuggetId)+OpeningInventoryRules.Quantity(inventory?.PcItems??[],BillItemRules.NuggetId);
-        if(nuggets>1||nuggets>0&&!received)return "save_bill_nugget_reward";
+        // Nuggets are fungible, sellable rewards from multiple source events.
+        // Bridge progress is validated by its receipt and battle flags above;
+        // shared inventory validation owns stack/pocket limits, not this giver.
         int fame=OpeningInventoryRules.Quantity(inventory?.KeyItems??[],BillItemRules.FameCheckerId);
         // The original rival sets its flag before giveitem. A full key pocket can leave zero items.
         if(fame>1||fame>0&&!rivalWon)return "save_bill_fame_checker_reward";

@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
+import sys
 
 from shared_trainers import (RESOURCE, publish_trainers, read_trainers,
     resolve_trainers, runtime_trainer, trainer_document)
@@ -24,6 +26,32 @@ class SharedTrainerTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.trainer = copy.deepcopy(next(iter(read_trainers(ROOT / 'content/generated').values())))
+
+    def test_first_sevii_import_publishes_shared_trainers_at_generated_root(self):
+        generated = self.root / 'content/generated'
+        package = generated / 'data/regions/first-sevii'
+        command = [sys.executable, str(ROOT / 'scripts/imports/story/import-first-sevii-rules.py'),
+                   '--raw-root', str(ROOT / 'content/raw/pokefirered/037335f4'),
+                   '--preparation', str(ROOT / 'content/generated/maps/regions/first-sevii'),
+                   '--out', str(package)]
+        subprocess.run(command, check=True, capture_output=True, text=True)
+        regional = json.loads((package / 'trainers.json').read_text())
+        shared = read_trainers(generated)
+        self.assertTrue(regional['trainers'])
+        self.assertEqual(set(regional['trainers']), set(shared))
+        self.assertTrue(all(isinstance(value, str) for value in regional['trainers']))
+        self.assertFalse((package.parent / RESOURCE).exists())
+        before = {path: path.read_bytes() for path in generated.rglob('*.json')}
+        subprocess.run([*command, '--check'], check=True, capture_output=True, text=True)
+        self.assertEqual(before, {path: path.read_bytes() for path in generated.rglob('*.json')})
+        shared_path = generated / RESOURCE
+        saved = shared_path.read_bytes()
+        shared_path.unlink()
+        result = subprocess.run([*command, '--check'], capture_output=True, text=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('Missing shared trainer', result.stderr)
+        self.assertFalse(shared_path.exists())
+        shared_path.write_bytes(saved)
 
     def test_projection_removes_only_named_definition_provenance(self):
         self.trainer['source'] = {'path': 'trainer.h'}

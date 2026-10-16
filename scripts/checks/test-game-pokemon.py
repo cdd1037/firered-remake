@@ -22,7 +22,16 @@ class GamePokemonAdmissionsTests(unittest.TestCase):
 
     def test_exact_admissions_compile(self):
         self.assertEqual(compiler.compile_admissions(self.policy, self.canonical), self.policy)
-        self.assertEqual([len(self.policy[k]) for k in ('owned', 'opponents', 'trainerTowerOpponents')], [189, 212, 204])
+        for roster in ('owned', 'opponents', 'trainerTowerOpponents'):
+            species = {row['id']['value'] for row in self.policy[roster]}
+            self.assertTrue(species)
+            self.assertEqual(len(species), len(self.policy[roster]))
+            self.assertIn('pret:SPECIES_DUNSPARCE', species)
+            self.assertNotIn('pret:SPECIES_TREECKO', species)
+        self.assertLessEqual({row['id']['value'] for row in self.policy['owned']},
+                             {row['id']['value'] for row in self.policy['opponents']})
+        generated = json.loads((ROOT / 'content/generated/data/pokemon/game/catalog.json').read_text())
+        self.assertEqual(generated, self.policy)
 
     def test_unknown_species_form_and_incorrect_evolution_rejected(self):
         for field, value in [('id', {'value': 'pret:SPECIES_MISSING'}), ('formScope', 'unknown')]:
@@ -43,9 +52,29 @@ class GamePokemonAdmissionsTests(unittest.TestCase):
 
     def test_breeding_is_flat_and_uses_original_machine_order(self):
         data = compiler.compile_breeding(ROOT, self.policy, self.canonical)
-        self.assertEqual(len(data['species']), 189)
+        self.assertEqual({row['species']['value'] for row in data['species']},
+                         {row['id']['value'] for row in self.policy['owned']})
+        self.assertEqual(len(data['species']), len(self.policy['owned']))
         self.assertEqual(len(data['allMachineMoves']), 58)
         self.assertEqual(data['allMachineMoves'][-1]['value'], 'pret:MOVE_DIVE')
         self.assertTrue(all(set(row) == {'species','baseEggSpecies','eggMoves'} for row in data['species']))
+
+    def test_dunsparce_admission_preserves_source_breeding_data(self):
+        species = 'pret:SPECIES_DUNSPARCE'
+        definition = next(row for row in self.canonical['species'] if row['id']['value'] == species)
+        metadata = next(row for row in self.canonical['metadata'] if row['id']['value'] == species)
+        self.assertEqual(definition['sourceSpeciesId'], 206)
+        self.assertEqual(definition['catchRate'], 190)
+        self.assertEqual(definition['growthRate'], 'mediumFast')
+        self.assertEqual(metadata['sourceEvolutions'], [])
+        self.assertEqual(metadata['eggGroups'], ['EGG_GROUP_FIELD', 'EGG_GROUP_FIELD'])
+        self.assertEqual(metadata['eggCycles'], 20)
+        breeding = compiler.compile_breeding(ROOT, self.policy, self.canonical)
+        row = next(row for row in breeding['species'] if row['species']['value'] == species)
+        self.assertEqual(row['baseEggSpecies']['value'], species)
+        self.assertEqual([move['value'] for move in row['eggMoves']], ['pret:MOVE_' + move for move in
+            ('BIDE', 'ANCIENT_POWER', 'ROCK_SLIDE', 'BITE', 'HEADBUTT', 'ASTONISH', 'CURSE')])
+        generated = json.loads((ROOT / 'content/generated/data/pokemon/game/breeding.json').read_text())
+        self.assertEqual(generated, breeding)
 
 if __name__ == '__main__': unittest.main()

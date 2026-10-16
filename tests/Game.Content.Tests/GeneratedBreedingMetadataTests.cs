@@ -26,7 +26,6 @@ public sealed class GeneratedBreedingMetadataTests
         var game = Load(TestAssets.Root);
         var breeding = game.Catalog.BreedingData!;
         var document = Parse(File.ReadAllText(Path.Combine(TestAssets.Root, BreedingPath)));
-        Assert.AreEqual(189, breeding.Species.Count);
         Assert.IsTrue(breeding.Species.Keys.ToHashSet().SetEquals(game.Catalog.Species.Keys));
         Assert.IsTrue(breeding.MachineCompatibility.Keys.ToHashSet().SetEquals(game.Catalog.Species.Keys));
         foreach (var row in document.Species)

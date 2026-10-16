@@ -62,7 +62,7 @@ public sealed partial class PretCampaignCatalog
 
     private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(maps.Count!=previous.Count+14)
+        if(maps.Count!=previous.Count+region.NewMaps.Count || !region.NewMaps.Keys.All(maps.ContainsKey))
             throw new InvalidDataException("first_sevii_composition_scope");
         foreach(var battle in trainers.BattlesBySource.Values)
         {

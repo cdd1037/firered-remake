@@ -120,6 +120,9 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableDictionary<string,int> TrainerTowerNpcGraphics(TrainerTowerBattleFormat format,TrainerTowerFloorTemplate template)=>throw new NotSupportedException("trainer_tower_not_enabled");
     int TrainerTowerTextGender(TrainerTowerFloorTemplate template,int trainerIndex,bool secondDoubleSpeaker)=>throw new NotSupportedException("trainer_tower_not_enabled");
     string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template,int trainerIndex)=>throw new NotSupportedException("trainer_tower_not_enabled");
+    bool HasMapLayouts(MapId map)=>false;
+    IFieldMap? MapLayout(MapId map,string layout)=>null;
+    ConnectedFieldMap? ConnectedMapLayout(MapId map,string layout)=>null;
     bool SeafoamEnabled=>false;
     bool LostCaveEnabled=>false;
     LostCaveTrainerCatalog? LostCaveTrainers=>null;

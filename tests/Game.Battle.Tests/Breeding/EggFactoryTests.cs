@@ -101,7 +101,8 @@ public sealed class EggFactoryTests
     public void ReceiptAndValidation()
     {
         Assert.IsTrue(Environment.Version.Major == 10, "actual runtime10");
-        Assert.IsTrue(content.Catalog.Species.Count == 189 && metadata.AllMachineMoves.Length == 58, "current189 and all58 inheritance machines");
+        Assert.IsTrue(metadata.Species.Keys.ToHashSet().SetEquals(content.Catalog.Species.Keys), "breeding covers every owned species");
+        Assert.AreEqual(58, metadata.AllMachineMoves.Length, "all original inheritance machine slots");
         Assert.IsTrue(PokemonStateValidator.ValidatePartyCollection(content, [], 1)is null, "authenticated content names and owner");
         Assert.IsTrue(received.Trace.Length == 9 && received.Rng.Cursor == 9, "receipt exactly9 draws");
         Assert.IsTrue((egg.Pokemon.Personality & 0xffff) == 123 && egg.Pokemon.Personality >> 16 == received.Trace[0].Raw, "stored pending low and fresh high PID");

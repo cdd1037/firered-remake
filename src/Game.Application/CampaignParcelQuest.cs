@@ -73,7 +73,7 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<Game.Domain.Ids.MapId,ConnectedFieldMap> EditedFieldMaps(CampaignState state)
     {
-        var maps=SeafoamConnectedMaps(state);
+        var maps=MapLayoutConnectedMaps(state);
         if(state.MapEdits is not {Count:>0})return maps;
         var current=maps[state.World.Player.MapId];var cells=current.Cells.ToBuilder();
         foreach(var edit in state.MapEdits.Values)

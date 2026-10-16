@@ -190,8 +190,13 @@ class PokemonConversionTests(unittest.TestCase):
             def text(self, path):
                 value = (RAW / path).read_text()
                 return value.replace('IsNationalPokedexEnabled', 'IsGameClear') if self.altered else value
-        expected = json.loads((ROOT / 'content/generated/maps/regions/first-sevii/contracts.json').read_text())
-        self.assertEqual(expected['excludedEncounterGates'], prep.encounter_gates(Source()))
+        gates = prep.encounter_gates(Source())
+        self.assertEqual([('MAP_THREE_ISLAND_PORT', 'SPECIES_DUNSPARCE', 'IsNationalPokedexEnabled')],
+                         [(gate['map'], gate['species'], gate['gate']) for gate in gates])
+        encounters = json.loads((ROOT / 'content/generated/data/regions/first-sevii/encounters.json').read_text())
+        port = next(row for row in encounters['admitted'] if row['map'] == 'MAP_THREE_ISLAND_PORT')
+        self.assertEqual({'SPECIES_DUNSPARCE'}, {row['species'] for row in port['land_mons']['mons']})
+        self.assertNotIn('excludedPortReason', encounters)
         with self.assertRaises(ValueError):
             prep.encounter_gates(Source(True))
         self.assertFalse(hasattr(prep, 'main'))

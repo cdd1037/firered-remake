@@ -6,7 +6,11 @@ namespace Game.Domain.Pokemon;
 public sealed record SourceMechanicsEvolution(string Method, int SourceMethodId, string Parameter,
     int ParameterValue, SpeciesId Target);
 public sealed record SourceSpeciesMechanics(SpeciesId Species, int WeightHectograms,
-    ImmutableArray<SourceMechanicsEvolution> SourceEvolutions);
+    ImmutableArray<SourceMechanicsEvolution> SourceEvolutions)
+{
+    public string ItemCommon { get; init; } = "ITEM_NONE";
+    public string ItemRare { get; init; } = "ITEM_NONE";
+}
 public sealed record SourceAbilityIdentity(string Symbol, int SourceAbilityId);
 public sealed record SourceFormStatOverride(SpeciesId Species, string Scope, SixStats BaseStats);
 
@@ -49,6 +53,8 @@ public sealed class SourceMechanicsCatalog
             catalog.Moves.Any(p => p.Key != p.Value?.Id || !Game.Domain.WildBattle.SourceMoveDefinitionRules.IsValid(p.Value)))
             throw new ArgumentException("source_mechanics_identity");
         if (metadata.Any(m => m is null || m.WeightHectograms <= 0 || m.SourceEvolutions.IsDefault ||
+                m.ItemCommon is null || !m.ItemCommon.StartsWith("ITEM_", StringComparison.Ordinal) ||
+                m.ItemRare is null || !m.ItemRare.StartsWith("ITEM_", StringComparison.Ordinal) ||
                 m.SourceEvolutions.Any(e => e is null || !catalog.Species.ContainsKey(e.Target))) ||
             !metadata.Select(m => m.Species).ToHashSet().SetEquals(catalog.Species.Keys) ||
             abilities.Any(a => a is null || string.IsNullOrWhiteSpace(a.Symbol) || a.SourceAbilityId < 0) ||

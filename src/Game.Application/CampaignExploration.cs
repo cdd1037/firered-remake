@@ -154,7 +154,7 @@ public sealed partial class CampaignSession
         if(legacySpecial)
         {
             if(VisibleActorAt(state,x,y) is not null)return new(CommandStatus.Accepted,state with{World=state.World with{Revision=checked(state.World.Revision+1),Player=before with{Facing=command.Direction}}});
-            var transition=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),movementMaps,_content.ForestEnabled,_content.MtMoonEnabled,_content.VermilionGymEnabled);
+            var transition=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),movementMaps,_content.ForestEnabled,_content.MtMoonEnabled,_content.VermilionGymEnabled, destination => MapLayoutForArrival(state, destination));
             if(transition.Status!=TransitionStatus.Accepted)return new(transition.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,transition.Diagnostic?.Code);
             moved=state with{World=transition.State};changed=transition.MapChanged;
             if(changed)moved=RecordEscapeWarp(state,moved,command.Direction);

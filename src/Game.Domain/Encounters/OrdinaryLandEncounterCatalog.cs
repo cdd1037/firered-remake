@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
+using Game.Domain.Growth;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.World;
@@ -100,10 +101,55 @@ public sealed class OrdinaryLandEncounterDefinition
         return new(generated.Pokemon, generated.GlobalRng, generated.RandomTrace);
     }
 
+    /// <summary>Runtime proof of the exact pending slot; active battles are not save payloads.</summary>
+    public OrdinaryLandBattleBinding BindBattle(EarlyLandEncounterState state)
+    {
+        ValidateState(state, Table);
+        var candidate = state.Pending?.Candidate ?? throw new InvalidOperationException("ordinary_land_pending");
+        return new(_pokemon, candidate);
+    }
+
     internal void ValidateCheck(EarlyLandEncounterCheck check)
     {
         if (check.Map != Table.Map || check.EncounterType is not (EncounterTileType.None or EncounterTileType.Land) ||
             !_attributes.Contains((check.MetatileBehavior, check.EncounterType)))
             throw new ArgumentException("Encounter check disagrees with its loaded map attributes.");
+    }
+}
+
+/// <summary>Created only from a validated ordinary table and pending land candidate.</summary>
+public sealed class OrdinaryLandBattleBinding
+{
+    private readonly PokemonCatalog _pokemon;
+    private readonly EarlyLandEncounterCandidate _candidate;
+
+    internal OrdinaryLandBattleBinding(PokemonCatalog pokemon, EarlyLandEncounterCandidate candidate)
+    {
+        _pokemon = pokemon;
+        _candidate = candidate;
+    }
+
+    public bool Matches(PokemonInstance pokemon) => pokemon is not null &&
+        pokemon.Species == _candidate.Species && pokemon.Level == _candidate.Level &&
+        pokemon.SourceSpeciesId == _pokemon.Species[_candidate.Species].SourceSpeciesId;
+
+    public bool SourceInitialInstance(GamePokemonCatalog owned, PokemonInstance pokemon)
+    {
+        if (owned is null || !ReferenceEquals(_pokemon, owned.Catalog) || !Matches(pokemon) ||
+            SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null) return false;
+        var source = owned.Mechanics.Catalog.Species[pokemon.Species];
+        return pokemon.NpcTradeOrigin is null && pokemon.ContestConditions is null && pokemon.StatCalculationEvs is null &&
+            pokemon.Evs == SixStats.Zero && pokemon.CurrentHp == pokemon.Stats.MaxHp && pokemon.Friendship == source.Friendship &&
+            pokemon.Experience == GrowthRules.ExperienceAtLevel(source.GrowthRate, pokemon.Level) &&
+            pokemon.Moves.SequenceEqual(PokemonMoveRules.InitialMovesCore(owned.Mechanics.Catalog, source, pokemon.Level));
+    }
+
+    public string HeldItem(GamePokemonCatalog owned, int roll)
+    {
+        if (owned is null || !ReferenceEquals(_pokemon, owned.Catalog) || roll is < 0 or > 99)
+            throw new ArgumentException("ordinary_land_held_item");
+        var source = owned.Mechanics.SpeciesMechanics[_candidate.Species];
+        return source.ItemCommon == source.ItemRare ? source.ItemCommon :
+            roll < 45 ? "ITEM_NONE" : roll < 95 ? source.ItemCommon : source.ItemRare;
     }
 }

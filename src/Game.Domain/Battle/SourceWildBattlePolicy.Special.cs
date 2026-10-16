@@ -16,6 +16,8 @@ public static partial class SourceWildBattlePolicy
     {
         var mon = opponent.Pokemon;
         if (!owned.Catalog.Species.ContainsKey(mon.Species)) return false;
+        if (context.OrdinaryLand is { } ordinary)
+            return ordinary.SourceInitialInstance(owned, mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.RockSmash is { } rock)
             return RockSmashWildBattleContract.SourceInitialInstance(owned, rock, mon) &&
                 opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";

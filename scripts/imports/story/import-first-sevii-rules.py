@@ -7,16 +7,30 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from shared_trainers import trainer_json
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 from shared_constants import read_values
-import json,re,sys,subprocess,importlib.util
+from field_item_services import service_script_graph
+from map_runtime import generated_root
+import argparse,json,re,sys,importlib.util
 from pathlib import Path
-check="--check" in sys.argv
-reference,preparation,out=map(Path,[a for a in sys.argv[1:] if a!="--check"])
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('paths',nargs='*',type=Path,help='Legacy Git mode: reference preparation output')
+parser.add_argument('--raw-root',type=Path,help='Offline pinned raw cache')
+parser.add_argument('--preparation',type=Path,help='Generated first-Sevii map package')
+parser.add_argument('--out',type=Path,help='Generated first-Sevii rule directory')
+parser.add_argument('--check',action='store_true')
+args=parser.parse_args();check=args.check
+if args.raw_root is not None:
+ if args.paths or args.preparation is None or args.out is None:parser.error('Raw mode requires --preparation and --out, with no positional paths')
+ reference=None;preparation=args.preparation;out=args.out
+else:
+ if len(args.paths)!=3 or args.preparation is not None or args.out is not None:parser.error('Provide reference preparation output, or --raw-root --preparation --out')
+ reference,preparation,out=args.paths
+generated=generated_root(out)
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 def importer(name, path):
  spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
 reader=importer('first_sevii_rule_source',(_PROJECT_ROOT / 'scripts/imports/source/import-cinnabar-source-preparation.py'))
 prep=importer('first_sevii_rule_declarations',(_PROJECT_ROOT / 'scripts/lib/prepare_first_sevii.py'))
-source=reader.Source(reference)
+source=reader.Source(reference,raw_root=args.raw_root)
 worlds=[dict(events=source.json('data/maps/'+name+'/map.json')) for name in prep.CORE+prep.SUPPORT]
 script_index=prep.script_index(source,reader)
 canonical=json.loads((_PROJECT_ROOT/'content/generated/data/pokemon/canonical/catalog.json').read_text())
@@ -32,7 +46,7 @@ def write(name,content):
 text={}
 def read(p):
  if p not in text:
-  data=subprocess.check_output(['git','show',COMMIT+':'+p],cwd=reference);text[p]=data.decode()
+  text[p]=source.text(p)
  return text[p]
 def one(p,pattern):
  matches=list(re.finditer(pattern,read(p),re.M|re.S))
@@ -75,7 +89,7 @@ for d in decl['battleOccurrences']:
 assert len(trainers)==10 and sum(len(t['party']) for t in trainers)==21 and len(battles)==11
 out.mkdir(parents=True,exist_ok=True)
 document=dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved)
-write('trainers.json',trainer_json(out.parent, document, check=check).decode())
+write('trainers.json',trainer_json(generated, document, check=check).decode())
 print('Converted10 trainers/21 members/11 admitted source occurrences')
 contracts=json.loads((preparation/'contracts.json').read_text()); constants=read_values(_PROJECT_ROOT / 'content/generated')
 items=[]; additions=[]; stocks=[];pickups=[]
@@ -120,13 +134,25 @@ for map in ['MAP_THREE_ISLAND_BOND_BRIDGE','MAP_THREE_ISLAND_BERRY_FOREST']:
  for k in ['rare','uncommon','common']:
   group=re.search(r'\.'+k+r' = \{(.*?)\}',m[1],re.S);tokens=re.findall(r'HIDDEN_ID\((FLAG_\w+)\)|\b(NO_ITEM)\b',group[1]);assert len(tokens)==8;groups[k]=[a if a else None for a,b in tokens]
  renew.append(dict(mapSymbol=map,**groups,source=ref(p,'sRenewableHiddenItems',m)))
+service_bindings=[]
+catalog=json.loads((preparation/'catalog.json').read_text())
+for name,root in [('ThreeIsland_DunsparceTunnel','ThreeIsland_DunsparceTunnel_EventScript_Prospector')]:
+ map_entry=next(m for m in catalog['maps'] if m['sourceName']==name)
+ events=source.json('data/maps/'+name+'/map.json')['object_events']
+ matches=[(index,event) for index,event in enumerate(events) if event['script']==root]
+ assert len(matches)==1,'Expected one source actor for '+root
+ index,event=matches[0];graph=service_script_graph(script_index,root)
+ assert graph['itemSymbols'] and all(symbol in lookup for symbol in graph['itemSymbols'])
+ service_bindings.append(dict(id='first-sevii:'+root,mapId=map_entry['stableId'],scriptId=root,
+  sourceLocalId=index+1,backgroundX=None,backgroundY=None,eventGroup='object_events',eventIndex=index,
+  sourceEvent=event,programIds=graph['programIds'],itemSymbols=graph['itemSymbols']))
+write('services.json',json.dumps(dict(serviceBindings=service_bindings),indent=2)+'\n')
 itemsdoc=dict(items=items,additions=additions,shops=stocks,pickups=pickups,renewableGroups=renew,renewableStepThreshold=1500)
 write('items.json',json.dumps(itemsdoc,indent=2,ensure_ascii=False, default=item_json)+'\n')
-print('Converted34 items/10 additions/3 stocks/5 visible/17 hidden; renewable source metadata retained')
+print(f'Converted {len(items)} items/{len(additions)} additions/{len(stocks)} stocks/{sum(not p["hidden"] for p in pickups)} visible/{sum(p["hidden"] for p in pickups)} hidden; renewable source metadata retained')
 
 for source_file in ['src/data/wild_encounters.json','src/data/pokemon/species_info.h','src/data/pokemon/level_up_learnsets.h','src/battle_setup.c']:
  read(source_file)
 encounters=dict(
- admitted=[t for t in decl['wildEncounters'] if t['map']!='MAP_THREE_ISLAND_PORT'],scriptedHypno=decl['scriptedHypno'],
- excludedPortReason='Dunsparce grass lies on the disconnected eastern port side; the connecting tunnel requires National Dex.')
+ admitted=decl['wildEncounters'],scriptedHypno=decl['scriptedHypno'])
 write('encounters.json',json.dumps(encounters,indent=2, default=item_json)+'\n')

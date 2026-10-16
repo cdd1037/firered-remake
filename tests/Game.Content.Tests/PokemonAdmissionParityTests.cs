@@ -18,7 +18,7 @@ public sealed class PokemonAdmissionParityTests
         Check(expected.Catalog, campaign.PokemonContent!.Catalog);
         Check(expected.Opponents.Catalog, campaign.VsSeekerOpponents!.Catalog);
         Check(expected.TrainerTowerOpponents.Catalog, campaign.TrainerTowerOpponents.Catalog);
-        Assert.AreEqual(189, campaign.BreedingMetadata!.Species.Count);
+        Assert.IsTrue(campaign.BreedingMetadata!.Species.Keys.ToHashSet().SetEquals(expected.Catalog.Species.Keys));
         Assert.AreEqual(9, campaign.NpcTrades.Definitions.Count);
         CollectionAssert.AreEqual(new[] { 0, 1, 2 }, campaign.PokemonContent.StarterChoices.Select(x => x.Index).ToArray());
         CollectionAssert.AreEquivalent(new[] { 1, 4, 7 }, campaign.PokemonContent.StarterChoices.Select(x => x.SourceSpeciesId).ToArray());

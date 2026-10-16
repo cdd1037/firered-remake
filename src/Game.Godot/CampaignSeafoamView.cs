@@ -76,10 +76,10 @@ public partial class CampaignView
     }
 
     private bool IsSeafoamPresentationMap(MapId map) => _catalog.SeafoamEnabled && _catalog.SeafoamRegion.NewMaps.ContainsKey(map);
-    private string SeafoamPresentationMapKey(MapId map) => IsSeafoamPresentationMap(map) && SeafoamFieldRules.IsWaterFloor(map)
-        ? map.Value + (_session.SeafoamCurrentStopped(map) ? ":current-stopped" : ":current-flowing") : map.Value;
-    private PretWorldMap SeafoamPresentationSourceMap(MapId map) => IsSeafoamPresentationMap(map)
-        ? _catalog.SeafoamRegion.SeafoamMap(map, SeafoamFieldRules.IsWaterFloor(map) && _session.SeafoamCurrentStopped(map)) : _catalog.SourceMaps[map];
+    private string SeafoamPresentationMapKey(MapId map) => map == _session.State.World.Player.MapId && _session.State.MapLayout is {} layout
+        ? map.Value + ":" + layout : map.Value;
+    private PretWorldMap SeafoamPresentationSourceMap(MapId map) => map == _session.State.World.Player.MapId && _session.State.MapLayout is {} layout
+        ? (PretWorldMap)(_catalog.MapLayout(map, layout) ?? throw new InvalidDataException("Map layout art missing.")) : _catalog.SourceMaps[map];
     private bool IsSeafoamPatchedMap(MapId map) => _catalog.SeafoamEnabled && map == SeafoamFieldRules.B4F;
     private bool TrySeafoamPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
     {

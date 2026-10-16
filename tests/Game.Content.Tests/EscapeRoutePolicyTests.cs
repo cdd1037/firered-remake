@@ -14,7 +14,8 @@ public sealed class EscapeRoutePolicyTests
         var maps = new[] { "route-4", "mt-moon-1f", "mt-moon-b1f", "mt-moon-b2f", "route-2",
             "viridian-forest", "route-2-forest-south-gate", "route-2-forest-north-gate", "route-10", "power-plant" }
             .Select(n => new MapId("map." + n));
-        var policy = CurrentEscapeRoutes.Create(maps);
+        var source = PretCampaignCatalog.LoadCurrent(TestAssets.Root).SourceMaps;
+        var policy = CurrentEscapeRoutes.Create(maps.ToDictionary(id => id, id => source[id]));
         var moon = policy.RecordWarp(null, new(new("map.route-4"), 19, 5, 3, Direction.North), new("map.mt-moon-1f"));
         Assert.AreEqual(new EscapeRopeDestination(new("map.route-4"), 19, 6), moon);
         Assert.IsTrue(policy.Exits[new("map.mt-moon-b2f")].Contains(moon!));
@@ -33,7 +34,9 @@ public sealed class EscapeRoutePolicyTests
     [TestMethod]
     public void MissingMapsDoNotBecomeAdmittedByARegionOrShopProfile()
     {
-        var policy = CurrentEscapeRoutes.Create([new("map.route-4")]);
+        var source = PretCampaignCatalog.LoadCurrent(TestAssets.Root).SourceMaps;
+        var id = new MapId("map.route-4");
+        var policy = CurrentEscapeRoutes.Create(new Dictionary<MapId, PretWorldMap> { [id] = source[id] });
         Assert.AreEqual(0, policy.Exits.Count);
         Assert.AreEqual(0, policy.Entrances.Length);
         Assert.AreEqual("escape_rope_destination_invalid", policy.ValidateDestination(new(new("map.route-4"), 19, 6)));
