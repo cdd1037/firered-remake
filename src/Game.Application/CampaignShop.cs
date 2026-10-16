@@ -22,6 +22,7 @@ public sealed partial class CampaignSession
         string map = state.World.Player.MapId.Value;
         string stockId, sourcePath, clerkScript;
         DepartmentStoreCounterStock? counter = null;
+        OrdinaryMartDefinition? ordinary = null;
         PokeDollShopStock? fourthFloor = null;
         if(_content.TrainerTowerEnabled && map==TrainerTowerLobby)
         { stockId=ItemIds.TrainerTowerLobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
@@ -66,8 +67,12 @@ public sealed partial class CampaignSession
         }
         else
         {
-            string sourceMap = map switch { "map.seven-island-mart" when _content.SevenIslandEnabled => "SevenIsland_Mart", "map.six-island-mart" when _content.SixIslandEnabled => "SixIsland_Mart", "map.four-island-mart" when _content.FourIslandEnabled => "FourIsland_Mart", "map.cinnabar-island-mart" when _content.CinnabarEnabled => "CinnabarIsland_Mart", "map.saffron-city-mart" when _content.SaffronGymEnabled => "SaffronCity_Mart", "map.lavender-town-mart" when _content.CeladonApproachEnabled => "LavenderTown_Mart", "map.vermilion-city-mart" when _content.VermilionEnabled => "VermilionCity_Mart", "map.viridian-mart" => "ViridianCity_Mart", "map.pewter-mart" => "PewterCity_Mart", "map.cerulean-city-mart" when _content.CeruleanEnabled => "CeruleanCity_Mart", _ => throw new InvalidDataException("shop_map_unsupported") };
-            stockId = sourceMap + "_Items"; sourcePath = "data/maps/" + sourceMap + "/scripts.inc"; clerkScript = sourceMap + "_EventScript_Clerk";
+            if (state.LastTalked is null || !_content.OrdinaryMarts.ByActor.TryGetValue(
+                (state.World.Player.MapId, state.LastTalked), out ordinary) ||
+                effect.Source != ordinary.Instruction.Source)
+                throw new InvalidDataException("shop_script_context_invalid");
+            stockId = ordinary.Stock.Id; sourcePath = ordinary.Instruction.Source.Path;
+            clerkScript = ordinary.Actor.ScriptId;
         }
         if (effect.Opcode != "pokemart" || effect.Args.Length != 1 || effect.Args[0] != stockId ||
             effect.Source.Path != sourcePath ||
@@ -76,6 +81,11 @@ public sealed partial class CampaignSession
             state.Script.Wait is not { Kind: StoryWaitKind.NativeEffect } wait ||
             state.LastTalked is null || !state.Actors.TryGetValue(state.LastTalked, out var clerk) ||
             clerk.ScriptId != clerkScript || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))
+            throw new InvalidDataException("shop_script_context_invalid");
+        if (ordinary is not null && (!clerk.Active || clerk.Invisible ||
+            clerk.SourceLocalId != ordinary.Actor.SourceLocalId || clerk.GraphicsId != ordinary.Actor.GraphicsId ||
+            clerk.TemplateX != ordinary.Actor.X || clerk.TemplateY != ordinary.Actor.Y ||
+            clerk.HideFlag != ordinary.Actor.HideFlag))
             throw new InvalidDataException("shop_script_context_invalid");
         if (fourthFloor is not null && (effect.Source.Line != 22 || !clerk.Active || clerk.Invisible ||
             !_content.MapDefinition(state.World.Player.MapId).Actors.Any(actor => actor.LocalId == state.LastTalked &&

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import the southern routes and Route15 gate upstairs; preserve Route12 reuse.
+"""Import southern routes and Fuchsia ordinary services; preserve Route12 reuse.
 
 Read the retained 037335f4 raw cache by default, or an explicitly selected pinned
 Git checkout. Raw mode trusts that pinned input selection and does not claim Git
@@ -23,9 +23,9 @@ PRODUCT = ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-fuchsia-route-region-import-v1'
 PACKAGE = 'maps/regions/fuchsia-route'
-CORE = ['Route12', 'Route13', 'Route14', 'Route15', 'Route15_WestEntrance_1F', 'Route15_WestEntrance_2F', 'FuchsiaCity', 'FuchsiaCity_PokemonCenter_1F']
+CORE = ['Route12', 'Route13', 'Route14', 'Route15', 'Route15_WestEntrance_1F', 'Route15_WestEntrance_2F', 'FuchsiaCity', 'FuchsiaCity_PokemonCenter_1F', 'FuchsiaCity_Mart']
 OPTIONAL = ['Route12_FishingHouse']
-TILESETS = {'gTileset_General':'primary/general', 'gTileset_LavenderTown':'secondary/lavender_town', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2', 'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_GenericBuilding1':'secondary/generic_building_1'}
+TILESETS = {'gTileset_General':'primary/general', 'gTileset_LavenderTown':'secondary/lavender_town', 'gTileset_FuchsiaCity':'secondary/fuchsia_city', 'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2', 'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_GenericBuilding1':'secondary/generic_building_1', 'gTileset_Mart':'secondary/mart'}
 
 def canonical(doc): return (json.dumps(doc, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())

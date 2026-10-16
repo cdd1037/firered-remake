@@ -114,7 +114,7 @@ public sealed partial class CampaignSession
             }
             if(a[0]=="QuestLog_CutRecording"&&(own||ferry))
             {if(state.Script.QuestLogState!=0)throw new InvalidDataException("quest_log_recording_not_supported");return true;}
-            if(a[0]=="BufferBigGuyOrBigGirlString"&&effect.Source.Path is "data/maps/ThreeIsland_BerryForest/scripts.inc" or "data/maps/TwoIsland_JoyfulGameCorner/scripts.inc")
+            if(a[0]=="BufferBigGuyOrBigGirlString")
             {next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",state.PlayerGender==0?"Big guy":"Big girl")};return true;}
         }
         // Exact original Berry Forest escape-warp: its map allows Escape Rope.

@@ -18,7 +18,7 @@ from presentation_atlas import pack
 
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-POKEMON = set('articuno chansey clefairy cubone deoxys-n doduo fearow ho-oh jigglypuff kabuto kangaskhan lapras lugia machoke machop meowth mewtwo moltres nidoran-f nidoran-m nidorino omanyte pidgeot pikachu poliwrath psyduck seel slowbro slowpoke snorlax voltorb wigglytuff zapdos'.split())
+POKEMON = set('articuno chansey clefairy cubone deoxys-n doduo fearow ho-oh jigglypuff kabuto kangaskhan lapras lugia machoke machop meowth mewtwo moltres nidoran-f nidoran-m nidorino omanyte pidgeot pidgey pikachu poliwrath psyduck seel slowbro slowpoke snorlax spearow voltorb wigglytuff zapdos'.split())
 OBJECTS = set('clipboard cut-tree fossil item-ball meteorite old-amber pokedex pushable-boulder rock-smash-rock ruby sapphire'.split())
 TRAINERS = set('agatha beauty biker black-belt blaine blue brock bruno bug-catcher camper channeler cooltrainer-f cooltrainer-m crush-girl erika fisher giovanni hiker koga lance lass lorelei lt-surge misty picnicker poke-maniac rocker rocket-f rocket-m sabrina sailor scientist swimmer-f-land swimmer-f-water swimmer-m-land swimmer-m-water trainer-tower-dude tuber-f tuber-m-land tuber-m-water youngster'.split())
 STANDALONE = {'red-normal', 'ss-anne', 'seagallop'}

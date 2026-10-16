@@ -670,10 +670,17 @@ public sealed partial class CampaignSession
                     return new(CommandStatus.Accepted,Pump(StartStory(state,CenterPcScript)));
                 if(_content.QuestItems is not null&&SourceBehavior(state,actorX,actorY)==0x80&&(!_content.SupportsRegionalFlavor(p.MapId)||VisibleActorAt(state,actorX,actorY) is null)){actorX+=dx;actorY+=dy;}
                 var actor=VisibleActorAt(state,actorX,actorY);
+                // Source GetInteractedObjectEventScript selects the object even when its
+                // script pointer is NULL; GetInteractionScript then tries the background.
+                // Decorative objects must not swallow a sign or letter on the same tile.
+                if(actor is not null && actor.ScriptId is "0" or "0x0")
+                {
+                    state=SelectInteractedObject(state,actor.LocalId) with{LastTalked=actor.LocalId,Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_LAST_TALKED",actor.SourceLocalId).SetItem("VAR_FACING",SourceDirectionValue(p.Facing))}};
+                    actor=null;
+                }
                 if(actor is not null)
                 {
                     if(_content.DeferredRegionalServiceReason(p.MapId,actor.ScriptId) is {} unavailable)return new(CommandStatus.Rejected,state,unavailable);
-                    if(actor.ScriptId is "0" or "0x0")return new(CommandStatus.Rejected,state,"actor_no_script");
                     if(_content.CeladonApproachEnabled&&!_content.PresetDoublesEnabled&&actor.ScriptId is "Route8_EventScript_Eli" or "Route8_EventScript_Anne")return new(CommandStatus.Rejected,state,"celadon_approach_double_battle_not_implemented");
                     if(_content.RocketHideoutEnabled&&actor.ScriptId is "RocketHideout_B4F_EventScript_LiftKey" or "RocketHideout_B4F_EventScript_SilphScope"&&
                         (state.Inventory?.KeyItems??[]).Length>=ShopCatalog.QuestLimits.KeyItemSlots)

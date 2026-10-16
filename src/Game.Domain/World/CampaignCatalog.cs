@@ -304,6 +304,7 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableArray<FieldPickupDefinition> FieldPickups=>[];
     ImmutableArray<FieldItemServiceDefinition> FieldItemServices=>[];
     EarlyShopCatalog? EarlyShop=>null;
+    OrdinaryMartCatalog OrdinaryMarts => OrdinaryMartCatalog.Empty;
     ForestTrainerCatalog? ForestTrainers=>null;
     PewterTrainerCatalog? PewterTrainers=>null;
     MachineCatalog? PewterMachines=>null;

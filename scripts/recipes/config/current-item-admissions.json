@@ -696,6 +696,10 @@
       "path": "data/maps/LavenderTown_Mart/scripts.inc"
     },
     {
+      "id": "FuchsiaCity_Mart_Items",
+      "path": "data/maps/FuchsiaCity_Mart/scripts.inc"
+    },
+    {
       "id": "SaffronCity_Mart_Items",
       "path": "data/maps/SaffronCity_Mart/scripts.inc"
     },

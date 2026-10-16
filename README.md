@@ -31,6 +31,15 @@ dotnet test
 
 `python dev build` 自动设置本机 NuGet 路径，从 Godot 安装目录及 nuget.org 还原依赖，不再使用 `--locked-mode`。直接运行 `dotnet test` 则从 nuget.org 还原官方包，首次运行需要网络；后续可用 `--no-restore`。Godot SDK 版本由项目声明，随安装提供的 Godot 包不使用跨平台共享的内容哈希锁。下载工具链的 `setup` 仍验证下载哈希，且只支持原有 Linux 下载清单；Windows 使用已有安装。`toolchain.lock.json` 中 SDK 10.0.401 / runtime 10.0.12 是原 Linux 下载和验收记录，不是开发机补丁版本门槛。
 
+当前 Linux 云环境的默认并行 MSBuild 已多次出现无诊断的 `Build FAILED`（0 warnings／0 errors）；该环境后续直接使用下面的串行命令，不重复尝试默认并行，也不修改机器配置：
+
+```sh
+source scripts/env.sh
+dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+```
+
+此命令保留原 SDK、目标框架与编译检查，只关闭并行节点复用和编译服务共享；首次构建仍须先完成正常还原。
+
 需要直接运行 dotnet 或其他 Bash 工具时，可先 `source scripts/env.sh`；PowerShell 可先导入相同环境：
 
 ```powershell

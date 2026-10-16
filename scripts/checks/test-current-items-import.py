@@ -23,7 +23,8 @@ class CurrentItemTests(unittest.TestCase):
         catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
         self.assertEqual(catalog, json.loads((ROOT / compiler.TARGET).read_text()))
         self.assertEqual(len(compiler.read_recipe(ROOT)['items']), len(catalog['items']))
-        self.assertEqual(14, len(catalog['shops']))
+        self.assertEqual(len(compiler.read_recipe(ROOT)['shops']), len(catalog['shops']))
+        self.assertEqual(len(catalog['shops']), len({shop['id'] for shop in catalog['shops']}))
         self.assertEqual('pret:ITEM_POKE_BALL', catalog['items'][0]['item'])
         self.assertEqual(99, catalog['maximumTransactionQuantity'])
         self.assertEqual(999999, catalog['maximumMoney'])
@@ -37,6 +38,18 @@ class CurrentItemTests(unittest.TestCase):
                 self.assertEqual(effects[item['item'].removeprefix('pret:')], item['effectBytes'])
             self.assertEqual({'item', 'description', 'healHp', 'cureStatus', 'effectBytes', 'useSupport'}, set(item))
         self.assertTrue(all(set(shop) == {'id', 'items'} for shop in catalog['shops']))
+
+    def test_fuchsia_mart_stock_is_parsed_from_its_original_ordered_table(self):
+        catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
+        shop, = [shop for shop in catalog['shops'] if shop['id'] == 'FuchsiaCity_Mart_Items']
+        self.assertEqual(['pret:ITEM_' + name for name in
+            ('ULTRA_BALL', 'GREAT_BALL', 'SUPER_POTION', 'REVIVE', 'FULL_HEAL', 'MAX_REPEL')],
+            [item['value'] for item in shop['items']])
+        source = (ROOT / RAW / 'data/maps/FuchsiaCity_Mart/scripts.inc').read_text()
+        self.assertIn('pokemart FuchsiaCity_Mart_Items', source)
+        recipe = compiler.read_recipe(ROOT)
+        row, = [row for row in recipe['shops'] if row['id'] == shop['id']]
+        self.assertEqual('data/maps/FuchsiaCity_Mart/scripts.inc', row['path'])
 
     def test_current_item_icons_match_source_pixels_after_atlas_packing(self):
         selected = {item['item'] for item in compiler.read_recipe(ROOT)['items'] if item.get('icon')}

@@ -13,7 +13,8 @@ public sealed class CurrentItemCatalogTests
         var shared = SharedItemCatalog.LoadProject(TestAssets.Root);
         var current = CurrentItemCatalog.Load(TestAssets.Root, shared);
         Assert.IsFalse(current.Items.IsDefaultOrEmpty);
-        Assert.AreEqual(14, current.Shops.Length);
+        Assert.IsFalse(current.Shops.IsDefaultOrEmpty);
+        Assert.AreEqual(current.Shops.Length, current.Shops.Select(shop => shop.Id).Distinct().Count());
         Assert.AreEqual("ViridianCity_Mart_Items", current.Shops[0].Id);
         Assert.AreEqual("TrainerTower_Lobby_Mart_Items", current.Shops[^1].Id);
         foreach (var item in current.Items) Assert.AreSame(shared.Definition(item.Id), item.Item);

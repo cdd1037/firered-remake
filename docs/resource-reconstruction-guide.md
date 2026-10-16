@@ -257,3 +257,9 @@ Encounter cry registration uses the loaded canonical species/cry capability;
 mode 2 keeps the existing fixed source parameters. No source audio assets or DSP
 algorithms were changed for this route. Offline synthesis checks do not establish
 audible device output.
+
+## 普通房屋与浅红商店
+
+普通房屋使用 `scripts/imports/maps/import-school-house-interiors.py` 的固定来源选择，默认读取 pinned raw；不再要求完整 Git checkout。浅红商店随 `import-fuchsia-route-region.py` 重建。均支持 `--check`，逐项核对源地图、保留的外部门和新渲染像素；已打包图像由共享地图图集读回比较。运行端只读生成目录，不复制房间数或坐标表。
+
+修改源选择后依次运行两个地图导入器、`scripts/imports/maps/import-field-tilesets.py`、`scripts/imports/maps/import-map-atlases.py`、`scripts/imports/presentation/import-shared-overworld.py`；故事与商店分别由 `scripts/imports/story/import-story.py` 和 `scripts/imports/items/import-current-items.py` 转换。普通房屋新增的波波／烈雀精灵帧保留于 raw 并进入共有 overworld 图集。所有步骤均使用本工程已审阅工具，不执行上游脚本。
