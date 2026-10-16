@@ -16,13 +16,14 @@ PACKAGE = 'maps/regions/four-island'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 CORE = ['FourIsland', 'FourIsland_Harbor', 'FourIsland_IcefallCave_Entrance',
         'FourIsland_IcefallCave_1F', 'FourIsland_IcefallCave_B1F', 'FourIsland_IcefallCave_Back']
-SUPPORT = ['FourIsland_PokemonCenter_1F', 'FourIsland_Mart', 'FourIsland_LoreleisHouse']
+SUPPORT = ['FourIsland_PokemonCenter_1F', 'FourIsland_Mart', 'FourIsland_LoreleisHouse', 'FourIsland_House2']
 ANCHOR = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/building',
             'gTileset_SeviiIslands45':'secondary/sevii_islands_45',
             'gTileset_SeafoamIslands':'secondary/seafoam_islands',
             'gTileset_IslandHarbor':'secondary/island_harbor',
             'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart',
+            'gTileset_GenericBuilding2':'secondary/generic_building_2',
             'gTileset_SafariZoneBuilding':'secondary/safari_zone_building'}
 
 def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
@@ -295,6 +296,28 @@ def doll_collection_contract(src, worlds, bylabel):
     need(any(line['text'].strip() == 'special ' + special for line in transition), 'Doll collection transition differs')
     return dict(statFlagUnlockSpecial=special, statFlagUnlocks=rows)
 
+def sticker_milestones(src):
+    script = src.text('data/scripts/trainer_card.inc')
+    native = src.text('src/field_specials.c')
+    body = re.search(r'u16 StickerManGetBragFlags\(void\)\s*\{(.*?)\n\}', native, re.S)[1]
+    rows = []
+    for index, (name, branch, stat, variable, clamp) in enumerate([
+        ('HOF', 'HoF', 'GAME_STAT_ENTERED_HOF', 'VAR_0x8004', False),
+        ('EGG', 'Eggs', 'GAME_STAT_HATCHED_EGGS', 'VAR_0x8005', True),
+        ('LINK_WIN', 'LinkWins', 'GAME_STAT_LINK_BATTLE_WINS', 'VAR_0x8006', False)]):
+        block = re.search(r'FourIsland_House2_EventScript_Brag' + branch + r'::(.*?)\n\s*end', script, re.S)[1]
+        upper = [int(v) for v in re.findall(r'goto_if_le ' + variable + r', (\d+),', block)]
+        need(len(upper) == 3 and stat in body, 'Missing Sticker Man source thresholds/stat')
+        need('result |= 1 << ' + str(index) in body, 'Sticker Man bit assignment differs')
+        award = 'VAR_' + name + '_BRAG_STATE'
+        need(all(re.search(r'setvar ' + award + ', ' + str(t), script) for t in range(1,5)), 'Missing source award tiers')
+        rows.append(dict(id=name,stat=stat,countVariable=variable,stateVariable=award,
+                         bragFlag=1 << index,clampCount=clamp,minimumCounts=[1]+[v+1 for v in upper]))
+    need('if (numEggs > 0xFFFF)' in body and 'gSpecialVar_0x8005 = 0xFFFF;' in body,
+         'Sticker Man egg clamp differs')
+    return dict(map='map.four-island-house2', special='StickerManGetBragFlags',
+                entryScript='FourIsland_House2_EventScript_StickerMan', categories=rows)
+
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     inputs=ap.add_mutually_exclusive_group(required=True)
@@ -352,6 +375,7 @@ def main():
         const=constants(src,shared,worlds,scripts)
         contract.update(field_contract(src, worlds, const, bylabel))
         contract.update(doll_collection_contract(src, worlds, bylabel))
+        contract['stickerMilestones'] = sticker_milestones(src)
         data['shopStocks'] = [dict(label='FourIsland_Mart_Items', sourceRef=bylabel['FourIsland_Mart_Items']['sourceRef'],
             items=re.findall(r'\bITEM_(?!NONE\b)\w+', '\n'.join(r['text'] for r in bylabel['FourIsland_Mart_Items']['lines'])))]
         mapsymbols={}

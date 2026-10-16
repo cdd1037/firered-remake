@@ -26,6 +26,24 @@ public sealed partial class CampaignSession
     private static IEnumerable<long> EggAcquisitionIds(CampaignState state) =>
         (state.DayCareEggs ?? []).Select(e => e.InstanceId).Concat((state.GiftEggs ?? []).Select(e => e.InstanceId));
 
+    // The counter is lifetime state. Retained receipts are only a lower bound because
+    // release/NPC exchange can prune breeding receipts; never reconstruct totals from them.
+    private string? ValidateHatchedEggCount(CampaignState state)
+    {
+        if (!_content.FourIslandDayCareEnabled) return null;
+        if (state.GameStats?.TryGetValue(HatchedEggsStat, out int count) != true)
+            return "save_hatched_egg_count_missing_migration_required";
+        int retained = Math.Min(0xffffff, (state.DayCareEggs ?? []).Count(e => e.Hatch is not null) +
+            (state.GiftEggs ?? []).Count(e => e.Hatch is not null));
+        return count < retained ? "save_hatched_egg_count" : null;
+    }
+
+    private static CampaignState InitializeHatchedEggCount(CampaignState state)
+    {
+        var stats = state.GameStats ?? ImmutableSortedDictionary<string, int>.Empty.WithComparers(StringComparer.Ordinal);
+        return state with { GameStats = stats.SetItem(HatchedEggsStat, 0) };
+    }
+
     private static CampaignDayCareHatchReceipt? EggHatchReceipt(CampaignState state, long instanceId)
     {
         var matches = (state.DayCareEggs ?? []).Where(e => e.InstanceId == instanceId).Select(e => e.Hatch)

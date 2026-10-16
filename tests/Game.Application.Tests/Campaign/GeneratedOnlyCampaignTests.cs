@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Game.Application;
 using Game.Content;
 using Game.Domain.World;
@@ -61,14 +60,11 @@ public sealed class GeneratedOnlyCampaignTests
     }
 
     [TestMethod]
-    public void LateCheckpointContinuesWithoutOriginalSourcesOrImportTools()
+    public void ControlledLateFixtureContinuesWithoutOriginalSourcesOrImportTools()
     {
         var session = CampaignSession.CreateCurrent(catalog);
-        var checkpoint = File.ReadAllBytes(TestAssets.Checkpoint);
-        using var document = JsonDocument.Parse(checkpoint);
-        var existing = SaveCodec.Decode<CampaignState>(checkpoint,
-            document.RootElement.GetProperty("RulesVersion").GetString()!,
-            document.RootElement.GetProperty("ContentVersion").GetString()!, validate: session.ValidatePlayerSave);
+        // Deliberately synthetic new-schema hatch total; original checkpoint is not repaired here.
+        var existing = CurrentCampaignFixture.Checkpoint;
         var restored = CampaignSession.RestoreCurrent(catalog, existing.State, existing.Generation);
         Assert.AreEqual(existing.Generation, restored.Revision);
         Assert.AreEqual(CanonicalJson.Hash(existing.State), CanonicalJson.Hash(restored.State));

@@ -94,6 +94,7 @@ public sealed class SaveOperationTests
     [DataRow("disk", SaveOperationStatus.StorageFailure)]
     [DataRow("oversized", SaveOperationStatus.TooLarge)]
     [DataRow("version", SaveOperationStatus.IncompatibleVersion)]
+    [DataRow("migration", SaveOperationStatus.MigrationRequired)]
     [DataRow("damaged", SaveOperationStatus.InvalidData)]
     public void Load_keeps_candidate_failure_types_and_diagnostic_detail(string fault, SaveOperationStatus expected)
     {
@@ -220,6 +221,7 @@ public sealed class SaveOperationTests
         "oversized" => new InvalidDataException("save_file_too_large"),
         "changed" => new IOException("save_file_changed_before_commit"),
         "version" => new InvalidDataException("save_version_mismatch"),
+        "migration" => new InvalidDataException("save_semantic_invalid: save_hatched_egg_count_missing_migration_required"),
         _ => new InvalidDataException("save_checksum_mismatch")
     };
     private sealed class FaultStorage(ISaveStorage storage) : ISaveStorage

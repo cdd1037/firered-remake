@@ -6,7 +6,7 @@ public enum SaveOperation { Save, Load }
 public enum SaveOperationStatus
 {
     Succeeded, OverwriteRequired, Blocked, Missing, AccessDenied, StorageFailure,
-    InvalidData, IncompatibleVersion, TooLarge, FilesChanged
+    InvalidData, IncompatibleVersion, TooLarge, FilesChanged, MigrationRequired
 }
 public enum SaveFileOutcome { Preserved, Committed, Unconfirmed }
 
@@ -39,7 +39,7 @@ public sealed record SaveOperationResult(
         {
             var failures = aggregate.InnerExceptions.Select(Classify).ToArray();
             foreach (var status in new[] { SaveOperationStatus.FilesChanged, SaveOperationStatus.AccessDenied,
-                SaveOperationStatus.StorageFailure, SaveOperationStatus.IncompatibleVersion,
+                SaveOperationStatus.StorageFailure, SaveOperationStatus.MigrationRequired, SaveOperationStatus.IncompatibleVersion,
                 SaveOperationStatus.TooLarge, SaveOperationStatus.InvalidData })
                 if (failures.Contains(status)) return status;
             return SaveOperationStatus.Missing;
@@ -48,6 +48,8 @@ public sealed record SaveOperationResult(
         if (error is FileNotFoundException or DirectoryNotFoundException) return SaveOperationStatus.Missing;
         if (error.Message.StartsWith("save_file_changed", StringComparison.Ordinal) || error.Message == "save_stage_changed")
             return SaveOperationStatus.FilesChanged;
+        if (error.Message is "save_semantic_invalid: save_hatched_egg_count_missing_migration_required" or
+            "campaign_restore_invalid: save_hatched_egg_count_missing_migration_required") return SaveOperationStatus.MigrationRequired;
         if (error.Message is "save_schema_unsupported" or "save_version_mismatch") return SaveOperationStatus.IncompatibleVersion;
         if (error.Message == "save_file_too_large") return SaveOperationStatus.TooLarge;
         if (error is InvalidDataException or JsonException) return SaveOperationStatus.InvalidData;

@@ -4289,6 +4289,29 @@
         "Repository": "pret/pokefirered",
         "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
       }
+    },
+    {
+      "path": "data/scripts/trainer_card.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/scripts/trainer_card.inc",
+        "Symbol": "FourIsland_House2_EventScript_StickerMan",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      },
+      "labelPrefixes": [
+        "FourIsland_House2_"
+      ]
+    },
+    {
+      "path": "data/maps/FourIsland_House2/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/FourIsland_House2/scripts.inc",
+        "Symbol": "MAP_FOUR_ISLAND_HOUSE2",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
     }
   ],
   "textPaths": [
@@ -4846,7 +4869,8 @@
     "data/maps/FiveIsland_House1/text.inc",
     "data/maps/FiveIsland_House2/text.inc",
     "data/maps/SixIsland_House/text.inc",
-    "data/maps/FourIsland_LoreleisHouse/text.inc"
+    "data/maps/FourIsland_LoreleisHouse/text.inc",
+    "data/text/trainer_card.inc"
   ],
   "constantSymbols": [
     "(MAX_COINS + 1) - 10",
@@ -11752,7 +11776,11 @@
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_OUTCAST_ISLAND_NET_BALL",
     "FLAG_HIDDEN_ITEM_SIX_ISLAND_OUTCAST_ISLAND_STAR_PIECE",
     "FLAG_WORLD_MAP_SIX_ISLAND_ALTERING_CAVE",
-    "VAR_HERACROSS_SIZE_RECORD"
+    "VAR_HERACROSS_SIZE_RECORD",
+    "VAR_0x8008",
+    "VAR_EGG_BRAG_STATE",
+    "VAR_HOF_BRAG_STATE",
+    "VAR_LINK_WIN_BRAG_STATE"
   ],
   "supplementalTexts": [
     {

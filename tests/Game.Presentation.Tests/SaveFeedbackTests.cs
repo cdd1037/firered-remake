@@ -6,6 +6,15 @@ namespace FireRed.Tests.Presentation;
 public sealed class SaveFeedbackTests
 {
     [TestMethod]
+    public void MissingHatchTotalRequestsExplicitConversionWithoutCallingSaveDamaged()
+    {
+        var text = CampaignSaveFeedback.Message(new(SaveOperation.Load, SaveOperationStatus.MigrationRequired));
+        StringAssert.Contains(text, "known hatch count");
+        StringAssert.Contains(text, "Convert explicitly");
+        Assert.IsFalse(text.Contains("damaged", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void Every_result_fits_two_short_lines_without_diagnostic_paths()
     {
         foreach (var operation in Enum.GetValues<SaveOperation>())

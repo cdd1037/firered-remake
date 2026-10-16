@@ -25,6 +25,8 @@ public sealed record CampaignEggHatch(int PartyIndex, long InstanceId, int Sourc
 
 public sealed partial class CampaignSession
 {
+    private const string HatchedEggsStat = "GAME_STAT_HATCHED_EGGS";
+
     private SourceEggTrainer EggTrainer(CampaignState state) => new(state.TrainerId, state.PlayerName, state.PlayerGender);
 
     private CampaignState ApplyDayCareWalkingStep(CampaignState state)
@@ -151,7 +153,11 @@ public sealed partial class CampaignSession
         string location = _content.MapDefinition(state.World.Player.MapId).RegionMapSection;
         var hatched = SourceEggRules.Hatch(_content.PokemonContent!, egg, EggTrainer(state), location, state.World.Rng);
         var shards = SourceEggRules.CreateNormalHatchShards(hatched.Rng);
+        var stats = state.GameStats;
+        if (stats?.TryGetValue(HatchedEggsStat, out int hatchCount) != true)
+            throw new InvalidDataException("hatch_stat_missing_migration_required");
         next = WriteEggHatchReceipt(state, egg.InstanceId, new(location, state.World.Rng, hatched.Rng)) with {
+            GameStats = stats.SetItem(HatchedEggsStat, Math.Min(0xffffff, hatchCount + 1)),
             Party = state.Party.SetItem(index, hatched.Pokemon), World = state.World with { Rng = hatched.Rng },
             SeenSpecies = state.SeenSpecies.Add(egg.Pokemon.SourceSpeciesId),
             CaughtSpecies = state.CaughtSpecies.Add(egg.Pokemon.SourceSpeciesId), TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", hatched.Pokemon.Nickname),

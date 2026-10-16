@@ -22,6 +22,8 @@ public sealed partial class PretFourIslandRegion
     public JsonElement SlidingIceCells => Contracts.GetProperty("slidingIceCells");
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public JsonElement ExcludedEncounterGates => Contracts.GetProperty("excludedEncounterGates");
+    public FieldMilestoneCollection StickerMilestones { get; }
+    public ImmutableDictionary<string, FieldMilestoneCollection> FieldMilestones { get; }
     public FieldStatFlagUnlocks DollCollection { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
@@ -36,6 +38,14 @@ public sealed partial class PretFourIslandRegion
         DollCollection = new(new("map.four-island-loreleis-house"), Contracts.GetProperty("statFlagUnlockSpecial").GetString()!, rules);
         var actors = NewMaps[DollCollection.Map].Events.GetProperty("object_events").EnumerateArray().ToArray();
         Need(rules.All(r => actors.Count(a => a.GetProperty("flag").GetString() == r.Flag) == 1), "Stat unlock must identify one source actor.");
+        var stickers = Contracts.GetProperty("stickerMilestones");
+        StickerMilestones = new(new(stickers.GetProperty("map").GetString()!), stickers.GetProperty("special").GetString()!,
+            stickers.GetProperty("categories").EnumerateArray().Select(row => new FieldMilestone(
+                row.GetProperty("stat").GetString()!, row.GetProperty("countVariable").GetString()!,
+                row.GetProperty("stateVariable").GetString()!, row.GetProperty("bragFlag").GetInt32(),
+                row.GetProperty("clampCount").GetBoolean(), row.GetProperty("stat").GetString() != "GAME_STAT_LINK_BATTLE_WINS",
+                row.GetProperty("minimumCounts").EnumerateArray().Select(v => v.GetInt32()).ToImmutableArray())).ToImmutableArray());
+        FieldMilestones = ImmutableDictionary<string, FieldMilestoneCollection>.Empty.Add(StickerMilestones.Special, StickerMilestones);
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch

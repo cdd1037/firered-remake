@@ -311,6 +311,7 @@ public sealed partial class CampaignSession
         if(content.OldManTutorialEnabled)initial=initial with{ObjectSlots=EmptyObjectPool};
         initial=InitializeRenewableHiddenItems(initial);
         initial=InitializeTrainerFanClub(initial);
+        initial=InitializeHatchedEggCount(initial);
         // NewGameInitData runs this real source script before normal map entry. No hand-copied hide flag list.
         initial=StartStory(initial,"EventScript_ResetAllMapFlags");
         initial=EnterMap(initial,null);
@@ -359,6 +360,8 @@ public sealed partial class CampaignSession
         var storageError=ValidateStorageState(s);if(storageError is not null)return storageError;
         var giftEggError=ValidateGiftEggReceipts(s);if(giftEggError is not null)return giftEggError;
         var daycareError=ValidateRoute5DayCare(s)??ValidateFourIslandDayCare(s);if(daycareError is not null)return daycareError;
+        if(ValidateHatchedEggCount(s) is {} hatchCountError)return hatchCountError;
+        if(ValidateFieldMilestones(s) is {} milestoneError)return milestoneError;
         var npcTradeError=ValidateNpcTradeHistory(s);if(npcTradeError is not null)return npcTradeError;
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
         var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
@@ -825,6 +828,7 @@ public sealed partial class CampaignSession
             if(TryApplySixIslandEffect(state,effect,out var sixIslandState)){state=sixIslandState;continue;}
             if(TryApplyFourIslandEffect(state,effect,out var fourIslandState)){state=fourIslandState;continue;}
             if(TryApplySeviiRubyEffect(state,effect,out var rubyState)){state=rubyState;continue;}
+            if(TryApplyFieldMilestoneEffect(state,effect,out var milestoneState)){state=milestoneState;continue;}
             if(TryApplyTrainerFanClubEffect(state,effect,out var fanClubState)){state=fanClubState;continue;}
             if(TryApplyPokemonLeagueEffect(state,effect,out var pokemonLeagueState)){state=pokemonLeagueState;continue;}
             if(TryApplyVictoryRoadFieldEffect(state,effect,out var victoryRoadFieldState)){state=victoryRoadFieldState;continue;}

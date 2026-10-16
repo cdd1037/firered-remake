@@ -80,10 +80,22 @@ def constants(symbols):
         if name not in values or name.startswith(('WALLPAPER_', 'OPTION_', 'MOVE_TARGET_')):
             if name in expressions: values[name] = resolve(name)
             elif name.startswith('(MAX_COINS'): values[name] = evaluate(ast.parse(name, mode='eval').body)
-    for path in ['PalletTown_RivalsHouse','PalletTown_PlayersHouse_1F','ViridianCity_Mart']:
+    for path in ['PalletTown_RivalsHouse','PalletTown_PlayersHouse_1F','ViridianCity_Mart','FourIsland_House2']:
         for index, actor in enumerate(json.loads(read('data/maps/' + path + '/map.json'))['object_events'], 1):
             if actor.get('local_id') in symbols: values[actor['local_id']] = index
     return {name: values[name] for name in symbols}
+
+def selected_source(entry):
+    text = read(entry['path'])
+    prefixes = entry.get('labelPrefixes')
+    if not prefixes: return text
+    selected, lines = False, []
+    for line in text.splitlines(keepends=True):
+        label = re.fullmatch(r'(\w+)::?\s*', line)
+        if label: selected = any(label[1].startswith(prefix) for prefix in prefixes)
+        lines.append(line if selected else '\n')
+    if not any(line.strip() for line in lines): raise ValueError('Empty story label selection')
+    return ''.join(lines)
 
 def prepare():
     recipe = json.loads((ROOT / 'tools/import-story/recipe.json').read_text())
@@ -114,7 +126,7 @@ def prepare():
         if isinstance(value, dict): return {key[0].upper()+key[1:]: pascal(item) for key,item in value.items()}
         if isinstance(value, list): return [pascal(item) for item in value]
         return value
-    return dict(Sources=[dict(Path=e['path'], Text=read(e['path']), SourceRef=e['sourceRef']) for e in recipe['scripts']],
+    return dict(Sources=[dict(Path=e['path'], Text=selected_source(e), SourceRef=e['sourceRef']) for e in recipe['scripts']],
                 Constants=const, TextBank=bank, Menus={m['id']:pascal(m) for m in menus},
                 StarterSpeciesNames=species_names, NicknameCharacters=chars, MoveNames=move_names)
 

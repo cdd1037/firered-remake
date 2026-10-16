@@ -23,6 +23,7 @@ public sealed partial class PretCampaignCatalog
     public MachineCatalog? FourIslandMachines => FourIslandItems?.Machines;
     public FourIslandWaterEncounterCatalog? FourIslandWaterEncounters { get; }
     public ImmutableDictionary<string, FieldStatFlagUnlocks> StatFlagUnlocks { get; }
+    public ImmutableDictionary<string, FieldMilestoneCollection> FieldMilestones => FourIslandRegion?.FieldMilestones ?? ImmutableDictionary<string, FieldMilestoneCollection>.Empty;
     public bool FourIslandEnabled => FourIslandRegion is not null;
 
     private static void ValidateFourIslandAnchors(PretFourIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
@@ -58,7 +59,19 @@ public sealed partial class PretCampaignCatalog
             !transition.Instructions.Select(i => i.Opcode).SequenceEqual(new[] { "special", "end" }) ||
             !transition.Instructions[0].Args.SequenceEqual(new[] { "UpdateLoreleiDollCollection" }))
             throw new InvalidDataException("lorelei_house_collection_transition_missing");
-        foreach (var symbol in new[] { "MAP_FOUR_ISLAND_POKEMON_CENTER_2F","MAP_FOUR_ISLAND_POKEMON_DAY_CARE","MAP_FOUR_ISLAND_HOUSE1","MAP_FOUR_ISLAND_HOUSE2" })
+        var stickerHouse = maps[new("map.four-island-house2")];
+        var door = maps[new("map.four-island")].FieldWarps.Single(w => w.Index == 5);
+        if (door is not { X: 25, Y: 26, DestinationWarpId: 0 } || door.DestinationMapId != stickerHouse.Id ||
+            stickerHouse.FieldWarps.Length != 1 || stickerHouse.FieldWarps[0] is not { X: 4, Y: 7, DestinationWarpId: 5 } ||
+            stickerHouse.FieldWarps[0].DestinationMapId != new MapId("map.four-island") ||
+            stickerHouse.Events.GetProperty("object_events").GetArrayLength() != 1)
+            throw new InvalidDataException("sticker_house_original_door_or_actor");
+        foreach (var program in scripts.Programs.Values.Where(p => p.Id.StartsWith("FourIsland_House2_", StringComparison.Ordinal)))
+            if (program.Instructions.Any(i => i.Op == StoryOp.Unsupported))
+                throw new InvalidDataException("sticker_house_unsupported_script:" + program.Id);
+        if (scripts.FindProgram("FourIsland_House2_EventScript_StickerMan") is not { Instructions.IsEmpty: false })
+            throw new InvalidDataException("sticker_house_missing_entry");
+        foreach (var symbol in new[] { "MAP_FOUR_ISLAND_POKEMON_CENTER_2F","MAP_FOUR_ISLAND_POKEMON_DAY_CARE","MAP_FOUR_ISLAND_HOUSE1" })
             if (maps.ContainsKey(PretFourIslandRegion.MapIdFromSourceSymbol(symbol)))
                 throw new InvalidDataException("four_island_excluded_map_admitted");
     }

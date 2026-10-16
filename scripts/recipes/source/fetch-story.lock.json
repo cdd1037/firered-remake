@@ -43,6 +43,30 @@
     },
     {
       "path": "data/scripts/obtain_item.inc"
+    },
+    {
+      "path": "data/maps/FourIsland_House2/map.json"
+    },
+    {
+      "path": "data/maps/FourIsland_House2/scripts.inc"
+    },
+    {
+      "path": "data/scripts/trainer_card.inc"
+    },
+    {
+      "path": "data/text/trainer_card.inc"
+    },
+    {
+      "path": "src/field_control_avatar.c"
+    },
+    {
+      "path": "src/daycare.c"
+    },
+    {
+      "path": "src/overworld.c"
+    },
+    {
+      "path": "src/field_specials.c"
     }
   ]
 }

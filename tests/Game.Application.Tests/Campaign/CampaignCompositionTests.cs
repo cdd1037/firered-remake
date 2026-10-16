@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Game.Application;
 using Game.Content;
 using Game.Domain.World;
@@ -37,26 +36,24 @@ public sealed class CampaignCompositionTests
     }
 
     [TestMethod]
-    public void ExistingCheckpointPreservesPayloadRngAndGeneration()
+    public void RawCheckpointWithoutLifetimeCountIsPreservedAndRequiresExplicitMigration()
     {
         var session = CampaignSession.CreateCurrent(catalog, new(0x11223344));
         byte[] source = File.ReadAllBytes(TestAssets.Checkpoint);
-        using var document = JsonDocument.Parse(source);
-        string oldVersion = document.RootElement.GetProperty("ContentVersion").GetString()!;
-        string oldRules = document.RootElement.GetProperty("RulesVersion").GetString()!;
-        var old = SaveCodec.Decode<CampaignState>(source, oldRules, oldVersion, validate: session.ValidatePlayerSave);
-        Assert.IsTrue(oldRules == session.RulesVersion, "checkpoint uses current gameplay rules");
-        byte[] converted = SaveCodec.Encode(old.State, old.Generation, oldRules, catalog.ContentVersion);
-        var reread = SaveCodec.Decode<CampaignState>(converted, oldRules, catalog.ContentVersion, validate: session.ValidatePlayerSave);
-        var restored = CampaignSession.RestoreCurrent(catalog, reread.State, reread.Generation);
-        Assert.IsTrue(CanonicalJson.Hash(restored.State) == CanonicalJson.Hash(old.State) && restored.Revision == old.Generation, "checkpoint Continue preserves entire payload and generation");
-        Assert.IsTrue(restored.ValidatePlayerSave(restored.State)is null, "continued checkpoint remains valid");
-        using var convertedJson = JsonDocument.Parse(converted);
-        Assert.IsTrue(JsonElement.DeepEquals(document.RootElement.GetProperty("Payload"), convertedJson.RootElement.GetProperty("Payload")), "conversion changes no payload fields");
-        using var output = TestAssets.TemporaryOutput();
-        string destination = Path.Combine(output.Path, "continued-checkpoint.json");
-        using (var file = new FileStream(destination, FileMode.CreateNew, FileAccess.Write))
-            file.Write(converted);
-        Assert.IsTrue(File.ReadAllBytes(TestAssets.Checkpoint).AsSpan().SequenceEqual(source), "source checkpoint preserved");
+        var loaded = SaveCodec.Decode<CampaignState>(source, session.RulesVersion, catalog.ContentVersion);
+        if (loaded.State.GameStats?.ContainsKey("GAME_STAT_HATCHED_EGGS") == true)
+        {
+            var restored = CampaignSession.RestoreCurrent(catalog, loaded.State, loaded.Generation);
+            Assert.AreEqual(CanonicalJson.Hash(loaded.State), CanonicalJson.Hash(restored.State));
+        }
+        else
+        {
+            var result = PlayerSaveOperations.Load(() => SaveCodec.Decode<CampaignState>(source,
+                session.RulesVersion, catalog.ContentVersion, validate: session.ValidatePlayerSave));
+            Assert.AreEqual(SaveOperationStatus.MigrationRequired, result.Result.Status);
+            Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
+            Assert.IsNull(result.Saved);
+        }
+        Assert.IsTrue(File.ReadAllBytes(TestAssets.Checkpoint).AsSpan().SequenceEqual(source));
     }
 }

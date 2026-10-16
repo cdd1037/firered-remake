@@ -8,6 +8,8 @@
 - `content/raw/`、`content/generated/`：本地导入输入与转换资源，不纳入源码 Git。
 - `checkpoints/`：代表存档与说明。默认 `current-ownership-v3-20261015/continued-checkpoint.json` 为 generation 57604，不会自动覆盖用户存档槽。
 
+当前 Sticker Man/孵蛋计数切片要求明确的终身孵蛋次数。上述旧代表档缺少此字段，原文件保持不变，暂不能作为当前可继续基线；不会按剩余蛋记录猜测历史次数。已知次数才可显式转换到新文件，详见 [Sticker Man 与存档边界](docs/sticker-man.md)。新游戏从零正确计数。
+
 源码、转换资源和代表存档各有明确边界。提交版本以 Git 为准，不在 README 重复记录历史分支节点。随工程包不含 SDK、Godot、NuGet/编译缓存、运行日志或测试探针。
 
 导入脚本按职责分组，入口、公共模块、配方和检查见 [scripts 说明](scripts/README.md)。
