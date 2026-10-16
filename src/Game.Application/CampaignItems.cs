@@ -42,6 +42,7 @@ public sealed partial class CampaignSession
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
         Decision<CampaignState> Menu(string view)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View=view,MessageSymbol=null,DisplayInventory=null,SourceMessages=null,SourceMessageIndex=0}});
         Decision<CampaignState> Message(string symbol,string returnView)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol=symbol,ReturnView=returnView}});
+        if(command.Kind=="item_move")return MoveInventoryStack(state,command);
         if(command.Kind=="bag_pocket")return SelectBagPocket(state,command);
         if(command.Kind=="bag_toss_open")return OpenBagToss(state,command);
         if(command.Kind is "field_give" or "field_take" or "held_bag_open" or "pc_give")return DecideHeldItem(state,command);
@@ -92,10 +93,10 @@ public sealed partial class CampaignSession
         {
             bool withdraw=command.Kind=="pc_withdraw";
             if(menu.Origin!="pc"||menu.View!=(withdraw?"withdraw":"deposit"))return No("pc_transfer_context_invalid");
-            if(command.Text!=OpeningInventoryRules.PotionId.Value)return No("inventory_item_unsupported");
-            var transfer=TransferCampaignPotion(state.Inventory!,command.Quantity,withdraw);
+            if(string.IsNullOrEmpty(command.Text)||!_content.Inventory.Items.TryGetValue(new(command.Text),out var item))return No("inventory_item_unsupported");
+            var transfer=PersonalPcInventoryRules.Transfer(_content.Inventory,state.Inventory!,item.Id,command.Quantity,withdraw);
             if(!transfer.Succeeded)return No(transfer.Error!);
-            return new(CommandStatus.Accepted,state with{Inventory=transfer.State,TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",Items.Potion.Name).SetItem("STR_VAR_2",command.Quantity.ToString(CultureInfo.InvariantCulture)),ItemMenu=menu with{View="message",MessageSymbol=withdraw?"gText_WithdrewQuantItem":"gText_DepositedStrVar2StrVar1s",ReturnView=menu.View,DisplayInventory=state.Inventory}});
+            return new(CommandStatus.Accepted,CommitInventory(state,transfer.State) with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",item.Name).SetItem("STR_VAR_2",command.Quantity.ToString(CultureInfo.InvariantCulture)),ItemMenu=menu with{View="message",MessageSymbol=withdraw?"gText_WithdrewQuantItem":"gText_DepositedStrVar2StrVar1s",ReturnView=menu.View,DisplayInventory=state.Inventory}});
         }
         if(command.Kind=="field_rare_candy")return UseFieldRareCandy(state,command);
         if(command.Kind=="field_escape_rope")return UseFieldEscapeRope(state,command);

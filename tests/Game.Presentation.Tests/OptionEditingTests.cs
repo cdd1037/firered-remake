@@ -24,9 +24,9 @@ public sealed class OptionEditingTests
     }
 
     [TestMethod]
-    public void ButtonModeAndCancelStayUnavailableAndFramesStillRequireAssets()
+    public void CancelStaysUnavailableAndFramesStillRequireAssets()
     {
-        foreach (int row in new[] { -1, 4, 6, 7 })
+        foreach (int row in new[] { -1, 6, 7 })
         {
             Assert.IsFalse(CampaignOptionEditing.IsEditable(row, true));
             Assert.AreSame(SourceGameOptions.Defaults, CampaignOptionEditing.Change(SourceGameOptions.Defaults, row, 1, true));
@@ -36,5 +36,17 @@ public sealed class OptionEditingTests
         Assert.AreEqual(9, CampaignOptionEditing.Change(SourceGameOptions.Defaults, 5, -1, true).Frame);
         Assert.AreEqual(SourceTextSpeed.Slow, CampaignOptionEditing.Change(SourceGameOptions.Defaults with { TextSpeed = SourceTextSpeed.Fast }, 0, 1, true).TextSpeed);
         Assert.AreSame(SourceGameOptions.Defaults, CampaignOptionEditing.Change(SourceGameOptions.Defaults, 1, 0, true));
+    }
+    [TestMethod]
+    public void ButtonModeCyclesAllThreeFunctionalModesAndWraps()
+    {
+        var help = SourceGameOptions.Defaults;
+        Assert.IsTrue(CampaignOptionEditing.IsEditable(4, false));
+        var lr = CampaignOptionEditing.Change(help, 4, 1, false);
+        Assert.AreEqual(SourceButtonMode.Lr, lr.ButtonMode);
+        var la = CampaignOptionEditing.Change(lr, 4, 1, false);
+        Assert.AreEqual(SourceButtonMode.LEqualsA, la.ButtonMode);
+        Assert.AreEqual(help, CampaignOptionEditing.Change(la, 4, 1, false));
+        Assert.AreEqual(la, CampaignOptionEditing.Change(help, 4, -1, false));
     }
 }

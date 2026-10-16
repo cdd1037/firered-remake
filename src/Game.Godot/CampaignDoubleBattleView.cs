@@ -48,7 +48,8 @@ public partial class CampaignView
             string file = asset.GetProperty("path").GetString()!;
             var id = asset.GetProperty("id").GetString()!;
             var shared = id is "hp-label" or "hp-green" or "hp-yellow" or "hp-red";
-            var expected = $"content/generated/{(shared ? "lab-battle-ui" : "double-battle-ui")}/{id}.png";
+            var assetFolder = shared ? Path.Combine(Path.GetDirectoryName(folder)!, "lab-battle-ui") : folder;
+            var expected = Path.GetRelativePath(_root, Path.Combine(assetFolder, id + ".png")).Replace('\\', '/');
             if (Path.GetFileName(id) != id || file != expected) throw new InvalidDataException("Doubles texture path differs.");
             var data = File.ReadAllBytes(Path.Combine(_root, file));
             using var image = new Image();
@@ -493,6 +494,7 @@ public partial class CampaignView
     private bool NavigateDoublePointer(Vector2 point,int direction)
     {
         var b=_session.State.DoubleBattle!;if(_doubleNotice is not null)return false;
+        if(_doubleMenu=="bag-actions")return PointerRows(point,direction,ref _doubleCursor,3,168,106,72);
         if(_doubleMenu=="bag")return PointerList(point,direction,ref _doubleCursor,DoubleBagStacks.Length);
         if(_doubleMenu=="medicine-target")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="medicine-move")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length+1,8,10,224,16);
@@ -512,6 +514,7 @@ public partial class CampaignView
     {
         var b=_session.State.DoubleBattle!;
         if(_doubleNotice is not null)return MouseMessage.HasPoint(point)&&MouseKey();
+        if(_doubleMenu=="bag-actions")return MouseSelect(point,ref _doubleCursor,3,168,106,72);
         if(_doubleMenu=="bag")return (!_doubleBerries&&MouseBagArrows(point,_doubleBagPocket))||MouseList(point,ref _doubleCursor,DoubleBagStacks.Length);
         if(_doubleMenu=="medicine-target")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="medicine-move")return MouseSelect(point,ref _doubleCursor,_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length+1,8,10,224,16);

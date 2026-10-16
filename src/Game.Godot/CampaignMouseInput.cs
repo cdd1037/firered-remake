@@ -18,6 +18,7 @@ public partial class CampaignView
     // No action is ever dispatched here or deferred until release.
     public override void _Input(InputEvent input)
     {
+        ObserveCampaignButtonInput(input);
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
         { _menuMousePressed = false; _fieldTextHeld=false; }
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false })
@@ -309,7 +310,7 @@ public partial class CampaignView
         if (_wildMenu == "bag") return PointerList(point, direction, ref _wildCursor,
             CaptureBagStacks.Length,
             scrolls: true);
-        if (_wildMenu == "bag-actions") return PointerRows(point, direction, ref _wildCursor, 2, 168, 130, 72);
+        if (_wildMenu == "bag-actions") return PointerRows(point, direction, ref _wildCursor, _captureBerries ? 3 : 2, 168, _captureBerries ? 106 : 130, 72);
         if (_wildMenu == "medicine-move") return PointerRows(point,direction,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
         if (_wildMenu is "party" or "medicine-target")
             return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
@@ -474,7 +475,7 @@ public partial class CampaignView
             return !_captureBerries && MouseBagArrows(point, _captureBagPocket) ||
                 MouseList(point, ref _wildCursor, CaptureBagStacks.Length, scrolls: true);
         }
-        if (_wildMenu == "bag-actions") return MouseSelect(point, ref _wildCursor, 2, 168, 130, 72);
+        if (_wildMenu == "bag-actions") return MouseSelect(point, ref _wildCursor, _captureBerries ? 3 : 2, 168, _captureBerries ? 106 : 130, 72);
         if (_wildMenu == "medicine-move") return MouseSelect(point,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
         if (_wildMenu is "party" or "medicine-target")
             return MouseSelect(point, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);

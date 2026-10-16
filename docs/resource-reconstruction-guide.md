@@ -51,7 +51,7 @@ python scripts/imports/rebuild-resources.py audio-cues
 python scripts/imports/rebuild-resources.py diploma
 
 # 检查而不修改；也可用独立输出目录重建再对照。
-python scripts/imports/rebuild-resources.py world field-rules field-services audio-cues diploma --check
+python scripts/imports/rebuild-resources.py world field-rules field-services audio-cues diploma help --check
 python scripts/imports/rebuild-resources.py world --out /tmp/firered-world-check
 ```
 
@@ -109,3 +109,5 @@ python scripts/imports/story/import-story.py
 目前均不作为本轮验证步骤。
 
 图鉴证书的独立输入闭包、屏幕块转换与重建检查见 [Pokédex diploma](pokedex-diploma.md)。
+
+情境 HELP 使用 `python scripts/imports/rebuild-resources.py help` 重建单一 `ui/help/help.json`。原作完整文本、主题／问答顺序、解锁条件和地图分类只在导入时解析；见 [HELP 资源](help-content.md)。

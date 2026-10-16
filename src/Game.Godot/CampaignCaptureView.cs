@@ -127,11 +127,19 @@ public partial class CampaignView
         if (_wildMenu is not ("bag" or "bag-actions")) return false;
         if (_wildMenu == "bag-actions")
         {
-            if (key.Keycode is Key.Up or Key.Down) _wildCursor ^= 1;
-            if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _wildCursor == 1)
+            int actionCount = _captureBerries ? 3 : 2;
+            if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
+            if (key.Keycode == Key.Down) _wildCursor = Math.Min(actionCount - 1, _wildCursor + 1);
+            if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _wildCursor == actionCount - 1)
             { _wildMenu = "bag"; _wildCursor = _captureBagSelected; }
             else if (key.Keycode == Key.Enter)
             {
+                if (_captureBerries && _wildCursor == 1)
+                {
+                    var item = CaptureBagStacks[_captureBagSelected].Item;
+                    _wildMenu = "bag"; _wildCursor = _captureBagSelected;
+                    OpenBattleBagToss(item, 0); return true;
+                }
                 if (TryOpenSingleBattleItem(CaptureBagStacks[_captureBagSelected].Item,battle)) return true;
                 // Capacity and available-ball checks remain authoritative application
                 // checks. UI cancellation never dispatches a command.
@@ -246,10 +254,7 @@ public partial class CampaignView
         }
         if (_wildMenu == "bag-actions" && selected < stacks.Length)
         {
-            _battleSkin.DrawStandardFrame(this, OpeningItemUiSkin.BattleBagActionFrame);
-            var actions = new[] { _itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel") };
-            for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionText(i), actions[i]);
-            SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionCursor(_wildCursor), _itemSkin.Text("gText_SelectorArrow2"));
+            DrawBattleBagActions(_captureBerries, _wildCursor);
             _itemSkin.DrawStandardFrame(this, OpeningItemUiSkin.BagSelectedFrame);
             var name = _captureBagPocket == 0 || _captureBerries ? SingleBattleItemName(stacks[selected].Item) : QuestPocketItem(stacks[selected]).Name;
             ItemLines(_sourceNormal, OpeningItemUiSkin.BagSelectedText, _itemSkin.FormatText("gText_Var1IsSelected", name));

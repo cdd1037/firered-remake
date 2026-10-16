@@ -33,6 +33,7 @@ public partial class CampaignView
     private void ApplySavedOptions(SourceGameOptions options)
     {
         ApplyOptionFrame(options.Frame);
+        ReconcileCampaignButtonMode(options.ButtonMode);
         _sourceAudio?.SetStereo(options.Sound == Game.Domain.Options.SourceSound.Stereo);
     }
     private void ApplyOptionFrame(int frame)
@@ -57,7 +58,7 @@ public partial class CampaignView
         if(!_session.CanEditOptions){_fieldMenuNotice="Options cannot be changed\nhere.";return;}
         _optionsDraft=_session.EffectiveOptions;_optionsCursor=0;_fieldMenuMode="options";
     }
-    private bool OptionEditable(int row)=>CampaignOptionEditing.IsEditable(row,_optionFrameTextures.Count==40);
+    private bool OptionEditable(int row)=>(row != 4 || _helpCatalog is not null) && CampaignOptionEditing.IsEditable(row,_optionFrameTextures.Count==40);
     private string OptionValue(int row)=>row switch
     {
         0=>_optionsDraft.TextSpeed.ToString().ToUpperInvariant(),1=>_optionsDraft.BattleScene.ToString().ToUpperInvariant(),

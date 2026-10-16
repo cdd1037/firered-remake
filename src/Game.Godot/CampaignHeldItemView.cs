@@ -36,7 +36,7 @@ public partial class CampaignView
     private void StartGiveItem(ItemId item, bool pc = false)
     {
         _itemPopup = false; _questPocketPopup = false;
-        if (!_session.CanGiveHeldItem(item) || pc && _session.CanGiveMail(item)) { _itemNotice = "This item can't be held."; return; }
+        if (!_session.CanGiveHeldItem(item)) { _itemNotice = "This item can't be held."; return; }
         if (_session.State.Party.IsEmpty) { _itemNotice = "There is no POKéMON."; return; }
         _heldGiveItem = item; _heldGivePc = pc; _heldExchange = false; _heldChoice = 0; _heldTarget = 0;
         _heldTargetIds = _session.State.Party.Select(p => p.InstanceId).ToArray();
@@ -89,7 +89,7 @@ public partial class CampaignView
         _heldGiveItem = null; _heldExchange = false;
         bool accepted = Apply(command);
         if (MachineActive) _machineCursor = Math.Min(_machineCursor, MachineStacks.Length);
-        _itemCursor = Math.Min(_itemCursor, FieldItemStacks.Length);
+        _itemCursor = Math.Min(_itemCursor, (_heldGivePc ? _session.State.Inventory!.PcItems : FieldItemStacks).Length);
         _questPocketCursor = Math.Min(_questPocketCursor, QuestPocketStacks.Length);
         if (_session.State.MailComposer is not null) { _itemNotice = null; return; }
         _itemNotice = !accepted ? HeldItemNotice(_status) : "Gave " + InventoryName(item) + "\nto " + _session.State.Party[_heldTarget].Nickname + ".";

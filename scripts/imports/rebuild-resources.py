@@ -21,6 +21,7 @@ TARGET_SCRIPTS = {
                        'scripts/imports/story/import-field-services.py'),
     'audio-cues': ('scripts/imports/audio/build-cue-catalog.py',),
     'diploma': ('scripts/imports/presentation/import-diploma.py',),
+    'help': ('scripts/imports/presentation/import-help-system.py',),
 }
 
 
@@ -49,6 +50,8 @@ def build_commands(targets, raw, out, *, pack=None, cries=None, check=False):
                     raise ValueError('Audio cue output overlaps an audio input')
                 arguments = ['--reference', str(raw), '--pack', str(pack), '--cries', str(cries),
                              '--output', str(output)]
+            elif target == 'help':
+                arguments = ['--raw', str(raw), '--out', str(out / 'ui/help/help.json')]
             elif target == 'diploma':
                 arguments = ['--raw', str(raw), '--out', str(out / 'ui/diploma')]
             else:
@@ -89,6 +92,7 @@ def main(argv=None):
                '  field-services City/rod items, trades, field service/battle bindings and item atlas.\n'
                '  audio-cues     Cue catalog from source + existing pack and normal-cries.\n'
                '  diploma        Original Kanto/National certificate artwork, text and layout.\n'
+               '  help           Original contextual HELP texts, ordered tables and unlock predicates.\n'
                '\nThere is no implicit all target or best-effort skipping. A failed step stops the run.\n'
                '--check is read-only for every target; world recompiles in a temporary directory.')
     parser.add_argument('targets', nargs='+', choices=tuple(TARGET_SCRIPTS))

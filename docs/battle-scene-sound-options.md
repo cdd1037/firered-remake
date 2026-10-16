@@ -1,6 +1,6 @@
 # Battle Scene / Sound 设置入口
 
-Options 现可用方向键或行两侧箭头切换 Battle Scene ON/OFF、Sound MONO/STEREO。菜单内修改仍是草稿；A（Enter）、B（Backspace）、鼠标 CANCEL 或右键通过同一个 `options_save` 事务提交。单击标签／值只选中行，不提交。Button Mode/Help 保持待实现。
+Options 现可用方向键或行两侧箭头切换 Battle Scene ON/OFF、Sound MONO/STEREO。菜单内修改仍是草稿；A（Enter）、B（Backspace）、鼠标 CANCEL 或右键通过同一个 `options_save` 事务提交。单击标签／值只选中行，不提交。Button Mode/Help 后续已接通，见[按键与帮助](button-mode-help.md)。
 
 保存的设置经同一个 `ApplySavedOptions` 路径应用：音频后端创建时、标题入口读取有效存档时，以及会话同步时。Continue、F9 读取、New Game 和接受的 `options_save` 都经过会话同步；新游戏取原作默认 Scene ON / Sound MONO，缺少 Options 的兼容存档也取这些默认值。打开设置菜单或切换草稿不会提前改变当前音频。
 
@@ -10,7 +10,7 @@ Scene OFF 使用已有 move-animation dispatch gate，仅抑制对应的攻击�
 
 ## 验证范围
 
-- `OptionEditingTests`：Scene/Sound 双向切换、草稿不可变、Button Mode/CANCEL 不可编辑、边框资源门控。
+- `OptionEditingTests`：Scene/Sound 双向切换、草稿不可变、Button Mode 依赖已加载的 Help、CANCEL 不可编辑、边框资源门控。
 - `CampaignOptionsTests`：新游戏和缺失设置默认值、场景／声音共同提交、校验后存档往返／Continue、无效枚举不改变状态。
 - `SceneOptionBattleTests`：相同公开野生遭遇及相同命令流，在 ON/OFF 下比较除 Options 外的完整最终状态（包含 RNG、PP、EXP、战斗历史），且要求进入终局。
 

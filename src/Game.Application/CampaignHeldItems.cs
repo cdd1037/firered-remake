@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
         if (command.Quantity != 1) return No("held_item_quantity_invalid");
         if (!take && (string.IsNullOrEmpty(command.Text) || !CanGiveHeldItem(new(command.Text)))) return No("held_item_not_holdable");
         if (!take && CanGiveMail(new(command.Text!)))
-            return fromPc ? No("mail_give_from_bag_required") : OpenMailComposer(state, command, false);
+            return OpenMailComposer(state, command, false);
         bool offeredMachine = !take && _content.Machines is {} machines && MachineRules.Definition(machines, new(command.Text!)) is not null;
         if (!take && (menu.View == "machines") != offeredMachine) return No("held_item_context_invalid");
         if (!take && menu.View == "berries" && shop.Items.FirstOrDefault(i => i.Id.Value == command.Text)?.Pocket != "POCKET_BERRY_POUCH")

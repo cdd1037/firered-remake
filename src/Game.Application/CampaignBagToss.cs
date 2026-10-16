@@ -8,6 +8,7 @@ public enum CampaignBagTossPhase { Quantity, Confirm, Result }
 public sealed record CampaignBagToss(string Ticket, long Revision, CampaignBagTossPhase Phase,
     ItemId Item, string Pocket, string Name, int Available, int Quantity, string InventoryHash)
 {
+    [System.Text.Json.Serialization.JsonIgnore] public CampaignBattleTossOwner? BattleOwner { get; init; }
     public string WaitId => Ticket + ":" + Revision.ToString(CultureInfo.InvariantCulture);
     // pret 037335f, src/strings.c:185-187. Preserve source line breaks and plurals.
     public string Message => Phase switch {
@@ -34,9 +35,16 @@ public sealed partial class CampaignSession
 
     private string? BagTossContextError(CampaignState state)
     {
-        if (_content.EarlyShop is null || state.ItemMenu is not { Origin: "bag", View: "bag" or "berries", TargetInstanceId: null, TargetPartyIndex: null } ||
-            state.MailComposer is not null || state.MailInteraction is not null || !IsStableFieldForParty(state with { ItemMenu = null }))
+        if (_content.EarlyShop is null || state.ItemMenu is not { Origin: "bag" or "battle", View: "bag" or "berries", TargetInstanceId: null, TargetPartyIndex: null } ||
+            state.MailComposer is not null || state.MailInteraction is not null)
             return "bag_toss_context_invalid";
+        if (state.ItemMenu.Origin == "battle")
+        {
+            if (state.ItemMenu.View != "berries" || BattleTossOwner(state) is null ||
+                state.ItemMenu.Toss is {} active && (active.BattleOwner is null || !ValidBattleTossOwner(state, active.BattleOwner)))
+                return "battle_toss_context_invalid";
+        }
+        else if (!IsStableFieldForParty(state with { ItemMenu = null })) return "bag_toss_context_invalid";
         if (ValidateCampaignInventory(state.Inventory) is {} inventoryError) return inventoryError;
         if (ValidateCampaignMail(state) is {} mailError) return mailError;
         if (state.ItemMenu.View == "berries" && (OpeningInventoryRules.Quantity(state.Inventory!.KeyItems ?? [], SsAnneItemRules.BerryPouchId) != 1))
@@ -76,7 +84,7 @@ public sealed partial class CampaignSession
         if (toss.InventoryHash != CanonicalJson.Hash(state.Inventory) ||
             toss.Available != BagTossRules.Available(shop, state.Inventory!, toss.Item)) return No("bag_toss_inventory_changed");
         if (toss.Quantity < 1 || toss.Quantity > toss.Available) return No("bag_toss_quantity_invalid");
-        Decision<CampaignState> Clear() => new(CommandStatus.Accepted, state with { ItemMenu = menu with { Toss = null } });
+        Decision<CampaignState> Clear() => new(CommandStatus.Accepted, state with { ItemMenu = menu.Origin == "battle" ? null : menu with { Toss = null } });
         Decision<CampaignState> Set(CampaignBagToss changed) => new(CommandStatus.Accepted,
             state with { ItemMenu = menu with { Toss = changed with { Revision = toss.Revision + 1 } } });
         if (command.Kind == "bag_toss_back" && toss.Phase != CampaignBagTossPhase.Result) return Clear();
@@ -97,6 +105,6 @@ public sealed partial class CampaignSession
         if (!result.Succeeded) return No(result.Error!);
         var inventory = result.State;
         if (ValidateCampaignInventory(inventory) is {} invalid) return No(invalid);
-        return new(CommandStatus.Accepted, state with { Inventory = inventory, ItemMenu = menu with { Toss = null } });
+        return new(CommandStatus.Accepted, state with { Inventory = inventory, ItemMenu = menu.Origin == "battle" ? null : menu with { Toss = null } });
     }
 }

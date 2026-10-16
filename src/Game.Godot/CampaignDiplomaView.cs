@@ -32,13 +32,12 @@ public partial class CampaignView
         {
             LoadDiplomaPresentation();
             _diplomaConfirmKeys.Clear();
-            foreach (Key key in new[] { Key.Enter, Key.KpEnter, Key.A })
-                if (Input.IsKeyPressed(key)) _diplomaConfirmKeys.Add(key);
+            if (NormalizedAHeld) _diplomaConfirmKeys.Add(Key.Enter);
+            // Preserve the existing diploma-only keyboard A alias independently.
+            if (Input.IsKeyPressed(Key.A)) _diplomaConfirmKeys.Add(Key.A);
             _diplomaConfirmJoypads.Clear();
-            foreach (int device in Input.GetConnectedJoypads())
-                if (Input.IsJoyButtonPressed(device, JoyButton.A)) _diplomaConfirmJoypads.Add(device);
             _diplomaMouseConfirm = Input.IsMouseButtonPressed(MouseButton.Left);
-            _diplomaPresentation!.Open(_diplomaConfirmKeys.Count > 0 || _diplomaConfirmJoypads.Count > 0 || _diplomaMouseConfirm);
+            _diplomaPresentation!.Open(NormalizedAHeld || _diplomaConfirmKeys.Count > 0 || _diplomaConfirmJoypads.Count > 0 || _diplomaMouseConfirm);
             _held = null; _repeat = 0; ReleaseFieldTextInput(); ResetFieldMenu();
         }
         else if (after.Diploma is null && before?.Diploma is not null)
@@ -87,7 +86,7 @@ public partial class CampaignView
             }
             else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse)
             { _diplomaMouseConfirm = mouse.Pressed; confirm = true; }
-            if (confirm) _diplomaPresentation!.Confirm(_diplomaConfirmKeys.Count > 0 || _diplomaConfirmJoypads.Count > 0 || _diplomaMouseConfirm, echo);
+            if (confirm) _diplomaPresentation!.Confirm(NormalizedAHeld || _diplomaConfirmKeys.Count > 0 || _diplomaConfirmJoypads.Count > 0 || _diplomaMouseConfirm, echo);
         }
         // B, Escape, save/load, movement and wheel input have no native-screen action.
         GetViewport().SetInputAsHandled(); QueueRedraw(); return true;

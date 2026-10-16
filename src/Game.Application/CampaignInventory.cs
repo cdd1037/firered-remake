@@ -54,13 +54,6 @@ public sealed partial class CampaignSession
         var result = OpeningPotionRules.UseOnParty(Items, _content.PokemonContent!, PotionView(inventory), pokemon, context);
         return result with { Inventory = result.Succeeded ? MergePotionView(inventory, result.Inventory) : inventory };
     }
-    private InventoryTransactionResult TransferCampaignPotion(InventoryState inventory, int quantity, bool withdraw)
-    {
-        var view = PotionView(inventory);
-        var result = withdraw ? OpeningInventoryRules.Withdraw(Items, view, OpeningInventoryRules.PotionId, quantity)
-            : OpeningInventoryRules.Deposit(Items, view, OpeningInventoryRules.PotionId, quantity);
-        return result with { State = result.Succeeded ? MergePotionView(inventory, result.State) : inventory };
-    }
     private InventoryTransactionResult CampaignPotionGift(InventoryState inventory, int quantity, bool add)
     {
         var view = PotionView(inventory);

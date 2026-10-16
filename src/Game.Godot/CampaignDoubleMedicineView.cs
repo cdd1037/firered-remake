@@ -34,9 +34,22 @@ public partial class CampaignView
     }
     private bool DoubleMedicineInput(InputEventKey key,int actor)
     {
-        if(_doubleMenu is not ("bag" or "medicine-target" or "medicine-move"))return false;
+        if(_doubleMenu is not ("bag" or "bag-actions" or "medicine-target" or "medicine-move"))return false;
         bool back=key.Keycode is Key.Backspace or Key.B;
         bool confirm=key.Keycode is Key.Enter or Key.Space;
+        if(_doubleMenu=="bag-actions")
+        {
+            if(key.Keycode==Key.Up)_doubleCursor=Math.Max(0,_doubleCursor-1);
+            if(key.Keycode==Key.Down)_doubleCursor=Math.Min(2,_doubleCursor+1);
+            if(back||confirm&&_doubleCursor==2){_doubleMenu="bag";_doubleCursor=_doubleBagCursor;}
+            else if(confirm)
+            {
+                var item=DoubleBagStacks[_doubleBagCursor].Item;
+                if(_doubleCursor==1){_doubleMenu="bag";_doubleCursor=_doubleBagCursor;OpenBattleBagToss(item,actor);}
+                else SelectDoubleBagItem(item,actor);
+            }
+            return true;
+        }
         if(_doubleMenu=="medicine-move")
         {
             int count=_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length;
@@ -79,14 +92,20 @@ public partial class CampaignView
             var item=stacks[_doubleCursor].Item;
             if(!_doubleBerries&&_doubleBagPocket==1&&item==SsAnneItemRules.BerryPouchId)
             {_doublePouchCursor=_doubleCursor;_doubleBerries=true;_doubleCursor=0;return true;}
-            if(!DoubleMedicineAvailable(item))
-            {_doubleNotice="This item's double-battle\nuse is not available yet.";return true;}
-            _doubleMedicineItem=item;_doubleBagCursor=_doubleCursor;
-            int member=_session.State.DoubleBattle!.Frame.Get(new(actor)).Member!.Value.Index;
-            if(_catalog.PresetDoubleItems!.Find(item)!.BattleUsage==2)SubmitDoubleMedicine(actor,member);
-            else {_doubleMenu="medicine-target";_doubleCursor=member;}
+            _doubleBagCursor=_doubleCursor;
+            if(_doubleBerries){_doubleMenu="bag-actions";_doubleCursor=0;}
+            else SelectDoubleBagItem(item,actor);
         }
         return true;
+    }
+    private void SelectDoubleBagItem(ItemId item,int actor)
+    {
+        if(!DoubleMedicineAvailable(item))
+        {_doubleNotice="This item's double-battle\nuse is not available yet.";return;}
+        _doubleMedicineItem=item;
+        int member=_session.State.DoubleBattle!.Frame.Get(new(actor)).Member!.Value.Index;
+        if(_catalog.PresetDoubleItems!.Find(item)!.BattleUsage==2)SubmitDoubleMedicine(actor,member);
+        else {_doubleMenu="medicine-target";_doubleCursor=member;}
     }
     private string DoubleMedicineNotice(string error) => error switch
     {
@@ -111,7 +130,7 @@ public partial class CampaignView
 
     private bool DrawDoubleMedicineOverlay(CampaignDoubleBattle battle)
     {
-        if(_doubleMenu=="bag"){DrawDoubleBag();return true;}
+        if(_doubleMenu is "bag" or "bag-actions"){DrawDoubleBag();return true;}
         if(_doubleMenu=="medicine-move")
         {
             _battleSkin.DrawBackground(this);_battleSkin.DrawBattleMessage(this);
@@ -153,7 +172,7 @@ public partial class CampaignView
     }
     private void DrawDoubleBag()
     {
-        var stacks=DoubleBagStacks;int selected=Math.Clamp(_doubleCursor,0,stacks.Length);
+        var stacks=DoubleBagStacks;int selected=Math.Clamp(_doubleMenu=="bag-actions"?_doubleBagCursor:_doubleCursor,0,stacks.Length);
         if(_doubleBagPocket==0||_doubleBerries)DrawItemList(_session.State.Inventory!,_doubleBerries?"berries":"bag",selected);
         else
         {
@@ -173,6 +192,12 @@ public partial class CampaignView
             if(selected<stacks.Length)
             {var item=QuestPocketItem(stacks[selected]);DrawQuestPocketAsset(item.Icon);ItemLines(_sourceWhite,OpeningItemUiSkin.DescriptionText,item.Description);}
             else ItemLines(_sourceWhite,OpeningItemUiSkin.DescriptionText,_itemSkin.Text("gText_CloseBag"));
+        }
+        if(_doubleMenu=="bag-actions")
+        {
+            DrawBattleBagActions(true,_doubleCursor);
+            _itemSkin.DrawStandardFrame(this,OpeningItemUiSkin.BagSelectedFrame);
+            ItemLines(_sourceNormal,OpeningItemUiSkin.BagSelectedText,_itemSkin.FormatText("gText_Var1IsSelected",SingleBattleItemName(stacks[selected].Item)));
         }
         if(_doubleNotice is not null)ItemMessageBox(_doubleNotice);
     }

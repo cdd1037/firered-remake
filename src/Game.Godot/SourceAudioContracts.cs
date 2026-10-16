@@ -36,6 +36,7 @@ public interface ISourceAudioBackend
     void ResetPlayback();
     void ShutdownPlayback();
     void SetStereo(bool stereo);
+    void SetHelpDucking(bool enabled);
     void AdvanceSourceFrame();
     SourceAudioPlaybackState Snapshot();
 }

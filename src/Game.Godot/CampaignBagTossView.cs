@@ -20,6 +20,18 @@ public partial class CampaignView
         if(accepted){_questPocketCursor=0;_questPocketAction=0;_itemCursor=0;_itemAction=0;}
     }
 
+    private void OpenBattleBagToss(ItemId item, int actor)
+    {
+        var state = _session.State;
+        int member = state.DoubleBattle is {} battle ? battle.Frame.Get(new(actor)).Member!.Value.Index : (state.ForestTrainerBattle?.Presentation ?? state.WildBattle!).ActivePartyIndex;
+        if (!Apply(new("battle_toss_open", Text:item.Value, PartyIndex:actor) { TargetInstanceId=state.Party[member].InstanceId }))
+        {
+            if (state.DoubleBattle is not null) _doubleNotice="That item can't be tossed.";
+            else _wildNotice="That item can't be tossed.";
+        }
+        SynchronizeBagToss();
+    }
+
     private void OpenBagToss(ItemId item)
     {
         bool accepted = Apply(new("bag_toss_open",Text:item.Value));
@@ -32,6 +44,17 @@ public partial class CampaignView
         var toss=_session.State.ItemMenu?.Toss;
         bool closed=_bagTossWait is not null&&toss is null;
         if(toss?.WaitId!=_bagTossWait){_bagTossWait=toss?.WaitId;_bagTossChoice=0;}
+        if(toss?.BattleOwner is not null)
+        {
+            _itemCursor = Math.Max(0, Enumerable.Range(0, (_session.State.Inventory!.Berries ?? []).Length)
+                .FirstOrDefault(i => (_session.State.Inventory!.Berries ?? [])[i].Item == toss.Item, 0));
+            return;
+        }
+        if(closed)
+        {
+            _wildCursor = Math.Min(_captureBagSelected, CaptureBagStacks.Length);
+            _doubleCursor = Math.Min(_doubleBagCursor, DoubleBagStacks.Length);
+        }
         if(toss is not null)
         {
             _itemPopup=false;_itemQuantityOpen=false;_questPocketPopup=false;
@@ -54,10 +77,10 @@ public partial class CampaignView
         _held=null;
         if(toss.Phase==CampaignBagTossPhase.Result)
         {
-            if(key.Keycode is Key.Enter or Key.Backspace)Apply(new("bag_toss_ack",Text:toss.WaitId));
+            if(key.Keycode is Key.Enter or Key.Space or Key.Backspace or Key.B)Apply(new("bag_toss_ack",Text:toss.WaitId));
             return true;
         }
-        if(key.Keycode==Key.Backspace){Apply(new("bag_toss_back",Text:toss.WaitId));return true;}
+        if(key.Keycode is Key.Backspace or Key.B){Apply(new("bag_toss_back",Text:toss.WaitId));return true;}
         if(toss.Phase==CampaignBagTossPhase.Quantity)
         {
             // menu_helpers.c AdjustQuantityAccordingToDPadInput: vertical wraps;
@@ -68,12 +91,12 @@ public partial class CampaignView
                 Key.Right=>Math.Min(toss.Available,toss.Quantity+10),
                 Key.Left=>Math.Max(1,toss.Quantity-10),_=>toss.Quantity};
             if(quantity!=toss.Quantity)Apply(new("bag_toss_quantity",Quantity:quantity,Text:toss.WaitId));
-            else if(key.Keycode==Key.Enter)Apply(new("bag_toss_select",Text:toss.WaitId));
+            else if(key.Keycode is Key.Enter or Key.Space)Apply(new("bag_toss_select",Text:toss.WaitId));
             return true;
         }
         if(key.Keycode==Key.Up)_bagTossChoice=0;
         if(key.Keycode==Key.Down)_bagTossChoice=1;
-        if(key.Keycode==Key.Enter)Apply(new("bag_toss_confirm",Choice:_bagTossChoice,Text:toss.WaitId));
+        if(key.Keycode is Key.Enter or Key.Space)Apply(new("bag_toss_confirm",Choice:_bagTossChoice,Text:toss.WaitId));
         return true;
     }
 

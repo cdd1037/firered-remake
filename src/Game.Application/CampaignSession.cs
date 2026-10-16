@@ -485,10 +485,12 @@ public sealed partial class CampaignSession
             // The source clock owns no modal object and runs during every active scene.
             // Dispatch this bounded, time-only transaction before ownership guards.
             if(command.Kind=="play_time_tick")return DecidePlayTime(state,command);
+            if(command.Kind=="help_intro_seen")return DecideHelpIntroSeen(state);
             // MOVE owns a removed creature or held item. All gameplay commands
             // remain behind this native modal.
             if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {GroupCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null} or {Summary:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
+            if(command.Kind.StartsWith("bag_toss_",StringComparison.Ordinal)&&command.Kind!="bag_toss_open")return new(CommandStatus.Rejected,state,"bag_toss_context_invalid");
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
             if(command.Kind=="field_fly")return StartFieldFly(state,command);
@@ -551,6 +553,7 @@ public sealed partial class CampaignSession
             if(state.FieldPoison is not null)return DecideFieldPoison(state,command);
             if(state.Evolution is not null)return DecideEvolution(state,command);
             if(state.OldManTutorial is not null)return DecideOldManTutorial(state,command);
+            if(command.Kind=="battle_toss_open")return OpenBattleBagToss(state,command);
             if(state.DoubleBattle is not null)return DecideDoubleBattle(state,command);
             if(state.ForestTrainerBattle is not null)return DecideForestTrainerBattle(state,command);
             if(state.WildBattle is not null)return DecideWildBattle(state,command);

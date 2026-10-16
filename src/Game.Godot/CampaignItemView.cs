@@ -9,18 +9,25 @@ public partial class CampaignView
     private bool _itemPopup,_itemQuantityOpen;
     private string? _itemNotice;
     private string? _itemMenuKey;
-    private string ItemText(string symbol)=>string.Join("\n",_catalog.TextPages(symbol)).Replace("{PLAYER}",_session.State.PlayerName,StringComparison.Ordinal).Replace("{STR_VAR_1}",_catalog.OpeningItems!.Potion.Name,StringComparison.Ordinal);
+    private string ItemText(string symbol)=>string.Join("\n",_catalog.TextPages(symbol)).Replace("{PLAYER}",_session.State.PlayerName,StringComparison.Ordinal).Replace("{STR_VAR_1}",SelectedPersonalPcItemName,StringComparison.Ordinal);
+    private string SelectedPersonalPcItemName => _session.State.ItemMenu is { View:"withdraw" or "deposit" } menu
+        && _itemCursor < (menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks).Length
+        ? InventoryName((menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item) : _catalog.OpeningItems!.Potion.Name;
     private void SynchronizeItems()
     {
         var menu=_session.State.ItemMenu;var key=menu is null?null:$"{menu.Origin}:{menu.View}";
         if(key!=_itemMenuKey){
+            ResetInventoryMove();
             if(menu is null && _itemMenuKey=="party:held")_fieldMenuMode="party";
             _heldGiveItem=null;_heldExchange=false;_heldChoice=0;
             // A Bag result overlays the same pocket and selected item. Keep that
             // presentation identity through its acknowledgement back to the Bag.
             bool sameBag = menu is { Origin:"bag", View:"bag" } or { Origin:"bag", View:"message", ReturnView:"bag" }
                 && _itemMenuKey is "bag:bag" or "bag:message";
-            if(!sameBag)ResetQuestPocketPresentation();_itemMenuKey=key;_itemCursor=0;_itemAction=0;_itemQuantity=1;_itemPopup=false;_itemQuantityOpen=false;_itemNotice=null;_fieldMedicineTargetOpen=false;_mtMoonMoveSlotOpen=false;}
+            bool samePc = menu is { Origin:"pc", View:"withdraw" or "deposit" or "message" }
+                && _itemMenuKey is "pc:withdraw" or "pc:deposit" or "pc:message";
+            if(!sameBag)ResetQuestPocketPresentation();_itemMenuKey=key;if(!samePc)_itemCursor=0;_itemAction=0;_itemQuantity=1;_itemPopup=false;_itemQuantityOpen=false;_itemNotice=null;_fieldMedicineTargetOpen=false;_mtMoonMoveSlotOpen=false;}
+        if(menu is { View:"withdraw" or "deposit" })_itemCursor=Math.Min(_itemCursor,(menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks).Length);
         if(menu is not null)_held=null;
         if(menu is { Origin:"bag", View:"bag" } or { Origin:"bag", View:"message", ReturnView:"bag" })_questPocket=menu.Pocket;
         SynchronizeBagToss();
@@ -60,11 +67,11 @@ public partial class CampaignView
                 {OpenBagToss(FieldItemStacks[_itemCursor].Item);return true;}
                 if(menu.Origin=="bag"){_itemPopup=false;if(_catalog.EarlyShop is not null){var item=FieldItemStacks[_itemCursor].Item;if(item.Value=="pret:ITEM_SACRED_ASH"&&_session.SacredAshEnabled){Apply(new("field_sacred_ash",Text:item.Value));return true;}if(_session.CanGiveMail(item)){Apply(new("mail_preview_open",Text:item.Value));return true;}if(TryOpenMtMoonItem(item))return true;if(item==EscapeRopeRules.Item){bool accepted = Apply(new("field_escape_rope",Text:item.Value));if(!accepted)_itemNotice=FieldConsumableNotice(_status);return true;}if((item==EarlyRepelRules.Item||item==LavenderItemRules.SuperRepelId||item==PretSaffronGymItems.MaxRepelId)){bool accepted = Apply(new("field_repel",Text:item.Value));if(!accepted)_itemNotice=_status;return true;}if(!CanSelectFieldMedicine(item)){_itemNotice="This item's use is not\nimplemented yet.";return true;}_fieldMedicineTarget=0;_fieldMedicineTargetOpen=true;return true;}Apply(new("field_potion"));if(_session.State.ItemMenu?.View!="message")_itemNotice=_status;return true;}
                 var stacks=menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks;
-                if(stacks[_itemCursor].Item!=OpeningInventoryRules.PotionId){_itemPopup=false;_itemNotice="PC storage for this item is\nnot implemented yet.";return true;}
                 if(stacks[_itemCursor].Quantity>1){_itemQuantity=1;_itemQuantityOpen=true;_itemPopup=false;}else TransferItem(menu.View);
             }
             return true;
         }
+        if(InventoryMoveInput(key,menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks,ref _itemCursor))return true;
         if(key.Keycode==Key.Backspace){Apply(new("menu_back"));return true;}
         string[] choices=menu.View switch{"top"=>["storage","mailbox","off"],"storage"=>["withdraw","deposit","cancel"],_=>[]};
         var inventory=_session.State.Inventory!;int countChoices=choices.Length>0?choices.Length:(menu.View=="withdraw"?inventory.PcItems:FieldItemStacks).Length+1;
@@ -109,6 +116,7 @@ public partial class CampaignView
         }
         if(_itemQuantityOpen)ItemMessageBox(ItemText(view=="withdraw"?"gText_WithdrawHowMany":"gText_DepositHowManyStrVars1")+"   × "+_itemQuantity);
         if(_fieldMedicineTargetOpen){if(MtMoonTargetActive)DrawMtMoonTargets();else DrawFieldMedicineTargets();}
+        DrawInventoryMove();
         if(_itemNotice is not null)ItemMessageBox(_itemNotice);
         NotePokemonTowerFluteMessage();
     }

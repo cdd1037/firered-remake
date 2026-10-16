@@ -7,6 +7,8 @@ namespace Game.Domain.Pokemon;
 /// <summary>Pure original GIVE→write transaction sharing the existing six-slot Mail owner.
 /// Draft editing is transient: cancellation keeps the input Bag, held item and Mail state untouched.
 /// Source: mail_data.c GiveMailToMon; party_menu.c Task_HandleSwitchItemsYesNoInput and both writing callbacks.</summary>
+public enum MailStationeryOrigin { Bag, Pc }
+
 public static class SourceMailComposerRules
 {
     public static SourceMailAuthor CreateAuthor(SourceEasyChatCatalog catalog, string name, uint trainerId)
@@ -48,16 +50,16 @@ public static class SourceMailComposerRules
 
     public static string? CheckGive(EarlyShopCatalog shop, InventoryState inventory, SourceMailState state,
         ImmutableArray<PartyPokemon> party, int partyIndex, ushort itemId, bool replaceConfirmed = false,
-        MachineCatalog? machines = null) =>
-        PrepareInventory(shop, inventory, state, party, partyIndex, itemId, replaceConfirmed, machines).Error;
+        MachineCatalog? machines = null, MailStationeryOrigin origin = MailStationeryOrigin.Bag) =>
+        PrepareInventory(shop, inventory, state, party, partyIndex, itemId, replaceConfirmed, machines, origin).Error;
 
     public static SourceMailInventoryResult Give(EarlyShopCatalog shop, SourceEasyChatCatalog catalog,
         SourceEasyChatSelection selection, InventoryState inventory, SourceMailState state, ImmutableArray<PartyPokemon> party,
         int partyIndex, ushort itemId, ImmutableArray<ushort> words, SourceMailAuthor author, bool replaceConfirmed = false,
-        MachineCatalog? machines = null)
+        MachineCatalog? machines = null, MailStationeryOrigin origin = MailStationeryOrigin.Bag)
     {
         SourceMailInventoryResult No(string error) => new(state, party, inventory, false, error);
-        var prepared = PrepareInventory(shop, inventory, state, party, partyIndex, itemId, replaceConfirmed, machines);
+        var prepared = PrepareInventory(shop, inventory, state, party, partyIndex, itemId, replaceConfirmed, machines, origin);
         if (!prepared.Succeeded) return No(prepared.Error!);
         if (SourceEasyChatRules.ValidateWords(catalog, words, requireNonempty: true) is { } invalid) return No(invalid);
         if (words.Any(w => w != SourceEasyChatRules.BlankWord && !SourceEasyChatRules.IsSelectable(catalog, selection, w)))
@@ -80,7 +82,7 @@ public static class SourceMailComposerRules
 
     private static InventoryTransactionResult PrepareInventory(EarlyShopCatalog shop, InventoryState inventory,
         SourceMailState state, ImmutableArray<PartyPokemon> party, int partyIndex, ushort itemId, bool replaceConfirmed,
-        MachineCatalog? machines)
+        MachineCatalog? machines, MailStationeryOrigin origin)
     {
         InventoryTransactionResult No(string error) => new(inventory, false, error);
         if (SourceMailRules.Validate(state, party) is { } invalid) return No(invalid);
@@ -92,10 +94,22 @@ public static class SourceMailComposerRules
         if (pokemon.HeldItem != "ITEM_NONE" && !replaceConfirmed) return No("mail_replace_confirmation_required");
         if (state.Attached.All(m => m is not null)) return No("mail_attached_full");
         if (machines is not null && MachineRules.Validate(machines, inventory) is { } machineError) return No(machineError);
-        var removed = EarlyInventoryAddRules.Remove(shop, inventory, new ItemId("pret:" + symbol), 1);
-        if (!removed.Succeeded) return No(removed.Error!);
-        // Removing stationery changes only its bag stack.
-        var changed = inventory with { BagItems = removed.State.BagItems };
+        if (HeldItemTransferRules.ValidateInventory(shop, inventory, machines) is {} inventoryError) return No(inventoryError);
+        var item = new ItemId("pret:" + symbol);
+        InventoryState changed;
+        if (origin == MailStationeryOrigin.Pc)
+        {
+            int count = OpeningInventoryRules.Quantity(inventory.PcItems, item);
+            if (count < 1) return No("inventory_insufficient_quantity");
+            changed = inventory with { PcItems = OpeningInventoryRules.SetQuantity(inventory.PcItems, item, count - 1) };
+        }
+        else if (origin == MailStationeryOrigin.Bag)
+        {
+            var removed = EarlyInventoryAddRules.Remove(shop, inventory, item, 1);
+            if (!removed.Succeeded) return No(removed.Error!);
+            changed = removed.State;
+        }
+        else return No("mail_stationery_origin");
         if (pokemon.HeldItem == "ITEM_NONE") return new(changed, true, null);
         // Remove the new stationery first: its last stack may free the slot for the old held item.
         var returned = HeldItemTransferRules.Take(shop, changed, pokemon, machines);

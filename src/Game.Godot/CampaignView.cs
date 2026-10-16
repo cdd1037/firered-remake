@@ -78,6 +78,7 @@ public partial class CampaignView:Node2D
         try
         {
             GetTree().AutoAcceptQuit=false;
+            Input.JoyConnectionChanged+=OnCampaignJoyConnectionChanged;
             if(Engine.PhysicsTicksPerSecond!=60)throw new InvalidOperationException("play_time_requires_60_physics_ticks");
             var startup=Startup??throw new InvalidOperationException("current_startup_selection_missing");
             if(startup.Mode!=GameStartupMode.Current)throw new InvalidOperationException("current_startup_mode_invalid");
@@ -116,6 +117,7 @@ public partial class CampaignView:Node2D
             _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui/ui-corrections"));
             _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
+            LoadHelpPresentation();
             LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadMuseumPicturesPresentation();LoadBattlePresentation();LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             _nicknameEdit=new LineEdit{Position=new(20,62),Size=new(200,22),MaxLength=10,Visible=false,PlaceholderText="",CaretBlink=true,KeepEditingOnTextSubmit=true};
             _nicknameEdit.AddThemeFontOverride("font",_font);_nicknameEdit.AddThemeFontSizeOverride("font_size",11);
@@ -263,10 +265,13 @@ public partial class CampaignView:Node2D
     {
         if(_quitRequested||_startupExited)return;
         if(!_startupReady){ProcessStartup();return;}
+        if(!PlayerEntryActive&&!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
+        if(ProcessHelpPresentation(delta))return;
+        ProcessCampaignButtonRepeats(delta);
+        if(PlayerEntryActive){QueueRedraw();return;}
         ProcessTrainerCardPresentation(delta);
         ProcessTrainerTowerTime(delta);
-        if(PlayerEntryActive){QueueRedraw();return;}
-        if(!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
+        if(_session.State.ItemMenu?.Toss?.BattleOwner is not null){QueueRedraw();return;}
         if(ProcessDiplomaPresentation(delta))return;
         if(ProcessTeachyTvBattle(delta))return;
         if(ProcessTeachyTvFieldPresentation(delta))return;
@@ -342,6 +347,7 @@ public partial class CampaignView:Node2D
             SetProcess(false);SetPhysicsProcess(false);SetProcessUnhandledInput(false);
             GetTree().Quit();return;
         }
+        DisposeHelpPresentation();
         ResetSourceMoveAnimation("quit");
         CommitPlayTime(true);
         _quitRequested=true;_held=null;_repeat=0;ResetPlayTimeHost();
@@ -372,7 +378,7 @@ public partial class CampaignView:Node2D
         if(what==(int)NotificationWMCloseRequest){RequestQuit();return;}
         if(!_startupReady||_quitRequested||_startupExited)return;
         if(what==(int)NotificationWMWindowFocusOut || what==(int)NotificationApplicationFocusOut)
-        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();ResetVsSeekerInput();ReleaseModalHeldInput();ReleaseDiplomaInput();}
+        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();ResetVsSeekerInput();ReleaseModalHeldInput();ReleaseDiplomaInput();ResetCampaignButtonInput();_storageRectangleAnchor=null;}
     }
     public override void _UnhandledInput(InputEvent input)
     {
@@ -383,6 +389,10 @@ public partial class CampaignView:Node2D
             GetViewport().SetInputAsHandled();return;
         }
         if(TrySystemScreenshotInput(input))return;
+        var physicalInput=input;
+        if(!NormalizeCampaignButtonInput(ref input))return;
+        using var normalizedInput=ReferenceEquals(physicalInput,input)?null:input;
+        if(TryHelpInput(input))return;
         if(TryDiplomaInput(input))return;
         if(TrySlotMachineInput(input))return;
         if(TryTeachyTvBattleInput(input))return;
@@ -516,7 +526,9 @@ public partial class CampaignView:Node2D
         }
         BeginMapFrame();
         if(_session is null)return;
+        if(DrawHelp())return;
         if(PlayerEntryActive){DrawPlayerEntry();return;}
+        if(_session.State.ItemMenu?.Toss?.BattleOwner is not null && DrawBagToss())return;
         if(DrawDiploma())return;
         if(DrawSlotMachine())return;
         if(DrawTeachyTvBattle())return;

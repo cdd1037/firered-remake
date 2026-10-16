@@ -24,6 +24,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     private long _nextToken, _generation, _fanfareToken, _fanfareMusicToken;
     private int _fanfareCounter, _cryGrace, _capacity, _retiredSkips;
     private double _sourceRemainder, _fadeRemaining, _fadeDuration;
+    private float _helpGain = 1;
     private float _musicGain = 1, _fadeStartGain, _fadeTargetGain;
     private bool _fadePauseAtEnd, _musicTemporarilyPaused;
     private bool _cryDucking, _renderCryDucking, _stereo = true, _faulted, _shutdown;
@@ -221,11 +222,13 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         _generation++;
         _fanfareToken = _fanfareMusicToken = 0; _fanfareCounter = 0; _fanfareCue = null;
         _music = _cry = null; _effects.Clear(); _cryDucking = _renderCryDucking = false; _cryGrace = 0;
-        _sourceRemainder = _fadeRemaining = 0; _musicGain = 1;
+        _sourceRemainder = _fadeRemaining = 0; _musicGain = _helpGain = 1;
         _fadePauseAtEnd = _musicTemporarilyPaused = false;
         ReleaseOutput();
         _pushedFrames = _capturedCompletionFrames = 0;
     }
+
+    public void SetHelpDucking(bool enabled) { if (_shutdown) return; _helpGain = enabled ? .5f : 1f; ApplyMusicGain(); }
 
     public void SetStereo(bool stereo) => _stereo = stereo;
 
@@ -369,11 +372,11 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         PlaybackEvent?.Invoke(new("fanfare-task-finished", cue?.Id ?? "", token, 2, reason, false, cue?.Metadata));
     }
 
-    private void ApplyMusicGain() => _synth.SetPlayerGain(0, _musicGain * (_renderCryDucking ? SourceAudioTiming.CryDuckGain : 1f));
+    private void ApplyMusicGain() => _synth.SetPlayerGain(0, _helpGain * _musicGain * (_renderCryDucking ? SourceAudioTiming.CryDuckGain : 1f));
     private SourceAudioVoiceState? State(ActiveCue? cue) => cue is null ? null : new(cue.Cue.Id, cue.Token,
         cue.Cue.SourcePlayer, cue.Cue.Priority, !Completed(cue), _synth.PlayerPaused(CoreSlot(cue.Cue.SourcePlayer)),
         (double)_synth.PlayerElapsedFrames(CoreSlot(cue.Cue.SourcePlayer)) / Synth.Rate,
-        cue.Cue.SourcePlayer == 0 ? _musicGain * (_cryDucking ? SourceAudioTiming.CryDuckGain : 1f) : 1);
+        cue.Cue.SourcePlayer == 0 ? _helpGain * _musicGain * (_cryDucking ? SourceAudioTiming.CryDuckGain : 1f) : 1);
     private void Emit(string kind, ActiveCue cue, string reason) => PlaybackEvent?.Invoke(new(kind,
         cue.Cue.Id, cue.Token, cue.Cue.SourcePlayer, reason, false, cue.Cue.Metadata));
     private static int CoreSlot(int player) => player switch { 0 => 0, 1 => 1, 2 => 3, 3 => 4, 4 => 2, _ => throw new ArgumentOutOfRangeException(nameof(player)) };

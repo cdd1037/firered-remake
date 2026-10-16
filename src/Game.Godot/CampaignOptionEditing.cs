@@ -5,7 +5,7 @@ using Game.Domain.Options;
 public static class CampaignOptionEditing
 {
     public static bool IsEditable(int row, bool framesAvailable) =>
-        row is 0 or 1 or 2 or 3 || row == 5 && framesAvailable;
+        row is 0 or 1 or 2 or 3 or 4 || row == 5 && framesAvailable;
 
     public static SourceGameOptions Change(SourceGameOptions options, int row, int direction, bool framesAvailable)
     {
@@ -17,6 +17,7 @@ public static class CampaignOptionEditing
             1 => options with { BattleScene = options.BattleScene == SourceBattleScene.On ? SourceBattleScene.Off : SourceBattleScene.On },
             2 => options with { BattleStyle = options.BattleStyle == SourceBattleStyle.Shift ? SourceBattleStyle.Set : SourceBattleStyle.Shift },
             3 => options with { Sound = options.Sound == SourceSound.Mono ? SourceSound.Stereo : SourceSound.Mono },
+            4 => options with { ButtonMode = (SourceButtonMode)(((int)options.ButtonMode + step + 3) % 3) },
             5 => options with { Frame = (options.Frame + step + SourceGameOptions.FrameCount) % SourceGameOptions.FrameCount },
             _ => options
         };

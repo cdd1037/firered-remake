@@ -59,6 +59,7 @@ public partial class CampaignView
 
     private void ResetQuestPocketPresentation()
     {
+        ResetInventoryMove();
         _questPocket = 0; _questPocketCursor = 0; _questPocketAction = 0;
         _questPocketPopup = false; _questPocketNotice = null;
     }
@@ -90,6 +91,7 @@ public partial class CampaignView
             Apply(new("bag_pocket",Choice:_questPocket));
         if (_questPocket == 0)
         {
+            if(_inventoryMoveSource>=0)return false;
             // The existing Potion popup, notice, quantity and command flow retain input ownership.
             if (_itemPopup || _itemQuantityOpen || _itemNotice is not null || key.Keycode is not (Key.Left or Key.Right)) return false;
             if (key.Pressed && !key.Echo && key.Keycode == Key.Right) SelectFieldBagPocket(1);
@@ -153,6 +155,7 @@ public partial class CampaignView
             }
             return true;
         }
+        if(InventoryMoveInput(key,QuestPocketStacks,ref _questPocketCursor))return true;
         if (key.Keycode is Key.Left or Key.Right)
         {
             SelectFieldBagPocket(Math.Clamp(_questPocket + (key.Keycode == Key.Left ? -1 : 1), 0, 2));
@@ -231,6 +234,7 @@ public partial class CampaignView
             ItemLines(_sourceNormal, OpeningItemUiSkin.PcResultText, _session.VisibleItemMessage!);
             NotePokemonTowerFluteMessage();
         }
+        DrawInventoryMove();
         if (_questPocketNotice is not null) ItemMessageBox(_questPocketNotice);
         if (_itemNotice is not null) ItemMessageBox(_itemNotice);
         return true;

@@ -349,6 +349,8 @@ public partial class CampaignView
     }
     public override void _ExitTree()
     {
+        Input.JoyConnectionChanged-=OnCampaignJoyConnectionChanged;
+        DisposeHelpPresentation();
         // A worker may finish after this scene leaves, but has no callback or node reference.
         _startupExited=true;_startupReady=false;_catalogLoad=null;
         DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();DisposeFameCheckerPresentation();DisposeTeachyTvPresentation();DisposeVsSeekerPresentation();
