@@ -17,7 +17,7 @@ public static class FirstBattleRules
     /// <summary>Automatic fallback only when every owned move has zero PP; it is not an owned move slot.</summary>
     public const int StruggleSlot = -1;
     public static MoveId StruggleMove { get; } = new("pret:MOVE_STRUGGLE");
-    private const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
+    private const string SourceCommit = PokemonFactory.SourceCommit;
 
     public static FirstBattleResult Start(PokemonCatalog catalog, FirstBattleCombatant player,
         FirstBattleCombatant opponent, RngState rng)
@@ -175,30 +175,18 @@ public static class FirstBattleRules
         if (p.SourceSpeciesId is not (1 or 4 or 7) || p.Level != 5 || p.Experience != 135 || p.Evs != SixStats.Zero)
             return $"first_battle_{side}_starter_profile_unsupported";
         if (p.Moves.Length != 2 || p.Moves.Any(m => m.PpUps != 0)) return $"first_battle_{side}_moves_unsupported";
-        string expectedAttack = p.SourceSpeciesId == 4 ? "pret:MOVE_SCRATCH" : "pret:MOVE_TACKLE";
-        string expectedStatus = p.SourceSpeciesId == 7 ? "pret:MOVE_TAIL_WHIP" : "pret:MOVE_GROWL";
+        string expectedAttack = FirstBattleProfile.AttackMove(p.SourceSpeciesId);
+        string expectedStatus = FirstBattleProfile.StatusMove(p.SourceSpeciesId);
         if (p.Moves[0].Move.Value != expectedAttack || p.Moves[1].Move.Value != expectedStatus)
             return $"first_battle_{side}_moves_unsupported";
         foreach (var slot in p.Moves)
         {
             var move = catalog.Moves[slot.Move];
-            var expected = move.Id.Value switch
-            {
-                "pret:MOVE_TACKLE" => (33, 35, 35, 95, "EFFECT_HIT", "MOVE_TARGET_SELECTED"),
-                "pret:MOVE_SCRATCH" => (10, 35, 40, 100, "EFFECT_HIT", "MOVE_TARGET_SELECTED"),
-                "pret:MOVE_GROWL" => (45, 40, 0, 100, "EFFECT_ATTACK_DOWN", "MOVE_TARGET_BOTH"),
-                "pret:MOVE_TAIL_WHIP" => (39, 30, 0, 100, "EFFECT_DEFENSE_DOWN", "MOVE_TARGET_BOTH"),
-                _ => throw new InvalidOperationException("Validated move set unexpectedly changed.")
-            };
-            if ((move.SourceMoveId, move.Pp, move.Power, move.Accuracy, move.Effect, move.Target) != expected ||
-                move.Type != "TYPE_NORMAL" || move.Priority != 0 || move.SecondaryEffectChance != 0)
+            if (!FirstBattleProfile.SupportsMove(move))
                 return "first_battle_move_definition_unsupported";
         }
         var species = catalog.Species[p.Species];
-        if ((p.SourceSpeciesId, species.Type1, species.Type2, species.Ability1, species.Ability2) is not
-            ((1, "TYPE_GRASS", "TYPE_POISON", "ABILITY_OVERGROW", "ABILITY_NONE") or
-             (4, "TYPE_FIRE", "TYPE_FIRE", "ABILITY_BLAZE", "ABILITY_NONE") or
-             (7, "TYPE_WATER", "TYPE_WATER", "ABILITY_TORRENT", "ABILITY_NONE")))
+        if (!FirstBattleProfile.SupportsSpecies(species))
             return "first_battle_species_definition_unsupported";
         return null;
     }

@@ -157,11 +157,10 @@ public static class LabBattleRewards
         if (pokemon.SourceSpeciesId is not (1 or 4 or 7) || pokemon.Level != 5 || pokemon.Experience != 135 || pokemon.Evs != SixStats.Zero)
             throw new NotSupportedException("Only level-5, EXP-135, zero-EV lab starters are supported by settlement.");
         var initial = PokemonMoveRules.InitialMoves(catalog, catalog.Species[pokemon.Species], 5);
-        string attack = pokemon.SourceSpeciesId == 4 ? "pret:MOVE_SCRATCH" : "pret:MOVE_TACKLE";
-        string status = pokemon.SourceSpeciesId == 7 ? "pret:MOVE_TAIL_WHIP" : "pret:MOVE_GROWL";
-        int statusPp = pokemon.SourceSpeciesId == 7 ? 30 : 40;
-        if (initial.Length != 2 || initial[0].Move.Value != attack || initial[0].MaximumPp != 35 ||
-            initial[1].Move.Value != status || initial[1].MaximumPp != statusPp ||
+        string attack = FirstBattleProfile.AttackMove(pokemon.SourceSpeciesId);
+        string status = FirstBattleProfile.StatusMove(pokemon.SourceSpeciesId);
+        if (initial.Length != 2 || initial[0].Move.Value != attack ||
+            initial[1].Move.Value != status ||
             pokemon.Moves.Length != initial.Length || pokemon.Moves.Where((m, i) =>
                 m with { CurrentPp = initial[i].CurrentPp } != initial[i]).Any())
             throw new NotSupportedException("Only the source two initial moves without PP Ups are supported by settlement.");

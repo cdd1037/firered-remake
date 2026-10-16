@@ -150,18 +150,14 @@ public static class FirstBattleAi
         foreach (var (name, pokemon) in new[] { ("user", input.User), ("target", input.Target) })
         {
             if (pokemon is null) return $"first_battle_ai_{name}_missing";
-            string? damageMove = pokemon.Species.Value switch
-            {
-                "pret:SPECIES_BULBASAUR" or "pret:SPECIES_SQUIRTLE" => "pret:MOVE_TACKLE",
-                "pret:SPECIES_CHARMANDER" => "pret:MOVE_SCRATCH",
-                _ => null
-            };
-            if (damageMove is null) return $"first_battle_ai_{name}_species";
+            int sourceSpecies = FirstBattleProfile.StarterSpecies(pokemon.Species);
+            if (sourceSpecies == 0) return $"first_battle_ai_{name}_species";
+            string damageMove = FirstBattleProfile.AttackMove(sourceSpecies);
             if (pokemon.Level != 5 || pokemon.Experience != 135 || pokemon.Evs != SixStats.Zero)
                 return $"first_battle_ai_{name}_initial_starter";
             if (pokemon.Moves.IsDefault || pokemon.Moves.Length is < 2 or > 4 || pokemon.Moves.Any(m => m is null))
                 return $"first_battle_ai_{name}_moves";
-            string statusMove = pokemon.Species.Value == "pret:SPECIES_SQUIRTLE" ? TailWhip : Growl;
+            string statusMove = FirstBattleProfile.StatusMove(sourceSpecies);
             if (pokemon.Moves[0].Move.Value != damageMove || pokemon.Moves[1].Move.Value != statusMove ||
                 pokemon.Moves.Any(m => m.PpUps != 0) ||
                 pokemon.Moves.Skip(2).Any(m => m.Move.Value != None || m.CurrentPp != 0 || m.MaximumPp != 0))
@@ -172,27 +168,12 @@ public static class FirstBattleAi
             if (invalid is not null) return $"first_battle_ai_{name}_{invalid}";
             if (pokemon.CurrentHp == 0) return $"first_battle_ai_{name}_fainted";
             var species = catalog!.Species[pokemon.Species];
-            var expected = pokemon.Species.Value switch
-            {
-                "pret:SPECIES_BULBASAUR" => ("TYPE_GRASS", "TYPE_POISON", "ABILITY_OVERGROW"),
-                "pret:SPECIES_CHARMANDER" => ("TYPE_FIRE", "TYPE_FIRE", "ABILITY_BLAZE"),
-                _ => ("TYPE_WATER", "TYPE_WATER", "ABILITY_TORRENT")
-            };
-            if ((species.Type1, species.Type2, species.Ability1) != expected || species.Ability2 != "ABILITY_NONE")
+            if (!FirstBattleProfile.SupportsSpecies(species))
                 return $"first_battle_ai_{name}_type_ability";
         }
-        foreach (var spec in new[]
+        foreach (var id in FirstBattleProfile.OwnedMoves)
         {
-            ("TACKLE", 33, 35, 35, 95, "EFFECT_HIT", "MOVE_TARGET_SELECTED"),
-            ("SCRATCH", 10, 35, 40, 100, "EFFECT_HIT", "MOVE_TARGET_SELECTED"),
-            ("GROWL", 45, 40, 0, 100, "EFFECT_ATTACK_DOWN", "MOVE_TARGET_BOTH"),
-            ("TAIL_WHIP", 39, 30, 0, 100, "EFFECT_DEFENSE_DOWN", "MOVE_TARGET_BOTH")
-        })
-        {
-            if (!catalog!.Moves.TryGetValue(new MoveId("pret:MOVE_" + spec.Item1), out var move) ||
-                move.SourceMoveId != spec.Item2 || move.Pp != spec.Item3 || move.Power != spec.Item4 ||
-                move.Accuracy != spec.Item5 || move.Effect != spec.Item6 || move.Target != spec.Item7 ||
-                move.Type != "TYPE_NORMAL" || move.SecondaryEffectChance != 0 || move.Priority != 0)
+            if (!catalog!.Moves.TryGetValue(id, out var move) || !FirstBattleProfile.SupportsMove(move))
                 return "first_battle_ai_move_definition";
         }
         return null;
