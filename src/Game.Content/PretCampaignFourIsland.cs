@@ -10,7 +10,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-/// <summary>Bounded Ruby successor: eight Four Island maps through the original Icefall Rocket scene.</summary>
+/// <summary>Four Island maps, Icefall Rocket scene and Lorelei’s doll collection.</summary>
 public sealed partial class PretCampaignCatalog
 {
     public const string FourIslandContentProfile = "firered-four-island-campaign-v1";
@@ -22,6 +22,7 @@ public sealed partial class PretCampaignCatalog
     public FourIslandItemContent? FourIslandItems { get; }
     public MachineCatalog? FourIslandMachines => FourIslandItems?.Machines;
     public FourIslandWaterEncounterCatalog? FourIslandWaterEncounters { get; }
+    public ImmutableDictionary<string, FieldStatFlagUnlocks> StatFlagUnlocks { get; }
     public bool FourIslandEnabled => FourIslandRegion is not null;
 
     private static void ValidateFourIslandAnchors(PretFourIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
@@ -46,7 +47,18 @@ public sealed partial class PretCampaignCatalog
         if (fight < 0 || scientist <= fight || home <= scientist || completed <= home ||
             instructions.Any(i => i.Op == StoryOp.Unsupported) || FourIslandTrainerPartyFactory.BasePrize(trainers, FourIslandTrainerPartyFactory.Grunt45) != 1216)
             throw new InvalidDataException("four_island_battle_reward_order");
-        foreach (var symbol in new[] { "MAP_FOUR_ISLAND_POKEMON_CENTER_2F","MAP_FOUR_ISLAND_POKEMON_DAY_CARE","MAP_FOUR_ISLAND_HOUSE1","MAP_FOUR_ISLAND_HOUSE2","MAP_FOUR_ISLAND_LORELEIS_HOUSE" })
+        var house = maps[new("map.four-island-loreleis-house")];
+        foreach (var actor in house.Events.GetProperty("object_events").EnumerateArray())
+        {
+            string script = actor.GetProperty("script").GetString()!;
+            if (scripts.FindProgram(script) is not {} program || program.Instructions.Any(i => i.Op == StoryOp.Unsupported))
+                throw new InvalidDataException("lorelei_house_actor_script_missing");
+        }
+        if (scripts.FindProgram("FourIsland_LoreleisHouse_OnTransition") is not {} transition ||
+            !transition.Instructions.Select(i => i.Opcode).SequenceEqual(new[] { "special", "end" }) ||
+            !transition.Instructions[0].Args.SequenceEqual(new[] { "UpdateLoreleiDollCollection" }))
+            throw new InvalidDataException("lorelei_house_collection_transition_missing");
+        foreach (var symbol in new[] { "MAP_FOUR_ISLAND_POKEMON_CENTER_2F","MAP_FOUR_ISLAND_POKEMON_DAY_CARE","MAP_FOUR_ISLAND_HOUSE1","MAP_FOUR_ISLAND_HOUSE2" })
             if (maps.ContainsKey(PretFourIslandRegion.MapIdFromSourceSymbol(symbol)))
                 throw new InvalidDataException("four_island_excluded_map_admitted");
     }

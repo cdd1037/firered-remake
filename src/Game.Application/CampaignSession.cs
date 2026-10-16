@@ -794,6 +794,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyStatFlagUnlockEffect(state,effect,out var statUnlockState)){state=statUnlockState;continue;}
             if(TryApplyCyclingRoadEffect(state,effect,out var cyclingRoadState)){state=cyclingRoadState;continue;}
             if(TryApplyVsSeekerFieldEffect(state,effect,out var vsFieldState)){state=vsFieldState;continue;}
             if(TryApplyVsSeekerBattleEffect(state,effect,out var vsBattleState)){state=vsBattleState;continue;}

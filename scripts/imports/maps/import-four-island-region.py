@@ -16,13 +16,14 @@ PACKAGE = 'maps/regions/four-island'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 CORE = ['FourIsland', 'FourIsland_Harbor', 'FourIsland_IcefallCave_Entrance',
         'FourIsland_IcefallCave_1F', 'FourIsland_IcefallCave_B1F', 'FourIsland_IcefallCave_Back']
-SUPPORT = ['FourIsland_PokemonCenter_1F', 'FourIsland_Mart']
+SUPPORT = ['FourIsland_PokemonCenter_1F', 'FourIsland_Mart', 'FourIsland_LoreleisHouse']
 ANCHOR = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/building',
             'gTileset_SeviiIslands45':'secondary/sevii_islands_45',
             'gTileset_SeafoamIslands':'secondary/seafoam_islands',
             'gTileset_IslandHarbor':'secondary/island_harbor',
-            'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart'}
+            'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart',
+            'gTileset_SafariZoneBuilding':'secondary/safari_zone_building'}
 
 def canonical(v): return (json.dumps(v, sort_keys=True, separators=(',', ':'))+'\n').encode()
 def need(v, message):
@@ -39,7 +40,7 @@ def script_index(src, reader):
        any(p.startswith('data/maps/'+n+'/') for n in CORE+SUPPORT+ANCHOR))]+['data/event_scripts.s']
     blocks={}; aliases={}
     for p in sorted(paths):
-        b=reader.git(src.reference,'cat-file','blob',src.tree[p][2]); current=None; macro=False
+        b=src.peek(p); current=None; macro=False
         for ln,line in enumerate(b.decode().splitlines(),1):
             code=line.split('@')[0].strip()
             if code.startswith('.macro'): macro=True;current=None;continue
@@ -264,20 +265,52 @@ def field_contract(src, worlds, constants, bylabel):
         mapHeaders=[dict(map=w['events']['id'], allowCycling=w['events']['allow_cycling'], allowEscaping=w['events']['allow_escaping'],
             allowRunning=w['events']['allow_running'], sourceRef=w['sourceRef']) for w in worlds])
 
+def doll_collection_contract(src, worlds, bylabel):
+    """Convert the source special's monotonic stat-gated flag clears to data."""
+    special = 'UpdateLoreleiDollCollection'
+    source = src.text('src/field_specials.c')
+    match = re.search(r'^void ' + special + r'\(void\)\n\{(.*?)^\}', source, re.M | re.S)
+    need(match, 'Missing doll collection source special')
+    body = match[1]
+    stat = re.match(r'\s*u32 (\w+) = GetGameStat\((GAME_STAT_\w+)\);', body)
+    need(stat, 'Doll collection stat declaration differs')
+    checks = list(re.finditer(r'if \(' + re.escape(stat[1]) + r' >= (\d+)\)\s*\{?\s*FlagClear\((FLAG_\w+)\);', body))
+    # The leading threshold encloses the remaining checks. Reject additional
+    # source operations rather than silently dropping new behavior.
+    remainder = body[stat.end():]
+    remainder = re.sub(r'if \(' + re.escape(stat[1]) + r' >= \d+\)\s*\{?\s*FlagClear\(FLAG_\w+\);', '', remainder)
+    need(checks and re.fullmatch(r'\s*\}\s*', remainder), 'Unsupported doll collection source operations')
+    rows = [dict(stat=stat[2], minimum=int(check[1]), flag=check[2]) for check in checks]
+    need(all(row['minimum'] > 0 for row in rows) and
+         [row['minimum'] for row in rows] == sorted({row['minimum'] for row in rows}) and
+         len({row['flag'] for row in rows}) == len(rows), 'Doll collection thresholds differ')
+    house = next(world for world in worlds if world['sourceName'] == 'FourIsland_LoreleisHouse')
+    doll_flags = {event['flag'] for event in house['events']['object_events']
+                  if event['script'] == 'FourIsland_LoreleisHouse_EventScript_Doll' and event['flag'] != '0'}
+    need({row['flag'] for row in rows} == doll_flags, 'Doll collection flags do not match house actors')
+    initial_flags = {line['text'].strip().split()[1] for line in bylabel['EventScript_ResetAllMapFlags']['lines']
+                     if line['text'].strip().startswith('setflag ')}
+    need(doll_flags <= initial_flags, 'New-game doll hide flags missing from script closure')
+    transition = bylabel['FourIsland_LoreleisHouse_OnTransition']['lines']
+    need(any(line['text'].strip() == 'special ' + special for line in transition), 'Doll collection transition differs')
+    return dict(statFlagUnlockSpecial=special, statFlagUnlocks=rows)
+
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--reference-root',type=Path,required=True)
+    inputs=ap.add_mutually_exclusive_group(required=True)
+    inputs.add_argument('--reference-root',type=Path)
+    inputs.add_argument('--raw-root',type=Path)
     ap.add_argument('--dependency-root',type=Path,default=ROOT)
     ap.add_argument('--project-root',type=Path,default=ROOT)
     ap.add_argument('--check',action='store_true');args=ap.parse_args()
     safe(args.project_root.absolute())
-    target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve();safe(target)
-    need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
+    target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve() if args.reference_root else None;safe(target)
+    if ref is not None:need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
     reader=module(dep / 'scripts/imports/source/import-cinnabar-source-preparation.py', 'four_island_reader')
     prep=module(dep / 'scripts/lib/prepare_first_sevii.py', 'four_island_script_index')
     reader.PRODUCT=dep;reader.TILESETS=TILESETS;reader.PROFILE=PROFILE
     prep.CORE=CORE;prep.SUPPORT=SUPPORT;prep.ANCHOR=ANCHOR
-    src=reader.Source(ref);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
+    src=reader.Source(ref,raw_root=args.raw_root);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
     for n in ANCHOR:src.read(f'data/maps/{n}/map.json','reused-anchor-events')
     scripts=script_index(src,reader);scripts['profile']=PROFILE
 
@@ -318,6 +351,7 @@ def main():
         npcs=shared.npc_inventory(src,worlds,stage/'npc')
         const=constants(src,shared,worlds,scripts)
         contract.update(field_contract(src, worlds, const, bylabel))
+        contract.update(doll_collection_contract(src, worlds, bylabel))
         data['shopStocks'] = [dict(label='FourIsland_Mart_Items', sourceRef=bylabel['FourIsland_Mart_Items']['sourceRef'],
             items=re.findall(r'\bITEM_(?!NONE\b)\w+', '\n'.join(r['text'] for r in bylabel['FourIsland_Mart_Items']['lines'])))]
         mapsymbols={}

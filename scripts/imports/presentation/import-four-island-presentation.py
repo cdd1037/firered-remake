@@ -14,7 +14,9 @@ import pathlib
 import re
 import struct
 import subprocess
+import tempfile
 from PIL import Image
+from overworld_sprites import graphics_records
 
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -54,6 +56,7 @@ class Source:
     def __init__(self, root, reference):
         self.root, self.reference = root, reference
         self.files, self.raw, self.inherited = {}, {}, {}
+        self.data = self.raw
         self.lock = None
         data = safe(root, 'scripts/recipes/presentation/four-island-presentation.lock.json').read_bytes()
         self.lock = json.loads(data)
@@ -71,6 +74,10 @@ class Source:
     def text(self, path):
         return self.read(path).decode()
 
+    def ref(self, path, symbol):
+        self.read(path)
+        return dict(path=path, symbol=symbol)
+
     def reuse(self, path):
         data = safe(self.root, path).read_bytes()
         row = dict(path=path)
@@ -83,6 +90,13 @@ class Source:
 def build(root, reference):
     source = Source(root, reference)
     out, assets = {}, []
+
+    # Retain and validate the house actors' source sheets through the shared
+    # renderer. Their runtime textures belong solely to the shared NPC atlas.
+    house = json.loads(source.read('data/maps/FourIsland_LoreleisHouse/map.json'))
+    house_graphics = {event['graphics_id'] for event in house['object_events']}
+    with tempfile.TemporaryDirectory(prefix='four-island-overworld-') as temporary:
+        overworld = graphics_records(source, house_graphics, pathlib.Path(temporary) / 'npc', render=True)
 
     def emit(identity, width, height, rgba, inputs):
         need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
@@ -379,6 +393,7 @@ def build(root, reference):
     result.update({RAW + p: b for p, b in source.raw.items()})
     result['scripts/recipes/presentation/four-island-presentation.lock.json'] = lock
     report = dict(passed=True, sourceFiles=len(source.raw), sprites=len(sprites), pokemonIcons=len(icons), footprints=len(footprints),
+        overworldGraphics=len(overworld),
         trainers=len(trainers), portraits=len(portraits), newPortraits=sum(not p['inherited'] for p in portraits),
         itemIcons=len(items), dynamicMetatiles=len(tiles), dynamicLayers=len(layers), outputs=len(out) - 1,
          lockBytes=len(lock),  manifestBytes=len(manifest),

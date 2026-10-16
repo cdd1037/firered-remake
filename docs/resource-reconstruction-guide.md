@@ -263,3 +263,5 @@ audible device output.
 普通房屋使用 `scripts/imports/maps/import-school-house-interiors.py` 的固定来源选择，默认读取 pinned raw；不再要求完整 Git checkout。浅红商店随 `import-fuchsia-route-region.py` 重建。均支持 `--check`，逐项核对源地图、保留的外部门和新渲染像素；已打包图像由共享地图图集读回比较。运行端只读生成目录，不复制房间数或坐标表。
 
 修改源选择后依次运行两个地图导入器、`scripts/imports/maps/import-field-tilesets.py`、`scripts/imports/maps/import-map-atlases.py`、`scripts/imports/presentation/import-shared-overworld.py`；故事与商店分别由 `scripts/imports/story/import-story.py` 和 `scripts/imports/items/import-current-items.py` 转换。普通房屋新增的波波／烈雀精灵帧保留于 raw 并进入共有 overworld 图集。所有步骤均使用本工程已审阅工具，不执行上游脚本。
+
+科拿住家继续由四岛地图包维护，可运行 `python scripts/imports/maps/import-four-island-region.py --raw-root content/raw/pokefirered/037335f4`（或固定 Git 来源 `--reference-root`）。`import-four-island-presentation.py` 保留原房屋全部NPC图像输入；随后重建共同 field tilesets、地图图集与 overworld 图集。以上入口均支持 `--check`。玩偶阈值从 `src/field_specials.c` 导入地图合同，并核对原新游戏初始隐藏旗标，不维护第二张手写运行时阈值表。故事入口沿用 `import-story.py`，源选择在既有 recipe 中。

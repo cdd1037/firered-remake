@@ -42,6 +42,7 @@ public sealed record CampaignDepartmentDynamicExit(int WarpIndex,int X,int Y,int
 public interface ICampaignCatalog:IStoryCatalog
 {
     InventoryCatalog Inventory { get; }
+    ImmutableDictionary<string, FieldStatFlagUnlocks> StatFlagUnlocks => ImmutableDictionary<string, FieldStatFlagUnlocks>.Empty;
     PokedexAideCatalog PokedexAides => PokedexAideCatalog.Empty;
     EscapeRopePolicy EscapeRoutes { get; }
     string ContentVersion{get;}

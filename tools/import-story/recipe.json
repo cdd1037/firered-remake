@@ -4279,6 +4279,16 @@
         "Repository": "pret/pokefirered",
         "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
       }
+    },
+    {
+      "path": "data/maps/FourIsland_LoreleisHouse/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/FourIsland_LoreleisHouse/scripts.inc",
+        "Symbol": "MAP_FOUR_ISLAND_LORELEIS_HOUSE",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
     }
   ],
   "textPaths": [
@@ -4835,7 +4845,8 @@
     "data/maps/ThreeIsland_House5/text.inc",
     "data/maps/FiveIsland_House1/text.inc",
     "data/maps/FiveIsland_House2/text.inc",
-    "data/maps/SixIsland_House/text.inc"
+    "data/maps/SixIsland_House/text.inc",
+    "data/maps/FourIsland_LoreleisHouse/text.inc"
   ],
   "constantSymbols": [
     "(MAX_COINS + 1) - 10",

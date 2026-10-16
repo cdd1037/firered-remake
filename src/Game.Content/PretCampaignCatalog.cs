@@ -353,6 +353,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         SixIslandTrainers = sixIslandTrainers;
         SixIslandItems = sixIslandItems;
         FourIslandRegion = fourIsland;
+        StatFlagUnlocks = ImmutableDictionary<string, FieldStatFlagUnlocks>.Empty.Add(fourIsland.DollCollection.Special, fourIsland.DollCollection);
         FourIslandOwnership = gamePokemon;
         FourIslandOpponents = gamePokemon.Opponents;
         FourIslandTrainers = fourIslandTrainers;

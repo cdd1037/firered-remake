@@ -11,6 +11,9 @@
       "path": "data/maps/FourIsland_IcefallCave_Back/scripts.inc"
     },
     {
+      "path": "data/maps/FourIsland_LoreleisHouse/map.json"
+    },
+    {
       "path": "data/tilesets/primary/general/palettes/00.pal"
     },
     {
@@ -90,6 +93,63 @@
     },
     {
       "path": "graphics/items/icons/tm_hm.png"
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_blue.pal"
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_green.pal"
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_pink.pal"
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_white.pal"
+    },
+    {
+      "path": "graphics/object_events/pics/misc/lapras_doll.png"
+    },
+    {
+      "path": "graphics/object_events/pics/people/lorelei.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/chansey.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/fearow.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/jigglypuff.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/meowth.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/nidoran_f.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/nidoran_m.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/pidgeot.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/pikachu.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/psyduck.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/seel.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/slowbro.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/slowpoke.png"
+    },
+    {
+      "path": "graphics/object_events/pics/pokemon/wigglytuff.png"
     },
     {
       "path": "graphics/pokedex/kanto_dex_bgpals.pal"
@@ -299,6 +359,18 @@
       "path": "src/data/items.json"
     },
     {
+      "path": "src/data/object_events/object_event_graphics.h"
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics_info.h"
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics_info_pointers.h"
+    },
+    {
+      "path": "src/data/object_events/object_event_pic_tables.h"
+    },
+    {
       "path": "src/data/pokemon_graphics/back_pic_coordinates.h"
     },
     {
@@ -329,6 +401,9 @@
       "path": "src/data/trainers.h"
     },
     {
+      "path": "src/event_object_movement.c"
+    },
+    {
       "path": "src/field_tasks.c"
     },
     {
@@ -345,9 +420,6 @@
     }
   ],
   "inheritedInputs": [
-    {
-      "path": "content/generated/sprites/trainers/silph/rocket-grunt-m-front.png"
-    },
     {
       "path": "content/generated/audio/synth/firered.pack"
     },
@@ -371,6 +443,9 @@
     },
     {
       "path": "content/generated/sprites/pokemon/victory-road/icons/dewgong.png"
+    },
+    {
+      "path": "content/generated/sprites/trainers/silph/rocket-grunt-m-front.png"
     }
   ],
   "profile": "firered-four-island-presentation-v1",

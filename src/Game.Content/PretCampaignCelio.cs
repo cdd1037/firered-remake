@@ -21,7 +21,7 @@ public sealed partial class PretCampaignCatalog
     // These are separate gameplay gates, not fake implementations of the link flag's consumers.
     public static ImmutableArray<string> CelioUnsupportedInteractions =>
         FiveIslandUnsupportedInteractions.Where(x => x is not "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire" and not "InitRoamer")
-            .Concat(new[] { "PokemonLeague.Rematch","CeruleanCave","Mewtwo","FourIsland_LoreleisHouse","HoennLink.Multiplayer" })
+            .Concat(new[] { "PokemonLeague.Rematch","CeruleanCave","Mewtwo","HoennLink.Multiplayer" })
             .ToImmutableArray();
 
     private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,CampaignPokemonContent pokemon,CelioPokemonContent celio,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,MachineCatalog machines)

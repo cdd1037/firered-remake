@@ -6,7 +6,7 @@ using Game.Domain.Ids;
 using Game.Domain.World;
 namespace Game.Content;
 
-/// <summary>Eight exact Four Island and Icefall Cave maps, including guarded original boundaries. Application admission remains separate.</summary>
+/// <summary>Original Four Island and Icefall Cave maps, including guarded original boundaries. Application admission remains separate.</summary>
 public sealed partial class PretFourIslandRegion
 {
     public const string Profile = "firered-four-island-region-v1";
@@ -22,6 +22,7 @@ public sealed partial class PretFourIslandRegion
     public JsonElement SlidingIceCells => Contracts.GetProperty("slidingIceCells");
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public JsonElement ExcludedEncounterGates => Contracts.GetProperty("excludedEncounterGates");
+    public FieldStatFlagUnlocks DollCollection { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretFourIslandRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
@@ -30,6 +31,11 @@ public sealed partial class PretFourIslandRegion
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
+        var rules = Contracts.GetProperty("statFlagUnlocks").EnumerateArray().Select(r => new FieldStatFlagUnlock(
+            r.GetProperty("stat").GetString()!, r.GetProperty("minimum").GetInt32(), r.GetProperty("flag").GetString()!)).ToImmutableArray();
+        DollCollection = new(new("map.four-island-loreleis-house"), Contracts.GetProperty("statFlagUnlockSpecial").GetString()!, rules);
+        var actors = NewMaps[DollCollection.Map].Events.GetProperty("object_events").EnumerateArray().ToArray();
+        Need(rules.All(r => actors.Count(a => a.GetProperty("flag").GetString() == r.Flag) == 1), "Stat unlock must identify one source actor.");
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
