@@ -27,7 +27,7 @@ public interface ISourceAudioBackend
     long PlayMusic(string id, bool restart = false);
     long PlaySoundEffect(string id);
     long PlayFanfare(string id);
-    long PlayCry(string id);
+    long PlayCry(string id, bool duckBgm = true);
     void CancelFanfare(long? expectedToken = null, bool resumeMusic = true);
     void CancelCry(long? expectedToken = null);
     void StopSoundEffects();

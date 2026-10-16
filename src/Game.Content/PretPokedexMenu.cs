@@ -15,9 +15,15 @@ public sealed record PokedexMenuRules(int RegionalCount, int NationalCount, stri
     bool SeenCanOpen, bool CaughtRequiredForDescription, bool CaughtRequiredForMeasures, bool CaughtRequiredForFootprint,
     bool CaughtRequiredForTypes, string UnseenCategory, string UnseenHeight, string UnseenWeight, int PageScroll,
     int PokedexFlag, int NationalFlag, int NationalVariable, int NationalVariableValue, int NationalMagic, bool StartRequiresSeen);
+/// <summary>Original canonical species permutations, including source-defined ordering of equal heights/weights.</summary>
+public sealed record PokedexMenuOrders(ImmutableArray<int> Alphabetical, ImmutableArray<int> Type,
+    ImmutableArray<int> Lightest, ImmutableArray<int> Smallest);
 public sealed record PokedexMenuDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries,
     CaptureDexLayout EntryLayout, ImmutableArray<PokedexMenuTexture> Assets, PokedexMenuTexture OwnedMarker,
-    ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules);
+    ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules,
+    PokedexMenuOrders Orders);
+
+public enum PokedexMenuOrder { NumericalKanto, Alphabetical, Type, Lightest, Smallest, NumericalNational }
 
 /// <summary>Actual source gates; a flag alone does not unlock National mode.</summary>
 public sealed record PokedexMenuAccess(bool HasPokedex, bool NationalFlag = false, int NationalMagic = 0, int NationalDexVariable = 0)
@@ -30,6 +36,7 @@ public sealed record PokedexMenuRow(int SourceSpeciesId, int NationalNumber, str
     public bool CanOpen => Seen;
     public int SourcePackedIndex => SourceSpeciesId | (Seen ? 1 << 16 : 0) | (Caught ? 1 << 17 : 0);
 }
+/// <summary>Counts cover the available dex range; NationalOrder denotes that range, not an alphabetical/type ordering.</summary>
 public sealed record PokedexMenuList(ImmutableArray<PokedexMenuRow> Rows, int SeenCount, int CaughtCount, bool NationalOrder);
 /// <summary>Player-safe projection. Uncaught records contain no hidden measures, category or description.</summary>
 public sealed record PokedexMenuPage(int SourceSpeciesId, int NationalNumber, string Name, bool Caught,
@@ -65,6 +72,17 @@ public sealed class PretPokedexMenu
         Document = document;
         Entries = document.Entries.ToImmutableDictionary(e => e.SourceSpeciesId);
         NationalEntries = document.Entries.ToImmutableSortedDictionary(e => e.NationalNumber, e => e);
+        Require(document.Rules.RegionalCount > 0 && document.Rules.RegionalCount <= document.Rules.NationalCount &&
+            document.Rules.NationalCount == Entries.Count &&
+            NationalEntries.Keys.SequenceEqual(Enumerable.Range(1, document.Rules.NationalCount)),
+            "Pokédex entry number range is invalid.");
+        foreach (var order in new[] { document.Orders.Alphabetical, document.Orders.Type, document.Orders.Lightest, document.Orders.Smallest })
+            Require(!order.IsDefault && order.Length == Entries.Count && order.Distinct().Count() == Entries.Count &&
+                order.All(Entries.ContainsKey), "Pokédex search order must contain each canonical species exactly once.");
+        foreach (var label in new[] { "gText_NumericalMode", "gText_NumericalModeKanto", "gText_NumericalModeNational",
+                "gText_AToZMode", "gText_TypeMode", "gText_LightestMode", "gText_SmallestMode", "gText_SearchNoColor" })
+            Require(document.UiTexts.TryGetValue(label, out var text) && !string.IsNullOrWhiteSpace(text),
+                "Pokédex order label is missing.");
         _textures = document.Entries.SelectMany(e => new[] { e.Portrait,e.Footprint }).OfType<PokedexMenuTexture>()
             .Concat(document.Assets).DistinctBy(a => a.TexturePath)
             .ToImmutableDictionary(a => a.TexturePath, StringComparer.Ordinal);
@@ -76,7 +94,7 @@ public sealed class PretPokedexMenu
         const string directory = "content/generated/sprites/pokemon/pokedex-menu/";
         var bytes = ReadPinned(root,directory + "pokedex-menu.json");
         var document = ContentJson.ParseStrict<PokedexMenuDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 1 && !document.Entries.IsDefaultOrEmpty,
+        Require(document.SchemaVersion == 2 && !document.Entries.IsDefaultOrEmpty,
             "Pokédex menu format is invalid.");
         return new(root, document);
     }
@@ -95,6 +113,62 @@ public sealed class PretPokedexMenu
     public bool CanOpen(PokedexMenuAccess access, IEnumerable<int> seenSpecies)
         => access.HasPokedex && ValidateSpecies(seenSpecies).Count != 0;
 
+    /// <summary>Original menu choices. Search is available before National unlock and follows its current range.</summary>
+    public ImmutableArray<PokedexMenuOrder> AvailableOrders(PokedexMenuAccess access)
+    {
+        if (!access.HasPokedex) return [];
+        return access.NationalEnabled
+            ? [PokedexMenuOrder.NumericalKanto, PokedexMenuOrder.NumericalNational, PokedexMenuOrder.Alphabetical,
+                PokedexMenuOrder.Type, PokedexMenuOrder.Lightest, PokedexMenuOrder.Smallest]
+            : [PokedexMenuOrder.NumericalKanto, PokedexMenuOrder.Alphabetical, PokedexMenuOrder.Type,
+                PokedexMenuOrder.Lightest, PokedexMenuOrder.Smallest];
+    }
+
+    public string GetOrderLabel(PokedexMenuOrder order, PokedexMenuAccess access)
+    {
+        Require(AvailableOrders(access).Contains(order), "Pokédex order is not available.");
+        return UiTexts[order switch
+        {
+            PokedexMenuOrder.NumericalKanto => access.NationalEnabled ? "gText_NumericalModeKanto" : "gText_NumericalMode",
+            PokedexMenuOrder.NumericalNational => "gText_NumericalModeNational",
+            PokedexMenuOrder.Alphabetical => "gText_AToZMode",
+            PokedexMenuOrder.Type => "gText_TypeMode",
+            PokedexMenuOrder.Lightest => "gText_LightestMode",
+            PokedexMenuOrder.Smallest => "gText_SmallestMode",
+            _ => throw new InvalidDataException("Unknown Pokédex order.")
+        }];
+    }
+
+    /// <summary>
+    /// Source Search modes use fixed permutations, not free-text/type/range filters. A–Z includes seen entries;
+    /// type, lightest and smallest include caught entries. Equal measures keep original table order.
+    /// Search uses the National unlock globally, independent of the last numerical-list selection.
+    /// </summary>
+    public PokedexMenuList BuildOrderedList(IEnumerable<int> seenSpecies, IEnumerable<int> caughtSpecies,
+        PokedexMenuAccess access, PokedexMenuOrder order)
+    {
+        Require(AvailableOrders(access).Contains(order), "Pokédex order is not available.");
+        if (order is PokedexMenuOrder.NumericalKanto or PokedexMenuOrder.NumericalNational)
+            return BuildNumericalList(seenSpecies, caughtSpecies, access, order == PokedexMenuOrder.NumericalNational);
+        var seen = ValidateSpecies(seenSpecies);
+        var caught = ValidateSpecies(caughtSpecies);
+        Require(caught.IsSubsetOf(seen), "Caught Pokédex species must also be seen.");
+        int capacity = access.NationalEnabled ? Document.Rules.NationalCount : Document.Rules.RegionalCount;
+        var speciesOrder = order switch
+        {
+            PokedexMenuOrder.Alphabetical => Document.Orders.Alphabetical,
+            PokedexMenuOrder.Type => Document.Orders.Type,
+            PokedexMenuOrder.Lightest => Document.Orders.Lightest,
+            PokedexMenuOrder.Smallest => Document.Orders.Smallest,
+            _ => throw new InvalidDataException("Unknown Pokédex search order.")
+        };
+        var visible = order == PokedexMenuOrder.Alphabetical ? seen : caught;
+        var rows = speciesOrder.Where(id => Entries[id].NationalNumber <= capacity && visible.Contains(id))
+            .Select(id => BuildRow(Entries[id], seen, caught)).ToImmutableArray();
+        return new(rows, seen.Count(i => Entries[i].NationalNumber <= capacity),
+            caught.Count(i => Entries[i].NationalNumber <= capacity), access.NationalEnabled);
+    }
+
     /// <summary>Builds numerical order through the highest seen number, retaining unseen holes.</summary>
     public PokedexMenuList BuildNumericalList(IEnumerable<int> seenSpecies, IEnumerable<int> caughtSpecies,
         PokedexMenuAccess access, bool nationalOrder = false)
@@ -104,15 +178,9 @@ public sealed class PretPokedexMenu
         var seen = ValidateSpecies(seenSpecies);
         var caught = ValidateSpecies(caughtSpecies);
         Require(caught.IsSubsetOf(seen), "Caught Pokédex species must also be seen.");
-        int capacity = nationalOrder ? 386 : 151;
+        int capacity = nationalOrder ? Document.Rules.NationalCount : Document.Rules.RegionalCount;
         int length = seen.Select(i => Entries[i].NationalNumber).Where(i => i <= capacity).DefaultIfEmpty(0).Max();
-        var rows = Enumerable.Range(1, length).Select(number =>
-        {
-            var entry = NationalEntries[number];
-            bool isSeen = seen.Contains(entry.SourceSpeciesId), isCaught = caught.Contains(entry.SourceSpeciesId);
-            return new PokedexMenuRow(entry.SourceSpeciesId, number, isSeen ? entry.Name : Document.Rules.UnseenLabel,
-                isSeen, isCaught, isCaught ? entry.Type1 : null, isCaught && entry.Type2 != entry.Type1 ? entry.Type2 : null);
-        }).ToImmutableArray();
+        var rows = Enumerable.Range(1, length).Select(number => BuildRow(NationalEntries[number], seen, caught)).ToImmutableArray();
         return new(rows, seen.Count(i => Entries[i].NationalNumber <= capacity), caught.Count(i => Entries[i].NationalNumber <= capacity), nationalOrder);
     }
 
@@ -189,6 +257,12 @@ public sealed class PretPokedexMenu
         var result = values.ToHashSet();
         Require(result.All(Entries.ContainsKey), "Unknown or noncanonical source species ID in Pokédex.");
         return result;
+    }
+    private PokedexMenuRow BuildRow(PokedexMenuEntry entry, HashSet<int> seen, HashSet<int> caught)
+    {
+        bool isSeen = seen.Contains(entry.SourceSpeciesId), isCaught = caught.Contains(entry.SourceSpeciesId);
+        return new(entry.SourceSpeciesId, entry.NationalNumber, isSeen ? entry.Name : Document.Rules.UnseenLabel,
+            isSeen, isCaught, isCaught ? entry.Type1 : null, isCaught && entry.Type2 != entry.Type1 ? entry.Type2 : null);
     }
     private static void ValidateCursor(PokedexMenuList list, PokedexMenuCursor cursor)
     {

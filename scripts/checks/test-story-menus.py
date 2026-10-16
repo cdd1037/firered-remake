@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
-from story_menus import extract_menus
+from story_menus import extract_menus, extract_list_menus
 
 
 class StoryMenuImportTests(unittest.TestCase):
@@ -19,6 +19,18 @@ class StoryMenuImportTests(unittest.TestCase):
         self.assertEqual([o['text'] for o in rows[1]['options']], ['YES', 'NO', 'INFO'])
         self.assertEqual([o['text'] for o in rows[2]['options']], ['SINGLE', 'DOUBLE', 'KNOCKOUT', 'MIXED', 'EXIT'])
         self.assertEqual(len({r['sourceId'] for r in rows}), len(rows))
+
+    def test_badge_list_is_source_ordered_four_row_suspendable_menu(self):
+        menu, = extract_list_menus(ROOT / 'content/raw/pokefirered/037335f4')
+        self.assertEqual(menu['id'], 'LISTMENU_BADGES')
+        self.assertEqual(menu['sourceId'], 0)
+        self.assertEqual([o['text'] for o in menu['options']],
+                         ['BOULDERBADGE', 'CASCADEBADGE', 'THUNDERBADGE', 'RAINBOWBADGE',
+                          'SOULBADGE', 'MARSHBADGE', 'VOLCANOBADGE', 'EARTHBADGE', 'EXIT'])
+        self.assertEqual(menu['listLayout'], dict(left=1, top=1, visibleRows=4, heightTiles=7, keepOpen=True))
+        installed = json.loads((ROOT / 'content/generated/data/story.json').read_text())['Compilation']['Menus']['LISTMENU_BADGES']
+        self.assertEqual(installed['ListLayout']['VisibleRows'], menu['listLayout']['visibleRows'])
+        self.assertEqual([o['Text'] for o in installed['Options']], [o['text'] for o in menu['options']])
 
     def test_empty_raw_fails(self):
         with tempfile.TemporaryDirectory() as root:

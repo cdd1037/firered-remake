@@ -34,6 +34,7 @@ public partial class CampaignView
 
     private void ResetFieldMenu()
     {
+        CancelPokedexCry();
         _fieldMenuMode = "closed"; _fieldMenuNotice = null; _fieldNoticeCloses = false;
         _fieldSwapSource = -1; ResetOwnedSummarySelection(); _held = null; _repeat = 0;
     }
@@ -46,6 +47,8 @@ public partial class CampaignView
             input is InputEventJoypadButton { ButtonIndex: JoyButton.Start };
         if (!start) return false;
         bool pressed = input is InputEventKey k ? k.Pressed : ((InputEventJoypadButton)input).Pressed;
+        if(TryPokedexCryStart(pressed))
+        {QueueRedraw();GetViewport().SetInputAsHandled();return true;}
         if(TryRegionalSignStart(pressed)){QueueRedraw();GetViewport().SetInputAsHandled();return true;}
         if(TownMapActive)
         {using var key=new InputEventKey{Keycode=Key.Tab,Pressed=pressed};TryTownMapInput(key);QueueRedraw();GetViewport().SetInputAsHandled();return true;}
@@ -237,7 +240,7 @@ public partial class CampaignView
     private bool MouseFieldMenu(Vector2 point)
     {
         if (_fieldMenuNotice is not null) return MouseConfirm(point, MouseMessage);
-        if (_fieldMenuMode is "pokedex" or "pokedex-entry") return MousePokedexMenu(point);
+        if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order") return MousePokedexMenu(point);
         if (_fieldMenuMode == "options") return MouseOptionsMenu(point);
         if (_fieldMenuMode == "trainer-card") return new Rect2(176,140,64,20).HasPoint(point)&&MouseKey(Key.Backspace);
         if (_fieldMenuMode is "save-confirm" or "save-overwrite") return MouseSelect(point, ref _fieldSaveChoice, 2, 192, 73, 40, 16);
@@ -269,7 +272,7 @@ public partial class CampaignView
                 SourceText(_sourceNormal, new(182, 73 + 16 * _fieldSaveChoice), "▶");
             }
         }
-        else if (_fieldMenuMode is "pokedex" or "pokedex-entry") DrawPokedexMenu();
+        else if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order") DrawPokedexMenu();
         else if (_fieldMenuMode == "trainer-card") DrawTrainerCard();
         else if (_fieldMenuMode == "options") DrawOptionsMenu();
         else if (_fieldMenuMode == "summary") DrawFieldSummary();

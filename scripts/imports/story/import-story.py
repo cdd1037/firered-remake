@@ -11,7 +11,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse, ast, json, os, re, subprocess
 from pathlib import Path
-from story_menus import extract_menus
+from story_menus import extract_menus, extract_list_menus
 
 ROOT = _PROJECT_ROOT
 RAW = ROOT / 'content/raw/pokefirered/037335f4'
@@ -121,7 +121,7 @@ def prepare():
     keyboard = re.search(r'static const u8 sKeyboardChars[^=]+=(.*?);', read('src/naming_screen.c'), re.S)
     chars = ''.join(sorted(set(''.join(re.findall(r'__\("([^"]*)"\)', keyboard[1])))))
     move_names = {'pret:' + name: text for name, text in re.findall(r'\[(MOVE_[A-Z0-9_]+)\]\s*=\s*_\("([^"]*)"\)', read('src/data/text/move_names.h'))}
-    menus = extract_menus(RAW)
+    menus = extract_menus(RAW) + extract_list_menus(RAW)
     def pascal(value):
         if isinstance(value, dict): return {key[0].upper()+key[1:]: pascal(item) for key,item in value.items()}
         if isinstance(value, list): return [pascal(item) for item in value]

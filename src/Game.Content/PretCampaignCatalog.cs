@@ -275,6 +275,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public ImmutableArray<string> Movement(string program) => _scripts.Movements.TryGetValue(program, out var list) ? list.Select(x => x.Opcode).ToImmutableArray() : throw new InvalidDataException("Missing movement program: " + program);
     public StoryProgram? FindProgram(string id) => _scripts.FindProgram(id);
     public StoryMenuDefinition? FindMenu(string id) => _scripts.FindMenu(id);
+    public StoryMenuDefinition? FindListMenu(int sourceId) => _scripts.FindListMenu(sourceId);
     public bool TryConstant(string symbol,out int value) => _scripts.TryConstant(symbol, out value);
     public ImmutableArray<string> TextPages(string symbol)
     {

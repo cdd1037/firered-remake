@@ -4,7 +4,14 @@ namespace Game.Domain.Events;
 
 /// <summary>Static source labels and source FONT_NORMAL_COPY_1 width, mounted by authenticated Content.</summary>
 public sealed record StoryMenuOption(string TextSymbol, string Text);
-public sealed record StoryMenuDefinition(string Id, int SourceId, ImmutableArray<StoryMenuOption> Options, int ColumnWidthTiles);
+public sealed record StoryMenuDefinition(string Id, int SourceId, ImmutableArray<StoryMenuOption> Options, int ColumnWidthTiles)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public StoryListMenuLayout? ListLayout { get; init; }
+}
+/// <summary>Source-native scrolling list geometry and whether topic selection suspends the window.</summary>
+public sealed record StoryListMenuLayout(int Left, int Top, int VisibleRows, int HeightTiles, bool KeepOpen);
+public sealed record StoryListMenuState(string MenuId, int SelectedIndex, bool Suspended);
 public sealed record StoryGridMenu(StoryMenuDefinition Definition, int Left, int Top, int Columns, bool IgnoreB)
 {
     public int Rows => Definition.Options.Length / Columns;

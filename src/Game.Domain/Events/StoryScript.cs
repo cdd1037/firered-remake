@@ -20,6 +20,8 @@ public sealed record StoryState(ImmutableArray<StoryFrame> Stack, ImmutableSorte
     ImmutableSortedDictionary<string,bool> Flags, bool Locked, StoryWait? Wait, long Revision, long EffectSequence, bool Completed, ImmutableSortedDictionary<int,FameEntry> Fame)
 {
     public int QuestLogState{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public StoryListMenuState? ListMenu { get; init; }
     public static StoryState Empty => new([],ImmutableSortedDictionary<string,int>.Empty.WithComparers(StringComparer.Ordinal),
         ImmutableSortedDictionary<string,bool>.Empty.WithComparers(StringComparer.Ordinal),false,null,0,0,true,ImmutableSortedDictionary<int,FameEntry>.Empty);
 }
@@ -30,6 +32,7 @@ public interface IStoryCatalog
     StoryProgram? FindProgram(string id);
     bool TryConstant(string symbol, out int value);
     StoryMenuDefinition? FindMenu(string id) => null;
+    StoryMenuDefinition? FindListMenu(int sourceId) => null;
 }
 /// <summary>A bounded typed interpreter; unknown source operations fault, never silently no-op.</summary>
 public static class StoryRules
@@ -46,12 +49,16 @@ public static class StoryRules
         if(state.Wait.Kind==StoryWaitKind.Choice&&choice is not (0 or 1))return new(TransitionStatus.Rejected,state,[],new("event_choice_required","Yes/no choice must be 0 or 1."));
         if(state.Wait.Kind==StoryWaitKind.MenuChoice&&!ValidMenuChoice(state,catalog,choice))return new(TransitionStatus.Rejected,state,[],new("event_menu_choice_required","Source menu choice or cancellation required."));
         var next=state with{Wait=null};
+        if (StoryListMenuRules.Pending(state, catalog) is { } list)
+            next = next with { ListMenu = choice == StoryMenu.CancelResult || choice == list.Definition.Options.Length - 1 ||
+                !list.Definition.ListLayout!.KeepOpen ? null : state.ListMenu! with { SelectedIndex = choice!.Value, Suspended = true } };
         if(state.Wait.Kind is StoryWaitKind.Choice or StoryWaitKind.MenuChoice)next=next with{Variables=next.Variables.SetItem("VAR_RESULT",choice!.Value)};
         return Run(state,next,catalog,budget);
     }
     private static bool ValidMenuChoice(StoryState state,IStoryCatalog catalog,int? choice)
     {
         if(choice is null)return false;
+        if (StoryListMenuRules.Pending(state, catalog) is { } list) return list.Accepts(choice);
         // Resolve the actual suspended instruction; definitions apply only to their own menu.
         if(!state.Stack.IsEmpty)
         {
@@ -189,7 +196,8 @@ public static class StoryRules
                     case StoryOp.WaitMessage:Effect(i,StoryWaitKind.MessagePrinting);break;
                     case StoryOp.WaitButtonPress:Effect(i,StoryWaitKind.ButtonPress);break;
                     case StoryOp.Delay:if(Value(a[0])<0)return Fault("event_delay_invalid",i.Source.ToString());Effect(i,StoryWaitKind.Presentation);break;
-                    case StoryOp.WaitMovement:case StoryOp.WaitState:Effect(i,StoryWaitKind.Presentation);break;
+                    case StoryOp.WaitMovement:case StoryOp.WaitState:
+                        Effect(i, StoryListMenuRules.IsCallback(i, state, catalog) ? StoryWaitKind.MenuChoice : StoryWaitKind.Presentation);break;
                     case StoryOp.FameChecker:
                         var fame = FameCheckerRules.ApplyMacro(state,Value(a[0]),Value(a[1]),a.Length==3?a[2]:FameCheckerRules.CollectFactFunction);
                         if(!fame.Succeeded)return Fault(fame.Error!,a.Length==3?a[2]:FameCheckerRules.CollectFactFunction);
@@ -198,7 +206,16 @@ public static class StoryRules
                     case StoryOp.TrainerBattle:Effect(i,StoryWaitKind.Battle);break;
                     case StoryOp.PokemonPicture:Effect(i,i.Opcode=="hidemonpic"?StoryWaitKind.Presentation:StoryWaitKind.NativeEffect);break;
                     case StoryOp.ScreenFade:Effect(i,StoryWaitKind.Presentation);break;
-                    case StoryOp.GivePokemon:case StoryOp.BufferSpecies:case StoryOp.Special:Effect(i,StoryWaitKind.NativeEffect);break;
+                    case StoryOp.Special:
+                        if (StoryListMenuRules.IsOpen(i) && catalog.FindListMenu(Value("VAR_0x8004")) is { } listDefinition)
+                        {
+                            if (state.ListMenu is not null) return Fault("event_list_menu_active", "Finish the active list menu first.");
+                            state = state with { ListMenu = new(listDefinition.Id, 0, false) };
+                        }
+                        else if (StoryListMenuRules.IsReturn(i) && state.ListMenu is { Suspended: true } suspended)
+                            state = state with { ListMenu = suspended with { Suspended = false } };
+                        Effect(i, StoryWaitKind.NativeEffect); break;
+                    case StoryOp.GivePokemon:case StoryOp.BufferSpecies:Effect(i,StoryWaitKind.NativeEffect);break;
                     case StoryOp.TextColor:
                         state=state with{Variables=state.Variables.SetItem("VAR_PREV_TEXT_COLOR",state.Variables.GetValueOrDefault("VAR_TEXT_COLOR")).SetItem("VAR_TEXT_COLOR",Value(a[0]))};Effect(i);break;
                     case StoryOp.Sound:case StoryOp.Door:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import authenticated FireRed numerical Pokédex metadata; read local Git/cache only.
+"""Import FireRed Pokédex metadata and original search orders; read local Git/cache only.
 
 Original descriptions are content, not permission to reveal unseen/uncaught data.
 Existing page skin, seven footprints and 29 normal fronts are referenced unchanged.
@@ -41,6 +41,7 @@ src/data/pokemon/pokedex_entries.h
 src/data/pokemon/pokedex_text.h
 src/data/pokemon/pokedex_text_fr.h
 src/data/pokemon/pokedex_categories.h
+src/data/pokemon/pokedex_orders.h
 src/data/pokemon/species_info.h
 src/data/pokemon_graphics/footprint_table.h
 src/data/graphics/pokemon.h
@@ -162,6 +163,43 @@ def string(text, symbol):
     return ''.join(json.loads(t) for t in re.findall(r'"(?:[^"\\]|\\.)*"', match[1]))
 
 
+def search_orders(text, national, species):
+    """Preserve source permutations; old Unown slots cannot pass the source national cap.
+
+    Alphabetical, weight and height contain national numbers, but type contains
+    source species IDs. Emit canonical species IDs once, without duplicating any
+    names, types or physical measures from the existing entry catalog.
+    """
+    result = {}
+    for field, symbol, prefix in (
+            ('alphabetical', 'Alphabetical', 'NATIONAL_DEX_'),
+            ('type', 'Type', 'SPECIES_'),
+            ('lightest', 'Weight', 'NATIONAL_DEX_'),
+            ('smallest', 'Height', 'NATIONAL_DEX_')):
+        match = re.search(r'const u16 gPokedexOrder_' + symbol + r'\[\]\s*=\s*\{(.*?)\};', text, re.S)
+        if match is None:
+            raise ValueError('Missing Pokédex order: ' + symbol)
+        body = re.sub(r'//[^\n]*|/\*.*?\*/', '', match[1], flags=re.S)
+        names = []
+        for token in body.split(','):
+            token = token.strip()
+            if not token:
+                continue
+            if not re.fullmatch(re.escape(prefix) + r'\w+', token):
+                raise ValueError('Unsupported Pokédex order token: ' + token)
+            name = token.removeprefix(prefix)
+            if name not in national or name not in species:
+                raise ValueError('Unknown Pokédex order species: ' + name)
+            names.append(name)
+        if len(names) != (411 if symbol in ('Alphabetical', 'Type') else 386):
+            raise ValueError('Pokédex order source bounds differ: ' + symbol)
+        canonical = [name for name in names if 1 <= national[name] <= 386]
+        if len(canonical) != 386 or len(set(canonical)) != 386:
+            raise ValueError('Pokédex order is not a canonical species permutation: ' + symbol)
+        result[field] = [species[name] for name in canonical]
+    return result
+
+
 def convert(sources, old):
     if set(sources) != PATHS:
         raise ValueError('Pokédex source set differs')
@@ -169,18 +207,22 @@ def convert(sources, old):
     screen = texts['src/pokedex_screen.c']
     for needle in ('ret = ndex_num;', '.maxShowed = 9,', 'gText_5Dashes', '(caught << 17) + (seen << 16)',
                    'while ((categoryName[index] != CHAR_SPACE) && (index < 11))', 'inches = 10000 * height / 254;',
-                   'lbs = (weight * 100000) / 4536;', 'LoadMonPicInWindow(species, SHINY_ODDS,'):
+                   'lbs = (weight * 100000) / 4536;', 'LoadMonPicInWindow(species, SHINY_ODDS,',
+                   '#include "data/pokemon/pokedex_orders.h"'):
         if needle not in screen:
             raise ValueError('Pokédex behavior source differs: ' + needle)
     if '#if defined(FIRERED)\n#include "pokedex_text_fr.h"' not in texts['src/data/pokemon/pokedex_text.h']:
         raise ValueError('FireRed description selection differs')
     constants = texts['include/constants/pokedex.h'].split('// National Pokedex order', 1)[1].split('};', 1)[0]
-    national = re.findall(r'^\s*NATIONAL_DEX_(\w+),', constants, re.M)[:387]
+    national_constants = re.findall(r'^\s*NATIONAL_DEX_(\w+),', constants, re.M)
+    national = national_constants[:387]
     species = {n: int(v) for n, v in re.findall(r'^#define SPECIES_(\w+)\s+(\d+)\s*$', texts['include/constants/species.h'], re.M)}
     mapping = texts['src/pokemon.c'].split('static const u16 sSpeciesToNationalPokedexNum', 1)[1].split('};', 1)[0]
     if len(national) != 387 or national[151] != 'MEW' or national[386] != 'DEOXYS':
         raise ValueError('National order capacity differs')
-    old_pages = [decode(old['content/generated/' + p + '/capture-dex.json']) for p in ('capture-dex', 'forest-capture-dex')]
+    orders = search_orders(texts['src/data/pokemon/pokedex_orders.h'],
+        {name: number for number, name in enumerate(national_constants)}, species)
+    old_pages = [decode(old['content/generated/sprites/pokemon/' + p + '/capture-dex.json']) for p in ('capture-dex', 'forest-capture-dex')]
     portraits, footprints, assets, outputs = {}, {}, [], {}
     for path, data in old.items():
         if path.endswith('art.json'):
@@ -193,7 +235,7 @@ def convert(sources, old):
     for folder, page in zip(('capture-dex', 'forest-capture-dex'), old_pages):
         for sid, entry in page['entries'].items():
             asset = next(a for a in page['assets'] if a['texturePath'] == entry['footprintPath'])
-            footprints[int(sid)] = dict(texturePath='content/generated/' + folder + '/' + asset['texturePath'],
+            footprints[int(sid)] = dict(texturePath='content/generated/sprites/pokemon/' + folder + '/' + asset['texturePath'],
                  width=16, height=16)
     # Reuse our previously reviewed decoder; no code from the reference is executed.
     spec = importlib.util.spec_from_file_location('pokedex_footprint_codec', ROOT / 'scripts/imports/pokemon/import-forest-capture-dex.py')
@@ -266,8 +308,9 @@ def convert(sources, old):
                     raise ValueError('Existing capture entry changed: ' + sid + '/' + key)
     symbols = ['gText_PokedexTableOfContents', 'gText_Seen', 'gText_Owned', 'gText_Kanto', 'gText_National',
         'gText_NumericalModeKanto', 'gText_NumericalModeNational', 'gText_PokemonListNoColor', 'gText_PickOKExit',
-        'gText_5Dashes', 'gText_PokedexPokemon', 'gText_HT', 'gText_WT', 'gText_Lbs', 'gText_Cry', 'gText_NextDataCancel', 'gText_PokedexNo', 'gText_ClosePokedex']
-    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=1,  entries=entries,
+        'gText_5Dashes', 'gText_PokedexPokemon', 'gText_HT', 'gText_WT', 'gText_Lbs', 'gText_Cry', 'gText_NextDataCancel', 'gText_PokedexNo', 'gText_ClosePokedex',
+        'gText_NumericalMode', 'gText_AToZMode', 'gText_TypeMode', 'gText_LightestMode', 'gText_SmallestMode', 'gText_SearchNoColor', 'gText_Search']
+    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=2, entries=entries, orders=orders,
         entryLayout=old_pages[0]['layout'], assets=assets, ownedMarker=owned_marker,
         uiTexts={n:string(texts['src/strings.c'], n) for n in symbols},
         listLayout=dict(width=240,height=160,x=16,y=16,windowWidth=184,windowHeight=128,visibleRows=9,

@@ -55,3 +55,17 @@ The historical breeding/ordinary-evolution/gift-egg species projections have sin
 This JSON slice reduced 1,295 files / 30,320,868 bytes to 1,293 files / 26,067,341 bytes: 1,755,435 bytes of unused/duplicated semantics and 2,498,092 bytes of formatting. The same JSON set compressed with ZIP DEFLATE level 9 changed from 3,655,177 to 3,476,165 bytes; raw-file savings are not archive savings. Current direct-output producers emit the compact form, with parsed values and array order preserved. Two unused source-input receipts were removed.
 
 Machine item wrappers now retain the actual displayed description and item definition only; redundant original declaration text/source spans and six Domain proof checks were removed. Gameplay checks for machine category, consumption, eligibility and PP remain. Exact comparison of 27 affected documents changed only those two removed fields, saving 54,525 bytes; this is primarily a responsibility cleanup rather than a large storage reduction.
+
+
+## 云端图形启动入口
+
+云端桌面与命令执行沙箱可能不共享显示连接和 `/tmp`。命令中没有 `DISPLAY`、
+看不到 `/tmp/.X11-unix`，或另起 Xorg 无法建立 socket，不代表现有桌面图形不可用。
+先检查现有云端桌面；从其终端进入实际工程根目录，`source scripts/env.sh` 后运行
+`"$GODOT" --path "$PWD/src/Game.Godot"`，保留终端原有显示环境。工程根目录已无
+额外的 `firered-remake/` 层，不复用旧绝对路径脚本。
+
+需在命令环境准备受控检查点或启动脚本时，使用双方可见的共享目录，不能假定 `/tmp`
+跨入口可见。检查点只用隔离测试分支，原玩家存档保持不变。2026-10-16已通过现有
+桌面终端确认当前4.7.2/.NET10.0.12、X11/Mesa llvmpipe可显示新游戏界面；不需要
+重装驱动、修改系统权限或另建显示服务器。Dummy音频仍不构成听感验收。

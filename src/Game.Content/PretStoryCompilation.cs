@@ -19,6 +19,7 @@ public sealed record PretStoryCompilation(
     public ImmutableDictionary<string,ImmutableArray<PretStoryDataDeclaration>> AssemblyData { get; init; }=ImmutableDictionary<string,ImmutableArray<PretStoryDataDeclaration>>.Empty;
     public ImmutableDictionary<string,StoryMenuDefinition> Menus { get; init; }=ImmutableDictionary<string,StoryMenuDefinition>.Empty;
     public StoryMenuDefinition? FindMenu(string id)=>Menus.GetValueOrDefault(id);
+    public StoryMenuDefinition? FindListMenu(int sourceId)=>Menus.Values.SingleOrDefault(m=>m.ListLayout is not null && m.SourceId==sourceId);
     public StoryProgram? FindProgram(string id)=>Programs.GetValueOrDefault(id);
     public bool TryConstant(string symbol,out int value)
     {

@@ -6,19 +6,28 @@ public partial class CampaignView
     private SourceVerticalMenuPresentation? _sourceMenu;
     private string? _sourceMenuWait;
     private StoryMenu? SourceMenu => _session?.SourceMenu;
+    private StoryMenu? DisplaySourceMenu => _session?.DisplaySourceMenu;
     private bool SourceMenuActive => SourceMenu is not null;
-    private bool SourceMenuVisible => SourceMenuActive && FieldTextComplete &&
-        (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length);
-    private bool SourceMenuReady => SourceMenuVisible && _waitElapsed >= _waitDuration && _fade <= 0 &&
+    private bool SourceMenuVisible => DisplaySourceMenu is not null && (SourceMenu is null || FieldTextComplete &&
+        (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length));
+    private bool SourceMenuReady => SourceMenuActive && SourceMenuVisible && _waitElapsed >= _waitDuration && _fade <= 0 &&
         _fanfareRemaining <= 0 && _tracks.All(t => t.Time >= t.Duration);
     private int SourceMenuWidth => (int)_sourceMenu!.Options.Max(t => _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(t), fontSize: _sourceNormal.Size).X);
 
     private void SynchronizeSourceMenu()
     {
-        if (SourceMenu is not { } menu) { _sourceMenu = null; _sourceMenuWait = null; return; }
+        if (DisplaySourceMenu is not { } menu) { _sourceMenu = null; _sourceMenuWait = null; return; }
         string? wait = _session.State.Script.Wait?.CorrelationId;
+        if (menu.Definition.ListLayout is not null && _sourceMenu?.IsScrollingList == true)
+        {
+            // Native topics suspend the same window, retaining both cursor and scroll.
+            if (_sourceMenuWait != wait && SourceMenu is not null) _sourceMenu.Select(menu.DefaultChoice);
+            _sourceMenuWait = wait; return;
+        }
         if (_sourceMenuWait == wait) return;
-        _sourceMenu = new(menu.Definition.Options.Select(o => o.Text), menu.Left, menu.Top, menu.DefaultChoice);
+        var list = menu.Definition.ListLayout;
+        _sourceMenu = new(menu.Definition.Options.Select(o => o.Text), menu.Left, menu.Top, menu.DefaultChoice,
+            list?.VisibleRows, list?.HeightTiles);
         _sourceMenuWait = wait; _held = null; _repeat = 0;
     }
     private bool TrySourceMenuInput(InputEventKey key)
@@ -50,7 +59,14 @@ public partial class CampaignView
         if (!SourceMenuVisible || _sourceMenu is not { } menu) return;
         var f = menu.Frame(SourceMenuWidth);
         _battleSkin.DrawUserFrame(this, new(f.X, f.Y, f.Width, f.Height));
-        for (int i = 0; i < menu.Options.Count; i++) SourceText(_sourceNormal, new(f.X + 16, f.Y + 10 + i * 14), menu.Options[i]);
-        SourceText(_sourceNormal, new(f.X + 8, f.Y + 10 + menu.Cursor * 14), "▶");
+        for (int i = 0; i < menu.VisibleRows; i++)
+            SourceText(_sourceNormal, new(f.X + 16, f.Y + 10 + i * 14), menu.Options[menu.ScrollOffset + i]);
+        SourceText(_sourceNormal, new(f.X + 8, f.Y + 10 + (menu.Cursor - menu.ScrollOffset) * 14), "▶");
+        if (SourceMenuActive && menu.IsScrollingList)
+        {
+            float center = f.X + f.Width / 2f;
+            if (menu.CanScrollUp) DrawColoredPolygon([new(center - 3, f.Y + 6), new(center + 3, f.Y + 6), new(center, f.Y + 2)], Colors.Black);
+            if (menu.CanScrollDown) DrawColoredPolygon([new(center - 3, f.Y + f.Height - 6), new(center + 3, f.Y + f.Height - 6), new(center, f.Y + f.Height - 2)], Colors.Black);
+        }
     }
 }

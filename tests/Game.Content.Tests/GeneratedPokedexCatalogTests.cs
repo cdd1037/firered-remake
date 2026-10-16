@@ -21,6 +21,10 @@ public sealed class GeneratedPokedexCatalogTests
             Assert.IsTrue(menu.CanOpen(new(true), new[] { 1 }));
             var page = menu.BuildPage(1, new[] { 1 }, Array.Empty<int>(), new(true));
             Assert.IsFalse(page.Caught);
+            var alphabetical = menu.BuildOrderedList([7, 1, 4], [1], new(true), PokedexMenuOrder.Alphabetical);
+            CollectionAssert.AreEqual(new[] { 1, 4, 7 }, alphabetical.Rows.Select(row => row.SourceSpeciesId).ToArray());
+            var smallest = menu.BuildOrderedList([7, 1, 4], [7, 1, 4], new(true), PokedexMenuOrder.Smallest);
+            CollectionAssert.AreEqual(new[] { 7, 4, 1 }, smallest.Rows.Select(row => row.SourceSpeciesId).ToArray());
         }
         finally { Directory.Delete(root, true); }
     }

@@ -135,13 +135,13 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         return token;
     }
 
-    public long PlayCry(string id)
+    public long PlayCry(string id, bool duckBgm = true)
     {
         if (!TryCue(id, 4, out var cue)) return 0;
         if (cue!.CryMode == 2) _synth.StartEncounterCry(cue.Species, duckBgm: false);
         else _synth.StartNormalCry(cue.Species, duckBgm: false);
         _cry = new ActiveCue(cue, ++_nextToken, _pushedFrames, _synth.GameFrames);
-        _cryDucking = _renderCryDucking = true; _cryGrace = 2; ApplyMusicGain();
+        _cryDucking = _renderCryDucking = duckBgm; _cryGrace = duckBgm ? 2 : 0; ApplyMusicGain();
         Emit("started", _cry, "cry");
         return _cry.Token;
     }

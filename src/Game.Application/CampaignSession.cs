@@ -14,7 +14,11 @@ public sealed record CampaignActor(string LocalId,int SourceLocalId,string Graph
 public sealed record CampaignDialogue(string TextSymbol,ImmutableArray<string> Pages,int Page,bool IsChoice,bool CloseOnCompletion);
 public sealed record CampaignMotion(string ActorId,ImmutableArray<TilePosition> Path,ImmutableArray<string> Actions);
 public sealed record CampaignPresentation(long Sequence,string Opcode,MapId MapId,ImmutableArray<string> Args);
-public sealed record CampaignMonPicture(int SourceSpeciesId,int X,int Y);
+public sealed record CampaignMonPicture(int SourceSpeciesId,int X,int Y)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? AssetId { get; init; }
+}
 public sealed record CampaignNickname(int PartyIndex,string OriginalName,bool Submitted)
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageAddress? BoxAddress{get;init;}
@@ -329,7 +333,7 @@ public sealed partial class CampaignSession
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         if(ValidateSelphyRequest(s) is {} selphyError)return selphyError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
-        if(s.DaisyGrooming is not null||s.DeferredNativeScreen is not null||s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.SizeRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.DaisyGrooming is not null||s.DeferredNativeScreen is not null||s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.SizeRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Script.ListMenu is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         if(s.MailComposer is not null||s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null||s.EggHatch is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
@@ -570,6 +574,7 @@ public sealed partial class CampaignSession
                 if(wait.Kind==StoryWaitKind.ButtonPress)return new(CommandStatus.Rejected,state,"button_press_required");
                 if(wait.Kind==StoryWaitKind.Nickname)return new(CommandStatus.Rejected,state,"nickname_submission_required");
                 if(wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.MessagePrinting && state.Dialogue is {} d&&d.Page+1<d.Pages.Length)return new(CommandStatus.Accepted,state with{Dialogue=d with{Page=d.Page+1}});
+                if(StoryMenuRules.Pending(state.Script,_content) is {} sourceMenu&&!sourceMenu.Accepts(command.Choice))return new(CommandStatus.Rejected,state,"event_menu_choice_required");
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&state.MonPicture is{SourceSpeciesId:1 or 4 or 7})
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
                 if(PrizeMenu(state) is {} prizeMenu && command.Choice is not 127 &&
@@ -773,6 +778,8 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplySourceListMenuEffect(state,effect,out var listMenuState)){state=listMenuState;continue;}
+            if(TryApplyMuseumPictureEffect(state,effect,out var museumPictureState)){state=museumPictureState;continue;}
             if(TryApplyStatFlagUnlockEffect(state,effect,out var statUnlockState)){state=statUnlockState;continue;}
             if(TryApplyCyclingRoadEffect(state,effect,out var cyclingRoadState)){state=cyclingRoadState;continue;}
             if(TryApplyVsSeekerFieldEffect(state,effect,out var vsFieldState)){state=vsFieldState;continue;}

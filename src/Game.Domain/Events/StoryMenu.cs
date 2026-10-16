@@ -13,6 +13,7 @@ public static class StoryMenuRules
 {
     public static StoryMenu? Pending(StoryState state, IStoryCatalog catalog)
     {
+        if (StoryListMenuRules.Pending(state, catalog) is { } list) return list;
         if (state.Wait?.Kind != StoryWaitKind.MenuChoice || state.Stack.IsEmpty) return null;
         var frame = state.Stack[^1];
         var program = catalog.FindProgram(frame.ProgramId);
