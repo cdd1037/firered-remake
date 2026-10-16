@@ -21,7 +21,7 @@ def encoded(document):
 
 
 def convert(source, dependency):
-    items = described_items(source.read, ['ITEM_' + name for name in ITEMS], dependency)
+    items = described_items(source.read, ['ITEM_' + name for name in ITEMS])
     script = source.text('data/maps/CinnabarIsland_Mart/scripts.inc')
     matches = list(re.finditer(r'^CinnabarIsland_Mart_Items::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)', script, re.M))
     if len(matches) != 1:

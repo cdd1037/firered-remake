@@ -234,8 +234,7 @@ public partial class CampaignView
         }
         if(input is InputEventKey {Pressed:true,Echo:false} key)
         {
-            if(key.Keycode==Key.F12&&_evidence.Length>0)GetViewport().GetTexture().GetImage().SavePng(Path.ChangeExtension(_evidence,"png"));
-            else EntryKey(key.Keycode);
+            EntryKey(key.Keycode);
             QueueRedraw();GetViewport().SetInputAsHandled();
         }
         return true;

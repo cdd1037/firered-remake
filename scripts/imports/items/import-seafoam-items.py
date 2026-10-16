@@ -7,7 +7,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse,io,json,re,subprocess
 from pathlib import Path
 from PIL import Image
@@ -36,6 +37,7 @@ def generate(reference,dependency):
   if p in SHARED:need((dependency/local).read_bytes()==b,'Shared source bytes: '+p)
   else:raw[local]=b
   inputs[p]=dict(path=p,localPath=local,shared=p in SHARED);texts[p]=b;return b
+ shared_item = ItemSource(read).definition
  def text(p):return read(p).decode()
  def one(p,pattern):
   rows=list(re.finditer(pattern,text(p),re.M|re.S));need(len(rows)==1,'Exact declaration: '+pattern);return rows[0]
@@ -64,7 +66,6 @@ def generate(reference,dependency):
  items=dict(previousItemCount=127,itemCount=128,additions=[addition],shopsAdded=[],icons=[icon])
 
  files = {'content/generated/data/items/seafoam.json': encoded(items),  icon['texturePath']: png, **raw}
- lock=dict(sourceCommit=COMMIT,profile=items['profile'],files=[dict(path=p) for p,b in sorted(files.items())])
  return files,items
 
 def main():

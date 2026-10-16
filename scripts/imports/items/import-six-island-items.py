@@ -5,7 +5,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse,  json, re, subprocess
 from pathlib import Path
 from machine_catalog import compatibility_additions
@@ -20,6 +21,7 @@ def generate(reference,root):
    b=(reference/path).read_bytes() if not (reference/'.git').exists() and (reference/path).is_file() else subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
    inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
+ shared_item = ItemSource(lambda path: source(path).encode()).definition
  def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}

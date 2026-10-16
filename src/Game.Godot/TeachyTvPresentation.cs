@@ -230,6 +230,11 @@ public sealed class TeachyTvPresentation
         }
     }
 
+    public void ReleaseInput()
+    {
+        _heldDirection = null; _repeat = 0; Text.ReleaseInput();
+    }
+
     public bool Input(TeachyTvButton button, bool pressed)
     {
         if (!OwnsOuterScreen) return false;

@@ -25,6 +25,12 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task SharedItemUiImports() => Run("test-item-ui-library-imports.py");
     [TestMethod]
+    public Task ExplicitImportInputs() => Run("test-import-input-closure.py");
+    [TestMethod]
+    public Task SuppliedItemSources() => Run("test-item-source-callers.py");
+    [TestMethod]
+    public Task MagikarpRuntimeReferences() => Run("test-magikarp-contract-import.py");
+    [TestMethod]
     public Task SpecialPresentationImports() => Run("test-special-presentation-importers.py");
     [TestMethod]
     public Task MapAtlases() => Run("test-map-atlases.py");

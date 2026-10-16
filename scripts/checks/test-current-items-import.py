@@ -81,6 +81,27 @@ class CurrentItemTests(unittest.TestCase):
         self.assertEqual(20, items['pret:ITEM_POTION']['healHp'])
         self.assertEqual(64, items['pret:ITEM_PARALYZE_HEAL']['cureStatus'])
 
+    def test_reachable_held_items_have_source_descriptions_without_shop_admission(self):
+        # Actual encounter-held and Pickup awards previously lacked inventory wrappers.
+        symbols = {'ITEM_' + name for name in ('SPELL_TAG FOCUS_BAND THICK_CLUB POISON_BARB SHARP_BEAK '
+            'LUCKY_EGG SILVER_POWDER METAL_POWDER TWISTED_SPOON MAGNET SPELON_BERRY PAMTRE_BERRY '
+            'WATMEL_BERRY DURIN_BERRY BELUE_BERRY').split()}
+        source = {row['itemId']: row for row in json.loads((ROOT / RAW / 'src/data/items.json').read_text())['items']}
+        catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
+        items = {row['item'].removeprefix('pret:'): row for row in catalog['items']}
+        effects = read_effects(ROOT / RAW)
+        selected_icons = {row['item'] for row in compiler.read_recipe(ROOT)['items'] if row.get('icon')}
+        for symbol in symbols:
+            with self.subTest(symbol=symbol):
+                item = items[symbol]
+                self.assertIn('pret:' + symbol, selected_icons)
+                self.assertEqual(source[symbol]['description_english'].replace('\\n', '\n'), item['description'])
+                self.assertEqual((0, 0, effects.get(symbol, []), 'noFieldUse'),
+                    (item['healHp'], item['cureStatus'], item['effectBytes'], item['useSupport']))
+        stock = {row['value'].removeprefix('pret:') for shop in catalog['shops'] for row in shop['items']}
+        self.assertFalse(symbols & stock)
+        self.assertNotIn('ITEM_LIECHI_BERRY', items)
+
     def test_recipe_rejects_duplicates_unknown_business_and_use(self):
         original = compiler.read_recipe(ROOT)
         for replacement, error in [({'item': original['items'][0]['item']}, 'Duplicate current item'),

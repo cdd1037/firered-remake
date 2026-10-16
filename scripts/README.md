@@ -41,6 +41,8 @@ python scripts/imports/rebuild-resources.py audio-cues --check
 早期机器图标文档只保存 `schemaVersion` 和 `icons`，不再重复机器兼容性投影。
 图标检查比较完整 RGBA 和元数据，也支持已有图集；教学与兼容性仍由共享机器目录负责。
 
+当前可获得物品的完整背包说明和补充图标由 `import-current-items.py` 读取 `current-item-admissions.json` 生成。实际野生持物和 Pickup 奖励也必须进入该选择；允许取得不等于加入商店库存。`icon: true` 通过原作图标绑定表选择 PNG／调色板，生成后仍合入同一物品图集。
+
 ## 原始输入
 
 ```sh
@@ -48,6 +50,8 @@ python scripts/imports/source/materialize-source.py --recipe scripts/recipes/sou
 ```
 
 输入版本在配方／共用源配置中明确。默认使用已有 raw；显式 `--reference-root` 时，以固定版本 Git blobs 为准。不得执行上游仓库脚本。物化工具默认不联网，只有显式 `--download` 才取缺失文件。
+
+接受已读字典或 source reader 的转换函数必须只从该输入取得原作数据。物品业务值用 `ItemSource.definition`，仅需描述和稳定引用的投影用 `described_items`；不要借用默认工程的 item cache 或已有 generated 文件。完整机器转换可用 `catalog_from_source`；从序列化机器 JSON 构造 `Catalog` 时须显式提供物品定义。
 
 connected-field、route1-encounter、route1-whiteout 和 wild-battle 的旧 fetch 包装入口已移除；使用同一物化命令并显式选择原有配方。输出不得与参考仓库或缓存目录重叠，输入／输出路径拒绝符号链接。
 
@@ -68,6 +72,9 @@ python scripts/checks/test-trainer-import.py
 python scripts/checks/test-trainer-portraits.py
 python scripts/checks/test-presentation-pixels.py
 python scripts/checks/test-item-ui-library-imports.py
+python scripts/checks/test-import-input-closure.py
+python scripts/checks/test-item-source-callers.py
+python scripts/checks/test-magikarp-contract-import.py
 python scripts/checks/test-special-presentation-importers.py
 python scripts/checks/verify-snorlax-catalog.py
 python scripts/checks/test-machine-importers.py

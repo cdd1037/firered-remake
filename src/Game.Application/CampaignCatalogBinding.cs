@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Collections.Immutable;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 using Game.Domain.Items;
@@ -18,7 +19,7 @@ public static class CurrentGameProfile
 
 internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion,
     PokemonCatalog Pokemon, GamePokemonCatalog Ownership, OrdinaryLandEncounterCatalog OrdinaryLand,
-    FrozenSet<string> EncounterAndPickupHeldItems, FrozenSet<ItemId> HoldableItems);
+    FrozenSet<ItemId> HoldableItems, ImmutableDictionary<SpeciesId, SourceBreedingSpecies> BreedingSpecies);
 
 public sealed partial class CampaignSession
 {
@@ -40,18 +41,21 @@ public sealed partial class CampaignSession
             LostCaveTrainerPartyFactory.ValidateCatalog(lostCaveTrainers);
         var water = content.WaterEncounters ?? throw new InvalidDataException("current_water_encounters_missing");
         var fishing = content.FishingTables ?? throw new InvalidDataException("current_fishing_encounters_missing");
-        // Canonical mechanics describe all species, including unavailable ones. Only actual loaded
-        // encounter sources may add held items beyond the ordinary inventory definitions.
+        // Acquirable held items must participate in the same inventory/transfer rules as bag items.
+        // Check this closure once at composition, using actual encounters rather than all species.
         var wildSpecies = content.LandEncounters.Values.SelectMany(table => table.Slots.Select(slot => slot.Species))
             .Concat(water.Values.SelectMany(table => table.Slots.Select(slot => slot.Species)))
             .Concat(fishing.Tables.Values.SelectMany(table => table.Slots.Select(slot => slot.Species)))
             .Distinct().Where(battle.Catalog.Species.ContainsKey);
-        var heldItems = wildSpecies.Select(species => battle.Mechanics.SpeciesMechanics[species])
+        var sourceHeldItems = wildSpecies.Select(species => battle.Mechanics.SpeciesMechanics[species])
             .SelectMany(species => new[] { species.ItemCommon, species.ItemRare })
-            .Concat(VermilionPickupRules.Items).ToFrozenSet(StringComparer.Ordinal);
+            .Concat(VermilionPickupRules.Items).Where(item => item != "ITEM_NONE").Distinct(StringComparer.Ordinal);
+        var holdableItems = HeldItemTransferRules.BuildHoldableItems(content.EarlyShop!, content.Machines);
+        if (sourceHeldItems.Any(item => !holdableItems.Contains(new("pret:" + item))))
+            throw new InvalidDataException("current_held_item_inventory_scope_missing");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion,
-            battle.Catalog, battle, ordinaryLand, heldItems,
-            HeldItemTransferRules.BuildHoldableItems(content.EarlyShop!, content.Machines));
+            battle.Catalog, battle, ordinaryLand, holdableItems,
+            content.BreedingMetadata!.Species.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.Breeding));
     }
 
     // Source validation is shared by New Game and Restore, and remains independent of rendering.

@@ -34,6 +34,7 @@ public interface ISourceAudioBackend
     void FadeOutMusic(double seconds, bool temporarily = false);
     void FadeInMusic(double seconds);
     void ResetPlayback();
+    void ShutdownPlayback();
     void SetStereo(bool stereo);
     void AdvanceSourceFrame();
     SourceAudioPlaybackState Snapshot();

@@ -7,7 +7,8 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
 from trainer_import import selected_trainers, resolved_parties
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import json
 import re
@@ -28,6 +29,7 @@ def need(value, message):
 def generate(raw_root, dependency):
     from world_source import WorldSource
     source = WorldSource(raw_root)
+    shared_item = ItemSource(source.read).definition
     read = source.text
     def one(path, pattern):
         matches = list(re.finditer(pattern, read(path), re.M | re.S))

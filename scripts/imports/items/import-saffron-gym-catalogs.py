@@ -32,7 +32,7 @@ def tm04_icon(src,dependency):
  return ItemSource(src.read).icon('ITEM_TM04', 'item_tm04.png')
 
 def metadata(src,dependency):
- return dict(schemaVersion=1,items=described_items(src.read, ['ITEM_'+name for name in ITEMS], dependency))
+ return dict(schemaVersion=1,items=described_items(src.read, ['ITEM_'+name for name in ITEMS]))
 
 def main():
  global TRAINERS

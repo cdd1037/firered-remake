@@ -5,7 +5,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse,  io, json, os, re, struct, subprocess
 from pathlib import Path
 from PIL import Image
@@ -27,6 +28,7 @@ def generate(reference,dependency):
             need(m is not None,'Regular source Git blob: '+path);blob=m[1];data=git('cat-file','blob',blob)
             inputs[path]=dict(path=path);cache[path]=data
         return cache[path]
+    shared_item = ItemSource(source).definition
     def text(path): return source(path).decode()
     def block(path,pattern):
         values=list(re.finditer(pattern,text(path),re.M|re.S));need(len(values)==1,'Unique source block '+pattern);return values[0]
@@ -119,4 +121,4 @@ if __name__=='__main__':
         target=a.output/path
         if a.check:need(target.read_bytes()==data,'Exact regeneration '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(passed=True,checked=a.check,files=len(files),assets=len(manifest['assets']),newTextures=6,sourceFiles=len(lock['sourceFiles']),manifestBytes=len(files[BASE+'manifest.json']),cues=manifest['audioCues'],jumpYOffsets=manifest['timing']['jumpYOffsets'],swimXOffsets=manifest['timing']['swimXOffsets']), default=item_json))
+    print(json.dumps(dict(passed=True,checked=a.check,files=len(files),assets=len(manifest['assets']),newTextures=6,manifestBytes=len(files[BASE+'manifest.json']),cues=manifest['audioCues'],jumpYOffsets=manifest['timing']['jumpYOffsets'],swimXOffsets=manifest['timing']['swimXOffsets']), default=item_json))

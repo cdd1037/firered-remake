@@ -43,7 +43,9 @@ class SharedMachineCatalogImport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.document = IMPORT.read_json(ROOT / IMPORT.CATALOG_PATH)
-        cls.catalog = IMPORT.Catalog(cls.document)
+        from item_catalog import definitions
+        cls.items = definitions(ROOT)
+        cls.catalog = IMPORT.Catalog(cls.document, cls.items)
         cls.results = IMPORT.process_documents(ROOT, cls.catalog)
 
     def test_rebuild_is_deterministic_and_all_regional_files_are_compact(self):
@@ -100,7 +102,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
         bad = copy.deepcopy(self.document)
         bad['compatibility'][0]['source'] = dict(path='retired-proof.h')
         with self.assertRaisesRegex(ValueError, 'Unexpected compatibility fields'):
-            IMPORT.Catalog(bad)
+            IMPORT.Catalog(bad, self.items)
         cell = self.catalog.compatibility('pret:ITEM_TM39', 'pret:SPECIES_BULBASAUR')
         cell['source'] = dict(path='retired-proof.h')
         with self.assertRaisesRegex(ValueError, 'Unexpected compatibility fields'):
@@ -177,7 +179,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
             bad = copy.deepcopy(self.document)
             bad['machines'][0]['machine'][field] = 'retired proof'
             with self.assertRaisesRegex(ValueError, 'Unexpected machine item fields'):
-                IMPORT.Catalog(bad)
+                IMPORT.Catalog(bad, self.items)
         current = self.document['current']
         self.assertEqual('pret:ITEM_TM39', current['order'][0]['value'])
         self.assertEqual('pret:ITEM_TM_CASE', current['tmCase']['item'])
@@ -256,7 +258,7 @@ class SharedMachineCatalogImport(unittest.TestCase):
         bad = copy.deepcopy(self.document)
         bad['machines'].append(copy.deepcopy(bad['machines'][0]))
         with self.assertRaisesRegex(ValueError, 'Duplicate/missing machines'):
-            IMPORT.Catalog(bad)
+            IMPORT.Catalog(bad, self.items)
         with self.assertRaisesRegex(ValueError, 'Duplicate JSON member'):
             json.loads('{"item":1,"item":2}', object_pairs_hook=IMPORT.unique_pairs)
 

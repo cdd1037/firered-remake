@@ -672,6 +672,81 @@
       "item": "pret:ITEM_EXP_SHARE",
       "useSupport": "noFieldUse",
       "icon": true
+    },
+    {
+      "item": "pret:ITEM_SPELL_TAG",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_FOCUS_BAND",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_THICK_CLUB",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_POISON_BARB",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_SHARP_BEAK",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_LUCKY_EGG",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_SILVER_POWDER",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_METAL_POWDER",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_TWISTED_SPOON",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_MAGNET",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_SPELON_BERRY",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_PAMTRE_BERRY",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_WATMEL_BERRY",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_DURIN_BERRY",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_BELUE_BERRY",
+      "useSupport": "noFieldUse",
+      "icon": true
     }
   ],
   "shops": [

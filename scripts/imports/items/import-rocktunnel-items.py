@@ -8,7 +8,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 from item_effects import read_effects_text
 from item_source import ItemSource
-from item_catalog import item_definition as shared_item, item_json
+from item_catalog import item_json
 import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
@@ -80,7 +80,7 @@ def convert(lock,data):
   symbol='ITEM_'+name;chosen=[i for i in all_items if i['itemId']==symbol]
   if len(chosen)!=1:raise ValueError('Nonunique item')
   i=chosen[0];p='src/data/items.json';m=match(p,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}');source=ref(p,symbol,m)
-  definition=shared_item(symbol)
+  definition=item_source.definition(symbol)
   declaration=i['description_english'].replace('\\n','\n');effect_bytes=source_effects[symbol] if name in effects else []
   if name in effects:
    p='src/data/pokemon/item_effects.h';em=match(p,r'^    \['+symbol+r' - ITEM_POTION\][ \t]*= sItemEffect_'+effects[name]+',');rules.append(ref(p,symbol+' effect binding',em))
@@ -107,12 +107,6 @@ def run(raw,out,repo=None,lock_path=None):
  if repo is not None:
   r=safe(repo)
   if any(p==r or p in r.parents or r in p.parents for p in [raw,out]):raise ValueError('Reference/output overlap')
- for kind in ['raw','generated']:
-  parent=ROOT/'content'/kind
-  for protected in parent.iterdir():
-   if protected.name=='rocktunnel-items': continue
-   p=protected.absolute()
-   if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
  materials=output_materials(out,outputs)
  if repo is not None:materials.update({(raw,p):b for p,b in data.items()})

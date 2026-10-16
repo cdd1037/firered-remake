@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'lib'))
 from project_paths import PROJECT_ROOT
-from item_catalog import item_definition, item_json
+from item_catalog import item_json
 from item_effects import read_effects_text
 from item_icon_exports import output_materials, decode_icon_page, ATLAS_PATH
 from item_source import ItemSource, unique_pairs
@@ -33,7 +33,7 @@ def convert(source, group, project_root=PROJECT_ROOT):
     for name in items:
         symbol = 'ITEM_' + name
         row = by_symbol[symbol]
-        entry = dict(metadata=dict(item=item_definition(symbol, project_root),
+        entry = dict(metadata=dict(item=reader.definition(symbol),
                                    description=row['description_english'].replace('\\n', '\n')),
                      effectBytes=source_effects[symbol] if name in effects else [])
         if name in separate:

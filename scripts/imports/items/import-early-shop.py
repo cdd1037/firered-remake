@@ -5,7 +5,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import json
 import pathlib
@@ -65,6 +66,7 @@ def convert(raw, out):
     for path, entry in inputs.items():
         data = (raw / path).read_bytes()
         sources[path] = data
+    shared_item = ItemSource(sources).definition
     def text(path):
         return sources[path].decode('utf-8')
     def match(path, pattern):

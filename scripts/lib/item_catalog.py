@@ -48,10 +48,19 @@ def item_json(value):
 @lru_cache(maxsize=None)
 def definitions(project_root=ROOT):
     raw = Path(project_root) / RAW
-    text = (raw / 'include/constants/items.h').read_text(encoding='utf-8')
-    ids = {name: int(number) for name, number in re.findall(r'^#define (ITEM_\w+)\s+(\d+)\b', text, re.M)}
-    secondary = {name: int(number) for name, number in re.findall(r'^#define ((?:OLD|GOOD|SUPER)_ROD)\s+(\d+)\b', text, re.M)}
-    rows = json.loads((raw / 'src/data/items.json').read_text(encoding='utf-8'))['items']
+    return definitions_from_source(lambda path: (raw / path).read_bytes())
+
+
+def definitions_from_source(source):
+    """Parse item business values from the caller's source closure, without IO fallback."""
+    read = source if callable(source) else source.__getitem__
+    def text(path):
+        value = read(path)
+        return value.decode('utf-8') if isinstance(value, bytes) else value
+    constants = text('include/constants/items.h')
+    ids = {name: int(number) for name, number in re.findall(r'^#define (ITEM_\w+)\s+(\d+)\b', constants, re.M)}
+    secondary = {name: int(number) for name, number in re.findall(r'^#define ((?:OLD|GOOD|SUPER)_ROD)\s+(\d+)\b', constants, re.M)}
+    rows = json.loads(text('src/data/items.json'))['items']
     result = {}
     for row in rows:
         symbol = row['itemId']
@@ -89,7 +98,7 @@ def compile_catalog(project_root=ROOT):
                 items=[item.fields for item in definitions(Path(project_root).resolve()).values()])
 
 
-def described_items(read, symbols, project_root=ROOT):
+def described_items(read, symbols):
     """Source descriptions plus shared item identities, without regional copies."""
     rows = json.loads(read('src/data/items.json'))['items']
     selected = list(symbols)
@@ -109,5 +118,7 @@ def described_items(read, symbols, project_root=ROOT):
             if len(matches) != 1:
                 raise ValueError('Expected one machine move description: ' + symbol)
             description = json.loads(matches[0][1])
-        result.append(dict(metadata=dict(item=item_definition(symbol, project_root), description=description), effectBytes=[]))
+        # This projection only emits a stable reference. Its declaration was
+        # selected uniquely above; no complete business catalog is needed here.
+        result.append(dict(metadata=dict(item='pret:' + symbol, description=description), effectBytes=[]))
     return result

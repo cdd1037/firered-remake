@@ -8,6 +8,17 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
+    // AddBagItem can acquire the Berry Pouch as part of another inventory transaction.
+    // Keep its script flag in the same commit for gifts, pickups and held-item returns.
+    private static CampaignState CommitInventory(CampaignState state, InventoryState inventory) => state with
+    {
+        Inventory = inventory,
+        Script = OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], SsAnneItemRules.BerryPouchId) == 1
+            && OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], SsAnneItemRules.BerryPouchId) == 0
+            ? state.Script with { Flags = state.Script.Flags.SetItem("FLAG_SYS_GOT_BERRY_POUCH", true) }
+            : state.Script
+    };
+
     private string? ValidateCampaignInventory(InventoryState? inventory)
     {
         var error = _content.Inventory.Validate(inventory);

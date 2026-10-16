@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
@@ -107,40 +108,28 @@ public static class CeruleanTrainerAi
         string? effect, SourceTrainerAiSlotContext slots, bool clearUserAbility = false, bool rain = false, bool reflect = false, string? moveTarget = null)
     {
         var facts = new SourceTrainerAiFacts(slots);
-        bool physical = TypeRules.Category(type) == DamageCategory.Physical;
-        int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
-        int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;
         string ability = clearUserAbility ? "ABILITY_NONE" : WildBattleEffective.Ability(user);
-        if (physical && user.AttackBadgeBoost) attack = attack * 110 / 100;
-        if (user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) attack = attack * 110 / 100;
+        // AI_CalcDmg reads the actual battle stats/items/field, independently of the script's
+        // guessed ability and known held-effect history. Those script queries stay unchanged.
+        string oppositeAbility = ability switch { "ABILITY_PLUS" => "ABILITY_MINUS", "ABILITY_MINUS" => "ABILITY_PLUS", _ => "" };
+        bool weatherSuppressed = false, plusMinusBoost = false, mudSport = false, waterSport = false;
+        // FIELD_SPORT scans every retained body, including fainted/absent positions. Replacement
+        // calculation observes the source's cleared fainted attacker ability, not its party ability.
+        foreach (var cell in slots.Frame.Slots.Take(slots.Frame.BattlerCount))
         {
-            if (user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) attack = attack * 110 / 100;
-            if (physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) attack *= 2;
-            if (physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132) defense *= 2;
+            if (cell.Body is not { } body) continue;
+            string fieldAbility = cell.Slot == slots.Actor ? ability : WildBattleEffective.Ability(body);
+            weatherSuppressed |= fieldAbility is "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK";
+            plusMinusBoost |= oppositeAbility.Length != 0 && fieldAbility == oppositeAbility;
+            mudSport |= body.MudSport;
+            waterSport |= body.WaterSport;
         }
-        if (WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice) attack /= 2;
-        if (physical && ability == "ABILITY_GUTS" && user.Status != 0) attack = attack * 150 / 100;
-        if (type == ElementType.Electric && (user.MudSport || target.MudSport)) power /= 2;
-        if (type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;
-        if (effect == "EFFECT_EXPLOSION") defense /= 2;
-        if (user.Pokemon.CurrentHp <= user.Pokemon.Stats.MaxHp / 3 && (type,ability) is
-            (ElementType.Grass,"ABILITY_OVERGROW") or (ElementType.Fire,"ABILITY_BLAZE") or
-            (ElementType.Water,"ABILITY_TORRENT") or (ElementType.Bug,"ABILITY_SWARM")) power = power * 150 / 100;
-        attack = Math.Max(1, WildBattleDamage.Stat(attack, physical ? user.AttackStage : user.SpecialAttackStageDelta + 6));
-        defense = Math.Max(1, WildBattleDamage.Stat(defense, physical ? target.DefenseStage : target.SpecialDefenseStageDelta + 6));
-        int value = checked(attack * power * (2 * user.Pokemon.Level / 5 + 2)) / defense / 50;
-        if (physical && user.Status == WildBattleStatus.Burn && ability != "ABILITY_GUTS") value /= 2;
-        if (physical && reflect) value = facts.TwoTargets == true ? 2 * (value / 3) : value / 2;
-        if (!physical && facts.TargetLightScreen == true) value = facts.TwoTargets ? 2 * (value / 3) : value / 2;
-        if (facts.TwoTargets == true && moveTarget == "MOVE_TARGET_BOTH") value /= 2;
-        if (physical) value = Math.Max(1, value);
-        if (facts.Sun == true && type == ElementType.Fire) value = value * 15 / 10;
-        if (facts.Sun == true && type == ElementType.Water) value /= 2;
-        if (rain && type == ElementType.Fire) value /= 2;
-        if (rain && type == ElementType.Water) value = value * 15 / 10;
-        if (effect == "EFFECT_SOLAR_BEAM" && (rain || facts.Sandstorm || facts.Hail)) value /= 2;
-        if (user.FlashFireBoost && type == ElementType.Fire) value = value * 15 / 10;
-        value += 2;
+        int value = SourceBattleDamage.CalculateBase(slots.Catalog, user, target, power, type, effect, moveTarget,
+            new(Rain: rain || facts.Rain, Reflect: reflect, Sun: facts.Sun, LightScreen: facts.TargetLightScreen,
+                WeatherSuppressed: weatherSuppressed,
+                SolarBeamWeakWeather: effect == "EFFECT_SOLAR_BEAM" && (rain || facts.Rain || facts.Sandstorm || facts.Hail),
+                DoubleBattle: facts.Doubles, DefenderCount: facts.TwoTargets ? 2 : 1,
+                PlusMinusBoost: plusMinusBoost, MudSport: mudSport, WaterSport: waterSport, UserAbility: ability));
         if (user.ChargeTurnsRemaining > 0 && type == ElementType.Electric) value *= 2;
         if (facts.HelpingHand == true) value = value * 15 / 10;
         return value;

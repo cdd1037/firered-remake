@@ -10,7 +10,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_catalog import definitions_from_source, ItemDefinition, inventory_item, item_json
 import argparse
 from collections import Counter
 from collections.abc import Mapping
@@ -73,7 +73,10 @@ def compile_catalog(raw, recipe):
     """Use only authoritative source files and the small presentation recipe."""
     require(recipe['sourceCommit'] == COMMIT and recipe['schemaVersion'] == 1,
             'Unsupported machine import recipe')
-    texts = {path: (raw / path).read_text(encoding='utf-8') for path in SOURCE_PATHS}
+    read = raw if callable(raw) else raw.__getitem__ if isinstance(raw, Mapping) else lambda path: (raw / path).read_bytes()
+    texts = {path: read(path) for path in SOURCE_PATHS}
+    texts = {path: value.decode('utf-8') if isinstance(value, bytes) else value for path, value in texts.items()}
+    item_definitions = definitions_from_source(texts)
     item_ids = constants(texts['include/constants/items.h'], 'ITEM_')
     move_ids = constants(texts['include/constants/moves.h'], 'MOVE_')
     species_ids = constants(texts['include/constants/species.h'], 'SPECIES_')
@@ -102,7 +105,7 @@ def compile_catalog(raw, recipe):
     for name in ADMITTED_MACHINES:
         symbol = 'ITEM_' + name
         item = items[symbol]
-        value = shared_item(symbol)
+        value = item_definitions[symbol]
         description_match = re.search(
             r'^const u8 (gMoveDescription_' + re.escape(item['moveId']) +
             r')\[\] = _\(("(?:[^"\\]|\\.)*")\);', descriptions, re.M)
@@ -154,21 +157,24 @@ def compile_catalog(raw, recipe):
     case = next(row for row in json.loads(item_text)['items'] if row['itemId'] == 'ITEM_TM_CASE')
     global_constants = constants(texts['include/constants/global.h'], '')
     current = dict(order=[dict(value=item) for item in current_order],
-                   tmCase=dict(item=shared_item('ITEM_TM_CASE'), description=case['description_english'].replace('\\n', '\n')),
+                   tmCase=dict(item=item_definitions['ITEM_TM_CASE'], description=case['description_english'].replace('\\n', '\n')),
                    machineSlots=global_constants['BAG_TMHM_COUNT'], keyItemSlots=global_constants['BAG_KEYITEMS_COUNT'], maximumStack=999)
     return dict(schemaVersion=1, machines=definitions,
                 compatibility=compatibility, current=current)
 
 
 class Catalog:
-    def __init__(self, document):
+    def __init__(self, document, item_definitions=None):
         require(document['schemaVersion'] == 1,
                 'Unsupported catalog')
         self.machines = {}
         for row in document['machines']:
             item = row['machine']['item']
             identity = item if isinstance(item, str) else item['id']['value']
-            self.machines[identity] = dict(row, machine=dict(row['machine'], item=shared_item(identity)))
+            if not isinstance(item, ItemDefinition):
+                require(item_definitions is not None, 'Serialized machines require explicit item definitions')
+                item = item_definitions[identity.removeprefix('pret:')]
+            self.machines[identity] = dict(row, machine=dict(row['machine'], item=item))
         self.species = {row['species']['value']: row for row in document['compatibility']}
         require(len(self.machines) == len(document['machines']) == 57, 'Duplicate/missing machines')
         require(len(self.species) == len(document['compatibility']) == 386, 'Duplicate/missing species')

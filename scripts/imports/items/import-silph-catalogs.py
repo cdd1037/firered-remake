@@ -30,7 +30,7 @@ ITEMS=('CARD_KEY','MASTER_BALL','ULTRA_BALL','TM01','TM08','TM41','HYPER_POTION'
 def need(ok,message):
  if not ok:raise ValueError(message)
 def metadata(src,dependency):
- return dict(schemaVersion=1,items=described_items(src.read, ['ITEM_'+name for name in ITEMS], dependency))
+ return dict(schemaVersion=1,items=described_items(src.read, ['ITEM_'+name for name in ITEMS]))
 
 def main():
  global TRAINERS

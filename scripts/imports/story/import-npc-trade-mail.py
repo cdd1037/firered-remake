@@ -9,7 +9,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import json
 from pathlib import Path
@@ -107,6 +108,7 @@ def payload(src):
 
 
 def item(src, codec, stage):
+    shared_item = ItemSource(src.read).definition
     path, symbol = 'src/data/items.json', 'ITEM_FAB_MAIL'; text = src.text(path)
     row = next(i for i in json.loads(text)['items'] if i['itemId'] == symbol)
     need(row == dict(english='FAB MAIL', itemId=symbol, price=50, holdEffect='HOLD_EFFECT_NONE', holdEffectParam=0,

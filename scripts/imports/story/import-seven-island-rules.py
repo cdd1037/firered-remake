@@ -10,7 +10,8 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from shared_trainers import trainer_json
 from trainer_import import read_source, selected_trainers, resolved_parties
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import json
 import re
@@ -36,6 +37,7 @@ def generate(reference, dependency):
             raw[path] = data
             texts[path] = data.decode()
         return texts[path]
+    shared_item = ItemSource(lambda path: read(path).encode()).definition
     def one(path, pattern):
         matches = list(re.finditer(pattern, read(path), re.M | re.S))
         need(len(matches) == 1, "Expected one source declaration: " + pattern)

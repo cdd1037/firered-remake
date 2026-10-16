@@ -49,9 +49,7 @@ public sealed partial class CampaignSession
                 changed=changed with {KeyItems=count==0?keys.RemoveAll(x=>x.Item==item.Id):index>=0?keys.SetItem(index,new(item.Id,count)):keys.Add(new(item.Id,count))};
             }
         }
-        next=Result(result.Succeeded?1:0) with{Inventory=changed,Script=Result(result.Succeeded?1:0).Script with{
-            Flags=result.Succeeded&&effect.Opcode=="additem"&&item.Pocket=="POCKET_BERRY_POUCH"?
-                state.Script.Flags.SetItem("FLAG_SYS_GOT_BERRY_POUCH",true):state.Script.Flags}};
+        next=CommitInventory(Result(result.Succeeded?1:0),changed);
         return true;
     }
     private string? ValidateFirstSeviiProgress(CampaignState state)

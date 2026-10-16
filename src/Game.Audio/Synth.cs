@@ -73,6 +73,19 @@ public sealed partial class Synth
         if (profile == AudioProfile.SourceFiltered)
             dcBlocker = new DcBlocker();
     }
+    /// <summary>Fresh voices, clocks and feedback tails with this resource set's already-decoded
+    /// cry samples. Sample arrays are read-only during synthesis; cache dictionaries stay independent.</summary>
+    public Synth CreateFreshPlayback()
+    {
+        var fresh = new Synth(Resources, Profile, cryCatalog)
+        {
+            EnableTrace = EnableTrace,
+            charmanderSamples = charmanderSamples
+        };
+        foreach (var (wave, samples) in catalogSamples) fresh.catalogSamples.Add(wave, samples);
+        return fresh;
+    }
+
     // Control calls and Render have one owner thread; the host owns command scheduling.
     public void Start(uint song, int player)
     {

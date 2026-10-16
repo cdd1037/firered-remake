@@ -235,7 +235,7 @@ public sealed partial class CampaignSession
                 next = state with { TextBuffers = buffers }; break;
             case "SetDaycareCompatibilityString" when !returns:
                 Require("FourIsland_EventScript_CheckOnTwoMons");
-                int score = FourIslandDayCareRules.Compatibility(FourDayCare(state), BreedingMetadata.Species.ToImmutableDictionary(p => p.Key, p => p.Value.Breeding));
+                int score = FourIslandDayCareRules.Compatibility(FourDayCare(state), _binding.BreedingSpecies);
                 next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_4", _content.DayCareCompatibilityTextSymbols[score]) }; break;
             case "ShowFieldMessageStringVar4" when !returns:
                 Require("FourIsland_EventScript_CheckOnTwoMons");

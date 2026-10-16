@@ -176,7 +176,7 @@ public partial class CampaignView
         _held=null;_repeat=0;
         if(input is InputEventKey key&&!key.Echo)
         {
-            if(key.Pressed&&key.Keycode is Key.Escape or Key.F12){RequestQuit();return true;}
+            if(key.Pressed&&key.Keycode == Key.Escape){RequestQuit();return true;}
             FameKey(key.Keycode,key.Pressed);
         }
         else if(input is InputEventJoypadButton joy)

@@ -92,9 +92,9 @@ public sealed partial class CampaignSession
         var result=effect.Opcode=="additem"?EarlyInventoryAddRules.Add(ShopCatalog,view,definition.Item,quantity):EarlyInventoryAddRules.CheckSpace(ShopCatalog,view,definition.Item,quantity);
         if(!result.Succeeded&&result.Error is not("inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full"))throw new InvalidDataException(result.Error);
         bool added=result.Succeeded&&effect.Opcode=="additem";
-        next=state with{Inventory=added?result.State:inventory,
+        next=CommitInventory(state with{
             FieldPickup=added?context with{InventoryAdded=true}:context,
-            Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",result.Succeeded?1:0),Flags=added&&definition.Pocket=="POCKET_BERRY_POUCH"?state.Script.Flags.SetItem("FLAG_SYS_GOT_BERRY_POUCH",true):state.Script.Flags}};return true;
+            Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",result.Succeeded?1:0)}},added?result.State:inventory);return true;
     }
 
     private CampaignState FinishFieldPickup(CampaignState state)

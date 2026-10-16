@@ -7,7 +7,7 @@ public sealed partial class CampaignSession
 {
     private bool OwnedHeldItemSupported(CampaignState state, PartyPokemon owned) =>
         owned.HeldItem == "ITEM_NONE" || CampaignMailHeldItemSupported(state, owned) ||
-        CanGiveHeldItem(new("pret:" + owned.HeldItem)) || _binding.EncounterAndPickupHeldItems.Contains(owned.HeldItem);
+        CanGiveHeldItem(new("pret:" + owned.HeldItem));
 
     private string? ValidateRoute3Progress(CampaignState state)
     {

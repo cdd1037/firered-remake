@@ -26,6 +26,8 @@ public sealed class TeachyTvTextPresentation
             encoded.EndsWith('$') ? encoded : encoded + "$", []), "RED", "BLUE");
         ResetPage();
     }
+    public void ReleaseInput() { _held = _pressed = false; }
+
     public void Confirm(bool pressed)
     {
         _held = pressed;

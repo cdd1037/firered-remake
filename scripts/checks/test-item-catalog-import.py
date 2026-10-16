@@ -84,7 +84,7 @@ class ItemCatalogTests(unittest.TestCase):
                 expected = json.loads(match[1])
             else:
                 expected = source['description_english'].replace('\\n', '\n')
-            self.assertIs(item_definition(symbol), value['metadata']['item'])
+            self.assertEqual(item_definition(symbol).identity, value['metadata']['item'])
             self.assertEqual(expected, value['metadata']['description'])
             self.assertEqual([], value['effectBytes'])
             self.assertEqual({'item', 'description'}, value['metadata'].keys())

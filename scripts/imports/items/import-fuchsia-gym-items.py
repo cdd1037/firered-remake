@@ -18,7 +18,7 @@ PROFILE = 'firered-fuchsia-gym-items-v1'
 
 
 def item_outputs(lock, sources, project):
-    items = described_items(sources.__getitem__, ['ITEM_TM06'], project)
+    items = described_items(sources.__getitem__, ['ITEM_TM06'])
     icon, png = ItemSource(sources).icon('ITEM_TM06', 'item_tm06.png')
     return {'fuchsia-gym-items.json': runtime_json_bytes(
                 dict(schemaVersion=1, items=items, icons=[icon]), sort_keys=True, default=item_json),

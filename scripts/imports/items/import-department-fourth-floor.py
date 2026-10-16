@@ -7,7 +7,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
@@ -37,6 +38,7 @@ def generate(reference,dependency):
   if path in SHARED:need((dependency/local).read_bytes()==data,'Shared source bytes: '+path)
   else:raw[local]=data
   inputs[path]=dict(path=path,localPath=local,shared=path in SHARED);cache[path]=data;return data
+ shared_item = ItemSource(read).definition
  def text(path):return read(path).decode()
  def one(path,pattern):
   matches=list(re.finditer(pattern,text(path),re.M|re.S));need(len(matches)==1,'Exact source declaration: '+pattern);return matches[0]

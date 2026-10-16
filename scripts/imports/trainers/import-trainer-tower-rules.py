@@ -5,7 +5,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import ast
 import json
@@ -50,6 +51,7 @@ def generate(reference, dependency):
             b = subprocess.check_output(['git', 'show', COMMIT + ':' + path], cwd=reference)
             raw[path] = b
         return raw[path].decode()
+    shared_item = ItemSource(lambda path: read(path).encode()).definition
     def one(path, pattern):
         matches = list(re.finditer(pattern, read(path), re.M | re.S))
         need(len(matches) == 1, 'Expected one source match: ' + path + ' ' + pattern)

@@ -5,7 +5,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse,io,json,pathlib,re,subprocess,sys
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -31,6 +32,7 @@ def authenticated(root,reference=None):
 
 def generate(root,dependency_root=None):
  lock,raw=authenticated(root);text={p:b.decode() for p,b in raw.items() if not p.endswith('.png')};inv={r['path']:r for r in lock['files']};rules=[]
+ shared_item = ItemSource(raw).definition
  def one(p,pattern):
   ms=list(re.finditer(pattern,text[p],re.M|re.S));require(len(ms)==1,'Expected one Safari item match: '+p+' '+pattern);return ms[0]
  def ref(p,s,m=None):return dict(path=p,symbol=s,startLine=1 if m is None else text[p].count('\n',0,m.start())+1,endLine=1 if m is None else text[p].count('\n',0,m.end())+1)

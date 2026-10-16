@@ -50,7 +50,6 @@ public static class SourceBattleDamage
         ElementType Type(string symbol) => Enum.Parse<ElementType>(symbol[5..], true);
         var type = sourceEffectiveType ?? (struggle ? ElementType.Normal : Type(move.Type));
         var category = TypeRules.Category(type);
-        bool physical = category == DamageCategory.Physical;
         if (move.Effect == "EFFECT_LEVEL_DAMAGE")
         {
             var species = WildBattleEffective.Types(catalog, target);
@@ -94,109 +93,12 @@ public static class SourceBattleDamage
         }
         if (pursuitSwitch && (moveId.Value != "pret:MOVE_PURSUIT"))
             throw new NotSupportedException("route22_pursuit_switch_move");
-        int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
-        int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;
         var steps = ImmutableArray.CreateBuilder<DamageStep>();
-        // Ability arithmetic is shared by ordinary and called actions.
-        if (physical && WildBattleEffective.Ability(user) is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER")
-        {
-            // pokemon.c:2437 precedes the attack badge's independent integer division.
-            attack *= 2;
-            steps.Add(new("huge-pure-power", attack));
-        }
-        if (physical && user.AttackBadgeBoost)
-        {
-            // pokemon.c:2440 precedes Guts (2490) and stat stages; preserve both integer divisions.
-            attack = attack * 110 / 100;
-            steps.Add(new("attack-badge", attack));
-        }
-        if (physical && target.DefenseBadgeBoost)
-        {
-            // pokemon.c:2442 applies the player's fifth badge before held items, abilities,
-            // Explosion's defense halving and stat stages. Keep its own integer truncation.
-            defense = defense * 110 / 100;
-            steps.Add(new("defense-badge", defense));
-        }
-        // pokemon.c:2444-2447 applies each special badge multiplication before held effects.
-        if (!physical && user.SpecialBadgeBoost)
-        { attack = attack * 110 / 100; steps.Add(new("special-attack-badge", attack)); }
-        if (!physical && target.SpecialBadgeBoost)
-        { defense = defense * 110 / 100; steps.Add(new("special-defense-badge", defense)); }
-        if (user.HeldItem is not ("ITEM_HARD_STONE" or "ITEM_BLACK_GLASSES" or "ITEM_SPELL_TAG"))
-        {
-            int held = SourceHeldItemModifiers.TypeAttack(catalog, user, type, attack);
-            if (held != attack) { attack = held; steps.Add(new("held-type", attack)); }
-        }
-        if (user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps.Add(new("hard-stone", attack)); }
-        if (user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }
-        if (user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) { attack = attack * 110 / 100; steps.Add(new("spell-tag", attack)); }
-        if (physical && user.HeldItem == "ITEM_CHOICE_BAND")
-        { attack = SourceBattleHeldItems.PhysicalAttack(attack, user.HeldItem); steps.Add(new("choice-band", attack)); }
-        if (!physical)
-        {
-            int held = SourceHeldItemModifiers.SpecialAttack(catalog, user, attack);
-            if (held != attack) { attack = held; steps.Add(new("held-species-special-attack", attack)); }
-            held = SourceHeldItemModifiers.SpecialDefense(catalog, target, defense);
-            if (held != defense) { defense = held; steps.Add(new("held-species-special-defense", defense)); }
-        }
-        if (physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) { attack *= 2; steps.Add(new("thick-club", attack)); }
-        if (WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
-        { attack /= 2; steps.Add(new("thick-fat",attack)); }
-        if (physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132)
-        { defense *= 2; steps.Add(new("metal-powder", defense)); }
-        if (physical && WildBattleEffective.Ability(user) == "ABILITY_HUSTLE")
-        { attack = attack * 150 / 100; steps.Add(new("hustle", attack)); }
-        if (sourcePlusMinusBoost && !physical)
-        { attack = attack * 150 / 100; steps.Add(new("plus-minus", attack)); }
-        if (physical && WildBattleEffective.Ability(user) == "ABILITY_GUTS" && user.Status != 0)
-            attack = attack * 150 / 100;
-        if (physical && WildBattleEffective.Ability(target) == "ABILITY_MARVEL_SCALE" && target.Status != 0)
-        { defense = defense * 150 / 100; steps.Add(new("marvel-scale", defense)); }
-        if (type == ElementType.Fire && (sourceWaterSport || (user.WaterSport || target.WaterSport))) power /= 2;
-        if (type == ElementType.Electric && (sourceMudSport || (user.MudSport || target.MudSport))) power /= 2;
-        if (move.Effect == "EFFECT_EXPLOSION") defense = Math.Max(1, defense / 2);
-        if (user.Pokemon.CurrentHp <= user.Pokemon.Stats.MaxHp / 3 &&
-            (type, WildBattleEffective.Ability(user)) is (ElementType.Grass, "ABILITY_OVERGROW") or
-                (ElementType.Fire, "ABILITY_BLAZE") or (ElementType.Water, "ABILITY_TORRENT") or
-                (ElementType.Bug, "ABILITY_SWARM")) power = power * 150 / 100;
-        // Critical hits ignore unfavorable attack stages and favorable defense stages.
-        int attackStage = physical ? user.AttackStage : 6 + user.SpecialAttackStageDelta, defenseStage = physical ? target.DefenseStage : 6 + target.SpecialDefenseStageDelta;
-        int Stage(int basis, int stage) => stage < 6 ? basis * 2 / (8 - stage) : basis * (stage - 4) / 2;
-        attack = Math.Max(1, Stage(attack, critical && attackStage <= 6 ? 6 : attackStage));
-        defense = Math.Max(1, Stage(defense, critical && defenseStage >= 6 ? 6 : defenseStage));
-        int value = checked(attack * power);
-        steps.Add(new("attack-times-power", value));
-        value = checked(value * (2 * user.Pokemon.Level / 5 + 2));
-        steps.Add(new("times-level-factor", value));
-        value /= defense; steps.Add(new("divide-defense", value));
-        value /= 50; steps.Add(new("divide-50", value));
-        if (physical && user.Status == WildBattleStatus.Burn && WildBattleEffective.Ability(user) != "ABILITY_GUTS") value /= 2;
-        steps.Add(new("burn", value));
-        bool twoDefenders = sourceDoubleBattle && sourceDefenderCount == 2;
-        bool spread = twoDefenders && move.Target == "MOVE_TARGET_BOTH";
-        if (reflect && physical && !critical)
-        { value = twoDefenders ? 2 * (value / 3) : value / 2; steps.Add(new("reflect", value)); }
-        if (physical && spread) { value /= 2; steps.Add(new("source-both-targets", value)); }
-        if (physical) value = Math.Max(1, value);
-        steps.Add(new("physical-minimum-before-plus-two", value));
-        if (lightScreen && !physical && !critical)
-        { value = twoDefenders ? 2 * (value / 3) : value / 2; steps.Add(new("light-screen", value)); }
-        if (!physical && spread) { value /= 2; steps.Add(new("source-both-targets", value)); }
-        if (rain && !physical && !weatherSuppressed)
-        {
-            if (type == ElementType.Fire) value /= 2;
-            else if (type == ElementType.Water) value = value * 15 / 10;
-            steps.Add(new("rain", value));
-        }
-        if (sourceSolarBeamWeakWeather && !weatherSuppressed) { value /= 2; steps.Add(new("solar-beam-weather", value)); }
-        if (sun && !physical && !weatherSuppressed)
-        {
-            if (type == ElementType.Fire) value = value * 15 / 10;
-            else if (type == ElementType.Water) value /= 2;
-            steps.Add(new("sun", value));
-        }
-        if (user.FlashFireBoost && type == ElementType.Fire) { value = value * 15 / 10; steps.Add(new("flash-fire", value)); }
-        value += 2; steps.Add(new("plus-two", value));
+        int value = CalculateBase(catalog, user, target, power, type, move.Effect, move.Target,
+            new(Critical: critical, Rain: rain, Reflect: reflect, Sun: sun, LightScreen: lightScreen,
+                WeatherSuppressed: weatherSuppressed, SolarBeamWeakWeather: sourceSolarBeamWeakWeather,
+                DoubleBattle: sourceDoubleBattle, DefenderCount: sourceDefenderCount,
+                PlusMinusBoost: sourcePlusMinusBoost, MudSport: sourceMudSport, WaterSport: sourceWaterSport), steps);
         if (critical) value *= 2;
         steps.Add(new("critical", value));
         if (sourceDamageMultiplier == 1)
@@ -230,4 +132,132 @@ public static class SourceBattleDamage
         steps.Add(new("random-percent", value));
         return new(value, category, steps.ToImmutable());
     }
+
+    // pokemon.c CalculateBaseDamage: no variable-power preprocessing, TypeCalc, randomness,
+    // critical multiplier or script multipliers. AI deliberately supplies base move power and
+    // keeps its own TypeCalc semantics; execution supplies its already-resolved power and type.
+    internal static int CalculateBase(PokemonCatalog catalog, WildBattleCombatant user,
+        WildBattleCombatant target, int power, ElementType type, string? effect, string? moveTarget,
+        SourceBaseDamageContext context, ImmutableArray<DamageStep>.Builder? steps = null)
+    {
+        bool physical = TypeRules.Category(type) == DamageCategory.Physical;
+        bool critical = context.Critical, reflect = context.Reflect, lightScreen = context.LightScreen;
+        bool rain = context.Rain, sun = context.Sun, weatherSuppressed = context.WeatherSuppressed;
+        bool sourceDoubleBattle = context.DoubleBattle, sourcePlusMinusBoost = context.PlusMinusBoost;
+        int sourceDefenderCount = context.DefenderCount;
+        bool sourceSolarBeamWeakWeather = context.SolarBeamWeakWeather;
+        bool sourceMudSport = context.MudSport, sourceWaterSport = context.WaterSport;
+        int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
+        int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;
+        string userAbility = context.UserAbility ?? WildBattleEffective.Ability(user);
+        // Ability arithmetic is shared by execution and AI_CalcDmg.
+        if (physical && userAbility is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER")
+        {
+            // pokemon.c:2437 precedes the attack badge's independent integer division.
+            attack *= 2;
+            steps?.Add(new("huge-pure-power", attack));
+        }
+        if (physical && user.AttackBadgeBoost)
+        {
+            // pokemon.c:2440 precedes Guts (2490) and stat stages; preserve both integer divisions.
+            attack = attack * 110 / 100;
+            steps?.Add(new("attack-badge", attack));
+        }
+        if (physical && target.DefenseBadgeBoost)
+        {
+            // pokemon.c:2442 applies the player's fifth badge before held items, abilities,
+            // Explosion's defense halving and stat stages. Keep its own integer truncation.
+            defense = defense * 110 / 100;
+            steps?.Add(new("defense-badge", defense));
+        }
+        // pokemon.c:2444-2447 applies each special badge multiplication before held effects.
+        if (!physical && user.SpecialBadgeBoost)
+        { attack = attack * 110 / 100; steps?.Add(new("special-attack-badge", attack)); }
+        if (!physical && target.SpecialBadgeBoost)
+        { defense = defense * 110 / 100; steps?.Add(new("special-defense-badge", defense)); }
+        if (user.HeldItem is not ("ITEM_HARD_STONE" or "ITEM_BLACK_GLASSES" or "ITEM_SPELL_TAG"))
+        {
+            int held = SourceHeldItemModifiers.TypeAttack(catalog, user, type, attack);
+            if (held != attack) { attack = held; steps?.Add(new("held-type", attack)); }
+        }
+        if (user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps?.Add(new("hard-stone", attack)); }
+        if (user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps?.Add(new("black-glasses", attack)); }
+        if (user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) { attack = attack * 110 / 100; steps?.Add(new("spell-tag", attack)); }
+        if (physical && user.HeldItem == "ITEM_CHOICE_BAND")
+        { attack = SourceBattleHeldItems.PhysicalAttack(attack, user.HeldItem); steps?.Add(new("choice-band", attack)); }
+        if (!physical)
+        {
+            int held = SourceHeldItemModifiers.SpecialAttack(catalog, user, attack);
+            if (held != attack) { attack = held; steps?.Add(new("held-species-special-attack", attack)); }
+            held = SourceHeldItemModifiers.SpecialDefense(catalog, target, defense);
+            if (held != defense) { defense = held; steps?.Add(new("held-species-special-defense", defense)); }
+        }
+        if (physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) { attack *= 2; steps?.Add(new("thick-club", attack)); }
+        if (WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
+        { attack /= 2; steps?.Add(new("thick-fat",attack)); }
+        if (physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132)
+        { defense *= 2; steps?.Add(new("metal-powder", defense)); }
+        if (physical && userAbility == "ABILITY_HUSTLE")
+        { attack = attack * 150 / 100; steps?.Add(new("hustle", attack)); }
+        if (sourcePlusMinusBoost && !physical)
+        { attack = attack * 150 / 100; steps?.Add(new("plus-minus", attack)); }
+        if (physical && userAbility == "ABILITY_GUTS" && user.Status != 0)
+            attack = attack * 150 / 100;
+        if (physical && WildBattleEffective.Ability(target) == "ABILITY_MARVEL_SCALE" && target.Status != 0)
+        { defense = defense * 150 / 100; steps?.Add(new("marvel-scale", defense)); }
+        if (type == ElementType.Fire && (sourceWaterSport || (user.WaterSport || target.WaterSport))) power /= 2;
+        if (type == ElementType.Electric && (sourceMudSport || (user.MudSport || target.MudSport))) power /= 2;
+        if (effect == "EFFECT_EXPLOSION") defense = Math.Max(1, defense / 2);
+        if (user.Pokemon.CurrentHp <= user.Pokemon.Stats.MaxHp / 3 &&
+            (type, userAbility) is (ElementType.Grass, "ABILITY_OVERGROW") or
+                (ElementType.Fire, "ABILITY_BLAZE") or (ElementType.Water, "ABILITY_TORRENT") or
+                (ElementType.Bug, "ABILITY_SWARM")) power = power * 150 / 100;
+        // Critical hits ignore unfavorable attack stages and favorable defense stages.
+        int attackStage = physical ? user.AttackStage : 6 + user.SpecialAttackStageDelta, defenseStage = physical ? target.DefenseStage : 6 + target.SpecialDefenseStageDelta;
+        int Stage(int basis, int stage) => stage < 6 ? basis * 2 / (8 - stage) : basis * (stage - 4) / 2;
+        attack = Math.Max(1, Stage(attack, critical && attackStage <= 6 ? 6 : attackStage));
+        defense = Math.Max(1, Stage(defense, critical && defenseStage >= 6 ? 6 : defenseStage));
+        int value = checked(attack * power);
+        steps?.Add(new("attack-times-power", value));
+        value = checked(value * (2 * user.Pokemon.Level / 5 + 2));
+        steps?.Add(new("times-level-factor", value));
+        value /= defense; steps?.Add(new("divide-defense", value));
+        value /= 50; steps?.Add(new("divide-50", value));
+        if (physical && user.Status == WildBattleStatus.Burn && userAbility != "ABILITY_GUTS") value /= 2;
+        steps?.Add(new("burn", value));
+        bool twoDefenders = sourceDoubleBattle && sourceDefenderCount == 2;
+        bool spread = twoDefenders && moveTarget == "MOVE_TARGET_BOTH";
+        if (reflect && physical && !critical)
+        { value = twoDefenders ? 2 * (value / 3) : value / 2; steps?.Add(new("reflect", value)); }
+        if (physical && spread) { value /= 2; steps?.Add(new("source-both-targets", value)); }
+        if (physical) value = Math.Max(1, value);
+        steps?.Add(new("physical-minimum-before-plus-two", value));
+        if (lightScreen && !physical && !critical)
+        { value = twoDefenders ? 2 * (value / 3) : value / 2; steps?.Add(new("light-screen", value)); }
+        if (!physical && spread) { value /= 2; steps?.Add(new("source-both-targets", value)); }
+        if (rain && !physical && !weatherSuppressed)
+        {
+            if (type == ElementType.Fire) value /= 2;
+            else if (type == ElementType.Water) value = value * 15 / 10;
+            steps?.Add(new("rain", value));
+        }
+        if (sourceSolarBeamWeakWeather && !weatherSuppressed) { value /= 2; steps?.Add(new("solar-beam-weather", value)); }
+        if (sun && !physical && !weatherSuppressed)
+        {
+            if (type == ElementType.Fire) value = value * 15 / 10;
+            else if (type == ElementType.Water) value /= 2;
+            steps?.Add(new("sun", value));
+        }
+        if (user.FlashFireBoost && type == ElementType.Fire) { value = value * 15 / 10; steps?.Add(new("flash-fire", value)); }
+        value += 2; steps?.Add(new("plus-two", value));
+        return value;
+    }
+
 }
+
+
+/// <summary>Pure CalculateBaseDamage inputs, separated from action execution and AI knowledge.</summary>
+internal readonly record struct SourceBaseDamageContext(bool Critical = false, bool Rain = false,
+    bool Reflect = false, bool Sun = false, bool LightScreen = false, bool WeatherSuppressed = false,
+    bool SolarBeamWeakWeather = false, bool DoubleBattle = false, int DefenderCount = 1,
+    bool PlusMinusBoost = false, bool MudSport = false, bool WaterSport = false, string? UserAbility = null);

@@ -9,7 +9,7 @@
 | Game.Application.Tests | 引用 Application、Content：命令与存档协议、工程会话、新游戏／Continue、野战、训练师战、场景脚本和背包接线 |
 | Game.Content.Tests | 只引用 Content：内容契约、序列化、引用校验和原版地图形状转换 |
 | Game.Audio.Tests | 只引用 Game.Audio（按需运行）：合成、PSG、声像、播放控制、回声、音序、叫声和目录 |
-| Game.Presentation.Tests | 源码链接纯 C# 的 SourceTextProgress：文本分页、帧推进和输入状态，不加载 Godot 引擎 |
+| Game.Presentation.Tests | 引用 Content，并链接纯 C# 表现组件：资源包、图鉴索引、菜单、文本分页、保存反馈与诊断；不加载 Godot 引擎 |
 | Game.ResourceImport.Tests | 无产品程序集依赖：维护的 Python 资源导入检查 |
 | Game.Process.Tests | 引用 Application：新进程之间的状态哈希一致性、存档往返；辅助程序在 Helpers/HashProbe |
 

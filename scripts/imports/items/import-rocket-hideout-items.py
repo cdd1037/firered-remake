@@ -8,7 +8,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 from item_effects import read_effects_text
 from item_source import ItemSource
-from item_catalog import item_definition as shared_item, item_json
+from item_catalog import item_json
 import argparse,json,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
@@ -49,6 +49,7 @@ def outputs(lock,data,project):
   m=match(p,r'^#define '+s+r'[ \t]+(0x[0-9A-Fa-f]+|\d+|\(FLAG_HIDDEN_ITEMS_START \+\s+\d+\))[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m))
   return number(p,'FLAG_HIDDEN_ITEMS_START')+int(re.search(r'\+\s+(\d+)',m[1])[1]) if m[1].startswith('(') else int(m[1],0)
  item_source=ItemSource(data)
+ shared_item = item_source.definition
  items=[];icons=[];result={};declarations=parse(data['src/data/items.json'])['items']
  source_effects=read_effects_text(text['include/constants/item_effects.h'],text['src/data/pokemon/item_effects.h'])
  mappingp='src/data/party_menu.h';m=match(mappingp,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);assert len(mapping)==58;rules.append(ref(mappingp,'sTMHMMoves',m))

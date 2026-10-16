@@ -52,6 +52,7 @@ public sealed record CampaignSlotMachine(int SignId, int MachineIndex, string Ca
 /// <summary>One deterministic original task frame. The scene never accepts a caller-selected result or RNG.</summary>
 public static class CampaignSlotMachineTransactions
 {
+    internal const string JackpotStat = "GAME_STAT_SLOT_JACKPOTS";
     private const CampaignSlotKeys AllKeys=(CampaignSlotKeys)1023;
     private const CampaignSlotKeys Dpad=CampaignSlotKeys.Up|CampaignSlotKeys.Down|CampaignSlotKeys.Left|CampaignSlotKeys.Right;
 
@@ -181,8 +182,8 @@ public static class CampaignSlotMachineTransactions
                                     if(result.BestReward==SlotReward.Seven)
                                     {
                                         var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty;
-                                        int count=stats.GetValueOrDefault("GAME_STAT_SLOT_JACKPOTS");
-                                        state=state with {GameStats=stats.SetItem("GAME_STAT_SLOT_JACKPOTS",Math.Min(0xffffff,checked(count+1)))};
+                                        int count=stats.GetValueOrDefault(JackpotStat);
+                                        state=state with {GameStats=stats.SetItem(JackpotStat,Math.Min(0xffffff,checked(count+1)))};
                                     }
                                     Phase(result.BestReward==SlotReward.None?CampaignSlotPhase.Lose:CampaignSlotPhase.Payout);
                                 }

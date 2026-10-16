@@ -28,7 +28,7 @@ public partial class CampaignView
             try
             {
                 var synthesized=new SynthSourceAudioPlayer(_root);
-                _sourceAudio=synthesized;AddChild(synthesized);
+                _sourceAudio=synthesized;AddChild(synthesized);_audioContext=AudioContext(_session.State);
                 synthesized.PlaybackEvent+=cue=>
                 {
                     if(cue.Kind=="fault")_audioFaulted=true;
@@ -106,7 +106,7 @@ public partial class CampaignView
     private void ResetSourceAudio()
     {
         ResetSourceMoveAnimation("audio-reset");
-        _sourceAudio?.ResetPlayback();_audioMusic=null;_audioContext=null;_audioPresentedEvent=null;_audioMap=null;_audioFieldMusic=null;_audioSavedMusic="MUS_DUMMY";
+        _sourceAudio?.ResetPlayback();_audioMusic=null;_audioContext=AudioContext(_session.State);_audioPresentedEvent=null;_audioMap=null;_audioFieldMusic=null;_audioSavedMusic="MUS_DUMMY";
         _audioSequence=_session.State.Script.EffectSequence;_audioTrainerOneShots.Clear();
     }
 

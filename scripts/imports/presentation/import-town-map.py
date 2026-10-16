@@ -7,7 +7,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 
 import argparse, json, os, pathlib, re, struct, subprocess, sys
 sys.dont_write_bytecode = True
@@ -158,6 +159,7 @@ def overlay(destination,source):
 
 
 def convert(sources):
+    shared_item = ItemSource(sources).definition
     outputs={};assets=[];code=sources['src/region_map.c'].decode();base='graphics/region_map/'
     def require(path,needle):
         if needle not in sources[path].decode(): raise ValueError('Unsupported Town Map semantics: '+needle)

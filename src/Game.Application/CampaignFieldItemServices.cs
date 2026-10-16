@@ -123,7 +123,7 @@ public sealed partial class CampaignSession
         }
         if (!transaction.Succeeded && transaction.Error is not (null or "inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full" or "inventory_insufficient_quantity"))
             throw new InvalidDataException(transaction.Error);
-        next = Result(transaction.Succeeded ? 1 : 0) with { Inventory = transaction.Succeeded && !check ? transaction.State : inventory };
+        next = CommitInventory(Result(transaction.Succeeded ? 1 : 0), transaction.Succeeded && !check ? transaction.State : inventory);
         return true;
     }
 }

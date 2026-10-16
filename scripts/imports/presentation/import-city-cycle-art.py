@@ -283,10 +283,6 @@ def import_content(raw, output, repository=None):
         repo = pathlib.Path(repository).resolve()
         require(not any(p.resolve().is_relative_to(repo) or repo.is_relative_to(p.resolve()) for p in (raw, output)),
                 'Player materialization overlaps reference repository')
-    for kind in ['raw','generated']:
-        for protected in (ROOT/'content'/kind).iterdir():
-            if protected.name=='city-cycle-art': continue
-            require(not any(p.resolve().is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(p.resolve()) for p in (raw,output)), 'Existing profile overlap')
     lock = load_lock()
     sources = read_sources(lock, raw, repository)
     outputs = convert( sources)

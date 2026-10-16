@@ -5,7 +5,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import json
 from pathlib import Path
@@ -27,6 +28,7 @@ def generate(raw):
     from world_source import WorldSource
     import ui_tiles as codec
     src = WorldSource(raw); outputs={}; assets=[]
+    shared_item = ItemSource(src.read).definition
     def capture(path, pattern, symbol):
         text=src.text(path); match=re.search(pattern,text,re.M|re.S); need(match is not None,'Missing source symbol: '+symbol)
         return match, dict(path=path,symbol=symbol,startLine=text[:match.start()].count('\n')+1,

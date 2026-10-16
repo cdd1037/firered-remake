@@ -138,12 +138,13 @@ def convert(lock,sources):
     elevation=block('src/data/pokemon_graphics/enemy_mon_elevation.h','const u8 gEnemyMonElevation[NUM_SPECIES] =','gEnemyMonElevation')
     if '[SPECIES_WEEDLE]' in elevation: raise ValueError('Unexpected explicit Weedle elevation')
     source('src/data/item_icon_table.h','gItemIconTable[ITEM_TEACHY_TV]','[ITEM_TEACHY_TV]      = {gItemIcon_TeachyTV, gItemIconPalette_TeachyTV},')
-    tutorial_bytes=(ROOT/'content/generated/data/services/old-man-tutorial.json').read_bytes()
-    tutorial=json.loads(tutorial_bytes,object_pairs_hook=pairs); tv=tutorial['teachyTv']
-    from item_catalog import item_definition
-    tv_item=item_definition('ITEM_TEACHY_TV')
-    items=json.loads(sources['src/data/items.json'],object_pairs_hook=pairs)['items']; item=next(i for i in items if i['itemId']=='ITEM_TEACHY_TV')
-    if (item['english'],item['description_english'].replace(r'\n','\n'),item['fieldUseFunc'])!=(tv_item['name'],tv['description'],tv_item['fieldUseFunction']):raise ValueError('Teachy TV differs from tutorial content')
+    items=json.loads(sources['src/data/items.json'],object_pairs_hook=pairs)['items']
+    selected = [row for row in items if row['itemId'] == 'ITEM_TEACHY_TV']
+    if len(selected) != 1: raise ValueError('Expected one Teachy TV declaration')
+    item = selected[0]
+    if item['fieldUseFunc'] != 'FieldUseFunc_TeachyTv': raise ValueError('Teachy TV field use differs')
+    tv_item = dict(name=item['english'], fieldUseFunction=item['fieldUseFunc'])
+    tv = dict(description=item['description_english'].replace(r'\n', '\n'))
     outputs={};assets=[]
     def add(id,image_path,palette_path,fw,fh,count,palette_kind='jasc-pal',patch=None):
         w,h,indices,png_palette=codec.indexed_png(sources[image_path])

@@ -26,7 +26,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     private double _sourceRemainder, _fadeRemaining, _fadeDuration;
     private float _musicGain = 1, _fadeStartGain, _fadeTargetGain;
     private bool _fadePauseAtEnd, _musicTemporarilyPaused;
-    private bool _cryDucking, _renderCryDucking, _stereo = true, _faulted;
+    private bool _cryDucking, _renderCryDucking, _stereo = true, _faulted, _shutdown;
     private long _pushedFrames, _capturedCompletionFrames;
     public bool AutomaticSourceClock { get; set; } = true;
     public event Action<SourceAudioPlaybackEvent>? PlaybackEvent;
@@ -99,7 +99,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public SourceAudioMetadata Metadata(string id) => _catalog.TryGetValue(id, out var cue)
         ? cue.Metadata : throw new InvalidDataException("Unknown synth cue: " + id);
     public string? CrySymbol(int species) => _catalog.Values.FirstOrDefault(c => c.Species == species)?.SourceSymbol;
-    public bool HasClip(string id) => !_faulted && _catalog.ContainsKey(id);
+    public bool HasClip(string id) => !_faulted && !_shutdown && _catalog.ContainsKey(id);
 
     public long PlayMusic(string id, bool restart = false)
     {
@@ -201,6 +201,22 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public void ResetPlayback()
     {
+        if (_shutdown) return;
+        ClearPlayback();
+        // Feedback/voice state is fresh; immutable decoded samples remain scene-owned.
+        _synth = _synth.CreateFreshPlayback();
+    }
+
+    public void ShutdownPlayback()
+    {
+        if (_shutdown) return;
+        _shutdown = true;
+        SetProcess(false);
+        ClearPlayback();
+    }
+
+    private void ClearPlayback()
+    {
         _seagallopMusicFade=null;
         _generation++;
         _fanfareToken = _fanfareMusicToken = 0; _fanfareCounter = 0; _fanfareCue = null;
@@ -208,8 +224,6 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         _sourceRemainder = _fadeRemaining = 0; _musicGain = 1;
         _fadePauseAtEnd = _musicTemporarilyPaused = false;
         ReleaseOutput();
-        // A new mixer clears feedback tails as well as voices on session replacement.
-        _synth = NewSynth();
         _pushedFrames = _capturedCompletionFrames = 0;
     }
 
@@ -237,7 +251,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public override void _Process(double delta)
     {
-        if (_faulted) return;
+        if (_faulted || _shutdown) return;
         try
         {
             UpdateCompletions();
@@ -322,7 +336,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     private bool TryCue(string id, int? expectedPlayer, out SynthCue? cue)
     {
         if (!IsInsideTree()) throw new InvalidOperationException("Attach synth backend before playback.");
-        if (_faulted || !_catalog.TryGetValue(id, out cue))
+        if (_faulted || _shutdown || !_catalog.TryGetValue(id, out cue))
         { cue = null; PlaybackEvent?.Invoke(new("missing", id, 0, expectedPlayer ?? -1, "No admitted synthesized cue", false)); return false; }
         if (expectedPlayer.HasValue && cue.SourcePlayer != expectedPlayer)
             throw new InvalidOperationException("Wrong source player for " + id);
@@ -371,7 +385,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         _playback?.Dispose(); _playback = null;
         _generator?.Dispose(); _generator = null; _capacity = 0;
     }
-    public override void _ExitTree() => ResetPlayback();
+    public override void _ExitTree() => ShutdownPlayback();
 
     private sealed class ActiveCue(SynthCue cue, long token, long startFrame, long startGameFrame)
     {

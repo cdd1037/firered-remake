@@ -97,13 +97,6 @@ public static class HeldItemTransferRules
         if (!CanHold(catalog, item, machines)) return No("held_item_not_holdable");
         if (machines is not null && MachineRules.Definition(machines, item) is not null)
             return MachineRules.AddMachine(machines, inventory, item);
-        var definition = EarlyShopInventoryRules.Find(catalog, item)!;
-        var pocket = EarlyShopInventoryRules.Pocket(inventory, definition);
-        int count = OpeningInventoryRules.Quantity(pocket, item);
-        if (count >= catalog.Limits.MaximumStack) return No("inventory_stack_full");
-        int capacity = definition.Pocket switch { "POCKET_BERRY_POUCH" => SsAnneItemRules.BerrySlots,
-            "POCKET_POKE_BALLS" => catalog.QuestLimits.BallSlots, _ => catalog.Limits.BagItemSlots };
-        if (count == 0 && pocket.Length >= capacity) return No("inventory_destination_full");
-        return new(EarlyShopInventoryRules.SetQuantity(inventory, definition, count + 1), true, null);
+        return EarlyInventoryAddRules.Add(catalog, inventory, item, 1);
     }
 }

@@ -8,7 +8,8 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_source import ItemSource
+from item_catalog import inventory_item, item_json
 import argparse
 import json
 import pathlib
@@ -73,6 +74,8 @@ def import_catalog(raw, out):
         data = (raw / entry['path']).read_bytes()
         inputs[entry['path']] = entry
         texts[entry['path']] = data.decode('utf-8')
+
+    shared_item = ItemSource(lambda path: texts[path].encode('utf-8')).definition
 
     def one(path, pattern):
         matches = list(re.finditer(pattern, texts[path], re.M | re.S))

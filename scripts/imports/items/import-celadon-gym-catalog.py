@@ -8,7 +8,8 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, item_json
+from item_source import ItemSource
+from item_catalog import item_json
 
 import argparse,json,pathlib,re,sys
 import pokemon_import as pokemon
@@ -22,6 +23,7 @@ def canonical(data):return (json.dumps(data,sort_keys=True,separators=(',',':'),
 
 
 def item_outputs(lock,sources,project):
+    shared_item = ItemSource(sources).definition
     text={p:b.decode() for p,b in sources.items() if not p.endswith('.png')};entries={e['path']:e for e in lock['files']}
     rules=[]
     def match(path,pattern):

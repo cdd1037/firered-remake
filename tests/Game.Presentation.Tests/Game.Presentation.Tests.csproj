@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
     <Compile Include="../../src/Game.Godot/*PresentationAssets.cs" Link="PresentationAssets/%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Godot/PresentationPackage.cs" Link="PresentationPackage.cs" />
@@ -9,5 +10,7 @@
     <Compile Include="../../src/Game.Godot/CampaignSaveFeedback.cs" Link="CampaignSaveFeedback.cs" />
     <Compile Include="../../src/Game.Godot/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />
     <Compile Include="../../src/Game.Godot/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
+    <Compile Include="../../src/Game.Godot/TeachyTvPresentation.cs" Link="TeachyTvPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/TeachyTvTextPresentation.cs" Link="TeachyTvTextPresentation.cs" />
   </ItemGroup>
 </Project>

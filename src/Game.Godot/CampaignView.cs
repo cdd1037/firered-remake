@@ -345,7 +345,7 @@ public partial class CampaignView:Node2D
         var tree=GetTree();
         if(_sourceAudio is not null)
         {
-            _sourceAudio.ResetPlayback();
+            _sourceAudio.ShutdownPlayback();
             // AudioServer retires stopped playback on its next mix. _ExitTree is too late
             // during engine shutdown, so allow real time and a normal frame before quitting.
             ulong stoppedAt=Time.GetTicksUsec();
@@ -367,7 +367,7 @@ public partial class CampaignView:Node2D
         if(what==(int)NotificationWMCloseRequest){RequestQuit();return;}
         if(!_startupReady||_quitRequested||_startupExited)return;
         if(what==(int)NotificationWMWindowFocusOut || what==(int)NotificationApplicationFocusOut)
-        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();ResetVsSeekerInput();}
+        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();ResetVsSeekerInput();ReleaseModalHeldInput();}
     }
     public override void _UnhandledInput(InputEvent input)
     {
@@ -377,6 +377,7 @@ public partial class CampaignView:Node2D
             if(input is InputEventKey {Pressed:true,Echo:false,Keycode:Key.Escape})RequestQuit();
             GetViewport().SetInputAsHandled();return;
         }
+        if(TrySystemScreenshotInput(input))return;
         if(TrySlotMachineInput(input))return;
         if(TryTeachyTvBattleInput(input))return;
         if(TryTeachyTvFieldInput(input))return;
@@ -464,7 +465,6 @@ public partial class CampaignView:Node2D
             if(key.Keycode==Key.Backspace&&_session.State.Script.Wait?.Kind is StoryWaitKind.Choice or StoryWaitKind.MenuChoice){_held=null;Apply(new("ack",Choice:_session.State.Script.Wait.Kind==StoryWaitKind.MenuChoice?127:0));}
             if(key.Keycode==Key.F5)ShowPlayerSaveResult(AttemptPlayerSave());
             if(key.Keycode==Key.F9)ShowPlayerSaveResult(AttemptPlayerLoad());
-            if(key.Keycode==Key.F12&&_evidence.Length>0)GetViewport().GetTexture().GetImage().SavePng(System.IO.Path.ChangeExtension(_evidence,"png"));
             if(key.Keycode==Key.Escape)RequestQuit();
         }
         QueueRedraw();GetViewport().SetInputAsHandled();

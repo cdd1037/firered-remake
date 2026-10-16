@@ -58,7 +58,7 @@ public sealed partial class CampaignSession
     {
         if(state.HealingEffect is not null)return "save_center_healing_active";
         if(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"&&!HasCenterRespawn(state))return "save_heal_location_unsupported";
-        if(state.GameStats is {} stats&&stats.Any(x=>(x.Key!=CenterUsageStat&&(x.Key is not ("GAME_STAT_ENTERED_HOF" or "GAME_STAT_RECEIVED_RIBBONS" or FirstHallOfFameTimeStat))&&(x.Key!="GAME_STAT_FISHING_CAPTURES")&&(x.Key!=EvolutionCountStat)&&(_content.FieldRockSmash is null||x.Key!=Game.Domain.World.FieldRockSmashSourceRules.UsageStat)&&(x.Key!=CutUsageStat)&&(x.Key!=DayCareUsageStat)&&(x.Key!=HatchedEggsStat))||(x.Key==FirstHallOfFameTimeStat?!ValidFirstHallOfFameTime(x.Value):x.Value is <0 or >0xffffff)))return "save_game_stat_invalid";
+        if(state.GameStats is {} stats&&stats.Any(x=>(x.Key!=CenterUsageStat&&(x.Key is not ("GAME_STAT_ENTERED_HOF" or "GAME_STAT_RECEIVED_RIBBONS" or FirstHallOfFameTimeStat))&&(x.Key!="GAME_STAT_FISHING_CAPTURES")&&(x.Key!=EvolutionCountStat)&&(_content.FieldRockSmash is null||x.Key!=Game.Domain.World.FieldRockSmashSourceRules.UsageStat)&&(x.Key!=CutUsageStat)&&(x.Key!=DayCareUsageStat)&&(x.Key!=HatchedEggsStat)&&(x.Key!=CampaignSlotMachineTransactions.JackpotStat))||(x.Key==FirstHallOfFameTimeStat?!ValidFirstHallOfFameTime(x.Value):x.Value is <0 or >0xffffff)))return "save_game_stat_invalid";
         return null;
     }
 }

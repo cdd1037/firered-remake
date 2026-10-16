@@ -8,14 +8,14 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 from item_effects import read_effects_text
 from item_source import ItemSource
-from item_catalog import item_definition as shared_item, item_json
+from item_catalog import item_json
 
 import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 import sys
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
-from machine_catalog import load_catalog, machine_reference, compatibility_reference
+from machine_catalog import catalog_from_source, machine_reference, compatibility_reference
 sys.path.insert(0, str(ROOT/'scripts/lib'))
 from item_icon_exports import output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -85,7 +85,7 @@ def convert(lock,data):
  for name in ITEMS:
   symbol='ITEM_'+name;i=next(i for i in all_items if i['itemId']==symbol)
   p='src/data/items.json';m=match(p,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}')
-  source=ref(p,symbol,m);definition=shared_item(symbol)
+  source=ref(p,symbol,m);definition=item_source.definition(symbol)
   declaration=i['description_english'].replace('\\n','\n');description=declaration
   effect_bytes=source_effects[symbol] if name in effects else []
   support=effects[name][1] if name in effects else ('fossil' if 'FOSSIL' in name else 'noFieldUse')
@@ -96,7 +96,7 @@ def convert(lock,data):
   defs.append(dict(metadata=wrapped, effectBytes=effect_bytes, useSupport=support))
   icon,icon_png=item_source.icon(symbol)
   icons.append(icon);outputs[icon['pngPath']]=icon_png
- shared = load_catalog(ROOT)
+ shared = catalog_from_source(data)
  def compatibility(tm):
   return [compatibility_reference(shared, 'pret:ITEM_' + tm[:4], 'pret:SPECIES_' + species) for species in SPECIES]
  machines = [machine_reference(shared, 'pret:ITEM_' + item, ['pret:SPECIES_' + species for species in SPECIES]) for item in ['TM05','TM09','TM46']]
@@ -120,12 +120,6 @@ def run(raw,out,repo=None,lock_path=None):
  if repo is not None:
   r=safe(repo)
   if any(p==r or p in r.parents or r in p.parents for p in [raw,out]):raise ValueError('Reference/output overlap')
- for kind in ['raw','generated']:
-  parent=ROOT/'content'/kind
-  for protected in parent.iterdir():
-   if protected.name=='mtmoon-items': continue
-   p=protected.absolute()
-   if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
  materials=output_materials(out,outputs)
  if repo is not None:materials.update({(raw,p):b for p,b in data.items()})

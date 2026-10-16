@@ -5,11 +5,12 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_catalog import definitions, inventory_item, item_json
 import  json, re
 from pathlib import Path
 from machine_catalog import admission_view, compatibility_additions
 ROOT=_PROJECT_ROOT
+shared_item=definitions(ROOT).__getitem__
 RAW=ROOT/'content/raw/pokefirered/037335f4'
 OUT=ROOT/'content/generated/data/items/sevii-ruby.json'
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'

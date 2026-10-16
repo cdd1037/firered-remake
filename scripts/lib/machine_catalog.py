@@ -25,6 +25,13 @@ def load_catalog(project_root):
         _compiler.read_json(root / _compiler.RECIPE_PATH)))
 
 
+def catalog_from_source(source, recipe=None):
+    """Compile a machine view from the selected input reader/dict only."""
+    if recipe is None:
+        recipe = _compiler.read_json(_PROJECT_ROOT / _compiler.RECIPE_PATH)
+    return _compiler.Catalog(_compiler.compile_catalog(source, recipe))
+
+
 def machine_reference(catalog, item, species):
     species = list(species)
     catalog.machine(item, species)  # validate the requested admitted definition and roster

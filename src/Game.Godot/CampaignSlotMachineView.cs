@@ -64,7 +64,7 @@ public partial class CampaignView
         if (!SlotMachineActive) return false;
         if (input is InputEventKey key && !key.Echo)
         {
-            if (key.Pressed && key.Keycode is Key.Escape or Key.F12) { RequestQuit(); return true; }
+            if (key.Pressed && key.Keycode == Key.Escape) { RequestQuit(); return true; }
             CampaignSlotKeys button = key.Keycode switch
             {
                 Key.Enter or Key.Z => CampaignSlotKeys.A,

@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
         Decision<CampaignState> Commit(PokemonStorageItemResult result)
         {
             if (!result.Succeeded) return No(result.Diagnostic!.Code);
-            var next = state with { Party = result.Party, Storage = result.Storage, Inventory = result.Inventory,
+            var next = CommitInventory(state, result.Inventory) with { Party = result.Party, Storage = result.Storage,
                 Pc = pc with { ItemCursor = result.Cursor, ItemPrompt = null, ItemBagTarget = null } };
             return ValidateStorageItemOwnership(next) is {} error ? No(error) : new(CommandStatus.Accepted, next);
         }

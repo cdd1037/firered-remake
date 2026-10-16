@@ -23,6 +23,18 @@ def unique_pairs(rows):
 class ItemSource:
     def __init__(self, data):
         self.read = data if callable(data) else data.__getitem__
+        self._definitions = None
+
+    def definition(self, symbol):
+        """Resolve business fields using this source reader, never the project cache."""
+        from item_catalog import definitions_from_source
+        if self._definitions is None:
+            self._definitions = definitions_from_source(self.read)
+        symbol = symbol.removeprefix('pret:')
+        try:
+            return self._definitions[symbol]
+        except KeyError as error:
+            raise ValueError('Unknown item: ' + symbol) from error
 
     def text(self, path):
         return self.read(path).decode('utf-8')

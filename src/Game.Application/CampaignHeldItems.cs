@@ -49,7 +49,7 @@ public sealed partial class CampaignSession
         var result = take ? HeldItemTransferRules.Take(shop, inventory, owned, _content.Machines)
             : HeldItemTransferRules.Give(shop, inventory, owned, new(command.Text!), fromPc, command.Choice == 1, _content.Machines);
         if (!result.Succeeded) return No(result.Error!);
-        return new(CommandStatus.Accepted, state with { Inventory = result.Inventory,
+        return new(CommandStatus.Accepted, CommitInventory(state, result.Inventory) with {
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             ItemMenu = !take && menu.TargetInstanceId is not null ? menu with { Origin = "party", View = "held" } : menu });
     }

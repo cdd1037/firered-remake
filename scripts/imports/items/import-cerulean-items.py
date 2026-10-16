@@ -6,7 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, item_json
+from item_catalog import item_json
 
 import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
@@ -73,7 +73,7 @@ def convert(lock,data):
  i=chosen[0];m=match(p,r'^    \{\n      "english": "SUPER POTION",.*?^    \}')
  source=ref(p,symbol,m)
  cp='include/constants/items.h';cm=match(cp,r'^#define ITEM_SUPER_POTION[ \t]+(\d+)[ \t]*$');rules.append(ref(cp,symbol,cm))
- definition=shared_item(symbol)
+ definition=ItemSource(data).definition(symbol)
  if (definition['sourceItemId'],definition['price'],definition['holdEffectParam'])!=(22,700,50):raise ValueError('Super Potion values differ')
  declaration=i['description_english'].replace('\\n','\n')
  p='include/constants/item_effects.h';m=match(p,r'^#define ITEM4_HEAL_HP[ \t]+(0x[0-9A-Fa-f]+|\d+)[ \t]*(?://[^\n]*)?$');flag=int(m[1],0);rules.append(ref(p,'ITEM4_HEAL_HP',m))
@@ -112,12 +112,6 @@ def run(raw,out,repo=None,lock_path=None):
  if repo is not None:
   r=safe(repo)
   if any(p==r or p in r.parents or r in p.parents for p in [raw,out]):raise ValueError('Reference/output overlap')
- for kind in ['raw','generated']:
-  parent=ROOT/'content'/kind
-  for protected in parent.iterdir():
-   if protected.name=='cerulean-items': continue
-   p=protected.absolute()
-   if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
  materials=output_materials(out,outputs)
  if repo is not None:materials.update({(raw,p):b for p,b in data.items()})

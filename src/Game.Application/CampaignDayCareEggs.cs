@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("daycare_step_context");
         // The shared u8 counter runs even with no residents and no eggs, as ShouldEggHatch does.
         var step = FourIslandDayCareRules.AdvanceEligibleStep(FourDayCare(state),
-            BreedingMetadata.Species.ToImmutableDictionary(p => p.Key, p => p.Value.Breeding), state.World.Rng);
+            _binding.BreedingSpecies, state.World.Rng);
         state = state with { FourIslandDayCare = step.State, World = state.World with { Rng = step.Rng },
             Script = step.EggProduced ? state.Script with { Flags = state.Script.Flags.SetItem(PendingDayCareEggFlag, true) } : state.Script };
         if (!step.HatchCycleDue) return state;
