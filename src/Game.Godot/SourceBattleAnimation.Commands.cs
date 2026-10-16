@@ -12,7 +12,7 @@ public sealed partial class SourceBattleAnimation
         {
             if(a.FirstOrDefault()=="SoundTask_FireBlast")
             {if(a.Length!=3||a[1]!="SE_M_FLAME_WHEEL"||a[2]!="SE_M_FLAME_WHEEL2")Fail(c,"Fire sound sequence operands differ.");return true;}
-            if(a.Length!=8||a[0]!="SoundTask_LoopSEAdjustPanning"||a[1]!="SE_M_BUBBLE_BEAM2"||SoundPan(a[2]) is < -64 or >63||SoundPan(a[3]) is < -64 or >63||Number(a[4]) is < -128 or >127||Number(a[5]) is <1 or >255||Number(a[6]) is <0 or >255||Number(a[7]) is <0 or >255)Fail(c,"Unsupported sound callback or source-width operands.");
+            if(a.Length!=8||a[0]!="SoundTask_LoopSEAdjustPanning"||!_script.SoundEffects.ContainsKey(a[1])||SoundPan(a[2]) is < -64 or >63||SoundPan(a[3]) is < -64 or >63||Number(a[4]) is < -128 or >127||Number(a[5]) is <1 or >255||Number(a[6]) is <0 or >255||Number(a[7]) is <0 or >255)Fail(c,"Unsupported sound callback or source-width operands.");
             return true;
         }
         if(c.Op is "splitbgprio" or "splitbgprio_foes")
@@ -37,7 +37,7 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_BlendMonInAndOut")
         {if(a.Length!=7||Number(a[1]) is <0 or >255||Number(a[2]) is <0 or >3||PaletteNumber(a[3]) is <0 or >65535||Number(a[4]) is <1 or >16||Number(a[5]) is <0 or >32767||Number(a[6]) is <1 or >32767)Fail(c,"Battler color cycle operands differ.");return true;}
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_ScaleMonAndRestore")
-        {if(a.Length!=7||Number(a[1]) is <0 or >255||Number(a[2]) is < -32768 or >32767||Number(a[3]) is < -32768 or >32767||Number(a[4]) is <1 or >32767||Number(a[5]) is <0 or >1||Number(a[6])!=0)Fail(c,"Battler scaling needs signed increments, positive duration and normal object mode.");return true;}
+        {if(a.Length!=7||Number(a[1]) is <0 or >255||Number(a[2]) is < -32768 or >32767||Number(a[3]) is < -32768 or >32767||Number(a[4]) is <1 or >32767||Number(a[5]) is <0 or >1||Number(a[6]) is <0 or >1)Fail(c,"Battler scaling needs signed increments, positive duration and normal or blend object mode.");return true;}
         if(c.Op=="call")
         {if(a.Length!=1||!_script.Subroutines.ContainsKey(a[0]))Fail(c,"Missing source subroutine.");return true;}
         if(c.Op=="return")
@@ -63,11 +63,11 @@ public sealed partial class SourceBattleAnimation
         {
             _slot=slot.Value;speed=Math.Clamp(speed,0,2);_leg=8-2*speed;
             int direction=slot.IsPlayer?1:-1;_rotationStep=(256+128*speed)*direction;_xStep=(speed+2)*direction;_cycles=rocks-1;
-            owner._affineMode[_slot]=true;
+            owner.PrepareBattlerRotScale(_slot,0);
         }
         public override void Step(SourceBattleAnimation owner)
         {
-            if(_phase==3){owner.SetBattlerRotScale(_slot,256,256,0);owner._affineMode[_slot]=false;Finished=true;return;}
+            if(_phase==3){owner.SetBattlerRotScale(_slot,256,256,0);owner.ResetBattlerRotScale(_slot);Finished=true;return;}
             int direction=_phase==1?-1:1;var offset=owner._offsets[_slot];
             _rotation=(short)(_rotation-direction*_rotationStep);owner.SetBattlerRotScale(_slot,256,256,_rotation);
             owner._offsets[_slot]=new((short)(offset.X+direction*_xStep),Math.Abs(owner._matrixC[_slot])>>3);

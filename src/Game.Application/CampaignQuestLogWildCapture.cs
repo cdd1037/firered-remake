@@ -11,7 +11,7 @@ public static class CampaignQuestLogWildCapture
     {
         if(incoming.Event!=CampaignQuestLogEvent.WildWon||!Counts(incoming,out int defeated,out int caught))return actions;
         int index=actions.Length-1;
-        while(index>=0&&actions[index].Event==CampaignQuestLogEvent.None)index--;
+        while(index>=0&&!CampaignQuestLogRecorder.IsCaption(actions[index]))index--;
         if(index<0||actions[index].Event!=CampaignQuestLogEvent.WildWon||!Counts(actions[index],out int priorDefeated,out int priorCaught))return actions;
         var prior=actions[index];
         var args=prior.Arguments.ToBuilder();

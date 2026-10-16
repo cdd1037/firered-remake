@@ -48,6 +48,14 @@ public partial class CampaignView
     private readonly Dictionary<string,ImageTexture> _sourceSubstituteTextures=[];
     private SourceAnimationResources? _sourceAnimationResources;
     private SourceBattleFrameComposer? _sourceMoveComposer;
+    private readonly Dictionary<ulong,int> _sourceTerrainIds=[];
+    private SourceAnimationBackgroundSurface SourceTerrainSurface(SourcePixelAsset field)
+    {
+        ulong key=CurrentWildBattleTerrain.GetInstanceId();
+        if(!_sourceTerrainIds.TryGetValue(key,out int id))
+        {id=_sourceAnimationResources!.IdentifyTerrain(field);_sourceTerrainIds.Add(key,id);}
+        return _sourceAnimationResources!.CreateBackgroundSurface(id);
+    }
     private ImageTexture? _sourceMoveField;
     private SourceBattleAnimationAudioAdapter? _sourceMoveSound;
     private CampaignMoveAnimationDispatch? _sourceMoveContinuation;
@@ -214,10 +222,11 @@ public partial class CampaignView
     {
         var resolved=_sourceAnimationResources!.Resolve(dispatch.SourceMoveId);
         var script=resolved.Script;foreach(var asset in resolved.Assets)assets[asset.Key]=asset.Value;
+        var backgroundSurface=SourceTerrainSurface(assets["background"]);var backgroundPalette=Enumerable.Range(0,16).Select(i=>backgroundSurface.PaletteColor(2,i)).ToArray();
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
-        if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){AcknowledgePresentedSingleBattle();return;}
-        _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
+        if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio(),backgroundPalette))){AcknowledgePresentedSingleBattle();return;}
+        _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();
     }
@@ -269,7 +278,7 @@ public partial class CampaignView
     }
     private void DisposeSourceMoveAnimation()
     {
-        ResetSourceMoveAnimation("exit-tree");_sourceMoveField?.Dispose();_sourceMoveField=null;_sourceAnimationResources?.Dispose();_sourceAnimationResources=null;
+        ResetSourceMoveAnimation("exit-tree");_sourceMoveField?.Dispose();_sourceMoveField=null;_sourceAnimationResources?.Dispose();_sourceAnimationResources=null;_sourceTerrainIds.Clear();
         foreach(var texture in _sourceSubstituteTextures.Values)texture.Dispose();_sourceSubstituteTextures.Clear();_sourceMoveAssets.Clear();_sourceBattlerGeometry.Clear();
     }
 }

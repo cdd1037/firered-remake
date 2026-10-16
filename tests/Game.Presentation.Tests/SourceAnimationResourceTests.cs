@@ -30,8 +30,9 @@ public sealed class SourceAnimationResourceTests
         {
             var resolved=resources.Resolve(script.MoveId);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
             assets.Add("background",new(240,112,new ushort[240*112]));foreach(var battler in battlers)assets.Add(battler.Asset,new(64,64,Enumerable.Repeat((ushort)0x801f,4096).ToArray()));
-            var runtime=new SourceBattleAnimation(resolved.Script,new("resources",1,script.MoveId,new(0),new(1)),battlers,true,new Silent());
-            var composer=new SourceBattleFrameComposer(assets,battlers,resolved.StatMask,resolved.Metallic);int ticks=0;
+            var surface=resources.CreateBackgroundSurface(0);
+            var runtime=new SourceBattleAnimation(resolved.Script,new("resources",1,script.MoveId,new(0),new(1)),battlers,true,new Silent(),Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray());
+            var composer=new SourceBattleFrameComposer(assets,battlers,resolved.StatMask,resolved.Metallic,surface,resolved.Backgrounds);int ticks=0;
             while(runtime.Active&&ticks++<2048)
             {
                 var frame=runtime.Tick();
@@ -42,6 +43,22 @@ public sealed class SourceAnimationResourceTests
             while(runtime.HasResidualSprites&&ticks++<4096)composer.ComposeResidualSprites(runtime.TickResidualSprites());
             Assert.IsFalse(runtime.HasResidualSprites);
         }
+    }
+    [TestMethod]
+    public void IndexedTerrainIdentityAndMoveMaterialFollowGeneratedDependencies()
+    {
+        using var resources=new SourceAnimationResources(Folder);
+        var surface=resources.CreateBackgroundSurface(0);var pixels=new ushort[240*112];surface.Render(pixels,240,112);
+        int terrain=resources.IdentifyTerrain(new(240,112,pixels));var matched=new ushort[pixels.Length];resources.CreateBackgroundSurface(terrain).Render(matched,240,112);CollectionAssert.AreEqual(pixels,matched);
+        Assert.AreEqual(0,resources.Resolve(1).Backgrounds.Count);
+        var dark=resources.Resolve(168);Assert.AreEqual(1,dark.Backgrounds.Count);Assert.AreSame(dark.Backgrounds[1],resources.Resolve(242).Backgrounds[1]);
+        var assets=dark.Assets.ToDictionary(p=>p.Key,p=>p.Value);assets.Add("background",new(240,112,pixels));
+        var composer=new SourceBattleFrameComposer(assets,[],backgroundSurface:resources.CreateBackgroundSurface(terrain),moveBackgrounds:dark.Backgrounds);
+        SourceAnimationFrame Frame(int revision,int? id,int darkness)=>new(revision,true,new PixelPoint[4],[],0,0,[],[]){MoveBackground=new(id,0,0,darkness){Revision=revision}};
+        byte[] original=composer.ComposeField(Frame(0,null,0));byte[] black=composer.ComposeField(Frame(1,1,16));
+        Assert.IsTrue(black.Where((_,i)=>i%4!=3).All(c=>c==0));Assert.IsTrue(black.Where((_,i)=>i%4==3).All(c=>c==255));
+        byte[] changed=composer.ComposeField(Frame(1,1,0));Assert.IsFalse(original.SequenceEqual(changed));
+        CollectionAssert.AreEqual(original,composer.ComposeField(Frame(2,null,0)));
     }
     [TestMethod]
     public void ProductionResolverLoadsEveryMoveFromGeneratedOnlyDirectory()
@@ -64,7 +81,7 @@ public sealed class SourceAnimationResourceTests
         string folder=Path.Combine(Path.GetTempPath(),"animation-recipes-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
         try
         {
-            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
             {string target=Path.Combine(folder,file);Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(Path.Combine(Folder,file),target);}
             string path=Path.Combine(folder,"explosion/manifest.json");var json=JsonNode.Parse(File.ReadAllText(path))!;json["spriteRecipes"]![0]!["blend"]=true;File.WriteAllText(path,json.ToJsonString());
             Assert.Throws<InvalidDataException>(()=>new SourceAnimationResources(folder));

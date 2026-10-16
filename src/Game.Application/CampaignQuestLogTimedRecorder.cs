@@ -5,10 +5,11 @@ namespace Game.Application;
 
 public static partial class CampaignQuestLogRecorder
 {
-    private static CampaignQuestLogScene AppendTimed(CampaignQuestLogScene scene,CampaignState before,CampaignState after,QuestLogSource? source,CampaignQuestLogAction? caption)
+    private static CampaignQuestLogScene AppendTimed(CampaignQuestLogScene scene,CampaignState before,CampaignState after,QuestLogSource? source,CampaignQuestLogAction? caption,out bool captionRecorded,int? recordingFrame=null)
     {
         var actions=scene.Actions;
         int start=actions.Where(a=>a.Event==CampaignQuestLogEvent.None&&a.Tile is null&&a.Layout is null).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max();
+        start=Math.Max(start,recordingFrame??0);
         var previous=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
         foreach(var a in actions.Where(a=>a.Event==CampaignQuestLogEvent.None&&a.Tile is null&&a.Layout is null).OrderBy(a=>a.StartFrame))
         {
@@ -40,17 +41,18 @@ public static partial class CampaignQuestLogRecorder
             var actor=latest.GetValueOrDefault(initial.Id)??initial with{Visible=false};
             if(!previous.TryGetValue(initial.Id,out var prior)||actor!=prior)Append(actor,start,prior is not null&&actor.X==prior.X&&actor.Y==prior.Y?1:16,null);
         }
-        if(caption is not null&&actions.Length<ActionLimit&&Budget(actions.Add(caption),source)<=QuestLogSource.ScriptBytes)actions=actions.Add(caption with{StartFrame=start});
+        captionRecorded=caption is null||TryAppendEvent(actions,caption with{StartFrame=start},source,out actions);
         return actions==scene.Actions?scene:scene with{Actions=actions,Closed=caption?.Event is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.GymWon or CampaignQuestLogEvent.EliteFourWon or CampaignQuestLogEvent.ChampionWon or CampaignQuestLogEvent.TrainerWon};
 
         bool Append(CampaignQuestLogActor actor,int at,int frames,string? opcode)
         {
+            if(at>ushort.MaxValue-frames)return false;
             int index=Array.FindIndex(scene.Actors.ToArray(),a=>a.Id==actor.Id);
             previous.TryGetValue(actor.Id,out var prior);
             var action=new CampaignQuestLogAction(index,actor.X,actor.Y,actor.Facing,actor.Visible,CampaignQuestLogEvent.None,frames)
             {StartFrame=at,SourceAction=opcode,Graphics=actor.Graphics!=prior?.Graphics?actor.Graphics:null,Spawn=index<0?prior??actor:null};
             int reserved=caption is null?0:source?.EventSizes[(int)caption.Event]??16;
-            if(actions.Length>=ActionLimit-(caption is null?0:1)||Budget(actions.Add(action),source)+reserved>QuestLogSource.ScriptBytes)return false;
+            if(actions.Length>=ActionLimit-(caption is null?0:1)||LogicalCommandCount(actions.Add(action))+(caption is null?0:1)>QuestLogSource.EventCursorCount||Budget(actions.Add(action),source)+reserved>QuestLogSource.ScriptBytes)return false;
             actions=actions.Add(action);previous[actor.Id]=actor;return true;
         }
     }

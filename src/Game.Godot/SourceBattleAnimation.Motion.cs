@@ -55,10 +55,9 @@ public sealed partial class SourceBattleAnimation
             case "gFistFootSpriteTemplate":Range(3,-127,127);Range(4,-127,127);Range(5,0,255);Range(6,0,1);Range(7,0,4);break;
         }
     }
-    private abstract class VisualTask
+    private abstract class VisualTask:SourceTask
     {
-        public bool Finished{get;protected set;}
-        public abstract void Step(SourceBattleAnimation owner);
+        public virtual bool Counted=>true;
     }
     private sealed class EllipseTask(AnimationSlot slot,int width,int height,int loops,int speed):VisualTask
     {

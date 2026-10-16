@@ -13,9 +13,20 @@ public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch
 
 public static class CampaignMoveAnimationPresentation
 {
+    private static bool MatchesSelfStatIncrease(WildBattleStat stat,int before,int after)=>
+        stat is WildBattleStat.Attack or WildBattleStat.Defense && before is >=0 and <12 && after==before+1;
+
     // Shared by single/double projections; zero means no implemented source renderer.
     private static int SupportedSourceMoveId(string move)=>move switch
     {
+        "pret:MOVE_CONFUSION" => 93,
+        "pret:MOVE_PSYCHIC" => 94,
+        "pret:MOVE_DEFENSE_CURL" => 111,
+        "pret:MOVE_PSYBEAM" => 60,
+        "pret:MOVE_HYPNOSIS" => 95,
+        "pret:MOVE_PSYWAVE" => 149,
+        "pret:MOVE_SLACK_OFF" => 303,
+        "pret:MOVE_BULK_UP" => 339,
         "pret:MOVE_POUND" => 1,
         "pret:MOVE_KARATE_CHOP" => 2,
         "pret:MOVE_FIRE_PUNCH" => 7,
@@ -81,13 +92,16 @@ public static class CampaignMoveAnimationPresentation
         "pret:MOVE_LEECH_LIFE" => 141,
         "pret:MOVE_BUBBLE" => 145,
         "pret:MOVE_FLASH" => 148,
+        "pret:MOVE_SPLASH" => 150,
         "pret:MOVE_CRABHAMMER" => 152,
         "pret:MOVE_EXPLOSION" => 153,
         "pret:MOVE_SLASH" => 163,
+        "pret:MOVE_THIEF" => 168,
         "pret:MOVE_FLAME_WHEEL" => 172,
         "pret:MOVE_POWDER_SNOW" => 181,
         "pret:MOVE_OCTAZOOKA" => 190,
         "pret:MOVE_ZAP_CANNON" => 192,
+        "pret:MOVE_OUTRAGE" => 200,
         "pret:MOVE_GIGA_DRAIN" => 202,
         "pret:MOVE_ENDURE" => 203,
         "pret:MOVE_CHARM" => 204,
@@ -96,8 +110,10 @@ public static class CampaignMoveAnimationPresentation
         "pret:MOVE_DRAGON_BREATH" => 225,
         "pret:MOVE_IRON_TAIL" => 231,
         "pret:MOVE_VITAL_THROW" => 233,
+        "pret:MOVE_CRUNCH" => 242,
         "pret:MOVE_WHIRLPOOL" => 250,
         "pret:MOVE_SNATCH" => 289,
+        "pret:MOVE_MUD_SPORT" => 300,
         "pret:MOVE_METAL_SOUND" => 319,
         "pret:MOVE_SIGNAL_BEAM" => 324,
         "pret:MOVE_SAND_TOMB" => 328,
@@ -144,11 +160,21 @@ public static class CampaignMoveAnimationPresentation
                 new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
         if (action.Any(e => e is WildBattleMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
-            e is WildBattleMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move ||
+            e is WildBattleMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 77 or 78 or 79 or 86 or 92)
+        if(move is 150 or 300)
+        {
+            // Splash's source animation precedes its intentional nothing-happened
+            // message. Field sports animate only after the committed state change.
+            var results=action.Where(e=>move==150
+                ? e is WildBattleMoveFailedEvent splash&&splash.Actor==used.Actor&&splash.Target==used.Actor&&splash.Move==used.Move&&splash.Reason=="nothing-happened"&&splash.Sequence>pp[0].Sequence
+                : e is WildBattleMtMoonVolatileEvent sport&&sport.Side==used.Actor&&sport.Volatile=="mud-sport"&&sport.Before==0&&sport.After==1&&sport.Reason=="move"&&sport.Sequence>pp[0].Sequence).ToArray();
+            if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
+        if(move is 77 or 78 or 79 or 86 or 92 or 95)
         {
             bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<WildBattleStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
@@ -169,7 +195,17 @@ public static class CampaignMoveAnimationPresentation
             if(ready.Length!=1)return new(null,"unmatched-source-snatch-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,ready[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
-        if(move is 74 or 106 or 334 or 110 or 107 or 97)
+        if(move==339)
+        {
+            var results=action.OfType<WildBattleStatChangedEvent>().ToArray();
+            var capped=action.OfType<WildBattleStatAtMaximumEvent>().ToArray();
+            if(capped.Any(e=>e.Actor!=used.Actor||e.Target!=used.Actor||e.Sequence<=pp[0].Sequence||e.Stat is not (WildBattleStat.Attack or WildBattleStat.Defense))||
+                results.Select(e=>e.Stat).Concat(capped.Select(e=>e.Stat)).Distinct().Count()!=2||results.Length+capped.Length!=2||used.Target!=used.Actor||results.Length is <1 or >2||results.Select(e=>e.Stat).Distinct().Count()!=results.Length||
+                results.Any(e=>e.Actor!=used.Actor||e.Target!=used.Actor||e.Sequence<=pp[0].Sequence||!MatchesSelfStatIncrease(e.Stat,e.Before,e.After)))
+                return new(null,"unmatched-source-self-stat-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
+        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is WildBattleStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=resultIndices[0]},true) is not {} result||result.SourceMoveId!=move)
@@ -182,7 +218,7 @@ public static class CampaignMoveAnimationPresentation
             if(results.Length!=1)return new(null,"unmatched-source-confusion-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
-        if(move==105)
+        if(move is 105 or 303)
         {
             var results=action.OfType<WildBattleRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
             if(results.Length!=1)return new(null,"unmatched-source-recovery-result");
@@ -279,11 +315,21 @@ public static class CampaignMoveAnimationPresentation
                 used.Actor,used.Target,false),"committed-source-animation");
         }
         if (action.Any(e => e is SourceMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
-            e is SourceMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move ||
+            e is SourceMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 77 or 78 or 79 or 86 or 92)
+        if(move is 150 or 300)
+        {
+            // Splash's source animation precedes its intentional nothing-happened
+            // message. Field sports animate only after the committed state change.
+            var results=action.Where(e=>move==150
+                ? e is SourceMoveFailedEvent splash&&splash.Actor==used.Actor&&splash.Target==used.Actor&&splash.Move==used.Move&&splash.Reason=="nothing-happened"&&splash.Sequence>pp[0].Sequence
+                : e is SourceMtMoonVolatileEvent sport&&sport.Side==used.Actor&&sport.Volatile=="mud-sport"&&sport.Before==0&&sport.After==1&&sport.Reason=="move"&&sport.Sequence>pp[0].Sequence).ToArray();
+            if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(move is 77 or 78 or 79 or 86 or 92 or 95)
         {
             bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<SourceStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
@@ -304,7 +350,17 @@ public static class CampaignMoveAnimationPresentation
             if(ready.Length!=1)return new(null,"unmatched-source-snatch-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,ready[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 74 or 106 or 334 or 110 or 107 or 97)
+        if(move==339)
+        {
+            var results=action.OfType<SourceStatChangedEvent>().ToArray();
+            var capped=action.OfType<SourceStatAtMaximumEvent>().ToArray();
+            if(capped.Any(e=>e.Actor!=used.Actor||e.Target!=used.Actor||e.Sequence<=pp[0].Sequence||e.Stat is not (WildBattleStat.Attack or WildBattleStat.Defense))||
+                results.Select(e=>e.Stat).Concat(capped.Select(e=>e.Stat)).Distinct().Count()!=2||results.Length+capped.Length!=2||used.Target!=used.Actor||results.Length is <1 or >2||results.Select(e=>e.Stat).Distinct().Count()!=results.Length||
+                results.Any(e=>e.Actor!=used.Actor||e.Target!=used.Actor||e.Sequence<=pp[0].Sequence||!MatchesSelfStatIncrease(e.Stat,e.Before,e.After)))
+                return new(null,"unmatched-source-self-stat-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is SourceStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=resultIndices[0]}) is not {} result||result.SourceMoveId!=move)
@@ -317,7 +373,7 @@ public static class CampaignMoveAnimationPresentation
             if(results.Length!=1)return new(null,"unmatched-source-confusion-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move==105)
+        if(move is 105 or 303)
         {
             var results=action.OfType<SourceRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
             if(results.Length!=1)return new(null,"unmatched-source-recovery-result");

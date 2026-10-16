@@ -30,7 +30,7 @@ public partial class CampaignView
             sound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceStatAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan})):null;
             return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio());
         }))return;
-        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask);_sourceStatContinuation=dispatch;
+        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask,backgroundSurface:SourceTerrainSurface(assets["background"]));_sourceStatContinuation=dispatch;
         _sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceStatAnimationGate.Current!.Tick());
         Write("sourceStatAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,scene=_session.EffectiveOptions.BattleScene.ToString()});

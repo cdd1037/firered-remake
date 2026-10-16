@@ -28,10 +28,11 @@ public static partial class CampaignQuestLogRecorder
         var result=scene with{Layout=state.MapLayout,Tiles=state.MapEdits?.Values.ToImmutableArray()??[]};
         return ValidateAppearance(result) is null?result:null;
     }
-    private static bool TryRecordAppearance(CampaignQuestLogScene scene,CampaignState before,CampaignState after,QuestLogSource? source,out CampaignQuestLogScene updated)
+    private static bool TryRecordAppearance(CampaignQuestLogScene scene,CampaignState before,CampaignState after,QuestLogSource? source,out CampaignQuestLogScene updated,int? recordingFrame=null)
     {
         updated=scene;if(before.MapLayout==after.MapLayout&&ReferenceEquals(before.MapEdits,after.MapEdits))return true;
         var actions=scene.Actions;int start=actions.Where(a=>a.Event==CampaignQuestLogEvent.None).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max();
+        start=Math.Max(start,recordingFrame??0);
         var additions=ImmutableArray.CreateBuilder<CampaignQuestLogAction>();
         CampaignQuestLogAction Action()=>new(-1,0,0,Direction.South,false,CampaignQuestLogEvent.None,1){StartFrame=start};
         if(before.MapLayout!=after.MapLayout)additions.Add(Action() with{Layout=after.MapLayout??""});
@@ -43,7 +44,7 @@ public static partial class CampaignQuestLogRecorder
         var combined=actions.AddRange(additions);
         // Stop before the unrepresentable change. Never truncate a patch set or show
         // a partly applied room. The next qualifying event may begin a fresh scene.
-        if(combined.Length>ActionLimit||Budget(combined,source)>QuestLogSource.ScriptBytes)return false;
+        if(!FitsActions(combined,source))return false;
         updated=scene with{Actions=combined};return true;
     }
 }

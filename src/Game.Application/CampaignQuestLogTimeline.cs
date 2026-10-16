@@ -27,7 +27,7 @@ internal sealed class CampaignQuestLogTimeline
         _scene=scene;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
         _moves=scene.Actions.Where(a=>a.Event==CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame).ToImmutableArray();
         var captions=ImmutableArray.CreateBuilder<(int Start,int End,string Text)>();int captionEnd=0;
-        foreach(var action in scene.Actions.Where(a=>a.Event!=CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame))
+        foreach(var action in scene.Actions.Where(a=>CampaignQuestLogRecorder.IsCaption(a)).OrderBy(a=>a.StartFrame))
         {
             string text=source is not null&&action.TextKey is {} key?source.Expand(key,player,action.Arguments):action.Event switch{CampaignQuestLogEvent.Arrived=>$"{player} arrived at {CampaignQuestLogRecorder.Location(scene.Map)}.",CampaignQuestLogEvent.PokemonCenter=>$"{player} restored the POKEMON at a POKEMON CENTER.",CampaignQuestLogEvent.TrainerWon=>$"{player} defeated a TRAINER in battle.",CampaignQuestLogEvent.WildWon=>$"{player} defeated a wild POKEMON.",_=>player+" continued the adventure."};
             Add(text,action);
@@ -37,7 +37,7 @@ internal sealed class CampaignQuestLogTimeline
                 Add(source.Expand("WonTheMatchAsAResult",player,[action.Arguments[4]]),action);
             }
         }
-        _captions=captions.ToImmutable();_end=Math.Max(captionEnd,_moves.Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max());
+        _captions=captions.ToImmutable();_end=Math.Max(captionEnd,scene.Actions.Where(a=>!CampaignQuestLogRecorder.IsCaption(a)).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max());
         Tick(0);
         void Add(string text,CampaignQuestLogAction action)
         {

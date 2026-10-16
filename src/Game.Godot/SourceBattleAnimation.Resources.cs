@@ -2,7 +2,8 @@ using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
 public sealed record SourceResolvedAnimation(SourceAnimationScript Script,IReadOnlyDictionary<string,SourcePixelAsset> Assets,
-    SourceMetallicMaterial? Metallic,SourceStatMaskMaterial? StatMask);
+    SourceMetallicMaterial? Metallic,SourceStatMaskMaterial? StatMask)
+{ public IReadOnlyDictionary<int,SourceBackgroundAsset> Backgrounds{get;init;}=new Dictionary<int,SourceBackgroundAsset>(); }
 
 // Generated metadata is shared across families. Pixel/material loading follows the
 // selected command dependencies and remains bounded by these scene-owned catalogs.
@@ -17,13 +18,18 @@ public sealed class SourceAnimationResources:IDisposable
     private SourceMetallicMaterial? _metallic;
     private SourceStatMaskMaterial? _statMask;
     private bool _disposed;
+    private readonly string _folder;
+    private SourceAnimationBackgroundCatalog? _backgroundCatalog;
+    private readonly Dictionary<int,ushort[]> _terrainPixels=[];
+    private SourceAnimationBackgroundCatalog BackgroundCatalog=>_backgroundCatalog??=new(Path.Combine(_folder,"backgrounds"));
     public IReadOnlyDictionary<int,SourceAnimationScript> Scripts=>_scripts;
     public int CachedAssetCount=>_pixels.Count;
     public SourceAnimationResources(string folder)
     {
+        _folder=folder;
         try
         {
-            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
                 ReadPack(Path.Combine(folder,file));
             int[] sine=_documents[0].RootElement.GetProperty("sineTable").EnumerateArray().Select(x=>x.GetInt32()).ToArray();
             foreach(var (id,script) in _scripts.ToArray())_scripts[id]=script with{SpriteRecipes=_recipes,SineTable=sine};
@@ -32,7 +38,7 @@ public sealed class SourceAnimationResources:IDisposable
         catch{Dispose();throw;}
     }
     private static SourceAnimationCommand[] Commands(JsonElement rows)=>rows.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray();
-    private static string RecipeValue(SourceSpriteRecipe recipe)=>JsonSerializer.Serialize(recipe with{LoopStarts=Enumerable.Range(0,recipe.Animations.Length).Select(i=>i<recipe.LoopStarts.Length?recipe.LoopStarts[i]:-1).ToArray()});
+    private static string RecipeValue(SourceSpriteRecipe recipe)=>JsonSerializer.Serialize(recipe with{LoopStarts=Enumerable.Range(0,recipe.Animations.Length).Select(i=>i<recipe.LoopStarts.Length?recipe.LoopStarts[i]:-1).ToArray(),FrameLoops=Enumerable.Range(0,recipe.Animations.Length).Select(i=>i<recipe.FrameLoops.Length?recipe.FrameLoops[i]:Array.Empty<SourceSpriteFrameLoop>()).ToArray()});
     private void ReadPack(string path)
     {
         string folder=Path.GetDirectoryName(path)!;var doc=JsonDocument.Parse(File.ReadAllBytes(path));_documents.Add(doc);var root=doc.RootElement;
@@ -54,6 +60,8 @@ public sealed class SourceAnimationResources:IDisposable
             string callback=root.TryGetProperty("script",out _)?"AnimTask_StatsChange":"AnimTask_MetallicShine";
             _materials.Add(callback,Path.Combine(folder,file));
         }
+        var taskAffinePrograms=root.TryGetProperty("taskAffinePrograms",out var affinePrograms)?SourceTaskAffineProgram.Read(affinePrograms):new Dictionary<string,SourceTaskAffineCommand[]>();
+        var backgroundSymbols=root.TryGetProperty("backgroundSymbols",out var bgSymbols)?bgSymbols.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>();
         var subs=root.TryGetProperty("subroutines",out var subRows)?subRows.EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value)):new Dictionary<string,SourceAnimationCommand[]>();
         var rows=root.TryGetProperty("scripts",out var scripts)?scripts.EnumerateArray().ToArray():[root.GetProperty("script")];
         foreach(var row in rows)
@@ -66,7 +74,7 @@ public sealed class SourceAnimationResources:IDisposable
                 {string name=c.Args[0];if(required.ContainsKey(name))continue;if(!subs.TryGetValue(name,out var body))throw new InvalidDataException($"Missing source subroutine {name}.");required.Add(name,body);AddSubroutines(body);}
             }
             AddSubroutines(commands);
-            _scripts.Add(id,new(id,row.GetProperty("label").GetString()!,commands){Subroutines=required,Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()});
+            _scripts.Add(id,new(id,row.GetProperty("label").GetString()!,commands){SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()});
         }
     }
     public SourcePixelAsset Asset(string id)
@@ -104,10 +112,35 @@ public sealed class SourceAnimationResources:IDisposable
         bool stats=commands.Any(c=>c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_StatsChange");
         if(metallic)_metallic??=new(File.ReadAllBytes(_materials["AnimTask_MetallicShine"]));
         if(stats)_statMask??=new(File.ReadAllBytes(_materials["AnimTask_StatsChange"]));
-        return new(script,names.ToDictionary(id=>id,Asset),metallic?_metallic:null,stats?_statMask:null);
+        var backgrounds=commands.Where(c=>c.Op=="fadetobg").Select(c=>script.BackgroundSymbols[c.Args[0]]).Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Move(id));
+        return new(script with{BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},names.ToDictionary(id=>id,Asset),metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds};
+    }
+    public SourceAnimationBackgroundSurface CreateBackgroundSurface(int terrainId)
+    {ObjectDisposedException.ThrowIf(_disposed,this);return BackgroundCatalog.CreateSurface(terrainId);}
+    // Existing scene selection already chose the source terrain. Resolve its exact
+    // pixels once at texture composition rather than duplicate regional rules.
+    public int IdentifyTerrain(SourcePixelAsset field)
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        if(field.Width!=240||field.Height!=112)throw new ArgumentException("Source terrain canvas differs.");
+        int? match=null;
+        foreach(int id in BackgroundCatalog.TerrainIds)
+        {
+            if(!_terrainPixels.TryGetValue(id,out var pixels))
+            {pixels=new ushort[240*112];BackgroundCatalog.CreateSurface(id).Render(pixels,240,112);_terrainPixels.Add(id,pixels);}
+            if(!pixels.SequenceEqual(field.Pixels))continue;
+            if(match is {} previous)
+            {
+                var first=BackgroundCatalog.Terrain(previous);var second=BackgroundCatalog.Terrain(id);
+                if(!first.Tiles.Span.SequenceEqual(second.Tiles.Span)||!first.Tilemap.Span.SequenceEqual(second.Tilemap.Span)||!first.Palette.Span.SequenceEqual(second.Palette.Span))
+                    throw new InvalidDataException("Visible terrain cannot identify its retained source background.");
+            }
+            else match=id;
+        }
+        return match??throw new InvalidDataException("Displayed terrain has no exact generated indexed source resource.");
     }
     public void Dispose()
     {
-        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_recipes.Clear();_materials.Clear();_metallic=null;_statMask=null;
+        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_recipes.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();
     }
 }

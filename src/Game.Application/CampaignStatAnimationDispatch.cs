@@ -13,6 +13,17 @@ public static class CampaignStatAnimationPresentation
     private static CampaignStatAnimationDispatch? Match(string battleId,Row[] rows,int index,bool substitute)
     {
         if(substitute||index<3||index>=rows.Length)return null;
+        // Typed self-state receipts can occur before or after PP in the committed
+        // kernel stream. Remove only the matching invocation's optional prelude;
+        // stat/PP ordering and all other boundaries remain checked below.
+        int invocation=Array.FindLastIndex(rows,index-1,r=>r.Kind=="used");
+        if(invocation>=0)
+        {
+            var moveRow=rows[invocation];
+            var prelude=rows.Skip(invocation+1).Take(index-invocation-1).Where(r=>r.Kind=="self-prelude").ToArray();
+            if(prelude.Length>1||prelude.Any(r=>r.Move!=moveRow.Move||r.Actor!=moveRow.Actor||r.Target!=moveRow.Actor||r.Turn!=moveRow.Turn||r.Sequence<=moveRow.Sequence||r.Sequence>=rows[index].Sequence))return null;
+            if(prelude.Length>0){rows=rows.Where((r,i)=>i<=invocation||i>=index||r.Kind!="self-prelude").ToArray();index-=prelude.Length;}
+        }
         var stat=rows[index];var pp=rows[index-1];
         if(stat.Kind!="stat"||stat.Before is <0 or >12||stat.After is <0 or >12||stat.After==stat.Before||
             pp.Kind!="pp"||pp.Actor!=stat.Actor||pp.Target!=stat.Target||pp.Owner!=stat.Actor||pp.Move!=pp.Chosen||pp.Turn!=stat.Turn||pp.Sequence>=stat.Sequence)return null;
@@ -22,6 +33,7 @@ public static class CampaignStatAnimationPresentation
             "pret:MOVE_GROWTH"=>(Move:74,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
             "pret:MOVE_MINIMIZE"=>(Move:107,Stat:WildBattleStat.Evasion,Delta:1,Arg:21),
             "pret:MOVE_WITHDRAW"=>(Move:110,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
+            "pret:MOVE_DEFENSE_CURL"=>(Move:111,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_HARDEN"=>(Move:106,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_IRON_DEFENSE"=>(Move:334,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
             "pret:MOVE_TAIL_WHIP"=>(Move:39,Stat:WildBattleStat.Defense,Delta:-1,Arg:23),
@@ -56,6 +68,8 @@ public static class CampaignStatAnimationPresentation
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
+            WildBattleDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_DEFENSE_CURL"),
+            WildBattleMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_MINIMIZE"),
             WildBattleStatChangedEvent s=>new Row(s.Sequence,s.Turn,"stat",(int)s.Actor,(int)s.Target,Stat:s.Stat,Before:s.Before,After:s.After),
             WildBattlePpCommandEvent p=>new(p.Sequence,p.Turn,"pp",(int)p.Actor,(int)p.Target,p.CurrentMove.Value,p.ChosenMove.Value,(int)p.PpOwner,Before:p.Before,After:p.After),
             WildBattleMoveUsedEvent m=>new(m.Sequence,m.Turn,"used",(int)m.Actor,(int)m.Target,m.Move.Value,Before:m.PpBefore,After:m.PpAfter),
@@ -70,6 +84,8 @@ public static class CampaignStatAnimationPresentation
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
+            SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),
+            SourceMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_MINIMIZE"),
             SourceStatChangedEvent s=>new Row(s.Sequence,s.Turn,"stat",s.Actor.Value,s.Target.Value,Stat:s.Stat,Before:s.Before,After:s.After),
             SourcePpCommandEvent p=>new(p.Sequence,p.Turn,"pp",p.Actor.Value,p.Target.Value,p.CurrentMove.Value,p.ChosenMove.Value,p.PpOwner.Value,Before:p.Before,After:p.After),
             SourceMoveUsedEvent m=>new(m.Sequence,m.Turn,"used",m.Actor.Value,m.Target.Value,m.Move.Value,Before:m.PpBefore,After:m.PpAfter),

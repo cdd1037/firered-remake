@@ -24,7 +24,7 @@ public sealed class CampaignQuestLogChampionTests
         Assert.IsFalse(playback.Finished);
         playback.Tick(255d/60);Assert.IsTrue(playback.Finished);
         Assert.AreEqual(saved,System.Text.Json.JsonSerializer.Serialize(log));
-        Assert.AreEqual(source.EventSizes[33]+2,CampaignQuestLogRecorder.Budget(log.Scenes[0].Actions,source));
+        Assert.AreEqual(source.EventSizes[33]+2+16,CampaignQuestLogRecorder.Budget(log.Scenes[0].Actions,source));
     }
 
     [TestMethod]

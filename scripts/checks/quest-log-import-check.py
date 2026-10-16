@@ -23,6 +23,11 @@ class QuestLogImporterTests(unittest.TestCase):
         self.assertIn('FLAG_WORLD_MAP_SIX_ISLAND',data['arrivalFlags'])
         self.assertIn('map.trainer-tower-lobby',data['disabledMaps'])
         self.assertTrue(any(d['textKey']=='LeftOaksLab' for d in data['departures']))
+        self.assertEqual([d['locationId'] for d in data['departures']],list(range(51)))
+        by_symbol={d['locationSymbol']:d for d in data['departures']}
+        self.assertEqual(by_symbol['QL_LOCATION_VIRIDIAN_GYM']['badgeFlag'],'FLAG_BADGE08_GET')
+        self.assertEqual(by_symbol['QL_LOCATION_PEWTER_GYM']['badgeFlag'],'FLAG_BADGE01_GET')
+        self.assertEqual(by_symbol['QL_LOCATION_VIRIDIAN_FOREST_2']['regionName'],'ROUTE 2')
 
     def test_raw_override_and_missing_caption_are_not_silently_accepted(self):
         with tempfile.TemporaryDirectory() as directory:

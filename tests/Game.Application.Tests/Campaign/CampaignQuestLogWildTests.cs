@@ -45,7 +45,7 @@ public sealed class CampaignQuestLogWildTests
         var catalog=CurrentCampaignFixture.Catalog;var state=CampaignSession.CreateCurrent(catalog).State;
         var actions=ImmutableArray.Create(Wild(1,0));
         var movement=new CampaignQuestLogAction(0,3,4,Direction.East,true,CampaignQuestLogEvent.None,16);
-        while(CampaignQuestLogRecorder.Budget(actions.Add(movement),catalog.QuestLogSource)<=256)actions=actions.Add(movement);
+        while(CampaignQuestLogRecorder.FitsActions(actions.Add(movement),catalog.QuestLogSource))actions=actions.Add(movement);
         var scene=new CampaignQuestLogScene(state.World.Player.MapId.Value,[new(CampaignQuestLogRecorder.PlayerId,"player",3,4,Direction.South,true)],actions);
         var log=new CampaignQuestLog([scene]);
         var updated=CampaignQuestLogRecorder.Record(log,state,state,new("battle_ack"),catalog,recordingOpen:true,suppliedEvent:Wild(0,1));

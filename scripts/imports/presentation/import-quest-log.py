@@ -32,11 +32,14 @@ def generate(raw=RAW, world_path=ROOT/"content/generated/maps/world.json"):
     locationtypes=dict(re.findall(r'\[(QL_LOCATION_\w+)\]\s*=\s*(QL_DEPARTED_\w+)',block(events,'sLocationToDepartedTextId')))
     departuretexts=dict(re.findall(r'\[(QL_DEPARTED_\w+)\]\s*=\s*gText_QuestLog_(\w+)',block(events,'sDepartedLocationTexts')))
     departures=[]
+    locationids={k:int(v) for k,v in re.findall(r"#define (QL_LOCATION_\w+)\s+(\d+)\b",constants)}
+    gymsections=re.findall(r"MAPSEC_\w+",re.search(r"sGymCityMapSecs\[NUM_BADGES\]\s*=\s*\{(.*?)\};",events,re.S).group(1))
+    mapsections={row["id"]:row["region_map_section"] for path in (raw/"data/maps").glob("*/map.json") for row in [json.loads(path.read_text())]}
     specials=(raw/'src/field_specials.c').read_text()
     pairs=re.findall(r'\[(QL_LOCATION_\w+)\]\s*=\s*\{MAP\((MAP_\w+)\),\s*MAP\((MAP_\w+)\)\}',block(specials,'sInsideOutsidePairs'))
     for location,inside,outside in pairs:
         if inside in symbols and outside in symbols:
-            departures.append({'inside':symbols[inside],'outside':symbols[outside],'textKey':departuretexts[locationtypes[location]],'place':texts[locationnames[location]],'kind':locationtypes[location].removeprefix('QL_DEPARTED_')})
+            departures.append({'inside':symbols[inside],'outside':symbols[outside],'textKey':departuretexts[locationtypes[location]],'place':texts[locationnames[location]],'kind':locationtypes[location].removeprefix('QL_DEPARTED_'),'locationId':locationids[location],'locationSymbol':location,'regionName':names['MAPSEC_ROUTE_2'] if location.startswith('QL_LOCATION_VIRIDIAN_FOREST_') else names[mapsections[inside]],'badgeFlag':f'FLAG_BADGE{gymsections.index(mapsections[inside])+1:02d}_GET' if locationtypes[location]=='QL_DEPARTED_GYM' and mapsections[inside] in gymsections else None})
     speciesconstants={symbol:int(value) for symbol,value in re.findall(r'#define (SPECIES_\w+)\s+(\d+)\b',(raw/'include/constants/species.h').read_text())}
     specialbody=re.search(r'static bool8 IsSpeciesFromSpecialEncounter\(u16 species\)\s*\{(.*?)\n\}',events,re.S).group(1)
     excluded=[speciesconstants[x] for x in re.findall(r'case (SPECIES_\w+):',specialbody)]

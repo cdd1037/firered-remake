@@ -8,14 +8,15 @@ public static class SourcePhysicalAnimationCatalog
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         return doc.RootElement.GetProperty("assets").EnumerateArray().Select(r=>r.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(doc,Path.GetDirectoryName(path)!,id));
     }
-    public static bool Supports(int move) => move is 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
+    public static bool Supports(int move) => move is 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
     public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
         var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
+        var taskAffinePrograms=doc.RootElement.TryGetProperty("taskAffinePrograms",out var affinePrograms)?SourceTaskAffineProgram.Read(affinePrograms):new Dictionary<string,SourceTaskAffineCommand[]>();
         var recipes=shared.SpriteRecipes.Concat(SourceHitAnimationCatalog.Recipes(doc.RootElement.GetProperty("spriteRecipes"))).ToDictionary(p=>p.Key,p=>p.Value);
         var subroutines=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray());
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=subroutines,Labels=r.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()}).ToDictionary(s=>s.MoveId);
+        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){TaskAffinePrograms=taskAffinePrograms,SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=subroutines,Labels=r.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()}).ToDictionary(s=>s.MoveId);
         if(scripts.Count==0||scripts.Keys.Any(id=>!Supports(id)))throw new InvalidDataException("Physical script catalog differs.");
         return scripts;
     }
@@ -178,7 +179,7 @@ public sealed partial class SourceBattleAnimation
         private readonly int _slot,_duration;private readonly bool _offsetBoth;private int _rotation,_speed,_mode,_count;
         public RotateToSide(SourceBattleAnimation owner,int duration,int speed,AnimationSlot slot,int mode,bool offsetBoth=false)
         {
-            _offsetBoth=offsetBoth;_slot=slot.Value;_duration=duration;_speed=slot.IsPlayer?-speed:speed;_mode=mode;_rotation=mode==1?duration*_speed:0;owner._affineMode[_slot]=true;
+            _offsetBoth=offsetBoth;_slot=slot.Value;_duration=duration;_speed=slot.IsPlayer?-speed:speed;_mode=mode;_rotation=mode==1?duration*_speed:0;owner.PrepareBattlerRotScale(_slot,0);
         }
         public override void Step(SourceBattleAnimation owner)
         {
@@ -186,7 +187,7 @@ public sealed partial class SourceBattleAnimation
             if(_offsetBoth||(_slot&1)==0){var p=owner._offsets[_slot];owner._offsets[_slot]=new(p.X,Math.Abs(owner._matrixC[_slot])>>3);}
             if(++_count<_duration)return;
             if(_mode==2){_count=0;_speed=-_speed;_mode=1;return;}
-            if(_mode==1){owner.SetBattlerRotScale(_slot,256,256,0);owner._affineMode[_slot]=false;var p=owner._offsets[_slot];owner._offsets[_slot]=new(p.X,0);}
+            if(_mode==1){owner.SetBattlerRotScale(_slot,256,256,0);owner.ResetBattlerRotScale(_slot);var p=owner._offsets[_slot];owner._offsets[_slot]=new(p.X,0);}
             Finished=true;
         }
     }
@@ -211,9 +212,9 @@ public sealed partial class SourceBattleAnimation
     private sealed class SimplePaletteSprite:VisualSprite
     {
         public SimplePaletteSprite(int slot,int priority,int[] a,SourceBattleAnimation owner):base(slot,priority)
-        {if(owner._fade?.Active!=true){owner._fade=new(owner.SelectPalettes(a[0]),a[2],a[3],(ushort)a[4],a[1]);owner._fade.Update(owner);}}
+        {if(!owner.PaletteFadeActive){owner._fade=new(owner.SelectPalettes(a[0]),a[2],a[3],(ushort)a[4],a[1]);owner._fade.Update(owner);}}
         public override SourceVisualSpriteFrame Frame=>new(Slot,"gSimplePaletteBlendSpriteTemplate",default,default,0,false,false,false,256,null,Subpriority);
-        public override void Step(SourceBattleAnimation owner){if(owner._fade?.Active!=true)Finished=true;}
+        public override void Step(SourceBattleAnimation owner){if(!owner.PaletteFadeActive)Finished=true;}
     }
 
     private sealed class FlashingHit:VisualSprite
@@ -242,7 +243,7 @@ public sealed partial class SourceBattleAnimation
                 {if(_count>0){_count--;var p=owner._offsets[actor];owner._offsets[actor]=new(p.X+_delta,p.Y);}else _state=stage==0?2:4;return;}
                 if(_state==2)
                 {
-                    owner._affineMode[actor]=true;_rotation-=direction*768;owner.SetBattlerRotScale(actor,256,256,_rotation);
+                    owner.PrepareBattlerRotScale(actor,0);_rotation-=direction*768;owner.SetBattlerRotScale(actor,256,256,_rotation);
                     var p=owner._offsets[actor];owner._offsets[actor]=new(p.X,Math.Abs(owner._matrixC[actor])>>3);
                     if(++_count>3)_state=4;return;
                 }
@@ -253,7 +254,7 @@ public sealed partial class SourceBattleAnimation
                 if(_state==3)
                 {
                     _rotation+=direction*1024;owner.SetBattlerRotScale(actor,256,256,_rotation);var p=owner._offsets[actor];owner._offsets[actor]=new(p.X,Math.Abs(owner._matrixC[actor])>>3);
-                    if(++_count>2){owner.SetBattlerRotScale(actor,256,256,0);owner._affineMode[actor]=false;_state=4;}return;
+                    if(++_count>2){owner.SetBattlerRotScale(actor,256,256,0);owner.ResetBattlerRotScale(actor);_state=4;}return;
                 }
             }
             Finished=true;

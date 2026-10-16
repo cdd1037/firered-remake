@@ -8,9 +8,12 @@ public sealed class PretGymBattleTerrain
 {
     public string GymSceneTexturePath { get; }
     public string LeaderSceneTexturePath { get; }
+    public int GymSourceTerrainId { get; }
+    public int LeaderSourceTerrainId { get; }
 
-    private PretGymBattleTerrain(string root)
+    private PretGymBattleTerrain(string root,int gymTerrain,int leaderTerrain)
     {
+        GymSourceTerrainId=gymTerrain;LeaderSourceTerrainId=leaderTerrain;
         GymSceneTexturePath = Path.GetFullPath(Path.Combine(root, "content/generated/battle/terrain/gym/gym-scene.png"));
         LeaderSceneTexturePath = Path.GetFullPath(Path.Combine(root, "content/generated/battle/terrain/gym/leader-scene.png"));
     }
@@ -56,6 +59,8 @@ public sealed class PretGymBattleTerrain
             if (id is "gym-scene" or "leader-scene") sceneIds.Add(id);
         }
         if (!sceneIds.SetEquals(["gym-scene", "leader-scene"])) throw new InvalidDataException("Gym terrain scene missing.");
-        return new(root);
+        var variants=document.GetProperty("variants").EnumerateArray().ToDictionary(v=>v.GetProperty("sceneTexture").GetString()!,v=>v.GetProperty("terrainId").GetInt32());
+        if(variants.Count!=2||!variants.TryGetValue("gym-scene",out int gymTerrain)||!variants.TryGetValue("leader-scene",out int leaderTerrain)||gymTerrain<0||leaderTerrain<0||gymTerrain==leaderTerrain)throw new InvalidDataException("Gym source terrain identities differ.");
+        return new(root,gymTerrain,leaderTerrain);
     }
 }

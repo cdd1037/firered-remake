@@ -3,7 +3,7 @@ namespace Game.Presentation.BattleAnimations;
 
 public static class SourceElementalAnimationCatalog
 {
-    public static bool Supports(int move)=>move is 7 or 52 or 53 or 56 or 190 or 324 or 341 or 84 or 86 or 9 or 55 or 85 or 121 or 152 or 192 or 48 or 103 or 319 or 71 or 72 or 202 or 105 or 51 or 61 or 92 or 141 or 145 or 83 or 250 or 328 or 44 or 128 or 116 or 203 or 8 or 58 or 181 or 82 or 126 or 172 or 225 or 204 or 343 or 231 or 342 or 223 or 75 or 129;
+    public static bool Supports(int move)=>move is 7 or 52 or 53 or 56 or 190 or 324 or 341 or 84 or 86 or 9 or 55 or 85 or 121 or 152 or 192 or 48 or 103 or 319 or 71 or 72 or 202 or 105 or 51 or 61 or 92 or 141 or 145 or 83 or 250 or 328 or 44 or 128 or 116 or 203 or 8 or 58 or 181 or 82 or 126 or 172 or 225 or 204 or 343 or 231 or 342 or 223 or 75 or 129 or 200;
     public static IReadOnlyDictionary<string,SourcePixelAsset> Assets(string path)
     {
         using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
@@ -18,7 +18,7 @@ public static class SourceElementalAnimationCatalog
         var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>
         {
             var commands=Commands(r.GetProperty("commands"));
-            return new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,commands){SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=commands.Where(c=>c.Op=="call").Select(c=>c.Args[0]).Distinct().ToDictionary(name=>name,name=>subs[name])};
+            return new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,commands){SoundEffects=r.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=commands.Where(c=>c.Op=="call").Select(c=>c.Args[0]).Distinct().ToDictionary(name=>name,name=>subs[name])};
         }).ToDictionary(s=>s.MoveId);
         if(scripts.Count==0||scripts.Keys.Any(id=>!Supports(id)))throw new InvalidDataException("Unadmitted elemental script.");return scripts;
     }
@@ -43,15 +43,15 @@ public sealed partial class SourceBattleAnimation
         "gZapCannonSparkSpriteTemplate"=>"AnimZapCannonSpark",
         "gSparkElectricityFlashingSpriteTemplate"=>"AnimSparkElectricityFlashing",
         "gThunderboltOrbSpriteTemplate"=>"AnimThunderboltOrb",
-        "gRazorLeafParticleSpriteTemplate"=>"AnimRazorLeafParticle","gRazorLeafCutterSpriteTemplate"=>"AnimTranslateLinearSingleSineWave","gSwiftStarSpriteTemplate"=>"AnimTranslateLinearSingleSineWave","gMagentaHeartSpriteTemplate"=>"AnimMagentaHeart","gDragonBreathFireSpriteTemplate"=>"AnimDragonFireToTarget","gDragonRageFireSpitSpriteTemplate"=>"AnimDragonFireToTarget","gDragonRageFirePlumeSpriteTemplate"=>"AnimDragonRageFirePlume","gFireBlastRingSpriteTemplate"=>"AnimFireRing","gFireBlastCrossSpriteTemplate"=>"AnimFireCross","gFireSpiralOutwardSpriteTemplate"=>"AnimFireSpiralOutward","gPowderSnowSnowballSpriteTemplate" or "gBlizzardIceCrystalSpriteTemplate"=>"AnimMoveParticleBeyondTarget","gIceCrystalSpiralInwardLarge"=>"AnimIcePunchSwirlingParticle","gIceCrystalSpiralInwardSmall"=>"AnimIcePunchSwirlingParticle","gIceBeamInnerCrystalSpriteTemplate"=>"AnimIceBeamParticle","gIceBeamOuterCrystalSpriteTemplate"=>"AnimIceBeamParticle","gIceCrystalHitLargeSpriteTemplate"=>"AnimIceEffectParticle","gIceCrystalHitSmallSpriteTemplate"=>"AnimIceEffectParticle","gEndureEnergySpriteTemplate"=>"AnimEndureEnergy","gSharpTeethSpriteTemplate" or "gClampJawSpriteTemplate"=>"AnimBite","gSwirlingDirtSpriteTemplate" or "gWhirlpoolSpriteTemplate" or "gFireSpinSpriteTemplate"=>"AnimParticleInVortex","gWaterBubbleProjectileSpriteTemplate"=>"AnimWaterBubbleProjectile","gPoisonBubbleSpriteTemplate" or "gWaterBubbleSpriteTemplate"=>"AnimBubbleEffect","gAcidPoisonBubbleSpriteTemplate"=>"AnimAcidPoisonBubble","gAcidPoisonDropletSpriteTemplate"=>"AnimAcidPoisonDroplet","gLeechLifeNeedleSpriteTemplate"=>"AnimLeechLifeNeedle","gLightningSpriteTemplate"=>"AnimLightning","gAbsorptionOrbSpriteTemplate"=>"AnimAbsorptionOrb","gPowerAbsorptionOrbSpriteTemplate"=>"AnimPowerAbsorptionOrb",_=>null
+        "gGoldRingSpriteTemplate"=>"TranslateAnimSpriteToTargetMonLocation","gPsywaveRingSpriteTemplate"=>"AnimToTargetInSinWave","gOutrageFlameSpriteTemplate"=>"AnimOutrageFlame","gRazorLeafParticleSpriteTemplate"=>"AnimRazorLeafParticle","gRazorLeafCutterSpriteTemplate"=>"AnimTranslateLinearSingleSineWave","gSwiftStarSpriteTemplate"=>"AnimTranslateLinearSingleSineWave","gMagentaHeartSpriteTemplate"=>"AnimMagentaHeart","gDragonBreathFireSpriteTemplate"=>"AnimDragonFireToTarget","gDragonRageFireSpitSpriteTemplate"=>"AnimDragonFireToTarget","gDragonRageFirePlumeSpriteTemplate"=>"AnimDragonRageFirePlume","gFireBlastRingSpriteTemplate"=>"AnimFireRing","gFireBlastCrossSpriteTemplate"=>"AnimFireCross","gFireSpiralOutwardSpriteTemplate"=>"AnimFireSpiralOutward","gPowderSnowSnowballSpriteTemplate" or "gBlizzardIceCrystalSpriteTemplate"=>"AnimMoveParticleBeyondTarget","gIceCrystalSpiralInwardLarge"=>"AnimIcePunchSwirlingParticle","gIceCrystalSpiralInwardSmall"=>"AnimIcePunchSwirlingParticle","gIceBeamInnerCrystalSpriteTemplate"=>"AnimIceBeamParticle","gIceBeamOuterCrystalSpriteTemplate"=>"AnimIceBeamParticle","gIceCrystalHitLargeSpriteTemplate"=>"AnimIceEffectParticle","gIceCrystalHitSmallSpriteTemplate"=>"AnimIceEffectParticle","gEndureEnergySpriteTemplate"=>"AnimEndureEnergy","gSharpTeethSpriteTemplate" or "gClampJawSpriteTemplate"=>"AnimBite","gSwirlingDirtSpriteTemplate" or "gWhirlpoolSpriteTemplate" or "gFireSpinSpriteTemplate"=>"AnimParticleInVortex","gWaterBubbleProjectileSpriteTemplate"=>"AnimWaterBubbleProjectile","gPoisonBubbleSpriteTemplate" or "gWaterBubbleSpriteTemplate"=>"AnimBubbleEffect","gAcidPoisonBubbleSpriteTemplate"=>"AnimAcidPoisonBubble","gAcidPoisonDropletSpriteTemplate"=>"AnimAcidPoisonDroplet","gLeechLifeNeedleSpriteTemplate"=>"AnimLeechLifeNeedle","gLightningSpriteTemplate"=>"AnimLightning","gAbsorptionOrbSpriteTemplate"=>"AnimAbsorptionOrb","gPowerAbsorptionOrbSpriteTemplate"=>"AnimPowerAbsorptionOrb",_=>null
     };
     private bool ValidateElementalOperand(SourceAnimationCommand c)
     {
         if(SourceExplosionAnimationCatalog.Supports(_script.MoveId))return false;
         if(ValidateElectricOperand(c))return true;
         var a=c.Args;
-        if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR")return true;
-        if(c.Op is "playsewithpan" or "loopsewithpan" or "waitplaysewithpan"&&a.FirstOrDefault() is "SE_M_EMBER" or "SE_M_FLAME_WHEEL" or "SE_M_FIRE_PUNCH" or "SE_M_SELF_DESTRUCT" or "SE_M_CRABHAMMER" or "SE_M_BUBBLE" or "SE_M_HYPER_BEAM" or "SE_M_TRI_ATTACK2" or "SE_M_ABSORB" or "SE_M_ABSORB_2" or "SE_M_BUBBLE3" or "SE_M_GIGA_DRAIN" or "SE_M_SCREECH" or "SE_M_SUPERSONIC" or "SE_M_MEGA_KICK" or "SE_M_TOXIC" or "SE_M_BUBBLE2" or "SE_M_SACRED_FIRE2" or "SE_M_SAND_TOMB" or "SE_M_WHIRLPOOL" or "SE_M_BITE" or "SE_M_VICEGRIP" or "SE_M_DRAGON_RAGE" or "SE_M_STRING_SHOT" or "SE_M_ICY_WIND" or "SE_M_GUST2" or "SE_M_FLAME_WHEEL2" or "SE_M_CHARM" or "SE_M_DIZZY_PUNCH" or "SE_M_HARDEN" or "SE_M_SWIFT" or "SE_M_POISON_POWDER" or "SE_M_RAZOR_WIND" or "SE_M_RAZOR_WIND2")
+        if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR" or "ANIM_TAG_BLUE_RING")return true;
+        if(c.Op is "playsewithpan" or "loopsewithpan" or "waitplaysewithpan"&&a.FirstOrDefault() is "SE_M_EMBER" or "SE_M_FLAME_WHEEL" or "SE_M_FIRE_PUNCH" or "SE_M_SELF_DESTRUCT" or "SE_M_CRABHAMMER" or "SE_M_BUBBLE" or "SE_M_HYPER_BEAM" or "SE_M_TRI_ATTACK2" or "SE_M_ABSORB" or "SE_M_ABSORB_2" or "SE_M_BUBBLE3" or "SE_M_GIGA_DRAIN" or "SE_M_SCREECH" or "SE_M_SUPERSONIC" or "SE_M_MEGA_KICK" or "SE_M_TOXIC" or "SE_M_BUBBLE2" or "SE_M_SACRED_FIRE2" or "SE_M_SAND_TOMB" or "SE_M_WHIRLPOOL" or "SE_M_BITE" or "SE_M_VICEGRIP" or "SE_M_DRAGON_RAGE" or "SE_M_STRING_SHOT" or "SE_M_ICY_WIND" or "SE_M_GUST2" or "SE_M_FLAME_WHEEL2" or "SE_M_CHARM" or "SE_M_DIZZY_PUNCH" or "SE_M_HARDEN" or "SE_M_SWIFT" or "SE_M_POISON_POWDER" or "SE_M_RAZOR_WIND" or "SE_M_RAZOR_WIND2" or "SE_M_PSYBEAM" or "SE_M_PSYBEAM2" or "SE_M_TELEPORT")
         {
             if(a.Length!=(c.Op=="loopsewithpan"?4:c.Op=="waitplaysewithpan"?3:2)||a[1] is not ("SOUND_PAN_TARGET" or "SOUND_PAN_ATTACKER"))Fail(c,"Elemental sound shape differs.");
             if(a.Length==3&&Number(a[2]) is <0 or >255)Fail(c,"Elemental delayed sound differs.");
@@ -60,7 +60,7 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_StartSinAnimTimer")
         {if(a.Length!=3||Number(a[1]) is <0 or >255||Number(a[2]) is <1 or >32767)Fail(c,"Sine timer operands differ.");return true;}
         if(c.Op!="createsprite"||a.Length==0||ElementalCallback(a[0]) is not string callback)return false;
-        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
+        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
         if(a.Length!=count||!_script.SpriteRecipes.TryGetValue(a[0],out var recipe)||recipe.Callback!=callback||recipe.Width is not (8 or 16 or 32 or 64)||recipe.Height is not (8 or 16 or 32 or 64)||_script.SineTable.Length!=320)Fail(c,"Elemental sprite recipe/operands differ.");
         if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127)Fail(c,"Elemental sprite participant/priority differs.");
         foreach(var arg in a.Skip(3))if(Number(arg) is < -32768 or >32767)Fail(c,"Elemental source argument outside s16.");
@@ -75,6 +75,7 @@ public sealed partial class SourceBattleAnimation
         if(callback=="AnimLeechLifeNeedle"&&Number(a[5]) is <1 or >32767)Fail(c,"Needle duration differs.");
         if(callback=="AnimBubbleEffect"&&Number(a[5]) is <0 or >1)Fail(c,"Bubble target grouping differs.");
         if(callback=="AnimWaterBubbleProjectile"&&Number(a[9]) is <2 or >255)Fail(c,"Water bubble timer differs.");
+        if(callback=="AnimOutrageFlame"&&(Number(a[5]) is <1 or >32767||Number(a[8]) is <1 or >32767))Fail(c,"Outrage lifetime/flicker divisor differs.");
         if(callback=="AnimTranslateLinearSingleSineWave"&&(Number(a[7]) is <1 or >32767||Number(a[9]) is <0 or >1))Fail(c,"Sine projectile duration/grouping differs.");
         if(callback=="AnimRazorLeafParticle"&&Number(a[5]) is <0 or >32767)Fail(c,"Leaf rise duration differs.");
         if(callback=="AnimDragonFireToTarget"&&(Number(a[7]) is <1 or >32767||_script.SpriteRecipes[a[0]].AffineAnimations.Length!=2||_script.SpriteRecipes[a[0]].Animations.Length!=2))Fail(c,"Dragon fire duration/animation mode differs.");
@@ -134,14 +135,14 @@ public sealed partial class SourceBattleAnimation
     }
     private sealed class ElementalSprite:VisualSprite
     {
-        private readonly SourceSpriteRecipe _recipe;private readonly SourceSpriteAnimFrame[] _animation;private readonly int _loop;
+        private readonly SourceSpriteRecipe _recipe;private readonly SourceSpriteFrameProgram _frames;
         private PixelPoint _position;private PixelPoint _offset;private PhysicalLinear? _linear;
         private bool _animationEnded,_hidden;private readonly SourceSpriteAffineProgram? _affine;
         private int _waveStep,_tileOffset,_blink,_blinkDelay;
-        private int _remaining,_angle,_amplitudeChange,_fx,_fy,_vx,_vy,_phase,_amplitude,_animIndex,_animDelay,_state;
+        private int _remaining,_angle,_amplitudeChange,_fx,_fy,_vx,_vy,_phase,_amplitude,_state;
         public ElementalSprite(int slot,int priority,SourceSpriteRecipe recipe,AnimationSlot createdAt,int[] a,SourceBattleAnimation owner):base(slot,priority)
         {
-            _recipe=recipe;_animation=recipe.Animations[0];_loop=recipe.LoopStarts[0];_animDelay=_animation[0].Duration-1;
+            _recipe=recipe;_frames=new(recipe);
             if(recipe.AffineAnimations.Length>0)_affine=new(recipe.AffineAnimations[0]);
             var actor=owner._battlers[owner._cue.Actor.Value];var target=owner._battlers[owner._cue.Target.Value];int direction=owner.InitialXDirection();
             // Cmd_createsprite always starts at the target; createdAt controls only OAM subpriority.
@@ -168,12 +169,13 @@ public sealed partial class SourceBattleAnimation
                 case "AnimTranslateLinearSingleSineWave":
                     center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);var sineEnd=a[6]==0?target.Center(owner._doubles,true):owner.AverageElementalTarget(true);
                     _linear=new(sineEnd.X+(actor.Slot.IsPlayer?a[2]:-a[2])-_position.X,sineEnd.Y+a[3]-_position.Y,a[4]);_waveStep=32768/a[4];_amplitude=a[5];_remaining=actor.Slot.IsPlayer==target.Slot.IsPlayer?1:0;break;
+                case "AnimOutrageFlame":center=actor.Center(owner._doubles,true);_position=new(center.X+(actor.Slot.IsPlayer?a[0]:-a[0]),center.Y+a[1]);_remaining=a[2];_vx=actor.Slot.IsPlayer?a[3]:-a[3];_vy=actor.Slot.IsPlayer?a[4]:-a[4];_phase=a[5];_hidden=true;break;
                 case "AnimRazorLeafParticle":_position=actor.Center(owner._doubles,true);_vx=a[0];_vy=a[1];_remaining=a[2];break;
                 case "AnimMagentaHeart":
                     center=actor.Base(owner._doubles);_position=new(center.X+direction*a[0],center.Y+a[1]);MoveHeart(owner);break;
                 case "AnimDragonFireToTarget":
                     center=actor.Center(owner._doubles,true);_position=new(center.X+(actor.Slot.IsPlayer?a[0]:-a[1]),center.Y+a[1]);
-                    _affine=new(recipe.AffineAnimations[actor.Slot.IsPlayer?0:1]);_animation=recipe.Animations[actor.Slot.IsPlayer?1:0];_loop=recipe.LoopStarts[actor.Slot.IsPlayer?1:0];_animDelay=_animation[0].Duration-1;
+                    _affine=new(recipe.AffineAnimations[actor.Slot.IsPlayer?0:1]);_frames=new(recipe,actor.Slot.IsPlayer?1:0);
                     var dragonEnd=target.Center(owner._doubles,true);_linear=new(dragonEnd.X+(actor.Slot.IsPlayer?a[2]:-a[2])-_position.X,dragonEnd.Y+a[3]-_position.Y,a[4]);break;
                 case "AnimDragonRageFirePlume":
                     center=(a[0]==0?actor:target).Base(owner._doubles);_position=new(center.X+direction*a[1],center.Y+a[2]);break;
@@ -250,7 +252,7 @@ public sealed partial class SourceBattleAnimation
             get
             {
                 var matrix=_affine?.Matrix??new SourceAffineMatrix(256,0,0,256);
-                return new(Slot,_recipe.Template,_position,_offset,_animation[_animIndex].Tile+_tileOffset,!_hidden,_animation[_animIndex].HFlip,_recipe.Blend,256,_recipe.Asset,Subpriority){VFlip=_animation[_animIndex].VFlip,Width=_recipe.Width,Height=_recipe.Height,Affine=_affine is not null,DoubleSize=_recipe.AffineDoubleSize,MatrixA=matrix.A,MatrixB=matrix.B,MatrixC=matrix.C,MatrixD=matrix.D};
+                return new(Slot,_recipe.Template,_position,_offset,_frames.Frame.Tile+_tileOffset,!_hidden,_frames.Frame.HFlip,_recipe.Blend,256,_recipe.Asset,Subpriority){VFlip=_frames.Frame.VFlip,Width=_recipe.Width,Height=_recipe.Height,Affine=_affine is not null,DoubleSize=_recipe.AffineDoubleSize,MatrixA=matrix.A,MatrixB=matrix.B,MatrixC=matrix.C,MatrixD=matrix.D};
             }
         }
         private void MoveSpark(SourceBattleAnimation owner,bool translating)
@@ -297,6 +299,7 @@ public sealed partial class SourceBattleAnimation
             {
                 case "AnimLightning":case "AnimSpriteOnMonPos":if(_animationEnded||_affine?.Ended==true)Finished=true;break;
                 case "AnimIcePunchSwirlingParticle":case "AnimFireSpiralInward":if(_remaining>0)MoveSpiral(owner);else _state=2;break;
+                case "AnimOutrageFlame":if(_remaining>0){--_remaining;_offset=new(_fx>>8,_fy>>8);_fx=(short)(_fx+_vx);_fy=(short)(_fy+_vy);if(_remaining%_phase==0)_hidden=!_hidden;}else _state=2;break;
                 case "AnimFireSpread":if(_remaining-->0){_fx=(short)(_fx+_vx);_fy=(short)(_fy+_vy);_offset=new(_fx>>8,_fy>>8);}else _state=2;break;
                 case "AnimToTargetInSinWave":MoveWave(owner);break;
                 case "AnimTranslateLinearSingleSineWave":
@@ -339,10 +342,7 @@ public sealed partial class SourceBattleAnimation
             }
             if(Finished)return;
             _affine?.Step();
-            if(_animDelay>0)_animDelay--;
-            else if(_animIndex+1<_animation.Length){_animIndex++;_animDelay=_animation[_animIndex].Duration-1;}
-            else if(_loop>=0){_animIndex=_loop;_animDelay=_animation[_animIndex].Duration-1;}
-            else _animationEnded=true;
+            _frames.Step();_animationEnded=_frames.Ended;
         }
     }
 }

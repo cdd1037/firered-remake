@@ -56,7 +56,7 @@ public sealed class CampaignQuestLogTests
             log=CampaignQuestLogRecorder.Record(log,state,next,new("move"),catalog);state=next;
         }
         Assert.AreEqual(4,log!.Scenes.Length);Assert.IsTrue(CampaignQuestLogRecorder.Budget(log.Scenes[^1].Actions,catalog.QuestLogSource)<=256);
-        Assert.IsTrue(CampaignQuestLogRecorder.Budget(log.Scenes[^1].Actions,catalog.QuestLogSource)+8>256);
+        Assert.IsFalse(CampaignQuestLogRecorder.FitsActions(log.Scenes[^1].Actions.Add(new(0,0,0,Direction.South,true,CampaignQuestLogEvent.None,16)),catalog.QuestLogSource));
         Assert.IsNull(CampaignQuestLogRecorder.Validate(log));
     }
 

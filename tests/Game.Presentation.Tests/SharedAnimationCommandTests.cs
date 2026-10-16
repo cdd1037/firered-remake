@@ -50,7 +50,7 @@ public sealed class SharedAnimationCommandTests
     [TestMethod][DataRow(0)][DataRow(1)]
     public void FireSoundTaskUsesSetupOnlyInitializerAndTwoSourcePhases(int actor)
     {
-        var script=new SourceAnimationScript(126,"fire",[new("createsoundtask",["SoundTask_FireBlast","SE_M_FLAME_WHEEL","SE_M_FLAME_WHEEL2"],1),new("waitsound",[],2),new("end",[],3)]);
+        var script=new SourceAnimationScript(126,"fire",[new("createsoundtask",["SoundTask_FireBlast","SE_M_FLAME_WHEEL","SE_M_FLAME_WHEEL2"],1),new("waitsound",[],2),new("end",[],3)]){SoundEffects=new Dictionary<string,int>{{"SE_M_FLAME_WHEEL",137},{"SE_M_FLAME_WHEEL2",138}}};
         var audio=new Audio();var runtime=new SourceBattleAnimation(script,new("fire",1,126,new(actor),new(actor^1)),Battlers(),true,audio);
         int ticks=0;while(runtime.Active&&ticks++<140)runtime.Tick();Assert.IsFalse(runtime.Active);
         CollectionAssert.AreEqual(Enumerable.Range(0,10).Select(x=>x*11).Concat(new[]{111,117}).ToArray(),audio.Sounds.Select(x=>x.Frame).ToArray());
@@ -71,7 +71,7 @@ public sealed class SharedAnimationCommandTests
     [TestMethod][DataRow(0)][DataRow(1)]
     public void SoundCallbackInitializesImmediatelyThenAdvancesTwiceInCreationFrame(int actor)
     {
-        var script=new SourceAnimationScript(58,"sound",[new("createsoundtask",["SoundTask_LoopSEAdjustPanning","SE_M_BUBBLE_BEAM2","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","4","4","0","10"],1),new("waitsound",[],2),new("end",[],3)]);
+        var script=new SourceAnimationScript(58,"sound",[new("createsoundtask",["SoundTask_LoopSEAdjustPanning","SE_M_BUBBLE_BEAM2","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","4","4","0","10"],1),new("waitsound",[],2),new("end",[],3)]){SoundEffects=new Dictionary<string,int>{{"SE_M_BUBBLE_BEAM2",176}}};
         var audio=new Audio();var runtime=new SourceBattleAnimation(script,new("sound",1,58,new(actor),new(actor^1)),Battlers(),true,audio);
         int ticks=0;while(runtime.Active&&ticks++<100)runtime.Tick();
         Assert.IsFalse(runtime.Active);CollectionAssert.AreEqual(new[]{0,10,21,32},audio.Sounds.Select(x=>x.Frame).ToArray());

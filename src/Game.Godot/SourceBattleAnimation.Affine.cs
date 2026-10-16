@@ -22,6 +22,14 @@ public readonly record struct SourceAffineMatrix(int A,int B,int C,int D)
 }
 public sealed partial class SourceBattleAnimation
 {
+    private readonly bool[] _restoredObject=new bool[4],_restoredObjectOam=new bool[4],_blendedObject=new bool[4],_blendedObjectOam=new bool[4];
+    private void PrepareBattlerRotScale(int slot,int objectMode)
+    {
+        if(objectMode is <0 or >1)throw new InvalidDataException("Unsupported battler object mode.");
+        _restoredObject[slot]=_battlers[slot].Visible;_blendedObject[slot]=objectMode==1;_affineMode[slot]=true;
+    }
+    private void ResetBattlerRotScale(int slot)
+    {SetBattlerRotScale(slot,256,256,0);_affineMode[slot]=false;_blendedObject[slot]=false;}
     private void SetBattlerRotScale(int slot,int xScale,int yScale,int rotation)
     {
         var m=SourceAffineMatrix.FromScaleRotation(xScale,yScale,rotation);
@@ -30,7 +38,7 @@ public sealed partial class SourceBattleAnimation
     private sealed class WithdrawTask:VisualTask
     {
         private readonly int _slot;private int _rotation,_phase,_hold;
-        public WithdrawTask(SourceBattleAnimation owner){_slot=owner._cue.Actor.Value;owner._affineMode[_slot]=true;}
+        public WithdrawTask(SourceBattleAnimation owner){_slot=owner._cue.Actor.Value;owner.PrepareBattlerRotScale(_slot,0);}
         public override void Step(SourceBattleAnimation owner)
         {
             owner.SetBattlerRotScale(_slot,256,256,(_slot&1)==0?-_rotation:_rotation);
@@ -39,7 +47,7 @@ public sealed partial class SourceBattleAnimation
             else _rotation-=176;
             owner._offsets[_slot]=new(0,Math.Abs(owner._matrixC[_slot])>>3);
             if(_rotation is not (3872 or 0))return;
-            if(_phase==2){owner.SetBattlerRotScale(_slot,256,256,0);owner._affineMode[_slot]=false;Finished=true;}
+            if(_phase==2){owner.SetBattlerRotScale(_slot,256,256,0);owner.ResetBattlerRotScale(_slot);Finished=true;}
             else _phase++;
         }
     }
@@ -54,7 +62,7 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly int _slot;private int _phase,_counter,_copies,_scale=256,_passes;
         public int LiveCopies;
-        public MinimizeTask(SourceBattleAnimation owner){_slot=owner._cue.Actor.Value;owner._affineMode[_slot]=true;}
+        public MinimizeTask(SourceBattleAnimation owner){_slot=owner._cue.Actor.Value;owner.PrepareBattlerRotScale(_slot,0);}
         public override void Step(SourceBattleAnimation owner)
         {
             switch(_phase)
@@ -78,7 +86,7 @@ public sealed partial class SourceBattleAnimation
                     _counter+=2;_scale-=80;owner.SetBattlerRotScale(_slot,_scale,_scale,0);owner.SetBattlerYOffsetFromScale(_slot);
                     if(_counter==32){_counter=0;_phase++;}break;
                 case 5:
-                    owner.SetBattlerRotScale(_slot,256,256,0);owner._affineMode[_slot]=false;
+                    owner.SetBattlerRotScale(_slot,256,256,0);owner.ResetBattlerRotScale(_slot);
                     // The source's uninitialized data[15] is zero. Scale restoration
                     // has already put the actor's y2 at zero on the previous tick.
                     owner._offsets[0]=new(owner._offsets[0].X,0);Finished=true;break;

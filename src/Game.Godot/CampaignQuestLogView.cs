@@ -38,6 +38,12 @@ public partial class CampaignView
         _questLogPlayback=null;_held=null;_repeat=0;ResetCampaignButtonInput();ResetPlayTimeHost();QueueRedraw();
         // Map/session/poses were never replaced, so Continue resumes the exact saved field.
     }
+    // The common field-loop early returns exclude menus, Help, recap and effects.
+    // Reuse the actual input lock boundary rather than maintaining a Quest whitelist.
+    private void ObserveQuestLogFieldStep()
+    {
+        if(!_busy&&!FieldPresentationInputLocked)_session.ObserveQuestLogFieldFrame(Engine.GetPhysicsFrames());
+    }
     private bool TickQuestLogPlayback(double delta)
     {
         if(_questLogPlayback is not {} playback)return false;

@@ -27,7 +27,8 @@ public sealed partial class SourceBattleAnimation
         uint mask=(background&256)!=0?0xeu:0;
         if((actor&256)!=0)mask|=1u<<(16+_cue.Actor.Value);
         if((target&256)!=0)mask|=1u<<(16+_cue.Target.Value);
-        for(int bank=0;bank<32;bank++)if((mask&(1u<<bank))!=0&&!_invertedPalettes.Add(bank))_invertedPalettes.Remove(bank);
+        for(int bank=0;bank<32;bank++)if((mask&(1u<<bank))!=0)
+        {if(!_invertedPalettes.Add(bank))_invertedPalettes.Remove(bank);if(bank==2&&_fadedBackgroundPalette is {} colors)for(int i=0;i<16;i++)colors[i]^=0x7fff;}
     }
     private readonly Dictionary<int,SourcePaletteBlend> _paletteBlends=[];
     private readonly List<SoundTask> _soundTasks=[];
@@ -39,7 +40,7 @@ public sealed partial class SourceBattleAnimation
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
-        {_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
+        {if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
     }
     // Source AnimTask_Flash / AnimTask_Flash_Step. Only BG palettes 1..3
     // and currently visible battler OBJ palettes are selected; HUD/text stay separate.
@@ -70,10 +71,8 @@ public sealed partial class SourceBattleAnimation
     }
     // Source priority-1 sound task; init runs once immediately, then once in
     // this frame's RunTasks. Visual waits ignore it; script end waits for it.
-    private abstract class SoundTask
+    private abstract class SoundTask:SourceTask
     {
-        public bool Finished{get;protected set;}
-        public abstract void Step(SourceBattleAnimation owner);
     }
     private sealed class DelayedSound(string sound,int pan,int frames):SoundTask
     {

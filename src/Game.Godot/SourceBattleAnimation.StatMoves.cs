@@ -88,14 +88,14 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly int _slot;private int _dx,_dy,_left,_restore;
         public ScaleMonTask(SourceBattleAnimation owner,int[] args)
-        {_slot=args[3]==0?owner._cue.Actor.Value:owner._cue.Target.Value;_dx=args[0];_dy=args[1];_left=_restore=args[2];owner._affineMode[_slot]=true;owner._xScale[_slot]=owner._yScale[_slot]=256;}
+        {_slot=args[3]==0?owner._cue.Actor.Value:owner._cue.Target.Value;_dx=args[0];_dy=args[1];_left=_restore=args[2];owner.PrepareBattlerRotScale(_slot,args[4]);owner._xScale[_slot]=owner._yScale[_slot]=256;}
         public override void Step(SourceBattleAnimation owner)
         {
             owner._matrixB[_slot]=owner._matrixC[_slot]=0;
             owner._xScale[_slot]=(short)(owner._xScale[_slot]+_dx);owner._yScale[_slot]=(short)(owner._yScale[_slot]+_dy);
             if(--_left!=0)return;
             if(_restore>0){_dx=-_dx;_dy=-_dy;_left=_restore;_restore=0;}
-            else{owner._xScale[_slot]=owner._yScale[_slot]=256;owner._matrixB[_slot]=owner._matrixC[_slot]=0;owner._affineMode[_slot]=false;Finished=true;}
+            else{owner._xScale[_slot]=owner._yScale[_slot]=256;owner._matrixB[_slot]=owner._matrixC[_slot]=0;owner.ResetBattlerRotScale(_slot);Finished=true;}
         }
     }
     // Original normal palette fade visits BG and OBJ halves on alternate calls,
@@ -125,10 +125,10 @@ public sealed partial class SourceBattleAnimation
         public BlendCycleTask(SourceBattleAnimation owner,int[] args)
         {_mask=owner.SelectPalettes(args[0]);_delay=args[1];_remaining=args[2];_initial=args[3];_target=args[4];_color=(ushort)args[5];Begin(owner,0,_target);}
         private void Begin(SourceBattleAnimation owner,int from,int to)
-        {if(owner._fade?.Active!=true){owner._fade=new(_mask,from,to,_color,_delay);owner._fade.Update(owner);}_remaining--;_restore=!_restore;}
+        {if(!owner.PaletteFadeActive){owner._fade=new(_mask,from,to,_color,_delay);owner._fade.Update(owner);}_remaining--;_restore=!_restore;}
         public override void Step(SourceBattleAnimation owner)
         {
-            if(owner._fade?.Active==true)return;
+            if(owner.PaletteFadeActive)return;
             if(_remaining<=0){Finished=true;return;}
             Begin(owner,_restore?_target:_initial,_remaining==1?0:_restore?_initial:_target);
         }
@@ -145,8 +145,8 @@ public sealed partial class SourceBattleAnimation
         public override SourceVisualSpriteFrame Frame=>new(Slot,"gComplexPaletteBlendSpriteTemplate",default,default,0,false,false,false,256,null,Subpriority);
         public override void Step(SourceBattleAnimation owner)
         {
-            if(_phase==1){if(owner._fade?.Active!=true){owner.BlendPalettes(_mask,0,0);Finished=true;}return;}
-            if(_delay>0){_delay--;return;}if(owner._fade?.Active==true)return;
+            if(_phase==1){if(!owner.PaletteFadeActive){owner.BlendPalettes(_mask,0,0);Finished=true;}return;}
+            if(_delay>0){_delay--;return;}if(owner.PaletteFadeActive)return;
             if(_remaining==0){_phase=1;return;}
             owner.BlendPalettes(_mask,(_toggle&256)!=0?_firstBlend:_secondBlend,(_toggle&256)!=0?_firstColor:_secondColor);_toggle^=256;_delay=_toggle&255;_remaining--;
         }

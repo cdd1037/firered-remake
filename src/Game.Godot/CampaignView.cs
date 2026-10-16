@@ -40,6 +40,7 @@ public partial class CampaignView:Node2D
     private double _repeat,_waitElapsed,_waitDuration,_fade,_fanfareRemaining;
     private long _lastFanfareSequence;
     private bool _busy,_choiceYes=true;
+    private bool FieldPresentationInputLocked=>SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in";
     // Cut's MSGBOX_YESNO uses new_menu_helpers.c's default (21,9), 6x4-tile window.
     // CreateYesNoMenu prints at interior y+2 with FONT_NORMAL's 14-pixel row pitch.
     // Keep other field/script choices at their existing positions.
@@ -343,6 +344,7 @@ public partial class CampaignView:Node2D
             if((wait.Kind==StoryWaitKind.Presentation||rendered)&&SourceAudioWaitReady()){Apply(new("ack"));QueueRedraw();return;}
         }
         if(ProcessCyclingRoadPull(delta)){QueueRedraw();return;}
+        ObserveQuestLogFieldStep();
         if(_held is {} direction&&_session.State.Script.Completed&&_session.State.Script.Wait is null)
         {_repeat+=delta;if(_repeat>=FieldStepTicksForDirection(_session.State,direction)/60.0&&_tracks.All(t=>t.Time>=t.Duration)){_repeat=0;Apply(new("move",direction));}}
         QueueRedraw();
@@ -416,7 +418,7 @@ public partial class CampaignView:Node2D
         if(_quitRequested)return;
         if(TryPokemonLeagueInput(input)){GetViewport().SetInputAsHandled();return;}
         if(TryNoncombatFieldInput(input))return;
-        if((SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in")&&input is not InputEventKey {Keycode:Key.Escape or Key.F12}){_held=null;GetViewport().SetInputAsHandled();return;}
+        if(FieldPresentationInputLocked&&input is not InputEventKey {Keycode:Key.Escape or Key.F12}){_held=null;GetViewport().SetInputAsHandled();return;}
         if(TryFishingInput(input)){GetViewport().SetInputAsHandled();return;}
         if(HandleRunningShift(input)){GetViewport().SetInputAsHandled();return;}
         if(TryPlayerEntryInput(input))return;

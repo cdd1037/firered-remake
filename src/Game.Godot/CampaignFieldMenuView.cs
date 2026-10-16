@@ -66,6 +66,7 @@ public partial class CampaignView
 
     private void OpenFieldStartMenu()
     {
+        if(!CanOpenFieldMenu||!Apply(new("field_start_menu")))return;
         _fieldMenuMode = "start"; _fieldMenuCursor = Math.Clamp(_fieldMenuCursor, 0, FieldMenuEntries().Length - 1);
         _held = null; _repeat = 0;
     }

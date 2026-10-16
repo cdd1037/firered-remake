@@ -14,22 +14,23 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly SourceSpriteRecipe _recipe;
         private readonly SourceSpriteAffineProgram _affine;
+        private readonly SourceSpriteFrameProgram _frames;
         private readonly PhysicalLinear _linear;
         private readonly PixelPoint _position;
         private readonly BubbleHelper _helper;
         private PixelPoint _offset;
         private readonly int _radiusX,_radiusY,_phaseStep;
-        private int _phase,_remaining,_state,_animIndex,_animDelay;
+        private int _phase,_remaining,_state;
         private bool _animationEnded;
         public WaterBubbleProjectile(int slot,int priority,SourceSpriteRecipe recipe,int[] args,SourceBattleAnimation owner):base(slot,priority)
         {
-            _recipe=recipe;_affine=new(recipe.AffineAnimations[0]);
+            _recipe=recipe;_affine=new(recipe.AffineAnimations[0]);_frames=new(recipe);
             var actor=owner._battlers[owner._cue.Actor.Value];var target=owner._battlers[owner._cue.Target.Value];int sign=actor.Slot.IsPlayer?1:-1;
             var from=actor.Center(owner._doubles,true);from=new(from.X+sign*args[0],from.Y+args[1]);var to=target.Center(owner._doubles,true);
             _linear=new(to.X-from.X,to.Y-from.Y,args[6]);_radiusX=sign*args[2];_radiusY=args[3];_phase=(args[4]&255)<<8;_phaseStep=args[5];_remaining=args[6];
             _position=new(from.X-((owner._script.SineTable[_phase>>8]*_radiusX)>>8),from.Y-((owner._script.SineTable[(_phase>>8)+64]*_radiusY)>>8));
             int helperSlot=owner.AllocateElectricSprite(slot);if(helperSlot<0)throw new InvalidDataException("Water bubble helper sprite capacity exhausted.");
-            _helper=new(helperSlot);owner._sprites.Add(_helper);_animDelay=recipe.Animations[0][0].Duration-1;Move(owner);
+            _helper=new(helperSlot);owner._sprites.Add(_helper);Move(owner);
         }
         private void Move(SourceBattleAnimation owner)
         {
@@ -42,7 +43,7 @@ public sealed partial class SourceBattleAnimation
         {
             get
             {
-                var f=_recipe.Animations[0][_animIndex];var m=_affine.Matrix;
+                var f=_frames.Frame;var m=_affine.Matrix;
                 return new(Slot,_recipe.Template,_position,_offset,f.Tile,true,f.HFlip,_recipe.Blend,256,_recipe.Asset,Subpriority){VFlip=f.VFlip,Width=_recipe.Width,Height=_recipe.Height,Affine=true,DoubleSize=_recipe.AffineDoubleSize,MatrixA=m.A,MatrixB=m.B,MatrixC=m.C,MatrixD=m.D};
             }
         }
@@ -59,9 +60,7 @@ public sealed partial class SourceBattleAnimation
             }
             _affine.Step();
             if(_state<2)return;
-            if(_animDelay>0)_animDelay--;
-            else if(_animIndex+1<_recipe.Animations[0].Length){_animIndex++;_animDelay=_recipe.Animations[0][_animIndex].Duration-1;}
-            else _animationEnded=true;
+            _frames.Step();_animationEnded=_frames.Ended;
         }
     }
 }

@@ -2,7 +2,13 @@ using System.Collections.Immutable;
 
 namespace Game.Domain.World;
 
-public sealed record QuestLogDeparture(string Inside,string Outside,string TextKey,string Place,string Kind);
+public sealed record QuestLogDeparture(string Inside,string Outside,string TextKey,string Place,string Kind)
+{
+    public int LocationId{get;init;}
+    public string LocationSymbol{get;init;}="";
+    public string RegionName{get;init;}="";
+    public string? BadgeFlag{get;init;}
+}
 
 public interface ICampaignQuestLogCatalog
 {

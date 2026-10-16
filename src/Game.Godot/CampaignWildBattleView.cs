@@ -94,6 +94,8 @@ public partial class CampaignView
             var gym = PretGymBattleTerrain.Load(_root);
             _gymTerrain = SceneTextures.Texture(gym.GymSceneTexturePath);
             _leaderTerrain = SceneTextures.Texture(gym.LeaderSceneTexturePath);
+            _sourceTerrainIds[_gymTerrain.GetInstanceId()]=gym.GymSourceTerrainId;
+            _sourceTerrainIds[_leaderTerrain.GetInstanceId()]=gym.LeaderSourceTerrainId;
             if (_gymTerrain.GetWidth() != 240 || _gymTerrain.GetHeight() != 112 || _leaderTerrain.GetWidth() != 240 || _leaderTerrain.GetHeight() != 112)
                 throw new InvalidDataException("Gym terrain size invalid.");
         }

@@ -11,9 +11,9 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,289},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({20,35,2,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111},{s['moveId'] for s in scripts})
   for s in scripts:
-   self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),32)
+   self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data)
   for move in [20,35]:
@@ -69,4 +69,71 @@ class PhysicalImportTests(unittest.TestCase):
   _,blocked=imp.build(REFERENCE)
   slam=next(b for b in blocked if b['moveId']==282)
   self.assertIn('graphics:ANIM_TAG_SLAM_HIT_2',slam['missing'])
+ def test_task_affine_program_is_parsed_as_task_data_not_sprite_affine(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  self.assertEqual({'sSplashEffectAffineAnimCmds','sGrowAndShrinkAffineAnimCmds','sSlackOffSquishAffineAnimCmds','DefenseCurlDeformMonAffineAnimCmds'},set(pack['taskAffinePrograms']))
+  commands=pack['taskAffinePrograms']['sSplashEffectAffineAnimCmds']
+  self.assertEqual([(-6,4,8),(10,-10,8),(-4,6,8),(0,0,0)],[(c['x'],c['y'],c['duration']) for c in commands])
+  self.assertEqual('end',commands[-1]['op'])
+  source='const union AffineAnimCmd test[] = {\n AFFINEANIMCMD_FRAME(0x100, 128, -1, 0),\n AFFINEANIMCMD_LOOP(0),\n AFFINEANIMCMD_FRAME(-3, 4, 0, 2),\n AFFINEANIMCMD_LOOP(3),\n AFFINEANIMCMD_JUMP(1),\n AFFINEANIMCMD_END,\n};'
+  parsed=imp.task_affine_program(source,'test')
+  self.assertEqual(['frame','loop','frame','loop','jump','end'],[c['op'] for c in parsed]);self.assertEqual(255,parsed[0]['rotation']);self.assertEqual(3,parsed[3]['count']);self.assertEqual(1,parsed[4]['target'])
+  with self.assertRaises(ValueError):imp.task_affine_program(source.replace('JUMP(1)','JUMP(100)'),'test')
+  with self.assertRaises(ValueError):imp.task_affine_program(source.replace('AFFINEANIMCMD_LOOP(3)','UNKNOWN_AFFINE(3)'),'test')
+ def test_mud_sport_closure_keeps_static_tile_recipe_and_exact_shared_pixels(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  recipe=next(r for r in pack['spriteRecipes'] if r['template']=='gMudsportMudSpriteTemplate')
+  self.assertEqual(('AnimMudSportDirt','mud-sand',16,16),(recipe['callback'],recipe['asset'],recipe['width'],recipe['height']))
+  script=next(s for s in pack['scripts'] if s['moveId']==300)
+  self.assertEqual(16,sum(c['op']=='createsprite' for c in script['commands']))
+  self.assertEqual(10,sum(c['op']=='waitplaysewithpan' and c['args'][1]=='0' for c in script['commands']))
+  mud=imp.build_assets(REFERENCE)['mud-sand']
+  self.assertEqual((ROOT/'content/generated/battle/animations/elemental-mud-sand.rgb555').read_bytes(),mud)
+  self.assertEqual((ROOT/'content/generated/battle/animations/physical-mud-sand.rgb555').read_bytes(),mud)
+ def test_missing_splash_or_mud_callback_does_not_admit_a_partial_move(self):
+  raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createsprite gMudsportMudSpriteTemplate',b'createsprite MissingMudSportParticle')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertIn(150,{s['moveId'] for s in json.loads(data)['scripts']});self.assertNotIn(300,{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertIn('callback:MissingMudSportParticle',next(b for b in blocked if b['moveId']==300)['missing'])
+ def test_growth_breath_and_slack_off_share_source_tasks_and_existing_healing_pixels(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  programs=pack['taskAffinePrograms']
+  self.assertEqual(48,sum(c['duration'] for c in programs['sGrowAndShrinkAffineAnimCmds']))
+  self.assertEqual(56,sum(c['duration'] for c in programs['sSlackOffSquishAffineAnimCmds']))
+  puff=next(r for r in pack['spriteRecipes'] if r['template']=='gBreathPuffSpriteTemplate')
+  self.assertEqual(('AnimBreathPuff',16,16),(puff['callback'],puff['width'],puff['height']))
+  self.assertEqual([0,4,8,12],[f['tile'] for f in puff['animations'][0]])
+  self.assertEqual([4,40,4,4],[f['duration'] for f in puff['animations'][0]])
+  self.assertTrue(all(f['hFlip'] for f in puff['animations'][0]));self.assertFalse(any(f['hFlip'] for f in puff['animations'][1]))
+  healing=next(a for a in pack['assets'] if a['id']=='blue-star');self.assertEqual('elemental-blue-star.rgb555',healing['path'])
+  self.assertEqual(imp.build_assets(REFERENCE)['breath'],(ROOT/'content/generated/battle/animations/physical-breath.rgb555').read_bytes())
+  root=next(s for s in pack['scripts'] if s['moveId']==303)
+  self.assertIn('HealingEffect',[c['args'][0] for c in root['commands'] if c['op']=='call'])
+  self.assertEqual(4,sum(c['op']=='createsprite' for c in pack['subroutines']['HealingEffect']))
+ def test_finite_sprite_loops_retain_region_and_count_without_expanding_frames(self):
+  raw=imp.read_sources(REFERENCE)['src/battle_anim_effects_3.c'].decode()
+  def parse(body):
+   import re
+   source=re.sub(r'(sEclipsingOrbAnimCmds\[\] =\s*\{).*?(\};)',lambda m:m[1]+'\n'+body+'\n'+m[2],raw,flags=re.S)
+   return imp.sprite_recipe(source,'gEclipsingOrbSpriteTemplate','eclipsing-orb','AnimSpriteOnMonPos')
+  marked=parse('ANIMCMD_FRAME(0, 2),\nANIMCMD_LOOP(0),\nANIMCMD_FRAME(16, 1, .hFlip = TRUE),\nANIMCMD_FRAME(32, 0, .vFlip = TRUE),\nANIMCMD_LOOP(2),\nANIMCMD_FRAME(48, 2),\nANIMCMD_END,')
+  self.assertEqual(4,len(marked['animations'][0]));self.assertEqual([[dict(at=3,start=1,count=2)]],marked['frameLoops'])
+  sequence=parse('ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(1),\nANIMCMD_FRAME(16, 1),\nANIMCMD_LOOP(2),\nANIMCMD_END,')
+  self.assertEqual([[dict(at=1,start=0,count=1),dict(at=2,start=1,count=2)]],sequence['frameLoops'])
+  jump=parse('ANIMCMD_FRAME(0, 1),\nANIMCMD_FRAME(16, 2),\nANIMCMD_LOOP(1),\nANIMCMD_FRAME(32, 1),\nANIMCMD_JUMP(3),')
+  self.assertEqual([2],jump['loopStarts']);self.assertEqual([[dict(at=2,start=0,count=1)]],jump['frameLoops'])
+  for body in ['ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(64),\nANIMCMD_END,','ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(1),\nANIMCMD_LOOP(3),\nANIMCMD_END,','ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(1),\nANIMCMD_JUMP(1),']:
+   with self.assertRaises(ValueError):parse(body)
+ def test_defense_curl_has_the_complete_deformation_palette_and_finite_orb_closure(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==111)
+  grayscale=[c for c in script['commands'] if c['op']=='createvisualtask' and c['args'][0]=='AnimTask_SetGrayscaleOrOriginalPal']
+  self.assertEqual(['0','1'],[c['args'][-1] for c in grayscale])
+  orb=next(r for r in pack['spriteRecipes'] if r['template']=='gEclipsingOrbSpriteTemplate')
+  self.assertEqual([[dict(at=7,start=0,count=1)]],orb['frameLoops']);self.assertEqual(7,len(orb['animations'][0]))
+  self.assertEqual(['frame','frame','loop','end'],[c['op'] for c in pack['taskAffinePrograms']['DefenseCurlDeformMonAffineAnimCmds']])
+  self.assertEqual(imp.build_assets(REFERENCE)['eclipsing-orb'],(ROOT/'content/generated/battle/animations/physical-eclipsing-orb.rgb555').read_bytes())
+ def test_defense_curl_is_rejected_if_a_required_palette_callback_is_missing(self):
+  raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createvisualtask AnimTask_SetGrayscaleOrOriginalPal',b'createvisualtask MissingGrayscale')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertNotIn(111,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('callback:MissingGrayscale',next(b for b in blocked if b['moveId']==111)['missing'])
 if __name__=='__main__':unittest.main()
