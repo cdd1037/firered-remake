@@ -22,6 +22,8 @@ public sealed partial class SourceBattleAnimation
         }
         if(c.Op=="waitsound")
         {if(a.Length!=0)Fail(c,"Sound wait takes no operands.");return true;}
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="SoundTask_PlaySE1WithPanning")
+        {if(a.Length!=4||Number(a[1]) is <0 or >255||!_script.SoundEffects.ContainsKey(a[2])||SoundPan(a[3]) is < -64 or >63)Fail(c,"Source visual SE1 wrapper operands differ.");return true;}
         if(c.Op=="createsoundtask")
         {
             if(a.FirstOrDefault()=="SoundTask_FireBlast")
@@ -29,6 +31,8 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=8||a[0]!="SoundTask_LoopSEAdjustPanning"||!_script.SoundEffects.ContainsKey(a[1])||SoundPan(a[2]) is < -64 or >63||SoundPan(a[3]) is < -64 or >63||Number(a[4]) is < -128 or >127||Number(a[5]) is <1 or >255||Number(a[6]) is <0 or >255||Number(a[7]) is <0 or >255)Fail(c,"Unsupported sound callback or source-width operands.");
             return true;
         }
+        if(c.Op=="splitbgprio_all")
+        {if(a.Length!=0)Fail(c,"Unconditional background priority split takes no operands.");return true;}
         if(c.Op is "splitbgprio" or "splitbgprio_foes")
         {if(a.Length!=1||a[0] is not ("ANIM_ATTACKER" or "ANIM_TARGET"))Fail(c,"Background priority participant differs.");return true;}
         if(c.Op=="panse")

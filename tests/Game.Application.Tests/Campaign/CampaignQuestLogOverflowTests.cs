@@ -70,4 +70,34 @@ public sealed class CampaignQuestLogOverflowTests
         Assert.AreEqual(1,result.Scenes.Length);Assert.IsTrue(result.Scenes[0].Closed);Assert.IsFalse(gate.WildRecordRetained);
     }
 
+    [TestMethod]
+    public void RetainedOverflowWildPointerCrossesOrdinaryMapWithoutRecordingAnotherProjection()
+    {
+        var (state,log,gate)=Full(Wild());var catalog=CurrentCampaignFixture.Catalog;
+        var after=state with{World=state.World with{Player=state.World.Player with{MapId=new("map.route-2")}},
+            MapEdits=System.Collections.Immutable.ImmutableSortedDictionary<string,FieldMetatileEdit>.Empty.Add("1,1",new(1,1,1,0,3))};
+        var crossed=CampaignQuestLogRecorder.Record(log,state,after,new("move"),catalog,recordingOpen:false,startGate:gate)!;
+        Assert.AreSame(log,crossed);Assert.IsTrue(gate.WildRecordRetained);
+        string original=System.Text.Json.JsonSerializer.Serialize(after);
+        var result=CampaignQuestLogRecorder.Record(crossed,after,after,new("battle_ack"),catalog,recordingOpen:false,
+            suppliedEvent:Wild() with{Arguments=Wild().Arguments.SetItem(0,"ROUTE 2")},startGate:gate)!;
+        Assert.AreEqual(1,result.Scenes.Length);Assert.IsTrue(result.Scenes[0].Closed);
+        Assert.AreEqual(log.Scenes[0].Map,result.Scenes[0].Map);Assert.AreEqual(log.Scenes[0].Actions.Length,result.Scenes[0].Actions.Length);
+        Assert.AreEqual("ROUTE 2",result.Scenes[0].Actions[0].Arguments[0]);Assert.AreEqual("2",result.Scenes[0].Actions[0].Arguments[2]);
+        Assert.IsFalse(result.Scenes[0].Actions.Any(a=>a.Transition is not null||a.Tile is not null));
+        Assert.AreEqual(original,System.Text.Json.JsonSerializer.Serialize(after));
+    }
+    [TestMethod]
+    public void NewSemanticEventAfterOrdinaryCrossingEndsTheRetainedWildAggregate()
+    {
+        var (state,log,gate)=Full(Wild());var catalog=CurrentCampaignFixture.Catalog;
+        var after=state with{World=state.World with{Player=state.World.Player with{MapId=new("map.route-2")}}};
+        var arrival=new CampaignQuestLogAction(-1,0,0,Direction.South,false,CampaignQuestLogEvent.Arrived,127){TextKey="ArrivedInLocation",Arguments=["ROUTE 2"]};
+        var next=CampaignQuestLogRecorder.Record(log,state,after,new("move"),catalog,recordingOpen:false,suppliedEvent:arrival,startGate:gate)!;
+        Assert.IsFalse(gate.WildRecordRetained);Assert.AreEqual(2,next.Scenes.Length);
+        next=CampaignQuestLogRecorder.Record(next,after,after,new("battle_ack"),catalog,recordingOpen:true,suppliedEvent:Wild(),startGate:gate)!;
+        Assert.AreEqual("1",next.Scenes[0].Actions[0].Arguments[2]);
+        Assert.AreEqual("1",next.Scenes[1].Actions.Single(a=>a.Event==CampaignQuestLogEvent.WildWon).Arguments[2]);
+    }
+
 }

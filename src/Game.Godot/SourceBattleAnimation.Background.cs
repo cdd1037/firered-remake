@@ -10,14 +10,16 @@ public sealed record SourceMoveBackgroundFrame(int? Id,int ScrollX,int ScrollY,i
 public sealed partial class SourceBattleAnimation
 {
     private int? _moveBackground;
+    private ushort BackgroundScrollX {get;set;}
     private ushort BackgroundScrollY {get;set;}
+    private int BackgroundScreenSize {get;set;}=1;
     private int _backgroundFadeState,_backgroundRevision,_hardwareDarkening;
     private HardwarePaletteFade? _hardwareFade;
     private long _nextTaskOrder;
     private readonly short[] _animationArgs=new short[8];
     private readonly ushort[]? _initialBackgroundPalette;
     private ushort[]? _unfadedBackgroundPalette,_fadedBackgroundPalette;
-    private SourceMoveBackgroundFrame BackgroundFrame=>new(_moveBackground,0,BackgroundScrollY,_hardwareDarkening){Revision=_backgroundRevision,FadedPalette=_fadedBackgroundPalette is null?[]:(ushort[])_fadedBackgroundPalette.Clone()};
+    private SourceMoveBackgroundFrame BackgroundFrame=>new(_moveBackground,BackgroundScrollX,BackgroundScrollY,_hardwareDarkening){ScreenSize=BackgroundScreenSize,Revision=_backgroundRevision,FadedPalette=_fadedBackgroundPalette is null?[]:(ushort[])_fadedBackgroundPalette.Clone()};
     private bool ValidateBackgroundCommand(SourceAnimationCommand command)
     {
         if(command.Op=="setarg")
@@ -114,7 +116,7 @@ public sealed partial class SourceBattleAnimation
     }
     private abstract class SourceTask
     {
-        public int Priority{get;set;}
+        public int Priority{get;set;}=-1;
         public long Order{get;set;}
         public bool Finished{get;protected set;}
         public abstract void Step(SourceBattleAnimation owner);
@@ -122,7 +124,7 @@ public sealed partial class SourceBattleAnimation
     private void AssignTaskOrder(int visualStart,int soundStart,SourceAnimationCommand command)
     {
         for(int i=visualStart;i<_tasks.Count;i++)
-        {_tasks[i].Priority=command.Op=="createvisualtask"?Number(command.Args[1]):5;_tasks[i].Order=_nextTaskOrder++;}
+        {if(_tasks[i].Priority<0)_tasks[i].Priority=command.Op=="createvisualtask"?Number(command.Args[1]):5;_tasks[i].Order=_nextTaskOrder++;}
         for(int i=soundStart;i<_soundTasks.Count;i++)
         {_soundTasks[i].Priority=1;_soundTasks[i].Order=_nextTaskOrder++;}
     }

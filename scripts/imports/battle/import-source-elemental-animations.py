@@ -158,6 +158,7 @@ def sound_effects(reference,commands):
  for command in commands:
   op,args=command['op'],command['args']
   if op in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'}:result.add(args[0])
+  elif op=='createvisualtask' and args[0] in {'SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning'}:result.add(args[2])
   elif op=='createsoundtask':
    if args[0]=='SoundTask_LoopSEAdjustPanning':result.add(args[1])
    elif args[0]=='SoundTask_FireBlast':result.update(args[1:3])

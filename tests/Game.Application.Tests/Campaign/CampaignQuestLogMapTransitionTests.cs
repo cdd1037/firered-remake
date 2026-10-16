@@ -40,7 +40,7 @@ public sealed class CampaignQuestLogMapTransitionTests
         var moved=second with{World=second.World with{Player=second.World.Player with{X=7}}};
         log=CampaignQuestLogRecorder.Record(log,second,moved,new("move",Direction.East),catalog,recordingFrame:20)!;
         var playback=new CampaignQuestLogPlayback(log,"RED",catalog.QuestLogSource,CampaignQuestLogRecorder.SavedScene(first,catalog.QuestLogSource));
-        playback.Tick(28d/60);Assert.AreEqual("map.route-1",playback.Map);Assert.AreEqual("OBJ_EVENT_GFX_RED_BIKE",playback.Actors.Single().Graphics);
+        playback.Tick(23d/60);Assert.AreEqual("map.route-1",playback.Map);Assert.AreEqual("OBJ_EVENT_GFX_RED_BIKE",playback.Actors.Single().Graphics);
         Assert.AreEqual(.5,playback.Movement(CampaignQuestLogRecorder.PlayerId)!.Value.Fraction,.001);
         playback.Skip();Assert.AreEqual("map.pallet-town",playback.Map);Assert.AreEqual("OBJ_EVENT_GFX_RED_NORMAL",playback.Actors.Single().Graphics);
     }

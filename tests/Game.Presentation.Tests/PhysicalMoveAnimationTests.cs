@@ -40,14 +40,15 @@ public sealed class PhysicalMoveAnimationTests
     public void EveryPhysicalFamilyComposesItsRealGeneratedSpriteSheets()
     {
         string folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");
+        using var resources=new SourceAnimationResources(folder);
         using var hit=SourceHitAnimationCatalog.Read(Path.Combine(folder,"hit"));
-        var assets=hit.RootElement.GetProperty("assets").EnumerateArray().Select(a=>a.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(hit,Path.Combine(folder,"hit"),id));
-        foreach(var pair in SourcePhysicalAnimationCatalog.Assets(Path.Combine(folder,"physical.json")))assets.Add(pair.Key,pair.Value);
-        assets.Add("background",new(240,112,new ushort[240*112]));
-        foreach(var b in Battlers(true))assets.Add(b.Asset,new(64,64,new ushort[4096]));
-        var composer=new SourceBattleFrameComposer(assets,Battlers(true));
-        foreach(var script in SourcePhysicalAnimationCatalog.Read(Path.Combine(folder,"physical.json"),hit).Values)
+        foreach(var move in SourcePhysicalAnimationCatalog.Read(Path.Combine(folder,"physical.json"),hit).Keys)
         {
+            var resolved=resources.Resolve(move);var script=resolved.Script;
+            var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
+            assets.Add("background",new(240,112,new ushort[240*112]));
+            foreach(var battler in Battlers(true))assets.Add(battler.Asset,new(64,64,new ushort[4096]));
+            var composer=new SourceBattleFrameComposer(assets,Battlers(true),resolved.StatMask,resolved.Metallic);
             var runtime=new SourceBattleAnimation(script,new("pixels",1,script.MoveId,new(2),new(3)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null},Battlers(true),true,new Audio());
             int frames=0;while(runtime.Active&&frames++<1000)Assert.AreEqual(240*112*4,composer.ComposeField(runtime.Tick()).Length);
             Assert.IsFalse(runtime.Active,script.Label);

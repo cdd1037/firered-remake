@@ -224,7 +224,7 @@ public partial class CampaignView:Node2D
                 var from=new Vector2(before!.World.Player.X*16,before.World.Player.Y*16);var to=player.Position;player.Position=from;
                 bool ledge=IsFuchsiaLedgeStep(before,after);
                 if(after.IsCycling&&!ledge)BeginCityCycleStep();
-                _tracks.Add(new(){Actor="LOCALID_PLAYER",Clips=[new(from,to,after.World.Player.Facing,(ledge?32:_fieldStepTicks)/60.0,true,ledge?"ledge-jump":after.IsCycling?(_fieldStepTicks==6?"cycle":"cycle-stairs"):_fieldStepTicks==8?"run":"walk")]});
+                _tracks.Add(new(){Actor="LOCALID_PLAYER",Clips=[new(from,to,after.World.Player.Facing,(ledge?CampaignFieldMovementTiming.LedgeFrames:_fieldStepTicks)/60.0,true,ledge?"ledge-jump":after.IsCycling?(_fieldStepTicks==6?"cycle":"cycle-stairs"):_fieldStepAction)]});
             }
             foreach(var motion in after.Motions)
             {
@@ -239,7 +239,7 @@ public partial class CampaignView:Node2D
                     {double time=action.StartsWith("delay_",StringComparison.Ordinal)&&int.TryParse(action[6..],out var frames)?frames/60.0:.5;clips.Add(new(new(current.X*16,current.Y*16),new(current.X*16,current.Y*16),current.Facing,time,visible,action));continue;}
                     if(action=="face_player"){clips.Add(new(new(current.X*16,current.Y*16),new(current.X*16,current.Y*16),after.Actors.GetValueOrDefault(motion.ActorId)?.Facing??current.Facing,1.0/60,visible,action));continue;}
                     var next=motion.Path[Math.Min(++index,motion.Path.Length-1)];
-                    double seconds=SeafoamMotionSeconds(after,motion.ActorId,action)??SixIslandMotionSeconds(after,motion.ActorId,action)??FourIslandMotionSeconds(after,motion.ActorId,action)??(action=="jump_2_down"?32.0/60:action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfSourcePresentation.JumpCueFrames/60.0:action=="cut_tree"?FieldCutSourcePresentation.TreeCutCueFrames/60.0:action=="rock_smash_break"?64.0/60:action=="face_original_direction"?1.0/60:action=="nurse_joy_bow"?48.0/60:action.Contains("fastest",StringComparison.Ordinal)?2.0/60:action.Contains("faster",StringComparison.Ordinal)?4.0/60:action.Contains("fast",StringComparison.Ordinal)||action.StartsWith("player_run_",StringComparison.Ordinal)?8.0/60:action.StartsWith("walk_slower_",StringComparison.Ordinal)?32.0/60:16.0/60);
+                    double seconds=SeafoamMotionSeconds(after,motion.ActorId,action)??SixIslandMotionSeconds(after,motion.ActorId,action)??FourIslandMotionSeconds(after,motion.ActorId,action)??(CampaignFieldMovementTiming.SourceDuration(action) is {} sourceFrames?sourceFrames/60.0:action=="jump_2_down"?32.0/60:action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfSourcePresentation.JumpCueFrames/60.0:action=="cut_tree"?FieldCutSourcePresentation.TreeCutCueFrames/60.0:action=="rock_smash_break"?64.0/60:action=="face_original_direction"?1.0/60:action=="nurse_joy_bow"?48.0/60:action.Contains("fastest",StringComparison.Ordinal)?2.0/60:action.Contains("faster",StringComparison.Ordinal)?4.0/60:action.Contains("fast",StringComparison.Ordinal)||action.StartsWith("player_run_",StringComparison.Ordinal)?8.0/60:action.StartsWith("walk_slower_",StringComparison.Ordinal)?32.0/60:16.0/60);
                     clips.Add(new(new(current.X*16,current.Y*16),new(next.X*16,next.Y*16),next.Facing,seconds,visible,action));current=next;
                 }
                 if(clips.Count>0){_tracks.Add(new(){Actor=motion.ActorId,Clips=clips});if(!_poses.TryGetValue(motion.ActorId,out var pose))_poses[motion.ActorId]=pose=new();pose.Position=clips[0].From;pose.Facing=clips[0].Facing;pose.Visible=clips[0].Visible;}
@@ -324,7 +324,7 @@ public partial class CampaignView:Node2D
             track.Time+=delta;double cursor=track.Time;var clip=track.Clips[^1];
             foreach(var candidate in track.Clips){clip=candidate;if(cursor<=candidate.Duration)break;cursor-=candidate.Duration;}
             // Original in-place jumps use the same high arc as ledges, over 16 frames instead of 32.
-            var pose=_poses[track.Actor];pose.Position=clip.From.Lerp(clip.To,SeafoamStepFraction(track.Actor,clip.Action,cursor)??SixIslandStepFraction(track.Actor,clip.Action,cursor)??FourIslandStepFraction(track.Actor,clip.Action,cursor)??(clip.Action=="cycle"?CityCycleStepFraction(cursor):(clip.Action.StartsWith("walk_slower_",StringComparison.Ordinal)||clip.Action.StartsWith("jump_special_",StringComparison.Ordinal))?FieldSlowerStepFraction(cursor):(float)Math.Clamp(cursor/clip.Duration,0,1)));pose.Facing=clip.Facing;pose.Visible=clip.Visible;pose.DrawYOffset=clip.Action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfJumpYOffset(cursor):clip.Action.StartsWith("jump_in_place_",StringComparison.Ordinal)?FuchsiaLedgeDrawYOffset(cursor*2):clip.Action is "ledge-jump" or "jump_2_down"?FuchsiaLedgeDrawYOffset(cursor):0;
+            var pose=_poses[track.Actor];pose.Position=clip.From.Lerp(clip.To,SeafoamStepFraction(track.Actor,clip.Action,cursor)??SixIslandStepFraction(track.Actor,clip.Action,cursor)??FourIslandStepFraction(track.Actor,clip.Action,cursor)??(clip.Action=="cycle"?CityCycleStepFraction(cursor):(clip.Action.StartsWith("walk_slower_",StringComparison.Ordinal)||clip.Action.StartsWith("jump_special_",StringComparison.Ordinal))?FieldSlowerStepFraction(cursor):(float)CampaignFieldMovementTiming.Fraction(clip.Action,(int)Math.Round(clip.Duration*60),cursor*60)));pose.Facing=clip.Facing;pose.Visible=clip.Visible;pose.DrawYOffset=clip.Action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfJumpYOffset(cursor):clip.Action.StartsWith("jump_in_place_",StringComparison.Ordinal)?FuchsiaLedgeDrawYOffset(cursor*2):clip.Action is "ledge-jump" or "jump_2_down"?FuchsiaLedgeDrawYOffset(cursor):0;
             bool moving=clip.From!=clip.To||clip.Action.StartsWith("walk_in_place",StringComparison.Ordinal);
             pose.Frame=clip.Action=="nurse_joy_bow"?(cursor>=8.0/60&&cursor<40.0/60?-9:0):moving?((int)(track.Time*60/(clip.Action is "cycle" or "cycle-stairs"?4:8))+(clip.Action is "cycle" or "cycle-stairs"?_cityCycleStepPhase:0))%4+1:0;
             if(clip.Action is "disable_anim" or "slide_down" or "restore_anim")pose.Frame=0;
@@ -507,7 +507,14 @@ public partial class CampaignView:Node2D
         if(!CommitPlayTime(true))return false;
         CommitTrainerTowerTime(true);_busy=true;
         command=CyclingRoadInput(command);
+        if(command.Kind=="move")command=command with{RunHeld=_runningShiftHeld};
+        _fieldStepAction="walk";
         var before=_session.State;_fieldStepTicks=command.Kind=="cycle_input"?CyclingRoadInputTicks(before,command):command.Kind=="move"?FieldStepTicksForDirection(before,command.Direction):16;var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
+        if(result.Status==CommandStatus.Accepted&&command.Kind is "move" or "cycle_input")
+        {
+            var timing=CampaignFieldMovementTiming.Resolve(before,command,_catalog,result.State);
+            _fieldStepTicks=timing.Frames;_fieldStepAction=timing.SourceAction;
+        }
         if(command.Kind=="slot_tick")
         {
             // Frame evidence is opt-in and remains a slot summary, not a full state dump.

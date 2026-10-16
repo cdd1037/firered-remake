@@ -11,8 +11,7 @@ public sealed class SourceBattleAnimationAudioAdapter(SynthSourceAudioPlayer bac
     public void Play(SourceAnimationSound cue)
     {
         if(cue.Pan is < -128 or > 127)throw new ArgumentOutOfRangeException(nameof(cue));
-        if(backend.Metadata(cue.Id).SourcePlayer is not (1 or 2))
-            throw new InvalidOperationException("Source animation requires an SE1/SE2 cue: "+cue.Id);
+        cue.ValidateSourcePlayer(backend.Metadata(cue.Id).SourcePlayer);
         long token=backend.PlaySoundEffect(cue.Id);
         if(token==0)throw new InvalidOperationException("Source animation sound was not admitted: "+cue.Id);
         _ownedTokens.Add(token);

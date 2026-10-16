@@ -24,6 +24,7 @@ public static partial class CampaignMoveAnimationPresentation
         319 => (WildBattleStat.SpecialDefense,-2),
         _ => null
     };
+    private static string? SideSettingAnimation(int move)=>move switch{54=>"mist",113=>"light-screen",115=>"reflect",_=>null};
     private static bool IsRecoveryAnimation(int move) => move is 105 or 235 or 303;
 
     internal static int SupportedSourceMoveId(string move)=>move switch
@@ -31,6 +32,13 @@ public static partial class CampaignMoveAnimationPresentation
         "pret:MOVE_DOUBLE_SLAP" => 3,
         "pret:MOVE_COMET_PUNCH" => 4,
         "pret:MOVE_TRIPLE_KICK" => 167,
+        "pret:MOVE_BONE_CLUB" => 125,
+        "pret:MOVE_BONE_RUSH" => 198,
+        "pret:MOVE_METAL_CLAW" => 232,
+        "pret:MOVE_CRUSH_CLAW" => 306,
+        "pret:MOVE_DRAGON_CLAW" => 337,
+        "pret:MOVE_MIST" => 54,
+        "pret:MOVE_SMOG" => 123,
         "pret:MOVE_GUST" => 16,
         "pret:MOVE_WING_ATTACK" => 17,
         "pret:MOVE_STEEL_WING" => 211,
@@ -165,16 +173,22 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
-        if(move is 3 or 4 or 167)return new(null,"source-per-hit-animation");
+        if(move is 3 or 4 or 167 or 198)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
-            attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
+            attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
+            attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
             return new(null, "unmatched-source-attack-string");
         int end = battle.EventIndex + 1;
         while (end < battle.Events.Length && battle.Events[end].Turn == used.Turn &&
             battle.Events[end] is not (WildBattleAttackStringEvent or WildBattleMoveUsedEvent or WildBattleOrderEvent or WildBattleTurnReadyEvent)) end++;
+        for(int i=battle.EventIndex+1;i<end;i++)
+            if(battle.Events[i].Sequence<=battle.Events[i-1].Sequence)return new(null,"unmatched-source-invocation-sequence");
         var action = battle.Events.Skip(battle.EventIndex + 1).Take(end - battle.EventIndex - 1).ToArray();
         var pp = action.OfType<WildBattlePpCommandEvent>().ToArray();
-        if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].Target != used.Target || pp[0].CurrentMove != used.Move)
+        if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].PpOwner != used.Actor ||
+            pp[0].Target != used.Target || pp[0].CurrentMove != used.Move || pp[0].ChosenMove != used.Move ||
+            pp[0].PpSlot != used.Slot || pp[0].Before != used.PpBefore || pp[0].After != used.PpAfter ||
+            pp[0].Before < 1 || pp[0].CommandCost < 1 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
             return new(null, "unmatched-source-pp-command");
         if (move is 120 or 153)
         {
@@ -199,7 +213,7 @@ public static partial class CampaignMoveAnimationPresentation
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 113 or 115 or 277)
+        if(SideSettingAnimation(move) is not null||move==277)
         {
             long result=0;
             if(move==277)
@@ -208,7 +222,7 @@ public static partial class CampaignMoveAnimationPresentation
             }
             else
             {
-                var changed=action.OfType<WildBattleMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==(move==113?"light-screen":"reflect")&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+                var changed=action.OfType<WildBattleMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==SideSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
                 if(changed.Length==1)result=changed[0].Sequence;
             }
             if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
@@ -290,13 +304,16 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
-        if(move is 3 or 4 or 167)return new(null,"source-per-hit-animation");
+        if(move is 3 or 4 or 167 or 198)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
-            attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
+            attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
+            attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
             return new(null, "unmatched-source-attack-string");
         int end = battle.EventIndex + 1;
         while (end < battle.Events.Length && battle.Events[end].Turn == used.Turn &&
             battle.Events[end] is not (SourceAttackStringEvent or SourceMoveUsedEvent or SourceOrderEvent or SourceTurnReadyEvent)) end++;
+        for(int i=battle.EventIndex+1;i<end;i++)
+            if(battle.Events[i].Sequence<=battle.Events[i-1].Sequence)return new(null,"unmatched-source-invocation-sequence");
         var action = battle.Events.Skip(battle.EventIndex + 1).Take(end - battle.EventIndex - 1).ToArray();
         var pp = action.OfType<SourcePpCommandEvent>().ToArray();
         if(move is 51 or 75 or 129 or 145 or 157 or 181)
@@ -340,7 +357,10 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"source-no-animation-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,ownPp.Sequence,result.Sequence,move,used.Actor,result.Target,false),"committed-source-animation");
         }
-        if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].Target != used.Target || pp[0].CurrentMove != used.Move)
+        if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].PpOwner != used.Actor ||
+            pp[0].Target != used.Target || pp[0].CurrentMove != used.Move || pp[0].ChosenMove != used.Move ||
+            pp[0].PpSlot != used.Slot || pp[0].Before != used.PpBefore || pp[0].After != used.PpAfter ||
+            pp[0].Before < 1 || pp[0].CommandCost < 1 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
             return new(null, "unmatched-source-pp-command");
         if (move is 120 or 153)
         {
@@ -365,7 +385,7 @@ public static partial class CampaignMoveAnimationPresentation
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 113 or 115 or 277)
+        if(SideSettingAnimation(move) is not null||move==277)
         {
             long result=0;
             if(move==277)
@@ -374,7 +394,7 @@ public static partial class CampaignMoveAnimationPresentation
             }
             else
             {
-                var changed=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==(move==113?"light-screen":"reflect")&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+                var changed=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==SideSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
                 if(changed.Length==1)result=changed[0].Sequence;
             }
             if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");

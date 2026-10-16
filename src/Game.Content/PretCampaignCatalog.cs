@@ -176,6 +176,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         ? _sharedFieldTilesets.Find(layout,id) : null;
 
     public int? TerrainAt(MapId map,int x,int y) => SourceMaps.TryGetValue(map, out var source) ? source.GetSourceCell(x, y)?.Terrain : null;
+    public bool AllowsRunning(MapId map) => SourceMaps.TryGetValue(map, out var source) && source.Events.GetProperty("allow_running").GetBoolean();
     public bool AllowsCycling(MapId map) => SourceMaps.TryGetValue(map, out var source) && source.Events.GetProperty("allow_cycling").GetBoolean();
     public FieldMapDefinition MapDefinition(MapId id) => _definitions[id];
     public MapId MapFromSourceSymbol(string symbol) => SourceMaps.Values.First().ResolveMapSymbol(symbol);

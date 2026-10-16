@@ -34,6 +34,8 @@ public sealed partial class SourceBattleAnimation
         "gGrantingStarsSpriteTemplate"=>"AnimGrantingStars",
         "gSporeParticleSpriteTemplate"=>"AnimSporeParticle",
         "gFallingRockSpriteTemplate"=>"AnimFallingRock",
+        "gSpinningBoneSpriteTemplate"=>"AnimBoneHitProjectile",
+        "gClawSlashSpriteTemplate"=>"AnimClawSlash",
         "gThinRingExpandingSpriteTemplate"=>"AnimSpriteOnMonPos",
         "gFireSpiralInwardSpriteTemplate"=>"AnimFireSpiralInward",
         "gFireSpreadSpriteTemplate"=>"AnimFireSpread",
@@ -66,9 +68,14 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_StartSinAnimTimer")
         {if(a.Length!=3||Number(a[1]) is <0 or >255||Number(a[2]) is <1 or >32767)Fail(c,"Sine timer operands differ.");return true;}
         if(c.Op=="createsprite"&&a.FirstOrDefault()=="gShakeMonOrTerrainSpriteTemplate")
-        {if(a.Length!=7||Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127||a.Skip(3).Take(3).Any(v=>Number(v) is <0 or >32767)||Number(a[6])!=1)Fail(c,"Only reviewed vertical terrain shake mode is supported.");return true;}
+        {
+            if(a.Length is not (7 or 8)||Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127)Fail(c,"Terrain shake shape/priority differs.");
+            if(a.Skip(3).Any(v=>Number(v) is < -32768 or >32767)||Number(a[5])<0||Number(a[6]) is <0 or >3)Fail(c,"Terrain shake source operands differ.");
+            int mode=Number(a[6]);
+            if(mode<2?a.Length!=7:a.Length!=8||Number(a[7]) is <0 or >2)Fail(c,"Sprite-coordinate shake requires an explicit reviewed participant.");return true;
+        }
         if(c.Op!="createsprite"||a.Length==0||ElementalCallback(a[0]) is not string callback)return false;
-        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimSporeParticle" or "AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame" or "AnimGrantingStars"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
+        int count=callback switch{"TranslateAnimSpriteToTargetMonLocation"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimBoneHitProjectile" or "AnimSporeParticle" or "AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame" or "AnimGrantingStars"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimClawSlash"=>6,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
         if(a.Length!=count||!_script.SpriteRecipes.TryGetValue(a[0],out var recipe)||recipe.Callback!=callback||recipe.Width is not (8 or 16 or 32 or 64)||recipe.Height is not (8 or 16 or 32 or 64)||_script.SineTable.Length!=320)Fail(c,"Elemental sprite recipe/operands differ.");
         if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127)Fail(c,"Elemental sprite participant/priority differs.");
         foreach(var arg in a.Skip(3))if(Number(arg) is < -32768 or >32767)Fail(c,"Elemental source argument outside s16.");
@@ -84,6 +91,8 @@ public sealed partial class SourceBattleAnimation
         if(callback=="AnimBubbleEffect"&&Number(a[5]) is <0 or >1)Fail(c,"Bubble target grouping differs.");
         if(callback=="AnimWaterBubbleProjectile"&&Number(a[9]) is <2 or >255)Fail(c,"Water bubble timer differs.");
         if(callback=="AnimFallingRock"&&(Number(a[4]) is <0 or >2||Number(a[6]) is <0 or >1))Fail(c,"Rock tile/grouping mode differs.");
+        if(callback=="AnimBoneHitProjectile"&&(Number(a[7]) is <1 or >32767||_script.SpriteRecipes[a[0]].Width!=32||_script.SpriteRecipes[a[0]].Height!=32||_script.SpriteRecipes[a[0]].AffineAnimations.Length!=1||_script.SpriteRecipes[a[0]].AffineDoubleSize))Fail(c,"Bone projectile duration/affine recipe differs.");
+        if(callback=="AnimClawSlash"&&(Number(a[5]) is <0 or >1||_script.SpriteRecipes[a[0]].Width!=32||_script.SpriteRecipes[a[0]].Height!=32||_script.SpriteRecipes[a[0]].Animations.Length!=2||_script.SpriteRecipes[a[0]].AffineAnimations.Length!=0||_script.SpriteRecipes[a[0]].AffineDoubleSize||_script.SpriteRecipes[a[0]].Blend))Fail(c,"Claw frame selection/recipe differs.");
         if(callback=="AnimSporeParticle"&&(Number(a[5]) is <0 or >255||Number(a[6]) is <0 or >32767||Number(a[7]) is <0 or >1))Fail(c,"Spore angle/lifetime/mode differs.");
         if(callback=="AnimGrantingStars"&&(Number(a[5]) is <0 or >1||Number(a[8]) is <0 or >32767))Fail(c,"Granting star participant/lifetime differs.");
         if(callback=="AnimOutrageFlame"&&(Number(a[5]) is <1 or >32767||Number(a[8]) is <1 or >32767))Fail(c,"Outrage lifetime/flicker divisor differs.");
@@ -165,6 +174,12 @@ public sealed partial class SourceBattleAnimation
             var center=target.Center(owner._doubles,true);_position=center;
             switch(recipe.Callback)
             {
+                case "AnimClawSlash":
+                    _position=new(unchecked((short)(center.X+a[0])),unchecked((short)(center.Y+a[1])));_frames=new(recipe,a[2]);break;
+                case "AnimBoneHitProjectile":
+                    _position=new(center.X+direction*a[0],center.Y+a[1]);
+                    if(!actor.Slot.IsPlayer)owner._animationArgs[2]=unchecked((short)-a[2]);
+                    _linear=new(center.X+owner._animationArgs[2]-_position.X,center.Y+a[3]-_position.Y,a[4]);break;
                 case "AnimGrantingStars":
                     center=a[2]==0?actor.Center(owner._doubles,true):center;_position=new(center.X+direction*a[0],center.Y+a[1]);_vx=a[3];_vy=a[4];_remaining=a[5];break;
                 case "AnimEyeSparkle":
@@ -321,6 +336,7 @@ public sealed partial class SourceBattleAnimation
             if(_state==2){Finished=true;return;}
             switch(_recipe.Callback)
             {
+                case "AnimClawSlash":if(_frames.Ended)_state=2;break;
                 case "AnimEyeSparkle":if(_animationEnded)Finished=true;break;
                 case "AnimAngerMark":if(_affine!.Ended)_state=2;break;
                 case "AnimLightning":case "AnimSpriteOnMonPos":if(_animationEnded||_affine?.Ended==true)Finished=true;break;

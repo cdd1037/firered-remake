@@ -8,8 +8,8 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本122／354，其余232尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
-- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前122招范围通过Presentation全套488／488、应用专属分派215／215；这些受控检查不等于原生逐帧或实际扬声器验收。
+- 专属招式脚本129／354，其余225尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前129招范围通过Presentation全套540／540、应用专属分派249／249；这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
 
@@ -35,11 +35,13 @@
 
 ## 专属动画范围
 
-当前分派支持：Pound、Karate Chop、Double Slap、Comet Punch、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Gust、Wing Attack、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Bite、Supersonic、Acid、Ember、Flamethrower、Water Gun、Hydro Pump、Ice Beam、Psybeam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Rock Throw、Toxic、Confusion、Psychic、Hypnosis、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Defense Curl、Barrier、Light Screen、Reflect、Focus Energy、Self Destruct、Egg Bomb、Fire Blast、Clamp、Swift、Hi Jump Kick、Dream Eater、Leech Life、Bubble、Spore、Flash、Psywave、Splash、Crabhammer、Explosion、Rock Slide、Slash、Triple Kick、Thief、Flame Wheel、Cotton Spore、Powder Snow、Octazooka、Zap Cannon、Outrage、Giga Drain、Endure、Charm、False Swipe、Swagger、Steel Wing、Dynamic Punch、Dragon Breath、Iron Tail、Synthesis、Vital Throw、Crunch、Mirror Coat、Whirlpool、Magic Coat、Snatch、Mud Sport、Slack Off、Metal Sound、Tickle、Signal Beam、Sand Tomb、Aerial Ace、Iron Defense、Bulk Up、Mud Shot、Poison Tail、Covet。
+当前分派支持：Pound、Karate Chop、Double Slap、Comet Punch、Fire Punch、Ice Punch、Thunder Punch、Scratch、Vice Grip、Cut、Gust、Wing Attack、Bind、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Wrap、Take Down、Double Edge、Tail Whip、Bite、Supersonic、Acid、Ember、Flamethrower、Mist、Water Gun、Hydro Pump、Ice Beam、Psybeam、Bubble Beam、Peck、Submission、Low Kick、Counter、Strength、Absorb、Mega Drain、Growth、Razor Leaf、Poison Powder、Stun Spore、Sleep Powder、Dragon Rage、Fire Spin、Thunder Shock、Thunderbolt、Thunder Wave、Rock Throw、Toxic、Confusion、Psychic、Hypnosis、Agility、Quick Attack、Screech、Recover、Harden、Minimize、Withdraw、Defense Curl、Barrier、Light Screen、Reflect、Focus Energy、Self Destruct、Egg Bomb、Smog、Bone Club、Fire Blast、Clamp、Swift、Hi Jump Kick、Dream Eater、Leech Life、Bubble、Spore、Flash、Psywave、Splash、Crabhammer、Explosion、Rock Slide、Slash、Triple Kick、Thief、Flame Wheel、Cotton Spore、Powder Snow、Octazooka、Zap Cannon、Bone Rush、Outrage、Giga Drain、Endure、Charm、False Swipe、Swagger、Steel Wing、Dynamic Punch、Dragon Breath、Iron Tail、Metal Claw、Synthesis、Vital Throw、Crunch、Mirror Coat、Whirlpool、Magic Coat、Snatch、Mud Sport、Slack Off、Crush Claw、Metal Sound、Tickle、Signal Beam、Sand Tomb、Aerial Ace、Dragon Claw、Iron Defense、Bulk Up、Mud Shot、Poison Tail、Covet。
 
 Double Slap／Comet Punch按每个真实HP或替身命中回执播放，使用明确的零起始命中序号选择源分支；结束保留同一回执，不再提交ACK。18个应用用例含原版随机向量、提前KO、Rough Skin接触截断、替身破裂后的本体命中及零伤害命中；8个表现用例含全部256字节分支输入和缺失上下文拒绝。Triple Kick另以固定三次计划命中契约接入相同逐回执生命周期，13个应用用例验证逐击命中检查、提前截断及10／20／30威力；4个表现用例含1,024个原C条件分支向量。Beat Up等不同调用上下文未据此准入。
 
 Rock Throw／Rock Slide共用原版落石与地形摇动回调；BG3纵向寄存器按16位值变化并恢复各控制器捕获的原值，重叠控制器及非零恢复向量已验证。画面从保留的原版512×256索引地图采样，拒绝用裁平的可见纹理假装滚动；健康栏与文字仍在240×112场地图层之后固定绘制。
+
+Metal Claw／Crush Claw／Dragon Claw复用共享爪击帧播放器及原版地形／OBJ坐标偏移控制器；全局偏移仅投影到启用的OBJ，不移动monbg副本或HUD。528组原C向量覆盖爪击与四种寄存器摇动模式，显式SE1包装器保留即时播放、参数前缀写入及零视觉任务计数。共享素材读取器支持原版128像素宽图块存储，取消与自然结束分别验证；禁用的金属背景寄存器快照不被误当活动图层。
 
 其他招式返回 `script-outside-slice`，不启动该专属脚本；普通文字、HP及结果表现仍独立工作。不能因此说招式规则不可用，也不能把通用反馈当原版专属动画。此名单由当前单／双打分派代码核对，JSON逐招标记相同范围。
 
@@ -52,3 +54,9 @@ Rock Throw／Rock Slide共用原版落石与地形摇动回调；BG3纵向寄存
 已批准的概率／Protect／Conversion 2／双打KO／王者之证／AI与服从规则差异保持不变，详见 [当前规则决定](first-clear-remaining-scope.md#中文与规则决定)。未批准候选不得由整理顺带实现。全游戏功能缺口、中文、通信进化服务待讨论及当前存档谱系边界也统一见该页。
 
 Gust／Wing Attack／Steel Wing共用索引GUST材质、椭圆／目标平移回调及原版调色板轮换任务；帧／仿射结束交接、共享参数改写、六个出战位置与Steel Wing金属材质依赖均通过受控表现检查。
+
+Bone Club／Bone Rush共用原版骨棒线性／仿射回调，Bone Rush复用2～5次真实命中回执；32组／352行原C向量与20个应用用例通过。普通专属入口同时统一收紧直接调用的选中招式、PP所有者／槽位／正成本与严格事件顺序，保留Pressure及耗尽时的扣减截断；范围仍不包含调用／复制等不同上下文。
+
+Mist／Smog共用索引雾片与原版旋转平移回调，保留初始化即步进、隐藏搭档BASE坐标平均及OAM优先级3→0回绕；`splitbgprio_all`无条件写入BG1／BG2优先级，清除图层不擅自恢复寄存器。Mist按成功的五回合场地状态回执播放，已有状态／错误来源回执不播放。
+
+已验证滑动背景基础层（不增加招式计数）：有符号8.8累加、原版256／512地图模式、独立优先级5无计数任务与共享参数停止／复位。六个新增背景的393,216像素独立核对按地图实际调色板银行读取，bank0保留原文字调色板、bank2使用招式调色板；既有背景／地形数据块逐字节保持不变。该基础层仍不等于其依赖招式已接入。

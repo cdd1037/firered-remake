@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public static partial class CampaignQuestLogRecorder
 {
-    private static CampaignQuestLogScene AppendTimed(CampaignQuestLogScene scene,CampaignState before,CampaignState after,QuestLogSource? source,CampaignQuestLogAction? caption,out bool captionRecorded,int? recordingFrame=null)
+    private static CampaignQuestLogScene AppendTimed(CampaignQuestLogScene scene,CampaignState before,CampaignState after,CampaignCommand command,ICampaignCatalog? catalog,QuestLogSource? source,CampaignQuestLogAction? caption,out bool captionRecorded,int? recordingFrame=null)
     {
         bool overflow=false;
         var actions=scene.Actions;
@@ -42,7 +42,12 @@ public static partial class CampaignQuestLogRecorder
         {
             if(scripted.Contains(initial.Id))continue;
             var actor=latest.GetValueOrDefault(initial.Id)??initial with{Visible=false};
-            if(!previous.TryGetValue(initial.Id,out var prior)||actor!=prior)Append(actor,start,prior is not null&&actor.X==prior.X&&actor.Y==prior.Y?1:16,null);
+            if(!previous.TryGetValue(initial.Id,out var prior)||actor!=prior)
+            {
+                bool moved=prior is not null&&(actor.X!=prior.X||actor.Y!=prior.Y);
+                var timing=actor.Id==PlayerId&&moved&&command.Kind is "move" or "cycle_input"?CampaignFieldMovementTiming.Resolve(before,command,catalog,after):null;
+                Append(actor,start,timing?.Frames??(prior is not null&&!moved?1:16),timing?.SourceAction);
+            }
         }
         captionRecorded=caption is null||!overflow&&TryAppendEvent(actions,caption with{StartFrame=start},source,out actions);
         return actions==scene.Actions&&!overflow?scene:scene with{Actions=actions,Closed=overflow||caption?.Event is CampaignQuestLogEvent.FieldMove or CampaignQuestLogEvent.GymWon or CampaignQuestLogEvent.EliteFourWon or CampaignQuestLogEvent.ChampionWon or CampaignQuestLogEvent.TrainerWon};
@@ -62,11 +67,12 @@ public static partial class CampaignQuestLogRecorder
     }
     private static int MovementFrames(string action)
     {
+        if(CampaignFieldMovementTiming.SourceDuration(action) is {} sourceFrames)return sourceFrames;
         if(action.StartsWith("delay_",StringComparison.Ordinal)&&int.TryParse(action[6..],out int delay))return Math.Clamp(delay,1,255);
         if(action.StartsWith("emote_",StringComparison.Ordinal)||action.StartsWith("face_",StringComparison.Ordinal))return 1;
         if(action is "lock_facing_direction" or "unlock_facing_direction" or "disable_anim" or "restore_anim" or "set_invisible" or "set_visible" or "face_player" or "face_original_direction")return 1;
         if(action=="nurse_joy_bow")return 48;
-        if(action=="jump_2_down"||action.StartsWith("jump_special_",StringComparison.Ordinal))return FieldSurfSourcePresentation.JumpCueFrames;
+        if(action.StartsWith("jump_2_",StringComparison.Ordinal)||action.StartsWith("jump_special_",StringComparison.Ordinal))return FieldSurfSourcePresentation.JumpCueFrames;
         if(action=="cut_tree")return FieldCutSourcePresentation.TreeCutCueFrames;
         if(action=="rock_smash_break")return 64;
         if(action.Contains("fastest",StringComparison.Ordinal))return 2;

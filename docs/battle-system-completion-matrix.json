@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 122,
-    "missingDedicatedMoveScripts": 232,
+    "dedicatedMoveScripts": 129,
+    "missingDedicatedMoveScripts": 225,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -22,7 +22,7 @@
   "boundaries": {
     "rules": "Ordinary singles and preset doubles share the current battle frame and execution lifecycle. All move identities have recipe admission and controlled public-turn test rows.",
     "specialModes": "Safari, roaming, scripted/tutorial encounters and Trainer Tower have separate application owners; ordinary-core coverage does not establish all of their outcomes. Dynamic Enigma payloads, player communication and external e-Reader inputs are not ordinary-core completion.",
-    "presentation": "122 source move scripts are dispatched in bounded tested contexts. Other moves retain ordinary text/HP/result presentation; no generic-animation parity is claimed.",
+    "presentation": "129 source move scripts are dispatched in bounded tested contexts. Other moves retain ordinary text/HP/result presentation; no generic-animation parity is claimed.",
     "verification": "Maintained tests contain controlled states. Neither their count nor this inventory proves natural full-game travel, original-frame parity or real-speaker audio.",
     "userDeferrals": "Chinese is deferred. The user resumed remaining single-player content, including animation and presentation, on 2026-10-16; completion still requires explicit evidence.",
     "approvedRules": "Keep the existing approved project differences, including end-of-turn doubles KO replacement; this inventory grants no new rule changes.",
@@ -598,7 +598,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_WATER_GUN",
@@ -1288,7 +1288,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_SLUDGE",
@@ -1308,7 +1308,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_FIRE_BLAST",
@@ -2038,7 +2038,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_LOCK_ON",
@@ -2378,7 +2378,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_VITAL_THROW",
@@ -3118,7 +3118,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_BLAST_BURN",
@@ -3428,7 +3428,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_FRENZY_PLANT",

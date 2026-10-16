@@ -8,6 +8,19 @@ public sealed class SourceAnimationResourceTests
     private sealed class Silent:ISourceAnimationAudio
     {public bool IsPlaying=>false;public void Play(SourceAnimationSound sound){}public void SetPan(int pan,int frame){}public void StopAnimationEffects(){}}
     [TestMethod]
+    public void SourceRegisteredWideTileSheetRetainsAllPixelsThroughSharedResolver()
+    {
+        using var resources=new SourceAnimationResources(Folder);
+        var sheet=resources.Asset("torn-metal");
+        Assert.AreEqual(128,sheet.Width);Assert.AreEqual(32,sheet.Height);
+        var bytes=File.ReadAllBytes(Path.Combine(Folder,"physical-torn-metal.rgb555"));
+        Assert.AreEqual(4+128*32*2,bytes.Length);
+        for(int i=0;i<sheet.Pixels.Length;i++)
+            Assert.AreEqual(System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(4+i*2)),sheet.Pixels[i]);
+        Assert.AreSame(sheet,resources.Asset("torn-metal"));
+        Assert.IsNotNull(resources.Resolve(232).Metallic);
+    }
+    [TestMethod]
     public void SharedRecipesCoalesceDefaultsAndMaterialSelectionFollowsTaskNotMoveId()
     {
         using var resources=new SourceAnimationResources(Folder);Assert.AreEqual(0,resources.CachedAssetCount);
@@ -81,7 +94,7 @@ public sealed class SourceAnimationResourceTests
         string folder=Path.Combine(Path.GetTempPath(),"animation-recipes-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
         try
         {
-            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","flying.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
+            foreach(string file in new[]{"hit/manifest.json","physical.json","elemental.json","background-scripts.json","walls.json","flying.json","fog.json","general.json","trace.json","explosion/manifest.json","stat-moves/manifest.json","stat-mask/manifest.json"})
             {string target=Path.Combine(folder,file);Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(Path.Combine(Folder,file),target);}
             string path=Path.Combine(folder,"explosion/manifest.json");var json=JsonNode.Parse(File.ReadAllText(path))!;json["spriteRecipes"]![0]!["blend"]=true;File.WriteAllText(path,json.ToJsonString());
             Assert.Throws<InvalidDataException>(()=>new SourceAnimationResources(folder));

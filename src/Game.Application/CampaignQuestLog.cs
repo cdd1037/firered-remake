@@ -143,8 +143,15 @@ public static partial class CampaignQuestLogRecorder
             if(!TryRecordMapTransition(scenes[^1],after,source,recordingFrame,out var crossed)){startGate?.EndRecording();return Close(log);}
             scenes=scenes.SetItem(scenes.Length-1,crossed);log=new(scenes);transitioned=true;
         }
-        // Source retains one wild-battle record pointer across movement overflow, but
-        // a different semantic event, map boundary, save/restore or explicit cut ends it.
+        // Source retains its single wild-event pointer after movement overflow,
+        // including quiet ordinary map changes. Update only that existing caption;
+        // stopped recording cannot append another appearance or movement segment.
+        if(startGate?.WildRecordRetained==true&&!scenes.IsEmpty&&scenes[^1].Closed&&caption?.Event==CampaignQuestLogEvent.WildWon)
+        {
+            var merged=CampaignQuestLogWildCapture.Merge(scenes[^1].Actions,caption);
+            if(merged!=scenes[^1].Actions)return new(scenes.SetItem(scenes.Length-1,scenes[^1] with{Actions=merged}));
+        }
+        // A different semantic event, save/restore or explicit/disabled-map cut ends it.
         if((recordingOpen&&!scenes.IsEmpty&&!scenes[^1].Closed||startGate?.WildRecordRetained==true)&&!transitioned&&!scenes.IsEmpty&&CurrentProjection(scenes[^1]).Map==after.World.Player.MapId.Value&&caption?.Event==CampaignQuestLogEvent.WildWon)
         {
             if(!TryRecordAppearance(scenes[^1],before,after,source,out var wildVisual,recordingFrame)){startGate?.EndRecording();return Close(log);}
@@ -164,7 +171,7 @@ public static partial class CampaignQuestLogRecorder
         var current=scenes[^1];
         var visual=current;
         if(!transitioned&&!TryRecordAppearance(current,before,after,source,out visual,recordingFrame)){startGate?.EndRecording();return Close(log);}
-        var timed=AppendTimed(visual,transitioned?after:before,after,source,caption,out bool captionRecorded,transitioned?visual.Actions[^1].StartFrame:recordingFrame);
+        var timed=AppendTimed(visual,transitioned?after:before,after,command,catalog,source,caption,out bool captionRecorded,transitioned?visual.Actions[^1].StartFrame:recordingFrame);
         if(!captionRecorded){startGate?.EndRecording();return Record(new(scenes.SetItem(scenes.Length-1,timed with{Closed=true})),before,after,command,catalog,trainerLookup,false,caption,playedSlots,recordingFrame,startGate);}
         if(caption is not null)startGate?.NoteEvent(caption);
         return ReferenceEquals(timed,current)?log:new(scenes.SetItem(scenes.Length-1,timed));

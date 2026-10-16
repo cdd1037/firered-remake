@@ -228,6 +228,7 @@ public sealed record CampaignCommand(string Kind,Direction Direction=Direction.S
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public SourceGameOptions? Options{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool RunHeld{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSlotInput? SlotInput { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignBattleMoveSwap? BattleMoveSwap { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]

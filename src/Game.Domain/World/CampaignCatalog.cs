@@ -179,6 +179,7 @@ public interface ICampaignCatalog:IStoryCatalog
     FieldMetatileEdit? SourceMetatileAt(MapId map,int x,int y)=>null;
     ImmutableDictionary<int,int> CutGrassMetatiles=>ImmutableDictionary<int,int>.Empty;
     bool AllowsCycling(MapId map)=>false;
+    bool AllowsRunning(MapId map)=>false;
     VermilionGymTrainerCatalog? VermilionGymTrainers=>null;
     SsAnneTrainerCatalog? SsAnneTrainers=>null;
     VermilionTrainerCatalog? VermilionTrainers=>null;

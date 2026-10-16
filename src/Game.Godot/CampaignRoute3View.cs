@@ -9,6 +9,7 @@ public partial class CampaignView
 {
     private bool _runningShiftHeld;
     private int _fieldStepTicks = 16;
+    private string _fieldStepAction = "walk";
 
     private bool HandleRunningShift(InputEvent input)
     {
@@ -19,24 +20,8 @@ public partial class CampaignView
 
     // Source field_player_avatar.c:516 and bike.c:253. FR's IsFortreeBridge is always false.
     // The desktop Shift key represents the source GBA B button; desktop B keeps opening Bag.
-    private int FieldStepTicksForDirection(CampaignState state,Game.Domain.World.Direction direction)
-    {
-        if (state.IsSurfing) return 8;
-        if (state.IsCycling)
-        {
-            if (CyclingRoadRules.IsSlope(_catalog.SourceMaps[state.World.Player.MapId].SourceBehaviorAt(state.World.Player.X,state.World.Player.Y)))
-                return CyclingRoadRules.Resolve(state.BicycleSlope,state.World.Player.Facing,direction,_runningShiftHeld).Ticks;
-            var p=state.World.Player;int y=direction==Game.Domain.World.Direction.South?p.Y+1:p.Y;
-            int? cyclingBehavior=state.MapEdits?.TryGetValue(p.X+":"+y,out var edit)==true
-                ?_catalog.MetatileDefinition(p.MapId,edit.SourceMetatileId)?.Behavior
-                :_catalog.SourceMaps[p.MapId].SourceBehaviorAt(p.X,y);
-            return direction is Game.Domain.World.Direction.North or Game.Domain.World.Direction.South&&cyclingBehavior==0x2a?8:6;
-        }
-        if (!_runningShiftHeld || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_B_DASH")) return 16;
-        var source = _catalog.SourceMaps[state.World.Player.MapId];
-        return source.Events.GetProperty("allow_running").GetBoolean() &&
-            source.SourceBehaviorAt(state.World.Player.X, state.World.Player.Y) is { } behavior && behavior != 0x0a ? 8 : 16;
-    }
+    private int FieldStepTicksForDirection(CampaignState state,Game.Domain.World.Direction direction) =>
+        CampaignFieldMovementTiming.Resolve(state,new("move",direction){RunHeld=_runningShiftHeld},_catalog).Frames;
 
     private void LoadRoute3PokemonPresentation()
     {

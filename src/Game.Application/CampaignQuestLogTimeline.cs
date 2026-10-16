@@ -11,7 +11,7 @@ internal sealed class CampaignQuestLogTimeline
     private readonly ImmutableArray<CampaignQuestLogAction> _moves;
     private readonly ImmutableArray<(int Start,int End,string Text)> _captions;
     private readonly Dictionary<string,CampaignQuestLogActor> _actors;
-    private readonly Dictionary<string,(CampaignQuestLogActor From,int Start,int Duration)> _moving=new(StringComparer.Ordinal);
+    private readonly Dictionary<string,(CampaignQuestLogActor From,int Start,int Duration,string? Action)> _moving=new(StringComparer.Ordinal);
     private readonly int _end;
     private int _move;
     private double _frame;
@@ -22,7 +22,7 @@ internal sealed class CampaignQuestLogTimeline
     public ImmutableArray<FieldMetatileEdit> Tiles{get;private set;}
     public string? Caption=>_captions.Where(c=>c.Start<=_frame&&c.End>_frame).Select(c=>c.Text).FirstOrDefault();
     public bool Finished=>_frame>=_end;
-    public (CampaignQuestLogActor From,double Fraction)? Movement(string id)=>_moving.TryGetValue(id,out var m)&&_frame<m.Start+m.Duration?(m.From,Math.Clamp((_frame-m.Start)/m.Duration,0,1)):null;
+    public (CampaignQuestLogActor From,double Fraction)? Movement(string id)=>_moving.TryGetValue(id,out var m)&&_frame<m.Start+m.Duration?(m.From,CampaignFieldMovementTiming.Fraction(m.Action,m.Duration,_frame-m.Start)):null;
     public CampaignQuestLogTimeline(CampaignQuestLogScene scene,string player,QuestLogSource? source,bool savedScene=false)
     {
         Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;
@@ -64,7 +64,7 @@ internal sealed class CampaignQuestLogTimeline
             if(action.Graphics is not null||action.Spawn is not null)ArtRevision++;
             var initial=action.Spawn??_segmentActors[action.ActorIndex];
             var prior=_actors.GetValueOrDefault(initial.Id)??initial;
-            _moving[initial.Id]=(prior,action.StartFrame,action.Frames);
+            _moving[initial.Id]=(prior,action.StartFrame,action.Frames,action.SourceAction);
             _actors[initial.Id]=prior with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible,Graphics=action.Graphics??prior.Graphics};
         }
     }

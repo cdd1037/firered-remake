@@ -130,8 +130,7 @@ public partial class CampaignView
     // Stepping stays pixel-based and does not interpolate uniformly over six ticks.
     private static float CityCycleStepFraction(double seconds)
     {
-        int frame=Math.Clamp((int)Math.Floor(seconds*60+1e-9),0,6);
-        return new[]{0,2,5,8,10,13,16}[frame]/16f;
+        return (float)CampaignFieldMovementTiming.Fraction("cycle",6,seconds*60);
     }
 
     private bool ProcessFishingPresentation(double delta)
