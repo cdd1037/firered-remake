@@ -66,8 +66,8 @@ public sealed partial class CampaignSession
             position.Elevation != 0 && front.Elevation is not (0 or 15) && front.Elevation != position.Elevation ? 3 :
             front.Occupied || VisibleActorAt(state, x, y) is not null ? 4 : 0;
         var context = new OldRodCastContext(position.MapId, rod == FishingRod.Old, position.Elevation, terrain.Value,
-            front.SourceBehavior, collision)
-            { Rod = rod, OwnsGoodRod = goodRod, OwnsSuperRod = superRod };
+            front.SourceBehavior, collision, IsSurfing: state.IsSurfing)
+            { Rod = rod, OwnsGoodRod = goodRod, OwnsSuperRod = superRod, FrontMapCollision = front.Collision };
         if (!OldRodFishingRules.CanCast(context)) return No("fishing_invalid_shore");
         var result = profile.Start(context, state.World.Rng);
         long sequence = checked(state.Script.EffectSequence + 1);

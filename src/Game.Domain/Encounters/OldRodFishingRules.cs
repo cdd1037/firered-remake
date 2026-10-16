@@ -1,11 +1,12 @@
 using System.Collections.Immutable;
 using Game.Domain.Randomness;
 using Game.Domain.Ids;
+using Game.Domain.World;
 
 namespace Game.Domain.Encounters;
 
 /// <summary>
-/// FireRed Task_Fishing, shared on-foot rod entry. SourceStep retains the original zero-based
+/// FireRed Task_Fishing, shared on-foot and Surf rod entry. SourceStep retains the original zero-based
 /// function index. Presentation callbacks and VBlank are not random gameplay draws.
 /// </summary>
 public static class OldRodFishingRules
@@ -19,9 +20,13 @@ public static class OldRodFishingRules
     public static bool CanCast(OldRodCastContext context)
     {
         ValidateContext(context);
-        return (context.Rod switch { FishingRod.Old => context.OwnsOldRod, FishingRod.Good => context.OwnsGoodRod, FishingRod.Super => context.OwnsSuperRod, _ => false }) && !context.IsSurfing && !context.IsUnderwater &&
-            context.FrontMetatileBehavior != WaterfallBehavior && context.PlayerElevation == 3 &&
-            context.FrontTerrain == WaterTerrain && context.FrontCollision == ElevationMismatchCollision;
+        bool ownsRod = context.Rod switch { FishingRod.Old => context.OwnsOldRod, FishingRod.Good => context.OwnsGoodRod, FishingRod.Super => context.OwnsSuperRod, _ => false };
+        if (!ownsRod || context.IsUnderwater || context.FrontMetatileBehavior == WaterfallBehavior) return false;
+        // item_use.c CanFish: Surf ignores elevation, terrain and object collision.
+        // FireRed's MetatileBehavior_IsBridge always returns FALSE.
+        if (context.IsSurfing) return FieldWaterRules.IsSurfableBehavior(context.FrontMetatileBehavior) && context.FrontMapCollision == 0;
+        return context.PlayerElevation == 3 && context.FrontTerrain == WaterTerrain &&
+            context.FrontCollision == ElevationMismatchCollision;
     }
 
     /// <summary>
@@ -165,7 +170,7 @@ public static class OldRodFishingRules
         ArgumentNullException.ThrowIfNull(context);
         if (!Enum.IsDefined(context.Rod) || string.IsNullOrWhiteSpace(context.Map.Value) || !context.Map.Value.StartsWith("map.", StringComparison.Ordinal) ||
             context.PlayerElevation is < 0 or > 15 || context.FrontTerrain is < 0 or > 31 ||
-            context.FrontMetatileBehavior is < 0 or > 511 || context.FrontCollision is < 0 or > 15)
+            context.FrontMetatileBehavior is < 0 or > 511 || context.FrontCollision is < 0 or > 15 || context.FrontMapCollision is < 0 or > 3)
             throw new ArgumentException("Invalid source cast context.");
     }
     private static int MinimumRoundsBound(FishingRod rod) => rod switch {

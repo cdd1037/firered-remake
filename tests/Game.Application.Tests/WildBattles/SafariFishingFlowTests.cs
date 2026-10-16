@@ -31,7 +31,7 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
         return (CampaignState)pump.Invoke(session, [state])!;
     }
 
-    private CampaignSession Shore(string area = "center", bool active = true)
+    private CampaignSession Shore(string area = "center", bool active = true, bool surfing = false)
     {
         var session = CampaignSession.CreateCurrent(content); var state = FieldFixture();
         var map = new MapId("map.safari-zone-" + area); var grid = content.ConnectedFieldMaps![map];
@@ -42,7 +42,8 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
                          (dx: 0, dy: 1, facing: Direction.South), (dx: 0, dy: -1, facing: Direction.North) }
                      let here = grid.CellAt(x, y)
                      let front = grid.CellAt(x + direction.dx, y + direction.dy)
-                     where here is { Collision: 0, Elevation: 3 } && front is { Collision: 0, Elevation: 1 } &&
+                     where here is { Collision: 0 } && here.Elevation == (surfing ? 1 : 3) &&
+                         (!surfing || here.SourceBehavior is 0x10 or 0x15) && front is { Collision: 0, Elevation: 1 } &&
                          content.TerrainAt(map, x + direction.dx, y + direction.dy) == 2 && front.SourceBehavior != 0x13 &&
                          !actors.Any(a => a.X == x && a.Y == y || a.X == x + direction.dx && a.Y == y + direction.dy)
                      select (x, y, direction.facing)).First();
@@ -57,6 +58,7 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
                 .SetItem("FLAG_GOT_OLD_ROD", true).SetItem("FLAG_GOT_GOOD_ROD", true).SetItem("FLAG_GOT_SUPER_ROD", true) },
             SafariVisit = active ? new(30, 600, true) : null };
         state = Place(session, state, map, shore.x, shore.y, shore.facing);
+        if (surfing) state = state with { IsSurfing = true, Music = "MUS_SURF" };
         Set(session, state);
         return session;
     }
@@ -129,9 +131,10 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
     [DataRow("east", FishingRod.Good)]
     [DataRow("north", FishingRod.Super)]
     [DataRow("west", FishingRod.Super)]
-    public void PublicRodEntryUsesSafariCommandsWithoutOrdinaryRewards(string area, FishingRod rod)
+    [DataRow("east", FishingRod.Good, true)]
+    public void PublicRodEntryUsesSafariCommandsWithoutOrdinaryRewards(string area, FishingRod rod, bool surfing = false)
     {
-        var session = Shore(area); var party = CanonicalJson.Hash(session.State.Party);
+        var session = Shore(area, surfing: surfing); var position = session.State.World.Player; var party = CanonicalJson.Hash(session.State.Party);
         int money = session.State.Money; var balls = CanonicalJson.Hash(session.State.Inventory!.Balls);
         Fish(session, rod); DrainSafari(session);
         var battle = session.State.SafariBattle!;
@@ -141,6 +144,9 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
         Assert.AreEqual(CommandStatus.Rejected, ordinary.Status);
         Send(session, new("safari_action", Text: "run")); DrainSafari(session);
         Assert.IsNull(session.State.SafariBattle);
+        Assert.AreEqual(surfing, session.State.IsSurfing);
+        Assert.AreEqual(position, session.State.World.Player);
+        if (surfing) Assert.AreEqual("MUS_SURF", session.State.Music);
         Assert.AreEqual(party, CanonicalJson.Hash(session.State.Party), "no HP/PP/EXP/EV changes");
         Assert.AreEqual(money, session.State.Money); Assert.AreEqual(balls, CanonicalJson.Hash(session.State.Inventory!.Balls));
         Assert.AreEqual(0, session.State.Exploration!.Battles[^1].ExperienceGained);
@@ -162,9 +168,12 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
     [DataRow(FishingRod.Old, 123u, 129)]
     [DataRow(FishingRod.Super, 32u, 147)]
     [DataRow(FishingRod.Super, 347u, 148)]
-    public void CaptureUsesSafariBallPreservesOriginAndSurvivesExitContinue(FishingRod rod, uint rootSeed, int species)
+    [DataRow(FishingRod.Old, 123u, 129, true)]
+    [DataRow(FishingRod.Super, 32u, 147, true)]
+    public void CaptureUsesSafariBallPreservesOriginAndSurvivesExitContinue(FishingRod rod, uint rootSeed, int species, bool surfing = false)
     {
-        var session = Shore();
+        var session = Shore(surfing: surfing);
+        var position = session.State.World.Player;
         var party = session.State.Party.ToDictionary(p => p.InstanceId, p => CanonicalJson.Hash(p));
         Set(session, session.State with { World = session.State.World with { Rng = new(rootSeed, session.State.World.Rng.Cursor) } });
         Fish(session, rod); DrainSafari(session);
@@ -185,6 +194,9 @@ public sealed class SafariFishingFlowTests : WildBattleFixture
         foreach (var member in session.State.Party.Where(p => party.ContainsKey(p.InstanceId)))
             Assert.AreEqual(party[member.InstanceId], CanonicalJson.Hash(member), "capture awards no HP/PP/EXP/EV changes");
         Assert.AreEqual(0, session.State.Exploration.Battles.Last().ExperienceGained);
+        Assert.AreEqual(surfing, session.State.IsSurfing);
+        Assert.AreEqual(position, session.State.World.Player);
+        if (surfing) Assert.AreEqual("MUS_SURF", session.State.Music);
         Retire(session); StrictRoundtrip(session);
         var invalid = session.State with { Exploration = session.State.Exploration with {
             Captured = session.State.Exploration.Captured.Value.SetItem(count, capture with { Fishing = capture.Fishing! with { Map = new("map.fuchsia-city") } }) } };

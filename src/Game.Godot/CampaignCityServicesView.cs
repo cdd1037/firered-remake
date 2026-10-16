@@ -140,6 +140,7 @@ public partial class CampaignView
     {
         if(_session.State.Fishing is null)return false;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
+        ProcessFieldSurfPresentation(delta);
         _fishingFrameRemainder+=delta*SourceAudioFramesPerSecond;
         int frames=(int)Math.Min(int.MaxValue,Math.Floor(_fishingFrameRemainder+1e-9));
         _fishingFrameRemainder-=frames;
@@ -214,8 +215,10 @@ public partial class CampaignView
         if(DrawEventIslandActor(id,asset,pose,camera))return;
         if(id=="LOCALID_PLAYER"&&FishingPlayerFrame is {} frame)
         {
+            // Fishing swaps only the rider; the Surf blob keeps animating underneath.
+            bool surfing = DrawFieldSurfActor(id, pose, camera, drawPlayer: false);
             var sprite=_cityFishingSprites[_session.State.PlayerGender];
-            var position=pose.Position.Floor()+new Vector2(8+frame.OffsetX,8+frame.OffsetY)-sprite.Anchor-camera;
+            var position=pose.Position.Floor()+new Vector2(8+frame.OffsetX,8+frame.OffsetY+(surfing ? FieldSurfBlobPhase : 0))-sprite.Anchor-camera;
             if(frame.FlipH)
             {
                 DrawSetTransform(position+new Vector2(sprite.Width,0),0,new(-1,1));

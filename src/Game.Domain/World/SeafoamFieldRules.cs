@@ -102,7 +102,7 @@ public static class SeafoamFieldRules
         map == B4F && BothBouldersPresent(map,flags) ? [new(12,14,CalmWaterMetatile,0x15,0,1),new(13,14,CalmWaterMetatile,0x15,0,1)] : [];
     public static Direction? CurrentDirection(int behavior) => behavior switch
     { 0x50 => Direction.East, 0x51 => Direction.West, 0x52 => Direction.North, 0x53 or 0x13 => Direction.South, _ => null };
-    public static bool Surfable(int behavior) => behavior is >=0x10 and <=0x13 or 0x15 or 0x1A or 0x1B or >=0x50 and <=0x53;
+    public static bool Surfable(int behavior) => FieldWaterRules.IsSurfableBehavior(behavior);
     public static bool IsWaterFloor(MapId map) => map == B3F || map == B4F;
     public static bool FallStartsSurf(TilePosition landing,int behavior) => IsWaterFloor(landing.MapId) && Surfable(behavior);
 

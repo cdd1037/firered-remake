@@ -15,22 +15,23 @@ namespace FireRed.Tests.Application.WildBattles;
 [TestClass]
 public sealed class SharedFishingFlowTests : WildBattleFixture
 {
-    private CampaignSession Shore(string id)
+    private CampaignSession Shore(string id, bool surfing = false)
     {
         var session = CampaignSession.CreateCurrent(content); var state = FieldFixture();
         var map = new MapId(id); var grid = content.ConnectedFieldMaps![map];
         var actors = content.MapDefinition(map).Actors;
         var validateWorld = typeof(CampaignSession).GetMethod("ValidateCampaignWorld", BindingFlags.Instance | BindingFlags.NonPublic)!;
         bool CanStand(int x, int y, Direction facing) => validateWorld.Invoke(session,
-            [state with { World = state.World with { Player = new(map, x, y, 3, facing) },
-                IsSurfing = false, IsCycling = false, MapEdits = null }, content.Maps[map]]) is null;
+            [state with { World = state.World with { Player = new(map, x, y, surfing ? 1 : 3, facing) },
+                IsSurfing = surfing, IsCycling = false, MapEdits = null }, content.Maps[map]]) is null;
         var shore = (from y in Enumerable.Range(1, grid.Height - 2)
                      from x in Enumerable.Range(1, grid.Width - 2)
                      from direction in new[] { (dx: 1, dy: 0, facing: Direction.East), (dx: -1, dy: 0, facing: Direction.West),
                          (dx: 0, dy: 1, facing: Direction.South), (dx: 0, dy: -1, facing: Direction.North) }
                      let here = grid.CellAt(x, y)
                      let front = grid.CellAt(x + direction.dx, y + direction.dy)
-                     where here is { Collision: 0, Elevation: 3 } && front is { Collision: 0, Elevation: 1 } &&
+                     where here is { Collision: 0 } && here.Elevation == (surfing ? 1 : 3) &&
+                         (!surfing || here.SourceBehavior is 0x10 or 0x15) && front is { Collision: 0, Elevation: 1 } &&
                          content.TerrainAt(map, x + direction.dx, y + direction.dy) == 2 && front.SourceBehavior != 0x13 &&
                          !actors.Any(a => a.X == x && a.Y == y || a.X == x + direction.dx && a.Y == y + direction.dy) &&
                          CanStand(x, y, direction.facing)
@@ -42,7 +43,7 @@ public sealed class SharedFishingFlowTests : WildBattleFixture
             keys = keys.RemoveAll(k => k.Item == item).Add(new(item, 1));
         }
         state = state with {
-            World = state.World with { Player = new(map, shore.x, shore.y, 3, shore.facing) },
+            World = state.World with { Player = new(map, shore.x, shore.y, surfing ? 1 : 3, shore.facing) },
             Inventory = state.Inventory with { KeyItems = keys, Balls = [new(new("pret:ITEM_MASTER_BALL"), 1)] },
             Script = StoryState.Empty with { EffectSequence = state.Script.EffectSequence, Variables = state.Script.Variables,
                 Flags = state.Script.Flags.SetItem("FLAG_GOT_OLD_ROD", true).SetItem("FLAG_GOT_GOOD_ROD", true).SetItem("FLAG_GOT_SUPER_ROD", true) },
@@ -52,6 +53,7 @@ public sealed class SharedFishingFlowTests : WildBattleFixture
         var pump = typeof(CampaignSession).GetMethod("Pump", BindingFlags.Instance | BindingFlags.NonPublic)!;
         state = (CampaignState)enter.Invoke(session, [state, null, Game.Domain.Roaming.RoamerTransition.Warp])!;
         state = (CampaignState)pump.Invoke(session, [state])!;
+        if (surfing) state = state with { IsSurfing = true, Music = "MUS_SURF" };
         typeof(CampaignSession).GetField("_commands", BindingFlags.Instance | BindingFlags.NonPublic)!
             .SetValue(session, new CommandSession<CampaignState, CampaignCommand>(state, session.RulesVersion, content.ContentVersion, session.Revision));
         return session;
@@ -111,9 +113,16 @@ public sealed class SharedFishingFlowTests : WildBattleFixture
     public void AllRodsUseSharedOriginAndContinueIncludingFormerRegionalReceiptMaps(string map, FishingRod rod)
         => Capture(map, rod);
 
-    private void Capture(string map, FishingRod rod)
+    [TestMethod]
+    [DataRow(FishingRod.Old)]
+    [DataRow(FishingRod.Good)]
+    [DataRow(FishingRod.Super)]
+    public void SurfFishingCaptureReturnsToWaterAndContinues(FishingRod rod)
+        => Capture("map.fuchsia-city", rod, surfing: true);
+
+    private void Capture(string map, FishingRod rod, bool surfing = false)
     {
-        var session = Shore(map); Fish(session, rod);
+        var session = Shore(map, surfing); var position = session.State.World.Player; Fish(session, rod);
         var battle = session.State.WildBattle!;
         Assert.AreSame(content.FishingTables, battle.Frame.WildEncounter!.FishingTables);
         var target = battle.Frame.Party(Game.Domain.Battle.BattleSide.Opponent).Members[0].Pokemon;
@@ -131,6 +140,9 @@ public sealed class SharedFishingFlowTests : WildBattleFixture
             Assert.AreEqual(new MapId(map), origin.Map); Assert.AreEqual(rod, origin.Rod);
             Assert.IsNotNull(content.FishingTables.SourceSlot(origin));
         }
+        Assert.AreEqual(surfing, session.State.IsSurfing);
+        Assert.AreEqual(position, session.State.World.Player);
+        if (surfing) Assert.AreEqual("MUS_SURF", session.State.Music);
         StrictRoundtrip(session);
         if (map == "map.seafoam-islands-b3f" && rod is FishingRod.Old or FishingRod.Good)
         {

@@ -116,17 +116,20 @@ public partial class CampaignView
         return update >= 32 ? 0 : high[Math.Clamp((update - 1) / 2, 0, 15)];
     }
 
-    private bool DrawFieldSurfActor(string id, Pose pose, Vector2 camera)
+    private int FieldSurfBlobPhase => (int)Math.Floor(_fieldSurfBlobFrames + 1e-7) / 48 % 2;
+
+    private bool DrawFieldSurfActor(string id, Pose pose, Vector2 camera, bool drawPlayer = true)
     {
         if (id != "LOCALID_PLAYER" || !FieldSurfRiding) return false;
         var effect = _session.State.SurfEffect;
         int direction = pose.Facing switch { Direction.South => 0, Direction.North => 1, _ => 2 };
-        int phase = (int)Math.Floor(_fieldSurfBlobFrames + 1e-7) / 48 % 2;
+        int phase = FieldSurfBlobPhase;
         bool jumping = effect is not null || SeafoamDismountOrigin is not null;
         var blobTile = SeafoamDismountOrigin ?? (effect is null ? pose.Position : new Vector2(
             (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.X : effect.Origin.X) * 16,
             (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.Y : effect.Origin.Y) * 16));
         DrawSurfSheet(_fieldSurfBlob!, blobTile.Floor() + new Vector2(-8, -8) - camera, 32, direction * 2 + phase, pose.Facing == Direction.East);
+        if (!drawPlayer) return true;
         // The source blob's direction is zero: no sinusoidal bob. Its second animation command adds one to player y2.
         var player = pose.Position.Floor() + new Vector2(0, -16 + (jumping ? pose.DrawYOffset : phase)) - camera;
         DrawSurfSheet(_session.State.PlayerGender == 0 ? _fieldSurfRed! : _fieldSurfGreen!, player, 16, direction, pose.Facing == Direction.East);

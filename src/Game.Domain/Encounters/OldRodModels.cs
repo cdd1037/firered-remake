@@ -11,11 +11,12 @@ public enum FishingRod { Old = 0, Good = 1, Super = 2 }
 
 public enum OldRodFishingStatus { Running, NotEvenANibble, EncounterReady, Cancelled, Rejected }
 
-/// <summary>Source-resolved collision is GetCollisionAtCoords, not the raw map collision bits.</summary>
+/// <summary>FrontCollision is GetCollisionAtCoords; Surf instead uses the separate raw map collision bits.</summary>
 public sealed record OldRodCastContext(MapId Map, bool OwnsOldRod, int PlayerElevation,
     int FrontTerrain, int FrontMetatileBehavior, int FrontCollision, bool IsSurfing = false,
     bool IsUnderwater = false)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? FrontMapCollision { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public FishingRod Rod { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool OwnsGoodRod { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool OwnsSuperRod { get; init; }
