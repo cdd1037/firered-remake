@@ -306,7 +306,7 @@ public sealed partial class CampaignSession
     {
         state=ResetPokemonLeagueForWhiteOut(state);
         bool center=HasCenterRespawn(state);
-        if((!center&&state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN")||HasUnimplementedBadge(state))throw new InvalidDataException("whiteout_respawn_profile_not_supported");
+        if((!center&&state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"))throw new InvalidDataException("whiteout_respawn_profile_not_supported");
         var flags=state.Script.Flags;
         foreach(var name in new[]{"FLAG_DEFEATED_LORELEI","FLAG_DEFEATED_BRUNO","FLAG_DEFEATED_AGATHA","FLAG_DEFEATED_LANCE","FLAG_DEFEATED_CHAMP","FLAG_SYS_ON_CYCLING_ROAD","FLAG_SYS_CRUISE_MODE","FLAG_SYS_SAFARI_MODE","FLAG_SYS_USE_STRENGTH","FLAG_SYS_FLASH_ACTIVE","FLAG_SYS_QL_DEPARTED"})flags=flags.SetItem(name,false);
         var vars=state.Script.Variables;

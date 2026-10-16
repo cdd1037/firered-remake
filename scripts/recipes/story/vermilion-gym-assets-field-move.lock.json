@@ -54,10 +54,5 @@
     {
       "path": "tools/gbagfx/gfx.c"
     }
-  ],
-  "inputs": [
-    {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    }
   ]
 }

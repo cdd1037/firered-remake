@@ -168,7 +168,6 @@ public sealed partial class PretCampaignCatalog
         var oldRod = PretOldRod.Load(projectRoot);
         var vermilionGym = PretVermilionGymRegion.Load(world);
         var vermilionGymTrainers = PretVermilionGymTrainers.Load(canonicalPokemon, projectRoot);
-        var vermilionGymAssets = PretVermilionGymAssets.Load(projectRoot, shared: sharedMachines);
         var ssAnne = PretSsAnneRegion.Load(world);
         var ssAnnePokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "ssanne", pokedexMenu: oakPokedex);
         var ssAnneTrainers = PretSsAnneTrainers.Load(projectRoot);

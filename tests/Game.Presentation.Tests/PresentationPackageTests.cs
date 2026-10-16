@@ -129,6 +129,81 @@ public sealed class PresentationPackageTests
     }
 
     [TestMethod]
+    public void SupplementalDexPacksMatchReversePriorityPagesAndExactPngBytes()
+    {
+        string root = TestAssets.Root;
+        var menu = TestAssets.Cached(() => PretPokedexMenu.Load(TestAssets.Root));
+        var packs = new List<(Dictionary<int, PokedexMenuEntry> Entries, Dictionary<string, byte[]> Files)>();
+        void Add(Dictionary<int, PokedexMenuEntry> entries, Dictionary<string, byte[]> files) => packs.Add((entries, files));
+        void AddManifest(JsonElement manifest, Dictionary<string, byte[]> files)
+        {
+            static PokedexMenuTexture Texture(JsonElement row) => new(row.GetProperty("texturePath").GetString()!,
+                row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
+            var entries = manifest.GetProperty("sprites").EnumerateArray()
+                .Where(row => row.GetProperty("side").GetString() == "front" && row.GetProperty("paletteVariant").GetString() == "normal")
+                .ToDictionary(row => row.GetProperty("sourceSpeciesId").GetInt32(), row =>
+                    menu.Entries[row.GetProperty("sourceSpeciesId").GetInt32()] with { Portrait = Texture(row) });
+            foreach (var row in manifest.GetProperty("footprints").EnumerateArray())
+            {
+                int species = row.GetProperty("sourceSpeciesId").GetInt32();
+                entries[species] = entries[species] with { Footprint = Texture(row) };
+            }
+            Add(entries, files);
+        }
+        // Actual initialization order, opposite the former lookup-chain priority.
+        var events = EventIslandPresentationAssets.Load(root); AddManifest(events.Manifest, events.Files);
+        var power = PowerPlantPresentationAssets.Load(root); AddManifest(power.Manifest, power.Files);
+        var dojo = FightingDojoPresentationAssets.Load(root); Add(dojo.DexEntries, dojo.Files);
+        var fossils = PretFossilLabPresentation.Load(root); Add(fossils.DexEntries, fossils.Files);
+        var seafoam = PretSeafoamPresentation.Load(root); Add(seafoam.DexEntries, seafoam.Files);
+        var qwilfish = PretQwilfishPresentation.Load(root); Add(qwilfish.DexEntries, qwilfish.Files);
+        var stone = PretStoneEvolutionPresentation.Load(root); Add(stone.DexEntries, stone.Files);
+        var prizes = PretGameCornerPresentation.Load(root); Add(prizes.DexEntries, prizes.Files);
+        var breeding = PretBreedingPresentation.Load(root); Add(breeding.DexEntries, breeding.Files);
+        var evolution = PretOrdinaryEvolutionPresentation.Load(root); Add(evolution.DexEntries, evolution.Files);
+        var index = new PresentationDexIndex();
+        foreach (var pack in packs) index.AddEntries(pack.Entries.Values, pack.Files);
+        var speciesIds = packs.SelectMany(pack => pack.Entries.Keys).Distinct().ToArray();
+        Assert.IsTrue(speciesIds.Length > 0);
+        foreach (int species in speciesIds)
+        {
+            var winner = packs.Last(pack => pack.Entries.ContainsKey(species));
+            var entry = winner.Entries[species];
+            Assert.AreEqual(entry, index.Entry(species));
+            Assert.AreEqual(Capture(entry), index.CaptureEntry(species));
+            foreach (bool caught in new[] { false, true })
+            {
+                var page = menu.BuildPage(species, [species], caught ? [species] : [], new(true, true, 0xB9, 0x6258));
+                Assert.AreEqual(page with { Portrait = entry.Portrait, Footprint = caught ? entry.Footprint : null }, index.Present(species, page));
+            }
+        }
+        foreach (var texture in packs.SelectMany(pack => pack.Entries.Values)
+            .SelectMany(entry => new[] { entry.Portrait!, entry.Footprint! }).Distinct())
+        {
+            var oldReader = packs.Last(pack => pack.Entries.Values.Any(entry => entry.Portrait == texture || entry.Footprint == texture));
+            CollectionAssert.AreEqual(oldReader.Files[texture.TexturePath], index.ReadTexture(texture)!);
+            Assert.IsNull(index.ReadTexture(texture with { Width = texture.Width + 1 }));
+        }
+        index.Clear();
+        foreach (int species in speciesIds) { Assert.IsNull(index.Entry(species)); Assert.IsNull(index.CaptureEntry(species)); }
+    }
+
+    [TestMethod]
+    public void SupplementalDexRetainsOldTextureReadersAndUsesLatestEntry()
+    {
+        var index = new PresentationDexIndex(); var first = Entry("first.png");
+        var latest = first with { Portrait = new("latest.png", 64, 64), Description = "Replacement" };
+        index.AddEntries([first], new Dictionary<string, byte[]> { ["first.png"] = [1], ["footprint.png"] = [2] });
+        index.AddEntries([latest], new Dictionary<string, byte[]> { ["latest.png"] = [3], ["footprint.png"] = [4] });
+        Assert.AreEqual(latest, index.Entry(25)); Assert.AreEqual(Capture(latest), index.CaptureEntry(25));
+        CollectionAssert.AreEqual(new byte[] { 1 }, index.ReadTexture(first.Portrait!)!);
+        CollectionAssert.AreEqual(new byte[] { 3 }, index.ReadTexture(latest.Portrait!)!);
+        CollectionAssert.AreEqual(new byte[] { 4 }, index.ReadTexture(first.Footprint!)!);
+        Assert.ThrowsExactly<InvalidDataException>(() => index.AddEntries([first with { Footprint = null }], new Dictionary<string, byte[]>()));
+        index.Clear(); Assert.IsNull(index.ReadTexture(first.Portrait!)); Assert.IsNull(index.ReadTexture(latest.Portrait!));
+    }
+
+    [TestMethod]
     public void EveryMaintainedPackageKeepsItsRealManifestAndFileKeyConvention()
     {
         string root = TestAssets.Root;

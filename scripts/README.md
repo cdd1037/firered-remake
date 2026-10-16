@@ -25,9 +25,10 @@ python scripts/imports/pokemon/import-evolution-presentation.py --selection ston
 python scripts/imports/trainers/import-trainer-battles.py --recipe scripts/recipes/trainers/bill.json --check
 python scripts/imports/trainers/import-trainer-portraits.py --group cerulean --check
 
-# 特殊物种图片和共享机器学习视图
+# 特殊物种图片、机器图标和区域物品
 python scripts/imports/presentation/import-species-art.py --profile eevee --check
 python scripts/imports/items/import-machine-views.py --region cerulean --out /tmp/example/content/generated/data/machine-learning/cerulean.json
+python scripts/imports/items/import-machine-views.py --region cerulean --check
 python scripts/imports/items/import-regional-items.py --group ssanne --check
 
 # 最终地图／场景服务／音频目录，不重放历史地域阶段
@@ -36,6 +37,9 @@ python scripts/imports/rebuild-resources.py audio-cues --check
 ```
 
 单文件资源的 `--out` / `--output` 指向 JSON 文件，不是同名目录。训练家导入还维护共享定义；非标准输出位置应显式传 `--generated-root`。物品图标临时输出至 `sprites/item-icons/`，最终用 `python scripts/lib/item_icon_exports.py --project-root <工程>` 合入 `sprites/items.png`。
+
+早期机器图标文档只保存 `schemaVersion` 和 `icons`，不再重复机器兼容性投影。
+图标检查比较完整 RGBA 和元数据，也支持已有图集；教学与兼容性仍由共享机器目录负责。
 
 ## 原始输入
 
@@ -63,6 +67,8 @@ python scripts/checks/test-pokemon-import.py
 python scripts/checks/test-trainer-import.py
 python scripts/checks/test-trainer-portraits.py
 python scripts/checks/test-presentation-pixels.py
+python scripts/checks/test-item-ui-library-imports.py
+python scripts/checks/test-special-presentation-importers.py
 python scripts/checks/verify-snorlax-catalog.py
 python scripts/checks/test-machine-importers.py
 ```

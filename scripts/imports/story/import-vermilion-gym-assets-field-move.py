@@ -6,8 +6,9 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
+from generated_output_compare import generated_output_matches
 import argparse
-import importlib.util
+import ui_tiles as codec
 import json
 import pathlib
 import re
@@ -17,10 +18,8 @@ import sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-vermilion-gym-field-move-art-v1'
 
-def encoded(v): return (json.dumps(v, indent=2) + '\n').encode()
 def safe(root, path=None):
     if '..' in pathlib.Path(root).parts: raise ValueError('Parent traversal root rejected')
     p = pathlib.Path(root).absolute()
@@ -34,7 +33,7 @@ def safe(root, path=None):
 def read_lock():
     b = safe(ROOT, 'scripts/recipes/story/vermilion-gym-assets-field-move.lock.json').read_bytes()
     d = json.loads(b)
-    if (d['schemaVersion'], d['repository'], d['commit'], d['profile'], len(d['files']), len(d['inputs'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 16, 1): raise ValueError('Field-move scope differs')
+    if (d['schemaVersion'], d['repository'], d['commit'], d['profile'], d['gameVersion'], d['revision']) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0): raise ValueError('Field-move source identity differs')
     return d
 
 def read_inputs(lock, raw, reference=None):
@@ -48,8 +47,6 @@ def read_inputs(lock, raw, reference=None):
         else:
             b = target.read_bytes()
         sources[path] = b
-    for row in lock['inputs']:
-        b = safe(ROOT,row['path']).read_bytes()
     return sources
 
 def build(lock, data):
@@ -60,8 +57,6 @@ def build(lock, data):
         values=list(re.finditer(pattern,text[path],re.M|re.S))
         if len(values)!=1: raise ValueError('Nonunique field-move source match')
         return values[0]
-    codec_path = safe(ROOT,'scripts/imports/presentation/import-lab-battle-ui.py')
-    spec=importlib.util.spec_from_file_location('_field_move_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
     require('tools/gbagfx/gfx.c','#define DOWNCONVERT_BIT_DEPTH(x) ((x) / 8)')
     require('Makefile','%.gbapal: %.png  ; $(GFX) $< $@')
     require('src/data/object_events/object_event_graphics.h','gObjectEventPal_Player[] = INCBIN_U16("graphics/object_events/palettes/player.gbapal")')
@@ -135,10 +130,13 @@ def run(raw,out,reference=None,check=False):
     if reference:
         ref=safe(reference)
         if any(p==ref or p in ref.parents or ref in p.parents for p in (raw,out)): raise ValueError('Reference/output overlap')
-    for kind in ('raw','generated'):
-        for old in (ROOT/'content'/kind).iterdir():
-            if old.name=='vermilion-gym-field-move-art':continue
-            if any(p==old or p in old.parents or old in p.parents for p in (raw,out)):raise ValueError('Historical output overlap')
+    source_root = ROOT / 'content/raw'
+    if out == source_root or source_root in out.parents or out in source_root.parents:
+        raise ValueError('Generated output overlaps project raw sources')
+    if reference:
+        generated_root = ROOT / 'content/generated'
+        if raw == generated_root or generated_root in raw.parents or raw in generated_root.parents:
+            raise ValueError('Raw materialization overlaps generated resources')
     lock=read_lock();sources=read_inputs(lock,raw,reference);outputs=build(lock,sources)
     materials={(out,p):b for p,b in outputs.items()}
     if reference: materials.update({(raw,p):b for p,b in sources.items()})
@@ -150,10 +148,11 @@ def run(raw,out,reference=None,check=False):
         targets.append((target,stage,b))
     for target,stage,b in targets:
         if check:
-            if target.read_bytes()!=b:raise ValueError('Field-move output differs')
+            matches = generated_output_matches(target, b) if target.is_relative_to(out) else target.read_bytes() == b
+            if not matches: raise ValueError('Field-move output differs: ' + str(target))
         else:
             target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
-    return dict(passed=True,sourceInputs=16,assets=3,outputs=7)
+    return dict(passed=True,sourceInputs=len(sources),assets=len(json.loads(outputs['manifest.json'])['assets']),outputs=len(outputs))
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path)
     p.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')

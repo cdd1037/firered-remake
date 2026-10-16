@@ -90,6 +90,49 @@ public sealed class WildBattleFlowTests : WildBattleFixture
     }
 
     [TestMethod]
+    public void medicine_rejects_invalid_target_and_slot_without_consuming_turn_or_item()
+    {
+        var player = Owned("PIDGEY", 20, 101, "GROWL");
+        var session = Controlled([player], Owned("PIDGEY", 4, 201, "GROWL"));
+        var valid = new CampaignCommand("battle_medicine", Text: "pret:ITEM_POTION") { TargetInstanceId = player.InstanceId };
+        foreach (var (command, error) in new[] {
+            (valid with { TargetInstanceId = 999 }, "battle_medicine_target_identity"),
+            (valid with { PartyIndex = 1 }, "battle_medicine_target_identity"),
+            (valid with { Text = "" }, "battle_medicine_item_invalid"),
+            (valid with { MoveSlot = -2 }, "source_item_move_slot") })
+        {
+            var before = session.State; long revision = session.Revision;
+            var rejected = session.Execute("invalid-medicine:" + commands++, revision, command);
+            Assert.AreEqual(CommandStatus.Rejected, rejected.Status); Assert.AreEqual(error, rejected.Error);
+            Assert.AreSame(before, session.State); Assert.AreEqual(revision, session.Revision);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("ETHER", false)]
+    [DataRow("LEPPA_BERRY", true)]
+    public void medicine_PP_selection_restores_reserve_move_and_consumes_correct_pocket(string symbol, bool berry)
+    {
+        var reserve = Owned("RATTATA", 20, 102, "GROWL", "TACKLE");
+        reserve = reserve with { Pokemon = reserve.Pokemon with { Moves = reserve.Pokemon.Moves.SetItem(1,
+            reserve.Pokemon.Moves[1] with { CurrentPp = 0 }) } };
+        var session = Controlled([Owned("PIDGEY", 20, 101, "GROWL"), reserve], Owned("PIDGEY", 4, 201, "GROWL"));
+        var item = new ItemId("pret:ITEM_" + symbol); var inventory = session.State.Inventory!;
+        var stacks = (berry ? inventory.Berries ?? [] : inventory.BagItems).RemoveAll(stack => stack.Item == item).Add(new(item, 2));
+        var state = session.State with { Inventory = berry ? inventory with { Berries = stacks } : inventory with { BagItems = stacks } };
+        typeof(CampaignSession).GetField("_commands", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(session,
+            new CommandSession<CampaignState, CampaignCommand>(state, session.RulesVersion, content.ContentVersion, session.Revision));
+        var command = new CampaignCommand("battle_medicine", Text: item.Value, PartyIndex: 1) { TargetInstanceId = reserve.InstanceId };
+        var rejected = session.Execute("missing-PP-slot", session.Revision, command);
+        Assert.AreEqual("source_item_move_slot", rejected.Error); Assert.AreSame(state, session.State);
+        Send(session, command with { MoveSlot = 1 }); Drain(session);
+        Assert.AreEqual(10, session.State.Party[1].Pokemon.Moves[1].CurrentPp);
+        Assert.AreEqual(reserve.Pokemon.Moves[0], session.State.Party[1].Pokemon.Moves[0]);
+        Assert.AreEqual(1, (berry ? session.State.Inventory!.Berries!.Value : session.State.Inventory!.BagItems).Single(stack => stack.Item == item).Quantity);
+        Assert.AreEqual(0, session.State.WildBattle!.ActivePartyIndex);
+    }
+
+    [TestMethod]
     public void faint_replacement_preserves_continuation_and_charges_friendship_once()
     {
         var a = Owned("PIDGEY", 3, 101, "GROWL");

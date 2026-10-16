@@ -6,7 +6,7 @@ using Game.Domain.Items;
 using Game.Domain.Ids;
 namespace Game.Content;
 
-public sealed record PretCeladonGymItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons);
+public sealed record PretCeladonGymItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<ItemIcon> Icons);
 
 public static class PretCeladonGymItems
 {
@@ -21,7 +21,7 @@ public static class PretCeladonGymItems
         var item=document.Items.Single();CeladonGymItemRules.ValidateMachine(item.Metadata);
         Require(item.EffectBytes.IsEmpty,"TM19 has unexpected effect bytes.");
         var icon=document.Icons.Single();Require(icon.Item==CeladonGymItemRules.Tm19Id&&icon.Region is not null,"TM19 icon identity differs.");
-PretPewterMachines.ValidateIcon(icon);
+ItemIconAssets.Validate(icon);
         return document;
     }
     public static PretCeladonGymItemsDocument LoadProject(string root, SharedMachineCatalog? shared = null)

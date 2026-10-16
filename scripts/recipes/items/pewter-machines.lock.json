@@ -5,12 +5,6 @@
   "profile": "firered-pewter-machines-v1",
   "files": [
     {
-      "path": "asm/macros/event.inc"
-    },
-    {
-      "path": "data/maps/PewterCity_Gym/scripts.inc"
-    },
-    {
       "path": "graphics/items/icon_palettes/rock_tm_hm.pal"
     },
     {
@@ -23,55 +17,10 @@
       "path": "graphics/items/icons/tm_hm.png"
     },
     {
-      "path": "include/constants/global.h"
-    },
-    {
-      "path": "include/constants/items.h"
-    },
-    {
-      "path": "include/constants/moves.h"
-    },
-    {
-      "path": "include/constants/species.h"
-    },
-    {
-      "path": "src/data/battle_moves.h"
-    },
-    {
       "path": "src/data/graphics/items.h"
     },
     {
       "path": "src/data/item_icon_table.h"
-    },
-    {
-      "path": "src/data/items.json"
-    },
-    {
-      "path": "src/data/items.json.txt"
-    },
-    {
-      "path": "src/data/party_menu.h"
-    },
-    {
-      "path": "src/data/pokemon/tmhm_learnsets.h"
-    },
-    {
-      "path": "src/item.c"
-    },
-    {
-      "path": "src/move_descriptions.c"
-    },
-    {
-      "path": "src/party_menu.c"
-    },
-    {
-      "path": "src/pokemon.c"
-    },
-    {
-      "path": "tools/gbagfx/convert_png.c"
-    },
-    {
-      "path": "tools/gbagfx/gfx.c"
     }
   ]
 }

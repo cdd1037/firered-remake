@@ -5,7 +5,7 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretSaffronGymItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
+public sealed record PretSaffronGymItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<ItemIcon> Icons);
 
 public static class PretSaffronGymItems
 {
@@ -31,7 +31,7 @@ public static class PretSaffronGymItems
             d.Items[1].Metadata.Description == "Prevents weak wild POKéMON from\nappearing for 250 steps.", "Saffron Gym TM04/Max Repel source values differ.");
         var icon = d.Icons[0];
         SilphSourcePackage.Need(icon.Item == Tm04Id && icon.Width == 24 && icon.Height == 24 && icon.Region is not null , "TM04 source icon differs.");
-PretPewterMachines.ValidateIcon(icon);
+ItemIconAssets.Validate(icon);
         return d;
     }
     public static EarlyShopItemDefinition Definition(PretSaffronGymItemsDocument document, ItemId id)

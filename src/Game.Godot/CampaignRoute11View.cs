@@ -1,3 +1,4 @@
+using Game.Domain.Items;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Ids;
@@ -26,7 +27,7 @@ public partial class CampaignView
             _forestStatusTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
         var items = _catalog.Route11Items ?? throw new InvalidDataException("Route11 item presentation is missing.");
-        foreach (var icon in items.Icons.Concat(PretRoute11Machines.LoadProject(_root).Icons).Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
+        foreach (var icon in items.Icons.Concat(ItemIconAssets.LoadProject(_root, "content/generated/data/machine-learning/route11.json", MachineRules.Hm05Id)).Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
         {
             
             _earlyItemIcons.Add(icon.Item, ItemTexture(items.Icons.Contains(icon) ? "data/items/route11" : "data/machine-learning", icon));

@@ -9,21 +9,15 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public bool BattleMedicineEnabled=>!_content.FieldPickups.IsEmpty;
-
-    public bool FullBattleItemsEnabled=>BattleMedicineEnabled&&
-        _content.PresetDoubleItems is not null&&_content.PresetDoubleMechanics is not null;
-
     private string? ValidateBattleMedicineCommand(CampaignState state,CampaignCommand command)
     {
-        if(!BattleMedicineEnabled||_content.EarlyShop is null||_content.OpeningItems is null||state.Inventory is null)
+        if(state.Inventory is null)
             return "battle_medicine_not_enabled";
         if(command.PartyIndex<0||command.PartyIndex>=state.Party.Length||command.TargetInstanceId is not >0||
             state.Party[command.PartyIndex].InstanceId!=command.TargetInstanceId)return "battle_medicine_target_identity";
         if(!StableId.IsValid(command.Text))return "battle_medicine_item_invalid";
         if(command.MoveSlot < -1)return "source_item_move_slot";
-        return FullBattleItemsEnabled?SourceBattleInventoryRules.Validate(_content.PresetDoubleItems!,state.Inventory):
-            command.MoveSlot>=0?"source_item_effect_unsupported":ValidateCampaignInventory(state.Inventory);
+        return SourceBattleInventoryRules.Validate(_content.PresetDoubleItems!,state.Inventory);
     }
 
     private Decision<CampaignState> DecideWildMedicine(CampaignState state,CampaignCommand command)

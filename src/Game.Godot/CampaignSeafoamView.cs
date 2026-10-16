@@ -40,6 +40,7 @@ public partial class CampaignView
             if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Seafoam dex metadata differs from the authenticated source menu.");
         _seafoamArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
 
     }
     private void VerifySeafoamMoveGeometry()
@@ -54,14 +55,6 @@ public partial class CampaignView
                 throw new InvalidDataException("Seafoam inherited move geometry differs.");
         }
     }
-    private CaptureDexEntry? SeafoamCaptureDexEntry(int species) => _seafoamArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? SeafoamPokedexPage(int species, PokedexMenuPage page) =>
-        _seafoamArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadSeafoamDexTexture(PokedexMenuTexture texture) => _seafoamArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     private void DisposeSeafoamPresentation()
     {
         _seafoamArt = null; _seafoamMovementId = null; _seafoamMovementFrames = 0;

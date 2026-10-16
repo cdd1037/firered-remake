@@ -5,16 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public static CampaignState UpgradePartyTrainingToForest(CampaignState verifiedState)
-    {
-        var exploration=verifiedState.Exploration??throw new InvalidDataException("exploration_missing");
-        var old=exploration.Encounter??throw new InvalidDataException("legacy_encounter_missing");
-        Route1EncounterRules.ValidateState(old);
-        if(exploration.EarlyEncounter is not null||old.Pending is not null||verifiedState.WildBattle is not null)throw new InvalidDataException("forest_upgrade_unstable");
-        return verifiedState with{Exploration=exploration with{Encounter=null,EarlyEncounter=new(old.RateRng,old.PreviousMetatileBehavior,old.EncounterRateBuff,old.StepsSinceLastEncounter)}};
-    }
     private CampaignExploration ResetEncounterModifiers(CampaignExploration state)=>state with{EarlyEncounter=EarlyLandEncounterRules.ResetRateModifiers(state.EarlyEncounter??throw new InvalidDataException("early_encounter_missing"))};
-    private bool WildSpeciesSupported(int id)=>_content.SuperRodEncounters.Values.SelectMany(t=>t.Slots).Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id)||_content.GoodRodEncounters!.Values.SelectMany(t=>t.Slots).Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id)||_content.WaterEncounters!.Values.SelectMany(t=>t.Slots).Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id)||id==129||(_content.LandEncounters!.Values.SelectMany(t=>t.Slots).Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id));
     private bool WildOriginSupported(int id,int level,string? region=null)=>SurfOriginSupported(id,level,region)||id==129&&_content.OldRodEncounters!.Values.Any(t=>!IsSourceTableMap(t.Map)&&!IsSeafoamMap(t.Map)&&t.Map.Value!=PowerPlantMap&&(!SevenIslandMap(t.Map))&&(!CeruleanCaveEncounterTables.IsCave(t.Map))&&(!FiveIslandEncounterTables.FishingSource.Any(r=>r.Map==t.Map))&&(!SixIslandEncounterTables.FishingSource.Any(r=>r.Map==t.Map))&&(!FourIslandEncounterTables.FishingSource.Any(r=>r.Map==t.Map))&&(!SeviiRubyEncounterTables.FishingSource.Any(r=>r.Map==t.Map))&&(region is null||_content.MapDefinition(t.Map).RegionMapSection==region)&&t.Slots.Any(s=>level>=s.MinimumLevel&&level<=s.MaximumLevel))||(_content.LandEncounters!.Values.Any(t=>!IsSourceTableMap(t.Map)&&!IsSeafoamMap(t.Map)&&t.Map.Value!=PowerPlantMap&&(!SevenIslandMap(t.Map))&&(!CeruleanCaveEncounterTables.IsCave(t.Map))&&(!FiveIslandEncounterTables.Land.Any(r=>r.Map==t.Map))&&(!SixIslandEncounterTables.Land.Any(r=>r.Map==t.Map))&&(!FourIslandEncounterTables.Land.Any(r=>r.Map==t.Map))&&(!SeviiRubyEncounterTables.Land.Any(r=>r.Map==t.Map))&&(region is null||_content.MapDefinition(t.Map).RegionMapSection==region)&&t.Slots.Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id&&level>=s.MinimumLevel&&level<=s.MaximumLevel)));
     private CampaignState CheckEarlyLandEncounter(CampaignState state,EncounterCheckTrigger trigger)
     {

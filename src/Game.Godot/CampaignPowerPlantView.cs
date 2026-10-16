@@ -41,14 +41,8 @@ public partial class CampaignView
             _earlyItemIcons.Add(new(row.GetProperty("item").GetProperty("value").GetString()!),(ImageTexture)SceneTextures.FromImage(image));
         }
 
+        _supplementalDex.AddEntries(_powerPlantDex.Values, _powerPlantArt.Files);
     }
-    private CaptureDexEntry? PowerPlantCaptureDexEntry(int species)=>!_powerPlantDex.TryGetValue(species,out var e)?null:
-        new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,
-            e.HeightDisplay,e.WeightDisplay,e.Description,e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
-    private PokedexMenuPage? PowerPlantPokedexPage(int species,PokedexMenuPage page)=>_powerPlantDex.TryGetValue(species,out var e)
-        ?page with{Portrait=e.Portrait,Footprint=page.Caught?e.Footprint:null}:null;
-    private byte[]? ReadPowerPlantDexTexture(PokedexMenuTexture texture)=>_powerPlantArt is not null&&
-        _powerPlantDex.Values.Any(e=>e.Portrait==texture||e.Footprint==texture)?_powerPlantArt.Files[texture.TexturePath]:null;
     private void VerifyPowerPlantMoveGeometry()
     {
         foreach(var row in PowerPlantManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())

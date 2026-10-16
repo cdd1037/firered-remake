@@ -13,7 +13,7 @@ public sealed class PretGameCornerCoins
     public const string ScriptPath = "data/maps/CeladonCity_GameCorner/scripts.inc";
     public const string RestaurantScriptPath = "data/maps/CeladonCity_Restaurant/scripts.inc";
     public ImmutableArray<MachineItem> Items { get; }
-    public ImmutableArray<PretPewterMachineIcon> Icons { get; }
+    public ImmutableArray<ItemIcon> Icons { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public JsonElement Contract { get; }
     public string GeneratedDirectory { get; }

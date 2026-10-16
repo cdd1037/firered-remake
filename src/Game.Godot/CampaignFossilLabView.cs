@@ -55,6 +55,7 @@ public partial class CampaignView
             if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Fossil Lab dex metadata differs from the authenticated source menu.");
         _fossilLabArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
         LoadOldAmberPocket(art);
 
     }
@@ -93,14 +94,6 @@ public partial class CampaignView
                 throw new InvalidDataException("Fossil Lab inherited move geometry differs.");
         }
     }
-    private CaptureDexEntry? FossilLabCaptureDexEntry(int species) => _fossilLabArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? FossilLabPokedexPage(int species, PokedexMenuPage page) =>
-        _fossilLabArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadFossilLabDexTexture(PokedexMenuTexture texture) => _fossilLabArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     private void DisposeFossilLabPresentation()
     {
         _fossilLabArt = null; _fossilLabMenuWait = null; _fossilLabCursor = 0;

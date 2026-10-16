@@ -11,7 +11,9 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 import argparse
 import io
-import importlib.util
+import ui_tiles as codec
+from image_io import png
+from pokemon_import import battle_indices, battle_palette, rgba_pixels, display_contract
 import json
 import pathlib
 import re
@@ -24,7 +26,6 @@ from PIL import Image
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-route1-capture-dex-v1'
-BACK_PROFILE = 'firered-route1-captured-back-static-v1'
 NAMES = (('Pidgey', 16), ('Rattata', 19))
 PATHS = frozenset('''src/pokedex_screen.c
 src/data/pokemon/pokedex_entries.h
@@ -58,17 +59,6 @@ graphics/pokedex/kanto_dex_bgtiles.png
 graphics/pokedex/kanto_dex_bgpals.pal'''.splitlines()) | frozenset(
     f'graphics/pokemon/{name.lower()}/{file}' for name, _ in NAMES
     for file in ('footprint.png', 'back.png', 'normal.pal', 'shiny.pal'))
-
-
-def module(name, path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    result = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(result)
-    return result
-
-
-codec = module('capture_dex_pixels', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-battle = module('capture_dex_battle', ROOT / 'scripts/imports/presentation/import-route1-battle-art.py')
 
 
 def canonical(value):
@@ -125,10 +115,6 @@ def string(source, symbol):
     return ''.join(json.loads(s) for s in re.findall(r'"(?:[^"\\]|\\.)*"', matches[0][1]))
 
 
-def reference(lock, sources, path, symbol, needle):
-    return battle.reference(lock, sources, path, symbol, needle)
-
-
 def footprint_indices(data):
     """Read 1-bit grayscale pixels and apply the source gbagfx inversion."""
     with Image.open(io.BytesIO(data)) as image:
@@ -173,12 +159,12 @@ def background(sources, palette):
 
 
 def back_art(lock, sources):
-    display = battle.display_contract(lock, sources)
+    display = display_contract(lock, sources)
     sprites, outputs = [], {}
     for name, sid in NAMES:
         stem, symbol = name.lower(), 'SPECIES_' + name.upper()
         path = f'graphics/pokemon/{stem}/back.png'
-        indices = battle.pixels.indexed_png(sources[path])
+        indices = battle_indices(sources[path])
         coords_path = 'src/data/pokemon_graphics/back_pic_coordinates.h'
         row = re.search(r'    \[' + symbol + r'\] =\s*\{\s*\.size = MON_COORDS_SIZE\((\d+), (\d+)\),\s*\.y_offset = (\d+),\s*\},', sources[coords_path].decode())
         if row is None:
@@ -195,10 +181,10 @@ def back_art(lock, sources):
         right, bottom = max(i % 64 for i in opaque) + 1, max(i // 64 for i in opaque) + 1
         for variant in ('normal', 'shiny'):
             palette_path = f'graphics/pokemon/{stem}/{variant}.pal'
-            colors, words = battle.pixels.palette(sources[palette_path])
-            rgba = battle.pixels.rgba_pixels(indices, colors)
+            colors, words = battle_palette(sources[palette_path])
+            rgba = rgba_pixels(indices, colors)
             filename = f'{stem}-back-{variant}.png'
-            outputs[filename] = battle.pixels.rgba_png(rgba)
+            outputs[filename] = png(64, 64, rgba)
             pal_symbol = 'gMon' + ('Shiny' if variant == 'shiny' else '') + 'Palette_' + name
             table = 'shiny_palette_table.h' if variant == 'shiny' else 'palette_table.h'
             macro = 'SPECIES_SHINY_PAL' if variant == 'shiny' else 'SPECIES_PAL'
@@ -212,12 +198,8 @@ def back_art(lock, sources):
                 singleBattleTopLeft=dict(x=center['x'] - 32, y=center['y'] - 32),
                 alphaBounds=dict(x=left, y=top, width=right-left, height=bottom-top), transparentIndex=0,
                 paletteRgb555=words, paletteExpansion='floor(rgb5 * 255 / 31)', flipH=False))
-    outputs['capture-back-art.json'] = canonical(dict(schemaVersion=1, profile=BACK_PROFILE,
-        repository='pret/pokefirered', sourceCommit=COMMIT,
-        display=display, sprites=sprites, limitations=[
-            'Pidgey/Rattata static player back frame only, normal and shiny. Existing front artifacts are reused unchanged.',
-            'Default single-battle placement only; no send-out, hit, faint, ball, cry or timing reproduction.',
-            'Local source reconstruction; no original-game frame comparison or distribution authorization.']))
+    outputs['capture-back-art.json'] = canonical(dict(schemaVersion=1, repository='pret/pokefirered',
+        display=display, sprites=sprites))
     return outputs
 
 
@@ -285,7 +267,7 @@ def convert(lock, sources):
             category=category, displayCategory=category.split(' ')[0], heightDecimeters=height, weightHectograms=weight,
             heightDisplay=f'{feet}’{remainder:02}”', weightDisplay=f'{lbs//100}.{(lbs//10)%10} {string(texts, "gText_Lbs")}',
             description=string(descriptions, desc_symbol), footprintPath=stem+'-footprint.png',
-            frontSpritePath='route1-battle-art/'+stem+'-front-normal.png', habitatTitle=string(texts, habitat_symbol))
+            frontSpritePath='battle/art/route1-battle-art/'+stem+'-front-normal.png', habitatTitle=string(texts, habitat_symbol))
     layout = dict(width=240, height=160, frontX=152, frontY=24, footprintX=104, footprintY=64,
         numberX=16, numberY=32, nameX=44, nameY=32, categoryX=16, categoryY=48,
         heightX=16, heightY=60, weightX=16, weightY=72, measureValueOffsetX=30,

@@ -7,12 +7,6 @@
   "revision": 0,
   "files": [
     {
-      "path": "data/maps/VermilionCity_Gym/map.json"
-    },
-    {
-      "path": "data/maps/VermilionCity_Gym/scripts.inc"
-    },
-    {
       "path": "graphics/items/icon_palettes/electric_tm_hm.pal"
     },
     {
@@ -31,22 +25,10 @@
       "path": "graphics/trainers/palettes/leader_lt_surge.pal"
     },
     {
-      "path": "include/constants/items.h"
-    },
-    {
-      "path": "include/constants/moves.h"
-    },
-    {
-      "path": "include/constants/species.h"
-    },
-    {
       "path": "include/constants/trainers.h"
     },
     {
       "path": "src/battle_controller_opponent.c"
-    },
-    {
-      "path": "src/data/battle_moves.h"
     },
     {
       "path": "src/data/graphics/items.h"
@@ -58,48 +40,10 @@
       "path": "src/data/item_icon_table.h"
     },
     {
-      "path": "src/data/items.json"
-    },
-    {
-      "path": "src/data/party_menu.h"
-    },
-    {
-      "path": "src/data/pokemon/level_up_learnset_pointers.h"
-    },
-    {
-      "path": "src/data/pokemon/level_up_learnsets.h"
-    },
-    {
-      "path": "src/data/pokemon/tmhm_learnsets.h"
-    },
-    {
       "path": "src/data/trainer_graphics/front_pic_tables.h"
     },
     {
-      "path": "src/data/trainer_parties.h"
-    },
-    {
-      "path": "src/data/trainers.h"
-    },
-    {
-      "path": "src/move_descriptions.c"
-    },
-    {
-      "path": "src/pokemon.c"
-    },
-    {
       "path": "tools/gbagfx/gfx.c"
-    }
-  ],
-  "inputs": [
-    {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    },
-    {
-      "path": "scripts/recipes/config/machine-admissions.json"
-    },
-    {
-      "path": "scripts/recipes/config/machine-catalog.json"
     }
   ]
 }

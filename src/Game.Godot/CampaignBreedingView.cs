@@ -75,6 +75,7 @@ public partial class CampaignView
         foreach (var row in art.Manifest.GetProperty("eggAssets").EnumerateArray())
             _breedingEggTextures.Add(row.GetProperty("id").GetString()!, Pixels(row));
         _breedingArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
 
     }
 
@@ -90,14 +91,6 @@ public partial class CampaignView
                 throw new InvalidDataException("Breeding inherited move geometry differs.");
         }
     }
-    private CaptureDexEntry? BreedingCaptureDexEntry(int species) => _breedingArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? BreedingPokedexPage(int species, PokedexMenuPage page) =>
-        _breedingArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadBreedingDexTexture(PokedexMenuTexture texture) => _breedingArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     // Callers must select these assets using the authoritative Egg marker before looking up real species.
     // No species parameter is accepted, so an Egg texture cannot disclose its hidden species or shiny flag.
     private Texture2D BreedingEggShell() => _breedingEggTextures["egg-front"];

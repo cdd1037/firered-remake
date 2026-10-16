@@ -5,7 +5,7 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 namespace Game.Content;
 
-public sealed record PretFuchsiaGymItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons);
+public sealed record PretFuchsiaGymItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<ItemIcon> Icons);
 
 /// <summary>Authenticated TM06 metadata for future composition. No reward or teaching handler is registered.</summary>
 public static class PretFuchsiaGymItems
@@ -25,7 +25,7 @@ public static class PretFuchsiaGymItems
             d.SecondaryId==0&&d.CanToss&&d.CanSell&&d.CanGive&&item.EffectBytes.IsEmpty,"TM06 source item differs.");
         var icon=document.Icons.Single();
         Need(icon.Item==Tm06Id&&icon.Width==24&&icon.Height==24&&icon.Region is not null,"TM06 source icon differs.");
-PretPewterMachines.ValidateIcon(icon);
+ItemIconAssets.Validate(icon);
         return document;
     }
     public static EarlyShopItemDefinition Definition(PretFuchsiaGymItemsDocument document)=>PretSsAnneItems.Definition(document.Items.Single());

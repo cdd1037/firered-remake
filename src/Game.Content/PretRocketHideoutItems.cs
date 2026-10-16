@@ -6,7 +6,7 @@ using Game.Domain.Items;
 using Game.Domain.Ids;
 namespace Game.Content;
 
-public sealed record PretRocketHideoutItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
+public sealed record PretRocketHideoutItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<ItemIcon> Icons);
 public sealed record PretRocketHideoutPickup(string Map, string Kind, int? LocalId, int? EventIndex,
     int X, int Y, int Elevation, string Flag, int SourceFlagId, bool InitiallyHidden, bool Underfoot,
     ItemId Item, int Quantity, string? Script, string? ScriptCommand, OpeningItemSourceRef MapSource,
@@ -31,7 +31,7 @@ public static class PretRocketHideoutItems
         foreach (var icon in document.Icons)
         {
             Require(document.Items.Any(i => i.Metadata.Item.Id == icon.Item) && icon.Region is not null,"Rocket Hideout icon identity differs.");
-PretPewterMachines.ValidateIcon(icon);
+ItemIconAssets.Validate(icon);
         }
         Require(document.Icons.Select(i => i.Item).Distinct().Count() == 10,"Duplicate Rocket Hideout icons.");
         return document;

@@ -52,17 +52,10 @@ public partial class CampaignView
             _route22Footprints.Add(row.GetProperty("sourceSpeciesId").GetInt32(), SceneTextures.FromImage(image));
         }
         _fightingDojoArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
 
     }
 
-    private CaptureDexEntry? FightingDojoCaptureDexEntry(int species) => _fightingDojoArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? FightingDojoPokedexPage(int species, PokedexMenuPage page) =>
-        _fightingDojoArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadFightingDojoDexTexture(PokedexMenuTexture texture) => _fightingDojoArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     private void DisposeFightingDojoPresentation()
     {
         _fightingDojoArt = null; _fightingDojoTrainers.Clear();

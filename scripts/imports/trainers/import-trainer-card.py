@@ -11,7 +11,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 
 import argparse
-import importlib.util
+import ui_tiles as pixels
 import json
 import os
 import pathlib
@@ -22,7 +22,6 @@ import sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-trainer-card-v1'
 PATHS = frozenset("""src/trainer_card.c
 src/trainer_pokemon_sprites.c
@@ -55,9 +54,7 @@ graphics/trainers/front_pics/red_front_pic.png
 graphics/trainers/front_pics/leaf_front_pic.png
 graphics/trainers/palettes/red.pal
 graphics/trainers/palettes/leaf.pal""".splitlines())
-_spec = importlib.util.spec_from_file_location('trainer_card_pixels', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-pixels = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(pixels)
+
 
 
 def canonical(value):
@@ -105,8 +102,6 @@ def load_lock(path=None):
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
-    if repository is not None:
-        tree = subprocess.run(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'], check=True, capture_output=True, timeout=30).stdout.decode('ascii').strip()
     for entry in lock['files']:
         target = safe(raw, entry['path'])
         if repository is None:

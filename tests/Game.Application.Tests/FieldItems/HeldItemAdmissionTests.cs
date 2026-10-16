@@ -1,10 +1,37 @@
 using Game.Application;
+using Game.Domain.Ids;
+using Game.Domain.Items;
 
 namespace FireRed.Tests.Application.FieldItems;
 
 [TestClass, TestCategory("Game")]
 public sealed class HeldItemAdmissionTests
 {
+    [TestMethod]
+    public void BoundEligibilityMatchesRawRulesForEveryAdmittedItemAndMachine()
+    {
+        var content = CurrentCampaignFixture.Catalog;
+        var session = CampaignSession.CreateCurrent(content);
+        var shop = content.EarlyShop!;
+        var bound = HeldItemTransferRules.BuildHoldableItems(shop, content.Machines);
+        var items = shop.Items.Select(item => item.Id)
+            .Concat(content.Machines.Machines.Select(machine => machine.Machine.Item.Id))
+            .Concat(content.Inventory.Items.Keys)
+            .Concat(new[] { "ITEM_NOT_REAL", "ITEM_BERRY_JUICE", "ITEM_MOOMOO_MILK", "ITEM_BLUE_SHARD",
+                "ITEM_GREEN_SHARD", "ITEM_HM08", "ITEM_ENIGMA_BERRY", "ITEM_ORANGE_MAIL" }
+                .Select(symbol => new ItemId("pret:" + symbol))).Distinct().ToArray();
+        Assert.IsTrue(items.Length > 0);
+        foreach (var item in items)
+        {
+            bool ordinary = HeldItemTransferRules.CanHold(shop, item, content.Machines);
+            Assert.AreEqual(ordinary, bound.Contains(item), item.Value);
+            Assert.AreEqual(session.CanGiveMail(item) || ordinary, session.CanGiveHeldItem(item), item.Value);
+        }
+        Assert.IsFalse(bound.Contains(new("pret:ITEM_ORANGE_MAIL")));
+        Assert.IsTrue(session.CanGiveMail(new("pret:ITEM_ORANGE_MAIL")));
+        Assert.IsTrue(session.CanGiveHeldItem(new("pret:ITEM_ORANGE_MAIL")));
+    }
+
     [TestMethod]
     [DataRow("ITEM_NONE")]
     [DataRow("ITEM_ORAN_BERRY")]

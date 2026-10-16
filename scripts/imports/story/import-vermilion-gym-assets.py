@@ -10,21 +10,17 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 
 import argparse
-import base64
-import importlib.util
+import ui_tiles as codec
 import json
 import pathlib
 import re
 import subprocess
 import sys
-import machine_catalog as shared_machines
 
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-vermilion-gym-assets-v1'
-LOCK_BYTES = 9529
 PORTRAITS = [('engineer-front', 'Engineer', 'engineer', 93),
              ('lt-surge-front', 'LeaderLtSurge', 'leader_lt_surge', 118)]
 
@@ -61,11 +57,10 @@ def read_lock(path=None):
     return lock
 
 
-def authenticated_inputs(lock, raw, repository=None, root=ROOT):
-    sources, inputs = {}, {}
+def read_sources(lock, raw, repository=None):
+    sources = {}
     if repository:
         repository = safe(repository)
-        tree = subprocess.check_output(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}']).decode().strip()
     for entry in lock['files']:
         path = entry['path']
         safe(raw, path)
@@ -74,40 +69,21 @@ def authenticated_inputs(lock, raw, repository=None, root=ROOT):
             data = subprocess.check_output(['git', '-C', str(repository), 'cat-file', 'blob', COMMIT + ':' + entry['path']])
         else: data = read(raw, path)
         sources[path] = data
-    for entry in lock['inputs']:
-        if entry['path'] in inputs: raise ValueError('Duplicate local input')
-        inputs[entry['path']] = read(root, entry['path'])
-    return sources, inputs
+    return sources
 
-def build(lock, sources, inputs, root=ROOT):
+def build(sources):
     text = {p: b.decode() for p, b in sources.items() if not p.endswith(('.png', '.mid'))}
-    entries = {e['path']: e for e in lock['files']}
-    rules = []
     def match(path, pattern):
         matches = list(re.finditer(pattern, text[path], re.M | re.S))
         if len(matches) != 1: raise ValueError('Nonunique source match: ' + path + ' ' + pattern)
         return matches[0]
-    def ref(path, symbol, m=None):
-        return dict(path=path, symbol=symbol, startLine=1 if m is None else text[path].count('\n', 0, m.start()) + 1,
-                    endLine=max(1, text.get(path, '').count('\n')) if m is None else text[path].count('\n', 0, m.end()) + 1)
     def require(path, fragment):
         if fragment not in text[path]: raise ValueError('Source contract missing: ' + fragment)
     def constant(path, symbol):
         m = match(path, r'^#define ' + symbol + r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$')
-        rules.append(ref(path, symbol, m))
         return int(m[1])
     def ident(symbol): return dict(value='pret:' + symbol)
 
-    tm34 = shared_machines.admission_view(root, 'content/generated/ui/vermilion-gym-assets/assets.json', '/tm34')
-    m = match('data/maps/VermilionCity_Gym/scripts.inc', r'^VermilionCity_Gym_EventScript_GiveTM34::.*?^\tend$')
-    rules.append(ref('data/maps/VermilionCity_Gym/scripts.inc', 'VermilionCity_Gym_EventScript_GiveTM34', m))
-
-    # The only executed helper is a separately authenticated local PNG codec, never upstream code.
-    codec_path = safe(ROOT, 'scripts/imports/presentation/import-lab-battle-ui.py')
-    if codec_path.read_bytes() != inputs['scripts/imports/presentation/import-lab-battle-ui.py']: raise ValueError('Authenticated PNG codec differs')
-    spec = importlib.util.spec_from_file_location('_gym_asset_codec', codec_path)
-    codec = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(codec)
     outputs, portraits = {}, []
     require('tools/gbagfx/gfx.c', '#define DOWNCONVERT_BIT_DEPTH(x) ((x) / 8)')
     def convert(name, image_path, palette_path, size):
@@ -119,12 +95,10 @@ def build(lock, sources, inputs, root=ROOT):
         return rgba, png
     p = 'src/data/item_icon_table.h'
     m = match(p, r'^    \[ITEM_TM34\][ \t]*= \{(\w+), (\w+)\},')
-    binding = ref(p, 'ITEM_TM34', m)
     symbols, paths = m.groups(), []
     for symbol in symbols:
         p = 'src/data/graphics/items.h'
         m = match(p, r'^const u32 ' + symbol + r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);')
-        rules.append(ref(p, symbol, m))
         paths.append(m[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
     rgba, png = convert('item_tm34', paths[0], paths[1], (24, 24))
     icon = dict(item=ident('ITEM_TM34'), width=24, height=24, pngPath='item_tm34.png')
@@ -144,56 +118,30 @@ def build(lock, sources, inputs, root=ROOT):
         portraits.append(dict(id=name, width=64, height=64, x=144, y=8, sourceTrainerPicId=picture, sourceFrame=0,
                               sourceImage=image_path, sourcePalette=palette_path))
 
-    # Resolve precisely the four Gym parties, including source default-move insertion/oldest-slot deletion.
-    require('src/pokemon.c', 'if (GiveMoveToBoxMon(boxMon, move) == MON_HAS_MAX_MOVES)\n            DeleteFirstMoveAndGiveMoveToBoxMon(boxMon, move);')
-    require('src/pokemon.c', 'if (existingMove == move)\n            return MON_ALREADY_KNOWS_MOVE;')
-    resolved, moves = [], set()
-    for trainer in ['LEADER_LT_SURGE', 'SAILOR_DWAYNE', 'ENGINEER_BAILY', 'GENTLEMAN_TUCKER']:
-        m = match('src/data/trainers.h', r'^    \[TRAINER_' + trainer + r'\] = \{.*?^    \},')
-        party_type, party_name = re.search(r'\.party = (NO_ITEM_(?:CUSTOM|DEFAULT)_MOVES)\((\w+)\)', m[0]).groups()
-        rules.append(ref('src/data/trainers.h', 'TRAINER_' + trainer, m))
-        m = match('src/data/trainer_parties.h', r'^static const struct \w+ ' + party_name + r'\[\] = \{(.*?)^\};')
-        rules.append(ref('src/data/trainer_parties.h', party_name, m))
-        roster = []
-        for slot in re.findall(r'    \{(.*?)    \},', m[1], re.S):
-            species = re.search(r'\.species = (SPECIES_\w+)', slot)[1]
-            level = int(re.search(r'\.lvl = (\d+)', slot)[1])
-            if party_type == 'NO_ITEM_CUSTOM_MOVES': known = re.findall(r'\bMOVE_\w+', slot)
-            else:
-                pointer = match('src/data/pokemon/level_up_learnset_pointers.h', r'^    \[' + species + r'\] = (\w+),$')[1]
-                learnset = match('src/data/pokemon/level_up_learnsets.h', r'^static const u16 ' + pointer + r'\[\] = \{(.*?)^\};')
-                known = []
-                for lvl, move in re.findall(r'LEVEL_UP_MOVE\(\s*(\d+), (MOVE_\w+)\)', learnset[1]):
-                    if int(lvl) > level: break
-                    if move not in known: known = (known + [move])[-4:]
-            if len(known) != 4: raise ValueError('Gym party move slots differ')
-            moves.update(k.removeprefix('MOVE_') for k in known)
-            roster.append(dict(species=species, level=level, moves=known))
-        resolved.append(dict(trainer='TRAINER_' + trainer, party=roster))
-    expected = set('THUNDER_WAVE QUICK_ATTACK DOUBLE_TEAM SLAM TACKLE SCREECH SONIC_BOOM SPARK THUNDER_SHOCK SUPERSONIC SHOCK_WAVE'.split())
-    if moves != expected or [len(r['party']) for r in resolved] != [3, 2, 2, 1]: raise ValueError('Gym move repertoire differs')
     document = dict(schemaVersion=1,
-                    tm34=tm34, icon=icon, portraits=portraits)
+                    icon=icon, portraits=portraits)
     outputs['assets.json'] = runtime_json_bytes(document)
     outputs['manifest.json'] = encoded(dict(schemaVersion=1,
          outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
     return outputs
 
-def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
+def run(raw, out, repository=None, lock_path=None, check=False):
     raw, out = safe(raw), safe(out)
     if raw == out or raw in out.parents or out in raw.parents: raise ValueError('Raw/generated overlap')
     if repository:
         reference = safe(repository)
         if any(p == reference or p in reference.parents or reference in p.parents for p in (raw, out)):
             raise ValueError('Reference/output overlap')
-    for kind in ('raw', 'generated'):
-        for protected in (ROOT / 'content' / kind).iterdir():
-            if protected.name == 'vermilion-gym-assets': continue
-            if any(p == protected or p in protected.parents or protected in p.parents for p in (raw, out)):
-                raise ValueError('Legacy/dependency output overlap')
+    source_root = ROOT / 'content/raw'
+    if out == source_root or source_root in out.parents or out in source_root.parents:
+        raise ValueError('Generated output overlaps project raw sources')
+    if repository:
+        generated_root = ROOT / 'content/generated'
+        if raw == generated_root or generated_root in raw.parents or raw in generated_root.parents:
+            raise ValueError('Raw materialization overlaps generated resources')
     lock = read_lock(lock_path)
-    sources, inputs = authenticated_inputs(lock, raw, repository, root)
-    outputs = build(lock, sources, inputs, root)
+    sources = read_sources(lock, raw, repository)
+    outputs = build(sources)
     materials = {(out, p): b for p, b in outputs.items()}
     if repository:
         materials.update({(raw, p): b for p, b in sources.items()})
@@ -212,9 +160,9 @@ def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
             target.parent.mkdir(parents=True, exist_ok=True)
             stage.write_bytes(data)
             stage.replace(target)
-    return dict(passed=True, sourceFiles=36, localInputs=5, species=73, machines=12, newPortraits=2,
-                newSynthCues=4, candidateCueCount=243,
-                 outputs=len(outputs))
+    return dict(passed=True, sourceFiles=len(sources),
+                newPortraits=len(json.loads(outputs['assets.json'])['portraits']), outputs=len(outputs))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

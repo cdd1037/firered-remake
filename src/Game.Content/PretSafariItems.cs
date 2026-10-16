@@ -6,7 +6,7 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record SafariItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record SafariItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<ItemIcon> Icons,
     ImmutableArray<SnorlaxArtOutput> Outputs);
 public sealed record SafariMachineAddition(ItemId Item,ImmutableArray<MachineCompatibility> Compatibility);
 public sealed record SafariMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds,
@@ -23,7 +23,7 @@ public sealed class PretSafariItems
     public SafariItemsDocument Document { get; }
     public SafariMachinesDocument Machines { get; }
     public ImmutableArray<PretBillSourceItem> Items=>Document.Items;
-    public ImmutableArray<PretPewterMachineIcon> Icons=>Document.Icons;
+    public ImmutableArray<ItemIcon> Icons=>Document.Icons;
     public ImmutableDictionary<string,byte[]> Files { get; }
     private PretSafariItems(SafariItemsDocument document,SafariMachinesDocument machines,ImmutableDictionary<string,byte[]> files)
     {

@@ -6,7 +6,6 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public const string NationalDexRulesVersion = "firered-national-dex-postgame-v1";
     private const string PalletSource = "data/maps/PalletTown/scripts.inc";
     private const string PalletDexScene = "PalletTown_EventScript_OakRatingScene";
     private const string LabDexScene = "PalletTown_ProfessorOaksLab_EventScript_NationalDexScene";

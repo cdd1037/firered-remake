@@ -17,7 +17,6 @@ class SingleFileImportTests(unittest.TestCase):
                  for region in ('route11', 'vermilion', 'rocktunnel')]
         cases += [('pokemon/import-pokemon.py', 'data/pokemon/starters.json'),
                   ('story/import-old-rod.py', 'data/services/old-rod.json'),
-                  ('items/import-vermilion-machines.py', 'data/machine-learning/vermilion.json'),
                   ('items/import-early-pickups.py', 'data/items/early-pickups.json'),
                   ('story/import-old-man-tutorial.py', 'data/services/old-man-tutorial.json')]
         with tempfile.TemporaryDirectory() as temporary:
@@ -94,8 +93,73 @@ class SingleFileImportTests(unittest.TestCase):
                     for old, new in zip(previous, emitted, strict=True):
                         self.assertEqual(pixels(ROOT / old['pngPath'], old.get('region')),
                                          pixels(project / new['pngPath']))
+                    self.assertEqual({'schemaVersion', 'icons'}, set(actual))
             self.assertFalse(any(p.name == 'manifest.json' for p in project.rglob('*')))
             self.assertFalse(any(p.is_dir() and p.suffix in ('.json', '.png') for p in project.rglob('*')))
+
+
+    def test_machine_icons_need_only_raw_images_and_check_never_writes(self):
+        from unittest.mock import patch
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('early_machine_icons',
+            ROOT / 'scripts/imports/items/import-machine-views.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        from item_source import ItemSource
+        source = ROOT / 'content/raw/pokefirered/037335f4'
+        paths = {'src/data/item_icon_table.h', 'src/data/graphics/items.h'}
+        reader = ItemSource(lambda path: (source / path).read_bytes())
+        for names in module.ICONS.values():
+            for name in names:
+                paths.update(reader.icon_sources('ITEM_' + name))
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary)
+            raw = project / 'raw'
+            for name in paths:
+                target = raw / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((source / name).read_bytes())
+            def snapshot():
+                return {str(path.relative_to(project)): (path.read_bytes(), path.stat().st_mtime_ns)
+                        for path in project.rglob('*') if path.is_file()}
+            for region in module.ICONS:
+                with self.subTest(region=region):
+                    output = project / ('generated/data/machine-learning/' + region + '.json')
+                    command = [sys.executable, str(ROOT / 'scripts/imports/items/import-machine-views.py'),
+                               '--region', region, '--project-root', str(project),
+                               '--raw', str(raw), '--out', str(output.relative_to(project))]
+                    def invoke(*arguments):
+                        return subprocess.run(command + list(arguments), cwd=temporary,
+                                              capture_output=True, text=True, timeout=30)
+                    before = snapshot()
+                    missing = invoke('--check')
+                    self.assertNotEqual(0, missing.returncode)
+                    self.assertEqual(before, snapshot())
+                    built = invoke()
+                    self.assertEqual(0, built.returncode, built.stdout + built.stderr)
+                    before = snapshot()
+                    checked = invoke('--check')
+                    self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+                    self.assertEqual(before, snapshot())
+                    document = json.loads(output.read_bytes())
+                    self.assertEqual({'schemaVersion', 'icons'}, set(document))
+                    self.assertEqual(['pret:ITEM_' + name for name in module.ICONS[region]],
+                                     [icon['item']['value'] for icon in document['icons']])
+                    document['icons'][0]['item']['value'] = 'pret:ITEM_TM00'
+                    output.write_text(json.dumps(document))
+                    before = snapshot()
+                    rejected = invoke('--check')
+                    self.assertNotEqual(0, rejected.returncode)
+                    self.assertEqual(before, snapshot())
+            # No recipe, canonical catalog or generated source dependency exists
+            # in this raw-only tree, and a real icon binding mutation must fail.
+            binding = raw / 'src/data/item_icon_table.h'
+            binding.write_bytes(binding.read_bytes().replace(b'[ITEM_TM03]', b'[ITEM_TM00]', 1))
+            with patch('subprocess.run', side_effect=AssertionError('Icon conversion invoked a process')):
+                with self.assertRaisesRegex(ValueError, 'Nonunique source match'):
+                    module.convert('cerulean', project, raw)
+            self.assertFalse((project / 'scripts').exists())
+            self.assertFalse((project / 'content/generated/data/machines.json').exists())
 
 if __name__ == '__main__':
     unittest.main()

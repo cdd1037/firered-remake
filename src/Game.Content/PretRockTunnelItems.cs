@@ -8,7 +8,7 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretRockTunnelItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record PretRockTunnelItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<ItemIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups);
 
 /// <summary>Authenticates seven RockTunnel item declarations, icons and fifteen source pickups.</summary>
@@ -32,7 +32,7 @@ public static class PretRockTunnelItems
             var item = definitions[n]; var icon = document.Icons[n];
             Require(item.Metadata.Item.Id.Value == "pret:ITEM_" + items[n] && icon.Item == item.Metadata.Item.Id,
                 "RockTunnel item order or icon differs.");
-            PretPewterMachines.ValidateIcon(icon);
+            ItemIconAssets.Validate(icon);
         }
         foreach (var pickup in document.Pickups)
         {

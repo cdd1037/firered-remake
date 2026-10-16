@@ -7,6 +7,8 @@ using Godot;
 public partial class CampaignView
 {
     private readonly Dictionary<int,Texture2D> _route22Footprints=[];
+    // These complete dex packs share one priority block; special form/portrait-only bindings stay separate.
+    private readonly PresentationDexIndex _supplementalDex = new();
 
     private void LoadRoute22PokemonPresentation()
     {
@@ -16,7 +18,7 @@ public partial class CampaignView
     }
 
     private CaptureDexEntry CaptureDexEntry(int species) =>
-        _pokemonCollectionArt?.CaptureEntries.GetValueOrDefault(species)??GiftEggCaptureDexEntry(species)??OrdinaryEvolutionCaptureDexEntry(species)??BreedingCaptureDexEntry(species)??GameCornerCaptureDexEntry(species)??StoneEvolutionCaptureDexEntry(species)??QwilfishCaptureDexEntry(species)??SeafoamCaptureDexEntry(species)??FossilLabCaptureDexEntry(species)??FightingDojoCaptureDexEntry(species)??PowerPlantCaptureDexEntry(species)??EventIslandCaptureDexEntry(species)??SevenIslandCaptureDexEntry(species)??MewtwoCaptureDexEntry(species)??CelioCaptureDexEntry(species)??FiveIslandCaptureDexEntry(species)??SixIslandCaptureDexEntry(species)??FourIslandCaptureDexEntry(species)??SeviiRubyCaptureDexEntry(species)??_catalog.CinnabarArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SaffronGymArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SilphArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SurfArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SafariArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.FuchsiaRouteArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.EeveeArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SnorlaxArt?.CaptureDexEntries.GetValueOrDefault(species)??TowerCaptureDexEntry(species)??_earlyDex.CaptureEntry(species)??_captureDex!.Entries[species];
+        _pokemonCollectionArt?.CaptureEntries.GetValueOrDefault(species)??GiftEggCaptureDexEntry(species)??_supplementalDex.CaptureEntry(species)??SevenIslandCaptureDexEntry(species)??MewtwoCaptureDexEntry(species)??CelioCaptureDexEntry(species)??FiveIslandCaptureDexEntry(species)??SixIslandCaptureDexEntry(species)??FourIslandCaptureDexEntry(species)??SeviiRubyCaptureDexEntry(species)??_catalog.CinnabarArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SaffronGymArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SilphArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SurfArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SafariArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.FuchsiaRouteArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.EeveeArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SnorlaxArt?.CaptureDexEntries.GetValueOrDefault(species)??TowerCaptureDexEntry(species)??_earlyDex.CaptureEntry(species)??_captureDex!.Entries[species];
 
     private PokedexMenuPage PresentedPokedexPage(int species)
     {
@@ -24,16 +26,7 @@ public partial class CampaignView
         if(_pokemonCollectionArt is {} collection)page=collection.Present(page);
         if(GiftEggPokedexPage(species,page) is {} giftPage)return giftPage;
         if(MemorialPillarPokedexPage(species,page) is {} memorialPage)return memorialPage;
-        if(OrdinaryEvolutionPokedexPage(species,page) is {} ordinaryPage)return ordinaryPage;
-        if(BreedingPokedexPage(species,page) is {} breedingPage)return breedingPage;
-        if(GameCornerPokedexPage(species,page) is {} cornerPage)return cornerPage;
-        if(StoneEvolutionPokedexPage(species,page) is {} stonePage)return stonePage;
-        if(QwilfishPokedexPage(species,page) is {} qwilfishPage)return qwilfishPage;
-        if(SeafoamPokedexPage(species,page) is {} seafoamPage)return seafoamPage;
-        if(FossilLabPokedexPage(species,page) is {} fossilPage)return fossilPage;
-        if(FightingDojoPokedexPage(species,page) is {} dojoPage)return dojoPage;
-        if(PowerPlantPokedexPage(species,page) is {} powerPage)return powerPage;
-        if(EventIslandPokedexPage(species,page) is {} eventPage)return eventPage;
+        if(_supplementalDex.Present(species,page) is {} supplementalPage)return supplementalPage;
         if(SevenIslandPokedexPage(species,page) is {} sevenPage)return sevenPage;
         if(_celioDex.TryGetValue(species,out var celioEntry))return page with{Portrait=celioEntry.Portrait,Footprint=page.Caught?celioEntry.Footprint:null};
         if(_sixIslandDex.TryGetValue(species,out var sixEntry))return page with{Portrait=sixEntry.Portrait,Footprint=page.Caught?sixEntry.Footprint:null};
@@ -56,16 +49,7 @@ public partial class CampaignView
         if(_pokemonCollectionArt?.Textures.TryGetValue(texture.TexturePath,out var collectionPixels)==true)return collectionPixels;
         if(ReadGiftEggDexTexture(texture) is {} giftPixels)return giftPixels;
         if(ReadMemorialPillarDexTexture(texture) is {} memorialPixels)return memorialPixels;
-        if(ReadOrdinaryEvolutionDexTexture(texture) is {} ordinaryPixels)return ordinaryPixels;
-        if(ReadBreedingDexTexture(texture) is {} breedingPixels)return breedingPixels;
-        if(ReadGameCornerDexTexture(texture) is {} cornerPixels)return cornerPixels;
-        if(ReadStoneEvolutionDexTexture(texture) is {} stonePixels)return stonePixels;
-        if(ReadQwilfishDexTexture(texture) is {} qwilfishPixels)return qwilfishPixels;
-        if(ReadSeafoamDexTexture(texture) is {} seafoamPixels)return seafoamPixels;
-        if(ReadFossilLabDexTexture(texture) is {} fossilPixels)return fossilPixels;
-        if(ReadFightingDojoDexTexture(texture) is {} dojoPixels)return dojoPixels;
-        if(ReadPowerPlantDexTexture(texture) is {} powerPixels)return powerPixels;
-        if(ReadEventIslandDexTexture(texture) is {} eventPixels)return eventPixels;
+        if(_supplementalDex.ReadTexture(texture) is {} supplementalPixels)return supplementalPixels;
         if(ReadSevenIslandDexTexture(texture) is {} sevenPixels)return sevenPixels;
         if(ReadMewtwoDexTexture(texture) is {} mewtwoPixels)return mewtwoPixels;
         if(ReadCelioDexTexture(texture) is {} celioPixels)return celioPixels;

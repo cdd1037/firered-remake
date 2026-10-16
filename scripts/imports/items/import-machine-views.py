@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Build early TM/HM views from the shared admission catalog and original item icons."""
+"""Build early TM/HM inventory icons directly from retained original images."""
 from pathlib import Path
 import argparse
 import json
-import re
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'lib'))
 from project_paths import PROJECT_ROOT
-from machine_catalog import machine_definitions
-from image_io import indexed_png, png
-from item_icon_exports import item_icon_path, output_materials
+from item_icon_exports import output_materials
+from item_source import ItemSource
+from presentation_source import safe
+from generated_output_compare import check_item_outputs
 from runtime_json import runtime_json_bytes
 
-# Only output-shape/icon selection remains local. Species, moves, PP and machine
-# memberships are owned by the existing canonical admission/source catalogs.
+# Actual icon selection only; teaching definitions and compatibility are owned
+# by the canonical machine catalog, not these presentation documents.
 ICONS = {
     'cerulean': ('TM03',),
     'bill': ('TM45', 'TM43', 'TM28'),
@@ -23,36 +23,16 @@ ICONS = {
 
 
 def convert(region, project=PROJECT_ROOT, raw=None):
-    from presentation_pixels import palette, rgba
     if region not in ICONS:
-        raise ValueError('Unknown machine view: ' + region)
-    project = Path(project)
-    raw = Path(raw) if raw is not None else project / 'content/raw/pokefirered/037335f4'
-    item_table = (raw / 'src/data/item_icon_table.h').read_text()
-    graphics = (raw / 'src/data/graphics/items.h').read_text()
-
-    def one(text, pattern):
-        rows = re.findall(pattern, text, re.M)
-        if len(rows) != 1:
-            raise ValueError('Missing or ambiguous source icon binding: ' + pattern)
-        return rows[0]
-
+        raise ValueError('Unknown machine icon selection: ' + region)
+    raw = Path(raw) if raw is not None else Path(project) / 'content/raw/pokefirered/037335f4'
+    source = ItemSource(lambda path: safe(raw, path).read_bytes())
     outputs, icons = {}, []
     for name in ICONS[region]:
-        symbols = one(item_table, r'^    \[ITEM_' + re.escape(name) + r'\]\s*= \{(\w+), (\w+)\},')
-        paths = [one(graphics, r'^const u32 ' + re.escape(symbol) + r'\[\]\s*= INCBIN_U32\("([^"]+)"\);')
-                 .replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal') for symbol in symbols]
-        image, colors = paths
-        width, height, indices, _ = indexed_png((raw / image).read_bytes())
-        if (width, height) != (24, 24):
-            raise ValueError('Machine icon must be 24x24')
-        output = item_icon_path(image, colors)
-        outputs[output] = png(width, height, rgba(indices, palette((raw / colors).read_bytes())))
-        icons.append(dict(item=dict(value='pret:ITEM_' + name), width=width, height=height, pngPath=output))
-    relative = f'content/generated/data/machine-learning/{region}.json'
-    doc = dict(schemaVersion=1, machines=machine_definitions(project, relative, 'machines'))
-    doc.update(dict(icon=icons[0]) if region == 'cerulean' else dict(icons=icons))
-    outputs[region + '.json'] = runtime_json_bytes(doc)
+        icon, image = source.icon('ITEM_' + name)
+        outputs[icon['pngPath']] = image
+        icons.append(icon)
+    outputs[region + '.json'] = runtime_json_bytes(dict(schemaVersion=1, icons=icons))
     return outputs
 
 
@@ -62,21 +42,28 @@ def main():
     parser.add_argument('--project-root', type=Path, default=PROJECT_ROOT)
     parser.add_argument('--raw', type=Path)
     parser.add_argument('--out', type=Path)
+    parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     target = args.out or args.project_root / f'content/generated/data/machine-learning/{args.region}.json'
+    target = target.absolute()
     if target.suffix != '.json':
         parser.error('--out must name a JSON file')
-    raw = (args.raw or args.project_root / 'content/raw/pokefirered/037335f4').resolve()
-    if target.resolve().is_relative_to(raw):
-        parser.error('--out must not overwrite raw inputs')
+    raw = args.raw or args.project_root / 'content/raw/pokefirered/037335f4'
     outputs = convert(args.region, args.project_root, raw)
-    for (directory, relative), data in output_materials(target, outputs).items():
-        path = directory / relative
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name(path.name + '.tmp')
-        temporary.write_bytes(data)
-        temporary.replace(path)
-    print(json.dumps(dict(region=args.region, outputCount=len(outputs))))
+    materials = [(safe(directory, relative), data)
+                 for (directory, relative), data in output_materials(target, outputs).items()]
+    if any(path.resolve().is_relative_to(raw.resolve()) for path, _ in materials):
+        parser.error('--out must not overwrite raw inputs')
+    if args.check:
+        generated = next(path for path in (target, *target.parents) if path.name == 'generated').absolute()
+        check_item_outputs(generated, {path.relative_to(generated).as_posix(): data for path, data in materials})
+    else:
+        for path, data in materials:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = safe(path.parent, path.name + '.tmp')
+            temporary.write_bytes(data)
+            temporary.replace(path)
+    print(json.dumps(dict(region=args.region, outputCount=len(outputs), checked=args.check)))
 
 
 if __name__ == '__main__':

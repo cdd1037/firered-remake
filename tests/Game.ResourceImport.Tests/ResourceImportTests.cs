@@ -23,6 +23,10 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task ImporterPngSemantics() => Run("test-importer-png-semantics.py");
     [TestMethod]
+    public Task SharedItemUiImports() => Run("test-item-ui-library-imports.py");
+    [TestMethod]
+    public Task SpecialPresentationImports() => Run("test-special-presentation-importers.py");
+    [TestMethod]
     public Task MapAtlases() => Run("test-map-atlases.py");
     [TestMethod]
     public Task WorldSourceSemantics() => Run("test-world-pipeline-oracle.py");

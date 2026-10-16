@@ -30,11 +30,10 @@ public partial class CampaignView
     partial void ExtendMachineQuestPocket(ref QuestItemUiDocument document)
     {
         if (_catalog.Machines is not { } catalog) return;
-        var machine = PretPewterMachines.LoadDocument(System.IO.File.ReadAllText(System.IO.Path.Combine(_root,
-            "content/generated/data/machine-learning/pewter.json")), SharedMachineCatalog.LoadProject(_root));
+        var icons = ItemIconAssets.LoadProject(_root, "content/generated/data/machine-learning/pewter.json", MachineRules.Tm39Id, MachineRules.TmCaseId);
         string firstIcon = document.Items[0].Icon;
         var position = document.Assets.Single(x => x.Id == firstIcon);
-        foreach (var icon in machine.Icons)
+        foreach (var icon in icons)
         {
             string id = icon.Item == MachineRules.TmCaseId ? MachineCaseIcon : MachineIcon;
             

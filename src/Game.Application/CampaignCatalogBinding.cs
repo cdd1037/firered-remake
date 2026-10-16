@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Game.Domain.Encounters;
+using Game.Domain.Ids;
 using Game.Domain.Items;
 using Game.Domain.Pokemon;
 using Game.Domain.Trainers;
@@ -15,7 +16,9 @@ public static class CurrentGameProfile
     public const string RulesVersion = "firered-current-campaign-v3";
 }
 
-internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog Pokemon, GamePokemonCatalog Ownership, OrdinaryLandEncounterCatalog OrdinaryLand, FrozenSet<string> EncounterAndPickupHeldItems);
+internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion,
+    PokemonCatalog Pokemon, GamePokemonCatalog Ownership, OrdinaryLandEncounterCatalog OrdinaryLand,
+    FrozenSet<string> EncounterAndPickupHeldItems, FrozenSet<ItemId> HoldableItems);
 
 public sealed partial class CampaignSession
 {
@@ -47,7 +50,8 @@ public sealed partial class CampaignSession
             .SelectMany(species => new[] { species.ItemCommon, species.ItemRare })
             .Concat(VermilionPickupRules.Items).ToFrozenSet(StringComparer.Ordinal);
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion,
-            battle.Catalog, battle, ordinaryLand, heldItems);
+            battle.Catalog, battle, ordinaryLand, heldItems,
+            HeldItemTransferRules.BuildHoldableItems(content.EarlyShop!, content.Machines));
     }
 
     // Source validation is shared by New Game and Restore, and remains independent of rendering.

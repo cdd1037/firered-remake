@@ -40,7 +40,6 @@ public sealed partial class CampaignSession
     private string? ValidatePewterProgress(CampaignState state)
     {
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET");
-        if(HasUnimplementedBadge(state))return "save_badges_outside_pewter_scope";
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==PewterTrainerPartyFactory.Brock.Value&&h.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_BROCK")!=won)return "save_brock_badge_history_mismatch";
         if(won&&(!state.BattledTrainers.Contains(PewterTrainerPartyFactory.Liam.Value)||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_PEWTER_CITY_GYM_GUIDE")||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PEWTER_CITY") is not (1 or 2)))return "save_brock_reward_flags_mismatch";

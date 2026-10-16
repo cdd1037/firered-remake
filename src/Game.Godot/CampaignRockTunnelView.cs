@@ -17,7 +17,7 @@ public partial class CampaignView
         var assets=RockTunnelPresentationAssets.Load(_root);
         using(var image=NativeImages.LoadPng(assets["pokemaniac-front.png"], 64, 64))_forestTrainerPortraits.Add("pokemaniac-front",ImageTexture.CreateFromImage(image));
         using(var image=NativeImages.LoadPng(assets["indoor-streaks.png"], 256, 80))_fieldFlashStreaks=ImageTexture.CreateFromImage(image);
-        foreach(var icon in PretRockTunnelMachines.LoadProject(_root).Icons.Concat(PretRockTunnelItems.LoadProject(_root).Icons))
+        foreach(var icon in ItemIconAssets.LoadProject(_root, "content/generated/data/items/rocktunnel/rocktunnel-machines.json", new Game.Domain.Ids.ItemId("pret:ITEM_TM40")).Concat(PretRockTunnelItems.LoadProject(_root).Icons))
         {
             
             if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("data/items/rocktunnel", icon));

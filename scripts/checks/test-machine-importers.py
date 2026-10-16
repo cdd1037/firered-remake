@@ -25,13 +25,12 @@ def wrappers(value):
 
 class EarlyMachineImporterTests(unittest.TestCase):
  def test_direct_shared_references_match_runtime_membership(self):
-  for name, family, folder in [('pewter-machines', 'items', 'data/machine-learning/pewter.json'), ('mtmoon-items', 'items', 'data/items/mtmoon'), ('cerulean-machines', 'items', 'data/machine-learning/cerulean.json'), ('bill-machines', 'items', 'data/machine-learning/bill.json'), ('vermilion-machines', 'items', 'data/machine-learning/vermilion.json'), ('route11-machines', 'items', 'data/machine-learning/route11.json'), ('rocktunnel-items', 'items', 'data/items/rocktunnel'), ('celadon-gym-catalog', 'items', 'data/items/celadon-gym'), ('rocket-hideout-items', 'items', 'data/items/rocket-hideout')]:
+  for name, family, folder in [('pewter-machines', 'items', 'data/machine-learning/pewter.json'), ('mtmoon-items', 'items', 'data/items/mtmoon'), ('cerulean-machines', 'items', 'data/machine-learning/cerulean.json'), ('bill-machines', 'items', 'data/machine-learning/bill.json'), ('route11-machines', 'items', 'data/machine-learning/route11.json'), ('rocktunnel-items', 'items', 'data/items/rocktunnel'), ('celadon-gym-catalog', 'items', 'data/items/celadon-gym'), ('rocket-hideout-items', 'items', 'data/items/rocket-hideout')]:
    regional = name in ('cerulean-machines','bill-machines','route11-machines')
    m=load('machine-views' if regional else name, family)
    if regional:outputs=m.convert(name.removesuffix('-machines'),root,raw)
    elif name=='pewter-machines':
     lock=m.read_lock();d={x['path']:(raw/x['path']).read_bytes() for x in lock['files']};doc,_=m.build(lock,d);outputs={'pewter-machines.json':json.dumps(doc,default=item_json).encode()}
-   elif name=='vermilion-machines':outputs={'machines.json':json.dumps(m.convert({p:(raw/p).read_bytes() for p in m.PATHS})).encode()}
    elif name=='celadon-gym-catalog':
     lock=json.loads((root/'scripts/recipes/items/celadon-gym-items.lock.json').read_bytes());d={x['path']:(raw/x['path']).read_bytes() for x in lock['files']};outputs=m.item_outputs(lock,d,root)
    elif name=='rocket-hideout-items':

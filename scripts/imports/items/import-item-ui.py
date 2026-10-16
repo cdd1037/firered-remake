@@ -6,6 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
+import ui_tiles as codec
 import argparse,importlib.util,json,pathlib,re,struct,sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
@@ -13,8 +14,6 @@ ROOT=_PROJECT_ROOT
 def module(name,path):
     spec=importlib.util.spec_from_file_location(name,path);result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
 inputs=module('item_ui_inputs',ROOT/'scripts/imports/source/fetch-item-ui.py')
-# Share the reviewed local PNG/tile codec, never an upstream tool or script.
-codec=module('item_ui_codec',ROOT/'scripts/imports/presentation/import-lab-battle-ui.py')
 TEXT_SYMBOLS = '''gOtherText_Use gOtherText_Give gOtherText_Toss gFameCheckerText_Cancel
 gText_TimesStrVar1 gText_Items2 gText_DepositItem gText_CloseBag gText_Var1IsSelected
 gText_DepositedStrVar2StrVar1s gText_NoRoomToStoreItems gText_NoMoreRoomInBag

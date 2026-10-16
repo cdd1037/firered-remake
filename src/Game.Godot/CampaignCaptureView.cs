@@ -133,28 +133,13 @@ public partial class CampaignView
             else if (key.Keycode == Key.Enter)
             {
                 if (TryOpenSingleBattleItem(CaptureBagStacks[_captureBagSelected].Item,battle)) return true;
-                if (_captureBagPocket == 0) {
-                    var item=CaptureBagStacks[_captureBagSelected].Item;
-                    bool enabled=_session.BattleMedicineEnabled&&EarlyItem(item)?.UseSupport is EarlyShopUseSupport.Potion or EarlyShopUseSupport.StatusCure or EarlyShopUseSupport.DeferredSleep;
-                    if(!enabled&&item!=OpeningInventoryRules.PotionId) { _wildNotice = "This item's battle use is\nnot implemented yet."; _wildNoticeReturn = "bag"; return true; }
-                    _wildMedicineItem=enabled?item:null;_wildMenu = "medicine-target"; _wildCursor = enabled?battle.ActivePartyIndex:0; }
-                else if (_captureBagPocket == 1)
+                // Capacity and available-ball checks remain authoritative application
+                // checks. UI cancellation never dispatches a command.
+                if (!ApplyWildChoice(new("battle_ball", Text: CaptureBagStacks[_captureBagSelected].Item.Value)))
                 {
-                    if(CaptureBagStacks[_captureBagSelected].Item.Value == "pret:ITEM_POKE_FLUTE")
-                    { ApplyWildChoice(new("battle_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
-                    _wildMenu = "bag"; _wildCursor = _captureBagSelected;
-                    _wildNotice = "Key items cannot be used\nin this battle.";
-                }
-                else
-                {
-                    // Capacity and available-ball checks remain authoritative application
-                    // checks. UI cancellation never dispatches a command.
-                    if (!ApplyWildChoice(new("battle_ball", Text: CaptureBagStacks[_captureBagSelected].Item.Value)))
-                    {
-                        if (_status != "storage_delivery_unsupported" && _status.Contains("unsupported", StringComparison.Ordinal) || _lastCommandFault)
-                            _wildNotice = "This capture is not supported.\nNo BALL was used.";
-                        _wildMenu = "bag"; _wildCursor = _captureBagSelected; _wildNoticeReturn = "bag";
-                    }
+                    if (_status != "storage_delivery_unsupported" && _status.Contains("unsupported", StringComparison.Ordinal) || _lastCommandFault)
+                        _wildNotice = "This capture is not supported.\nNo BALL was used.";
+                    _wildMenu = "bag"; _wildCursor = _captureBagSelected; _wildNoticeReturn = "bag";
                 }
             }
             return true;
@@ -233,10 +218,7 @@ public partial class CampaignView
         var stacks = CaptureBagStacks;
         int selected = Math.Clamp(_wildMenu == "bag-actions" ? _captureBagSelected : _wildCursor, 0, stacks.Length);
         if (_captureBagPocket == 0 || _captureBerries)
-        {
-            if(_session.FullBattleItemsEnabled) DrawSingleBattleItemList(stacks,selected);
-            else DrawItemList(_session.State.Inventory!, "bag", selected);
-        }
+            DrawSingleBattleItemList(stacks,selected);
         else
         {
             DrawQuestPocketAsset(_captureBagPocket == 1 ? "bag-key-items-background" : "bag-poke-balls-background");

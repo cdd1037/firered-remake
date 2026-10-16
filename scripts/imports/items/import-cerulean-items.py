@@ -6,13 +6,16 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_catalog import item_definition as shared_item, item_json
 
-import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
+import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 sys.path.insert(0, str(ROOT/'scripts/lib'))
 from item_icon_exports import item_icon_path, output_materials
+from image_io import indexed_png, png
+from item_source import ItemSource
+from ui_tiles import palette, rgba
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-cerulean-items-v1'
@@ -92,19 +95,14 @@ def convert(lock,data):
  m=match(p,r'^CeruleanCity_Mart_EventScript_Clerk::\n(.*?)(?=^\t\.align)')
  if '\tpokemart CeruleanCity_Mart_Items\n' not in m[1]:raise ValueError('Cerulean clerk binding differs')
  rules.append(ref(p,'CeruleanCity_Mart_EventScript_Clerk',m))
- p='src/data/item_icon_table.h';m=match(p,r'^    \[ITEM_SUPER_POTION\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);symbols=m.groups();paths=[]
- for sym in symbols:
-  p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
- codec_path=ROOT/'scripts/imports/presentation/import-lab-battle-ui.py'
- spec=importlib.util.spec_from_file_location('cerulean_items_existing_png_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
- image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
+ image,palette_path=ItemSource(data).icon_sources(symbol);w,h,idx,_=indexed_png(data[image]);pixels=rgba(idx,palette(data[palette_path]))
  if (w,h)!=(24,24):raise ValueError('Super Potion icon dimensions differ')
- png=codec.png(w,h,rgba);png_name=item_icon_path(image,palette)
+ image_bytes=png(w,h,pixels);png_name=item_icon_path(image,palette_path)
  icon=dict(item=ident(symbol), width=w, height=h, pngPath=png_name)
  for p,s,pat in [('src/pokemon.c','PokemonUseItemEffects',r'^bool8 PokemonUseItemEffects\([^;]*?\n\{.*?^\}'),('src/item_use.c','FieldUseFunc_Medicine',r'^void FieldUseFunc_Medicine\([^;]*?\n\{.*?^\}'),('src/item_use.c','BattleUseFunc_Medicine',r'^void BattleUseFunc_Medicine\([^;]*?\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pat)))
  for p in ['src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
  doc=dict(schemaVersion=1,item=item,shop=shop,icon=icon)
- outputs={png_name:png,'cerulean-items.json':runtime_json_bytes(doc, default=item_json)}
+ outputs={png_name:image_bytes,'cerulean-items.json':runtime_json_bytes(doc, default=item_json)}
  outputs['manifest.json']=encoded(dict(schemaVersion=1,inputCount=14,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
 

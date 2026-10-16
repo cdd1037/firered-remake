@@ -18,9 +18,9 @@ public partial class CampaignView
             throw new InvalidDataException("Item texture dimensions differ: " + path);
         return texture;
     }
-    private Texture2D ItemTexture(string package, PretPewterMachineIcon icon)
+    private Texture2D ItemTexture(string package, ItemIcon icon)
     {
-        PretPewterMachines.ValidateIcon(icon);
+        ItemIconAssets.Validate(icon);
         return ItemTexture(icon.PngPath.StartsWith("content/generated/", StringComparison.Ordinal)
             ? icon.PngPath : "content/generated/" + package + "/" + icon.PngPath, icon.Region, icon.Width, icon.Height);
     }

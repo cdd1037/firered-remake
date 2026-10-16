@@ -20,7 +20,6 @@ public sealed record CampaignPokemonLeagueProgress(int ChallengeNumber, Immutabl
 /// the tier selected on entry even after a later Celio handoff unlocks rematches.</summary>
 public sealed partial class CampaignSession
 {
-    public const string PokemonLeagueRulesVersion="firered-pokemon-league-first-clear-v1";
     private const string PokemonLeagueCenterMap="map.indigo-plateau-pokemon-center-1f";
     private const string PokemonLeagueHealingLocation="HEAL_LOCATION_INDIGO_PLATEAU";
     private const string PokemonLeagueHallMap="map.pokemon-league-hall-of-fame";

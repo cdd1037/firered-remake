@@ -9,6 +9,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse
 import importlib.util
+import ui_tiles as pixels
 import json
 import os
 from pathlib import Path
@@ -16,22 +17,12 @@ import re
 import struct
 import subprocess
 import sys
-import zlib
 
 sys.dont_write_bytecode = True
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-slot-machine-presentation-v1'
 BASE = 'content/generated/ui/slot-machine-presentation/'
 RAW = 'content/raw/pokefirered/037335f4/'
-HELPERS = (
-    'scripts/lib/slot_machine_layers.py',
-    'scripts/lib/presentation_atlas.py',
-    'scripts/imports/presentation/import-lab-battle-ui.py',
-    'scripts/imports/source/fetch-lab-battle-ui.py',
-    'scripts/imports/presentation/import-source-font.py',
-    'scripts/imports/source/fetch-source-font.py',
-)
 SHARED = {
     'src/window.c': 'content/raw/pokefirered/037335f4/src/window.c',
     'src/blit.c': 'content/raw/pokefirered/037335f4/src/blit.c',
@@ -73,7 +64,7 @@ def generate(reference, dependency):
         if row:
             fields, path = row.split(b'\t')
             tree[path.decode()] = fields.decode().split()
-    sources, source_rows, inherited, outputs, assets = {}, {}, {}, {}, []
+    sources, outputs, assets = {}, {}, []
 
     def source(path):
         if path not in sources:
@@ -86,7 +77,6 @@ def generate(reference, dependency):
             raw = SHARED.get(path, RAW + path)
             if path in SHARED:
                 need(safe(dependency, raw).read_bytes() == data, 'Inherited raw source differs: ' + path)
-            source_rows[path] = dict(path=path, rawPath=raw)
         return sources[path]
 
 
@@ -96,7 +86,6 @@ def generate(reference, dependency):
         spec.loader.exec_module(mod)
         return mod
 
-    pixels = helper('scripts/imports/presentation/import-lab-battle-ui.py', 'slot_pixels')
     font = helper('scripts/imports/presentation/import-source-font.py', 'slot_font')
     original = source('src/slot_machine.c').decode()
     # Resolve only the FireRed branch, preserving the independently locked original bytes.
@@ -245,18 +234,10 @@ def generate(reference, dependency):
     layout = dict(width=240, height=160, textureFilter='nearest', paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', mapWidthTiles=32, mapHeightTiles=20, bgTemplates=structures('sBgTemplates'), windows=structures('sWindowTemplates'), yesNoWindow={k: int(v, 0) for k, v in re.findall('\\.(\\w+)\\s*=\\s*(0x[\\da-fA-F]+|\\d+)', declaration('sYesNoWindowTemplate'))}, reels=dict(centers=[[80 + 40 * i, 44 + 24 * j] for i in range(3) for j in range(5)], spriteWidth=32, spriteHeight=32, priority=3, subpriority=2, subpixelScale=8, paletteBanks=palette_tags, iconSymbols=['ICON_7', 'ICON_ROCKET', 'ICON_PIKACHU', 'ICON_PSYDUCK', 'ICON_CHERRIES', 'ICON_MAGNEMITE', 'ICON_SHELLDER'], tileOffsets=[0, 16, 32, 48, 64, 80, 96]), digits=dict(creditCenters=[[85 + 7 * i, 30] for i in range(4)], payoutCenters=[[133 + 7 * i, 30] for i in range(4)], spriteWidth=8, spriteHeight=16, tileOffsets=list(range(0, 20, 2)), leadingZeros=True, priority=1), clefairy=dict(centers=[[16, 136], [224, 136]], rightHFlip=True, spriteWidth=32, spriteHeight=32, priority=1, animations=animations), scanline=dict(registerOffset=43, activeRows=84, affineParameters=table('sReelIconAffineParams'), darkenCoefficients=table('sReelIconBldY'), effect='darken BG3, OBJ and backdrop; outside range affine 0x100 and darken 0'), matchLines=[dict(id=i, name=n, minimumBet=[3, 2, 1, 2, 3][i], tileIndices=table('sLineTiles_' + n)) for i, n in enumerate(line_names)], normalLinePalette=4, betLinePalette=5, winningLinePalette=6, winningUnblendedColorIndices=table('sWinningLineFlashPalIdxs'), buttonTileIndices=table('sReelButtonMapTileIdxs'), pressedButtonTileBase=192, controls=dict(font='small', fontId=0, x=controls_x, y=0, width=controls_width, paletteBank=14, colorIndices=[15, 1, 3], keypad=keypad), help=dict(bg=1, initialScrollPixels=256, finalScrollPixels=0, stepPixels=16, openButton='Right', closeButton='Left'), message=dict(fontId=2, x=1, y=2, letterSpacing=1, lineSpacing=2, borderTileStart=1, borderPalette=15), yesNo=dict(fontId=2, x=0, y=2, borderTileStart=10, borderPalette=13, initialCursor=0, wraps=False), backdropRgb555=[30, 30, 31])
     need(len(layout['scanline']['affineParameters']) == len(layout['scanline']['darkenCoefficients']) == 96, 'Scanline table length differs')
     outputs['palettes.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, palettes=palettes))
-    outputs['layout.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, layout=layout, texts=texts))
+    outputs['layout.json'] = encoded(dict(schemaVersion=1, layout=layout, texts=texts))
     source('src/text_window.c')
-    source_lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', sourceCommit=COMMIT,
-         helpers=HELPERS,
-        inputs=[source_rows[p] for p in sorted(source_rows)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
-    lock_bytes = encoded(source_lock)
-    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        assets=assets,
-        outputs=[dict(path=path) for path, data in sorted(outputs.items())],
-        limitations=['Resource candidate only; no Application betting, probabilities or initial-state policy.',
-                     'Background, help and controls are individual source layers, not complete game screenshots.',
-                     'No scanline shader, task timings, native render or physical audio acceptance is claimed.'])
+    manifest = dict(schemaVersion=1, assets=assets,
+        outputs=[dict(path=path) for path, data in sorted(outputs.items())])
     from slot_machine_layers import bake
     outputs, manifest = bake(outputs, manifest)
     outputs['manifest.json'] = encoded(manifest)

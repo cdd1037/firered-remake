@@ -61,6 +61,7 @@ public partial class CampaignView
             else _route22Footprints.Add(species, Pixels(row));
         }
         _stoneEvolutionArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
 
     }
 
@@ -76,13 +77,5 @@ public partial class CampaignView
                 throw new InvalidDataException("Stone evolution inherited move geometry differs.");
         }
     }
-    private CaptureDexEntry? StoneEvolutionCaptureDexEntry(int species) => _stoneEvolutionArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? StoneEvolutionPokedexPage(int species, PokedexMenuPage page) =>
-        _stoneEvolutionArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadStoneEvolutionDexTexture(PokedexMenuTexture texture) => _stoneEvolutionArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     private void DisposeStoneEvolutionPresentation() => _stoneEvolutionArt = null;
 }

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 namespace Game.Content;
 
-public sealed record SilphItemArtDocument(int SchemaVersion, ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record SilphItemArtDocument(int SchemaVersion, ImmutableArray<ItemIcon> Icons,
     ImmutableArray<SnorlaxArtOutput> Outputs);
 
 /// <summary>All 23 distinct Silph pickup/reward source icons. Metadata and item effects remain separate.</summary>
@@ -9,7 +9,7 @@ public sealed class PretSilphItemArt
 {
     public const string GeneratedDirectory = "content/generated/data/services/silph-item-art.json";
     public SilphItemArtDocument Document { get; }
-    public ImmutableArray<PretPewterMachineIcon> Icons => Document.Icons;
+    public ImmutableArray<ItemIcon> Icons => Document.Icons;
     public ImmutableDictionary<string, byte[]> Files { get; }
     private PretSilphItemArt(SilphItemArtDocument document, ImmutableDictionary<string, byte[]> files)
     {
@@ -25,7 +25,9 @@ public sealed class PretSilphItemArt
         {
             SafariSource.Require(expected.Remove(icon.Item.Value) && icon.Width == 24 && icon.Height == 24 &&
                 icon.PngPath == "content/generated/sprites/items.png" , "Silph item icon differs.");
-            _ = PretPewterMachines.TexturePage(icon, files[icon.PngPath]);         }
+            ItemIconAssets.Validate(icon);
+            SafariSource.Require(files.ContainsKey(icon.PngPath), "Silph item texture page is missing.");
+        }
         SafariSource.Require(expected.Count == 0, "Missing Silph item icon.");
         return new(doc, files);
     }

@@ -33,17 +33,22 @@ not generic runtime JSON transformations.
 
 ## Resources and presentation
 
-`data/machine-learning` contains direct files: `pewter.json`, `bill.json`,
-`cerulean.json`, `ssanne.json`, `route11.json`, `vermilion.json`,
-`department-machine-stock.json`, `acquisition-machines.json` and
-`acquisitions.json`. Pewter supplies TM39/TM Case icons; the other early machine
-views retain the selection and presentation fields their consumers use.
-Inventory icons point directly to `sprites/items.png` with explicit rectangles.
-There are no receipt manifests or nested one-file regional packages here.
+The early presentation files `data/machine-learning/{pewter,bill,cerulean,route11}.json`
+contain only `{schemaVersion, icons}`. Rock Tunnel uses the same icon shape in its
+existing item directory. `ItemIconAssets` reads these without loading machine
+compatibility or historical species selections. All icons retain their actual
+item IDs and atlas rectangles in `sprites/items.png`.
 
-Unused standalone compatibility-extension copies are gone. Their eligibility
-values remain in the shared 386-species table. Actual current regional views in
-other item/service resources keep their ordered selections.
+The obsolete S.S. Anne and Vermilion compatibility-only documents are retired.
+Vermilion Gym's separate presentation retains its real icon and trainer portraits;
+it no longer carries an unused TM34 definition. Department machine stock and
+acquisition documents remain actual gameplay inputs. Other live item/service
+resources keep ordered selections where a consumer needs them.
+
+Shared `ItemIcon` metadata is no longer named after Pewter. Empty, duplicate,
+unsafe or invalid-size metadata is rejected; native upload validates actual PNG
+geometry. JSON size is checked before reading the file. No source locks or
+compatibility tables are loaded just to display an icon.
 
 ## Import and verification
 

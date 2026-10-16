@@ -1,3 +1,4 @@
+using Game.Domain.Items;
 using Game.Content;
 using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
@@ -11,7 +12,7 @@ public partial class CampaignView
         RegisterPokemonSprites(source);
 
         RegisterPokemonIcons(source);
-        foreach(var icon in _catalog.BillItems!.Icons.Where(i=>i.Item.Value is "pret:ITEM_NUGGET" or "pret:ITEM_FAME_CHECKER" or "pret:ITEM_SS_TICKET").Concat(PretBillMachines.LoadProject(_root).Icons.Where(i=>i.Item.Value is "pret:ITEM_TM45" or "pret:ITEM_TM43" or "pret:ITEM_TM28")))
+        foreach(var icon in _catalog.BillItems!.Icons.Where(i=>i.Item.Value is "pret:ITEM_NUGGET" or "pret:ITEM_FAME_CHECKER" or "pret:ITEM_SS_TICKET").Concat(ItemIconAssets.LoadProject(_root, "content/generated/data/machine-learning/bill.json", MachineRules.Tm45Id, MachineRules.Tm43Id, MachineRules.Tm28Id)))
         {
             
             _earlyItemIcons.Add(icon.Item,ItemTexture(_catalog.BillItems!.Icons.Contains(icon) ? "data/items/bill" : "data/machine-learning", icon));

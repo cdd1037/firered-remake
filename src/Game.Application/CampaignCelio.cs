@@ -21,7 +21,6 @@ public sealed record CampaignCelioHandoff(int SapphireQuantityBefore, bool Sapph
 
 public sealed partial class CampaignSession
 {
-    public const string CelioRulesVersion = "firered-celio-campaign-v1";
     private const string CelioHandoffScript = "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire";
     private const string CelioSapphireScript = "OneIsland_PokemonCenter_1F_EventScript_SetSapphireMetatile";
     private const string CelioMachineScript = "OneIsland_PokemonCenter_1F_EventScript_SetNetworkMachineOn";

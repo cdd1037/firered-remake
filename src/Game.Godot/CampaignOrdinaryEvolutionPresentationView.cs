@@ -61,6 +61,7 @@ public partial class CampaignView
             else _route22Footprints.Add(species, Pixels(row));
         }
         _ordinaryEvolutionArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
 
     }
 
@@ -76,13 +77,5 @@ public partial class CampaignView
                 throw new InvalidDataException("Ordinary evolution inherited move geometry differs.");
         }
     }
-    private CaptureDexEntry? OrdinaryEvolutionCaptureDexEntry(int species) => _ordinaryEvolutionArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? OrdinaryEvolutionPokedexPage(int species, PokedexMenuPage page) =>
-        _ordinaryEvolutionArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadOrdinaryEvolutionDexTexture(PokedexMenuTexture texture) => _ordinaryEvolutionArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     private void DisposeOrdinaryEvolutionPresentation() => _ordinaryEvolutionArt = null;
 }

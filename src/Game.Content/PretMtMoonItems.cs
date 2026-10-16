@@ -13,7 +13,7 @@ public sealed record PretMtMoonPickup(string Map, string Kind, ItemId Item, int 
     OpeningItemSourceRef? ScriptSource);
 public sealed record PretMtMoonFossil(ItemId Item, string Script, OpeningItemSourceRef Source);
 public sealed record PretMtMoonItemsDocument(int SchemaVersion, ImmutableArray<PretMtMoonItem> Items, ImmutableArray<MachineDefinition> Machines,
-    ImmutableArray<MachineCompatibility> Tm39Compatibility, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<MachineCompatibility> Tm39Compatibility, ImmutableArray<ItemIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Fossils);
 
 /// <summary>All reviewed input, generated and icon bytes are authenticated before bounded composition.</summary>
@@ -31,7 +31,7 @@ public static class PretMtMoonItems
             d.Icons.Length == 12 && d.Pickups.Length == 19 && d.Fossils.Length == 2, "MtMoon item scope differs.");
         foreach (var i in d.Icons)
         {
-            PretPewterMachines.ValidateIcon(i);
+            ItemIconAssets.Validate(i);
         }
         foreach (var p in d.Pickups)
         {

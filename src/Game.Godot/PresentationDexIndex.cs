@@ -15,6 +15,19 @@ internal sealed class PresentationDexIndex
                 () => source.ReadTexture(entry.Footprint!.TexturePath));
     }
 
+    internal void AddEntries(IEnumerable<PokedexMenuEntry> entries, IReadOnlyDictionary<string, byte[]> files)
+    {
+        foreach (var entry in entries)
+        {
+            var portrait = entry.Portrait ?? throw new InvalidDataException("Dex portrait missing.");
+            var footprint = entry.Footprint ?? throw new InvalidDataException("Dex footprint missing.");
+            Add(entry, new(entry.SourceSpeciesId, entry.NationalNumber, entry.Name, entry.Category,
+                entry.DisplayCategory, entry.HeightDecimeters, entry.WeightHectograms, entry.HeightDisplay,
+                entry.WeightDisplay, entry.Description, footprint.TexturePath, portrait.TexturePath, entry.HabitatTitle),
+                () => files[portrait.TexturePath], () => files[footprint.TexturePath]);
+        }
+    }
+
     internal void Add(PokedexMenuEntry entry, CaptureDexEntry capture, Func<byte[]> portrait, Func<byte[]> footprint)
     {
         _entries[entry.SourceSpeciesId] = entry;
@@ -23,6 +36,8 @@ internal sealed class PresentationDexIndex
         _textures[entry.Footprint ?? throw new InvalidDataException("Dex footprint missing.")] = footprint;
     }
 
+    internal PokedexMenuPage? Present(int species, PokedexMenuPage page) => Entry(species) is { } entry
+        ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     internal PokedexMenuEntry? Entry(int species) => _entries.GetValueOrDefault(species);
     internal CaptureDexEntry? CaptureEntry(int species) => _captureEntries.GetValueOrDefault(species);
     internal byte[]? ReadTexture(PokedexMenuTexture texture) => _textures.TryGetValue(texture, out var read) ? read() : null;

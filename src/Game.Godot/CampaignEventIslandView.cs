@@ -41,14 +41,8 @@ public partial class CampaignView
         foreach(var row in EventIslandManifest.GetProperty("fragments").EnumerateArray())
             _eventRockFragments.Add(row.GetProperty("ordinal").GetInt32(),EventIslandPixels(row));
 
+        _supplementalDex.AddEntries(_eventIslandDex.Values, _eventIslandArt.Files);
     }
-    private CaptureDexEntry? EventIslandCaptureDexEntry(int species)=>!_eventIslandDex.TryGetValue(species,out var e)?null:
-        new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,
-            e.HeightDisplay,e.WeightDisplay,e.Description,e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
-    private PokedexMenuPage? EventIslandPokedexPage(int species,PokedexMenuPage page)=>_eventIslandDex.TryGetValue(species,out var e)
-        ?page with{Portrait=e.Portrait,Footprint=page.Caught?e.Footprint:null}:null;
-    private byte[]? ReadEventIslandDexTexture(PokedexMenuTexture texture)=>_eventIslandArt is not null&&
-        _eventIslandDex.Values.Any(e=>e.Portrait==texture||e.Footprint==texture)?_eventIslandArt.Files[texture.TexturePath]:null;
     private void VerifyEventIslandMoveGeometry()
     {
         foreach(var row in EventIslandManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())

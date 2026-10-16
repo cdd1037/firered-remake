@@ -8,7 +8,7 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretCityServiceItemsDocument(int SchemaVersion, ImmutableArray<MachineItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
+public sealed record PretCityServiceItemsDocument(int SchemaVersion, ImmutableArray<MachineItem> Items, ImmutableArray<ItemIcon> Icons);
 
 /// <summary>Authenticates Fan Club voucher, Old Rod and Bicycle exchange content. Registers no gameplay handlers.</summary>
 public sealed class PretCityServices
@@ -17,7 +17,7 @@ public sealed class PretCityServices
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<MachineItem> Items { get; }
-    public ImmutableArray<PretPewterMachineIcon> Icons { get; }
+    public ImmutableArray<ItemIcon> Icons { get; }
     public ImmutableArray<MapId> ReusedMapIds => [new("map.cerulean-city-bike-shop")];
 
     public string GeneratedDirectory { get; }

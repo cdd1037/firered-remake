@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 
@@ -12,13 +13,26 @@ public static class HeldItemTransferRules
     public static bool CanHold(EarlyShopCatalog catalog, ItemId item, MachineCatalog? machines = null)
     {
         EarlyShopInventoryRules.ValidateCatalog(catalog);
-        if (machines is not null)
-        {
-            MachineRules.ValidateCatalog(machines);
-            if (MachineRules.Definition(machines, item) is {} machine)
-                // tm_case.c IS_HM uses source importance, not the move or item name.
-                return machine.Machine.Item is { Importance: 0, Pocket: "POCKET_TM_CASE" };
-        }
+        if (machines is not null) MachineRules.ValidateCatalog(machines);
+        return CanHoldCore(catalog, item, machines);
+    }
+
+    /// <summary>Bind immutable Give eligibility once for a composed inventory. This does not grant stock,
+    /// authorize transfers, or include mail, which requires its separate composer workflow.</summary>
+    public static FrozenSet<ItemId> BuildHoldableItems(EarlyShopCatalog catalog, MachineCatalog? machines = null)
+    {
+        EarlyShopInventoryRules.ValidateCatalog(catalog);
+        if (machines is not null) MachineRules.ValidateCatalog(machines);
+        return catalog.Items.Select(item => item.Id)
+            .Concat(machines?.Machines.Select(machine => machine.Machine.Item.Id) ?? [])
+            .Where(item => CanHoldCore(catalog, item, machines)).ToFrozenSet();
+    }
+
+    private static bool CanHoldCore(EarlyShopCatalog catalog, ItemId item, MachineCatalog? machines)
+    {
+        if (machines is not null && MachineRules.Definition(machines, item) is {} machine)
+            // tm_case.c IS_HM uses source importance, not the move or item name.
+            return machine.Machine.Item is { Importance: 0, Pocket: "POCKET_TM_CASE" };
         return EarlyShopInventoryRules.Find(catalog, item) is { Importance: 0 } definition &&
             definition.Pocket is "POCKET_ITEMS" or "POCKET_BERRY_POUCH" or "POCKET_POKE_BALLS" &&
             definition.SourceItemSymbol != "ITEM_ENIGMA_BERRY" && !PokemonStorageRules.IsMailItem(definition.SourceItemSymbol);

@@ -6,7 +6,7 @@ using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretCeruleanItemsDocument(int SchemaVersion, PretMtMoonItem Item, EarlyShopStock Shop, PretPewterMachineIcon Icon);
+public sealed record PretCeruleanItemsDocument(int SchemaVersion, PretMtMoonItem Item, EarlyShopStock Shop, ItemIcon Icon);
 
 /// <summary>Authenticates original source, the generated data and palette-derived Super Potion art.</summary>
 public static class PretCeruleanItems
@@ -24,7 +24,7 @@ public static class PretCeruleanItems
         CeruleanItemRules.ValidateSuperPotion(Definition(document.Item));
         CeruleanItemRules.ValidateStock(document.Shop);
         Require(document.Icon.Item == CeruleanItemRules.SuperPotionId, "Cerulean item icon identity differs.");
-        PretPewterMachines.ValidateIcon(document.Icon);
+        ItemIconAssets.Validate(document.Icon);
         return document;
     }
 

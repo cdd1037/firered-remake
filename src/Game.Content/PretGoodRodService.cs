@@ -14,7 +14,7 @@ public sealed class PretGoodRodService
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<MachineItem> Items { get; }
-    public ImmutableArray<PretPewterMachineIcon> Icons { get; }
+    public ImmutableArray<ItemIcon> Icons { get; }
     public string GeneratedDirectory { get; }
 
     private PretGoodRodService(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,

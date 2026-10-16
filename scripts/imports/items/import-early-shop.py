@@ -7,8 +7,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
-import base64
-import importlib.util
 import json
 import pathlib
 import re
@@ -19,6 +17,8 @@ sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 sys.path.insert(0, str(ROOT/'scripts/lib'))
 from item_icon_exports import item_icon_path, output_materials
+from image_io import indexed_png, png
+from ui_tiles import palette, rgba
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-viridian-pewter-shop-v1'
 SYMBOLS = ['ITEM_POKE_BALL', 'ITEM_POTION', 'ITEM_ANTIDOTE', 'ITEM_PARALYZE_HEAL',
@@ -139,10 +139,6 @@ def convert(raw, out):
         shift = int(match('include/constants/battle.h', r'^#define STATUS1_' + status + r'\s+\(1 << (\d+)\)')[1])
         if (1 << shift) != expected:
             raise ValueError('Supported status1 bit differs')
-    # Reuse the already-reviewed local PNG codec, not an upstream tool or its scripts.
-    spec = importlib.util.spec_from_file_location('early_shop_codec', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-    codec = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(codec)
     icons, icon_outputs = [], {}
     for symbol in SYMBOLS:
         table = 'src/data/item_icon_table.h'
@@ -155,13 +151,12 @@ def convert(raw, out):
                 raise ValueError('Icon binding outside source lock')
             bindings.append(path)
         image_path, palette_path = bindings
-        w, h, indices, _ = codec.indexed_png(sources[image_path])
+        w, h, indices, _ = indexed_png(sources[image_path])
         if (w, h) != (24, 24):
             raise ValueError('Item icon dimensions differ')
-        rgba = codec.rgba(indices, codec.palette(sources[palette_path]))
-        png = codec.png(w, h, rgba)
+        pixels = rgba(indices, palette(sources[palette_path]))
         filename = item_icon_path(image_path, palette_path)
-        icon_outputs[filename] = png
+        icon_outputs[filename] = png(w, h, pixels)
         # Binary sources use a one-line identity span; source text line counts are not meaningful for PNG.
         image_ref = dict(path=image_path, symbol=m[1], startLine=1, endLine=1)
         icons.append(dict(item=dict(value='pret:' + symbol), width=w, height=h, pngPath=filename))

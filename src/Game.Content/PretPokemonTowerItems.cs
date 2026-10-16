@@ -6,7 +6,7 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 namespace Game.Content;
 
-public sealed record PretPokemonTowerItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
+public sealed record PretPokemonTowerItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<ItemIcon> Icons);
 public sealed record PretPokemonTowerPickup(string Map, string Kind, int? LocalId, int? EventIndex,
     int X, int Y, int Elevation, string Flag, int SourceFlagId, bool InitiallyHidden, bool Underfoot,
     bool RequiresItemfinder, bool AllowsOrdinaryInteraction, ItemId Item, int Quantity, string? Script,
@@ -17,27 +17,7 @@ public sealed record PretPokemonTowerPickupsDocument(int SchemaVersion, Immutabl
     [JsonIgnore] public ImmutableArray<PretPokemonTowerPickup> OrdinaryPickups =>
         Pickups.Where(p => p.AllowsOrdinaryInteraction && !p.RequiresItemfinder && !p.Underfoot).ToImmutableArray();
 }
-public sealed record PretPokemonTowerFluteReward(ItemId Item, int Quantity, string Map, int LocalId,
-    int X, int Y, int Elevation, string ActorHideFlag, int SourceActorHideFlagId, string ObtainedFlag,
-    int SourceObtainedFlagId, string Fanfare, ImmutableArray<string> SourceOrder,
-    OpeningItemSourceRef MapSource, OpeningItemSourceRef ScriptSource);
-public sealed record PretPokemonTowerFluteContract(ItemId Item, bool Consumed, bool Registrable,
-    bool FieldUsesAwakeningOnEntirePlayerParty, bool FieldChecksSoundproof, bool BattleTargetsBothParties,
-    bool BattleChecksSoundproof, bool BattleClearsActiveNightmare, int SleepStatusMask, uint NightmareStatusMask,
-    int BattleSleepingPartyStatusWrite, bool BattleConsumesAction, string Fanfare, bool FanfareOnlyWhenWaking,
-    string FieldNoEffectMessage, string BattleNoEffectMessage, bool ExecutionImplemented,
-    ImmutableArray<OpeningItemSourceRef> Sources);
-public sealed record PretPokemonTowerUnderfootContract(ItemId Item, ItemId RequiredItem, int SourceRequiredItemId,
-    string Map, int X, int Y, int Elevation, string Flag, int SourceFlagId, bool BlocksOrdinaryInteraction,
-    bool RequiresExactPlayerTile, int ForcedQuantity, int OccupyingActorLocalId, string OccupyingActorHideFlag,
-    int SourceOccupyingActorHideFlagId, bool HasExplicitRescueFlagCheck, bool SetPickupFlagOnlyAfterSuccessfulAdd,
-    bool ExecutionImplemented, ImmutableArray<OpeningItemSourceRef> Sources);
-public sealed record PretPokemonTowerItemUseNote(ItemId Item, string Status, ImmutableArray<string> Rules,
-    ImmutableArray<OpeningItemSourceRef> Sources);
-public sealed record PretPokemonTowerItemContractsDocument(int SchemaVersion, PretPokemonTowerFluteReward FluteReward, PretPokemonTowerFluteContract PokeFlute,
-    PretPokemonTowerUnderfootContract SootheBell, ImmutableArray<PretPokemonTowerItemUseNote> ItemUseNotes);
-
-/// <summary>Authenticates metadata and source contracts; does not enable any gameplay handler.</summary>
+/// <summary>Loads Tower item metadata, inventory icons and pickup declarations.</summary>
 public static class PretPokemonTowerItems
 {
     public const string Profile = PokemonTowerItemRules.Profile;
@@ -58,7 +38,7 @@ public static class PretPokemonTowerItems
         {
             Require(document.Items.Any(i => i.Metadata.Item.Id == icon.Item) &&
                 icon.Region is not null, "Pokemon Tower icon identity differs.");
-            PretPewterMachines.ValidateIcon(icon);
+            ItemIconAssets.Validate(icon);
         }
         Require(document.Icons.Select(i => i.Item).Distinct().Count() == 5, "Duplicate Pokemon Tower icons.");
         return document;
@@ -101,42 +81,6 @@ public static class PretPokemonTowerItems
             if (special) Require(pickup.Map == "MAP_POKEMON_TOWER_7F" && pickup.X == 11 && pickup.Y == 4 &&
                 pickup.EventIndex == 0 && pickup.Flag == "FLAG_HIDDEN_ITEM_POKEMON_TOWER_7F_SOOTHE_BELL" &&
                 pickup.SourceFlagId == 1159, "Soothe Bell location differs.");
-        }
-        return document;
-    }
-    public static PretPokemonTowerItemContractsDocument LoadContractsProject(string root, SharedMachineCatalog? shared = null)
-    {
-        var items = LoadProject(root, shared);
-        var bytes = PretCeladonApproachSource.Read(root,"content/generated/" + Stem + "/pokemon-tower-item-contracts.json");
-        var document = ContentJson.ParseStrict<PretPokemonTowerItemContractsDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 1 &&
-            document.ItemUseNotes.Length == 4, "Pokemon Tower item contract scope differs.");
-        var reward = document.FluteReward;
-        Require(reward.Item == PokemonTowerItemRules.PokeFluteId && reward.Quantity == 1 &&
-            reward.Map == "MAP_LAVENDER_TOWN_VOLUNTEER_POKEMON_HOUSE" && reward.LocalId == 1 &&
-            reward.X == 3 && reward.Y == 3 && reward.Elevation == 3 && reward.ActorHideFlag == "FLAG_HIDE_POKEHOUSE_FUJI" &&
-            reward.SourceActorHideFlagId == 53 && reward.ObtainedFlag == "FLAG_GOT_POKE_FLUTE" &&
-            reward.SourceObtainedFlagId == 573 && reward.Fanfare == "MUS_OBTAIN_KEY_ITEM" && reward.SourceOrder.Length == 7,
-            "Fuji home flute reward differs.");
-        var flute = document.PokeFlute;
-        Require(flute.Item == PokemonTowerItemRules.PokeFluteId && !flute.Consumed && !flute.Registrable &&
-            flute.FieldUsesAwakeningOnEntirePlayerParty && !flute.FieldChecksSoundproof && flute.BattleTargetsBothParties &&
-            flute.BattleChecksSoundproof && flute.BattleClearsActiveNightmare && flute.SleepStatusMask == 7 &&
-            flute.NightmareStatusMask == 1u << 27 && flute.BattleSleepingPartyStatusWrite == 0 && flute.BattleConsumesAction &&
-            flute.Fanfare == "MUS_POKE_FLUTE" && flute.FanfareOnlyWhenWaking && !flute.ExecutionImplemented &&
-            !flute.Sources.IsDefaultOrEmpty, "Poke Flute source behavior contract differs.");
-        var bell = document.SootheBell;
-        Require(bell.Item == PokemonTowerItemRules.SootheBellId && bell.RequiredItem == new ItemId("pret:ITEM_ITEMFINDER") &&
-            bell.SourceRequiredItemId == 261 && bell.Map == "MAP_POKEMON_TOWER_7F" && bell.X == 11 && bell.Y == 4 &&
-            bell.Elevation == 3 && bell.Flag == "FLAG_HIDDEN_ITEM_POKEMON_TOWER_7F_SOOTHE_BELL" && bell.SourceFlagId == 1159 &&
-            bell.BlocksOrdinaryInteraction && bell.RequiresExactPlayerTile && bell.ForcedQuantity == 1 && bell.OccupyingActorLocalId == 1 &&
-            bell.OccupyingActorHideFlag == "FLAG_HIDE_TOWER_FUJI" && bell.SourceOccupyingActorHideFlagId == 52 &&
-            !bell.HasExplicitRescueFlagCheck && bell.SetPickupFlagOnlyAfterSuccessfulAdd && !bell.ExecutionImplemented &&
-            !bell.Sources.IsDefaultOrEmpty, "Soothe Bell source pickup contract differs.");
-        foreach (var note in document.ItemUseNotes)
-        {
-            Require(items.Items.Any(i => i.Metadata.Item.Id == note.Item) && note.Status == "metadata-only" &&
-                !note.Rules.IsDefaultOrEmpty && !note.Sources.IsDefaultOrEmpty, "Pokemon Tower item-use note differs.");
         }
         return document;
     }

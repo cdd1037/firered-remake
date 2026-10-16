@@ -12,7 +12,7 @@ public partial class CampaignView
     private string SingleBattleItemName(ItemId item)=>_catalog.PresetDoubleItems?.Find(item)?.Name??InventoryName(item);
     private bool TryOpenSingleBattleItem(ItemId item,CampaignWildBattle battle)
     {
-        if(!_session.FullBattleItemsEnabled||_captureBagPocket==2)return false;
+        if(_captureBagPocket==2)return false;
         if(item==SsAnneItemRules.BerryPouchId)
         {_capturePouchSelected=_captureBagSelected;_captureBerries=true;_wildMenu="bag";_wildCursor=0;return true;}
         var definition=_catalog.PresetDoubleItems!.Find(item);
@@ -45,7 +45,7 @@ public partial class CampaignView
     };
     private bool SingleMedicineInput(InputEventKey key,CampaignWildBattle battle)
     {
-        if(!_session.FullBattleItemsEnabled||_wildMedicineItem is not {} item||_wildMenu is not ("medicine-target" or "medicine-move"))return false;
+        if(_wildMedicineItem is not {} item||_wildMenu is not ("medicine-target" or "medicine-move"))return false;
         bool move=_wildMenu=="medicine-move";
         int count=move?_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length:_session.State.Party.Length;
         if(key.Keycode is Key.Up or Key.Left)_wildCursor=Math.Max(0,_wildCursor-1);

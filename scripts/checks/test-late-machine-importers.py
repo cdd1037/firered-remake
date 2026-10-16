@@ -141,10 +141,16 @@ class LateMachineImporterTests(unittest.TestCase):
         self.assertNotIn('fuchsia-gym-machines.json', outputs)
         module = load('imports/story/import-vermilion-gym-assets.py')
         lock = module.read_lock()
-        sources, local_inputs = module.authenticated_inputs(lock, RAW, root=ROOT)
-        self.assertNotIn('content/generated/data/machine-learning/ssanne.json', local_inputs)
-        outputs = module.build(lock, sources, local_inputs)
-        self.compare('content/generated/ui/vermilion-gym-assets/assets.json', json.loads(outputs['assets.json']))
+        sources = module.read_sources(lock, RAW)
+        outputs = module.build(sources)
+        actual = json.loads(outputs['assets.json'])
+        self.assertEqual({'schemaVersion', 'icon', 'portraits'}, set(actual))
+        self.assertEqual([], references(actual))
+        retained = json.loads((ROOT / 'content/generated/ui/vermilion-gym-assets/assets.json').read_bytes())
+        self.assertEqual(retained['portraits'], actual['portraits'])
+        from item_icon_exports import decode_icon_page
+        self.assertEqual(decode_icon_page((ROOT / retained['icon']['pngPath']).read_bytes(), retained['icon']).tobytes(),
+                         decode_icon_page(outputs[actual['icon']['pngPath']], actual['icon']).tobytes())
         outputs = load('imports/items/import-safari-items.py').generate(ROOT)
         self.compare('content/generated/data/items/safari/machines.json',
                      json.loads(outputs['content/generated/data/items/safari/machines.json']))

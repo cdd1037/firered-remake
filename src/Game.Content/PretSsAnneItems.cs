@@ -8,7 +8,7 @@ using Game.Domain.Ids;
 
 namespace Game.Content;
 
-public sealed record PretSsAnneItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, PretBillSourceItem BerryPouch, ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record PretSsAnneItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, PretBillSourceItem BerryPouch, ImmutableArray<ItemIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups);
 
 /// <summary>Authenticates fourteen ship item declarations, their icons, twelve pickups and the Berry Pouch dependency.</summary>
@@ -32,7 +32,7 @@ public static class PretSsAnneItems
             var item = definitions[n]; var icon = document.Icons[n];
             Require(item.Metadata.Item.Id.Value == "pret:ITEM_" + items[n] && icon.Item == item.Metadata.Item.Id,
                 "S.S. Anne item order or icon differs.");
-            PretPewterMachines.ValidateIcon(icon);
+            ItemIconAssets.Validate(icon);
         }
         foreach (var pickup in document.Pickups)
         {

@@ -5,9 +5,6 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private int HighestSupportedBadge=>8;
-    private bool HasUnimplementedBadge(CampaignState state)=>Enumerable.Range(HighestSupportedBadge+1,8-HighestSupportedBadge)
-        .Any(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"));
     public int WhiteOutMoneyLoss=>WhiteOutLoss(State);
     private int WhiteOutLoss(CampaignState state)=>ViridianGymWhiteoutRules.Loss(state.Money,state.Party.Max(p=>p.Pokemon.Level),Enumerable.Range(1,8).Count(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET")));
     private bool IsVictoryRoadTrainer(TrainerId id)=>_content.VictoryRoadTrainerParties?.Trainers.TryGetValue(id,out var trainer)==true&&!trainer.DoubleBattle;

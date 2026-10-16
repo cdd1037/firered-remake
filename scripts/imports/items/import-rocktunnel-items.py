@@ -96,9 +96,7 @@ def convert(lock,data):
  if '.equ REQUIRED_OWNED_MONS, 20' not in aide_text or 'checkitemspace ITEM_EVERSTONE' not in aide_text or 'setflag FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE' not in aide_text:raise ValueError('Everstone aide source differs')
  doc=dict(schemaVersion=1,items=defs[:-1],icons=icons[:-1],pickups=pickups)
  outputs['rocktunnel-items.json']=runtime_json_bytes(doc, default=item_json)
- from machine_catalog import machine_definitions
- machine_doc=dict(schemaVersion=1,machines=machine_definitions(ROOT,
-  'content/generated/data/items/rocktunnel/rocktunnel-machines.json','machines'),icons=[icons[-1]])
+ machine_doc=dict(schemaVersion=1,icons=[icons[-1]])
  outputs['rocktunnel-machines.json']=encoded(machine_doc)
  outputs['manifest.json']=encoded(dict(schemaVersion=1,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs

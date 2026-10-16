@@ -11,7 +11,7 @@ public sealed record PretBillSourceItem(MachineItem Metadata, ImmutableArray<int
 public sealed record PretBillDexView(SpeciesId Species, int SourceSpeciesId, int NationalDex, string Name, int X, int Y, int Width, int Height,
     bool MarksSeen, bool MarksOwned, string PngPath, OpeningItemSourceRef Source,
     OpeningItemSourceRef PaletteSource, OpeningItemSourceRef ScriptSource, OpeningItemSourceRef NameSource);
-public sealed record PretBillItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record PretBillItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<ItemIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Rewards,
     ImmutableArray<PretBillDexView> DexViews);
 
@@ -36,7 +36,7 @@ public static class PretBillItems
             var item = document.Items[n]; var icon = document.Icons[n];
             Require(item.Metadata.Item.Id.Value == "pret:ITEM_" + items[n] &&
                 icon.Item == item.Metadata.Item.Id, "Bill item order or icon differs.");
-            PretPewterMachines.ValidateIcon(icon);
+            ItemIconAssets.Validate(icon);
         }
         foreach (var pickup in document.Pickups)
         {
@@ -65,7 +65,7 @@ public static class PretBillItems
     {
         var document = Load(Utf8.GetString(Read(root,            "content/generated/data/items/bill/bill-items.json")), (shared ?? SharedMachineCatalog.LoadProject(root)));
         foreach (var icon in document.Icons)
-            _ = PretPewterMachines.TexturePage(icon, Read(root, icon.PngPath));
+            _ = Read(root, icon.PngPath);
         foreach (var view in document.DexViews)
             _ = DexPng(view, Read(root, "content/generated/data/items/bill/" + view.PngPath));
         return document;

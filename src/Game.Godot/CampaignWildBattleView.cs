@@ -426,44 +426,7 @@ public partial class CampaignView
             }
             return true;
         }
-        if (_wildMenu == "bag")
-        {
-            int entries = (_session.State.Inventory?.BagItems.Length ?? 0) + 1;
-            if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
-            if (key.Keycode == Key.Down) _wildCursor = Math.Min(entries - 1, _wildCursor + 1);
-            if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _wildCursor == entries - 1) { _wildMenu = "actions"; _wildCursor = 0; }
-            else if (key.Keycode == Key.Enter) { _wildMenu = "bag-actions"; _wildCursor = 0; }
-            return true;
-        }
-        if (_wildMenu == "bag-actions")
-        {
-            if (key.Keycode is Key.Up or Key.Down) _wildCursor ^= 1;
-            if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _wildCursor == 1) { _wildMenu = "bag"; _wildCursor = 0; }
-            else if (key.Keycode == Key.Enter) { _wildMenu = "medicine-target"; _wildCursor = 0; }
-            return true;
-        }
         if (SingleMedicineInput(key,b)) return true;
-        if (_wildMenu == "medicine-target")
-        {
-            if(_session.BattleMedicineEnabled&&_wildMedicineItem is {} medicine)
-            {
-                int cancel=_session.State.Party.Length;
-                if(key.Keycode==Key.Up)_wildCursor=Math.Max(0,_wildCursor-1);
-                if(key.Keycode==Key.Down)_wildCursor=Math.Min(cancel,_wildCursor+1);
-                if(key.Keycode==Key.Backspace||key.Keycode==Key.Enter&&_wildCursor==cancel)
-                {_wildMenu="bag";_wildCursor=_captureBagSelected;}
-                else if(key.Keycode==Key.Enter)
-                {
-                    var selected=_session.State.Party[_wildCursor];
-                    if(!ApplyWildChoice(new("battle_medicine",Text:medicine.Value,PartyIndex:_wildCursor){TargetInstanceId=selected.InstanceId}))
-                        _wildNoticeReturn="medicine-target";
-                }
-                return true;
-            }
-            if (key.Keycode == Key.Backspace) { _wildMenu = "bag"; _wildCursor = 0; }
-            else if (key.Keycode == Key.Enter && !ApplyWildChoice(new("battle_potion", PartyIndex: b.ActivePartyIndex))) _wildNoticeReturn = "bag";
-            return true;
-        }
         if (_wildMenu == "party")
         {
             int cancel = _session.State.Party.Length;
@@ -590,15 +553,7 @@ public partial class CampaignView
             SourceText(_battleMenuFont, new(168 + width, 138), _catalog.PokemonContent!.Catalog.Moves[move.Move].Type.Replace("TYPE_", "", StringComparison.Ordinal));
         }
     }
-    private void DrawWildParty(CampaignWildBattle b)
-    {
-        if(_wildMenu=="medicine-target"&&_session.BattleMedicineEnabled){DrawCaptureParty(b,true,true);return;}
-        if (_wildMenu == "party") { DrawCaptureParty(b, true, true); return; }
-        // Functional one-member summary; the original full-screen party presentation remains a separate gate.
-        _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112)); var p = b.DisplayPlayer;
-        SourceText(_sourceNormal, new(12, 8), $"{b.OwnedBefore.Nickname} {p.CurrentHp}/{p.Stats.MaxHp} HP");
-        for (int i = 0; i < p.Moves.Length; i++) SourceText(_sourceNormal, new(12, 29 + i * 16), $"{MoveName(p.Moves[i].Move)} {p.Moves[i].CurrentPp}/{p.Moves[i].MaximumPp}");
-    }
+    private void DrawWildParty(CampaignWildBattle b) => DrawCaptureParty(b, true, true);
     private void DrawWildLearning(CampaignWildBattle b)
     {
         var moves = WildRewardRecipient(b).Pokemon.Moves;

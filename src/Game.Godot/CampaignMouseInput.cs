@@ -309,8 +309,7 @@ public partial class CampaignView
             scrolls: true);
         if (_wildMenu == "bag-actions") return PointerRows(point, direction, ref _wildCursor, 2, 168, 130, 72);
         if (_wildMenu == "medicine-move") return PointerRows(point,direction,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
-        if (_wildMenu == "party" ||
-            _wildMenu == "medicine-target" && _session.BattleMedicineEnabled)
+        if (_wildMenu is "party" or "medicine-target")
             return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
         return _wildMenu is "actions" or "moves" && PointerGrid(point, direction, ref _wildCursor, _wildMenu == "moves",
             _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(battle) ? 1 : battle.State.Player.Pokemon.Moves.Length);
@@ -475,11 +474,8 @@ public partial class CampaignView
         }
         if (_wildMenu == "bag-actions") return MouseSelect(point, ref _wildCursor, 2, 168, 130, 72);
         if (_wildMenu == "medicine-move") return MouseSelect(point,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
-        if (_wildMenu == "party")
+        if (_wildMenu is "party" or "medicine-target")
             return MouseSelect(point, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
-        if(_wildMenu=="medicine-target"&&_session.BattleMedicineEnabled)
-            return MouseSelect(point,ref _wildCursor,_session.State.Party.Length+1,8,8,224,14);
-        if (_wildMenu is "party" or "medicine-target") return MouseConfirm(point, new Rect2(8, 8, 224, 16));
         return _wildMenu is "actions" or "moves" && MouseGrid(point, ref _wildCursor, _wildMenu == "moves",
             _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(battle) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }

@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public bool CanGiveHeldItem(ItemId item) => CanGiveMail(item) || _content.EarlyShop is {} shop && HeldItemTransferRules.CanHold(shop, item, _content.Machines);
+    public bool CanGiveHeldItem(ItemId item) => CanGiveMail(item) || _binding.HoldableItems.Contains(item);
 
     private Decision<CampaignState> OpenPartyItemMenu(CampaignState state, CampaignCommand command)
     {

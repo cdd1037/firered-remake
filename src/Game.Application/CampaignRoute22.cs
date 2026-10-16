@@ -83,7 +83,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateRoute22Progress(CampaignState state)
     {
-        if(HasUnimplementedBadge(state))return "save_route22_later_badges_unsupported";
         if(ValidateLeagueRivalProgress(state) is {} lateError)return lateError;
         var rivals=(state.ForestTrainerHistory??[]).Where(h=>_content.Route22Trainers!.Trainers.Keys.Any(t=>t.Value==h.TrainerId)).ToArray();
         bool won=rivals.Any(h=>h.Outcome==WildBattleOutcome.Won);

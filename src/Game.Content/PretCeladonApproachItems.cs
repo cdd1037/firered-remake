@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using Game.Domain.Items;
 using Game.Domain.Ids;
 namespace Game.Content;
-public sealed record PretCeladonApproachItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
+public sealed record PretCeladonApproachItemsDocument(int SchemaVersion,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<ItemIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups,EarlyShopStock Shop);
 public static class PretCeladonApproachItems
 {
@@ -22,7 +22,7 @@ public static class PretCeladonApproachItems
         for(int n=0;n<7;n++)
         {
             var i=d.Items[n];var icon=d.Icons[n];Require(i.Metadata.Item.Id.Value=="pret:ITEM_"+names[n]&&icon.Item==i.Metadata.Item.Id,"Celadon item order differs.");
-PretPewterMachines.ValidateIcon(icon);
+ItemIconAssets.Validate(icon);
         }
         foreach(var p in d.Pickups)
         {

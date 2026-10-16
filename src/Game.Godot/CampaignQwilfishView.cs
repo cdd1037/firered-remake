@@ -30,6 +30,7 @@ public partial class CampaignView
         if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[211])
             throw new InvalidDataException("Qwilfish shared presentation inventory differs.");
         _qwilfishArt = art;
+        _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
 
     }
 
@@ -45,13 +46,5 @@ public partial class CampaignView
                 throw new InvalidDataException("Qwilfish inherited Tower move geometry differs.");
         }
     }
-    private CaptureDexEntry? QwilfishCaptureDexEntry(int species) => _qwilfishArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
-        new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
-    private PokedexMenuPage? QwilfishPokedexPage(int species, PokedexMenuPage page) =>
-        _qwilfishArt?.DexEntries.GetValueOrDefault(species) is { } entry
-            ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
-    private byte[]? ReadQwilfishDexTexture(PokedexMenuTexture texture) => _qwilfishArt is { } art &&
-        art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
     private void DisposeQwilfishPresentation() => _qwilfishArt = null;
 }
