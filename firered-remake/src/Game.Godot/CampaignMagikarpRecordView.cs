@@ -20,11 +20,7 @@ public partial class CampaignView
         else _magikarpRecordClosedFrame = Engine.GetProcessFrames();
     }
 
-    private bool ConsumeMagikarpRecordTransitionInput(InputEvent input)
-    {
-        if (_magikarpRecordClosedFrame != Engine.GetProcessFrames() || input is InputEventKey { Keycode: Key.F5 or Key.F9 or Key.F12 }) return false;
-        GetViewport().SetInputAsHandled(); return true;
-    }
+    private bool ConsumeMagikarpRecordTransitionInput(InputEvent input) => ConsumeServiceTransitionInput(input, _magikarpRecordClosedFrame);
 
     private bool MagikarpRecordInput(InputEventKey key)
     {

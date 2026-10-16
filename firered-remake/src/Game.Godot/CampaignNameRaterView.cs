@@ -30,11 +30,7 @@ public partial class CampaignView
         }
     }
 
-    private bool ConsumeNameRaterTransitionInput(InputEvent input)
-    {
-        if (_nameRaterClosedFrame != Engine.GetProcessFrames() || input is InputEventKey { Keycode: Key.F5 or Key.F9 or Key.F12 }) return false;
-        GetViewport().SetInputAsHandled(); return true;
-    }
+    private bool ConsumeNameRaterTransitionInput(InputEvent input) => ConsumeServiceTransitionInput(input, _nameRaterClosedFrame);
 
     private bool NameRaterInput(InputEventKey key)
     {

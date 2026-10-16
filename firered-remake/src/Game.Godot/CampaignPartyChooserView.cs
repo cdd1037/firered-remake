@@ -4,6 +4,14 @@ using Godot;
 /// Eligibility and the meaning of a selected row remain with the calling service.</summary>
 public partial class CampaignView
 {
+    // These services share the same transition-frame input barrier. Each caller
+    // still owns when a transition occurs; other overlays have different hotkeys.
+    private bool ConsumeServiceTransitionInput(InputEvent input, ulong transitionFrame)
+    {
+        if (transitionFrame != Engine.GetProcessFrames() || input is InputEventKey { Keycode: Key.F5 or Key.F9 or Key.F12 }) return false;
+        GetViewport().SetInputAsHandled(); return true;
+    }
+
     private static Rect2 ServicePartyRow(int index) => new(8, 6 + index * 18, 224, 18);
     private static readonly Rect2 ServicePartyCancelRow = new(8, 116, 224, 18);
     private Rect2 ServicePartyChooserRow(int index) => index == _session.State.Party.Length

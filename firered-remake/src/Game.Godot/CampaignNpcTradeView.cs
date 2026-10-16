@@ -31,11 +31,7 @@ public partial class CampaignView
         }
     }
 
-    private bool ConsumeNpcTradeTransitionInput(InputEvent input)
-    {
-        if (_npcTradeClosedFrame != Engine.GetProcessFrames() || input is InputEventKey { Keycode: Key.F5 or Key.F9 or Key.F12 }) return false;
-        GetViewport().SetInputAsHandled(); return true;
-    }
+    private bool ConsumeNpcTradeTransitionInput(InputEvent input) => ConsumeServiceTransitionInput(input, _npcTradeClosedFrame);
 
     private bool NpcTradeInput(InputEventKey key)
     {

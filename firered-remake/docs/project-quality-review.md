@@ -225,3 +225,7 @@ Godot构建零警告/错误。独立headless宿主验证正常退出、8模块�
 ## 首战目录边界整理
 
 FirstBattleProfile集中首战支持的招式语义、御三家类型/特性与两招次序；PP、威力、命中率由传入目录提供，LabBattleRewards也以InitialMoves核对PP。保留实际教程能力限制，不扩大到完整战斗框架。三御三家共30个固定场景的改前/改后状态、事件、AI、奖励与RNG trace一致；18项新测试覆盖目录编辑与不支持能力原子拒绝，Battle全1,605项、Domain全164项通过，零失败/跳过。没有更改存档结构、规则版本、字体或玩法数据。
+
+## 服务转换帧输入复用
+
+MoveTutor、NameRater、MagikarpRecord、NpcTrade共用同一转换当帧防穿透helper，各模块仍保留自身触发条件和帧号；F5/F9/F12按原路径放行，StorageCustomization的Escape例外不变。Godot产品与外置宿主构建零警告/错误，四适配器输入矩阵及Storage对照186项断言通过；Name Rater真实脚本选择→取消当帧不穿透，下一帧解除门控，淡出和文本结束后正常推进，退出0。未合并不同语义的保存/路由/preflight名单，不代表Q09整体完成。

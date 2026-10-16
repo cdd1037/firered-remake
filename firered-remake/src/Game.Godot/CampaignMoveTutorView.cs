@@ -68,11 +68,7 @@ public partial class CampaignView
         if (oldActive != MoveTutorActive) _fade = 16.0 / 60;
     }
 
-    private bool ConsumeMoveTutorTransitionInput(InputEvent input)
-    {
-        if (_tutorTransitionFrame != Engine.GetProcessFrames() || input is InputEventKey { Keycode: Key.F5 or Key.F9 or Key.F12 }) return false;
-        GetViewport().SetInputAsHandled(); return true;
-    }
+    private bool ConsumeMoveTutorTransitionInput(InputEvent input) => ConsumeServiceTransitionInput(input, _tutorTransitionFrame);
 
     private int TutorRowCount => Teaching is not { } scene ? 0 : scene.Party ? _session.State.Party.Length + 1 :
         scene.Replace ? _session.State.Party[scene.PartyIndex].Pokemon.Moves.Length + 1 : scene.Moves ? _session.State.MoveReminder!.Moves.Length + 1 : scene.Choice || scene.Payment ? 2 : 0;
