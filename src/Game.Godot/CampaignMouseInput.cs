@@ -246,11 +246,7 @@ public partial class CampaignView
         if (_fieldMenuMode is "save-confirm" or "save-overwrite") return PointerRows(point, direction, ref _fieldSaveChoice, 2, 192, 73, 40);
         if (_fieldMenuMode == "start") return PointerRows(point, direction, ref _fieldMenuCursor, FieldMenuEntries().Length, 176, 8, 56, 15);
         if (_fieldMenuMode == "actions") return PointerRows(point, direction, ref _fieldPartyAction, FieldPartyActions().Length, 160, FieldPartyActionTop, 72);
-        if (PointerRows(point, direction, ref _fieldPartyCursor, _session.State.Party.Length, 8, 8, 224, 20)) return true;
-        if (!new Rect2(8, 132, 76, 16).HasPoint(point)) return false;
-        if (direction != 0) return MouseNavigationKey(direction);
-        if (_fieldPartyCursor == _session.State.Party.Length) return false;
-        _fieldPartyCursor = _session.State.Party.Length; return true;
+        return PointerNativeParty(point, direction, ref _fieldPartyCursor, _session.State.Party.Length);
     }
     private bool NavigateItemsPointer(Vector2 point, int direction)
     {

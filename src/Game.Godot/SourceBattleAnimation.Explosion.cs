@@ -20,13 +20,11 @@ public sealed partial class SourceBattleAnimation
 {
     private void ValidateSubroutines()
     {
-        if(SourceExplosionAnimationCatalog.Supports(_script.MoveId))
+        foreach(var (name,commands) in _script.Subroutines)
         {
-            if(_script.Subroutines.Count!=2||_script.Subroutines.Any(p=>p.Key is not ("SelfDestructExplode" or "Explosion1")||p.Value.Length!=16||p.Value[^1].Op!="return"||p.Value.Any(c=>c.Op=="call")))
-                throw new InvalidDataException("Unadmitted explosion source subroutine.");
+            int count=name switch{"GrowthEffect"=>4,"SelfDestructExplode" or "Explosion1"=>16,"EmberFireHit"=>3,"FireSpreadEffect"=>8,"FlamethrowerCreateFlames"=>5,_=>0};
+            if(count==0||commands.Length!=count||commands[^1].Op!="return"||commands.Any(c=>c.Op=="call"))throw new InvalidDataException("Unadmitted source subroutine.");
         }
-        else if(_script.Subroutines.Count>1||_script.Subroutines.Any(p=>p.Key!="GrowthEffect"||p.Value.Length!=4||p.Value[^1].Op!="return"||p.Value.Any(c=>c.Op=="call")))
-            throw new InvalidDataException("Unadmitted source subroutine.");
     }
     private bool ValidateExplosionOperand(SourceAnimationCommand c)
     {
@@ -53,8 +51,18 @@ public sealed partial class SourceBattleAnimation
         if(c.Op is "call" or "return" or "loadspritegfx" or "playsewithpan" or "createsprite" or "createvisualtask")Fail(c,"Unadmitted explosion source operand.");
         return false;
     }
-    private static int PaletteNumber(string value)=>value switch
-    {"F_PAL_BG | F_PAL_BATTLERS"=>31,"F_PAL_BG"=>1,"F_PAL_ATTACKER"=>2,"RGB_RED"=>31,"RGB_WHITE"=>32767,"RGB_WHITEALPHA"=>65535,"RGB_BLACK"=>0,"RGB(26, 8, 8)"=>26|(8<<5)|(8<<10),_=>Number(value)};
+    private static int PaletteNumber(string value)
+    {
+        value=value.Trim();
+        if(value.Contains('|'))return value.Split('|').Select(PaletteNumber).Aggregate(0,(a,b)=>a|b);
+        if(value.StartsWith("RGB(",StringComparison.Ordinal)&&value.EndsWith(')'))
+        {
+            var channels=value[4..^1].Split(',').Select(x=>Number(x.Trim())).ToArray();
+            if(channels.Length!=3||channels.Any(v=>v is <0 or >31))throw new InvalidDataException("RGB555 expression differs.");
+            return channels[0]|channels[1]<<5|channels[2]<<10;
+        }
+        return value switch{"F_PAL_BG"=>1,"F_PAL_ATTACKER"=>2,"F_PAL_TARGET"=>4,"F_PAL_ATK_PARTNER"=>8,"F_PAL_DEF_PARTNER"=>16,"F_PAL_ATK_SIDE"=>10,"F_PAL_DEF_SIDE"=>20,"F_PAL_BATTLERS"=>30,"F_PAL_BATTLERS_2"=>1920,"RGB_RED"=>31,"RGB_WHITE"=>32767,"RGB_WHITEALPHA"=>65535,"RGB_BLACK"=>0,_=>Number(value)};
+    }
     // Original UnpackSelectedBattlePalettes and visible position extensions. The
     // selectors name source palette banks, independent of equal RGB colors.
     private uint SelectPalettes(int selector)

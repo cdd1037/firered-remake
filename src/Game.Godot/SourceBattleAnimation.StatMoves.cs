@@ -98,20 +98,22 @@ public sealed partial class SourceBattleAnimation
     }
     // Original normal palette fade visits BG and OBJ halves on alternate calls,
     // advances by 2 only after the OBJ half, and retains five finishing calls.
-    private sealed class PaletteFade(uint mask,int from,int to,ushort color)
+    private sealed class PaletteFade(uint mask,int from,int to,ushort color,int delay=0)
     {
         private readonly uint _mask=mask;private readonly int _target=to;private readonly ushort _color=color;
-        private int _y=from,_toggle,_finishing=-1;
+        private readonly int _delay=Math.Max(0,delay),_delta=2+Math.Max(0,-delay);
+        private int _y=from,_toggle,_finishing=-1,_delayCounter=Math.Max(0,delay);
         public bool Active{get;private set;}=true;
         public void Update(SourceBattleAnimation owner)
         {
             if(!Active)return;
             if(_finishing>=0){if(_finishing++==4)Active=false;return;}
+            if(_toggle==0){if(_delayCounter<_delay){_delayCounter++;return;}_delayCounter=0;}
             owner.BlendPalettes(_mask&(_toggle==0?0xffffu:0xffff0000u),_y,_color);
             _toggle^=1;
             if(_toggle!=0)return;
             if(_y==_target)_finishing=0;
-            else _y=_y<_target?Math.Min(_y+2,_target):Math.Max(_y-2,_target);
+            else _y=_y<_target?Math.Min(_y+_delta,_target):Math.Max(_y-_delta,_target);
         }
     }
     private sealed class BlendCycleTask:VisualTask

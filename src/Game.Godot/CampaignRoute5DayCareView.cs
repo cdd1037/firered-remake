@@ -14,7 +14,7 @@ public partial class CampaignView
         state.Script.Wait?.Kind == StoryWaitKind.PartySelection;
     private bool DayCareChoosing => IsDayCareChoosing(_session?.State);
     private bool DayCareResidentsChoosing => DayCareChoosing && _session.State.DayCareInteraction!.Stage == CampaignRoute5DayCareStage.Residents;
-    private void ResetDayCarePartyPresentation() => _dayCareActionCursor = _dayCareSummaryPage = -1;
+    private void ResetDayCarePartyPresentation() { _dayCareActionCursor = _dayCareSummaryPage = -1; _partyLastRightSlot = 1; }
 
     // pret 037335f: party_menu.c:2990,3109,3391,3840,6315; data/party_menu.h:1096,1099.
     // Eggs retain SUMMARY/CANCEL. STORE submits the live identity; the source script,
@@ -29,6 +29,7 @@ public partial class CampaignView
 
     private bool DayCarePartyInput(InputEventKey key)
     {
+        if (SummaryExitActive) return true;
         if (DayCareResidentsChoosing) return DayCareResidentsInput(key);
         bool confirm = key.Keycode is Key.Enter or Key.KpEnter or Key.A;
         bool cancel = key.Keycode is Key.Backspace or Key.Escape or Key.B;
@@ -37,8 +38,7 @@ public partial class CampaignView
         {
             if (cancel)
             {
-                _dayCareSummaryPage = -1; _dayCareActionCursor = 0;
-                DayCarePartyTransition();
+                BeginSummaryExit(() => { _dayCareSummaryPage = -1; _dayCareActionCursor = 0; DayCarePartyTransition(); });
             }
             else
             {
@@ -75,8 +75,7 @@ public partial class CampaignView
             return true;
         }
         int count = _session.State.Party.Length + 1;
-        if (key.Keycode is Key.Up or Key.Left) _tutorCursor = (_tutorCursor + count - 1) % count;
-        if (key.Keycode is Key.Down or Key.Right) _tutorCursor = (_tutorCursor + 1) % count;
+        NativePartyMove(key.Keycode, ref _tutorCursor, count - 1);
         if (cancel || confirm && _tutorCursor == count - 1) Apply(new("daycare_cancel"));
         else if (confirm) { _dayCareActionCursor = 0; DayCarePartyTransition(); }
         return true;
@@ -102,9 +101,9 @@ public partial class CampaignView
             _session.State.DayCareInteraction!.Residents.Length + 1, 96, 8, 136, 14);
         if (_dayCareSummaryPage >= 0)
         {
-            if (new Rect2(8, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Left);
-            if (new Rect2(84, 140, 68, 16).HasPoint(point)) return MouseKey(Key.Right);
-            if (new Rect2(172, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Backspace);
+            if (new Rect2(104, 0, 24, 16).HasPoint(point)) return MouseKey(Key.Left);
+            if (new Rect2(128, 0, 80, 16).HasPoint(point)) return MouseKey(Key.Right);
+            if (new Rect2(208, 0, 32, 16).HasPoint(point)) return MouseKey(Key.Backspace);
             return false;
         }
         if (_dayCareActionCursor >= 0)

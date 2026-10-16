@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 20,
-    "missingDedicatedMoveScripts": 334,
+    "dedicatedMoveScripts": 41,
+    "missingDedicatedMoveScripts": 313,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -22,9 +22,9 @@
   "boundaries": {
     "rules": "Ordinary singles and preset doubles share the current battle frame and execution lifecycle. All move identities have recipe admission and controlled public-turn test rows.",
     "specialModes": "Safari, roaming, scripted/tutorial encounters and Trainer Tower have separate application owners; ordinary-core coverage does not establish all of their outcomes. Dynamic Enigma payloads, player communication and external e-Reader inputs are not ordinary-core completion.",
-    "presentation": "Only the twenty listed moves dispatch dedicated scripts. Other moves retain ordinary text/HP/result presentation; no blanket generic-animation parity is claimed.",
+    "presentation": "41 source move scripts are dispatched in bounded tested contexts. Other moves retain ordinary text/HP/result presentation; no generic-animation parity is claimed.",
     "verification": "Maintained tests contain controlled states. Neither their count nor this inventory proves natural full-game travel, original-frame parity or real-speaker audio.",
-    "userDeferrals": "Dedicated animation and comprehensive native audiovisual verification remain deferred separately; they are not reactivated by this documentation cleanup.",
+    "userDeferrals": "Chinese is deferred. The user resumed remaining single-player content, including animation and presentation, on 2026-10-16; completion still requires explicit evidence.",
     "approvedRules": "Keep the existing approved project differences, including end-of-turn doubles KO replacement; this inventory grants no new rule changes.",
     "playerSaves": "Stable field saves and strict Continue are separate from controlled in-battle test serialization."
   },
@@ -115,7 +115,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_ICE_PUNCH",
@@ -155,7 +155,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_GUILLOTINE",
@@ -255,7 +255,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_VINE_WHIP",
@@ -265,7 +265,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_STOMP",
@@ -275,7 +275,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_DOUBLE_KICK",
@@ -305,7 +305,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_ROLLING_KICK",
@@ -315,7 +315,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_SAND_ATTACK",
@@ -335,7 +335,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_HORN_ATTACK",
@@ -385,7 +385,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_WRAP",
@@ -405,7 +405,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_THRASH",
@@ -425,7 +425,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_TAIL_WHIP",
@@ -565,7 +565,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_FLAMETHROWER",
@@ -575,7 +575,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_MIST",
@@ -685,7 +685,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_DRILL_PECK",
@@ -715,7 +715,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_COUNTER",
@@ -745,7 +745,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_ABSORB",
@@ -815,7 +815,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_STUN_SPORE",
@@ -825,7 +825,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_SLEEP_POWDER",
@@ -835,7 +835,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_PETAL_DANCE",
@@ -1405,7 +1405,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_GLARE",
@@ -2935,7 +2935,7 @@
       "metronomePath": "outside-metronome-closure",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_SECRET_POWER",

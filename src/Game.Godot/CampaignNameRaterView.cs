@@ -21,7 +21,7 @@ public partial class CampaignView
             before.Script.Wait?.Kind == StoryWaitKind.Nickname;
         bool naming = after.NameRater is { Target: not null } && after.Nickname is { Submitted: false } &&
             after.Script.Wait?.Kind == StoryWaitKind.Nickname;
-        if (!wasChoosing && choosing) _nameRaterCursor = 0;
+        if (!wasChoosing && choosing) { _nameRaterCursor = 0; _partyLastRightSlot = 1; }
         if (wasChoosing != choosing) _fade = 16.0 / 60;
         if (wasChoosing != choosing || wasNaming != naming)
         {
@@ -44,8 +44,7 @@ public partial class CampaignView
             return true;
         }
         int count = _session.State.Party.Length + 1;
-        if (key.Keycode is Key.Up or Key.Left) _nameRaterCursor = (_nameRaterCursor + count - 1) % count;
-        else if (key.Keycode is Key.Down or Key.Right) _nameRaterCursor = (_nameRaterCursor + 1) % count;
+        if (NativePartyMove(key.Keycode, ref _nameRaterCursor, count - 1)) { }
         else if (key.Keycode is Key.Backspace or Key.Escape) Apply(new("name_rater_cancel"));
         else if (key.Keycode is Key.Enter or Key.KpEnter)
         {

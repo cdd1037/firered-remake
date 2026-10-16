@@ -44,8 +44,17 @@ def run(root,reference,inherited,check=False):
   trainers.append(dict(trainer='pret:'+symbol,sourceTrainerId=int(re.search(r'^#define '+symbol+r'\s+(\d+)',opponents,re.M)[1]),name=re.search(r'\.trainerName = _\("([^"]+)"\)',b)[1],trainerClass=cls,className=re.search(r'\['+cls+r'\]\s*= _\("([^"]+)"\)',classes)[1],trainerPic=pic,portrait=next(r['id'] for r in portraits if r['trainerPic']==pic)))
  emit('hof-monitor',indexed('graphics/field_effects/pics/hof_monitor.png'))
  emit('hof-tiles',indexed('graphics/hall_of_fame/hall_of_fame.png',transparent=False))
+ hof=indexed('graphics/hall_of_fame/hall_of_fame.png',transparent=False);border=Image.new('RGBA',(80,8))
+ for y in range(8):
+  for x in range(8):
+   a=hof.getpixel((8+x,y));b=hof.getpixel((16+x,y));rgb=[min(31,(a[i]>>3)+((b[i]>>3)*7//16)) for i in range(3)];border.putpixel((x,y),tuple((v<<3)|(v>>2) for v in rgb)+(255,))
+ for coefficient in range(8,17):
+  for y in range(8):
+   for x in range(8):
+    b=hof.getpixel((16+x,y));rgb=[(b[i]>>3)*coefficient//16 for i in range(3)];border.putpixel(((coefficient-7)*8+x,y),tuple((v<<3)|(v>>2) for v in rgb)+(255,))
+ emit('hof-border',border)
  emit('confetti',indexed('graphics/misc/confetti.png'))
- for stem in ['player_male','player_female','ground_grass','ground_dirt','ground_city']:
+ for stem in ['player_male','player_female','rival','ground_grass','ground_dirt','ground_city']:
   emit('credits-'+stem,indexed('graphics/credits/'+stem+'.png'))
  for stem in ['copyright','the_end']:
   img=indexed('graphics/credits/'+stem+'.png',transparent=False);tm=struct.unpack('<'+'H'*(len(get('graphics/credits/'+stem+'.bin'))//2),get('graphics/credits/'+stem+'.bin'));canvas=Image.new('RGBA',(256,256))
@@ -55,6 +64,29 @@ def run(root,reference,inherited,check=False):
    if v&0x800:t=t.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
    canvas.paste(t,(n%32*8,n//32*8))
   emit('credits-'+stem,canvas.crop((0,0,240,160)))
+ # Credits use authored intermediate Pokemon pictures, not scaled battle sprites.
+ zoom=Image.new('RGBA',(480,336));zoomrows=[]
+ for col,stem in enumerate(['charizard','venusaur','blastoise','pikachu']):
+  body=re.search(r'sWindowTemplates_'+stem.title()+r'\[\] = \{(.*?)DUMMY_WIN_TEMPLATE',text('src/credits.c'),re.S)[1]
+  coords=re.findall(r'\.tilemapLeft = (\d+),\s*\.tilemapTop = (\d+),\s*\.width = (\d+),\s*\.height = (\d+)',body)
+  for frame,(x,y,w,h) in enumerate(coords):
+   image=indexed('graphics/pokemon/'+stem+'/front.png' if frame==0 else 'graphics/credits/'+stem+'_'+str(frame)+'.png','graphics/pokemon/'+stem+'/normal.pal')
+   need(image.size==(int(w)*8,int(h)*8),'Credits zoom window dimensions')
+   zoom.paste(image,(col*120+int(x)*8-64,frame*112+int(y)*8-16))
+  zoomrows.append(dict(species=stem.upper(),x=col*120))
+ emit('credits-mon-zoom',zoom)
+ for stem in ['charizard','venusaur','blastoise','pikachu']:
+  img=indexed('graphics/credits/pokeball.png','graphics/credits/pokeball_'+stem+'.pal',False);data=get('graphics/credits/pokeball.bin');tm=struct.unpack('<'+'H'*(len(data)//2),data);canvas=Image.new('RGBA',(256,160))
+  for n,v in enumerate(tm):
+   tid=v&1023;t=img.crop((tid%16*8,tid//16*8,tid%16*8+8,tid//16*8+8))
+   if v&0x400:t=t.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+   if v&0x800:t=t.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+   canvas.paste(t,(n%32*8,n//32*8))
+  emit('credits-ball-'+stem,canvas.crop((0,0,240,160)))
+ img=indexed('graphics/credits/white_circle.png',transparent=False);canvas=Image.new('RGBA',(256,256))
+ for n,tid in enumerate(get('graphics/credits/white_circle.bin')):
+  canvas.paste(img.crop((tid%8*8,tid//8*8,tid%8*8+8,tid//8*8+8)),(n%32*8,n//32*8))
+ emit('credits-circle',canvas)
  # Source tile replacement pixels, including alpha clearing on upper layers.
  bases=['data/tilesets/primary/building','data/tilesets/secondary/pokemon_league'];images=[Image.open(io.BytesIO(get(b+'/tiles.png'))) for b in bases]
  pals=[]
@@ -99,9 +131,10 @@ def run(root,reference,inherited,check=False):
     for r,g,b,a in im.getdata():pix.append(((r>>3)*255//31,(g>>3)*255//31,(b>>3)*255//31,a))
     im.putdata(pix);row=emit(stem+'-'+side+'-'+variant,im);row.update(speciesId='pret:'+sym,sourceSpeciesId=sid,side=side,paletteVariant=variant,x=144 if side=='front' else 40,y=8+yoff-elevation if side=='front' else 48+yoff);sprites.append(row)
   pi=int(re.search(r'\['+sym+r'\]\s*=\s*(\d+),',text('src/pokemon_icon.c'))[1]);im=indexed('graphics/pokemon/'+stem+'/icon.png',f'graphics/pokemon/icon_palettes/icon_palette_{pi}.pal').crop((0,0,32,32));row=emit(stem+'-icon',im);row.update(speciesId='pret:'+sym,sourceSpeciesId=sid);icons.append(row)
+ get('src/trig.c');get('graphics/interface/std_menu.pal')
  inputs=[dict(path=p) for p,b in sorted(raw.items())]
  lock=enc(dict(schemaVersion=1,sourceCommit=COMMIT,files=inputs));lockpath=root/'scripts/recipes/presentation/pokemon-league-presentation.lock.json'
- manifest=runtime_json_bytes(dict(schemaVersion=1,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(title=strings['gString_PokemonFireRed_Staff'],texts=texts,commands=commands,maps=maps),texts={k:strings[k] for k in ['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber']},outputs=[dict(path=p) for p,b in sorted(out.items())]));out['manifest.json']=manifest
+ manifest=runtime_json_bytes(dict(schemaVersion=1,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(title=strings['gString_PokemonFireRed_Staff'],texts=texts,commands=commands,maps=maps,zoom=zoomrows,headerColor=[int(v) for v in text('graphics/interface/std_menu.pal').splitlines()[8].split()]),hallSine=[int(float(v)*256) for v in re.findall(r'Q_8_8\((-?[0-9.]+)\)',text('src/trig.c'))[:256]],texts={k:strings[k] for k in ['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber']},outputs=[dict(path=p) for p,b in sorted(out.items())]));out['manifest.json']=manifest
  if check:
   need(lockpath.read_bytes()==lock,'Lock differs')
   for p,b in out.items():need((root/BASE/p).read_bytes()==b,'Generated resource differs: '+p)

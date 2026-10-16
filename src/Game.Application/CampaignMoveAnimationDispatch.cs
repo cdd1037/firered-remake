@@ -13,6 +13,53 @@ public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch
 
 public static class CampaignMoveAnimationPresentation
 {
+    // Shared by single/double projections; zero means no implemented source renderer.
+    private static int SupportedSourceMoveId(string move)=>move switch
+    {
+        "pret:MOVE_POUND" => 1,
+        "pret:MOVE_FIRE_PUNCH" => 7,
+        "pret:MOVE_SCRATCH" => 10,
+        "pret:MOVE_VICE_GRIP" => 11,
+        "pret:MOVE_CUT" => 15,
+        "pret:MOVE_SLAM" => 21,
+        "pret:MOVE_VINE_WHIP" => 22,
+        "pret:MOVE_STOMP" => 23,
+        "pret:MOVE_JUMP_KICK" => 26,
+        "pret:MOVE_ROLLING_KICK" => 27,
+        "pret:MOVE_HEADBUTT" => 29,
+        "pret:MOVE_TACKLE" => 33,
+        "pret:MOVE_BODY_SLAM" => 34,
+        "pret:MOVE_TAKE_DOWN" => 36,
+        "pret:MOVE_DOUBLE_EDGE" => 38,
+        "pret:MOVE_TAIL_WHIP" => 39,
+        "pret:MOVE_EMBER" => 52,
+        "pret:MOVE_FLAMETHROWER" => 53,
+        "pret:MOVE_PECK" => 64,
+        "pret:MOVE_LOW_KICK" => 67,
+        "pret:MOVE_COUNTER" => 68,
+        "pret:MOVE_STRENGTH" => 70,
+        "pret:MOVE_GROWTH" => 74,
+        "pret:MOVE_POISON_POWDER" => 77,
+        "pret:MOVE_STUN_SPORE" => 78,
+        "pret:MOVE_SLEEP_POWDER" => 79,
+        "pret:MOVE_AGILITY" => 97,
+        "pret:MOVE_QUICK_ATTACK" => 98,
+        "pret:MOVE_HARDEN" => 106,
+        "pret:MOVE_MINIMIZE" => 107,
+        "pret:MOVE_WITHDRAW" => 110,
+        "pret:MOVE_SELF_DESTRUCT" => 120,
+        "pret:MOVE_HI_JUMP_KICK" => 136,
+        "pret:MOVE_FLASH" => 148,
+        "pret:MOVE_EXPLOSION" => 153,
+        "pret:MOVE_SLASH" => 163,
+        "pret:MOVE_FALSE_SWIPE" => 206,
+        "pret:MOVE_VITAL_THROW" => 233,
+        "pret:MOVE_SNATCH" => 289,
+        "pret:MOVE_AERIAL_ACE" => 332,
+        "pret:MOVE_IRON_DEFENSE" => 334,
+        _=>0
+    };
+
     public static CampaignMoveAnimationDecision AtAttackText(CampaignWildBattle battle, bool sourceRules,
         SourceBattleScene scene)
     {
@@ -23,7 +70,7 @@ public static class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_AGILITY" => 97, "pret:MOVE_QUICK_ATTACK" => 98, "pret:MOVE_AERIAL_ACE" => 332, "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
+        int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
@@ -52,6 +99,19 @@ public static class CampaignMoveAnimationPresentation
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
+        if(move is 77 or 78 or 79)
+        {
+            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,78=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
+            var changed=action.OfType<WildBattleStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+            if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
+        if(move==289)
+        {
+            var ready=action.OfType<WildBattleSnatchReadyEvent>().Where(e=>e.Actor==used.Actor&&e.Sequence>pp[0].Sequence).ToArray();
+            if(ready.Length!=1)return new(null,"unmatched-source-snatch-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,ready[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
         if(move is 74 or 106 or 334 or 110 or 107 or 97)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is WildBattleStatChangedEvent).ToArray();
@@ -84,7 +144,7 @@ public static class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_AGILITY" => 97, "pret:MOVE_QUICK_ATTACK" => 98, "pret:MOVE_AERIAL_ACE" => 332, "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
+        int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
@@ -133,6 +193,19 @@ public static class CampaignMoveAnimationPresentation
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
+        if(move is 77 or 78 or 79)
+        {
+            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,78=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
+            var changed=action.OfType<SourceStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+            if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(move==289)
+        {
+            var ready=action.OfType<SourceSnatchReadyEvent>().Where(e=>e.Actor==used.Actor&&e.Sequence>pp[0].Sequence).ToArray();
+            if(ready.Length!=1)return new(null,"unmatched-source-snatch-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,ready[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if(move is 74 or 106 or 334 or 110 or 107 or 97)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is SourceStatChangedEvent).ToArray();

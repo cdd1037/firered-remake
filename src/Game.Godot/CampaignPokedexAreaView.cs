@@ -9,6 +9,7 @@ public partial class CampaignView
     {
         var state = _session.State;
         var species = _pokedexList!.Rows[_pokedexCursor.SelectedIndex].SourceSpeciesId;
+        _pokedexAreaIcon=ResolvePokedexIcon(species);
         _pokedexAreaPage = _pokedexMenu!.BuildAreaPage(species, state.SeenSpecies, state.CaughtSpecies, PokedexAccess,
             new(state.Script.Flags, state.Script.Variables.GetValueOrDefault("VAR_ALTERING_CAVE_WILD_SET"),
                 state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON"), _session.ActiveRoamerMapSection));

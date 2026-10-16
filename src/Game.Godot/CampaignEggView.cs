@@ -166,9 +166,8 @@ public partial class CampaignView
         var owned = _session.State.Party[hatch.PartyIndex];
         if (owned.InstanceId != hatch.InstanceId || owned.IsEgg || owned.Pokemon.SourceSpeciesId != hatch.SourceSpeciesId)
             throw new InvalidDataException("Hatch presentation identity differs from its Application scene.");
-        // The full trade/shadow tilemap background remains unimplemented. The original
-        // shell, crack frames, shards and hatched sprite are authenticated source pixels.
-        DrawRect(new(0,0,240,160), new Color("e8f0d8"));
+        // daycare.c loads the shared trade shadow map using gba_pal2.
+        DrawTexture(EvolutionSceneTexture("hatch"), Vector2.Zero);
         if (hatch.Stage == CampaignEggHatchStage.Naming)
         {
             _battleSkin.DrawStandardFrame(this, new(8,16,224,136));

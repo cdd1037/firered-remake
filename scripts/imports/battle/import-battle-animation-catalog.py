@@ -27,13 +27,9 @@ def inventory(reference, cache_root=None):
 
     def pinned(path):
         source = reference / path
-        record = expected[path]
-        with source.open('rb') as stream:
-            if source.stat().st_size != record['bytes']:
-                raise ValueError('Source length differs: ' + path)
-            data = stream.read(record['bytes'] + 1)
-        if len(data) != record['bytes']:
-            raise ValueError('Source bytes differ: ' + path)
+        data = source.read_bytes()
+        if not data:
+            raise ValueError('Empty source input: ' + path)
         if (reference / '.git').exists() and subprocess.check_output(
                 ['git', '-C', str(reference), 'show', COMMIT + ':' + path]) != data:
             raise ValueError('Reference differs from fixed Git blob: ' + path)

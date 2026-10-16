@@ -21,6 +21,7 @@ import sys
 import tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from pokedex_area_data import AREA_PATHS, area_map_paths, build_areas
+from pokedex_visual_data import VISUAL_PATHS, build_visuals
 
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
@@ -142,7 +143,7 @@ def safe(root, relative=None):
 
 def read_sources(raw, repository=None):
     sources = {}
-    for relative in sorted(PATHS | AREA_PATHS):
+    for relative in sorted(PATHS | AREA_PATHS | VISUAL_PATHS):
         if repository is None:
             data = safe(raw, relative).read_bytes()
         else:
@@ -222,7 +223,7 @@ def habitat_categories(text, species, strings):
 
 
 def convert(sources, old):
-    if set(sources) != PATHS | AREA_PATHS | area_map_paths(sources):
+    if set(sources) != PATHS | AREA_PATHS | VISUAL_PATHS | area_map_paths(sources):
         raise ValueError('Pokédex source set differs')
     texts = {p: b.decode('utf-8') for p, b in sources.items() if p.endswith(('.c', '.h'))}
     screen = texts['src/pokedex_screen.c']
@@ -296,6 +297,8 @@ def convert(sources, old):
         assets.append(asset)
     areas, area_outputs, area_assets = build_areas(sources, species, codec)
     outputs.update(area_outputs); assets.extend(area_assets)
+    visuals, visual_outputs, visual_assets = build_visuals(sources)
+    outputs.update(visual_outputs); assets.extend(visual_assets)
     entries = []
     sizes = {}
     for number, name in enumerate(national[1:], 1):
@@ -336,7 +339,7 @@ def convert(sources, old):
         'gText_NumericalModeKanto', 'gText_NumericalModeNational', 'gText_PokemonListNoColor', 'gText_PickOKExit',
         'gText_5Dashes', 'gText_PokedexPokemon', 'gText_HT', 'gText_WT', 'gText_Lbs', 'gText_Cry', 'gText_NextDataCancel', 'gText_PokedexNo', 'gText_ClosePokedex',
         'gText_NumericalMode', 'gText_AToZMode', 'gText_TypeMode', 'gText_LightestMode', 'gText_SmallestMode', 'gText_SearchNoColor', 'gText_Search']
-    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=3, entries=entries, orders=orders, areas=areas, sizes=sizes,
+    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=4, visuals=visuals, entries=entries, orders=orders, areas=areas, sizes=sizes,
         silhouetteRgb=list(codec.legacy.codec.palette(sources['graphics/pokedex/silhouette_sprite_pal.pal'])[1][:3]),
         habitats=habitat_categories(texts['src/data/pokemon/pokedex_categories.h'], species, texts['src/strings.c']),
         habitatLayouts=[[dict(portraitX=int(x)*8, portraitY=int(y)*8, infoX=int(ix)*8, infoY=int(iy)*8)

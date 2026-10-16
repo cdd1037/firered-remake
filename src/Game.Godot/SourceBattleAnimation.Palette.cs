@@ -20,7 +20,7 @@ public static class SourcePaletteMath
 public sealed partial class SourceBattleAnimation
 {
     private readonly Dictionary<int,SourcePaletteBlend> _paletteBlends=[];
-    private readonly List<SoundLoop> _soundTasks=[];
+    private readonly List<SoundTask> _soundTasks=[];
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
@@ -55,12 +55,22 @@ public sealed partial class SourceBattleAnimation
     }
     // Source priority-1 sound task; init runs once immediately, then once in
     // this frame's RunTasks. Visual waits ignore it; script end waits for it.
-    private sealed class SoundLoop(string sound,int pan,int delay,int plays)
+    private abstract class SoundTask
+    {
+        public bool Finished{get;protected set;}
+        public abstract void Step(SourceBattleAnimation owner);
+    }
+    private sealed class DelayedSound(string sound,int pan,int frames):SoundTask
+    {
+        private int _remaining=frames;
+        public override void Step(SourceBattleAnimation owner)
+        {if(_remaining--<=0){owner._audio.Play(new(sound,pan,owner._frame));Finished=true;}}
+    }
+    private sealed class SoundLoop(string sound,int pan,int delay,int plays):SoundTask
     {
         private readonly int _delay=delay;
         private int _counter=delay,_remaining=plays;
-        public bool Finished{get;private set;}
-        public void Step(SourceBattleAnimation owner)
+        public override void Step(SourceBattleAnimation owner)
         {
             if(_counter++>=_delay)
             {

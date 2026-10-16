@@ -28,7 +28,12 @@ public sealed record CommittedMoveAnimation(string BattleId, long Sequence, int 
 { public int? StatAnimationArgument {get;init;} }
 public sealed record SourceAnimationCommand(string Op, string[] Args, int Line);
 public sealed record SourceSpriteAnimFrame(int Tile,int Duration,bool HFlip,bool VFlip);
-public sealed record SourceSpriteRecipe(string Template,string Asset,string Callback,bool Blend,SourceSpriteAnimFrame[][] Animations);
+public sealed record SourceSpriteRecipe(string Template,string Asset,string Callback,bool Blend,SourceSpriteAnimFrame[][] Animations)
+{
+    public int Width{get;init;}=32;
+    public int Height{get;init;}=32;
+    public int[] LoopStarts{get;init;}=[];
+}
 public sealed record SourceAnimationScript(int MoveId, string Label, SourceAnimationCommand[] Commands)
 {
     public IReadOnlyDictionary<string,SourceAnimationCommand[]> Subroutines {get;init;} = new Dictionary<string,SourceAnimationCommand[]>();
@@ -46,10 +51,14 @@ public interface ISourceAnimationAudio
     void Play(SourceAnimationSound cue);
     bool IsPlaying { get; }
     void StopAnimationEffects();
+    void SetPan(int pan,int frame)=>throw new NotSupportedException("Animation audio cannot sweep pan.");
 }
 public sealed record HitSplatFrame(PixelPoint Center, int Scale, string Asset = "impact");
 public sealed record SourceVisualSpriteFrame(int Slot,string Template,PixelPoint Position,PixelPoint Offset,int Tile,bool Visible,bool HFlip,bool Blend,int Scale,string? Asset,int Subpriority)
 {
+    public int Width{get;init;}=32;
+    public int Height{get;init;}=32;
+    public bool VFlip {get;init;}
     public int OamRank{get;init;}
     public int BattlerCopySlot {get;init;} = -1;
 }
@@ -61,6 +70,7 @@ public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] O
     public SourcePaletteBlend[] PaletteBlends {get;init;} = [];
     public SourceStatMaskFrame? StatMask {get;init;}
     public SourceMetallicFrame? Metallic {get;init;}
+    public int[] ForegroundBackgroundSlots {get;init;} = [];
     public int[] GreyscaleSlots {get;init;} = [];
     public SourceBattlerAffine[] BattlerAffine {get;init;} = [];
     public bool BlendEnabled {get;init;}
@@ -73,7 +83,7 @@ public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] O
 public sealed partial class SourceBattleAnimation
 {
     public const double SourceFrameSeconds=280896d/16777216;
-    public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"call","return","loadspritegfx","monbg","setalpha","playsewithpan","loopsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
+    public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"panse","splitbgprio","waitplaysewithpan","call","return","loadspritegfx","monbg","setalpha","playsewithpan","loopsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
     private readonly SourceAnimationScript _script;
     private readonly bool _doubles;
     private readonly int _battlerCount;
@@ -101,7 +111,7 @@ public sealed partial class SourceBattleAnimation
         _script=script;_cue=cue;_audio=audio;_doubles=doubles;_battlerCount=doubles?4:2;_battlers=battlers.ToDictionary(x=>x.Slot.Value);
         if(_battlers.Count!=_battlerCount||Enumerable.Range(0,_battlerCount).Any(i=>!_battlers.ContainsKey(i)))throw new InvalidDataException("Animation needs every canonical battle position.");
         if(script.MoveId!=cue.MoveId||!_battlers.ContainsKey(cue.Actor.Value)||!_battlers.ContainsKey(cue.Target.Value))throw new ArgumentException("Animation participants/script differ.");
-        if(script.Commands.Length is <1 or >32||script.Commands[^1].Op!="end")throw new InvalidDataException("Unbounded or unterminated script.");
+        if(script.Commands.Length is <1 or >128||script.Commands[^1].Op!="end")throw new InvalidDataException("Unbounded or unterminated script.");
         ValidateStatRoot();
         foreach(var command in script.Commands.Concat(script.Subroutines.Values.SelectMany(s=>s)))Validate(command);
         ValidateSubroutines();
@@ -110,7 +120,7 @@ public sealed partial class SourceBattleAnimation
     private void Validate(SourceAnimationCommand c)
     {
         if(!SupportedCommands.Contains(c.Op))Fail(c,"No accepted source adapter.");
-        if(ValidateTraceOperand(c)||ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
+        if(ValidateSharedCommand(c)||ValidateElementalOperand(c)||ValidatePhysicalOperand(c)||ValidateTraceOperand(c)||ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
         int count=c.Op switch{"loadspritegfx" or "monbg" or "clearmonbg" or "delay"=>1,"setalpha" or "playsewithpan"=>2,"createsprite"=>c.Args.FirstOrDefault() switch
         {"gBasicHitSplatSpriteTemplate" or "gScratchSpriteTemplate"=>7,"gHorizontalLungeSpriteTemplate"=>5,"gCuttingSliceSpriteTemplate" or "gSlashSliceSpriteTemplate"=>6,"gFalseSwipeSliceSpriteTemplate"=>3,"gFalseSwipePositionedSliceSpriteTemplate"=>4,"gSlideMonToOffsetSpriteTemplate" or "gFistFootSpriteTemplate"=>8,"gSlideMonToOriginalPosSpriteTemplate"=>6,_=>-1},"createvisualtask"=>c.Args.FirstOrDefault() is "AnimTask_Flash" or "AnimTask_StatsChange"?2:7,"loopsewithpan"=>4,_=>0};
         if(c.Args.Length!=count)Fail(c,"Command argument shape differs.");
@@ -126,7 +136,7 @@ public sealed partial class SourceBattleAnimation
     }
     private static int Number(string s)=>s switch{"ANIM_ATTACKER"=>0,"ANIM_TARGET"=>1,_=>int.Parse(s,System.Globalization.CultureInfo.InvariantCulture)};
     private AnimationSlot Resolve(string s)=>Number(s) switch{0=>_cue.Actor,1=>_cue.Target,_=>throw new InvalidDataException("Unknown animation participant.")};
-    public SourceAnimationFrame Snapshot()=>new(_frame,Active,(PixelPoint[])_offsets.Clone(),[.._backgrounds.Order()],_alphaA,_alphaB,[.._sprites.OfType<HitSplat>().OrderBy(x=>x.Slot).Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){Metallic=_metallic,GreyscaleSlots=[.._greyscale.Order()],BattlerAffine=Enumerable.Range(0,_battlerCount).Select(i=>new SourceBattlerAffine(_affineOamMode[i],_xScale[i],_yScale[i]){MatrixB=_matrixB[i],MatrixC=_matrixC[i]}).ToArray(),StatMask=_statMask,PaletteBlends=[.._paletteBlends.Values.OrderBy(p=>p.Palette)],BlendEnabled=_blendEnabled,Doubles=_doubles,BattlerOamRanks=Enumerable.Range(0,_battlerCount).Select(i=>Array.IndexOf(_oamOrder,i)).ToArray(),ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=[.._sprites.OrderBy(x=>x.Slot).Select(x=>x.Frame with{OamRank=Array.IndexOf(_oamOrder,x.Slot)})]};
+    public SourceAnimationFrame Snapshot()=>new(_frame,Active,(PixelPoint[])_offsets.Clone(),[.._backgrounds.Order()],_alphaA,_alphaB,[.._sprites.OfType<HitSplat>().OrderBy(x=>x.Slot).Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){ForegroundBackgroundSlots=_splitBackgroundPriority?_backgrounds.Where(i=>i is 1 or 2).ToArray():[],Metallic=_metallic,GreyscaleSlots=[.._greyscale.Order()],BattlerAffine=Enumerable.Range(0,_battlerCount).Select(i=>new SourceBattlerAffine(_affineOamMode[i],_xScale[i],_yScale[i]){MatrixB=_matrixB[i],MatrixC=_matrixC[i]}).ToArray(),StatMask=_statMask,PaletteBlends=[.._paletteBlends.Values.OrderBy(p=>p.Palette)],BlendEnabled=_blendEnabled,Doubles=_doubles,BattlerOamRanks=Enumerable.Range(0,_battlerCount).Select(i=>Array.IndexOf(_oamOrder,i)).ToArray(),ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=[.._sprites.OrderBy(x=>x.Slot).Select(x=>x.Frame with{OamRank=Array.IndexOf(_oamOrder,x.Slot)})]};
     public SourceAnimationFrame Tick()
     {
         if(!Active)throw new InvalidOperationException("Animation already ended.");
@@ -173,7 +183,7 @@ public sealed partial class SourceBattleAnimation
             var sprite=_sprites.FirstOrDefault(s=>s.Slot==i);
             if(sprite is null){_oamY[i]=160;continue;}
             var f=sprite.Frame;priorities[i]=(f.Asset is null?768:512)+f.Subpriority;
-            if(f.Visible)_oamY[i]=(f.Position.Y+f.Offset.Y-(sprite is MinimizeClone or TraceMonClone?32:16))&255;
+            if(f.Visible)_oamY[i]=(f.Position.Y+f.Offset.Y-(sprite is MinimizeClone or TraceMonClone?32:f.Height/2))&255;
         }
         _oamOrder=_oamOrder.OrderBy(i=>priorities[i]).ThenByDescending(i=>_oamY[i]>=160?_oamY[i]-256:_oamY[i]).ToArray();
     }
@@ -193,16 +203,27 @@ public sealed partial class SourceBattleAnimation
                 case "return":if(_subroutine is null)Fail(c,"Return outside subroutine.");_subroutine=null;_pc=_returnPc;continue;
                 case "loadspritegfx":_loaded.Add(a[0]);_pc++;Wait(1);return;
                 case "monbg":
+                    _splitBackgroundPriority=false;
                     var backgroundSlot=a[0]=="ANIM_ATK_PARTNER"?_cue.Actor:_cue.Target;
                     if(_battlers[backgroundSlot.Value].Visible)_backgrounds.Add(backgroundSlot.Value);
                     if(_doubles&&_battlers[backgroundSlot.Partner.Value].Visible)_backgrounds.Add(backgroundSlot.Partner.Value);
                     break;
+                case "splitbgprio":if(Resolve(a[0]).Value is 0 or 3)_splitBackgroundPriority=true;break;
+                case "panse":
+                    int initial=AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),targetPan=AdjustPanning(a[2]=="SOUND_PAN_ATTACKER"?-64:63);
+                    _audio.Play(new(a[0],initial,_frame));_soundTasks.Add(new PanSweep(initial,targetPan,Number(a[3]),Number(a[4])));break;
                 case "setalpha":_blendEnabled=true;_alphaA=Math.Clamp(Number(a[0]),0,16);_alphaB=Math.Clamp(Number(a[1]),0,16);break;
                 case "createsprite":
                     int slot=Enumerable.Range(0,64).First(i=>(!_battlers.TryGetValue(i,out var reserved)||!reserved.Visible)&&_sprites.All(s=>s.Slot!=i));
                     _oamY[slot]=a[0] is "gHorizontalLungeSpriteTemplate" or "gSlideMonToOffsetSpriteTemplate" or "gSlideMonToOriginalPosSpriteTemplate"?160:0;
                     int modifier=Number(a[2]);int priority=Math.Max(3,_battlers[Resolve(a[1]).Value].Subpriority+(modifier>=64?modifier-64:-modifier));
-                    if(a[0]=="gComplexPaletteBlendSpriteTemplate")_sprites.Add(new ComplexPaletteSprite(slot,priority,a.Skip(3).Select(PaletteNumber).ToArray(),this));
+                    if(TryCreateElementalSprite(c,slot,priority))break;
+                    if(a[0]=="gBowMonSpriteTemplate")_sprites.Add(new BowMon(slot,priority,Number(a[3])));
+                    else if(a[0]=="gFlashingHitSplatSpriteTemplate")_sprites.Add(new FlashingHit(slot,priority,a.Skip(3).Select(Number).ToArray(),this));
+                    else if(a[0]=="gSimplePaletteBlendSpriteTemplate")_sprites.Add(new SimplePaletteSprite(slot,priority,a.Skip(3).Select(PaletteNumber).ToArray(),this));
+                    else if(a[0]=="gVerticalDipSpriteTemplate")_sprites.Add(new VerticalDip(slot,priority,Resolve(a[5]),Number(a[3]),Number(a[4])));
+                    else if(a[0] is "gStompFootSpriteTemplate" or "gJumpKickSpriteTemplate" or "gSlidingKickSpriteTemplate")_sprites.Add(new PhysicalFoot(slot,priority,a[0],a.Skip(3).Select(Number).ToArray(),this));
+                    else if(a[0]=="gComplexPaletteBlendSpriteTemplate")_sprites.Add(new ComplexPaletteSprite(slot,priority,a.Skip(3).Select(PaletteNumber).ToArray(),this));
                     else if(a[0]=="gBasicHitSplatSpriteTemplate")
                     {
                         var target=Resolve(a[5]);var center=_battlers[target.Value].Center(_doubles,true);
@@ -220,6 +241,11 @@ public sealed partial class SourceBattleAnimation
                     }
                     break;
                 case "createvisualtask":
+                    if(TryCreateElementalTask(c))break;
+                    if(a[0]=="AnimTask_WindUpLunge"){_tasks.Add(new WindUpLunge(this,a.Skip(2).Select(Number).ToArray()));break;}
+                    if(a[0] is "AnimTask_RotateMonSpriteToSide" or "AnimTask_RotateMonToSideAndRestore"){_tasks.Add(new RotateToSide(this,Number(a[2]),Number(a[3]),Resolve(a[4]),Number(a[5]),a[0]=="AnimTask_RotateMonToSideAndRestore"));break;}
+                    if(a[0]=="AnimTask_ShakeMonInPlace"){var inPlaceSlot=Resolve(a[2]);var p=_offsets[inPlaceSlot.Value];_offsets[inPlaceSlot.Value]=new(p.X+Number(a[3]),p.Y+Number(a[4]));var shakeInPlace=new InPlaceShake(inPlaceSlot,Number(a[3]),Number(a[4]),Number(a[5]),Number(a[6]));shakeInPlace.Step(this);if(!shakeInPlace.Finished)_tasks.Add(shakeInPlace);break;}
+                    if(a[0]=="AnimTask_ShakeAndSinkMon"){var sinkSlot=Resolve(a[2]);_offsets[sinkSlot.Value]=new(Number(a[3]),_offsets[sinkSlot.Value].Y);var sink=new ShakeAndSinkTask(sinkSlot,Number(a[3]),Number(a[4]),Number(a[5]),Number(a[6]));sink.Step(this);if(!sink.Finished)_tasks.Add(sink);break;}
                     if(a[0]=="AnimTask_TraceMonBlended"){_tasks.Add(new TraceMonTask(Number(a[2]),Number(a[3]),Number(a[4]),Number(a[5])));break;}
                     if(a[0]=="AnimTask_BlendBattleAnimPal"){var blend=new BlendPaletteTask(a.Skip(2).Select(PaletteNumber).ToArray(),this);blend.Step(this);if(!blend.Finished)_tasks.Add(blend);break;}
                     if(a[0]=="AnimTask_Minimize"){_tasks.Add(new MinimizeTask(this));break;}
@@ -235,6 +261,7 @@ public sealed partial class SourceBattleAnimation
                     if(shakeSlot is null)break;
                     var shake=new ShakeTask(shakeSlot.Value,Number(a[3]),Number(a[4]),Number(a[5]),Number(a[6]),a[0]=="AnimTask_ShakeMon2");
                     _offsets[shake.Slot.Value]=new(shake.X,shake.Y);shake.Step(this);_tasks.Add(shake);break;
+                case "waitplaysewithpan":_soundTasks.Add(new DelayedSound(a[0],AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),Number(a[2])));break;
                 case "loopsewithpan":
                     var loop=new SoundLoop(a[0],AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),Number(a[2]),Number(a[3]));loop.Step(this);if(!loop.Finished)_soundTasks.Add(loop);break;
                 case "playsewithpan":_audio.Play(new(a[0],AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),_frame));break;
@@ -256,7 +283,7 @@ public sealed partial class SourceBattleAnimation
     public void Cancel()
     {
         if(_cancelled)return;_cancelled=true;Active=false;
-        _metallic=null;_greyscale.Clear();_fade=null;Array.Clear(_affineMode);Array.Clear(_affineOamMode);Array.Fill(_xScale,256);Array.Fill(_yScale,256);Array.Clear(_matrixB);Array.Clear(_matrixC);_statMask=null;_audio.StopAnimationEffects();_soundTasks.Clear();_paletteBlends.Clear();_sprites.Clear();_tasks.Clear();_backgrounds.Clear();Array.Clear(_offsets);Array.Clear(_objectOffsets);_alphaA=_alphaB=0;_blendEnabled=false;_clearTicks=-1;
+        _splitBackgroundPriority=false;_metallic=null;_greyscale.Clear();_fade=null;Array.Clear(_affineMode);Array.Clear(_affineOamMode);Array.Fill(_xScale,256);Array.Fill(_yScale,256);Array.Clear(_matrixB);Array.Clear(_matrixC);_statMask=null;_audio.StopAnimationEffects();_soundTasks.Clear();_paletteBlends.Clear();_sprites.Clear();_tasks.Clear();_backgrounds.Clear();Array.Clear(_offsets);Array.Clear(_objectOffsets);_alphaA=_alphaB=0;_blendEnabled=false;_clearTicks=-1;
     }
     private abstract class VisualSprite(int slot,int subpriority)
     {
@@ -267,12 +294,12 @@ public sealed partial class SourceBattleAnimation
     }
     private sealed class HitSplat:VisualSprite
     {
-        public PixelPoint Center{get;}public int Scale{get;}
+        public PixelPoint Center{get;}public int Scale{get;}private readonly string _asset;
         private int _state,_delay;
-        public override SourceVisualSpriteFrame Frame=>new(Slot,"gBasicHitSplatSpriteTemplate",Center,default,0,true,false,true,Scale,"impact",Subpriority);
-        public HitSplat(int slot,int subpriority,PixelPoint center,int affine):base(slot,subpriority)
+        public override SourceVisualSpriteFrame Frame=>new(Slot,"gBasicHitSplatSpriteTemplate",Center,default,0,true,false,true,Scale,_asset,Subpriority);
+        public HitSplat(int slot,int subpriority,PixelPoint center,int affine,string asset="impact"):base(slot,subpriority)
         {
-            Center=center;Scale=affine switch{0=>256,1=>216,2=>176,3=>128,_=>throw new InvalidDataException("Unknown source affine animation.")};
+            _asset=asset;Center=center;Scale=affine switch{0=>256,1=>216,2=>176,3=>128,_=>throw new InvalidDataException("Unknown source affine animation.")};
             // CreateSpriteAndAnimate already executes callback and BeginAffineAnim once.
             if(affine==0){_state=1;_delay=7;}
         }
@@ -308,14 +335,21 @@ public sealed partial class SourceBattleAnimation
         private PixelPoint _position,_offset;
         private int _animIndex,_animDelay,_state,_counter,_flickers,_vx,_vy,_fx,_fy,_direction;
         private bool _ended,_invisible,_hFlip;
+        private PhysicalLinear? _physicalLinear;
+        private readonly int _loopStart;private int _powderSpeed,_powderAmplitude,_powderWave;
         public AnimatedSprite(int slot,int subpriority,SourceSpriteRecipe recipe,int[] args,SourceBattleAnimation owner):base(slot,subpriority)
         {
-            _recipe=recipe;int anim=recipe.Callback=="AnimBasicFistOrFoot"?args[4]:recipe.Callback=="AnimFalseSwipePositionedSlice"?1:0;
+            _recipe=recipe;int anim=recipe.Callback=="AnimWhipHit"?(owner._cue.Actor.IsPlayer?1:0):recipe.Callback=="AnimViceGripPincer"?args[0]:recipe.Callback=="AnimBasicFistOrFoot"?args[4]:recipe.Callback=="AnimFalseSwipePositionedSlice"?1:0;
             if(recipe.Animations.Length<=anim||recipe.Animations[anim].Length==0)throw new InvalidDataException("Source sprite frame recipe missing.");
-            _animation=recipe.Animations[anim];
+            _animation=recipe.Animations[anim];_loopStart=recipe.LoopStarts.Length>anim?recipe.LoopStarts[anim]:-1;
+            if(_loopStart< -1||_loopStart>=_animation.Length)throw new InvalidDataException("Sprite frame loop differs.");
             var target=owner._battlers[owner._cue.Target.Value];var center=target.Center(owner._doubles,true);
             switch(recipe.Callback)
             {
+                case "AnimMovePowderParticle":_position=new(center.X+args[0],center.Y+args[1]);_counter=args[2];_powderSpeed=args[3];_powderAmplitude=args[4]*(owner._cue.Actor.IsPlayer?1:-1);_powderWave=args[5];break;
+                case "AnimWhipHit":_position=new(center.X+owner.InitialXDirection()*args[0],center.Y+args[1]);break;
+                case "AnimViceGripPincer":
+                    int sign=args[0]==0?1:-1;_position=new(center.X+32*sign,center.Y-32*sign);_physicalLinear=new(-16*sign,16*sign,6);break;
                 case "AnimBasicFistOrFoot":
                     var fistMon=owner._battlers[(args[3]==0?owner._cue.Actor:owner._cue.Target).Value];var fistCenter=fistMon.Center(owner._doubles,true);
                     int direction=owner.InitialXDirection();
@@ -337,13 +371,20 @@ public sealed partial class SourceBattleAnimation
             // CreateSpriteAndAnimate invokes initializer then BeginAnim immediately.
             _animDelay=_animation[0].Duration-1;
         }
-        public override SourceVisualSpriteFrame Frame=>new(Slot,_recipe.Template,_position,_offset,_animation[_animIndex].Tile,!_invisible,_hFlip^_animation[_animIndex].HFlip,_recipe.Blend,256,_recipe.Asset,Subpriority);
+        public override SourceVisualSpriteFrame Frame=>new(Slot,_recipe.Template,_position,_offset,_animation[_animIndex].Tile,!_invisible,_hFlip^_animation[_animIndex].HFlip,_recipe.Blend,256,_recipe.Asset,Subpriority){VFlip=_animation[_animIndex].VFlip,Width=_recipe.Width,Height=_recipe.Height};
         public override void Step(SourceBattleAnimation owner)
         {
             switch(_recipe.Callback)
             {
+                case "AnimMovePowderParticle":
+                    if(_counter<=0){Finished=true;break;}
+                    _counter--;_offset=new((owner._script.SineTable[_fx]*_powderAmplitude)>>8,_fy>>8);_fy=(short)(_fy+_powderSpeed);_fx=(_fx+_powderWave)&255;break;
+                case "AnimViceGripPincer":
+                    if(_state==0){if(_physicalLinear!.Step(out var step))_state=1;else _offset=step;}
+                    else if(_ended)Finished=true;
+                    break;
                 case "AnimBasicFistOrFoot":if(_state==1)Finished=true;else if(_counter>0)_counter--;else _state=1;break;
-                case "AnimSpriteOnMonPos":if(_ended)Finished=true;break;
+                case "AnimWhipHit":case "AnimSpriteOnMonPos":if(_ended)Finished=true;break;
                 case "AnimCuttingSlice":
                     if(_state==0)
                     {
@@ -368,6 +409,7 @@ public sealed partial class SourceBattleAnimation
             if(Finished)return;
             if(_animDelay>0)_animDelay--;
             else if(_animIndex+1<_animation.Length){_animIndex++;_animDelay=_animation[_animIndex].Duration-1;}
+            else if(_loopStart>=0){_animIndex=_loopStart;_animDelay=_animation[_animIndex].Duration-1;}
             else _ended=true;
         }
     }
@@ -413,9 +455,10 @@ public static class SourceHitAnimationCatalog
     public static SourceAnimationScript Script(JsonDocument manifest,int move)
     {
         var row=manifest.RootElement.GetProperty("scripts").EnumerateArray().Single(x=>x.GetProperty("moveId").GetInt32()==move);
-        var recipes=manifest.RootElement.GetProperty("spriteRecipes").EnumerateArray().Select(x=>new SourceSpriteRecipe(x.GetProperty("template").GetString()!,x.GetProperty("asset").GetString()!,x.GetProperty("callback").GetString()!,x.GetProperty("blend").GetBoolean(),x.GetProperty("animations").EnumerateArray().Select(a=>a.EnumerateArray().Select(f=>new SourceSpriteAnimFrame(f.GetProperty("tile").GetInt32(),f.GetProperty("duration").GetInt32(),f.GetProperty("hFlip").GetBoolean(),f.GetProperty("vFlip").GetBoolean())).ToArray()).ToArray())).ToDictionary(x=>x.Template);
+        var recipes=Recipes(manifest.RootElement.GetProperty("spriteRecipes"));
         return new(move,row.GetProperty("label").GetString()!,row.GetProperty("commands").EnumerateArray().Select(x=>new SourceAnimationCommand(x.GetProperty("op").GetString()!,x.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),x.GetProperty("line").GetInt32())).ToArray()){SpriteRecipes=recipes,SineTable=manifest.RootElement.GetProperty("sineTable").EnumerateArray().Select(x=>x.GetInt32()).ToArray()};
     }
+    public static IReadOnlyDictionary<string,SourceSpriteRecipe> Recipes(JsonElement rows)=>rows.EnumerateArray().Select(x=>new SourceSpriteRecipe(x.GetProperty("template").GetString()!,x.GetProperty("asset").GetString()!,x.GetProperty("callback").GetString()!,x.GetProperty("blend").GetBoolean(),x.GetProperty("animations").EnumerateArray().Select(a=>a.EnumerateArray().Select(f=>new SourceSpriteAnimFrame(f.GetProperty("tile").GetInt32(),f.GetProperty("duration").GetInt32(),f.GetProperty("hFlip").GetBoolean(),f.GetProperty("vFlip").GetBoolean())).ToArray()).ToArray()){Width=x.TryGetProperty("width",out var w)?w.GetInt32():32,Height=x.TryGetProperty("height",out var h)?h.GetInt32():32,LoopStarts=x.TryGetProperty("loopStarts",out var loops)?loops.EnumerateArray().Select(v=>v.GetInt32()).ToArray():[]}).ToDictionary(x=>x.Template);
     public static SourcePixelAsset Asset(JsonDocument manifest,string folder,string id)
     {
         var row=manifest.RootElement.GetProperty("assets").EnumerateArray().Single(x=>x.GetProperty("id").GetString()==id);
@@ -423,7 +466,7 @@ public static class SourceHitAnimationCatalog
         if(Path.GetFileName(path)!=path)throw new InvalidDataException("Asset path differs.");
         var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,path));
         int width=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes),height=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(2));
-        if(width!=32||height is not (32 or 128 or 160)||bytes.Length!=4+width*height*2)throw new InvalidDataException("Impact shape differs.");
+        if(width is not (8 or 16 or 32 or 64)||height is <8 or >512||height%8!=0||bytes.Length!=4+width*height*2)throw new InvalidDataException("Impact shape differs.");
         var pixels=new ushort[width*height];for(int i=0;i<pixels.Length;i++)pixels[i]=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(4+i*2));
         return new(width,height,pixels);
     }

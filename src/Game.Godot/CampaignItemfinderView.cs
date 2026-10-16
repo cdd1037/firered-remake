@@ -5,6 +5,32 @@ using Godot;
 
 public partial class CampaignView
 {
+    private ItemfinderResponse? _itemfinderResponse;
+    private double _itemfinderElapsed;
+    private int _itemfinderSounds;
+    private Texture2D? _itemfinderSprites;
+
+    private void SynchronizeItemfinderPresentation()
+    {
+        var response = _session.State.Itemfinder?.Response;
+        if (ReferenceEquals(response, _itemfinderResponse)) return;
+        _itemfinderResponse = response; _itemfinderElapsed = 0; _itemfinderSounds = 0;
+    }
+
+    private int ItemfinderTick => (int)Math.Floor(_itemfinderElapsed * 60 + 1e-9);
+    private bool ItemfinderMessageReady => _itemfinderResponse is null || ItemfinderTick >= ItemfinderPresentation.MessageFrame(_itemfinderResponse);
+
+    private void ProcessItemfinderPresentation(double delta)
+    {
+        SynchronizeItemfinderPresentation();
+        if (_itemfinderResponse is not { } response) return;
+        _itemfinderElapsed += delta;
+        while (_itemfinderSounds < response.Dings && ItemfinderTick >= _itemfinderSounds * ItemfinderPresentation.PulseFrames)
+        {
+            SourceSound("SE_ITEMFINDER"); _itemfinderSounds++;
+        }
+    }
+
     private void ExtendItemfinderQuestPocket(ref QuestItemUiDocument document)
     {
         if(_catalog.ItemfinderDocument is not {} source)return;
@@ -29,6 +55,12 @@ public partial class CampaignView
         if(_session.State.Itemfinder is not null)
         {
             _held=null;
+            SynchronizeItemfinderPresentation();
+            if (!ItemfinderMessageReady)
+            {
+                if (input is InputEventKey { Keycode: Key.Escape or Key.F12 }) return false;
+                GetViewport().SetInputAsHandled(); return true;
+            }
             if(input is InputEventKey {Pressed:true,Echo:false,Keycode:Key.Enter or Key.Backspace})Apply(new("itemfinder_ack"));
             else if(input is InputEventMouseButton {Pressed:true,ButtonIndex:MouseButton.Left or MouseButton.Right})Apply(new("itemfinder_ack"));
             else if(input is InputEventJoypadButton {Pressed:true,ButtonIndex:JoyButton.A or JoyButton.B})Apply(new("itemfinder_ack"));
@@ -42,13 +74,18 @@ public partial class CampaignView
     private void DrawItemfinder()
     {
         if(_session.State.Itemfinder is not {} task)return;
-        // Direction is decoded from the original arrow index; player facing is unchanged.
-        if(task.Response.Target is not null)
+        SynchronizeItemfinderPresentation();
+        if (task.Response.Target is not null)
         {
-            string response=task.Response.Target.Underfoot?"★":task.Response.Direction switch
-                {Direction.North=>"↑",Direction.South=>"↓",Direction.West=>"←",Direction.East=>"→",_=>"HERE"};
-            SourceText(_sourceNormal,new(116,72),response);
+            _itemfinderSprites ??= Texture(System.IO.Path.Combine(_root, "content/generated/sprites/overworld/itemfinder.png"));
+            for (int pulse = 0; pulse < task.Response.Dings; pulse++)
+            {
+                if (ItemfinderPresentation.Sprite(task.Response, _session.State.World.Player.Facing, ItemfinderTick, pulse) is not { } sprite) continue;
+                DrawSetTransform(new(sprite.X, sprite.Y), Mathf.DegToRad(sprite.RotationDegrees));
+                DrawTextureRectRegion(_itemfinderSprites, new(-8, -8, 16, 16), new(0, sprite.Frame * 16, 16, 16));
+                DrawSetTransform(Vector2.Zero);
+            }
         }
-        if(_session.VisibleItemfinderMessage is {} text)ItemMessageBox(text);
+        if (ItemfinderMessageReady && _session.VisibleItemfinderMessage is {} text) ItemMessageBox(text);
     }
 }

@@ -59,7 +59,7 @@ public partial class CampaignView
         ResetPlayTimeHost(); _trainerTowerFrames.Reset(); _entryOverwritePending = false;
         _sequence = saved.Generation; _lastFanfareSequence = 0; _fanfareRemaining = 0;
         _blockedAutomaticWait = null; _lastCommandFault = false; _waitId = null; _waitKind = null;
-        ResetSourceAudio(); LoadMap(saved.State.World.Player.MapId); Synchronize(null, saved.State);
+        ResetSummaryPresentation();ResetSourceAudio(); LoadMap(saved.State.World.Player.MapId); Synchronize(null, saved.State);
         return attempt.Result;
     }
 

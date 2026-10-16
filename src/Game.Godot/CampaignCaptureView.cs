@@ -28,6 +28,7 @@ public partial class CampaignView
         var document = PretForestCaptureDex.Load(_root);
         foreach (var texture in _captureTextures.Values) texture.Dispose();
         _captureTextures.Clear();
+        LoadCaptureBallPresentation();
         foreach (var asset in document.Assets)
         {
             using var image = new Image();
@@ -70,6 +71,7 @@ public partial class CampaignView
 
     private void DisposeCapturePresentation()
     {
+        ClearCaptureTargetTints(); _captureBallPlayback=null; _captureBallPlaybackKey=null;
         foreach(var texture in _captureTextures.Values)texture.Dispose();
         _captureTextures.Clear(); _captureDex=null;
         _captureDexNormal?.Dispose(); _captureDexSmall?.Dispose(); _captureDexDescription?.Dispose();

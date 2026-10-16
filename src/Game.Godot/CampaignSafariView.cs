@@ -107,7 +107,7 @@ public partial class CampaignView
         }
     }
 
-    private void ProcessSafariBattle(double delta) { _held = null; _safariElapsed += delta; }
+    private void ProcessSafariBattle(double delta) { _held = null; _safariElapsed += delta; ProcessSafariCaptureBall(); }
 
     private bool SafariBattleInput(InputEventKey key)
     {
@@ -130,7 +130,7 @@ public partial class CampaignView
         }
         if (battle.Capture is not null || battle.Phase == CampaignBattlePhase.Events)
         {
-            if (key.Keycode == Key.Enter && _safariElapsed > .1)
+            if (key.Keycode == Key.Enter && !SafariCaptureBallBlocking && _safariElapsed > .1)
             {
                 _safariActionFrame = Engine.GetProcessFrames();
                 if (_safariTextPage + 1 < _safariPages.Length) { _safariTextPage++; _safariElapsed = 0; }
@@ -182,12 +182,13 @@ public partial class CampaignView
         if (battle.Capture?.Stage == CampaignCaptureStage.Naming) { DrawCaptureNamingPanel(); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         _battleSkin.DrawBackground(this); DrawTexture(_session.State.IsSurfing ? _cityBattleScenes["water"] : _wildTerrain, Vector2.Zero);
-        DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender == 0 ? "red-back" : "leaf-back"], new(48, 48));
+        DrawSafariCaptureTrainer();
         if (battle.Capture is null)
         {
             var target = battle.State.Target;
             var sprite = _battleArt[(PresentedRenderSpecies(target), "front", target.IsShiny)];
-            DrawTexture(sprite.Texture, sprite.Position);
+            if(SafariCaptureBallPlayback() is {} playback)DrawCaptureTargetFrame(sprite.Texture,sprite.Position,playback.Sample(SafariCaptureBallTick),playback.Ball,playback.TargetBlend(SafariCaptureBallTick));
+            else DrawTexture(sprite.Texture, sprite.Position);
             _battleSkin.DrawHealthbox(this, false, target.CurrentHp, target.Stats.MaxHp);
             SourceText(_healthFont, LabBattleUiSkin.OpponentName, battle.Origin.DefaultName);
             if (target.Gender != PokemonGender.Genderless)
@@ -198,6 +199,7 @@ public partial class CampaignView
             }
             SourceText(_healthFont, LabBattleUiSkin.OpponentLevelWindow + new Vector2(5 * (3 - target.Level.ToString().Length), 0), _healthFont.LevelPrefix + target.Level);
         }
+        if(SafariCaptureBallPlayback() is {} ballPlayback)DrawCapturePlayback(ballPlayback,SafariCaptureBallTick);
         // Source wording/counter, using the shared source frame until the dedicated Safari healthbox is imported.
         _battleSkin.DrawStandardFrame(this, new(128, 72, 112, 40));
         SourceText(_sourceSmall, new(140, 79), "SAFARI BALLS");
@@ -209,7 +211,7 @@ public partial class CampaignView
             for (int i = 0; i < SafariLabels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), SafariLabels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, _safariCursor);
         }
-        else if (!_safariPages.IsEmpty)
+        else if (!_safariPages.IsEmpty && !SafariCaptureBallBlocking)
         {
             string text = _safariPages[_safariTextPage]; WildLines(text);
             if (battle.Capture?.Stage == CampaignCaptureStage.NicknameChoice && _safariTextPage + 1 >= _safariPages.Length)

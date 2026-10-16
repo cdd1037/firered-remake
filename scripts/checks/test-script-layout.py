@@ -138,6 +138,24 @@ class ResourceEntryTests(unittest.TestCase):
         self.assertEqual('import-diploma.py', Path(commands[0][1]).name)
         self.assertEqual(['--raw', str(self.raw), '--out', str(self.out / 'ui/diploma'), '--check'], commands[0][2:])
 
+    def test_presentation_targets_honor_selected_raw_and_output(self):
+        targets = {'opening': ('--out', 'ui/opening'), 'summary': ('--target', 'ui/summary-screen'),
+                   'evolution': ('--out', 'ui/evolution-scene'), 'capture-balls': ('--out', 'battle/capture-balls'),
+                   'overworld-art': ('--generated', ''), 'party': ('--out', 'ui/party-screen'),
+                   'npc-trade': ('--out', 'ui/npc-trade-scene')}
+        for target, (flag, folder) in targets.items():
+            with self.subTest(target=target):
+                commands = self.module.build_commands([target], self.raw, self.out, check=True)
+                self.assertEqual(1, len(commands))
+                self.assertEqual(['--raw', str(self.raw), flag, str(self.out / folder), '--check'], commands[0][2:])
+
+    def test_animation_producers_use_selected_dependencies(self):
+        commands = self.module.build_commands(['move-animations'], self.raw, self.out, check=True)
+        self.assertEqual(2, len(commands))
+        for command, name in zip(commands, ('physical', 'elemental')):
+            self.assertEqual(['--reference', str(self.raw), '--output',
+                              str(self.out / ('battle/animations/' + name + '.json')), '--check'], command[2:])
+
     def test_missing_audio_input_fails_before_other_targets_write(self):
         with patch.object(self.module.subprocess, 'run') as run:
             with self.assertRaises(SystemExit) as error:

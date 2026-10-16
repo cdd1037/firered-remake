@@ -1,5 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <Compile Include="../../src/Game.Godot/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
+    <Compile Include="../../src/Game.Godot/OpeningNamingPresentation.cs" Link="OpeningNamingPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/ItemfinderPresentation.cs" Link="ItemfinderPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/CaptureBallPresentation.cs" Link="CaptureBallPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/EvolutionScenePresentation.cs" Link="EvolutionScenePresentation.cs" />
+    <Compile Include="../../src/Game.Godot/SourceBattleAnimation*.cs" Exclude="../../src/Game.Godot/SourceBattleAnimationAudioAdapter.cs" Link="Animations/%(Filename)%(Extension)" />
+    <Compile Include="../../src/Game.Godot/SourceBattleFrameComposer.cs" Link="Animations/SourceBattleFrameComposer.cs" />
     <Compile Include="../../src/Game.Godot/CampaignButtonInput.cs" Link="CampaignButtonInput.cs" />
     <Compile Include="../../src/Game.Godot/SourceHelpPresentation.cs" Link="SourceHelpPresentation.cs" />
     <Compile Include="../../src/Game.Godot/CampaignOptionEditing.cs" Link="CampaignOptionEditing.cs" />

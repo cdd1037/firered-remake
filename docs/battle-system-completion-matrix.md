@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本20／354，其余334尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本41／354，其余313尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。本次文档整理不产生新测试通过记录。
 
 ## 当前所有者与维护检查
@@ -25,11 +25,11 @@
 
 ## 专属动画范围
 
-当前分派支持：Pound、Scratch、Cut、Tackle、Tail Whip、Counter、Growth、Agility、Quick Attack、Harden、Minimize、Withdraw、Self-Destruct、Flash、Explosion、Slash、False Swipe、Vital Throw、Aerial Ace、Iron Defense。
+当前分派支持：Pound、Fire Punch、Scratch、Vice Grip、Cut、Slam、Vine Whip、Stomp、Jump Kick、Rolling Kick、Headbutt、Tackle、Body Slam、Take Down、Double Edge、Tail Whip、Ember、Flamethrower、Peck、Low Kick、Counter、Strength、Growth、Poison Powder、Stun Spore、Sleep Powder、Agility、Quick Attack、Harden、Minimize、Withdraw、Self Destruct、Hi Jump Kick、Flash、Explosion、Slash、False Swipe、Vital Throw、Snatch、Aerial Ace、Iron Defense。
 
 其他招式返回 `script-outside-slice`，不启动该专属脚本；普通文字、HP及结果表现仍独立工作。不能因此说招式规则不可用，也不能把通用反馈当原版专属动画。此名单由当前单／双打分派代码核对，JSON逐招标记相同范围。
 
-用户已将专属动画和全面原生视听验收后置，规则与地区推进不以它们全量完成为前提。本页保留缺口，不自动恢复该工作。[Options玩家入口](../src/Game.Godot/CampaignOptionsView.cs)仍未开放Battle Scene编辑；测试Scene Off不等于玩家设置完成。
+用户于2026-10-16要求完成除汉化外的单机内容，专属动画与剩余原生表现重新进入当前工作范围。采用共享实现与代表性检查，保持实现范围和已验证范围分开。[Options玩家入口](../src/Game.Godot/CampaignOptionsView.cs)已开放Battle Scene和Sound编辑并接入保存与运行时应用，见[设置说明](battle-scene-sound-options.md)。
 
 ## 验证与规则决定
 

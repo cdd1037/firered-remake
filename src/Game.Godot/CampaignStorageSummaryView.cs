@@ -49,6 +49,7 @@ public partial class CampaignView
     private bool StorageSummaryInput(InputEventKey key)
     {
         _held = null; _repeat = 0;
+        if (SummaryExitActive) return true;
         if (!key.Pressed || key.Echo) return true;
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return true; }
         if (_pcNotice is not null)
@@ -58,7 +59,7 @@ public partial class CampaignView
         if (owned is null) { _pcNotice = SummaryChangedNotice; return true; }
         if (OwnedMoveDetailsInput(key, owned)) return true;
         if (key.Keycode is Key.Backspace or Key.B || key.Keycode == Key.Enter && summary.Page == PokemonSummaryPage.Info)
-        { StorageSummaryAction(new("storage_summary_close")); return true; }
+        { BeginSummaryExit(() => StorageSummaryAction(new("storage_summary_close"))); return true; }
         if (key.Keycode is Key.Left or Key.Right && !owned.IsEgg)
         {
             int page = Math.Clamp((int)summary.Page + (key.Keycode == Key.Left ? -1 : 1), 0, 2);

@@ -14,7 +14,7 @@ public sealed class SourceBattleFrameComposer
     {
         foreach(var (id,asset) in assets)
         {
-            if(asset.Width is <1 or >240||asset.Height is <1 or >160||asset.Pixels.Length!=asset.Width*asset.Height)throw new InvalidDataException("Campaign animation asset shape differs.");
+            if(asset.Width is <1 or >240||asset.Height is <1 or >512||asset.Pixels.Length!=asset.Width*asset.Height)throw new InvalidDataException("Campaign animation asset shape differs.");
             _assets.Add(id,asset);
         }
         _battlers=battlers;_statMaterial=statMaterial;_metallicMaterial=metallicMaterial;
@@ -45,7 +45,7 @@ public sealed class SourceBattleFrameComposer
         void Sprite(SourceVisualSpriteFrame sprite)
         {
             if(!sprite.Visible||sprite.Asset is null)return;
-            if(sprite.Template=="gBasicHitSplatSpriteTemplate")AffineImpact(pixels,_assets[sprite.Asset],new(sprite.Position,sprite.Scale,sprite.Asset),frame.AlphaA,frame.AlphaB,frame.BlendEnabled);
+            if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(pixels,_assets[sprite.Asset],new(sprite.Position,sprite.Scale,sprite.Asset),frame.AlphaA,frame.AlphaB,sprite.Blend&&frame.BlendEnabled);
             else BlitSprite(pixels,_assets[sprite.Asset],sprite,frame.AlphaA,frame.AlphaB,frame.BlendEnabled);
         }
         // monbg transfers the target and its visible partner to BG1/BG2 at priority 2.
@@ -69,7 +69,7 @@ public sealed class SourceBattleFrameComposer
                 {
                     var sprite=item.Item3!;blend=sprite.Blend;
                     if(sprite.Template=="AnimMonTrace")Blit(layer,_assets[sprite.Asset!],sprite.Position.X+sprite.Offset.X-32,sprite.Position.Y+sprite.Offset.Y-32,palettes.GetValueOrDefault(16+sprite.BattlerCopySlot));
-                    else if(sprite.Template=="gBasicHitSplatSpriteTemplate")AffineImpact(layer,_assets[sprite.Asset!],new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
+                    else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,_assets[sprite.Asset!],new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
                     else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false);
                 }
                 for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;}
@@ -126,6 +126,8 @@ public sealed class SourceBattleFrameComposer
             foreach(var b in _battlers.OrderBy(b=>frame.BackgroundSlots.Contains(b.Slot.Value)?0:1).ThenBy(b=>b.Slot.IsPlayer?1:0))Battler(b);
             foreach(var sprite in frame.Sprites.OrderByDescending(s=>s.OamRank))Sprite(sprite);
         }
+        // splitbgprio promotes BG1 above priority-2 objects; BG2 retains priority 2.
+        foreach(var b in _battlers.Where(b=>frame.ForegroundBackgroundSlots.Contains(b.Slot.Value)))Battler(b);
         if(frame.StatMask is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} mask)
         {
             if(_statMaterial is null)throw new InvalidDataException("Source stat material missing.");
@@ -178,18 +180,21 @@ public sealed class SourceBattleFrameComposer
     }
     private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)
     {
-        // Source 32x32 4bpp frames are 16 sequential 8x8 tiles, stacked in the imported sheet.
-        if(sprite.Tile<0||sprite.Tile%16!=0||sprite.Tile/16*32+32>sheet.Height)throw new InvalidDataException("Source sprite tile frame exceeds sheet.");
-        int top=sprite.Tile/16*32;
-        for(int y=0;y<32;y++)for(int x=0;x<32;x++)
+        // Sheets preserve original sequential 8x8 tile order, including 8x16 particles.
+        int width=sprite.Width,height=sprite.Height;
+        if(width is not (8 or 16 or 32 or 64)||height is not (8 or 16 or 32 or 64)||sheet.Width!=width||sprite.Tile<0||sprite.Tile*64%sheet.Width!=0)throw new InvalidDataException("Source sprite frame shape differs.");
+        int top=sprite.Tile*64/sheet.Width;
+        if(top+height>sheet.Height)throw new InvalidDataException("Source sprite tile frame exceeds sheet.");
+        for(int y=0;y<height;y++)for(int x=0;x<width;x++)
         {
-            int dx=sprite.Position.X+sprite.Offset.X-16+x,dy=sprite.Position.Y+sprite.Offset.Y-16+y;
+            int dx=sprite.Position.X+sprite.Offset.X-width/2+x,dy=sprite.Position.Y+sprite.Offset.Y-height/2+y;
             if(dx<0||dx>=240||dy<0||dy>=112)continue;
-            int sx=sprite.HFlip?31-x:x;ushort pixel=sheet.Pixels[(top+y)*sheet.Width+sx];
+            int sx=sprite.HFlip?width-1-x:x;ushort pixel=sheet.Pixels[(top+(sprite.VFlip?height-1-y:y))*sheet.Width+sx];
             if((pixel&0x8000)==0)continue;
             int at=dy*240+dx;dest[at]=sprite.Blend&&blendEnabled?Blend(pixel,dest[at],eva,evb):pixel;
         }
     }
+
     private static ushort Blend(int pixel,int under,int eva,int evb)
     {
         int result=0x8000;

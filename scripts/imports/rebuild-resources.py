@@ -22,6 +22,15 @@ TARGET_SCRIPTS = {
     'audio-cues': ('scripts/imports/audio/build-cue-catalog.py',),
     'diploma': ('scripts/imports/presentation/import-diploma.py',),
     'help': ('scripts/imports/presentation/import-help-system.py',),
+    'opening': ('scripts/imports/presentation/import-opening-presentation.py',),
+    'summary': ('scripts/imports/presentation/import-summary-screen.py',),
+    'evolution': ('scripts/imports/presentation/import-evolution-scene.py',),
+    'capture-balls': ('scripts/imports/presentation/import-capture-balls.py',),
+    'overworld-art': ('scripts/imports/presentation/import-shared-overworld.py',),
+    'party': ('scripts/imports/presentation/import-party-screen.py',),
+    'npc-trade': ('scripts/imports/presentation/import-npc-trade-scene.py',),
+    'move-animations': ('scripts/imports/battle/import-source-physical-animations.py',
+                        'scripts/imports/battle/import-source-elemental-animations.py'),
 }
 
 
@@ -50,6 +59,18 @@ def build_commands(targets, raw, out, *, pack=None, cries=None, check=False):
                     raise ValueError('Audio cue output overlaps an audio input')
                 arguments = ['--reference', str(raw), '--pack', str(pack), '--cries', str(cries),
                              '--output', str(output)]
+            elif target == 'move-animations':
+                name = 'physical' if 'physical' in script else 'elemental'
+                arguments = ['--reference', str(raw), '--output', str(out / ('battle/animations/' + name + '.json'))]
+            elif target in ('opening', 'evolution', 'capture-balls', 'party', 'npc-trade'):
+                folder = {'opening': 'ui/opening', 'evolution': 'ui/evolution-scene',
+                          'capture-balls': 'battle/capture-balls', 'party': 'ui/party-screen',
+                          'npc-trade': 'ui/npc-trade-scene'}[target]
+                arguments = ['--raw', str(raw), '--out', str(out / folder)]
+            elif target == 'summary':
+                arguments = ['--raw', str(raw), '--target', str(out / 'ui/summary-screen')]
+            elif target == 'overworld-art':
+                arguments = ['--raw', str(raw), '--generated', str(out)]
             elif target == 'help':
                 arguments = ['--raw', str(raw), '--out', str(out / 'ui/help/help.json')]
             elif target == 'diploma':
@@ -93,6 +114,14 @@ def main(argv=None):
                '  audio-cues     Cue catalog from source + existing pack and normal-cries.\n'
                '  diploma        Original Kanto/National certificate artwork, text and layout.\n'
                '  help           Original contextual HELP texts, ordered tables and unlock predicates.\n'
+               '  opening        Source title, Oak introduction and naming presentation.\n'
+               '  summary        Native summary artwork and text.\n'
+               '  evolution      Evolution atlases and hatch background.\n'
+               '  capture-balls  Native ball atlas, particles and motion data.\n'
+               '  overworld-art  Shared field actors and Itemfinder sprite sheet.\n'
+               '  party          Native party panel atlas and geometry.\n'
+               '  npc-trade      Native NPC wireless trade scene assets.\n'
+               '  move-animations Supported physical/elemental source animation packs.\n'
                '\nThere is no implicit all target or best-effort skipping. A failed step stops the run.\n'
                '--check is read-only for every target; world recompiles in a temporary directory.')
     parser.add_argument('targets', nargs='+', choices=tuple(TARGET_SCRIPTS))

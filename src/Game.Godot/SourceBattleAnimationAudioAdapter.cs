@@ -20,6 +20,8 @@ public sealed class SourceBattleAnimationAudioAdapter(SynthSourceAudioPlayer bac
             throw new InvalidOperationException("Source animation sound has no owned active SE track: "+cue.Id);
         controlObserver?.Invoke(cue);
     }
+    public void SetPan(int pan,int frame)
+    {foreach(long token in _ownedTokens)backend.SetBattleAnimationSoundPan(token,pan);}
     public void StopAnimationEffects(){backend.StopBattleAnimationSoundEffects(_ownedTokens);_ownedTokens.Clear();}
 }
 

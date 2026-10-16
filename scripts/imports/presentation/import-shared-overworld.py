@@ -74,6 +74,17 @@ def build(raw, *, selection=None):
     rgba.putdata([(*colors[index], 0 if index == 0 else 255) for index in player.get_flattened_data()])
     from image_io import encode_png
     outputs['opening-player.png'] = encode_png(rgba)
+    # Itemfinder sprites use OBJ palette zero, the same player palette. The five
+    # 16x16 frames are the four response strengths followed by the underfoot star.
+    with Image.open(raw / 'graphics/itemfinder/spr_tiles.png') as finder:
+        if finder.mode != 'P' or finder.size != (16, 80):
+            raise ValueError('Itemfinder sprite sheet format differs')
+        pixels = list(finder.get_flattened_data())
+        if any(index >= len(colors) for index in pixels):
+            raise ValueError('Itemfinder palette index outside player palette')
+        effect = Image.new('RGBA', finder.size)
+        effect.putdata([(*colors[index], 0 if index == 0 else 255) for index in pixels])
+        outputs['itemfinder.png'] = encode_png(effect)
     outputs['catalog.json'] = (json.dumps(catalog,sort_keys=True,separators=(',',':'))+'\n').encode()
     return outputs
 

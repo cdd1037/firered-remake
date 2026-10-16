@@ -60,6 +60,18 @@
       "path": "data/tilesets/secondary/pokemon_league/tiles.png"
     },
     {
+      "path": "graphics/credits/blastoise_1.png"
+    },
+    {
+      "path": "graphics/credits/blastoise_2.png"
+    },
+    {
+      "path": "graphics/credits/charizard_1.png"
+    },
+    {
+      "path": "graphics/credits/charizard_2.png"
+    },
+    {
       "path": "graphics/credits/copyright.bin"
     },
     {
@@ -75,10 +87,37 @@
       "path": "graphics/credits/ground_grass.png"
     },
     {
+      "path": "graphics/credits/pikachu_1.png"
+    },
+    {
+      "path": "graphics/credits/pikachu_2.png"
+    },
+    {
       "path": "graphics/credits/player_female.png"
     },
     {
       "path": "graphics/credits/player_male.png"
+    },
+    {
+      "path": "graphics/credits/pokeball.bin"
+    },
+    {
+      "path": "graphics/credits/pokeball.png"
+    },
+    {
+      "path": "graphics/credits/pokeball_blastoise.pal"
+    },
+    {
+      "path": "graphics/credits/pokeball_charizard.pal"
+    },
+    {
+      "path": "graphics/credits/pokeball_pikachu.pal"
+    },
+    {
+      "path": "graphics/credits/pokeball_venusaur.pal"
+    },
+    {
+      "path": "graphics/credits/rival.png"
     },
     {
       "path": "graphics/credits/the_end.bin"
@@ -87,10 +126,25 @@
       "path": "graphics/credits/the_end.png"
     },
     {
+      "path": "graphics/credits/venusaur_1.png"
+    },
+    {
+      "path": "graphics/credits/venusaur_2.png"
+    },
+    {
+      "path": "graphics/credits/white_circle.bin"
+    },
+    {
+      "path": "graphics/credits/white_circle.png"
+    },
+    {
       "path": "graphics/field_effects/pics/hof_monitor.png"
     },
     {
       "path": "graphics/hall_of_fame/hall_of_fame.png"
+    },
+    {
+      "path": "graphics/interface/std_menu.pal"
     },
     {
       "path": "graphics/misc/confetti.png"
@@ -109,6 +163,18 @@
     },
     {
       "path": "graphics/pokemon/aerodactyl/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/blastoise/front.png"
+    },
+    {
+      "path": "graphics/pokemon/blastoise/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/charizard/front.png"
+    },
+    {
+      "path": "graphics/pokemon/charizard/normal.pal"
     },
     {
       "path": "graphics/pokemon/dragonair/back.png"
@@ -225,6 +291,12 @@
       "path": "graphics/pokemon/machamp/shiny.pal"
     },
     {
+      "path": "graphics/pokemon/pikachu/front.png"
+    },
+    {
+      "path": "graphics/pokemon/pikachu/normal.pal"
+    },
+    {
       "path": "graphics/pokemon/rhydon/back.png"
     },
     {
@@ -238,6 +310,12 @@
     },
     {
       "path": "graphics/pokemon/rhydon/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/venusaur/front.png"
+    },
+    {
+      "path": "graphics/pokemon/venusaur/normal.pal"
     },
     {
       "path": "graphics/trainers/front_pics/champion_rival_front_pic.png"
@@ -337,6 +415,9 @@
     },
     {
       "path": "src/strings.c"
+    },
+    {
+      "path": "src/trig.c"
     },
     {
       "path": "tileset_rules.mk"

@@ -1,6 +1,6 @@
 # 图鉴栖息地、分布与大小
 
-来源仍为 pret/pokefirered 固定提交 `037335f4c725d7c9aecdac87066f2002b4bd7e14`。本轮扩展同一个 `pokedex-menu.json`（schema 3）及 `PretPokedexMenu`，不新增平行物种目录，不改 seen/caught、全国图鉴条件、库存、RNG 或存档。
+来源仍为 pret/pokefirered 固定提交 `037335f4c725d7c9aecdac87066f2002b4bd7e14`。本轮扩展同一个 `pokedex-menu.json`（schema 4）及 `PretPokedexMenu`，不新增平行物种目录，不改 seen/caught、全国图鉴条件、库存、RNG 或存档。
 
 ## 栖息地路径
 
@@ -14,7 +14,11 @@
 
 四个字段 `pokemonScale`、`pokemonOffset`、`trainerScale`、`trainerOffset` 逐项来自 `pokedex_entries.h`，不用身高反推。比例是 GBA OAM 的反向 8.8 仿射系数，显示倍率为 `256 / coefficient`；按 NORMAL 仿射的 64×64 sprite box 裁切。中心分别为 (40,104) 与 (80,104)，加各自有符号 y 偏移。只在已捕获时显示两幅轮廓，未捕获连训练家轮廓也不显示。轮廓颜色来自原 `silhouette_sprite_pal.pal`，所有非透明色为 (82,82,82)。训练家正面沿用已加载的玩家性别资源。
 
-栖息地每页 1–4 种的画像/信息坐标逐项导入 `sPageIconCoords_*`，画像使用现有 64×64 正面资源。类别背景装饰、圆形窗口 tilemap、分布页小图标/属性徽章、翻页/缩放转场以及原控制键图标尚未逐像素还原；当前沿用共享菜单框和键鼠文字提示，不能据此称整个原图鉴视觉验收通过。
+栖息地每页 1–4 种的画像/信息坐标逐项导入 `sPageIconCoords_*`，画像使用现有 64×64 正面资源。`visual-atlas.png` 在同一菜单资源内保存 Kanto／National 两套背景与资料边框、原 `page_icon_tilemap.bin` 圆形窗口、五组圆形游标调色板、64×40 mini-page 信息框和原 8×8 捕获标记。类别图标直接由固定源 PNG 和其调色板转换；目录右侧使用原 (168,88) 坐标。分布页复用已有物种 icon（Unown 使用已记录形态），不缩小战斗正面画像冒充小图标。18 种属性徽章按 `sMenuInfoIcons` 的原 GBA tile-memory 偏移、32×12 尺寸与 `pokemon_types.pal` 导入；只在已捕获时显示。单属性投影的第二属性为 null，不会查询不存在的徽章。
+
+A／B／START／方向键 glyph 来自 `sKeypadIcons` 与 `keypad_icons.png`，独立裁切，不重新设计字体。键盘映射仍是 Enter／Backspace／Tab／方向键。当前既有数值列表／搜索排序布局及部分文案保留；此工作不声称整个目录与原作滚动列表逐像素相同。
+
+翻页 shader 逐列使用原 `sDexScreenPageTurnColumns[10][30]`，不做平滑水平缩放代替原 tile-column 变换。右翻先收缩旧页，再换源页并淡入；左翻先淡出旧页，再准备前页展开，转场期间拦截浏览输入。资料展开／收起用原 0–6 级 tile-space 边框几何，末级固定为 (0,2,28,14)，只使用表现时钟，不改变 state／revision／RNG。淡出／淡入使用原 palette[7]、5-bit 整数混色，以及 `palette.c` 的 delta=2、BG/OBJ交替与结束等待所导出的23帧斜坡；每侧表现阶段合计33帧。原状态机的空白帧／零幅度淡变等待未全部逐帧复演，GPU shader 在实际窗口上的渲染、完整原作节奏与视觉验收仍须单独检查，不能以资源像素一致或 headless 检查代替。
 
 ## 分布与共享区域图集
 
@@ -53,3 +57,28 @@ AUDIT_ROOT="$PWD" FIRERED_AUDIO_BACKEND=synth FIRERED_AUDIO=1 "$GODOT" \
 ```
 
 隔离 probe 与日志在 `/tmp/firered-pokedex-habitat-ui/`，不作为运行资源或替代维护测试提交。早先叫声切片的 probe 和失败日志保持在原目录，未覆盖。
+
+
+## 2026-10-16 原生视觉资源补充
+
+`python3 scripts/checks/test-pokedex-visual-import.py` 4/4 通过：属性徽章 tile-memory 偏移／调色板、两套圆形 tilemap 全像素及 H/V 翻转、原控制 glyph 尺寸与完整像素、翻页列向量和 atlas 可重复生成。此检查通过 `PokedexVisualImportTests` 加入普通资源导入测试项目。既有分布导入检查仍为 5/5。
+
+内容项目 `FullyQualifiedName~Pokedex` 32/32 通过（无失败或跳过），新增 `PokedexVisualTests` 覆盖类别／属性／双调色板图集与全部页面位置的 0–6 级缩放边界。日志 `.toolhome/test-results/pokedex-native-visuals.trx`。本次首次整解构建被同时进行中的其他表现文件编译错误阻断，保留 `/tmp/pokedex-native-build.log`，不把该构建称为成功；随后整合构建／原生窗口结论应按实际验证另行记录。新增 145 个视觉裁切共用一张无损图集，运行时仍只读取 generated。
+
+
+新隔离 probe `/tmp/firered-pokedex-native-ui/` 使用已复制的整合产品程序集快照（不回编产品）完成 34 项检查，Godot 4.7.2 .NET／runtime 10.0.12，MVID `75b14c6f-5335-414c-8454-ebc32b26e09f`。覆盖实际共享小图标、资料展开、双向源页翻转与输入抑制，加上先前导航／门禁／state/revision/RNG检查。最终 `run-native-final.log` 无 ERROR／Exception／WARNING；首轮通过检查后出现 fixture 跳过 `_Ready` 导致的控制器事件退订错误，原日志保留，修正 fixture 对称安装生命周期事件后复测通过。显示为 headless，音频为 Dummy 且音频进程暂停，peak=0、frames=0；不提供GPU像素或真实音频证据。随后修正shader列偏移的画布缩放公式（使用实际屏幕跨度，而非8个物理像素），此公式仍须实际窗口验证。该34项结果对应淡变扩展前的程序集；23帧淡变扩展的最新构建／运行结果应另行记录，不追溯覆盖此快照。
+
+最终补充：整合解决方案构建已通过（0 warnings／0 errors，`/tmp/firered-presentations-integrated-build.log`）。最新导入检查为 5/5，新增 mini-page 四角及类别图标 padding 的 source index0 全像素透明度检查；这两类是覆盖底层的窗口，不能把 index0 当不透明调色板颜色。最新图集已原子再生成。以重新复制的程序集 MVID `5518e114-c267-4db6-91cb-3a5359964505`、最新图集执行 `/tmp/firered-pokedex-native-ui/run-fade-alpha-final.log`，34项通过，日志无 ERROR／Exception／WARNING。环境仍是 Godot 4.7.2 .NET、runtime10.0.12、headless、Dummy，peak=0、frames=0；原窗口GPU像素和音频听感边界不变。
+
+最终探针命令（工程根；probe 的 Reference 全部指向独立复制目录，不触发产品回编）：
+
+```sh
+source scripts/env.sh
+dotnet build /tmp/firered-pokedex-native-ui/PokedexProbe.csproj --no-restore \
+  -m:1 -nr:false -p:UseSharedCompilation=false
+AUDIT_ROOT="$PWD" FIRERED_AUDIO_BACKEND=synth FIRERED_AUDIO=1 "$GODOT" \
+  --headless --path /tmp/firered-pokedex-native-ui --audio-driver Dummy
+```
+
+
+原生 Summary 检查发现 Mewtwo 错显 POISON 后修复共享图集：`sMenuInfoIcons`／`sKeypadIcons` 的 offset 是32-byte 4bpp tile序号，不能以 offset×64 索引 PNG 的逐行像素数组。两条导入路径现按 tile 坐标裁切；PSYCHIC 的0x84对应原PNG (32,64)。此前像素检查复用了错误寻址假设，未能发现此错误，不能用此前通过结果为错误图像背书。检查现独立打包4bpp tile-memory，并按固定 `src/blit.c` 的 nibble-address 公式读取，覆盖全部18徽章与13控制 glyph，并另设 PSYCHIC 的明确图像坐标锚点。重新导入后 visual5/5、area5/5通过；放大查看 PSYCHIC 实际字样正确。14:41 的图集替换不改变 C#，运行窗口须重启以清除旧纹理缓存。

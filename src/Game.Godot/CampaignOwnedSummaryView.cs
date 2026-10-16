@@ -75,10 +75,11 @@ public partial class CampaignView
     }
     private bool FieldSummaryInput(InputEventKey key)
     {
+        if (SummaryExitActive) return true;
         var owned = _session.State.Party[_fieldPartyCursor];
         if (OwnedMoveDetailsInput(key, owned)) return true;
         if (key.Keycode is Key.Backspace or Key.B || key.Keycode == Key.Enter && _fieldSummaryPage == 0)
-        { ResetOwnedSummarySelection(); _fieldMenuMode = "party"; return true; }
+        { BeginSummaryExit(() => { ResetOwnedSummarySelection(); _fieldMenuMode = "party"; }); return true; }
         if (!owned.IsEgg)
         {
             if (key.Keycode == Key.Left) _fieldSummaryPage = Math.Max(0, _fieldSummaryPage - 1);
@@ -92,45 +93,27 @@ public partial class CampaignView
     }
     private bool MouseOwnedSummary(Vector2 point, PartyPokemon owned, int page)
     {
+        if (SummaryExitActive) return true;
         if (_summaryDetails)
         {
             if (!OwnedSummarySelectionIsCurrent(owned)) return true;
-            if (new Rect2(172, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Backspace);
+            if (new Rect2(208, 0, 32, 16).HasPoint(point)) return MouseKey(Key.Backspace);
+            if (new Rect2(152, 0, 56, 16).HasPoint(point)) return MouseKey(Key.Enter);
             int rows = owned.Pokemon.Moves.Length + (_summarySwapSource < 0 ? 1 : 0);
-            return MouseSelect(point, ref _summaryMoveCursor, rows, 8, 44, 224, 16);
+            return MouseSelect(point, ref _summaryMoveCursor, rows, 120, 18, 120, 28);
         }
-        if (!owned.IsEgg && page > 0 && new Rect2(8, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Left);
-        if (!owned.IsEgg && new Rect2(84, 140, 68, 16).HasPoint(point)) return MouseKey(page == 2 ? Key.Enter : Key.Right);
-        if (new Rect2(172, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Backspace);
+        if (!owned.IsEgg && page > 0 && new Rect2(104, 0, 24, 16).HasPoint(point)) return MouseKey(Key.Left);
+        if (!owned.IsEgg && new Rect2(128, 0, 80, 16).HasPoint(point)) return MouseKey(page == 2 ? Key.Enter : Key.Right);
+        if (new Rect2(208, 0, 32, 16).HasPoint(point)) return MouseKey(Key.Backspace);
         return false;
     }
     private bool NavigateOwnedSummaryPointer(Vector2 point, int direction, PartyPokemon owned)
     {
+        if (SummaryExitActive) return true;
         if (!_summaryDetails) return direction != 0 && new Rect2(8, 26, 224, 110).HasPoint(point) && MouseNavigationKey(direction);
         if (!OwnedSummarySelectionIsCurrent(owned)) return true;
         return PointerRows(point, direction, ref _summaryMoveCursor,
-            owned.Pokemon.Moves.Length + (_summarySwapSource < 0 ? 1 : 0), 8, 44, 224, 16);
+            owned.Pokemon.Moves.Length + (_summarySwapSource < 0 ? 1 : 0), 120, 18, 120, 28);
     }
-    private void DrawOwnedMoveDetails(PartyPokemon owned)
-    {
-        _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-        SourceText(_sourceNormal, new(8, 8), "MOVE DETAILS");
-        SourceText(_sourceNormal, new(8, 26), owned.Nickname);
-        var moves = owned.Pokemon.Moves;
-        for (int i = 0; i < moves.Length; i++)
-        {
-            SourceText(_sourceSmall, new(20, 44 + i * 16), MoveName(moves[i].Move) + $"  PP {moves[i].CurrentPp}/{moves[i].MaximumPp}");
-            if (_summarySwapSource == i) DrawRect(new(224, 48 + i * 16, 5, 5), new Color("c34f4f"));
-        }
-        if (_summarySwapSource < 0) SourceText(_sourceSmall, new(20, 44 + moves.Length * 16), "CANCEL");
-        SourceText(_sourceSmall, new(8, 44 + _summaryMoveCursor * 16), "▶");
-        if (_summaryMoveCursor < moves.Length)
-        {
-            var move = _catalog.PokemonContent!.Catalog.Moves[moves[_summaryMoveCursor].Move];
-            string power = move.Power <= 1 ? "---" : move.Power.ToString(), accuracy = move.Accuracy == 0 ? "---" : move.Accuracy.ToString();
-            SourceText(_sourceSmall, new(8, 124), FieldSymbol(move.Type, "TYPE_") + "  POWER " + power + "  ACC " + accuracy);
-        }
-        SourceText(_sourceSmall, new(8, 143), _summarySwapSource < 0 ? "ENTER: SWITCH" : "ENTER: PLACE");
-        SourceText(_sourceSmall, new(172, 143), _summarySwapSource < 0 ? "BACK" : "CANCEL");
-    }
+    private void DrawOwnedMoveDetails(PartyPokemon owned) => DrawNativeSummary(owned, 2, true, true);
 }

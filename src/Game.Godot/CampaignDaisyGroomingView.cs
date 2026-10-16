@@ -16,7 +16,7 @@ public partial class CampaignView
         bool choosing = after.DaisyGrooming?.ChoosingParty == true;
         if (wasChoosing == choosing) return;
         _held = null; _repeat = 0; ReleaseFieldTextInput(); _fade = 16.0 / 60;
-        if (choosing) _daisyGroomingCursor = 0;
+        if (choosing) { _daisyGroomingCursor = 0; _partyLastRightSlot = 1; }
         else _daisyGroomingClosedFrame = Engine.GetProcessFrames();
     }
 
@@ -28,8 +28,7 @@ public partial class CampaignView
         _held = null; _repeat = 0;
         if (!key.Pressed || key.Echo || _fade > 0) return true;
         int count = _session.State.Party.Length + 1;
-        if (key.Keycode is Key.Up or Key.Left) _daisyGroomingCursor = (_daisyGroomingCursor + count - 1) % count;
-        else if (key.Keycode is Key.Down or Key.Right) _daisyGroomingCursor = (_daisyGroomingCursor + 1) % count;
+        if (NativePartyMove(key.Keycode, ref _daisyGroomingCursor, count - 1)) { }
         else if (key.Keycode is Key.Backspace or Key.Escape) Apply(new("daisy_cancel"));
         else if (key.Keycode is Key.Enter or Key.KpEnter)
         {

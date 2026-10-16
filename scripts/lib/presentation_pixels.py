@@ -1,5 +1,6 @@
 """Shared exact GBA palette expansion and source-frame decoding for presentation."""
 import io
+import struct
 from PIL import Image
 
 
@@ -43,3 +44,21 @@ class PixelReader:
 
     def pixels(self, *args, **kwargs):
         return self.indexed(*args, **kwargs)[1]
+
+
+def tilemap(tiles, data, colors, width=256, height=256, bank_base=0, transparent=False):
+    if tiles.mode != 'P' or len(data) != width * height // 32:
+        raise ValueError('Invalid indexed tilemap geometry')
+    out = Image.new('RGBA', (width, height))
+    for n, (word,) in enumerate(struct.iter_unpack('<H', data)):
+        index, bank = word & 1023, (word >> 12) - bank_base
+        tx, ty = index % (tiles.width // 8) * 8, index // (tiles.width // 8) * 8
+        if word == 0:
+            continue
+        if ty + 8 > tiles.height or bank < 0 or (bank+1)*16 > len(colors):
+            raise ValueError(f'Invalid tile reference {word:x}')
+        for y in range(8):
+            for x in range(8):
+                pixel = tiles.getpixel((tx + (7-x if word & 1024 else x), ty + (7-y if word & 2048 else y)))
+                out.putpixel((n % (width//8)*8+x,n//(width//8)*8+y), (*colors[bank*16+pixel], 0 if transparent and pixel == 0 else 255))
+    return out
