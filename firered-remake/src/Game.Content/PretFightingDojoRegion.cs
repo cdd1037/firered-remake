@@ -41,7 +41,7 @@ public sealed class PretFightingDojoRegion
         Need(map.Id == new MapId("map.saffron-city-dojo") && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Saffron Fighting Dojo must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     public static PretFightingDojoRegion Load(string projectRoot)

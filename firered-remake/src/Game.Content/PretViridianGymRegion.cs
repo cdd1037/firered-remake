@@ -40,7 +40,7 @@ public sealed partial class PretViridianGymRegion
     {
         Need(map.Id == new MapId("map.viridian-city-gym") && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Viridian Gym has no edge connections.");
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), []);
     }
     private static SilphSourcePackage ViridianGymSource(string root) => new(root,"maps/regions/viridian-gym");
     public static PretViridianGymRegion Load(string root)

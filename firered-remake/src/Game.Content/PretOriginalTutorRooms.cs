@@ -43,7 +43,7 @@ public sealed class PretOriginalTutorRooms
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Original tutor rooms must retain their disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>Load before campaign compilation. dependencyRoot supplies unchanged adjacent maps and NPC textures.</summary>

@@ -44,7 +44,7 @@ public sealed class PretMoveDeleterHouse
         Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Move Deleter house must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>Bind only after composition has constructed its final owned catalog. Reuses authenticated source bytes.</summary>

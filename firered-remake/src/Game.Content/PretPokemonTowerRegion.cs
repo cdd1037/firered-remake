@@ -39,7 +39,7 @@ public sealed partial class PretPokemonTowerRegion
     {
         var source = map.Events.GetProperty("connections");
         Need(source.ValueKind == JsonValueKind.Null, "Tower maps must retain their original disconnected indoor topology.");
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), []);
     }
 
     public static PretPokemonTowerRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)

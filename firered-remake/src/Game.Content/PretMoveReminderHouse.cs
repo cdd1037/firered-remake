@@ -41,7 +41,7 @@ public sealed class PretMoveReminderHouse
         Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Move Reminder house must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>dependencyRoot optionally supplies the unchanged town and existing NPC atlas resources.</summary>

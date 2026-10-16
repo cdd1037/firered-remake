@@ -42,7 +42,7 @@ public sealed class PretRoute5DayCare
         Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Route 5 Day Care must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>Load map/script evidence before compiling campaign scripts. dependencyRoot supplies unchanged town/NPC resources.</summary>

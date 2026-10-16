@@ -50,7 +50,7 @@ public sealed class PretSuperRodService
         Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Super Rod house must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     public static PretSuperRodService Load(string projectRoot, string? dependencyRoot = null)

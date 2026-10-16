@@ -57,7 +57,7 @@ public sealed class PretSchoolHouseInteriors
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "School/house interiors must retain their disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>Load before campaign compilation. dependencyRoot supplies unchanged adjacent maps and NPC textures.</summary>

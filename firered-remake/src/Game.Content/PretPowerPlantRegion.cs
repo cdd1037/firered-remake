@@ -45,7 +45,7 @@ public sealed class PretPowerPlantRegion
         Need(map.Id == new MapId("map.power-plant") && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Power Plant must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     public static PretPowerPlantRegion Load(string projectRoot)

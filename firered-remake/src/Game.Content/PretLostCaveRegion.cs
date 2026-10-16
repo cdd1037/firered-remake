@@ -66,7 +66,7 @@ public sealed class PretLostCaveRegion
                     _ => throw new InvalidDataException("Lost Cave has only original north/south outdoor connections.")
                 }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+            map.CreateConnectedCells(), edges);
     }
 
     public static PretLostCaveRegion Load(string projectRoot)

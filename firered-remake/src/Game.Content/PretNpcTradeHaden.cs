@@ -51,7 +51,7 @@ public sealed class PretNpcTradeHaden
                 _ => throw new InvalidDataException("Unknown original Haden connection direction.")
             }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+            map.CreateConnectedCells(), edges);
     }
 
     /// <summary>Source-authenticated eastern foot cells only. Other maps return false. Scene=0 and normal movement/warp rules remain Application responsibilities.</summary>

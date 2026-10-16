@@ -145,6 +145,14 @@ public sealed class PretRuntimeMapData : IFieldMap
     public ImmutableArray<PretWorldCell> ExpandCells()
         => _blocks.Select((block, i) => Expand(block, i % Width, i / Width)).ToImmutableArray();
 
+    internal ImmutableArray<ConnectedFieldCell> CreateConnectedCells()
+    {
+        var cells = ImmutableArray.CreateBuilder<ConnectedFieldCell>(_blocks.Length);
+        foreach (var block in _blocks)
+            cells.Add(new((int)(_metatiles[block & 1023] & 511), (block >> 10) & 3, block >> 12));
+        return cells.MoveToImmutable();
+    }
+
     public ImmutableArray<PretWorldCell> ExpandBorderCells()
         => _borderBlocks.Select((block, i) => Expand(block, i % BorderWidth, i / BorderWidth)).ToImmutableArray();
 

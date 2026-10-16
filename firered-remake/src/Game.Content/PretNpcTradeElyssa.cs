@@ -46,7 +46,7 @@ public sealed class PretNpcTradeElyssa
         Need(map.Id == HouseMapId && map.Width == 11 && map.Height == 9 &&
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Original Elyssa room geometry differs.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     public static PretNpcTradeElyssa Load(string projectRoot)

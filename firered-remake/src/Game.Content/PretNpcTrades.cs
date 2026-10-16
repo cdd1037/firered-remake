@@ -43,7 +43,7 @@ public sealed class PretNpcTrades
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "NPC trade Lounge indoor geometry differs.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
     public static PretNpcTrades Load(string projectRoot, PokemonCatalog pokemon)
     {

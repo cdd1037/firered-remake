@@ -112,7 +112,7 @@ public sealed class PretTrainerTowerRegion
     public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
     {
         Need(map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Tower indoor connection scope differs.");
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), []);
     }
 
     public static PretTrainerTowerRegion Load(string projectRoot)

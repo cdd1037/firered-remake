@@ -51,7 +51,7 @@ public sealed partial class PretPokemonLeagueRegion
         var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
             new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
                 _ => throw new InvalidDataException("Unknown PokemonLeague connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
     }
     private static SilphSourcePackage PokemonLeagueSource(string root) => new(root,"maps/regions/pokemon-league");
     public static PretPokemonLeagueRegion Load(string root)

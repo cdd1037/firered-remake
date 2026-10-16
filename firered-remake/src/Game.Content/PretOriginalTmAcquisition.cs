@@ -69,7 +69,7 @@ public sealed class PretOriginalTmAcquisition
                     _ => throw new InvalidDataException("Unknown original connection direction.") },
                 c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+            map.CreateConnectedCells(), edges);
     }
 
     /// <summary>Append exactly three source instances; never replace existing Route12/15 or entrance geometry.</summary>

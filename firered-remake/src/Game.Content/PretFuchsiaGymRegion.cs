@@ -45,7 +45,7 @@ public sealed class PretFuchsiaGymRegion
                 _ => throw new InvalidDataException("Unsupported connection direction.")
             }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new Game.Domain.World.ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), values);
+            map.CreateConnectedCells(), values);
     }
 
     public static PretFuchsiaGymRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)

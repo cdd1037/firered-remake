@@ -62,7 +62,7 @@ public sealed class PretSeafoamRegion
                 "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
                 _ => throw new InvalidDataException("Unknown Seafoam route connection direction.")
             }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
     }
 
     /// <summary>Complete original attributes, including CalmWater used by B4F OnLoad.</summary>

@@ -663,7 +663,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         if (map.Events.GetProperty("connections").ValueKind != JsonValueKind.Null)
             throw new InvalidDataException("cerulean_cave_unexpected_connection");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     private static ImmutableArray<FieldPickupDefinition> SourceRegionPickupDefinitions(IReadOnlyDictionary<MapId,PretWorldMap> regionMaps,JsonElement items,JsonElement contracts,Func<string,MapId> resolveMap,string proofId,EarlyShopCatalog shop,PretStoryCompilation scripts)

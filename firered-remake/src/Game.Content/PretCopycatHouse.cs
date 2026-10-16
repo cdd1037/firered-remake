@@ -44,7 +44,7 @@ public sealed class PretCopycatHouse
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Copycat house must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>Load before campaign compilation. dependencyRoot supplies unchanged town and actor resources.</summary>

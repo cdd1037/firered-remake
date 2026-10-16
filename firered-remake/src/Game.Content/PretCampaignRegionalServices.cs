@@ -39,7 +39,7 @@ public sealed partial class PretCampaignCatalog
                 _ => throw new InvalidDataException("regional_services_connection_direction")
             }, c.GetProperty("offset").GetInt32(), PretRegionalServiceMaps.MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), connections);
+            map.CreateConnectedCells(), connections);
     }
 
     private static void MergeRegionalServiceConstants(Dictionary<string, int> constants,IReadOnlyDictionary<string, int> added)

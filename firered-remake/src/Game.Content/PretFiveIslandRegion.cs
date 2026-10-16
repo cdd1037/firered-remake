@@ -61,7 +61,7 @@ public sealed partial class PretFiveIslandRegion
                     "MAP_FIVE_ISLAND_MEMORIAL_PILLAR" => MemorialPillarConnectionHeight,
                     _ => (int?)null
                 })).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
     }
     public static PretFiveIslandRegion Load(string root)
     {

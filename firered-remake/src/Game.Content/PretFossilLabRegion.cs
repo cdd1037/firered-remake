@@ -48,7 +48,7 @@ public sealed class PretFossilLabRegion
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Cinnabar fossil lab must retain its original disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     public static PretFossilLabRegion Load(string projectRoot)

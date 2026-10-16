@@ -57,7 +57,7 @@ public sealed class PretSnorlaxRegion
                 _ => throw new InvalidDataException("Unsupported connection direction.")
             }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new Game.Domain.World.ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), values);
+            map.CreateConnectedCells(), values);
     }
 
     /// <summary>Pure preflight. This never changes source collision or substitutes for ordinary movement checks.</summary>

@@ -41,7 +41,7 @@ public sealed class PretTrainerFanClub
         Need(map.Id == RoomMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
             "Trainer Fan Club must retain its disconnected indoor geometry.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>dependencyRoot supplies unchanged Saffron City and the nine existing NPC sheets.</summary>

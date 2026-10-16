@@ -64,7 +64,7 @@ public sealed class PretRoute16FlyHouse
     {
         Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Unexpected Fly house connection.");
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+            map.CreateConnectedCells(), []);
     }
 
     /// <summary>Call before composing. This validates the retained instances without replacing or republishing them.</summary>

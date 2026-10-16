@@ -66,7 +66,7 @@ public sealed partial class PretSixIslandRegion
                 _ => throw new InvalidDataException("Unknown SixIsland connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!),
                 map.Id.Value == "map.six-island-water-path" && c.GetProperty("map").GetString() == "MAP_SIX_ISLAND_GREEN_PATH" &&
                     c.GetProperty("direction").GetString() == "left" ? GreenPathConnectionHeight : null)).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
     }
     public static PretSixIslandRegion Load(string root)
     {

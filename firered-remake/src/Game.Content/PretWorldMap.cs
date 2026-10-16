@@ -64,6 +64,7 @@ public sealed class PretWorldMap : IFieldMap
     public PretWorldMetadata Metadata { get; }
     public PretWorldSpawn TechnicalSpawn => _data.TechnicalSpawn ?? throw new InvalidDataException("No technical spawn is declared for this region map.");
     public ImmutableArray<PretWorldCell> Cells => _data.ExpandCells();
+    internal ImmutableArray<ConnectedFieldCell> CreateConnectedCells() => _data.CreateConnectedCells();
     public ImmutableArray<PretWorldCell> BorderCells => _data.ExpandBorderCells();
     public ImmutableArray<PretWorldArtifact> Artifacts => _data.Artifacts;
     public JsonElement Events => _data.Events;

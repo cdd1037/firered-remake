@@ -70,7 +70,7 @@ public sealed class PretFuchsiaRouteRegion
                 _ => throw new InvalidDataException("Unknown Fuchsia route connection direction.")
             }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
         return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new Game.Domain.World.ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), edges);
+            map.CreateConnectedCells(), edges);
     }
 
     /// <summary>Only a source-package boundary check; not an admission of interactions, trainer approaches or encounters.</summary>
