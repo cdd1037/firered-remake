@@ -29,6 +29,7 @@ public sealed class GeneratedStoryRuntimeTests
         SameKeys(compilation.GetProperty("MapHeaders"), story.Compilation.MapHeaders.Keys);
         SameKeys(compilation.GetProperty("Movements"), story.Compilation.Movements.Keys);
         SameKeys(compilation.GetProperty("Constants"), story.Compilation.Constants.Keys);
+        SameKeys(compilation.GetProperty("Menus"), story.Compilation.Menus.Keys);
         Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));
         Assert.IsFalse(typeof(PretStoryRuntime).Assembly.GetTypes().Any(t => t.Name == "PretStoryCompiler"));
     }
@@ -43,7 +44,9 @@ public sealed class GeneratedStoryRuntimeTests
         CollectionAssert.AreEqual(new[] { "lockall", "msgbox", "releaseall", "end" },
             compiled.FindProgram("EventScript_CantUseWaterfall")!.Instructions.Select(i => i.Opcode).ToArray());
         Assert.AreEqual("return", compiled.FindProgram("FourIsland_EventScript_TrySetDayCareManPos")!.Instructions.Last().Opcode);
-        CollectionAssert.AreEquivalent(new[]
+        // These semantic examples remain required; newly imported source menus are
+        // covered by the artifact-key equality above and their service tests.
+        CollectionAssert.IsSubsetOf(new[]
         {
             "MULTICHOICE_TRAINER_SCHOOL_WHITEBOARD",
             "MULTICHOICE_TRAINER_TOWER_MODE",

@@ -1,0 +1,84 @@
+{
+  "ssanne": {
+    "items": [
+      "CHERI_BERRY",
+      "CHESTO_BERRY",
+      "ETHER",
+      "GREAT_BALL",
+      "HM01",
+      "HYPER_POTION",
+      "LAVA_COOKIE",
+      "PECHA_BERRY",
+      "SS_TICKET",
+      "STARDUST",
+      "SUPER_POTION",
+      "TM31",
+      "TM44",
+      "X_ATTACK",
+      "BERRY_POUCH"
+    ],
+    "effects": [
+      "ETHER",
+      "SUPER_POTION",
+      "HYPER_POTION",
+      "LAVA_COOKIE",
+      "PECHA_BERRY",
+      "CHERI_BERRY",
+      "CHESTO_BERRY",
+      "X_ATTACK"
+    ],
+    "maps": [
+      "SSAnne_1F_Corridor",
+      "SSAnne_1F_Room1",
+      "SSAnne_1F_Room2",
+      "SSAnne_1F_Room3",
+      "SSAnne_1F_Room4",
+      "SSAnne_1F_Room5",
+      "SSAnne_1F_Room6",
+      "SSAnne_1F_Room7",
+      "SSAnne_2F_Corridor",
+      "SSAnne_2F_Room1",
+      "SSAnne_2F_Room2",
+      "SSAnne_2F_Room3",
+      "SSAnne_2F_Room4",
+      "SSAnne_2F_Room5",
+      "SSAnne_2F_Room6",
+      "SSAnne_3F_Corridor",
+      "SSAnne_B1F_Corridor",
+      "SSAnne_B1F_Room1",
+      "SSAnne_B1F_Room2",
+      "SSAnne_B1F_Room3",
+      "SSAnne_B1F_Room4",
+      "SSAnne_B1F_Room5",
+      "SSAnne_CaptainsOffice",
+      "SSAnne_Deck",
+      "SSAnne_Exterior",
+      "SSAnne_Kitchen"
+    ],
+    "separateItems": {
+      "BERRY_POUCH": "berryPouch"
+    }
+  },
+  "route11": {
+    "items": [
+      "AWAKENING",
+      "ETHER",
+      "ESCAPE_ROPE",
+      "GREAT_BALL",
+      "PARALYZE_HEAL",
+      "X_DEFEND",
+      "ASPEAR_BERRY"
+    ],
+    "effects": [
+      "AWAKENING",
+      "ETHER",
+      "PARALYZE_HEAL",
+      "X_DEFEND",
+      "ASPEAR_BERRY"
+    ],
+    "maps": [
+      "Route11",
+      "Route2"
+    ]
+  }
+}

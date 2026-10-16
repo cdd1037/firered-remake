@@ -1,0 +1,17 @@
+{
+  "output": "data/trainer-battles/celadon-gym.json",
+  "trainers": [
+    "LASS_KAY",
+    "BEAUTY_BRIDGET",
+    "PICNICKER_TINA",
+    "BEAUTY_TAMIA",
+    "BEAUTY_LORI",
+    "LASS_LISA",
+    "COOLTRAINER_MARY",
+    "LEADER_ERIKA"
+  ],
+  "scripts": [
+    "data/maps/CeladonCity_Gym/scripts.inc"
+  ],
+  "moves": "party"
+}

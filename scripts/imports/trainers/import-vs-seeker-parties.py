@@ -10,6 +10,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from trainer_import import selected_trainers, natural_moves as source_natural_moves
 import argparse
 import importlib.util
 import json
@@ -29,11 +30,11 @@ def compact(value): return json.dumps(value, ensure_ascii=False, sort_keys=True,
 def output(value): return compact(value) + b'\n'
 def identity(symbol): return {'value': 'pret:' + symbol}
 
-def generate(reference, dependency, rules_root):
+def generate(reference, dependency, rules_root, raw_root=None):
     helper = dependency/'scripts/imports/source/import-cinnabar-source-preparation.py'
     spec = importlib.util.spec_from_file_location('vs_seeker_source_reader', helper)
     reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
-    src = reader.Source(reference)
+    src = reader.Source(reference, raw_root=raw_root)
     dependencies = []
     def dependent(root, path):
         raw = (root/path).read_bytes()
@@ -58,24 +59,8 @@ def generate(reference, dependency, rules_root):
         shift = re.fullmatch(r'\(1 << (\d+)\)', value)
         need(shift, 'Unsupported source constant: ' + symbol)
         return 1 << int(shift[1])
-    def encode(name):
-        return [int(one('charmap.txt', "^'" + re.escape("\\'" if c == "'" else c) + r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1], 16) for c in name]
-    def fields(body):
-        pairs = []
-        for line in body.splitlines():
-            m = re.fullmatch(r'\s*\.(\w+) = (.*),', line)
-            need(m, 'Unhandled source field: ' + line); pairs.append(m.groups())
-        need(len({p[0] for p in pairs}) == len(pairs), 'Duplicate source field')
-        return dict(pairs)
     def natural(species_symbol, level):
-        pointer = one('src/data/pokemon/level_up_learnset_pointers.h', r'^    \[' + species_symbol + r'\] = (\w+),$')[1]
-        body = one('src/data/pokemon/level_up_learnsets.h', r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};')[1]
-        # Original FireRed conditionals are preserved by selecting their named branch.
-        body = re.sub(r'#if defined\(FIRERED\)\n(.*?)#elif defined\(LEAFGREEN\)\n.*?#endif', r'\1', body, flags=re.S)
-        need('#' not in body, 'Unhandled conditional learnset: ' + species_symbol)
-        result = []
-        for lv, move in re.findall(r'LEVEL_UP_MOVE\(\s*(\d+), (MOVE_\w+)\)', body):
-            if int(lv) <= level and move not in result: result = (result + [move])[-4:]
+        result = source_natural_moves(src.text, species_symbol, level)
         projected = []
         for row in species[species_symbol]['levelUpMoves']:
             move = row['move']['value'][5:]
@@ -94,47 +79,22 @@ def generate(reference, dependency, rules_root):
             need(symbol not in source_ids or source_ids[symbol] == source_id, 'Conflicting rematch trainer ID')
             source_ids[symbol] = source_id
     need(source_ids and len(set(source_ids.values())) == len(source_ids), 'Empty or conflicting rematch roster')
-    for symbol in sorted(source_ids, key=source_ids.get):
-        path = 'src/data/trainers.h'
-        match = one(path, r'^    \[' + symbol + r'\] = \{\n(.*?)^    \},')
-        f = fields(match[1]); need(set(f) == {'trainerClass', 'encounterMusic_gender', 'trainerPic', 'trainerName', 'items', 'doubleBattle', 'aiFlags', 'party'}, 'Trainer fields differ')
-        shape, party_symbol = re.fullmatch(r'((?:NO_ITEM|ITEM)_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)', f['party']).groups()
-        custom, held = 'CUSTOM' in shape, shape.startswith('ITEM_')
-        need(f['doubleBattle'] in ('TRUE', 'FALSE'), 'Unsupported doubleBattle value')
-        pp = 'src/data/trainer_parties.h'
-        party = one(pp, r'^static const struct TrainerMon' + ('Item' if held else 'NoItem') + ('Custom' if custom else 'Default') + 'Moves ' + party_symbol + r'\[\] = \{\n(.*?)^\};')
-        rows = list(re.finditer(r'    \{\n(.*?)    \},\n', party[1], re.S))
-        need(''.join(r[0] for r in rows) == party[1] and 1 <= len(rows) <= 6, 'Unhandled trainer party syntax')
-        members, expected = [], []
-        for row in rows:
-            mf = fields(row[1]); need(set(mf) == {'iv', 'lvl', 'species'} | ({'heldItem'} if held else set()) | ({'moves'} if custom else set()), 'Member fields differ')
-            s, level = mf['species'], int(mf['lvl']); np = 'src/data/text/species_names.h'
-            name = one(np, r'^    \[' + s + r'\] = _\("([^"\n]+)"\),$')
-            natural_moves = natural(s, level)
-            custom_moves = [m.strip() for m in mf['moves'].strip('{}').split(',')] if custom else []
-            need(not custom or len(custom_moves) == 4, 'Four original custom slots required')
-            actual_moves = custom_moves[:custom_moves.index('MOVE_NONE')] if 'MOVE_NONE' in custom_moves else custom_moves
-            need(not custom or all(m == 'MOVE_NONE' for m in custom_moves[len(actual_moves):]), 'Nontrailing MOVE_NONE')
-            source_id = number('include/constants/species.h', s)
-            need(s in species and species[s]['sourceSpeciesId'] == source_id, 'Missing canonical species: ' + s)
-            need(all(m in moves for m in (actual_moves if custom else natural_moves)), 'Missing canonical moves: ' + s)
-            members.append(dict(species=identity(s), sourceSpeciesId=source_id, speciesName=name[1], encodedSpeciesName=encode(name[1]),
-                level=level, sourceIv=int(mf['iv']), heldItem=mf.get('heldItem', 'ITEM_NONE'), customMoves=[identity(m) for m in custom_moves],
-                source=ref(pp, party_symbol, party), speciesNameSource=ref(np, s, name)))
-            expected.append([identity(m) for m in (actual_moves if custom else natural_moves)])
-        name = re.fullmatch(r'_\("([^"\n]+)"\)', f['trainerName'])[1]
-        items = [x.strip() for x in f['items'].strip('{}').split(',')] if f['items'] != '{}' else []
-        need(len(items) <= 4, 'Trainer inventory size'); items += ['ITEM_NONE'] * (4 - len(items))
-        money = one('src/battle_main.c', r'^\s*\{' + f['trainerClass'] + r', (\d+)\},$')
-        ai = f['aiFlags'].split(' | ')
-        trainer = dict(id=identity(symbol), sourceTrainerId=source_ids[symbol], trainerClass=f['trainerClass'],
-            sourceTrainerClass=number('include/constants/trainers.h', f['trainerClass']), trainerPic=f['trainerPic'],
-            sourceTrainerPic=number('include/constants/trainers.h', f['trainerPic']), sourceTrainerName=name, encodedTrainerName=encode(name),
-            encounterMusicGender=sum(number('include/constants/trainers.h', v) if not v.isdigit() else int(v) for v in f['encounterMusic_gender'].split(' | ')),
-            items=items, doubleBattle=f['doubleBattle'] == 'TRUE', partyFlags=int(custom) | (int(held) << 1),
-            aiFlags=sum(number('include/constants/battle_ai.h', a) for a in ai), aiFlagSymbols=ai, baseMoney=int(money[1]),
-            party=members, source=ref(path, symbol, match), moneySource=ref('src/battle_main.c', f['trainerClass'], money))
-        trainers.append(trainer); resolved.append(dict(trainer=identity(symbol), partyMoves=expected))
+    trainers = selected_trainers(src.text, sorted(source_ids, key=source_ids.get))
+    for trainer in trainers:
+        expected = []
+        custom = bool(trainer['partyFlags'] & 1)
+        for member in trainer['party']:
+            symbol = member['species']['value'][5:]
+            default_moves = natural(symbol, member['level'])
+            custom_moves = [slot['value'][5:] for slot in member['customMoves']]
+            actual = custom_moves[:custom_moves.index('MOVE_NONE')] if 'MOVE_NONE' in custom_moves else custom_moves
+            need(not custom or all(move == 'MOVE_NONE' for move in custom_moves[len(actual):]), 'Nontrailing MOVE_NONE')
+            need(symbol in species and species[symbol]['sourceSpeciesId'] == member['sourceSpeciesId'],
+                 'Missing canonical species: ' + symbol)
+            chosen = actual if custom else default_moves
+            need(all(move in moves for move in chosen), 'Missing canonical moves: ' + symbol)
+            expected.append([identity(move) for move in chosen])
+        resolved.append(dict(trainer=trainer['id'], partyMoves=expected))
     trainers.sort(key=lambda t: t['sourceTrainerId']); resolved.sort(key=lambda r: next(t['sourceTrainerId'] for t in trainers if t['id'] == r['trainer']))
     # Authenticate the actual actor-script branch, including its rematch label and exact line.
     script_path = 'data/scripts/trainers.inc'; script_text = src.text(script_path)
@@ -180,9 +140,13 @@ def generate(reference, dependency, rules_root):
            summary=summary))}, src
 
 def main():
-    p = argparse.ArgumentParser(); p.add_argument('--source-root', type=Path, required=True); p.add_argument('--dependency-root', type=Path, required=True)
+    p = argparse.ArgumentParser()
+    source = p.add_mutually_exclusive_group(required=True)
+    source.add_argument('--source-root', type=Path)
+    source.add_argument('--raw-root', type=Path)
+    p.add_argument('--dependency-root', type=Path, required=True)
     p.add_argument('--rules-root', type=Path, required=True); p.add_argument('--output-root', type=Path, default=_PROJECT_ROOT); p.add_argument('--check', action='store_true')
-    a = p.parse_args(); artifacts, src = generate(a.source_root, a.dependency_root, a.rules_root)
+    a = p.parse_args(); artifacts, src = generate(a.source_root, a.dependency_root, a.rules_root, a.raw_root)
     artifacts['catalog.json'] = trainer_json(a.output_root/'content/generated', json.loads(artifacts['catalog.json']), check=a.check)
     for name, data in artifacts.items():
         path = a.output_root/'content/generated/data/services/vs-seeker-parties'/name

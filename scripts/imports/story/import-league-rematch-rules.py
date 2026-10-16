@@ -6,6 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from trainer_import import read_source, selected_trainers
 from runtime_json import runtime_json_bytes
 import argparse
 import json
@@ -33,7 +34,7 @@ def generate(reference, dependency):
     raw, inputs, texts, dependencies = {}, {}, {}, []
     def read(path):
         if path not in texts:
-            data = subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
+            data = read_source(reference, path, COMMIT)
             raw[path]=data; texts[path]=data.decode()
             inputs[path]=dict(path=path)
         return texts[path]
@@ -63,41 +64,23 @@ def generate(reference, dependency):
     owned=({s[5:] for s in baseline['ownedSpecies']} | set(five_pokemon['ownedSpeciesAdded'])) | set(celio['speciesAdded']) | set(cave['speciesAdded'])
     previous={s[5:] for s in baseline['opponentSpecies']} | owned | set(five_pokemon['opponentSpeciesAdded'])
     need(len(owned)==139 and len(previous)==163 and owned<=previous,'Exact current Cave predecessor scope')
-    trainers,battles,move_defs=[],[],{}
-    for short in TRAINERS:
-        symbol='TRAINER_'+short;path='src/data/trainers.h'
-        block=one(path,r'^    \['+symbol+r'\] = \{\n(.*?)^    \},')
-        fields=dict(re.findall(r'^        \.(\w+) = (.*),$',block[1],re.M))
-        party_symbol=re.fullmatch(r'ITEM_CUSTOM_MOVES\((\w+)\)',fields['party'])[1]
-        party_path='src/data/trainer_parties.h'
-        party=one(party_path,r'^static const struct TrainerMonItemCustomMoves '+party_symbol+r'\[\] = \{\n(.*?)^\};')
-        rows=list(re.finditer(r'    \{\n(.*?)    \},\n',party[1],re.S))
-        need(''.join(r[0] for r in rows)==party[1],'Unknown party syntax')
-        name=re.fullmatch(r'_\("([^"]+)"\)',fields['trainerName'])[1]; encoded=encode(name)
-        gender=sum(number('include/constants/trainers.h',v) if not v.isdigit() else int(v) for v in fields['encounterMusic_gender'].split(' | '))
-        members=[]
-        for row in rows:
-            mf=dict(re.findall(r'^        \.(\w+) = (.*),$',row[1],re.M))
-            need(set(mf)=={'iv','lvl','species','heldItem','moves'},'Unknown member field')
-            sp=mf['species'];need(sp in species,'Unknown canonical trainer species: '+sp)
-            names='src/data/text/species_names.h';nm=one(names,r'^    \['+sp+r'\] = _\("([^"]+)"\),$')
-            moves=mf['moves'].strip('{}').split(', ');need(len(moves)==4 and len(set(moves))==4,'Custom moves shape')
-            level,iv=int(mf['lvl']),int(mf['iv']);spname=encode(nm[1])
-            members.append(dict(species=identity(sp),sourceSpeciesId=number('include/constants/species.h',sp),speciesName=nm[1],
-                encodedSpeciesName=spname,level=level,sourceIv=iv,heldItem=mf['heldItem'],customMoves=[identity(m) for m in moves],
-                source=ref(party_path,party_symbol,party),speciesNameSource=ref(names,sp,nm)))
+    trainers = selected_trainers(read, ['TRAINER_' + short for short in TRAINERS])
+    battles, move_defs = [], {}
+    for short, trainer in zip(TRAINERS, trainers):
+        symbol = 'TRAINER_' + short
+        need(trainer['partyFlags'] == 3, 'League requires held-item custom-move parties')
+        for member in trainer['party']:
+            sp = member['species']['value'][5:]
+            need(sp in species, 'Unknown canonical trainer species: ' + sp)
+            moves = [slot['value'][5:] for slot in member['customMoves']]
+            need(len(moves) == 4 and len(set(moves)) == 4, 'Custom moves shape')
             for move in moves:
-                mp='src/data/battle_moves.h';m=one(mp,r'^    \['+move+r'\] =\n    \{(.*?)^    \},')
-                effect=re.search(r'\.effect = (\w+),',m[1])[1];pp=int(re.search(r'\.pp = (\d+),',m[1])[1])
-                move_defs[move]=dict(move=identity(move),sourceMoveId=number('include/constants/moves.h',move),pp=pp,effect=effect,source=ref(mp,move,m))
-        money=one('src/battle_main.c',r'^    \{'+fields['trainerClass']+r', (\d+)\},$')
-        ai=fields['aiFlags'].split(' | ');ai_flags=sum(number('include/constants/battle_ai.h',s) for s in ai)
-        items=fields['items'].strip('{}').split(', ');items+=['ITEM_NONE']*(4-len(items))
-        trainers.append(dict(id=identity(symbol),sourceTrainerId=number('include/constants/opponents.h',symbol),trainerClass=fields['trainerClass'],
-            sourceTrainerClass=number('include/constants/trainers.h',fields['trainerClass']),trainerPic=fields['trainerPic'],
-            sourceTrainerPic=number('include/constants/trainers.h',fields['trainerPic']),sourceTrainerName=name,encodedTrainerName=encoded,
-            encounterMusicGender=gender,items=items,doubleBattle=fields['doubleBattle']=='TRUE',partyFlags=3,aiFlags=ai_flags,
-            aiFlagSymbols=ai,baseMoney=int(money[1]),party=members,source=ref(path,symbol,block),moneySource=ref('src/battle_main.c',fields['trainerClass'],money)))
+                mp = 'src/data/battle_moves.h'
+                m = one(mp, r'^    \[' + move + r'\] =\n    \{(.*?)^    \},')
+                effect = re.search(r'\.effect = (\w+),', m[1])[1]
+                pp = int(re.search(r'\.pp = (\d+),', m[1])[1])
+                move_defs[move] = dict(move=identity(move), sourceMoveId=number('include/constants/moves.h', move),
+                    pp=pp, effect=effect, source=ref(mp, move, m))
         champion=short.startswith('CHAMPION');room='Champions' if champion else short.split('_')[-2].title()+'s'
         prefix='PokemonLeague_'+room+'Room';label=prefix+'_EventScript_Rematch'+(short.split('_')[-1].title() if champion else '')
         script_path='data/maps/'+prefix+'/scripts.inc';script=one(script_path,r'^'+label+r'::\n((?:(?!^\w+::).)*)')

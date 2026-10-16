@@ -32,9 +32,14 @@ def load(name):
 class RuntimeProofRetirementTests(unittest.TestCase):
     def _regional_source_reader(self, module):
         def read_source(command, **kwargs):
-            self.assertEqual(['git', 'show'], command[:2])
-            self.assertEqual(3, len(command))
-            commit, path = command[2].split(':', 1)
+            if command[:2] == ['git', '-C']:
+                self.assertEqual(['git', '-C', str(ROOT), 'show'], command[:4])
+                self.assertEqual(5, len(command))
+            else:
+                self.assertEqual(['git', 'show'], command[:2])
+                self.assertEqual(3, len(command))
+                self.assertEqual(ROOT, kwargs.get('cwd'))
+            commit, path = command[-1].split(':', 1)
             self.assertEqual(module.COMMIT, commit)
             self.assertFalse(Path(path).is_absolute())
             self.assertNotIn('..', Path(path).parts)
@@ -76,7 +81,7 @@ class RuntimeProofRetirementTests(unittest.TestCase):
             for damaged in ('party', 'battle-script'):
                 def broken_source(command, **kwargs):
                     data = read_source(command, **kwargs)
-                    path = command[2].split(':', 1)[1]
+                    path = command[-1].split(':', 1)[1]
                     if damaged == 'party' and path == 'src/data/trainer_parties.h':
                         self.assertIn(b'.species = SPECIES_', data)
                         return data.replace(b'.species = SPECIES_', b'.unsupportedSpecies = SPECIES_')
@@ -92,7 +97,7 @@ class RuntimeProofRetirementTests(unittest.TestCase):
 
                 with self.subTest(family=family, damaged=damaged), \
                      patch.object(module.subprocess, 'check_output', side_effect=broken_source):
-                    message = ('Unexpected member fields' if family == 'seven-island' else 'Unknown member field') \
+                    message = 'Unrecognized party fields' \
                         if damaged == 'party' else ('First trainer command' if family == 'seven-island' else 'Trainer script differs')
                     with self.assertRaisesRegex(ValueError, message):
                         module.generate(ROOT, ROOT)
@@ -100,14 +105,7 @@ class RuntimeProofRetirementTests(unittest.TestCase):
     def test_seafoam_outputs_keep_business_data_without_unused_rules_report(self):
         module = load('imports/story/import-seafoam-rules.py')
 
-        def read_source(command, **kwargs):
-            self.assertEqual(['git', 'show'], command[:2])
-            self.assertEqual(3, len(command))
-            commit, path = command[2].split(':', 1)
-            self.assertEqual(module.COMMIT, commit)
-            self.assertFalse(Path(path).is_absolute())
-            self.assertNotIn('..', Path(path).parts)
-            return (ROOT / module.RAW / path).read_bytes()
+        read_source = self._regional_source_reader(module)
 
         with patch.object(module.subprocess, 'check_output', side_effect=read_source):
             documents, _, files = module.generate(ROOT, ROOT)
@@ -122,9 +120,9 @@ class RuntimeProofRetirementTests(unittest.TestCase):
         for damaged in ('static-command', 'learnset'):
             def broken_source(command, **kwargs):
                 data = read_source(command, **kwargs)
-                if damaged == 'static-command' and command[2].endswith('data/maps/SeafoamIslands_B4F/scripts.inc'):
+                if damaged == 'static-command' and command[-1].endswith('data/maps/SeafoamIslands_B4F/scripts.inc'):
                     return data.replace(b'setwildbattle SPECIES_ARTICUNO, 50', b'setwildbattle SPECIES_ARTICUNO, 49')
-                if damaged == 'learnset' and command[2].endswith('src/data/pokemon/level_up_learnsets.h'):
+                if damaged == 'learnset' and command[-1].endswith('src/data/pokemon/level_up_learnsets.h'):
                     return data.replace(b'LEVEL_UP_MOVE(', b'INVALID_MOVE(')
                 return data
             # Let the malformed learnset reach its parser, rather than stop at
@@ -133,7 +131,7 @@ class RuntimeProofRetirementTests(unittest.TestCase):
                       if path != 'src/data/pokemon/level_up_learnsets.h'}
             with self.subTest(damaged=damaged), patch.object(module.subprocess, 'check_output', side_effect=broken_source), \
                  patch.dict(module.SHARED_INPUTS, shared, clear=True):
-                message = 'Original static command' if damaged == 'static-command' else 'Expected source natural moves'
+                message = 'Original static command' if damaged == 'static-command' else 'Unsupported or incomplete source learnset line'
                 with self.assertRaisesRegex(ValueError, message):
                     module.generate(ROOT, ROOT)
 
@@ -189,9 +187,14 @@ class RuntimeProofRetirementTests(unittest.TestCase):
         module = load('imports/trainers/import-trainer-tower-rules.py')
 
         def read_source(command, **kwargs):
-            self.assertEqual(['git', 'show'], command[:2])
-            self.assertEqual(3, len(command))
-            commit, path = command[2].split(':', 1)
+            if command[:2] == ['git', '-C']:
+                self.assertEqual(['git', '-C', str(ROOT), 'show'], command[:4])
+                self.assertEqual(5, len(command))
+            else:
+                self.assertEqual(['git', 'show'], command[:2])
+                self.assertEqual(3, len(command))
+                self.assertEqual(ROOT, kwargs.get('cwd'))
+            commit, path = command[-1].split(':', 1)
             self.assertEqual(module.COMMIT, commit)
             self.assertFalse(Path(path).is_absolute())
             self.assertNotIn('..', Path(path).parts)

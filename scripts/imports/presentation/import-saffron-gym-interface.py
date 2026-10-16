@@ -10,8 +10,8 @@ import argparse,importlib.util,io,json,pathlib,re,subprocess,sys
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
-spec=importlib.util.spec_from_file_location('art',ROOT/'scripts/imports/presentation/import-saffron-gym-art.py');art=importlib.util.module_from_spec(spec);spec.loader.exec_module(art)
-meta=art.meta
+spec=importlib.util.spec_from_file_location('presentation_metadata',ROOT/'scripts/imports/presentation/import-saffron-gym-presentation-source.py');meta=importlib.util.module_from_spec(spec);spec.loader.exec_module(meta)
+from image_io import png as encode_rgba_png
 PROFILE='firered-saffron-gym-interface-v1'
 def build(root,reference=None):
  lb=meta.safe(root,'scripts/recipes/presentation/saffron-gym-interface.lock.json').read_bytes();lock=json.loads(lb)
@@ -24,7 +24,7 @@ def build(root,reference=None):
  graphics=raw['src/data/graphics/items.h'].decode();meta.require('gItemIcon_Repel[] = INCBIN_U32("graphics/items/icons/repel.4bpp.lz")' in graphics and 'gItemIconPalette_MaxRepel[] = INCBIN_U32("graphics/items/icon_palettes/max_repel.gbapal.lz")' in graphics,'Max Repel graphics binding differs')
  im=Image.open(io.BytesIO(raw['graphics/items/icons/repel.png']));meta.require(im.mode=='P' and im.size==(24,24),'Max Repel source shape differs');ix=im.tobytes()
  lines=raw['graphics/items/icon_palettes/max_repel.pal'].decode().splitlines();meta.require(lines[:3]==['JASC-PAL','0100','16'] and len(lines)==19 and max(ix)<16,'Max Repel palette differs');pal=[tuple((int(c)//8<<3)|(int(c)//8>>2) for c in line.split()) for line in lines[3:]]
- rgba=bytes(c for i in ix for c in (*pal[i],255 if i else 0));out = {'max-repel.png': art.png(24, 24, rgba)}
+ rgba=bytes(c for i in ix for c in (*pal[i],255 if i else 0));out = {'max-repel.png': encode_rgba_png(24, 24, rgba)}
  text=raw['src/data/text/trainer_class_names.h'].decode();names={}
  for symbol in ['TRAINER_CLASS_PSYCHIC','TRAINER_CLASS_CHANNELER','TRAINER_CLASS_LEADER']:
   m=re.search(r'\['+symbol+r'\]\s*= _\("([^"]+)"\)',text);meta.require(m is not None,'Trainer class source name missing');names[symbol]=m[1]

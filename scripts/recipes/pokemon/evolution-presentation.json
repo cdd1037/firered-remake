@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "catalogs": {
+    "cinnabar": "content/generated/sprites/pokemon/cinnabar/manifest.json",
+    "victory": "content/generated/sprites/pokemon/victory-road/manifest.json",
+    "tower": "content/generated/sprites/pokemon/trainer-tower/catalog.json",
+    "league": "content/generated/sprites/pokemon/pokemon-league/manifest.json",
+    "saffron": "content/generated/sprites/pokemon/saffron-gym/manifest.json",
+    "rematch": "content/generated/sprites/pokemon/league-rematch/manifest.json"
+  },
+  "selections": {
+    "stone-evolution": {
+      "outputSchema": "inherited",
+      "species": [
+        {
+          "name": "Ninetales",
+          "catalog": "cinnabar",
+          "cryManifest": "content/generated/audio/cues/cinnabar.json",
+          "icon": {
+            "collection": "icons",
+            "palette": "floor"
+          },
+          "footprint": "footprints"
+        },
+        {
+          "name": "Arcanine",
+          "catalog": "cinnabar",
+          "cryManifest": "content/generated/audio/cues/cinnabar.json",
+          "icon": {
+            "collection": "icons",
+            "palette": "floor"
+          },
+          "footprint": "footprints"
+        },
+        {
+          "name": "Poliwrath",
+          "catalog": "tower",
+          "cryManifest": "content/generated/audio/cues/celadon-approach.json"
+        },
+        {
+          "name": "Cloyster",
+          "catalog": "cinnabar",
+          "cryManifest": "content/generated/audio/cues/cinnabar.json",
+          "icon": {
+            "collection": "icons",
+            "palette": "floor"
+          },
+          "footprint": "footprints"
+        },
+        {
+          "name": "Exeggutor",
+          "catalog": "victory",
+          "cryManifest": "content/generated/sprites/pokemon/pokemon-league/synth-manifest.json",
+          "icon": {
+            "collection": "pokemonIcons",
+            "palette": "floor"
+          }
+        },
+        {
+          "name": "Vaporeon",
+          "catalog": "tower",
+          "cryManifest": "content/generated/audio/synth/manifest.json"
+        },
+        {
+          "name": "Flareon",
+          "catalog": "tower",
+          "cryManifest": "content/generated/audio/synth/manifest.json"
+        }
+      ],
+      "limits": [
+        "All battlers, four icons, three footprints and seven normal cries reuse existing resources unchanged.",
+        "Only three frame-zero party icons, four footprints and seven Dex bindings are added.",
+        "No new move animation coverage; native visual and audible output remain unverified."
+      ]
+    },
+    "ordinary-evolution": {
+      "outputSchema": "normalized",
+      "species": [
+        {
+          "name": "Rhydon",
+          "catalog": "league",
+          "cryManifest": "content/generated/sprites/pokemon/pokemon-league/synth-manifest.json",
+          "icon": {
+            "collection": "pokemonIcons",
+            "palette": "replicate"
+          }
+        },
+        {
+          "name": "Slowbro",
+          "catalog": "saffron",
+          "cryManifest": "content/generated/audio/cues/saffron-gym.json",
+          "icon": {
+            "collection": "icons",
+            "palette": "floor"
+          },
+          "footprint": "footprints"
+        },
+        {
+          "name": "Crobat",
+          "catalog": "rematch",
+          "cryManifest": "content/generated/sprites/pokemon/league-rematch/synth-manifest.json"
+        },
+        {
+          "name": "Blissey",
+          "catalog": "tower",
+          "cryManifest": "content/generated/audio/cues/trainer-tower/synth-manifest.json"
+        }
+      ],
+      "limits": [
+        "All sixteen battlers, two icons, one footprint and four normal cries reuse existing resources unchanged.",
+        "Only two frame-zero party icons, three footprints and four Dex bindings are added.",
+        "No new move animation coverage; native visual and audible output remain unverified."
+      ]
+    }
+  }
+}

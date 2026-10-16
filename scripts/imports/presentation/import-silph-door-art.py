@@ -9,7 +9,8 @@ import argparse,importlib.util,io,json,pathlib,re,struct,sys
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
-spec=importlib.util.spec_from_file_location('silph_art',ROOT/'scripts/imports/presentation/import-silph-art.py');art=importlib.util.module_from_spec(spec);spec.loader.exec_module(art);meta=art.meta
+spec=importlib.util.spec_from_file_location('presentation_metadata',ROOT/'scripts/imports/presentation/import-silph-presentation-source.py');meta=importlib.util.module_from_spec(spec);spec.loader.exec_module(meta)
+from image_io import png as encode_rgba_png
 def build(root):
  lock,source=meta.authenticated(root);text=lambda p:source[p].decode();unit=lambda p,f:list(struct.unpack('<'+f*(len(source[p])//struct.calcsize(f)),source[p]));labels={k:int(v,16) for k,v in re.findall(r'^#define\s+(METATILE_\w+)\s+(0x[\da-fA-F]+)',text('include/constants/metatile_labels.h'),re.M)}
  door=text('data/scripts/silphco_doors.inc');symbols=sorted(set(re.findall(r'^\s*setmetatile \d+, \d+, (METATILE_SilphCo_\w+), [01]$',door,re.M)));meta.require(len(symbols)==16,'Card Key gate metatile scope differs')
@@ -37,7 +38,7 @@ def build(root):
   tiles.append(dict(symbol=symbol,metatileId=mid,rawAttributes=attribute,x=column*16,y=0,width=16,height=16))
  out={};assets=[]
  for name,layer in zip(('bottom','middle','top'),layers):
-  rgba=layer.tobytes();stem='card-key-'+name;out[stem+'.png']=art.png(layer.width,layer.height,rgba);assets.append(dict(layer=name, texturePath=stem + '.png', width=layer.width, height=layer.height))
+  rgba=layer.tobytes();stem='card-key-'+name;out[stem+'.png']=encode_rgba_png(layer.width,layer.height,rgba);assets.append(dict(layer=name, texturePath=stem + '.png', width=layer.width, height=layer.height))
  meta.require('special DrawWholeMapView' in door and 'playse SE_UNLOCK' in door,'Card Key redraw source differs');out['manifest.json']=meta.canonical(dict(schemaVersion=1,tiles=tiles,layers=assets,limits=['Card Key gate switches metatiles after source fanfare, then redraws the map; it is not a sliding-door animation.','Each atlas retains bottom, middle and top BG layers; gameplay owns collision and persistent door flags.'],outputs=[dict(path=p) for p,b in sorted(out.items())]));return out
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args();out=build(a.project_root)

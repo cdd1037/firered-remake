@@ -10,6 +10,8 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from map_source import decode_geometry
+from map_source import reciprocal_topology as topology
 from map_runtime import publish_map_package
 
 from shared_constants import package_documents
@@ -87,17 +89,8 @@ class Source:
         if line is not None:v['line']=line
         return v
 
-def decode(src,name):
-    events=src.json(f'data/maps/{name}/map.json');layout=next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id')==events['layout'])
-    attrs=[src.units('data/tilesets/'+TILESETS[layout[k]]+'/metatile_attributes.bin','I') for k in ('primary_tileset','secondary_tileset')]
-    names={int(v,16):n for n,v in re.findall(r'^#define\s+(MB_\w+)\s+(0x[0-9A-Fa-f]+)',src.text('include/constants/metatile_behaviors.h'),re.M)}
-    blocks=src.units(layout['blockdata_filepath'],'H');border=src.units(layout['border_filepath'],'H')
-    if len(blocks)!=layout['width']*layout['height']:raise ValueError('Grid size differs')
-    cells=[]
-    for i,b in enumerate(blocks):
-        mid=b&1023;a=attrs[mid>=640][mid if mid<640 else mid-640];bh=a&511
-        cells.append(dict(x=i%layout['width'],y=i//layout['width'],rawBlock=b,metatileId=mid,rawAttributes=a,collision=(b>>10)&3,elevation=b>>12,behaviorId=bh,behaviorName=names.get(bh,'UNKNOWN'),encounterType=(a>>24)&7))
-    return dict(sourceName=name,stableId='map.'+directory(name),sourceRef=src.ref(f'data/maps/{name}/map.json',events['id']),width=layout['width'],height=layout['height'],layout=layout,events=events,cells=cells,borderBlocks=border)
+def decode(src, name):
+    return decode_geometry(src, name, tilesets=TILESETS)
 
 def scripts(src,maps):
     # Full files are indexed to discover symbols; only selected closure files become
@@ -151,31 +144,6 @@ def scripts(src,maps):
             if target and target not in ('0','0x0','NULL') and aliases.get(target,target) not in blocks:unresolved.append(dict(source=label,line=row['line'],target=target))
     if unresolved:raise ValueError('Unresolved source label targets: '+repr(unresolved))
     return dict(executable=False,roots=sorted(roots),blocks=result,opcodeCounts=dict(sorted(opcodes.items())),specialCounts=dict(sorted(specials.items())),aliases=aliases,unresolvedLabelReferences=unresolved)
-
-def topology(src,worlds):
-    by_symbol={w['events']['id']:w for w in worlds};warps=[];connections=[]
-    def target(symbol):
-        if symbol in by_symbol:return by_symbol[symbol]['events']
-        for p in src.tree:
-            if p.startswith('data/maps/') and p.endswith('/map.json'):
-                # Names are generated deterministically by mapjson; do not guess a URL.
-                name=p.split('/')[2]
-                if re.sub(r'([a-z])([A-Z])',r'\1_\2',name).upper()==symbol.removeprefix('MAP_'):
-                    return src.json(p)
-        raise ValueError('Unknown external map '+symbol)
-    opposite={'up':'down','down':'up','left':'right','right':'left'}
-    for w in worlds:
-        m=w['events']
-        for i,c in enumerate(m['connections'] or []):
-            d=target(c['map']);back=[x for x in d['connections'] or [] if x['map']==m['id'] and x['direction']==opposite[c['direction']]]
-            if len(back)!=1 or back[0]['offset']!=-c['offset']:raise ValueError('Nonreciprocal connection')
-            connections.append(dict(sourceMap=m['id'],sourceIndex=i,**c,coordinateRule='destination transverse coordinate = source transverse coordinate - offset'))
-        for i,e in enumerate(m['warp_events']):
-            d=target(e['dest_map']);j=int(e['dest_warp_id']);end=d['warp_events'][j]
-            if end['dest_map']!=m['id']:raise ValueError('Nonreciprocal warp')
-            warps.append(dict(sourceMap=m['id'],sourceIndex=i,source=e,destinationMap=d['id'],destinationIndex=j,destination=end))
-    return dict(connections=connections,warps=warps)
-
 
 
 def load_helper(name):

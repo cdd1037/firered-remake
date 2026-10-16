@@ -1,0 +1,16 @@
+{
+  "output": "data/trainer-battles/fuchsia-gym.json",
+  "trainers": [
+    "JUGGLER_KAYDEN",
+    "JUGGLER_SHAWN",
+    "JUGGLER_KIRK",
+    "TAMER_EDGAR",
+    "TAMER_PHIL",
+    "JUGGLER_NATE",
+    "LEADER_KOGA"
+  ],
+  "scripts": [
+    "data/maps/FuchsiaCity_Gym/scripts.inc"
+  ],
+  "moves": "party"
+}

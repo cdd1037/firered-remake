@@ -7,6 +7,8 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
+from presentation_pixels import PixelReader
+from presentation_source import Source, safe, need
 import argparse
 import io
 import json
@@ -18,9 +20,6 @@ import wave
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
-COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-PROFILE = 'firered-celio-presentation-v1'
 BASE = 'content/generated/sprites/pokemon/celio/'
 RAW = 'content/raw/pokefirered/037335f4/'
 OWNED = [('Raikou', 243), ('Entei', 244), ('Suicune', 245)]
@@ -29,54 +28,8 @@ REUSED_ASSETS = {}
 
 from image_io import png as encode_rgba_png
 
-def need(ok, message):
-    if not ok:
-        raise ValueError(message)
-
-
-def encode(value):
-    return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=False) + '\n').encode()
-
-
-def safe(root, path):
-    need(path and not pathlib.PurePosixPath(path).is_absolute() and '\\' not in path and
-         ':' not in path and all(p not in ('', '.', '..') for p in path.split('/')), 'Unsafe presentation path')
-    result = pathlib.Path(root).absolute() / path
-    need(not any(p.is_symlink() for p in (result, *result.parents)), 'Presentation symlink rejected')
-    return result
-
 
 png = encode_rgba_png
-
-
-class Source:
-    def __init__(self, root, reference, dependency):
-        self.root, self.reference, self.dependency = root, reference, dependency
-        self.files, self.raw, self.inherited = {}, {}, {}
-        self.lock = None
-        data = safe(root, 'scripts/recipes/presentation/celio-presentation.lock.json').read_bytes()
-        self.lock = json.loads(data)
-        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
-
-    def read(self, path):
-        if path not in self.raw:
-            data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path)
-            if self.lock:
-                need(row in self.lock['files'], 'Source input differs: ' + path)
-            self.raw[path], self.files[path] = data, row
-        return self.raw[path]
-
-    def text(self, path):
-        return self.read(path).decode()
-
-    def reuse(self, path):
-        data = safe(self.dependency, path).read_bytes()
-        row = dict(path=path)
-        if self.lock:
-            need(row in self.lock['inheritedInputs'], 'Inherited pixels differ: ' + path)
-        self.inherited[path] = row
-        return data
 
 
 def build(root, reference, dependency):
@@ -96,17 +49,8 @@ def build(root, reference, dependency):
         assets.append(row)
         return row
 
-    def palette(path, floor=False):
-        lines = source.text(path).splitlines()
-        need(lines[:2] == ['JASC-PAL', '0100'] and len(lines) == int(lines[2]) + 3, 'Source palette framing differs')
-        return [tuple((int(c) >> 3) * 255 // 31 if floor else ((int(c) >> 3) << 3) | ((int(c) >> 3) >> 2) for c in line.split()) for line in lines[3:]]
-
-    def indexed(image, pal, shape, floor=False, first_frame=False):
-        im = Image.open(io.BytesIO(source.read(image)))
-        need(im.mode == 'P' and im.size == shape and max(im.tobytes()) < 16, 'Source indexed image differs: ' + image)
-        indices = im.tobytes()[:1024] if first_frame else im.tobytes()
-        colors = palette(pal, floor)
-        return indices, bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
+    pixels = PixelReader(source)
+    palette, indexed = pixels.palette, pixels.indexed
 
     sprites, icons, footprints = [], [], []
     graphics = source.text('src/data/graphics/pokemon.h')
@@ -281,8 +225,6 @@ def build(root, reference, dependency):
         inherited_geometry.append(expected)
     out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
 
-    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
-                       files=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
     manifest = runtime_json_bytes(dict(schemaVersion=1,
 
         assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, tiles=tiles, layers=layers,
@@ -298,10 +240,10 @@ def build(root, reference, dependency):
     out['manifest.json'] = manifest
     result = {BASE + p: b for p, b in out.items()}
     result.update({RAW + p: b for p, b in source.raw.items()})
-    result['scripts/recipes/presentation/celio-presentation.lock.json'] = lock
+
     report = dict(passed=True, sourceFiles=len(source.raw), sprites=len(sprites), pokemonIcons=len(icons), footprints=len(footprints),
         dynamicMetatiles=len(tiles), dynamicLayers=len(layers), moveGeometry=len(inherited_geometry), outputs=len(out) - 1,
-         lockBytes=len(lock),  manifestBytes=len(manifest),
+         manifestBytes=len(manifest),
          synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
     return result, report
 

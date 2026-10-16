@@ -1,0 +1,15 @@
+{
+  "output": "data/trainer-battles/vermilion.json",
+  "trainers": [
+    "BUG_CATCHER_KEIGO",
+    "CAMPER_RICKY",
+    "PICNICKER_NANCY",
+    "BUG_CATCHER_ELIJAH",
+    "PICNICKER_ISABELLE",
+    "CAMPER_JEFF"
+  ],
+  "scripts": [
+    "data/scripts/trainers.inc",
+    "data/maps/Route6/scripts.inc"
+  ]
+}

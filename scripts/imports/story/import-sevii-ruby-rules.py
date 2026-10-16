@@ -8,6 +8,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from trainer_import import read_source, selected_trainers, resolved_parties
 import argparse
 import json
 import re
@@ -26,7 +27,7 @@ def generate(reference, dependency, region):
     texts, inputs, raw = {}, {}, {}
     def read(path):
         if path not in texts:
-            data = subprocess.check_output(["git", "show", COMMIT + ":" + path], cwd=reference)
+            data = read_source(reference, path, COMMIT)
             inputs[path] = dict(path=path)
             raw[path] = data
             texts[path] = data.decode()
@@ -41,61 +42,10 @@ def generate(reference, dependency, region):
     def number(path, symbol):
         value = one(path, r"^#define " + symbol + r"\s+([^\n]+)")[1].split("//")[0].strip()
         return int(value, 0) if re.fullmatch(r"(?:0x[0-9a-fA-F]+|\d+)", value) else 1 << int(re.fullmatch(r"\(1 << (\d+)\)", value)[1])
-    def encode(name):
-        return [int(one("charmap.txt", "^'" + re.escape(c) + r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1], 16) for c in name]
     def identity(symbol):
         return dict(value="pret:" + symbol)
-    def ai_flags(symbols):
-        return sum(1 << int(one("include/constants/battle_ai.h", r"^#define " + s + r"\s+\(1 << (\d+)\)[^\n]*")[1]) for s in symbols)
-    def natural_moves(species, level):
-        pointer = one("src/data/pokemon/level_up_learnset_pointers.h", r"^    \[" + species + r"\] = (\w+),$")[1]
-        body = one("src/data/pokemon/level_up_learnsets.h", r"^static const u16 " + pointer + r"\[\] = \{\n(.*?)^\};")[1]
-        moves = []
-        for lv, move in re.findall(r"LEVEL_UP_MOVE\(\s*(\d+), (MOVE_\w+)\)", body):
-            if int(lv) <= level and move not in moves:
-                moves = (moves + [move])[-4:]
-        need(1 <= len(moves) <= 4, "Expected source natural moves")
-        return moves
-
-    trainers, resolved = [], []
-    for short in TRAINERS:
-        symbol, path = "TRAINER_" + short, "src/data/trainers.h"
-        match = one(path, r"^    \[" + symbol + r"\] = \{\n(.*?)^    \},")
-        fields = dict(re.findall(r"^        \.(\w+) = (.*),$", match[1], re.M))
-        shape, party_symbol = re.fullmatch(r"((?:NO_ITEM|ITEM)_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)", fields["party"]).groups()
-        custom, held = "CUSTOM" in shape, shape.startswith("ITEM_")
-        flags = int(custom) | (int(held) << 1)
-        party_path = "src/data/trainer_parties.h"
-        party = one(party_path, r"^static const struct TrainerMon" + ("Item" if held else "NoItem") + ("Custom" if custom else "Default") + "Moves " + party_symbol + r"\[\] = \{\n(.*?)^\};")
-        rows = list(re.finditer(r"    \{\n(.*?)    \},\n", party[1], re.S))
-        need("".join(r[0] for r in rows) == party[1], "Unhandled trainer party syntax")
-        members, movesets = [], []
-        for row in rows:
-            mf = dict(re.findall(r"^        \.(\w+) = (.*),$", row[1], re.M))
-            need(set(mf) == {"iv", "lvl", "species"} | ({"heldItem"} if held else set()) | ({"moves"} if custom else set()), "Unexpected member fields")
-            species, level = mf["species"], int(mf["lvl"])
-            names_path = "src/data/text/species_names.h"
-            name = one(names_path, r'^    \[' + species + r'\] = _\("([^"]+)"\),$')
-            moves = mf["moves"].strip("{}").split(", ") if custom else natural_moves(species, level)
-            members.append(dict(species=identity(species), sourceSpeciesId=number("include/constants/species.h", species),
-                speciesName=name[1], encodedSpeciesName=encode(name[1]), level=level, sourceIv=int(mf["iv"]),
-                heldItem=mf.get("heldItem", "ITEM_NONE"), customMoves=[identity(m) for m in moves] if custom else [],
-                source=ref(party_path, party_symbol, party), speciesNameSource=ref(names_path, species, name)))
-            movesets.append(dict(species=identity(species), level=level, moves=moves))
-        name = re.fullmatch(r'_\("([^"]+)"\)', fields["trainerName"])[1]
-        items = fields["items"].strip("{}").split(", ") if fields["items"] != "{}" else []
-        items += ["ITEM_NONE"] * (4 - len(items))
-        money = one("src/battle_main.c", r"^\s*\{" + fields["trainerClass"] + r", (\d+)\},$")
-        ai = fields["aiFlags"].split(" | ")
-        trainers.append(dict(id=identity(symbol), sourceTrainerId=number("include/constants/opponents.h", symbol),
-            trainerClass=fields["trainerClass"], sourceTrainerClass=number("include/constants/trainers.h", fields["trainerClass"]),
-            trainerPic=fields["trainerPic"], sourceTrainerPic=number("include/constants/trainers.h", fields["trainerPic"]),
-            sourceTrainerName=name, encodedTrainerName=encode(name),
-            encounterMusicGender=sum(number("include/constants/trainers.h", v) if not v.isdigit() else int(v) for v in fields["encounterMusic_gender"].split(" | ")),
-            items=items, doubleBattle=fields["doubleBattle"] == "TRUE", partyFlags=flags,
-            aiFlags=ai_flags(ai), aiFlagSymbols=ai, baseMoney=int(money[1]), party=members,
-            source=ref(path, symbol, match), moneySource=ref("src/battle_main.c", fields["trainerClass"], money)))
-        resolved.append(dict(trainer=symbol, party=movesets))
+    trainers = selected_trainers(read, ["TRAINER_" + short for short in TRAINERS])
+    resolved = resolved_parties(read, trainers)
     dependencies = []
     def dependent(root, path):
         data = (root / path).read_bytes()
@@ -110,7 +60,7 @@ def generate(reference, dependency, region):
     reader=ruby.module((_PROJECT_ROOT / 'scripts/imports/source/import-cinnabar-source-preparation.py'),'ruby_rule_source')
     prep=ruby.module((_PROJECT_ROOT / 'scripts/lib/prepare_first_sevii.py'),'ruby_rule_scripts')
     prep.CORE=ruby.CORE;prep.SUPPORT=ruby.SUPPORT;prep.ANCHOR=['OneIsland_PokemonCenter_1F']
-    source=reader.Source(reference)
+    source=reader.Source(reference) if (reference / ".git").exists() else reader.Source(raw_root=reference)
     worlds=[dict(events=source.json('data/maps/'+name+'/map.json')) for name in ruby.CORE+ruby.SUPPORT]
     declarations=json.loads(json.dumps(ruby.declarations(source,prep.script_index(source,reader),worlds,canonical),sort_keys=True))
     species = {s['id']['value'][5:]: s for s in canonical['species']}

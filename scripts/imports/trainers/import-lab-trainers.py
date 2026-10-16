@@ -6,6 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from trainer_import import selected_trainers
 import argparse
 import json
 import pathlib
@@ -18,7 +19,13 @@ SYMBOLS = ['TRAINER_RIVAL_OAKS_LAB_SQUIRTLE', 'TRAINER_RIVAL_OAKS_LAB_BULBASAUR'
            'TRAINER_RIVAL_OAKS_LAB_CHARMANDER']
 
 
-def import_catalog(raw, out):
+def import_catalog(raw, out, generated_root=None, check=False):
+    out = pathlib.Path(out).absolute()
+    if generated_root is None:
+        if out.parent.parts[-2:] != ("data", "trainer-battles"):
+            raise ValueError("Use --generated-root for an output outside data/trainer-battles")
+        generated_root = out.parents[2]
+    generated_root = pathlib.Path(generated_root).absolute()
     lock = json.loads((ROOT / 'scripts/recipes/trainers/lab-trainers.lock.json').read_text(encoding='utf-8'))
     if (lock['schemaVersion'] != 1 or lock['commit'] != COMMIT or
             lock['repository'] != 'pret/pokefirered' or lock['profile'] != PROFILE or
@@ -54,76 +61,20 @@ def import_catalog(raw, out):
             return 1 << int(shift[1])
         raise ValueError('Unsupported constant: ' + expression)
 
-    def fields(body):
-        result = {}
-        for line in body.splitlines():
-            match = re.fullmatch(r'\s*\.(\w+) = (.*),', line)
-            if not match or match[1] in result:
-                raise ValueError('Unknown or duplicate record field: ' + line)
-            result[match[1]] = match[2]
-        return result
-
     def function_ref(path, symbol):
         match = one(r'^(?:static )?(?:inline )?\w+[ *]+' + re.escape(symbol) + r'\([^;\n]*\)\n\{\n.*?^\}', sources[path])
         return source(path, symbol, match.start(), match.end())
 
-    charmap = {}
-    for match in re.finditer(r"^'([A-Z])'\s*=\s*([0-9A-F]{2})$", sources['charmap.txt'], re.M):
-        if match[1] in charmap:
-            raise ValueError('Duplicate character encoding')
-        charmap[match[1]] = int(match[2], 16)
-    if len(charmap) != 26:
-        raise ValueError('Missing English uppercase character map')
-
-    trainers, battles = [], []
-    tp, pp = 'src/data/trainers.h', 'src/data/trainer_parties.h'
-    names_path = 'src/data/text/species_names.h'
+    trainers = selected_trainers(sources.__getitem__, SYMBOLS)
+    battles = []
     script_path = 'data/maps/PalletTown_ProfessorOaksLab/scripts.inc'
-    for symbol in SYMBOLS:
-        match = one(r'^    \[' + symbol + r'\] = \{\n(.*?)^    \},', sources[tp])
-        f = fields(match[1])
-        if set(f) != {'trainerClass', 'encounterMusic_gender', 'trainerPic', 'trainerName', 'items', 'doubleBattle', 'aiFlags', 'party'}:
-            raise ValueError('Unknown trainer record layout')
-        if f['items'] != '{}' or f['doubleBattle'] != 'FALSE':
-            raise ValueError('Only empty-item single battles are supported')
-        name = one(r'^_\("([A-Z]+)"\)$', f['trainerName'])[1]
-        party_symbol = one(r'^NO_ITEM_DEFAULT_MOVES\((\w+)\)$', f['party'])[1]
-        party_match = one(r'^static const struct TrainerMonNoItemDefaultMoves ' + party_symbol + r'\[\] = \{\n(.*?)^\};', sources[pp])
-        party_body = party_match[1]
-        entries = list(re.finditer(r'^    \{\n(.*?)^    \},\n', party_body, re.M | re.S))
-        if len(entries) != 1 or ''.join(e[0] for e in entries) != party_body:
-            raise ValueError('Exactly one fully parsed lab party member required')
-        party = []
-        for entry in entries:
-            pf = fields(entry[1])
-            if set(pf) != {'iv', 'lvl', 'species'} or not re.fullmatch(r'\d+', pf['iv']) or not re.fullmatch(r'\d+', pf['lvl']):
-                raise ValueError('Unsupported party member layout')
-            species_symbol = pf['species']
-            species_match = one(r'^    \[' + species_symbol + r'\] = _\("([A-Z]+)"\),$', sources[names_path])
-            species_name = species_match[1]
-            party.append(dict(species={'value': 'pret:' + species_symbol},
-                              sourceSpeciesId=constant('include/constants/species.h', species_symbol),
-                              speciesName=species_name, encodedSpeciesName=[charmap[c] for c in species_name],
-                              level=int(pf['lvl']), sourceIv=int(pf['iv']), heldItem='ITEM_NONE', customMoves=[],
-                              source=source(pp, party_symbol, party_match.start(), party_match.end()),
-                              speciesNameSource=source(names_path, species_symbol, species_match.start(), species_match.end())))
-        ai_symbols = f['aiFlags'].split(' | ')
-        if len(set(ai_symbols)) != len(ai_symbols):
+    for trainer in trainers:
+        symbol, trainer_id = trainer['id']['value'][5:], trainer['id']
+        if (trainer['doubleBattle'] or trainer['partyFlags'] != 0 or
+                trainer['items'] != ['ITEM_NONE'] * 4 or len(trainer['party']) != 1):
+            raise ValueError('Lab requires one default-move member and empty-item single battle')
+        if len(set(trainer['aiFlagSymbols'])) != len(trainer['aiFlagSymbols']):
             raise ValueError('Duplicate AI flags')
-        ai_flags = 0
-        for ai in ai_symbols:
-            ai_flags |= constant('include/constants/battle_ai.h', ai)
-        trainer_id = {'value': 'pret:' + symbol}
-        money = one(r'^    \{' + f['trainerClass'] + r', (\d+)\},$', sources['src/battle_main.c'])
-        trainers.append(dict(id=trainer_id, sourceTrainerId=constant('include/constants/opponents.h', symbol),
-                             trainerClass=f['trainerClass'], sourceTrainerClass=constant('include/constants/trainers.h', f['trainerClass']),
-                             trainerPic=f['trainerPic'], sourceTrainerPic=constant('include/constants/trainers.h', f['trainerPic']),
-                             sourceTrainerName=name, encodedTrainerName=[charmap[c] for c in name],
-                             encounterMusicGender=constant('include/constants/trainers.h', f['encounterMusic_gender']),
-                             items=['ITEM_NONE'] * constant('include/battle.h', 'MAX_TRAINER_ITEMS'),
-                             doubleBattle=False, partyFlags=0, aiFlags=ai_flags, aiFlagSymbols=ai_symbols,
-                             baseMoney=int(money[1]), party=party, source=source(tp, symbol, match.start(), match.end()),
-                             moneySource=source('src/battle_main.c', 'gTrainerMoneyTable', money.start(), money.end())))
         battle_match = one(r'^\ttrainerbattle_earlyrival ' + symbol + r', (\w+), (\w+), (\w+)\n\tgoto (\w+)\n\tend$', sources[script_path])
         flags = constant('include/constants/battle.h', battle_match[1])
         battle_flags = constant('include/constants/battle.h', 'BATTLE_TYPE_TRAINER')
@@ -140,14 +91,19 @@ def import_catalog(raw, out):
         ('src/battle_ai_script_commands.c', 'BattleAI_SetupAIData')]]
     document = dict(schemaVersion=1,   completeSourceRoster=False,
                       trainers=trainers, battles=battles)
-    data = trainer_json(out.parent, document)
+    data = trainer_json(generated_root, document, check=check)
     output = dict(path='lab-trainers.json')
     manifest = dict(schemaVersion=1,   trainerCount=len(trainers),
                     partyMemberCount=sum(len(t['party']) for t in trainers), completeSourceRoster=False,
                       outputs=[output])
     # All input/grammar checks finish before touching any output.
-    out.mkdir(parents=True, exist_ok=True)
+    if not check:
+        out.mkdir(parents=True, exist_ok=True)
     for path, content in [('lab-trainers.json', data), ('manifest.json', (json.dumps(manifest, indent=2) + '\n').encode('utf-8'))]:
+        if check:
+            if (out / path).read_bytes() != content:
+                raise ValueError('Lab trainer output differs: ' + path)
+            continue
         temporary = out / (path + '.tmp')
         temporary.write_bytes(content)
         temporary.replace(out / path)
@@ -158,5 +114,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--raw-root', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out-root', type=pathlib.Path, default=ROOT / 'content/generated/data/trainer-battles/lab')
+    parser.add_argument("--generated-root", type=pathlib.Path)
+    parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    import_catalog(args.raw_root, args.out_root)
+    import_catalog(args.raw_root, args.out_root, args.generated_root, args.check)

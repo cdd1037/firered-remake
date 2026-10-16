@@ -7,6 +7,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse,json,pathlib,re,sys
 sys.dont_write_bytecode=True
+from import_canonical_pokemon import Sources
 from pokemon_import_io import safe, load_recipe, read_sources, write_files
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -28,31 +29,17 @@ def authenticated(root,reference=None):
 
 def generate(root,dependency_root=None):
  lock,raw=authenticated(root);texts={p:b.decode() for p,b in raw.items() if not p.endswith(('.png','.wav'))};inv={r['path']:r for r in lock['files']}
- def one(path,pattern):
-  ms=list(re.finditer(pattern,texts[path],re.M|re.S));require(len(ms)==1,f'Expected one source match: {path}: {pattern}');return ms[0]
- def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=texts[path].count('\n',0,m.start())+1,endLine=texts[path].count('\n',0,m.end())+1)
+ src=Sources(texts,{})
+ one,ref,const,fields,name,learn=src.one,src.match_ref,src.constant,src.block,src.name,src.learnset
  def ident(s):return dict(value='pret:'+s)
- def const(path,s):
-  m=one(path,r'^#define '+s+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');return dict(symbol=s,value=int(m[1]),source=ref(path,s,m))
  def number(path,s):return const(path,s)['value']
- def fields(path,s):
-  m=one(path,r'^    \['+s+r'\] =\s*\n    \{\n(.*?)^    \},');return dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M)),ref(path,s,m)
- def name(path,s):
-  m=one(path,r'^    \['+s+r'\]\s*= _\("([^"\n]+)"\),$');return dict(id=ident(s),name=m[1],source=ref(path,s,m))
- def learn(s):
-  pointer=one('src/data/pokemon/level_up_learnset_pointers.h',r'^    \['+s+r'\] = (\w+),$')[1];p='src/data/pokemon/level_up_learnsets.h';m=one(p,r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};');rows=[]
-  require('#' not in m[1],'Unexpected conditional learnset')
-  for row in re.finditer(r'^    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),$',texts[p],re.M):
-   if m.start(1)<=row.start()<m.end(1):rows.append(dict(level=int(row[1]),move=ident(row[2])))
-  require(len(rows)==m[1].count('LEVEL_UP_MOVE(') and '    LEVEL_UP_END\n' in m[1] and rows,'Incomplete learnset')
-  return rows,ref(p,pointer,m)
  def move(s):
   f,r=fields('src/data/battle_moves.h',s);return ident(s)
  species=[];held=[];machines=[];rates=[];evolutions=[];required=set();names=[];constants=set();cries=[]
  for short in SPECIES:
-  s='SPECIES_'+short;f,sr=fields('src/data/pokemon/species_info.h',s);lr,lref=learn(s);required.update(r['move']['value'][5:] for r in lr)
-  statkeys=('hp','attack','defense','speed','specialAttack','specialDefense');suffix=('HP','Attack','Defense','Speed','SpAttack','SpDefense');types=re.findall(r'TYPE_\w+',f['types']);abilities=re.findall(r'ABILITY_\w+',f['abilities'])
-  species.append(dict(id=ident(s), sourceSpeciesId=number('include/constants/species.h', s), baseStats={k: int(f['base' + v]) for k, v in zip(statkeys, suffix)}, type1=types[0], type2=types[1], catchRate=int(f['catchRate']), experienceYield=int(f['expYield']), evYield={k: int(f['evYield_' + v]) for k, v in zip(statkeys, suffix)}, growthRate={'GROWTH_FAST': 'fast', 'GROWTH_MEDIUM_FAST': 'mediumFast', 'GROWTH_SLOW': 'slow'}[f['growthRate']], genderRatio={'MON_FEMALE': 254, 'MON_MALE': 0, 'PERCENT_FEMALE(50)': 127}[f['genderRatio']], ability1=abilities[0], ability2=abilities[1], friendship=int(f['friendship']), levelUpMoves=lr, evolutions=[]))
+  s='SPECIES_'+short;definition,f=src.species_definition(s);lr=definition['levelUpMoves'];required.update(r['move']['value'][5:] for r in lr)
+  abilities=[definition['ability1'],definition['ability2']]
+  species.append(definition)
   held.append(dict(species=ident(s),common=f['itemCommon'],rare=f['itemRare']));rates.append(dict(species=ident(s),catchRate=int(f['catchRate']),fleeRate=int(f['safariZoneFleeRate'])));names.append(name('src/data/text/species_names.h',s))
   p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+s+r'\]\s*= TMHM_LEARNSET\((.*?)\),');machines.append(dict(species=ident(s),machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1])))
   ep='src/data/pokemon/evolution.h';em=re.search(r'^    \['+s+r'\][ \t]*= \{\{(EVO_\w+), (\w+), (SPECIES_\w+)\}\},$',texts[ep],re.M)

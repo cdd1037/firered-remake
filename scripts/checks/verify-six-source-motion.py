@@ -8,9 +8,9 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 import argparse,pathlib,re,json,subprocess
 p=argparse.ArgumentParser();p.add_argument('--project-root',type=pathlib.Path,default=_PROJECT_ROOT);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
 r=a.project_root;out=a.output;out.mkdir(parents=True,exist_ok=False)
-lock=json.loads((r/'scripts/recipes/presentation/six-island-presentation.lock.json').read_text());inputs=[]
+inputs=[]
 def source(path):
- data=(r/'content/raw/pokefirered/037335f4'/path).read_bytes();row=next(v for v in lock['files'] if v['path']==path)
+ data=(r/'content/raw/pokefirered/037335f4'/path).read_bytes()
  inputs.append(path);return data.decode()
 def func(text,name):
  m=re.search(r'^(?:static )?(?:bool8|u8|void) '+name+r'\([^;]*?\)\n\{',text,re.M);assert m,name

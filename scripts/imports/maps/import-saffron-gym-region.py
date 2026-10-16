@@ -8,6 +8,7 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from map_source import decode_geometry
 from map_runtime import publish_map_package, generated_root
 
 from shared_constants import package_documents
@@ -65,17 +66,8 @@ class Source:
     def lock(self):
         return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
 
-def decode(src,name):
-    events=src.json(f'data/maps/{name}/map.json');layout=next(x for x in src.json('data/layouts/layouts.json')['layouts'] if x.get('id')==events['layout'])
-    attrs=[src.units('data/tilesets/'+TILESETS[layout[k]]+'/metatile_attributes.bin','I') for k in ('primary_tileset','secondary_tileset')]
-    names={int(v,16):n for n,v in re.findall(r'^#define\s+(MB_\w+)\s+(0x[0-9A-Fa-f]+)',src.text('include/constants/metatile_behaviors.h'),re.M)}
-    blocks=src.units(layout['blockdata_filepath'],'H');border=src.units(layout['border_filepath'],'H')
-    if len(blocks)!=layout['width']*layout['height']:raise ValueError('Grid size differs')
-    cells=[]
-    for i,b in enumerate(blocks):
-        mid=b&1023;a=attrs[mid>=640][mid if mid<640 else mid-640];bh=a&511
-        cells.append(dict(x=i%layout['width'],y=i//layout['width'],rawBlock=b,metatileId=mid,rawAttributes=a,collision=(b>>10)&3,elevation=b>>12,behaviorId=bh,behaviorName=names.get(bh,'UNKNOWN'),encounterType=(a>>24)&7))
-    return dict(sourceName=name,stableId='map.'+directory(name),sourceRef=src.ref(f'data/maps/{name}/map.json',events['id']),width=layout['width'],height=layout['height'],layout=layout,events=events,cells=cells,borderBlocks=border)
+def decode(src, name):
+    return decode_geometry(src, name, tilesets=TILESETS)
 
 def scripts(src,maps):
     # Full files are indexed to discover symbols; only selected closure files become

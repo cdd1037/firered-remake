@@ -1,0 +1,17 @@
+{
+  "output": "data/trainer-battles/vermilion-gym.json",
+  "trainers": [
+    "SAILOR_DWAYNE",
+    "ENGINEER_BAILY",
+    "GENTLEMAN_TUCKER",
+    "LEADER_LT_SURGE"
+  ],
+  "scripts": [
+    "data/maps/VermilionCity_Gym/scripts.inc"
+  ],
+  "moves": [
+    "MOVE_SONIC_BOOM",
+    "MOVE_SHOCK_WAVE",
+    "MOVE_SPARK"
+  ]
+}

@@ -14,6 +14,11 @@ def read_effects(raw):
     raw = Path(raw)
     header = (raw / 'include/constants/item_effects.h').read_text(encoding='utf-8')
     source = (raw / 'src/data/pokemon/item_effects.h').read_text(encoding='utf-8')
+    return read_effects_text(header, source)
+
+
+def read_effects_text(header, source):
+    """Compile already-read source text, including item-to-array bindings."""
     def uncomment(text):
         return re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S)
     constants = dict(re.findall(r'^#define (ITEM\w+)\s+([^\n]+)', uncomment(header), re.M))
@@ -58,7 +63,10 @@ def read_effects(raw):
         if name in arrays:
             raise ValueError('Duplicate item effect: ' + name)
         arrays[name] = output
-    bindings = dict(re.findall(r'\[(ITEM_\w+) - ITEM_POTION\]\s*=\s*(sItemEffect_\w+)', joined))
+    rows = re.findall(r'\[(ITEM_\w+) - ITEM_POTION\]\s*=\s*(sItemEffect_\w+)', joined)
+    bindings = dict(rows)
+    if not arrays or not bindings or len(bindings) != len(rows):
+        raise ValueError('Empty or duplicate item effect bindings')
     if any(name not in arrays for name in bindings.values()):
         raise ValueError('Unresolved item effect binding')
     return {item: arrays[name] for item, name in bindings.items()}

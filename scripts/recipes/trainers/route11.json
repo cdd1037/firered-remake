@@ -1,0 +1,22 @@
+{
+  "output": "data/trainer-battles/route11.json",
+  "trainers": [
+    "YOUNGSTER_EDDIE",
+    "GAMER_HUGO",
+    "YOUNGSTER_DILLON",
+    "YOUNGSTER_DAVE",
+    "GAMER_JASPER",
+    "GAMER_DARIAN",
+    "ENGINEER_BRAXTON",
+    "YOUNGSTER_YASU",
+    "GAMER_DIRK",
+    "ENGINEER_BERNIE"
+  ],
+  "scripts": [
+    "data/scripts/trainers.inc",
+    "data/maps/Route11/scripts.inc"
+  ],
+  "maps": [
+    "Route11"
+  ]
+}

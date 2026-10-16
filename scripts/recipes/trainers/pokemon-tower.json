@@ -1,0 +1,44 @@
+{
+  "output": "data/trainer-battles/pokemon-tower/trainers.json",
+  "trainers": [
+    "RIVAL_POKEMON_TOWER_SQUIRTLE",
+    "RIVAL_POKEMON_TOWER_BULBASAUR",
+    "RIVAL_POKEMON_TOWER_CHARMANDER",
+    "CHANNELER_PATRICIA",
+    "CHANNELER_CARLY",
+    "CHANNELER_HOPE",
+    "CHANNELER_PAULA",
+    "CHANNELER_LAUREL",
+    "CHANNELER_JODY",
+    "CHANNELER_TAMMY",
+    "CHANNELER_RUTH",
+    "CHANNELER_KARINA",
+    "CHANNELER_JANAE",
+    "CHANNELER_ANGELICA",
+    "CHANNELER_EMILIA",
+    "CHANNELER_JENNIFER",
+    "TEAM_ROCKET_GRUNT_19",
+    "TEAM_ROCKET_GRUNT_20",
+    "TEAM_ROCKET_GRUNT_21"
+  ],
+  "scripts": [
+    "data/maps/PokemonTower_2F/scripts.inc",
+    "data/maps/PokemonTower_3F/scripts.inc",
+    "data/maps/PokemonTower_4F/scripts.inc",
+    "data/maps/PokemonTower_5F/scripts.inc",
+    "data/maps/PokemonTower_6F/scripts.inc",
+    "data/maps/PokemonTower_7F/scripts.inc"
+  ],
+  "dialogueContexts": [
+    {
+      "trainers": [
+        "RIVAL_POKEMON_TOWER_SQUIRTLE",
+        "RIVAL_POKEMON_TOWER_BULBASAUR",
+        "RIVAL_POKEMON_TOWER_CHARMANDER"
+      ],
+      "script": "data/maps/PokemonTower_2F/scripts.inc",
+      "label": "PokemonTower_2F_EventScript_Rival"
+    }
+  ],
+  "moves": "party"
+}

@@ -7,6 +7,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from map_runtime import publish_map_package, generated_root
 
 from shared_constants import package_documents
+from runtime_map_manifest import verify_package
 import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
@@ -405,9 +406,14 @@ def main():
             scriptIndexerVersion='four-island-label-closure-v1',outputs=outputs)
         manifestbytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifestbytes)
         writes=[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        if args.check:
+            verify_package(stage, target/'content/generated'/PACKAGE, target/'content/generated')
         for p,b in writes:
             safe(p)
-            if args.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
+            if args.check:
+                if p.is_relative_to(target/'content/generated'):
+                    continue  # The whole package was compared above, including atlas pixels.
+                need(p.is_file() and p.read_bytes()==b,'Raw source differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
         print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 

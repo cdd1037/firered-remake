@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import re
 
+from pokemon_import import learn_rows
 from build_source_lock import COMMIT, TREE, PROFILE, FILES, encode, git
 
 ROOT = _PROJECT_ROOT
@@ -79,6 +80,8 @@ class Sources:
     def __init__(self, sources, metadata):
         self.text = sources
         self.meta = metadata
+        self._constants = {}
+        self._learntext = None
 
     def ref(self, path, symbol, start, end):
         text = self.text[path]
@@ -100,6 +103,69 @@ class Sources:
             require(m[1] not in result, 'Duplicate source constant: ' + m[1])
             result[m[1]] = int(m[2], 0) if m[2].startswith('0x') else int(m[2])
         return result
+
+    def one(self, path, pattern):
+        return one(pattern, self.text[path])
+
+    def match_ref(self, path, symbol, match):
+        return self.ref(path, symbol, match.start(), match.end())
+
+    def constant(self, path, symbol):
+        match = self.one(path, r'^#define ' + symbol + r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$')
+        return dict(symbol=symbol, value=int(match[1]), source=self.match_ref(path, symbol, match))
+
+    def name(self, path, symbol):
+        match = self.one(path, r'^    \[' + symbol + r'\]\s*= _\("([^"\n]+)"\),$')
+        return dict(id=ident(symbol), name=match[1], source=self.match_ref(path, symbol, match))
+
+    def learnset(self, symbol):
+        pointer = self.one(POINTERS, r'^    \[' + symbol + r'\] = (\w+),$')[1]
+        if self._learntext is None:
+            self._learntext = select_firered(self.text[LEARNSETS])
+        match = one(r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};', self._learntext)
+        rows = [dict(level=int(row[1]), move=ident(row[2]))
+                for row in learn_rows(self._learntext, match)]
+        levels = [row['level'] for row in rows]
+        require(levels == sorted(levels) and all(1 <= level <= 100 for level in levels),
+                'Invalid or unordered learnset levels: ' + symbol)
+        return rows, self.match_ref(LEARNSETS, pointer, match)
+
+    def constants(self, path, prefix):
+        key = (path, prefix)
+        if key not in self._constants:
+            self._constants[key] = self.numeric_constants(path, prefix)
+        return self._constants[key]
+
+    def species_definition(self, symbol):
+        """Canonical source mechanics only; callers separately admit evolution edges."""
+        fields, _ = self.block(SPECIES_INFO, symbol)
+        expected = {'base' + suffix for _, suffix in STATS} | {'evYield_' + suffix for _, suffix in STATS} | {
+            'types', 'catchRate', 'expYield', 'itemCommon', 'itemRare', 'genderRatio', 'eggCycles',
+            'friendship', 'growthRate', 'eggGroups', 'abilities', 'safariZoneFleeRate', 'bodyColor', 'noFlip'}
+        require(set(fields) == expected, 'Species fields differ: ' + symbol)
+        constants = self.constants('include/constants/pokemon.h', '(?:TYPE_|MON_|EVO_|GROWTH_)')
+        abilities = self.constants('include/constants/abilities.h', 'ABILITY_')
+        gender = fields['genderRatio']
+        if gender.startswith('PERCENT_FEMALE('):
+            match = re.fullmatch(r'PERCENT_FEMALE\((\d+(?:\.\d+)?)\)', gender)
+            require(match is not None, 'Unsupported gender ratio')
+            ratio = min(254, int(Decimal(match[1]) * 255 / 100))
+        else:
+            require(gender in ('MON_MALE', 'MON_FEMALE', 'MON_GENDERLESS'), 'Unsupported gender constant')
+            ratio = constants[gender]
+        types, slots = pair(fields['types'], 'TYPE_'), pair(fields['abilities'], 'ABILITY_')
+        official = set(abilities) - {'ABILITY_NONE', 'ABILITY_CACOPHONY'}
+        require(all(t in constants for t in types) and slots[0] in official and
+                (slots[1] in official or slots[1] == 'ABILITY_NONE'), 'Invalid species type/ability')
+        entries, _ = self.learnset(symbol)
+        definition = dict(id=ident(symbol), sourceSpeciesId=self.constant('include/constants/species.h', symbol)['value'],
+            baseStats={key: number(fields['base' + suffix]) for key, suffix in STATS},
+            type1=types[0], type2=types[1], catchRate=number(fields['catchRate']),
+            experienceYield=number(fields['expYield']),
+            evYield={key: number(fields['evYield_' + suffix]) for key, suffix in STATS},
+            growthRate=GROWTH[fields['growthRate']], genderRatio=ratio, ability1=slots[0], ability2=slots[1],
+            friendship=number(fields['friendship']), levelUpMoves=entries, evolutions=[])
+        return definition, fields
 
     def function(self, name):
         m = one(r'^(?:static )?(?:void|bool8|u8|u16|u32|s32) ' + name + r'\([^;]*?\)\n\{', self.text[POKEMON])
@@ -150,7 +216,7 @@ def extract(lock, src, moves):
     dex_map = one(r'^static const u16 sSpeciesToNationalPokedexNum\[NUM_SPECIES - 1\] =\n\{(.*?)^\};', src.text[POKEMON])
     mapped_names = re.findall(r'^    SPECIES_TO_NATIONAL\((\w+)\),$', dex_map[1], re.M)
     require(set(species_ids) <= {'SPECIES_' + name for name in mapped_names}, 'Source species-to-national mapping incomplete')
-    learntext = select_firered(src.text[LEARNSETS])
+    select_firered(src.text[LEARNSETS])
     evolutions = {}
     for em in re.finditer(r'^    \[(SPECIES_\w+)\]\s*= (\{\{.*?\}\}),$', src.text[EVOLUTION], re.M | re.S):
         require(em[1] in species_ids and em[1] not in evolutions, 'Unknown/duplicate evolution source species')
@@ -167,44 +233,13 @@ def extract(lock, src, moves):
         evolutions[em[1]] = entries
     require(len(evolutions) == len(re.findall(r'^    \[SPECIES_', src.text[EVOLUTION], re.M)), 'Evolution parser skipped source records')
     species, metadata = [], []
-    expected_fields = {'base' + x for _, x in STATS} | {'evYield_' + x for _, x in STATS} | {
-        'types', 'catchRate', 'expYield', 'itemCommon', 'itemRare', 'genderRatio', 'eggCycles',
-        'friendship', 'growthRate', 'eggGroups', 'abilities', 'safariZoneFleeRate', 'bodyColor', 'noFlip'}
     for symbol, sid in sorted(species_ids.items(), key=lambda x: x[1]):
-        f, _ = src.block(SPECIES_INFO, symbol)
-        require(set(f) == expected_fields, 'Species fields differ: ' + symbol)
-        gender = f['genderRatio']
-        if gender.startswith('PERCENT_FEMALE('):
-            m = re.fullmatch(r'PERCENT_FEMALE\((\d+(?:\.\d+)?)\)', gender)
-            require(m is not None, 'Unsupported gender ratio')
-            ratio = min(254, int(Decimal(m[1]) * 255 / 100))
-        else:
-            require(gender in ('MON_MALE', 'MON_FEMALE', 'MON_GENDERLESS'), 'Unsupported gender constant')
-            ratio = constants[gender]
-        types, slots = pair(f['types'], 'TYPE_'), pair(f['abilities'], 'ABILITY_')
-        require(all(t in constants for t in types) and slots[0] in official and (slots[1] in official or slots[1] == 'ABILITY_NONE'), 'Invalid species type/ability')
-        pm = one(r'^    \[' + symbol + r'\] = (\w+),$', src.text[POINTERS])
-        pointer = pm[1]
-        lm = one(r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};', learntext)
-        entries, end_seen = [], False
-        for line in lm[1].splitlines(keepends=True):
-            stripped = line.strip()
-            if not stripped:
-                continue
-            if stripped == 'LEVEL_UP_END':
-                require(not end_seen, 'Duplicate learnset terminator')
-                end_seen = True
-            else:
-                match = re.fullmatch(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),\n', line)
-                require(match is not None and not end_seen, 'Unhandled learnset entry: ' + line)
-                level, move = number(match[1]), match[2]
-                require(1 <= level <= 100 and 'pret:' + move in move_ids, 'Invalid learnset level/move')
-                entries.append(dict(level=level, move=ident(move)))
-        require(end_seen and entries and [e['level'] for e in entries] == sorted(e['level'] for e in entries), 'Unterminated/empty/unordered learnset')
+        definition, f = src.species_definition(symbol)
+        require(all(row['move']['value'] in move_ids for row in definition['levelUpMoves']), 'Unknown learnset move')
         dex_symbol = symbol.replace('SPECIES_', 'NATIONAL_DEX_', 1)
         dex, _ = src.block(POKEDEX, dex_symbol)
         require(1 <= dex_ids[dex_symbol] <= 386, 'Noncanonical national dex identity')
-        species.append(dict(id=ident(symbol), sourceSpeciesId=sid, baseStats={k: number(f['base' + suffix]) for k, suffix in STATS}, type1=types[0], type2=types[1], catchRate=number(f['catchRate']), experienceYield=number(f['expYield']), evYield={k: number(f['evYield_' + suffix]) for k, suffix in STATS}, growthRate=GROWTH[f['growthRate']], genderRatio=ratio, ability1=slots[0], ability2=slots[1], friendship=number(f['friendship']), levelUpMoves=entries, evolutions=[]))
+        species.append(definition)
         require(f['noFlip'] in ('FALSE', 'TRUE'), 'Invalid noFlip value')
         metadata.append(dict(id=ident(symbol), nationalDexNumber=dex_ids[dex_symbol], heightDecimeters=number(dex['height']), weightHectograms=number(dex['weight']), sourceEvolutions=evolutions.get(symbol, []), eggGroups=list(pair(f['eggGroups'], 'EGG_GROUP_')), eggCycles=number(f['eggCycles']), itemCommon=f['itemCommon'], itemRare=f['itemRare'], safariZoneFleeRate=number(f['safariZoneFleeRate']), bodyColor=f['bodyColor'], noFlip=f['noFlip'] == 'TRUE'))
     ability_rows = [dict(symbol=symbol, sourceAbilityId=value)

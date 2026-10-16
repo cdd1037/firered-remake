@@ -14,6 +14,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as ROOT
 from map_runtime import encode, publish_map_package
+from runtime_map_manifest import verify_package
 from PIL import Image
 
 PACKAGE = 'maps/regions/school-house-interiors'
@@ -88,25 +89,12 @@ def convert(root, raw, check=False):
         publish_map_package(stage)
         manifest = dict(schemaVersion=1, resourceId=RESOURCE_ID, outputs=[dict(path=p.name) for p in sorted(stage.iterdir()) if p.is_file()])
         (stage / 'manifest.json').write_bytes(encode(manifest))
-        atlas = None
-        for path in sorted(stage.iterdir()):
-            destination = output / path.name
-            if check:
-                if path.suffix == '.png':
-                    with Image.open(path) as image: expected = image.convert('RGBA')
-                    if destination.is_file():
-                        with Image.open(destination) as image: actual = image.convert('RGBA')
-                    else:
-                        if atlas is None:
-                            helper = module(ROOT / 'scripts/imports/maps/import-map-atlases.py', 'interior_atlas')
-                            atlas = helper.AtlasReader(generated / 'maps/atlases')
-                        actual = atlas.read(PACKAGE + '/' + path.name)
-                    require(actual.size == expected.size and actual.tobytes() == expected.tobytes(), 'Interior pixels differ: ' + path.name)
-                else:
-                    require(destination.is_file() and destination.read_bytes() == path.read_bytes(), 'Interior output differs: ' + path.name)
-            else:
-                output.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(path, destination)
+        if check:
+            verify_package(stage, output, generated)
+        else:
+            output.mkdir(parents=True, exist_ok=True)
+            for path in sorted(stage.iterdir()):
+                shutil.copyfile(path, output / path.name)
     return dict(maps=len(MAPS), checked=check)
 
 if __name__ == '__main__':

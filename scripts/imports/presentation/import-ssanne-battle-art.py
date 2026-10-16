@@ -26,10 +26,7 @@ PORTRAITS = (("sailor-front", "Sailor", "sailor", 85),
              ("gentleman-front", "Gentleman", "gentleman", 123),
              ("rival-late-front", "RivalLate", "rival_late", 124))
 # Reuse local reviewed bounded I/O, safe-path and canonical serialization utilities.
-SPEC = importlib.util.spec_from_file_location("_ssanne_art_shared", ROOT / "scripts/imports/trainers/import-cerulean-trainers.py")
-SHARED = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(SHARED)
-canonical, safe = SHARED.canonical, SHARED.safe
+from trainer_portraits import canonical, safe
 
 
 def read_lock(path=None):

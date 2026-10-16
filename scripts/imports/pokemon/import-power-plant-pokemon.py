@@ -546,7 +546,6 @@ def main():
  doc,raw,files=generate(a.reference,a.dependency_root,raw_root);files[CATALOG_PATH]=encoded(doc)
  presentation,art=build_power_plant_presentation(lambda path:read_source(raw_root,path,commit=COMMIT,repository=a.reference),a.dependency_root);files.update(presentation)
  for path,b in raw.items():files[RAW+path]=b
- lock=dict(sourceCommit=COMMIT,profile=doc['profile'],files=[dict(path=p) for p,b in sorted(files.items())])
  if a.check:
   for path,b in files.items():need(safe(a.output,path).read_bytes()==b,'Regeneration differs: '+path)
  else:write_files(a.output,files)

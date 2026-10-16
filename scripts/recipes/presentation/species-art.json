@@ -1,0 +1,58 @@
+{
+  "eevee": {
+    "species": [
+      "EEVEE"
+    ],
+    "singleDex": true
+  },
+  "snorlax": {
+    "species": [
+      "SNORLAX"
+    ],
+    "singleDex": true,
+    "reduceIndices": true
+  },
+  "silph": {
+    "species": [
+      "ALAKAZAM",
+      "MR_MIME",
+      "LAPRAS"
+    ]
+  },
+  "saffron-gym": {
+    "species": [
+      "SLOWBRO"
+    ]
+  },
+  "cinnabar": {
+    "species": [
+      "NINETALES",
+      "ARCANINE",
+      "RAPIDASH",
+      "CLOYSTER",
+      "KRABBY",
+      "KINGLER"
+    ]
+  },
+  "surf": {
+    "species": [
+      "PSYDUCK",
+      "GOLDUCK"
+    ]
+  },
+  "safari": {
+    "species": [
+      "CHANSEY",
+      "SCYTHER",
+      "TAUROS"
+    ]
+  },
+  "fuchsia-route": {
+    "species": [
+      "FARFETCHD",
+      "DODUO",
+      "DODRIO",
+      "DITTO"
+    ]
+  }
+}

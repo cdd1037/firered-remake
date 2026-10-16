@@ -149,7 +149,7 @@ def compile_route22(rows):
 
 
 def compile_catalog(root, region):
-    dependency = json.loads((root / 'content/generated' / (region + '-region') / 'dependencies.json').read_text())
+    dependency = json.loads((root / 'content/generated/maps/regions' / region / 'dependencies.json').read_text())
     if region == 'route22':
         trainers, battles = compile_route22(dependency['earlyRivalTrainers'])
     else:
@@ -168,7 +168,7 @@ def main():
     for region in COUNTS:
         document = compile_catalog(ROOT, region)
         data = trainer_json(ROOT / 'content/generated', document, check=args.check)
-        path = ROOT / 'content/generated' / (region + '-trainers') / 'trainers.json'
+        path = ROOT / 'content/generated/data/trainer-battles' / (region + '.json')
         if args.check:
             require(path.read_bytes() == data, region + ': Generated trainer output differs')
         else:

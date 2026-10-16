@@ -9,7 +9,8 @@ import argparse,importlib.util,io,json,pathlib,re,struct,sys
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
-spec=importlib.util.spec_from_file_location('art',ROOT/'scripts/imports/presentation/import-cinnabar-art.py');art=importlib.util.module_from_spec(spec);spec.loader.exec_module(art);meta=art.meta
+spec=importlib.util.spec_from_file_location('presentation_metadata',ROOT/'scripts/imports/presentation/import-cinnabar-presentation-source.py');meta=importlib.util.module_from_spec(spec);spec.loader.exec_module(meta)
+from image_io import png as encode_rgba_png
 
 def build(root):
  _,source=meta.authenticated(root);text=lambda p:source[p].decode();unit=lambda p,f:list(struct.unpack('<'+f*(len(source[p])//struct.calcsize(f)),source[p]));labels={k:int(v,16) for k,v in re.findall(r'^#define\s+(METATILE_\w+)\s+(0x[\da-fA-F]+)',text('include/constants/metatile_labels.h'),re.M)}
@@ -40,7 +41,7 @@ def build(root):
     for n,v in enumerate(group):layer.paste(tile(v),(column*16+n%2*8,n//2*8))
    tiles.append(dict(family=family,symbol=symbol,metatileId=mid,rawAttributes=attribute,x=column*16,y=0,width=16,height=16))
   for name,layer in zip(('bottom','middle','top'),layers):
-   rgba=layer.tobytes();stem=family+'-'+name;out[stem+'.png']=art.png(layer.width,layer.height,rgba);assets.append(dict(family=family, layer=name, texturePath=stem + '.png', width=layer.width, height=layer.height))
+   rgba=layer.tobytes();stem=family+'-'+name;out[stem+'.png']=encode_rgba_png(layer.width,layer.height,rgba);assets.append(dict(family=family, layer=name, texturePath=stem + '.png', width=layer.width, height=layer.height))
  out['manifest.json']=meta.canonical(dict(schemaVersion=1,tiles=tiles,layers=assets,limits=['Source statue/barrier and quiz doors replace exact metatiles after the source script commands.','Three source BG layers retain the map-family identity; gameplay owns collision and flags.'],outputs=[dict(path=p) for p,b in sorted(out.items())]));return out
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--check',action='store_true');a=p.parse_args();out=build(a.project_root)

@@ -17,6 +17,7 @@ from PIL import Image
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
+from presentation_source import Source
 from item_icon_exports import ATLAS_PATH, item_icon_path, output_materials, pack_project
 
 PACKAGES = (
@@ -68,8 +69,10 @@ class ItemIconExportsTests(unittest.TestCase):
         count=0
         for package, relative_document in PACKAGES:
             with self.subTest(package=package):
-                module=load(package)
-                if package=='silph-item-art': outputs=module.build(ROOT)
+                regional = package in ('ssanne-items', 'route11-items')
+                module=load('regional-items' if regional else package)
+                if regional: outputs=module.convert(Source(ROOT), package.removesuffix('-items'))
+                elif package=='silph-item-art': outputs=module.build(ROOT)
                 elif package=='early-shop':
                     with tempfile.TemporaryDirectory() as directory:
                         out=Path(directory)/'generated'/package

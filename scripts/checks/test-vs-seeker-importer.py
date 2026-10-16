@@ -45,7 +45,8 @@ parties = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(parties)
 
 class RawSource:
-    def __init__(self, reference):
+    def __init__(self, reference=None, *, raw_root=None):
+        assert reference == args.git_dir and raw_root is None, "Unexpected fixture source selection"
         self.data, self.entries = {}, {}
     def text(self, path):
         data = (root / 'content/raw/pokefirered/037335f4' / path).read_bytes()
@@ -92,7 +93,7 @@ with patch.object(parties.importlib.util, 'spec_from_file_location', return_valu
         try:
             parties.generate(args.git_dir, root, root)
         except ValueError as error:
-            assert str(error) == 'Unsupported doubleBattle value'
+            assert str(error).startswith('Unrecognized trainer items or battle mode:')
         else:
             raise AssertionError('invalid declaration accepted')
 print(json.dumps(dict(passed=True, rematches=len(catalog['rematches']), trainers=351, doubles=25,

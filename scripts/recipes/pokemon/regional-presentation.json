@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "groups": {
+    "initial": {
+      "species": [
+        "Bulbasaur",
+        "Ivysaur",
+        "Venusaur",
+        "Charmander",
+        "Charmeleon",
+        "Charizard",
+        "Squirtle",
+        "Wartortle",
+        "Blastoise",
+        "Pidgey",
+        "Pidgeotto",
+        "Pidgeot",
+        "Rattata",
+        "Raticate",
+        "Weedle",
+        "Kakuna",
+        "Beedrill"
+      ]
+    },
+    "forest": {
+      "species": [
+        "Caterpie",
+        "Metapod",
+        "Butterfree",
+        "Pikachu",
+        "Raichu"
+      ],
+      "include": "initial"
+    },
+    "pewter": {
+      "species": [
+        "Geodude",
+        "Graveler",
+        "Golem",
+        "Sandshrew",
+        "Sandslash",
+        "Onix",
+        "Steelix"
+      ],
+      "include": "forest"
+    },
+    "route22": {
+      "species": [
+        "Spearow",
+        "Fearow",
+        "Mankey"
+      ],
+      "include": "pewter"
+    },
+    "route3": {
+      "species": [
+        "Ekans",
+        "NidoranF",
+        "Nidorina",
+        "NidoranM",
+        "Nidorino",
+        "Jigglypuff",
+        "Magikarp",
+        "Gyarados"
+      ],
+      "include": "route22"
+    },
+    "mtmoon": {
+      "species": [
+        "Arbok",
+        "Clefairy",
+        "Zubat",
+        "Golbat",
+        "Oddish",
+        "Paras",
+        "Parasect",
+        "Bellsprout",
+        "Magnemite",
+        "Grimer",
+        "Voltorb",
+        "Koffing",
+        "Nidoqueen",
+        "Nidoking",
+        "Clefable",
+        "Wigglytuff"
+      ],
+      "include": "route3"
+    },
+    "cerulean": {
+      "species": [
+        "Abra",
+        "Kadabra",
+        "Machop",
+        "Drowzee",
+        "Shellder",
+        "Horsea",
+        "Goldeen",
+        "Staryu",
+        "Starmie"
+      ],
+      "include": "mtmoon"
+    },
+    "bill": {
+      "species": [
+        "Slowpoke",
+        "Gloom",
+        "Weepinbell"
+      ],
+      "include": "cerulean"
+    },
+    "vermilion": {
+      "species": [
+        "Meowth",
+        "Persian"
+      ],
+      "include": "bill"
+    },
+    "ssanne": {
+      "species": [
+        "Growlithe",
+        "Ponyta",
+        "Tentacool"
+      ],
+      "include": "vermilion"
+    },
+    "route11": {
+      "species": [
+        "Diglett",
+        "Dugtrio",
+        "Magneton",
+        "Poliwag",
+        "Poliwhirl",
+        "Vulpix"
+      ],
+      "include": "ssanne"
+    },
+    "rocktunnel": {
+      "species": [
+        "Cubone",
+        "Electrode",
+        "Hypno",
+        "Lickitung",
+        "Machoke",
+        "Marowak",
+        "Primeape",
+        "Rhyhorn",
+        "Seadra",
+        "Seaking",
+        "Tentacruel",
+        "Venomoth",
+        "Venonat",
+        "Weezing"
+      ],
+      "include": "route11"
+    }
+  },
+  "regions": {
+    "forest": {
+      "artSpecies": [
+        "Caterpie",
+        "Metapod",
+        "Butterfree",
+        "Weedle",
+        "Kakuna",
+        "Beedrill",
+        "Pikachu",
+        "Raichu"
+      ]
+    },
+    "pewter": {},
+    "route22": {
+      "supplement": {
+        "naturalLevelLimit": 20,
+        "cryWaves": true
+      }
+    },
+    "route3": {
+      "supplement": {
+        "naturalLevelLimit": 20
+      }
+    },
+    "mtmoon": {
+      "supplement": {
+        "naturalLevelLimit": 25
+      }
+    },
+    "cerulean": {
+      "supplement": {
+        "naturalLevelLimit": 25
+      }
+    },
+    "bill": {
+      "supplement": {
+        "naturalLevelLimit": 25
+      }
+    },
+    "vermilion": {
+      "supplement": {
+        "naturalLevelLimit": 28
+      }
+    },
+    "ssanne": {
+      "supplement": {
+        "naturalLevelLimit": null
+      }
+    },
+    "route11": {
+      "supplement": {
+        "naturalLevelLimit": null
+      }
+    },
+    "rocktunnel": {
+      "sortPriorWeights": true,
+      "supplement": {
+        "naturalLevelLimit": null
+      }
+    }
+  }
+}

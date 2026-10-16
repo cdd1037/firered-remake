@@ -8,6 +8,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 import argparse,json,pathlib,re,sys
 sys.dont_write_bytecode=True
+from import_canonical_pokemon import Sources
 from pokemon_import_io import safe, load_recipe, read_sources, write_files
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -21,28 +22,13 @@ def authenticated(root):
 
 def generate(root):
  lock,raw=authenticated(root);texts={p:b.decode() for p,b in raw.items() if not p.endswith('.png')};inventory={r['path']:r for r in lock['files']}
- def one(path,pattern):
-  found=list(re.finditer(pattern,texts[path],re.M|re.S))
-  if len(found)!=1:raise ValueError('Expected one source match: '+path+': '+pattern)
-  return found[0]
- def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=texts[path].count('\n',0,m.start())+1,endLine=texts[path].count('\n',0,m.end())+1)
- def constant(path,symbol):
-  m=one(path,r'^#define '+symbol+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');return dict(symbol=symbol,value=int(m[1]),source=ref(path,symbol,m))
+ src=Sources(texts,{})
+ one,ref,constant,block,name=src.one,src.match_ref,src.constant,src.block,src.name
  def ident(s):return dict(value='pret:'+s)
- def block(path,symbol):
-  m=one(path,r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},');return dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M)),ref(path,symbol,m)
- def name(path,symbol):
-  m=one(path,r'^    \['+symbol+r'\]\s*= _\("([A-Z ]+)"\),$');return dict(id=ident(symbol),name=m[1],source=ref(path,symbol,m))
- symbol='SPECIES_SNORLAX';fields,source=block('src/data/pokemon/species_info.h',symbol)
+ symbol='SPECIES_SNORLAX';species,fields=src.species_definition(symbol)
  assert fields['genderRatio']=='PERCENT_FEMALE(12.5)' and fields['growthRate']=='GROWTH_SLOW' and fields['types']=='{TYPE_NORMAL, TYPE_NORMAL}' and fields['abilities']=='{ABILITY_IMMUNITY, ABILITY_THICK_FAT}'
- pointer=one('src/data/pokemon/level_up_learnset_pointers.h',r'^    \['+symbol+r'\] = (\w+),$')[1]
- path='src/data/pokemon/level_up_learnsets.h';learn=one(path,r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};')
- level_moves=[];required=set()
- for m in re.finditer(r'^    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),\n',texts[path],re.M):
-  if learn.start()<=m.start()<learn.end():level_moves.append(dict(level=int(m[1]),move=ident(m[2])));required.add(m[2])
+ level_moves=species['levelUpMoves'];required={row['move']['value'][5:] for row in level_moves}
  assert len(level_moves)==14 and not re.search(r'\['+symbol+r'\]',texts['src/data/pokemon/evolution.h'])
- stat_source=('HP','Attack','Defense','Speed','SpAttack','SpDefense');stat_names=('hp','attack','defense','speed','specialAttack','specialDefense')
- species=dict(id=ident(symbol), sourceSpeciesId=constant('include/constants/species.h', symbol)['value'], baseStats={k: int(fields['base' + s]) for k, s in zip(stat_names, stat_source)}, type1='TYPE_NORMAL', type2='TYPE_NORMAL', catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_names, stat_source)}, growthRate='slow', genderRatio=31, ability1='ABILITY_IMMUNITY', ability2='ABILITY_THICK_FAT', friendship=int(fields['friendship']), levelUpMoves=level_moves, evolutions=[])
  definitions=[]
  for symbol in sorted(required):
   f,r=block('src/data/battle_moves.h',symbol)

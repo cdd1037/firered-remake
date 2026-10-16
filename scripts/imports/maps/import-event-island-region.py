@@ -4,6 +4,7 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from map_source import source_topology as topology
 from map_runtime import publish_map_package, generated_root
 
 from shared_constants import package_documents
@@ -134,26 +135,6 @@ def constants(src, shared, worlds, scripts):
     for m in re.finditer(r'^#define\s+(METATILE_\w+)\s+(0x[0-9A-Fa-f]+)\s*$',text,re.M):
         result['values'][m[1]]=dict(value=int(m[2],16),sourceRef=src.ref(path,m[1],text.count('\n',0,m.start())+1))
     return result
-
-def topology(src,worlds):
-    allmaps={}
-    for p in src.tree:
-        if p.startswith('data/maps/') and p.endswith('/map.json'):
-            n=p.split('/')[2]; symbol='MAP_'+re.sub(r'([a-z])([A-Z])',r'\1_\2',n).upper(); allmaps[symbol]=p
-    active={w['events']['id'] for w in worlds}; warps=[]; connections=[]
-    for w in worlds:
-        e=w['events'];symbol=e['id']
-        for i,x in enumerate(e['warp_events']):
-            d=src.json(allmaps[x['dest_map']]); j=int(x['dest_warp_id']); back=d['warp_events'][j]
-            warps.append(dict(sourceMap=symbol,sourceIndex=i,source=x,destination=back,
-              destinationInSlice=x['dest_map'] in active,reciprocalMap=back['dest_map']==symbol,
-              reciprocalIndex=back['dest_map']==symbol and int(back['dest_warp_id'])==i))
-        opposite={'up':'down','down':'up','left':'right','right':'left'}
-        for x in e['connections'] or []:
-            d=src.json(allmaps[x['map']]);back=[y for y in d['connections'] or [] if y['map']==symbol and y['direction']==opposite[x['direction']]]
-            need(len(back)==1 and back[0]['offset']==-x['offset'],'connection mismatch')
-            connections.append(dict(sourceMap=symbol,source=x,destinationInSlice=x['map'] in active,reciprocal=True))
-    return dict(warps=warps,connections=connections)
 
 
 def function(src, path, symbol):

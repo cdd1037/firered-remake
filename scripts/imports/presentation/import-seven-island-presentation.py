@@ -7,6 +7,9 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
+from presentation_pixels import PixelReader
+from presentation_source import Source, safe, need
+from image_io import png
 import argparse
 import io
 import json
@@ -19,45 +22,11 @@ import wave
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
-# Reuse the established authored PNG/path/hash helpers; importing performs no rebuild.
-common = runpy.run_path(str(ROOT / 'scripts/imports/presentation/import-celio-presentation.py'))
-need, encode, safe, png = (common[k] for k in ('need', 'encode', 'safe', 'png'))
-COMMIT, TREE = common['COMMIT'], common['TREE']
-PROFILE = 'firered-seven-island-presentation-v1'
 BASE = 'content/generated/sprites/pokemon/seven-island/'
 RAW = 'content/raw/pokefirered/037335f4/'
 OWNED = [('Phanpy',231),('Donphan',232),('Larvitar',246),('Pupitar',247),('Tyranitar',248),('Skarmory',227),('Unown',201)]
 OPPONENT_ONLY = [('Girafarig',203),('Hitmontop',237),('Miltank',241),('Pineco',204),('Smeargle',235),('Ursaring',217)]
 SPECIES = OWNED + OPPONENT_ONLY
-
-class Source:
-    def __init__(self, root, reference, dependency):
-        self.root, self.reference, self.dependency = root, reference, dependency
-        self.files, self.raw, self.inherited = {}, {}, {}
-        self.lock = None
-        data = safe(root, 'scripts/recipes/presentation/seven-island-presentation.lock.json').read_bytes()
-        self.lock = json.loads(data)
-        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
-
-    def read(self, path):
-        if path not in self.raw:
-            data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path)
-            if self.lock:
-                need(row in self.lock['files'], 'Source input differs: ' + path)
-            self.raw[path], self.files[path] = data, row
-        return self.raw[path]
-
-    def text(self, path):
-        return self.read(path).decode()
-
-    def reuse(self, path):
-        data = safe(self.dependency, path).read_bytes()
-        row = dict(path=path)
-        if self.lock:
-            need(row in self.lock['inheritedInputs'], 'Inherited pixels differ: ' + path)
-        self.inherited[path] = row
-        return data
 
 
 TRAINERS = ('CRUSH_GIRL_CYNDY', 'TAMER_EVAN', 'PKMN_RANGER_JACKSON', 'PKMN_RANGER_KATELYN', 'COOLTRAINER_LEROY', 'COOLTRAINER_MICHELLE', 'COOL_COUPLE_LEX_NYA', 'AROMA_LADY_MIAH', 'YOUNG_COUPLE_EVE_JON', 'PKMN_RANGER_NICOLAS', 'PKMN_RANGER_MADELINE', 'JUGGLER_MASON', 'RUIN_MANIAC_BRANDON', 'RUIN_MANIAC_BENJAMIN', 'PAINTER_EDNA', 'GENTLEMAN_CLIFFORD', 'PSYCHIC_DARIO', 'PSYCHIC_RODETTE')
@@ -75,17 +44,8 @@ def build(root, reference, dependency):
         assets.append(row)
         return row
 
-    def palette(path, floor=False):
-        lines = source.text(path).splitlines()
-        need(lines[:2] == ['JASC-PAL', '0100'] and len(lines) == int(lines[2]) + 3, 'Source palette framing differs')
-        return [tuple((int(c) >> 3) * 255 // 31 if floor else ((int(c) >> 3) << 3) | ((int(c) >> 3) >> 2) for c in line.split()) for line in lines[3:]]
-
-    def indexed(image, pal, shape, floor=False, first_frame=False):
-        im = Image.open(io.BytesIO(source.read(image)))
-        need(im.mode == 'P' and im.size == shape and max(im.tobytes()) < 16, 'Source indexed image differs: ' + image)
-        indices = im.tobytes()[:1024] if first_frame else im.tobytes()
-        colors = palette(pal, floor)
-        return indices, bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
+    pixels = PixelReader(source)
+    palette, indexed = pixels.palette, pixels.indexed
 
     sprites, icons, footprints, inherited_sprites, names = [], [], [], [], []
     graphics = source.text('src/data/graphics/pokemon.h')
@@ -302,11 +262,10 @@ def build(root, reference, dependency):
         shade_maps.append(dict(map=map_name,paletteIndices=sorted(used),normalGammaOnly=True))
     need(len(shade_maps)==7,'Shade chamber inventory differs')
     out['synth-manifest.json']=runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
-    lock=encode(dict(schemaVersion=1,profile=PROFILE,repository='pret/pokefirered',commit=COMMIT,files=[source.files[p] for p in sorted(source.files)],inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
     manifest = runtime_json_bytes(dict(schemaVersion=1,     assets=assets, sprites=sprites, inheritedSprites=inherited_sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in OWNED], newOpponentOnlySpecies=[s for _, s in OPPONENT_ONLY], trainers=trainers, portraits=portraits, mapMusic=map_music, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues], cries=cry_evidence, ), fieldPresentation=dict(shadeGammaIndex=3, shadeStepDelay=20, shadeMaps=shade_maps, shadeNormalChannels=[c * 13 // 16 for c in range(32)], shadeAlternateChannels=list(range(32)), shakeVectors=[[1, 1, 8, 3], [2, 2, 10, 3], [3, 3, 12, 2]]), unown=dict(canonicalSpecies=201, formCount=28, renderSpecies=[201] + list(range(413, 440)), dexTrainerId=8, iconFrame=0), outputs=[dict(path=p) for p, b in sorted(out.items())]), sort_keys=True)
     out['manifest.json']=manifest
-    result={BASE+p:b for p,b in out.items()};result.update({RAW+p:b for p,b in source.raw.items()});result['scripts/recipes/presentation/seven-island-presentation.lock.json']=lock
-    report=dict(passed=True,sourceFiles=len(source.raw),inheritedInputs=len(source.inherited),sprites=len(sprites),inheritedSprites=len(inherited_sprites),icons=len(icons),footprints=len(footprints),assets=len(assets),geometry=len(geometry_rows),trainers=len(trainers),portraits=len(portraits),newPortraits=sum(not p['inherited'] for p in portraits),outputs=len(out)-1,lockBytes=len(lock),manifestBytes=len(manifest),synthBytes=len(out['synth-manifest.json']),newCues=len(cues),inheritedCues=len(inherited_cues),exactCryPcmCompared=True,nativeWindowVerified=False)
+    result={BASE+p:b for p,b in out.items()};result.update({RAW+p:b for p,b in source.raw.items()})
+    report=dict(passed=True,sourceFiles=len(source.raw),inheritedInputs=len(source.inherited),sprites=len(sprites),inheritedSprites=len(inherited_sprites),icons=len(icons),footprints=len(footprints),assets=len(assets),geometry=len(geometry_rows),trainers=len(trainers),portraits=len(portraits),newPortraits=sum(not p['inherited'] for p in portraits),outputs=len(out)-1,manifestBytes=len(manifest),synthBytes=len(out['synth-manifest.json']),newCues=len(cues),inheritedCues=len(inherited_cues),exactCryPcmCompared=True,nativeWindowVerified=False)
     return result,report
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

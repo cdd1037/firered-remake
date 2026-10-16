@@ -265,3 +265,7 @@ audible device output.
 修改源选择后依次运行两个地图导入器、`scripts/imports/maps/import-field-tilesets.py`、`scripts/imports/maps/import-map-atlases.py`、`scripts/imports/presentation/import-shared-overworld.py`；故事与商店分别由 `scripts/imports/story/import-story.py` 和 `scripts/imports/items/import-current-items.py` 转换。普通房屋新增的波波／烈雀精灵帧保留于 raw 并进入共有 overworld 图集。所有步骤均使用本工程已审阅工具，不执行上游脚本。
 
 科拿住家继续由四岛地图包维护，可运行 `python scripts/imports/maps/import-four-island-region.py --raw-root content/raw/pokefirered/037335f4`（或固定 Git 来源 `--reference-root`）。`import-four-island-presentation.py` 保留原房屋全部NPC图像输入；随后重建共同 field tilesets、地图图集与 overworld 图集。以上入口均支持 `--check`。玩偶阈值从 `src/field_specials.c` 导入地图合同，并核对原新游戏初始隐藏旗标，不维护第二张手写运行时阈值表。故事入口沿用 `import-story.py`，源选择在既有 recipe 中。
+
+## 导入入口收敛
+
+区域宝可梦、训练家、机器视图、物种图片及地图目录的重复入口已合并，旧入口不再保留。当前命令见 [scripts 说明](../scripts/README.md)，实际等价验证与尚未覆盖的冷重建边界见[整合记录](script-consolidation.md)。请按新命令选择资源，不沿用历史阶段的脚本名。

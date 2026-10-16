@@ -32,9 +32,12 @@ def load(script):
 
 
 def read_source(command, **kwargs):
-    if command[:2] != ['git', 'show'] or len(command) != 3:
+    if command[:2] == ['git', '-C']:
+        if len(command) != 5 or command[:4] != ['git', '-C', str(ROOT), 'show']:
+            raise AssertionError('Unexpected source command: ' + repr(command))
+    elif command[:2] != ['git', 'show'] or len(command) != 3 or kwargs.get('cwd') != ROOT:
         raise AssertionError('Unexpected source command: ' + repr(command))
-    commit, relative = command[2].split(':', 1)
+    commit, relative = command[-1].split(':', 1)
     if commit != COMMIT or Path(relative).is_absolute() or '..' in Path(relative).parts:
         raise AssertionError('Unexpected source identity/path')
     return (RAW / relative).read_bytes()

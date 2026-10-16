@@ -5,6 +5,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[2] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
+import copy
 import importlib.util
 import io
 import json
@@ -17,17 +18,13 @@ from PIL import Image
 
 import pokemon_import as pokemon
 import pokemon_import_io as inputs
+import pokemon_presentation as presentation
 
 ROOT = _PROJECT_ROOT
 RAW = ROOT / 'content/raw/pokefirered/037335f4'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
 
-def importer(region):
-    spec = importlib.util.spec_from_file_location('test_' + region, ROOT / f'scripts/imports/pokemon/import-{region}-pokemon.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 class SourceInputTests(unittest.TestCase):
@@ -93,6 +90,87 @@ class SourceInputTests(unittest.TestCase):
 
 
 class PokemonConversionTests(unittest.TestCase):
+    def test_selection_recipe_rejects_cycles_duplicates_and_unknown_options(self):
+        original = presentation.load_selections()
+        cases = []
+        recipe = copy.deepcopy(original)
+        recipe['groups']['initial']['include'] = 'forest'
+        cases.append(recipe)
+        recipe = copy.deepcopy(original)
+        recipe['groups']['forest']['species'].append('Bulbasaur')
+        cases.append(recipe)
+        recipe = copy.deepcopy(original)
+        recipe['groups']['forest']['include'] = 'missing'
+        cases.append(recipe)
+        recipe = copy.deepcopy(original)
+        recipe['regions']['forest']['unknown'] = True
+        cases.append(recipe)
+        recipe = copy.deepcopy(original)
+        recipe['regions']['bill']['supplement']['naturalLevelLimit'] = 101
+        cases.append(recipe)
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'recipe.json'
+            for recipe in cases:
+                path.write_text(json.dumps(recipe))
+                with self.subTest(recipe=recipe), self.assertRaises(ValueError):
+                    presentation.load_selections(path)
+        with self.assertRaises(ValueError):
+            presentation.load_lock('../forest')
+
+    def test_species_ids_come_from_original_constants(self):
+        lock = presentation.load_lock('bill')
+        sources = inputs.read_sources(lock, RAW)
+        recipe = presentation.load_selections()
+        self.assertEqual(presentation.art_species('bill', sources, recipe),
+                         [('Slowpoke', 79), ('Gloom', 44), ('Weepinbell', 70)])
+        changed = dict(sources)
+        changed['include/constants/species.h'] = sources['include/constants/species.h'].replace(
+            b'#define SPECIES_SLOWPOKE ', b'#define SPECIES_UNSELECTED ')
+        with self.assertRaises(ValueError):
+            presentation.art_species('bill', changed, recipe)
+
+    def test_canonical_and_overlay_species_share_source_parser(self):
+        from import_canonical_pokemon import authenticate, extract
+        lock, source, moves = authenticate(ROOT, None, ROOT)
+        catalog = extract(lock, source, moves)
+        expected = json.loads((ROOT / 'content/generated/data/pokemon/canonical/catalog.json').read_bytes())
+        self.assertEqual(catalog, expected)
+        self.assertEqual(len(catalog['species']), 386)
+        for species in catalog['species']:
+            definition, _ = source.species_definition(species['id']['value'][5:])
+            self.assertEqual(definition, species)
+        with tempfile.TemporaryDirectory() as temp:
+            for region, filename in (
+                    ('eevee', 'eevee.json'), ('snorlax', 'snorlax.json'),
+                    ('pokemon-tower', 'pokemon-tower.json'), ('safari', 'safari.json'),
+                    ('surf', 'surf.json'), ('fuchsia-route', 'fuchsia-route/catalog.json')):
+                path = ROOT / f'scripts/imports/pokemon/import-{region}-pokemon.py'
+                spec = importlib.util.spec_from_file_location('source_' + region, path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                outputs = module.generate(ROOT)
+                inputs.write_files(Path(temp) / region, outputs)
+                relative = 'content/generated/data/pokemon/' + filename
+                self.assertEqual(json.loads(outputs[relative]), json.loads((ROOT / relative).read_bytes()))
+
+    def test_shared_species_parser_rejects_incomplete_and_duplicate_source(self):
+        from import_canonical_pokemon import authenticate, Sources, SPECIES_INFO, LEARNSETS
+        _, source, _ = authenticate(ROOT, None, ROOT)
+        broken = dict(source.text)
+        broken[SPECIES_INFO] = broken[SPECIES_INFO].replace('        .baseHP = 45,',
+            '        .baseHP = 45,\n        .baseHP = 45,', 1)
+        with self.assertRaises(ValueError):
+            Sources(broken, {}).species_definition('SPECIES_BULBASAUR')
+        broken = dict(source.text)
+        broken[LEARNSETS] = broken[LEARNSETS].replace('    LEVEL_UP_END\n', '', 1)
+        with self.assertRaises(ValueError):
+            Sources(broken, {}).learnset('SPECIES_BULBASAUR')
+        broken = dict(source.text)
+        broken[LEARNSETS] = broken[LEARNSETS].replace('LEVEL_UP_MOVE(1, MOVE_TACKLE)',
+            'LEVEL_UP_MOVE(101, MOVE_TACKLE)', 1)
+        with self.assertRaises(ValueError):
+            Sources(broken, {}).learnset('SPECIES_BULBASAUR')
+
     def test_palette_expansion_rules_remain_distinct(self):
         data = ('JASC-PAL\n0100\n16\n' + '32 0 0\n' * 16).encode()
         colors, words = pokemon.battle_palette(data)
@@ -127,31 +205,27 @@ class PokemonConversionTests(unittest.TestCase):
             pokemon.learn_rows(broken, re.search(r'test\[\] = \{\n(.*?)\};', broken, re.S))
 
     def test_region_conversions_are_independent_and_repeatable(self):
-        first = importer('forest')
-        first_lock = first.load_lock()
+        first_lock = presentation.load_lock('forest')
         first_sources = inputs.read_sources(first_lock, RAW)
-        initial = first.convert(first_lock, first_sources)
+        initial = presentation.convert('forest', first_lock, first_sources)
         for region in ('route3', 'bill', 'rocktunnel'):
-            module = importer(region)
-            lock = module.load_lock()
-            outputs = module.convert(lock, inputs.read_sources(lock, RAW))
+            lock = presentation.load_lock(region)
+            sources = inputs.read_sources(lock, RAW)
+            outputs = presentation.convert(region, lock, sources)
             self.assertNotIn('catalog.json', outputs)
             self.assertNotIn('source-species.json', outputs)
             art = json.loads(outputs['battle-art.json'])
-            self.assertEqual(len(art['sprites']), 4 * len(module.ART_SPECIES))
-            self.assertFalse(hasattr(module, 'base'))
-        self.assertEqual(first.convert(first_lock, first_sources), initial)
+            self.assertEqual(len(art['sprites']), 4 * len(presentation.art_species(region, sources, presentation.load_selections())))
+        self.assertEqual(presentation.convert('forest', first_lock, first_sources), initial)
 
     def test_all_regional_outputs_preserve_presentation_without_stage_catalogs(self):
         for region in ('forest', 'pewter', 'route22', 'route3', 'mtmoon', 'cerulean',
                        'bill', 'vermilion', 'ssanne', 'route11', 'rocktunnel'):
             with self.subTest(region=region):
-                module = importer(region)
-                lock = module.load_lock()
-                outputs = module.convert(lock, inputs.read_sources(lock, RAW))
+                lock = presentation.load_lock(region)
+                outputs = presentation.convert(region, lock, inputs.read_sources(lock, RAW))
                 self.assertNotIn('catalog.json', outputs)
                 self.assertNotIn('source-species.json', outputs)
-                self.assertFalse(hasattr(module, 'metadata'))
                 manifest = json.loads(outputs['manifest.json'])
                 self.assertEqual({row['path'] for row in manifest['outputs']},
                                  set(outputs) - {'manifest.json'})
@@ -170,6 +244,45 @@ class PokemonConversionTests(unittest.TestCase):
                         self.assertEqual((RAW / 'sound/direct_sound_samples' / name).read_bytes(), data)
                     else:
                         self.assertEqual(expected.read_bytes(), data, str(expected))
+
+    def test_evolution_presentations_regenerate_into_empty_output(self):
+        import evolution_presentation as evolution
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)
+            for selection in evolution.load_recipe()['selections']:
+                result = evolution.build(selection, target, ROOT)
+                self.assertGreater(result['outputFiles'], 0)
+                directory = Path('content/generated/sprites/pokemon') / selection
+                paths = list((target / directory).rglob('*'))
+                self.assertTrue(paths)
+                for actual in paths:
+                    if not actual.is_file():
+                        continue
+                    expected = ROOT / actual.relative_to(target)
+                    if actual.suffix == '.png':
+                        with Image.open(actual) as image, Image.open(expected) as before:
+                            self.assertEqual(image.size, before.size)
+                            self.assertEqual(image.convert('RGBA').tobytes(), before.convert('RGBA').tobytes())
+                    else:
+                        self.assertEqual(json.loads(actual.read_bytes()), json.loads(expected.read_bytes()))
+                self.assertFalse((target / 'content/raw').exists())
+                evolution.build(selection, target, ROOT, check=True)
+
+    def test_evolution_recipe_rejects_unknown_palette_and_empty_species(self):
+        import evolution_presentation as evolution
+        recipe = evolution.load_recipe()
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'recipe.json'
+            bad = copy.deepcopy(recipe)
+            bad['selections']['stone-evolution']['species'][0]['icon']['palette'] = 'nearest'
+            path.write_text(json.dumps(bad))
+            with self.assertRaises(ValueError):
+                evolution.load_recipe(path)
+            bad = copy.deepcopy(recipe)
+            bad['selections']['ordinary-evolution']['species'] = []
+            path.write_text(json.dumps(bad))
+            with self.assertRaises(ValueError):
+                evolution.load_recipe(path)
 
     def test_audio_repertoire_uses_current_definitions_only(self):
         from pokemon_audio_moves import repertoire
@@ -202,10 +315,9 @@ class PokemonConversionTests(unittest.TestCase):
         self.assertFalse(hasattr(prep, 'main'))
 
     def test_supplement_requires_no_generated_proof_inputs(self):
-        module = importer('bill')
-        lock = module.load_lock()
+        lock = presentation.load_lock('bill')
         sources = inputs.read_sources(lock, RAW)
-        outputs = pokemon.supplement(lock, sources, profile='test-bill', species=module.ART_SPECIES,
+        outputs = pokemon.supplement(lock, sources, profile='test-bill', species=presentation.art_species('bill', sources, presentation.load_selections()),
             weight_species=('SLOWPOKE',), natural_level_limit=25)
         doc = json.loads(outputs['supplement.json'])
         self.assertEqual(len(doc['weights']), 1)

@@ -14,6 +14,7 @@ import tempfile
 import unittest
 
 import import_canonical_pokemon as canonical
+import pokemon_presentation as presentation
 from pokemon_import_io import load_recipe, read_sources
 
 ROOT = _PROJECT_ROOT
@@ -155,9 +156,8 @@ class LearnsetImportTests(unittest.TestCase):
                              (out / 'catalog.json').read_bytes())
         for region in ('forest', 'rocktunnel'):
             with self.subTest(region=region):
-                importer = module('imports/pokemon/import-' + region + '-pokemon')
-                recipe = importer.load_lock()
-                actual = importer.convert(recipe, read_sources(recipe, RAW))
+                recipe = presentation.load_lock(region)
+                actual = presentation.convert(region, recipe, read_sources(recipe, RAW))
                 self.assertNotIn('catalog.json', actual)
                 for name in ('battle-art.json', 'supplement.json'):
                     if name in actual:

@@ -1,0 +1,36 @@
+{
+  "output": "data/trainer-battles/bill.json",
+  "trainers": [
+    "BUG_CATCHER_CALE",
+    "CAMPER_ETHAN",
+    "CAMPER_FLINT",
+    "CAMPER_SHANE",
+    "HIKER_FRANKLIN",
+    "HIKER_NOB",
+    "HIKER_WAYNE",
+    "LASS_ALI",
+    "LASS_HALEY",
+    "LASS_RELI",
+    "PICNICKER_KELSEY",
+    "RIVAL_CERULEAN_BULBASAUR",
+    "RIVAL_CERULEAN_CHARMANDER",
+    "RIVAL_CERULEAN_SQUIRTLE",
+    "TEAM_ROCKET_GRUNT_6",
+    "YOUNGSTER_CHAD",
+    "YOUNGSTER_DAN",
+    "YOUNGSTER_JOEY",
+    "YOUNGSTER_TIMMY"
+  ],
+  "scripts": [
+    "data/scripts/trainers.inc",
+    "data/maps/Route24/scripts.inc",
+    "data/maps/CeruleanCity/scripts.inc"
+  ],
+  "additionalOccurrences": [
+    {
+      "trainer": "TEAM_ROCKET_GRUNT_5",
+      "script": "data/maps/CeruleanCity/scripts.inc",
+      "label": "CeruleanCity_EventScript_GruntTrigger"
+    }
+  ]
+}

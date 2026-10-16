@@ -6,6 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from trainer_import import read_source, selected_trainers
 import argparse
 import json
 from pathlib import Path
@@ -21,7 +22,7 @@ def extract(source):
 
     def read(path):
         if path not in blobs:
-            blobs[path] = subprocess.check_output(["git", "show", PIN + ":" + path], cwd=source)
+            blobs[path] = read_source(source, path, PIN)
         return blobs[path].decode("utf-8")
 
     def ref(path, symbol, start, end=None):
@@ -49,50 +50,18 @@ def extract(source):
     names_path, parties_path, trainers_path = "src/data/text/species_names.h", "src/data/trainer_parties.h", "src/data/trainers.h"
     for starter, source_id in [("Squirtle", 435), ("Bulbasaur", 436), ("Charmander", 437)]:
         trainer_symbol = "TRAINER_RIVAL_ROUTE22_LATE_" + starter.upper()
-        party_symbol = "sParty_RivalRoute22Late" + starter
-        trainer_raw, trainer_line = block(trainers_path, r"^    \[" + trainer_symbol + r"\] = \{[\s\S]*?^    \},")
-        party_raw, party_line = block(parties_path, r"^static const struct TrainerMonNoItemCustomMoves " + party_symbol + r"\[\] = \{[\s\S]*?^\};")
-        if ".items = {}" not in trainer_raw or ".doubleBattle = FALSE" not in trainer_raw or "NO_ITEM_CUSTOM_MOVES(" + party_symbol + ")" not in trainer_raw:
-            raise ValueError("Unexpected trainer declaration")
-        ai_symbols = re.search(r"\.aiFlags = (.*),", trainer_raw)[1].split(" | ")
-        ai_flags = sum(1 << int(re.search(r"^#define\s+" + symbol + r"\s+\(1 << (\d+)\)", read("include/constants/battle_ai.h"), re.M)[1]) for symbol in ai_symbols)
-        trainer_id = number("include/constants/opponents.h", trainer_symbol)
-        if trainer_id != source_id or ai_flags != 7:
-            raise ValueError("Unexpected trainer identity or AI flags")
-        name = re.search(r'\.trainerName = _\("([^"]+)"\)', trainer_raw)[1]
-        party = []
-        for match in re.finditer(r"    \{\n([\s\S]*?)    \},", party_raw):
-            raw = match[1]
-            symbol = re.search(r"\.species = (SPECIES_\w+)", raw)[1]
-            name_match = re.search(r'^.*\[' + symbol + r'\]\s*=\s*_\("([^"]+)"\).*$', read(names_path), re.M)
-            species_name = name_match[1]
-            species_line = read(names_path)[:name_match.start()].count("\n") + 1
-            moves = re.search(r"\.moves = \{([^}]+)\}", raw)[1].split(", ")
-            if len(moves) != 4:
-                raise ValueError("Expected four custom moves")
-            for move in moves:
-                move_raw, move_line = block("src/data/battle_moves.h", r"^    \[" + move + r"\] =[\s\S]*?^    \},")
-                resolved[move] = dict(pp=int(re.search(r"\.pp = (\d+)", move_raw)[1]),
-                    sourceMoveId=number("include/constants/moves.h", move),
-                    source=ref("src/data/battle_moves.h", move, move_line, move_line + move_raw.count("\n")))
-            party.append(dict(species={"value": "pret:" + symbol}, sourceSpeciesId=number("include/constants/species.h", symbol),
-                speciesName=species_name, encodedSpeciesName=encode(species_name),
-                level=int(re.search(r"\.lvl = (\d+)", raw)[1]), sourceIv=int(re.search(r"\.iv = (\d+)", raw)[1]),
-                heldItem="ITEM_NONE", customMoves=[{"value": "pret:" + m} for m in moves],
-                source=ref(parties_path, party_symbol, party_line + party_raw[:match.start()].count("\n"), party_line + party_raw[:match.end()].count("\n")),
-                speciesNameSource=ref(names_path, symbol, species_line)))
-        if len(party) != 6:
-            raise ValueError("Expected six party members")
-        money_raw, money_line = block("src/battle_main.c", r"^.*\{TRAINER_CLASS_RIVAL_LATE,\s*\d+\}.*$")
-        base_money = int(re.search(r"TRAINER_CLASS_RIVAL_LATE,\s*(\d+)", money_raw)[1])
-        trainer = dict(id={"value": "pret:" + trainer_symbol}, sourceTrainerId=trainer_id,
-            trainerClass="TRAINER_CLASS_RIVAL_LATE", sourceTrainerClass=number("include/constants/trainers.h", "TRAINER_CLASS_RIVAL_LATE"),
-            trainerPic="TRAINER_PIC_RIVAL_LATE", sourceTrainerPic=number("include/constants/trainers.h", "TRAINER_PIC_RIVAL_LATE"),
-            sourceTrainerName=name, encodedTrainerName=encode(name), encounterMusicGender=0,
-            doubleBattle=False, partyFlags=1, aiFlags=ai_flags, aiFlagSymbols=ai_symbols, baseMoney=base_money,
-            items=["ITEM_NONE"] * 4, party=party,
-            source=ref(trainers_path, trainer_symbol, trainer_line, trainer_line + trainer_raw.count("\n")),
-            moneySource=ref("src/battle_main.c", "TRAINER_CLASS_RIVAL_LATE", money_line))
+        trainer = selected_trainers(read, [trainer_symbol])[0]
+        if (trainer['sourceTrainerId'] != source_id or trainer['aiFlags'] != 7 or
+                trainer['doubleBattle'] or trainer['partyFlags'] != 1 or
+                trainer['items'] != ['ITEM_NONE'] * 4 or len(trainer['party']) != 6):
+            raise ValueError('Unexpected late-rival trainer declaration')
+        for member in trainer['party']:
+            for slot in member['customMoves']:
+                move = slot['value'][5:]
+                move_raw, move_line = block('src/data/battle_moves.h', r'^    \[' + move + r'\] =[\s\S]*?^    \},')
+                resolved[move] = dict(pp=int(re.search(r'\.pp = (\d+)', move_raw)[1]),
+                    sourceMoveId=number('include/constants/moves.h', move),
+                    source=ref('src/data/battle_moves.h', move, move_line, move_line + move_raw.count('\n')))
         label = "Route22_EventScript_LateRival" + starter
         script_raw, script_line = block("data/maps/Route22/scripts.inc", r"^" + label + r"::[^\n]*\n(?:(?!^[A-Za-z_][A-Za-z0-9_]*::).*(?:\n|$))*")
         script_raw = script_raw.rstrip()
@@ -106,9 +75,7 @@ def extract(source):
             source=ref("data/maps/Route22/scripts.inc", label, script_line, script_line + script_raw.count("\n"))))
     document = dict(  completeSourceRoster=False,
                     trainers=trainers, battles=battles, resolvedMoves=resolved)
-    inputs = dict(profile=PROFILE, sourceCommit=COMMIT, inputs=[dict(path=path)
-                  for path, data in sorted(blobs.items())])
-    return document, inputs
+    return document
 
 
 def main():
@@ -117,9 +84,9 @@ def main():
     parser.add_argument("--output-root", type=Path, default=_PROJECT_ROOT)
     args = parser.parse_args()
     output = args.output_root / "content/generated/data/trainer-battles/league-rival-rules.json"
-    documents = extract(args.source)
+    document = extract(args.source)
     output.parent.mkdir(parents=True, exist_ok=True)
-    for name, document in [("trainers.json", documents[0])]:
+    for name, document in [("trainers.json", document)]:
         data = trainer_json(args.output_root / 'content/generated', document)
         output.write_bytes(data)
         print(name)

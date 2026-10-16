@@ -1,6 +1,6 @@
 # 当前实施顺序
 
-2026-10-16 用户已明确恢复内容开发，继续在 refactor/project-governance 工作。当前优先补原作可达地区与交互；字体暂缓，工程治理仅处理新增内容实际遇到的问题。完整产品目标见[范围](scope.md)，已实现与缺口只维护在[当前状态](first-clear-remaining-scope.md)。
+2026-10-16 用户最新要求深入整合 scripts／配方，新增内容暂缓，继续在 refactor/project-governance 工作。本轮整合见[导入工具整合](script-consolidation.md)。内容优先级仍为地图与收集养成，待这轮工具整治收敛后再安排；字体暂缓。完整产品目标见[范围](scope.md)，已实现与缺口只维护在[当前状态](first-clear-remaining-scope.md)。
 
 ## 1. 已完成治理后的维护原则
 

@@ -10,7 +10,8 @@ from fractions import Fraction
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
-spec=importlib.util.spec_from_file_location('silph_art',ROOT/'scripts/imports/presentation/import-silph-art.py');art=importlib.util.module_from_spec(spec);spec.loader.exec_module(art);meta=art.meta
+spec=importlib.util.spec_from_file_location('presentation_metadata',ROOT/'scripts/imports/presentation/import-silph-presentation-source.py');meta=importlib.util.module_from_spec(spec);spec.loader.exec_module(meta)
+from image_io import png as encode_rgba_png
 def authenticated(root,reference=None):
  b=meta.safe(root,'scripts/recipes/presentation/silph-interface.lock.json').read_bytes();lock=json.loads(b)
  meta.require((lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], len(lock['files'])) == (1, 'pret/pokefirered', meta.COMMIT, 'firered-silph-interface-v1', 5),'Silph interface inventory differs');sources={}
@@ -32,7 +33,7 @@ def build(root,reference=None):
  st=re.search(r'const s16 gSineTable\[\]\s*=\s*\{(.*?)\};',s['src/trig.c'].decode(),re.S)[1];sine=[Fraction(v) for v in re.findall(r'Q_8_8\(([-\d.]+)\)',st)];meta.require(len(sine)==320,'Source sine table scope differs')
  im=Image.open(io.BytesIO(s['graphics/interface/red_arrow_other.png']));meta.require(im.mode=='P' and im.size==(16,32),'Source arrow sheet differs');up=im.crop((0,16,16,32));lines=s['graphics/interface/red_arrow.pal'].decode().splitlines();meta.require(lines[:3]==['JASC-PAL','0100','16'] and len(lines)==19,'Arrow palette differs');pal=[tuple((int(c)//8<<3)|(int(c)//8>>2) for c in line.split()) for line in lines[3:]];out={};arrows=[]
  for direction,kind,frequency,image in [('up',2,8,up),('down',3,-8,up.transpose(Image.Transpose.FLIP_TOP_BOTTOM))]:
-  ix=image.tobytes();meta.require(max(ix)<16,'Arrow palette index differs');rgba=bytes(c for i in ix for c in (*pal[i],0 if i==0 else 255));stem='scroll-'+direction;out[stem+'.png']=art.png(16,16,rgba);arrows.append(dict(id=stem, arrowType=kind, sourceTileOffset=4, flipV=direction == 'down', width=16, height=16, texturePath=stem + '.png', bounceOffsets=[int(sine[tick * frequency % 256] * 2) for tick in range(32)]))
+  ix=image.tobytes();meta.require(max(ix)<16,'Arrow palette index differs');rgba=bytes(c for i in ix for c in (*pal[i],0 if i==0 else 255));stem='scroll-'+direction;out[stem+'.png']=encode_rgba_png(16,16,rgba);arrows.append(dict(id=stem, arrowType=kind, sourceTileOffset=4, flipV=direction == 'down', width=16, height=16, texturePath=stem + '.png', bounceOffsets=[int(sine[tick * frequency % 256] * 2) for tick in range(32)]))
  out['manifest.json']=meta.canonical(dict(schemaVersion=1,arrows=arrows,outputs=[dict(path=p) for p,b in sorted(out.items())]));return out
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();out=build(a.project_root,a.reference_root)

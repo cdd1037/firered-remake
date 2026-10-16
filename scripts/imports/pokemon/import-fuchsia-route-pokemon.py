@@ -10,6 +10,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from shared_trainers import trainer_json
 import argparse,  json, pathlib, re, sys
 sys.dont_write_bytecode=True
+from import_canonical_pokemon import Sources
 from pokemon_import_io import safe, load_recipe, read_sources, write_files
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -28,39 +29,11 @@ def authenticated(root,reference=None):
 
 def generate(root):
  lock,raw=authenticated(root);text={p:b.decode() for p,b in raw.items() if not p.endswith('.png')};inventory={x['path']:x for x in lock['files']}
- def one(p,pattern):
-  ms=list(re.finditer(pattern,text[p],re.M|re.S))
-  if len(ms)!=1:raise ValueError(f'Expected one source match ({len(ms)}): {p}: {pattern}')
-  return ms[0]
- def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1)
+ src=Sources(text,{})
+ one,ref,constant,field,name,learn=src.one,src.match_ref,src.constant,src.block,src.name,src.learnset
  def ident(s):return dict(value='pret:'+s)
- def constant(p,s):
-  m=one(p,r'^#define '+s+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');return dict(symbol=s,value=int(m[1]),source=ref(p,s,m))
  def number(p,s):return constant(p,s)['value']
- def field(p,s):
-  m=one(p,r'^    \['+s+r'\] =\s*\n    \{\n(.*?)^    \},');return dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M)),ref(p,s,m)
- def name(p,s):
-  m=one(p,r'^    \['+s+r'\]\s*= _\("([^"\n]+)"\),$');return dict(id=ident(s),name=m[1],source=ref(p,s,m))
  def encode(n):return [int(one('charmap.txt',"^'"+re.escape("\\'" if c=="'" else c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in n]
- def learn(sp):
-  pointer=one('src/data/pokemon/level_up_learnset_pointers.h',r'^    \['+sp+r'\] = (\w+),$')[1];p='src/data/pokemon/level_up_learnsets.h';m=one(p,r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};')
-  rows=[];active=True;stack=[];previous=0
-  for row in re.finditer(r'^.*(?:\n|\Z)',text[p],re.M):
-   if not(m.start(1)<=row.start()<m.end(1)):continue
-   line=row[0].strip()
-   if line.startswith('#if defined('):
-    which=line=='#if defined(FIRERED)';stack.append((active,which));active=active and which;continue
-   if line.startswith('#elif defined('):
-    parent,taken=stack[-1];which=line=='#elif defined(FIRERED)';active=parent and not taken and which;stack[-1]=(parent,taken or which);continue
-   if line=='#else':parent,taken=stack[-1];active=parent and not taken;stack[-1]=(parent,True);continue
-   if line=='#endif':active=stack.pop()[0];continue
-   if not active or not line or line=='LEVEL_UP_END':continue
-   lm=re.fullmatch(r'LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),',line)
-   if not lm:raise ValueError('Unsupported source learn row: '+line)
-   lv=int(lm[1]);assert lv>=previous;previous=lv
-   rows.append(dict(level=lv,move=ident(lm[2])))
-  assert rows and not stack
-  return rows,ref(p,pointer,m)
  def initial(sp,lv):
   moves=[]
   for row in learn(sp)[0]:
@@ -72,14 +45,12 @@ def generate(root):
   return ident(sp)
  species=[];required=set();names=[];machines=[];held=[]
  for short in NEW_SPECIES:
-  sp='SPECIES_'+short;f,sr=field('src/data/pokemon/species_info.h',sp);lr,lref=learn(sp);required.update(x['move']['value'][5:] for x in lr)
+  sp='SPECIES_'+short;definition,f=src.species_definition(sp);lr=definition['levelUpMoves'];required.update(x['move']['value'][5:] for x in lr)
   ep='src/data/pokemon/evolution.h';evol=[]
   if short=='DODUO':
    em=one(ep,r'^    \[SPECIES_DODUO\][ \t]*= \{\{EVO_LEVEL, 31, SPECIES_DODRIO\}\},$');evol=[dict(method='level', level=31, target=ident('SPECIES_DODRIO'))]
   else:assert not re.search(r'^    \['+sp+r'\]',text[ep],re.M)
-  keys=('hp','attack','defense','speed','specialAttack','specialDefense');suffix=('HP','Attack','Defense','Speed','SpAttack','SpDefense');types=re.findall(r'TYPE_\w+',f['types']);abilities=re.findall(r'ABILITY_\w+',f['abilities'])
-  assert f['growthRate']=='GROWTH_MEDIUM_FAST' and f['genderRatio'] in ('PERCENT_FEMALE(50)','MON_GENDERLESS')
-  species.append(dict(id=ident(sp), sourceSpeciesId=number('include/constants/species.h', sp), baseStats={k: int(f['base' + s]) for k, s in zip(keys, suffix)}, type1=types[0], type2=types[1], catchRate=int(f['catchRate']), experienceYield=int(f['expYield']), evYield={k: int(f['evYield_' + s]) for k, s in zip(keys, suffix)}, growthRate='mediumFast', genderRatio=255 if f['genderRatio'] == 'MON_GENDERLESS' else 127, ability1=abilities[0], ability2=abilities[1], friendship=int(f['friendship']), levelUpMoves=lr, evolutions=evol))
+  species.append(dict(definition,evolutions=evol))
   names.append(name('src/data/text/species_names.h',sp));held.append(dict(species=ident(sp),common=f['itemCommon'],rare=f['itemRare']))
   p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+sp+r'\]\s*= TMHM_LEARNSET\((.*?)\),');machines.append(dict(species=ident(sp),machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1])))
  move_names=[name('src/data/text/move_names.h',x) for x in NEW_MOVES];encoding=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'))

@@ -7,6 +7,8 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
+from presentation_source import Source, safe, need
+from image_io import png
 import argparse
 import io
 import json
@@ -19,43 +21,10 @@ import wave
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
-common = runpy.run_path(str(ROOT / 'scripts/imports/presentation/import-celio-presentation.py'))
-need, encode, safe, png = (common[k] for k in ('need', 'encode', 'safe', 'png'))
-COMMIT, TREE = common['COMMIT'], common['TREE']
-PROFILE = 'firered-league-rematch-presentation-v1'
 BASE = 'content/generated/sprites/pokemon/league-rematch/'
 RAW = 'content/raw/pokefirered/037335f4/'
 SPECIES = [('Crobat', 169), ('Misdreavus', 200), ('Steelix', 208), ('Heracross', 214), ('Kingdra', 230), ('Tyranitar', 248)]
 MUSIC = ['MUS_VS_GYM_LEADER', 'MUS_VS_CHAMPION', 'MUS_VICTORY_TRAINER', 'MUS_VICTORY_GYM_LEADER']
-
-class Source:
-    def __init__(self, root, reference, dependency):
-        self.root, self.reference, self.dependency = root, reference, dependency
-        self.files, self.raw, self.inherited = {}, {}, {}
-        self.lock = None
-        data = safe(root, 'scripts/recipes/presentation/league-rematch-presentation.lock.json').read_bytes()
-        self.lock = json.loads(data)
-        need((self.lock['schemaVersion'], self.lock['profile'], self.lock['repository'], self.lock['commit']) == (1, PROFILE, 'pret/pokefirered', COMMIT), 'Source lock identity differs')
-
-    def read(self, path):
-        if path not in self.raw:
-            data = subprocess.check_output(['git', '-C', str(self.reference), 'show', COMMIT + ':' + path]) if self.reference else safe(self.root, RAW + path).read_bytes()
-            row = dict(path=path)
-            if self.lock:
-                need(row in self.lock['files'], 'Source input differs: ' + path)
-            self.raw[path], self.files[path] = data, row
-        return self.raw[path]
-
-    def text(self, path):
-        return self.read(path).decode()
-
-    def reuse(self, path):
-        data = safe(self.dependency, path).read_bytes()
-        row = dict(path=path)
-        if self.lock:
-            need(row in self.lock['inheritedInputs'], 'Inherited resource differs: ' + path)
-        self.inherited[path] = row
-        return data
 
 
 def build(root, reference, dependency):
@@ -196,8 +165,6 @@ def build(root, reference, dependency):
         trainers.append(dict(row, inheritedTrainer=old['trainer'], sourcePath=trainer_source_path))
     need(len(trainers) == 7, 'Rematch trainer inventory differs')
     out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
-    lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
-        files=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
     manifest = runtime_json_bytes(dict(schemaVersion=1,
 
         assets=assets, sprites=sprites, inheritedSprites=inherited_sprites, inheritedSpriteManifest=pewter_path, speciesNames=species_names, pokemonIcons=[], footprints=[], newOwnedSpecies=[],
@@ -212,10 +179,10 @@ def build(root, reference, dependency):
     out['manifest.json'] = manifest
     result = {BASE + p: b for p, b in out.items()}
     result.update({RAW + p: b for p, b in source.raw.items()})
-    result['scripts/recipes/presentation/league-rematch-presentation.lock.json'] = lock
+
     report = dict(passed=True, sourceFiles=len(source.raw), inheritedInputs=len(source.inherited), sprites=len(sprites),
         inheritedSprites=len(inherited_sprites), pokemonIcons=0, footprints=0, assets=len(assets), moveGeometry=len(inherited_geometry), trainers=len(trainers),
-        outputs=len(out) - 1,  lockBytes=len(lock),  manifestBytes=len(manifest),
+        outputs=len(out) - 1,  manifestBytes=len(manifest),
          synthBytes=len(out['synth-manifest.json']), newCries=len(cues),
         exactCryPcmCompared=True, sourceAndStaticChecksOnly=True, nativeWindowVerified=False)
     return result, report

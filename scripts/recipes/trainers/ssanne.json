@@ -1,0 +1,48 @@
+{
+  "output": "data/trainer-battles/ssanne.json",
+  "trainers": [
+    "YOUNGSTER_TYLER",
+    "LASS_ANN",
+    "LASS_DAWN",
+    "SAILOR_EDMOND",
+    "SAILOR_TREVOR",
+    "SAILOR_LEONARD",
+    "SAILOR_DUNCAN",
+    "SAILOR_HUEY",
+    "SAILOR_DYLAN",
+    "SAILOR_PHILLIP",
+    "FISHERMAN_DALE",
+    "FISHERMAN_BARNY",
+    "GENTLEMAN_THOMAS",
+    "GENTLEMAN_ARTHUR",
+    "RIVAL_SS_ANNE_SQUIRTLE",
+    "RIVAL_SS_ANNE_BULBASAUR",
+    "RIVAL_SS_ANNE_CHARMANDER",
+    "GENTLEMAN_BROOKS",
+    "GENTLEMAN_LAMAR"
+  ],
+  "scripts": [
+    "data/maps/SSAnne_1F_Room2/scripts.inc",
+    "data/maps/SSAnne_1F_Room5/scripts.inc",
+    "data/maps/SSAnne_1F_Room7/scripts.inc",
+    "data/maps/SSAnne_2F_Corridor/scripts.inc",
+    "data/maps/SSAnne_2F_Room2/scripts.inc",
+    "data/maps/SSAnne_2F_Room4/scripts.inc",
+    "data/maps/SSAnne_B1F_Room1/scripts.inc",
+    "data/maps/SSAnne_B1F_Room2/scripts.inc",
+    "data/maps/SSAnne_B1F_Room3/scripts.inc",
+    "data/maps/SSAnne_B1F_Room4/scripts.inc",
+    "data/maps/SSAnne_Deck/scripts.inc"
+  ],
+  "dialogueContexts": [
+    {
+      "trainers": [
+        "RIVAL_SS_ANNE_SQUIRTLE",
+        "RIVAL_SS_ANNE_BULBASAUR",
+        "RIVAL_SS_ANNE_CHARMANDER"
+      ],
+      "script": "data/maps/SSAnne_2F_Corridor/scripts.inc",
+      "label": "SSAnne_2F_Corridor_EventScript_RivalTrigger"
+    }
+  ]
+}

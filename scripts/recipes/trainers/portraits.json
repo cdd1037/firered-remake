@@ -1,0 +1,255 @@
+{
+  "portraits": {
+    "bug-catcher-front": {
+      "symbol": "BugCatcher",
+      "stem": "bug_catcher",
+      "localPalette": "forest-trainer-art"
+    },
+    "camper-front": {
+      "symbol": "Camper",
+      "stem": "camper"
+    },
+    "brock-front": {
+      "symbol": "LeaderBrock",
+      "stem": "leader_brock"
+    },
+    "rival-early-front": {
+      "symbol": "RivalEarly",
+      "stem": "rival_early"
+    },
+    "youngster-front": {
+      "symbol": "Youngster",
+      "stem": "youngster"
+    },
+    "lass-front": {
+      "symbol": "Lass",
+      "stem": "lass"
+    },
+    "super-nerd-front": {
+      "symbol": "SuperNerd",
+      "stem": "super_nerd"
+    },
+    "hiker-front": {
+      "symbol": "Hiker",
+      "stem": "hiker"
+    },
+    "rocket-grunt-m-front": {
+      "symbol": "RocketGruntM",
+      "stem": "rocket_grunt_m"
+    },
+    "misty-front": {
+      "symbol": "LeaderMisty",
+      "stem": "leader_misty"
+    },
+    "picnicker-front": {
+      "symbol": "Picnicker",
+      "stem": "picnicker"
+    },
+    "swimmer-m-front": {
+      "symbol": "SwimmerM",
+      "stem": "swimmer_m"
+    },
+    "burglar-front": {
+      "symbol": "Burglar",
+      "stem": "burglar"
+    },
+    "blaine-front": {
+      "symbol": "LeaderBlaine",
+      "stem": "leader_blaine"
+    },
+    "sis-and-bro-front": {
+      "symbol": "SisAndBro",
+      "stem": "sis_and_bro"
+    },
+    "fisherman-front": {
+      "symbol": "Fisherman",
+      "stem": "fisherman"
+    },
+    "scientist-front": {
+      "symbol": "Scientist",
+      "stem": "scientist"
+    },
+    "psychic-m-front": {
+      "symbol": "PsychicM",
+      "stem": "psychic_m"
+    },
+    "sabrina-front": {
+      "symbol": "LeaderSabrina",
+      "stem": "leader_sabrina"
+    },
+    "rocket-grunt-f-front": {
+      "symbol": "RocketGruntF",
+      "stem": "rocket_grunt_f"
+    },
+    "rival-late-front": {
+      "symbol": "RivalLate",
+      "stem": "rival_late"
+    },
+    "giovanni-front": {
+      "symbol": "LeaderGiovanni",
+      "stem": "leader_giovanni"
+    },
+    "red-back": {
+      "symbol": "Red",
+      "stem": "red",
+      "side": "back",
+      "localPalette": "forest-trainer-art"
+    },
+    "leaf-back": {
+      "symbol": "Leaf",
+      "stem": "leaf",
+      "side": "back",
+      "localPalette": "forest-trainer-art"
+    }
+  },
+  "groups": {
+    "forest": {
+      "output": "sprites/trainers/forest",
+      "manifest": "forest-trainer-art.json",
+      "collection": "assets",
+      "portraits": [
+        "bug-catcher-front",
+        "red-back",
+        "leaf-back"
+      ],
+      "metadata": []
+    },
+    "pewter": {
+      "output": "sprites/trainers/pewter",
+      "manifest": "pewter-trainer-art.json",
+      "collection": "assets",
+      "portraits": [
+        "camper-front",
+        "brock-front"
+      ],
+      "metadata": []
+    },
+    "route22": {
+      "output": "sprites/trainers/route22",
+      "manifest": "route22-trainer-art.json",
+      "collection": "assets",
+      "portraits": [
+        "rival-early-front"
+      ],
+      "metadata": [
+        "sourceTrainerPicId"
+      ],
+      "trainerBindings": {
+        "TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE": {
+          "picture": "RIVAL_EARLY",
+          "class": "RIVAL_EARLY"
+        },
+        "TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR": {
+          "picture": "RIVAL_EARLY",
+          "class": "RIVAL_EARLY"
+        },
+        "TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER": {
+          "picture": "RIVAL_EARLY",
+          "class": "RIVAL_EARLY"
+        }
+      }
+    },
+    "route3": {
+      "output": "sprites/trainers/route3",
+      "manifest": "route3-trainer-art.json",
+      "collection": "assets",
+      "portraits": [
+        "youngster-front",
+        "lass-front"
+      ],
+      "metadata": [
+        "sourceTrainerPicId"
+      ]
+    },
+    "mtmoon": {
+      "output": "sprites/trainers/mtmoon",
+      "manifest": "mtmoon-trainer-art.json",
+      "collection": "assets",
+      "portraits": [
+        "super-nerd-front",
+        "hiker-front",
+        {
+          "portrait": "rocket-grunt-m-front",
+          "id": "rocket-m-front"
+        }
+      ],
+      "metadata": [
+        "sourceTrainerPicId"
+      ]
+    },
+    "cerulean": {
+      "output": "data/trainer-battles/cerulean",
+      "manifest": "cerulean-trainers.json",
+      "collection": "assets",
+      "portraits": [
+        "misty-front",
+        "picnicker-front",
+        "swimmer-m-front"
+      ],
+      "metadata": [
+        "sourceTrainerPicId"
+      ]
+    },
+    "cinnabar": {
+      "output": "sprites/trainers/cinnabar",
+      "manifest": "manifest.json",
+      "collection": "portraits",
+      "portraits": [
+        "burglar-front",
+        "blaine-front",
+        "sis-and-bro-front",
+        "fisherman-front",
+        "scientist-front",
+        "super-nerd-front",
+        "swimmer-m-front",
+        "youngster-front"
+      ],
+      "metadata": [
+        "sourceTrainerPicId",
+        "trainerPic"
+      ],
+      "schemaVersion": 1,
+      "trainerClasses": [
+        "BURGLAR",
+        "FISHERMAN",
+        "LEADER",
+        "SCIENTIST",
+        "SIS_AND_BRO",
+        "SUPER_NERD",
+        "SWIMMER_M",
+        "YOUNGSTER"
+      ]
+    },
+    "saffron-gym": {
+      "output": "sprites/trainers/saffron-gym",
+      "manifest": "manifest.json",
+      "collection": "portraits",
+      "portraits": [
+        "psychic-m-front",
+        "sabrina-front"
+      ],
+      "metadata": [
+        "sourceTrainerPicId",
+        "trainerPic"
+      ],
+      "schemaVersion": 1
+    },
+    "silph": {
+      "output": "sprites/trainers/silph",
+      "manifest": "manifest.json",
+      "collection": "portraits",
+      "portraits": [
+        "rocket-grunt-m-front",
+        "rocket-grunt-f-front",
+        "scientist-front",
+        "rival-late-front",
+        "giovanni-front"
+      ],
+      "metadata": [
+        "sourceTrainerPicId",
+        "trainerPic"
+      ],
+      "schemaVersion": 1
+    }
+  }
+}

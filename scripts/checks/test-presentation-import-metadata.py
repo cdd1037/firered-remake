@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate presentation JSON from retained raw inputs, preserving import-tool inventories."""
+"""Regenerate presentation JSON from retained raw inputs, without historical stage inventories."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[2] / 'scripts/lib'))
@@ -43,7 +43,7 @@ class PresentationImportMetadataTests(unittest.TestCase):
             self.assertTrue(generated_output_matches(path, b'abc'))
             self.assertFalse(generated_output_matches(path, b'abd'))
 
-    def test_real_writers_reproduce_runtime_json_and_keep_tool_inventories(self):
+    def test_real_writers_reproduce_runtime_json_without_stage_inventories(self):
         for package in PACKAGES:
             with self.subTest(package=package):
                 module = runpy.run_path(str(ROOT / f'scripts/imports/presentation/import-{package}-presentation.py'))
@@ -56,10 +56,8 @@ class PresentationImportMetadataTests(unittest.TestCase):
                         self.assertEqual((ROOT / path).read_bytes(), data, path)
                         self.assert_runtime_fields(json.loads(data), path)
                 self.assertGreater(runtime_count, 0)
-                lock_path = f'scripts/recipes/presentation/{package}-presentation.lock.json'
-                lock = json.loads(outputs[lock_path])
-                self.assertTrue(lock['files'], lock_path)
-                self.assertTrue(all(row['path'] for row in lock['files']), lock_path)
+                self.assertFalse(any(path.startswith('scripts/recipes/') for path in outputs))
+                self.assertTrue(any(path.startswith('content/raw/') for path in outputs))
 
     def assert_runtime_fields(self, value, path):
         if isinstance(value, dict):

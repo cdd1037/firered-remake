@@ -6,8 +6,10 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, inventory_item, item_json
-import argparse,base64,copy,importlib.util,json,pathlib,re,subprocess,sys
+from item_effects import read_effects_text
+from item_source import ItemSource
+from item_catalog import item_definition as shared_item, item_json
+import argparse,json,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
 import sys
@@ -15,9 +17,6 @@ sys.path.insert(0, str(ROOT / 'scripts/lib'))
 from machine_catalog import load_catalog, machine_reference, compatibility_reference, admission_view, admission_species
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14';TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-rocket-hideout-items-v1'
-DEPENDENCIES=(
-    'scripts/imports/presentation/import-lab-battle-ui.py',
-)
 ITEMS=('LIFT_KEY','SILPH_SCOPE','BLACK_GLASSES','X_SPEED','CALCIUM','NET_BALL','NEST_BALL','TM12','TM21','TM49')
 TEACHING={'TM12':('TAUNT','Taunt'),'TM21':('FRUSTRATION','Frustration'),'TM49':('SNATCH','Snatch')}
 def canonical(v):return (json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=False, default=item_json)+'\n').encode()
@@ -53,25 +52,9 @@ def outputs(lock,data,project):
  target='content/generated/data/items/rocket-hideout/rocket-hideout-machines.json'
  machines=[admission_view(project,target,'/machines/'+str(index)) for index in range(18)]
  species=[species[5:] for species in admission_species(project,target,'/machines/0')]
- codec_path=safe(project,'scripts/imports/presentation/import-lab-battle-ui.py');read(project,'scripts/imports/presentation/import-lab-battle-ui.py')
- spec=importlib.util.spec_from_file_location('rocket_item_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
+ item_source=ItemSource(data)
  items=[];icons=[];result={};declarations=parse(data['src/data/items.json'])['items']
- effectp='src/data/pokemon/item_effects.h';constants='include/constants/item_effects.h'
- # Exact source constants/macros are authenticated above. Resolve only these two supported declaration shapes.
- def effect(symbol):
-  short={'CALCIUM':'Calcium','X_SPEED':'XSpeed'}.get(symbol)
-  if short is None:return [],None
-  m=match(effectp,r'^static const u8 sItemEffect_'+short+r'\[(\d+)\] = \{\n(.*?)^\};')
-  if symbol=='CALCIUM':
-   expected='[5] = ITEM5_EV_SPATK | ITEM5_FRIENDSHIP_ALL, [6] = ITEM6_ADD_EV, VITAMIN_FRIENDSHIP_CHANGE(7),'
-   actual=' '.join(m[2].split());assert actual==expected
-   values=[0]*10;values[5]=number(constants,'ITEM5_EV_SPATK')|number(constants,'ITEM5_FRIENDSHIP_LOW')|number(constants,'ITEM5_FRIENDSHIP_MID')|number(constants,'ITEM5_FRIENDSHIP_HIGH');values[6]=number(constants,'ITEM6_ADD_EV')
-   macro=match(effectp,r'^#define VITAMIN_FRIENDSHIP_CHANGE\(i\).*?high \*/');changes=re.findall(r'= (\d+)',macro[0]);assert changes==['5','3','2'];values[7:]=map(int,changes);rules.append(ref(effectp,'VITAMIN_FRIENDSHIP_CHANGE',macro))
-  else:
-   actual=' '.join(re.sub(r'//[^\n]*','',m[2]).split());assert actual=='[1] = 1, [5] = ITEM5_FRIENDSHIP_LOW | ITEM5_FRIENDSHIP_MID, STAT_BOOST_FRIENDSHIP_CHANGE,'
-   values=[0,1,0,0,0,number(constants,'ITEM5_FRIENDSHIP_LOW')|number(constants,'ITEM5_FRIENDSHIP_MID'),1,1]
-   macro=match(effectp,r'^#define STAT_BOOST_FRIENDSHIP_CHANGE\s+.*?mid \*/');assert re.findall('= (\\d+)', macro[0]) == ['1', '1'];rules.append(ref(effectp,'STAT_BOOST_FRIENDSHIP_CHANGE',macro))
-  assert len(values)==int(m[1]);return values,ref(effectp,'sItemEffect_'+short,m)
+ source_effects=read_effects_text(text['include/constants/item_effects.h'],text['src/data/pokemon/item_effects.h'])
  mappingp='src/data/party_menu.h';m=match(mappingp,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);assert len(mapping)==58;rules.append(ref(mappingp,'sTMHMMoves',m))
  for short in ITEMS:
   symbol='ITEM_'+short;i=next(x for x in declarations if x['itemId']==symbol);p='src/data/items.json'
@@ -82,14 +65,11 @@ def outputs(lock,data,project):
    move,camel=TEACHING[short];assert mapping[int(short[2:])-1]=='MOVE_'+move
    p='src/move_descriptions.c';m=match(p,r'^const u8 gMoveDescription_'+camel+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
   wrapped=dict(item=definition,description=description)
-  effects,effect_source=effect(short);items.append(dict(metadata=wrapped, effectBytes=effects))
+  effects=source_effects[symbol] if short in ('CALCIUM','X_SPEED') else [];items.append(dict(metadata=wrapped, effectBytes=effects))
   if short in TEACHING:
    p='src/data/battle_moves.h';m=match(p,r'^    \[MOVE_'+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);rules.append(ref(p,'MOVE_'+move,m))
-  p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);icon_symbols=m.groups();paths=[]
-  for asset in icon_symbols:
-   p='src/data/graphics/items.h';m=match(p,r'^const u32 '+asset+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,asset,m));paths.append(m[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
-  image,palette=paths;w,h,indices,_=codec.indexed_png(data[image]);rgba=codec.rgba(indices,codec.palette(data[palette]));png=codec.png(w,h,rgba);assert(w,h)==(24,24)
-  pngpath=symbol.lower()+'.png';result[pngpath]=png;icons.append(dict(item=ident(symbol), width=w, height=h, pngPath=pngpath))
+  icon,icon_png=item_source.icon(symbol, symbol.lower()+'.png')
+  icons.append(icon);result[icon['pngPath']]=icon_png
  pickups=[]
  for floor in range(1,5):
   name='RocketHideout_B'+str(floor)+'F';p='data/maps/'+name+'/map.json';mapdata=parse(data[p]);mapsource=ref(p,'MAP_ROCKET_HIDEOUT_B'+str(floor)+'F')

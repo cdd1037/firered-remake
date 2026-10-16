@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class SingleFileImportTests(unittest.TestCase):
     def test_cli_outputs_are_files_and_preserve_gameplay_data(self):
-        cases = [(f'trainers/import-{region}-trainers.py', f'data/trainer-battles/{region}.json')
+        cases = [('trainers/import-trainer-battles.py', f'data/trainer-battles/{region}.json')
                  for region in ('bill', 'vermilion', 'ssanne', 'route11', 'rocktunnel',
                                 'vermilion-gym', 'fuchsia-gym', 'celadon-gym')]
         cases += [(f'story/import-{region}-encounters.py', f'data/encounters/{region}.json')
@@ -28,8 +28,9 @@ class SingleFileImportTests(unittest.TestCase):
             for script, relative in cases:
                 with self.subTest(script=script):
                     target = generated / relative
+                    extra = ['--recipe', str(ROOT / 'scripts/recipes/trainers' / (Path(relative).stem + '.json'))] if script == 'trainers/import-trainer-battles.py' else []
                     result = subprocess.run([sys.executable, str(ROOT / 'scripts/imports' / script),
-                                             '--out', str(target)], cwd=temporary,
+                                             '--out', str(target), *extra], cwd=temporary,
                                             capture_output=True, text=True, timeout=60)
                     self.assertEqual(0, result.returncode, result.stdout + result.stderr)
                     self.assertTrue(target.is_file(), target)
@@ -66,8 +67,10 @@ class SingleFileImportTests(unittest.TestCase):
                 with self.subTest(region=region):
                     relative = f'content/generated/data/machine-learning/{region}.json'
                     target = project / relative
-                    result = subprocess.run([sys.executable, str(ROOT / f'scripts/imports/items/import-{region}-machines.py'),
-                                             '--out', str(target)], cwd=temporary,
+                    entry = 'import-pewter-machines.py' if region == 'pewter' else 'import-machine-views.py'
+                    selection = [] if region == 'pewter' else ['--region', region]
+                    result = subprocess.run([sys.executable, str(ROOT / 'scripts/imports/items' / entry),
+                                             *selection, '--out', str(target)], cwd=temporary,
                                             capture_output=True, text=True, timeout=60)
                     self.assertEqual(0, result.returncode, result.stdout + result.stderr)
                     self.assertTrue(target.is_file(), target)

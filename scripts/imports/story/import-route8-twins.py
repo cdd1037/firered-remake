@@ -8,6 +8,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import publish_trainers
+from trainer_import import read_source, selected_trainers
 import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -15,7 +16,7 @@ PROFILE='firered-route8-twins-encounter-v1'
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--source',required=True);ap.add_argument('--output-root',required=True);a=ap.parse_args()
     root=Path(a.output_root); source=Path(a.source)
-    def read(path): return subprocess.check_output(['git','-C',str(source),'show',f'{COMMIT}:{path}'])
+    def read(path): return read_source(source, path, COMMIT)
     files={p:read(p) for p in ['src/data/trainers.h','src/data/trainer_parties.h','src/data/text/species_names.h','src/battle_main.c','src/battle_setup.c','data/scripts/trainers.inc','include/constants/trainers.h','include/constants/opponents.h','charmap.txt','src/data/pokemon/level_up_learnsets.h']}
     def ref(path,symbol,pattern):
         text=files[path].decode();m=re.search(pattern,text,re.S);assert m,(path,symbol)
@@ -31,11 +32,7 @@ def main():
     moneyref=ref('src/battle_main.c','TRAINER_CLASS_TWINS',r'    \{TRAINER_CLASS_TWINS, 3\},')
     assert 'if (gTrainers[trainerNum].doubleBattle == TRUE)\n                personalityValue = 0x80;' in files['src/battle_main.c'].decode()
     assert re.search(r'case TRAINER_ENCOUNTER_MUSIC_TWINS:\s*music = MUS_ENCOUNTER_GIRL;',files['src/battle_setup.c'].decode())
-    party=[]
-    for name,sid in [('CLEFAIRY',35),('JIGGLYPUFF',39)]:
-        nref=ref('src/data/text/species_names.h','SPECIES_'+name,r'    \[SPECIES_'+name+r'\] = _\("'+name+r'"\),')
-        party.append(dict(species={'value':'pret:SPECIES_'+name},sourceSpeciesId=sid,speciesName=name,encodedSpeciesName=encode(name),level=22,sourceIv=0,heldItem='ITEM_NONE',customMoves=[],source=partyref,speciesNameSource=nref))
-    trainer=dict(id={'value':'pret:TRAINER_TWINS_ELI_ANNE'},sourceTrainerId=484,trainerClass='TRAINER_CLASS_TWINS',sourceTrainerClass=92,trainerPic='TRAINER_PIC_TWINS',sourceTrainerPic=127,sourceTrainerName='ELI & ANNE',encodedTrainerName=encode('ELI & ANNE'),encounterMusicGender=9,items=['ITEM_NONE']*4,doubleBattle=True,partyFlags=0,aiFlags=1,aiFlagSymbols=['AI_SCRIPT_CHECK_BAD_MOVE'],baseMoney=3,party=party,source=t,moneySource=moneyref)
+    trainer = selected_trainers(lambda path: read(path).decode(), ['TRAINER_TWINS_ELI_ANNE'])[0]
     interactions=[]
     for name in ['Eli','Anne']:
         script=f'Route8_EventScript_{name}'; text=files['data/scripts/trainers.inc'].decode();block=text.split(script+'::',1)[1].split('\n\n',1)[0]

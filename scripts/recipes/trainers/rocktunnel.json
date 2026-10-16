@@ -1,0 +1,48 @@
+{
+  "output": "data/trainer-battles/rocktunnel.json",
+  "trainers": [
+    "PICNICKER_ALICIA",
+    "HIKER_JEREMY",
+    "HIKER_ALAN",
+    "CAMPER_CHRIS",
+    "BUG_CATCHER_BRENT",
+    "BUG_CATCHER_CONNER",
+    "HIKER_BRICE",
+    "PICNICKER_CAITLIN",
+    "CAMPER_DREW",
+    "PICNICKER_CAROL",
+    "HIKER_CLARK",
+    "POKEMANIAC_HERMAN",
+    "HIKER_TRENT",
+    "POKEMANIAC_MARK",
+    "PICNICKER_HEIDI",
+    "PICNICKER_DANA",
+    "PICNICKER_ARIANA",
+    "PICNICKER_LEAH",
+    "HIKER_LUCAS",
+    "HIKER_OLIVER",
+    "HIKER_LENNY",
+    "POKEMANIAC_ASHTON",
+    "POKEMANIAC_COOPER",
+    "HIKER_DUDLEY",
+    "PICNICKER_SOFIA",
+    "HIKER_ALLEN",
+    "HIKER_ERIC",
+    "POKEMANIAC_STEVE",
+    "PICNICKER_MARTHA",
+    "POKEMANIAC_WINSTON"
+  ],
+  "scripts": [
+    "data/scripts/trainers.inc",
+    "data/maps/Route9/scripts.inc",
+    "data/maps/Route10/scripts.inc",
+    "data/maps/RockTunnel_1F/scripts.inc",
+    "data/maps/RockTunnel_B1F/scripts.inc"
+  ],
+  "maps": [
+    "Route9",
+    "Route10",
+    "RockTunnel_1F",
+    "RockTunnel_B1F"
+  ]
+}

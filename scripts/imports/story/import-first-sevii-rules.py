@@ -5,6 +5,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from trainer_import import selected_trainers
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 from shared_constants import read_values
 from field_item_services import service_script_graph
@@ -54,30 +55,11 @@ def one(p,pattern):
  return matches[0]
 def ref(p,s,m):return dict(path=p,symbol=s,startLine=read(p).count('\n',0,m.start())+1,endLine=read(p).count('\n',0,m.end())+1)
 def num(p,s):return int(one(p,r'^#define '+s+r'\s+(\d+)\b[^\n]*')[1])
-def encode(s):return [int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in s]
-def expr(s):
- n=0
- for v in s.split(' | '):
-  p='include/constants/battle_ai.h' if v.startswith('AI_SCRIPT_') else 'include/constants/trainers.h'
-  if v.startswith('AI_SCRIPT_') or v=='F_TRAINER_FEMALE':n|=1<<int(one(p,r'^#define '+v+r'\s+\(1 << (\d+)\)[^\n]*')[1])
-  else:n|=num(p,v)
- return n
 def identity(s):return dict(value='pret:'+s)
-trainers=[];battles=[];resolved=[]
-for d in decl['trainers']:
- for r in (d['sourceRef'],d['partySource']):
-  read(r['path'])
- symbol=d['trainer'];p='src/data/trainers.h';m=one(p,r'^    \['+symbol+r'\] = \{\n(.*?)^    \},');f=d['fields'];name=re.fullmatch(r'_\("([A-Z.& ]+)"\)',f['trainerName'])[1]
- shape,partySymbol=re.fullmatch(r'(NO_ITEM_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)',f['party']).groups();custom=shape=='NO_ITEM_CUSTOM_MOVES'
- pp='src/data/trainer_parties.h';party=one(pp,r'^static const struct TrainerMonNoItem'+('Custom' if custom else 'Default')+'Moves '+partySymbol+r'\[\] = \{\n(.*?)^\};')
- rows=list(re.finditer(r'    \{\n        \.iv = (\d+),\n        \.lvl = (\d+),\n        \.species = (SPECIES_\w+),\n(?:        \.moves = \{([^}]+)\},\n)?    \},\n',party[1]));assert ''.join(r[0] for r in rows)==party[1]
- mons=[]
- for row in rows:
-  iv,lv,sp=int(row[1]),int(row[2]),row[3];np='src/data/text/species_names.h';nm=one(np,r'^    \['+sp+r'\] = _\("([^"]+)"\),$');sn=nm[1]
-  mons.append(dict(species=identity(sp),sourceSpeciesId=num('include/constants/species.h',sp),speciesName=sn,encodedSpeciesName=encode(sn),level=lv,sourceIv=iv,heldItem='ITEM_NONE',customMoves=[identity(x) for x in row[4].split(', ')] if custom else [],source=ref(pp,partySymbol,party),speciesNameSource=ref(np,sp,nm)))
- items=[x for x in f['items'].strip('{}').split(', ') if x];items+=['ITEM_NONE']*(4-len(items));money=one('src/battle_main.c',r'^\s*\{'+f['trainerClass']+r', (\d+)\},$')
- trainers.append(dict(id=identity(symbol),sourceTrainerId=num('include/constants/opponents.h',symbol),trainerClass=f['trainerClass'],sourceTrainerClass=num('include/constants/trainers.h',f['trainerClass']),trainerPic=f['trainerPic'],sourceTrainerPic=num('include/constants/trainers.h',f['trainerPic']),sourceTrainerName=name,encodedTrainerName=encode(name),encounterMusicGender=expr(f['encounterMusic_gender']),items=items,doubleBattle=f['doubleBattle']=='TRUE',partyFlags=1 if custom else 0,aiFlags=expr(f['aiFlags']),aiFlagSymbols=f['aiFlags'].split(' | '),baseMoney=int(money[1]),party=mons,source=ref(p,symbol,m),moneySource=ref('src/battle_main.c',f['trainerClass'],money)))
- resolved.append(dict(trainer=symbol,party=[dict(species=x['species'],level=x['level'],moves=x['resolvedMoves']) for x in d['party']]))
+trainers = selected_trainers(read, [row['trainer'] for row in decl['trainers']])
+battles = []
+resolved = [dict(trainer=row['trainer'], party=[dict(species=member['species'], level=member['level'],
+    moves=member['resolvedMoves']) for member in row['party']]) for row in decl['trainers']]
 for d in decl['battleOccurrences']:
  if d['rematch']:continue
  p=d['sourceRef']['path'];read(p);assert read(p).splitlines()[d['sourceRef']['line']-1].strip()==d['opcode']+' '+', '.join(d['arguments']);label=one(p,r'^'+d['script']+r'::\n((?:(?!^\w+::).)*)');args=d['arguments'][1:];noIntro=d['opcode']=='trainerbattle_no_intro';double=d['opcode']=='trainerbattle_double'

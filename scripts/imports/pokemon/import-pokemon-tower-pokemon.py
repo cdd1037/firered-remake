@@ -10,6 +10,7 @@ import argparse
 import json
 import pathlib
 import re
+from import_canonical_pokemon import Sources
 from pokemon_import_io import safe, load_recipe, read_sources, write_files
 
 ROOT = _PROJECT_ROOT
@@ -35,52 +36,20 @@ def generate(project):
     raw = read_sources(dict(commit=COMMIT, files=entries), safe(project, 'content/raw/pokefirered/037335f4'))
     texts = {path: data.decode('utf-8') for path, data in raw.items()}
 
-    def one(path, pattern):
-        found = list(re.finditer(pattern, texts[path], re.M | re.S))
-        if len(found) != 1:
-            raise ValueError('Expected one source match: ' + path + ': ' + pattern)
-        return found[0]
-
-    def ref(path, symbol, match):
-        return dict(path=path, symbol=symbol, startLine=texts[path].count('\n', 0, match.start()) + 1,
-                    endLine=texts[path].count('\n', 0, match.end()) + 1)
-
-    def constant(path, symbol):
-        match = one(path, r'^#define ' + symbol + r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$')
-        return dict(symbol=symbol, value=int(match[1]), source=ref(path, symbol, match))
-
+    src = Sources(texts, {})
+    one, ref, constant, block, name = src.one, src.match_ref, src.constant, src.block, src.name
     def ident(symbol):
         return dict(value='pret:' + symbol)
 
-    def block(path, symbol):
-        match = one(path, r'^    \[' + symbol + r'\] =\s*\n    \{\n(.*?)^    \},')
-        fields = dict(re.findall(r'^\s*\.(\w+) = (.+),$', match[1], re.M))
-        return fields, ref(path, symbol, match)
-
-    def name(path, symbol):
-        match = one(path, r'^    \[' + symbol + r'\]\s*= _\("([A-Z ]+)"\),$')
-        return dict(id=ident(symbol), name=match[1], source=ref(path, symbol, match))
-
     species, names, deferred, held = [], [], [], []
     required = {'MOVE_BONEMERANG'}
-    stat_source = ('HP', 'Attack', 'Defense', 'Speed', 'SpAttack', 'SpDefense')
-    stat_names = ('hp', 'attack', 'defense', 'speed', 'specialAttack', 'specialDefense')
     for short in ('GASTLY', 'HAUNTER'):
         symbol = 'SPECIES_' + short
-        fields, source = block('src/data/pokemon/species_info.h', symbol)
+        definition, fields = src.species_definition(symbol)
         assert fields['genderRatio'] == 'PERCENT_FEMALE(50)' and fields['growthRate'] == 'GROWTH_MEDIUM_SLOW'
         assert fields['types'] == '{TYPE_GHOST, TYPE_POISON}' and fields['abilities'] == '{ABILITY_LEVITATE, ABILITY_NONE}'
-        pointer_path = 'src/data/pokemon/level_up_learnset_pointers.h'
-        pointer_match = one(pointer_path, r'^    \[' + symbol + r'\] = (\w+),$')
-        pointer = pointer_match[1]
-        path = 'src/data/pokemon/level_up_learnsets.h'
-        learn = one(path, r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};')
-        moves = []
-        for match in re.finditer(r'^    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),\n', texts[path], re.M):
-            if not learn.start() <= match.start() < learn.end():
-                continue
-            moves.append(dict(level=int(match[1]), move=ident(match[2])))
-            required.add(match[2])
+        moves = definition['levelUpMoves']
+        required.update(row['move']['value'][5:] for row in moves)
         assert len(moves) == (11 if short == 'GASTLY' else 13)
         evo_path = 'src/data/pokemon/evolution.h'
         evolution = one(evo_path, r'^    \[' + symbol + r'\]\s*= \{\{(EVO_\w+), (\w+), (SPECIES_\w+)\}\},$')
@@ -91,7 +60,7 @@ def generate(project):
         else:
             assert evolution.groups() == ('EVO_TRADE', '0', 'SPECIES_GENGAR')
             deferred.append(dict(species=ident(symbol), method=evolution[1], parameter=evolution[2], target=ident(evolution[3]), executable=False, reason='Gengar is excluded; trade evolution and communication are not implemented.'))
-        species.append(dict(id=ident(symbol), sourceSpeciesId=constant('include/constants/species.h', symbol)['value'], baseStats={k: int(fields['base' + s]) for k, s in zip(stat_names, stat_source)}, type1='TYPE_GHOST', type2='TYPE_POISON', catchRate=int(fields['catchRate']), experienceYield=int(fields['expYield']), evYield={k: int(fields['evYield_' + s]) for k, s in zip(stat_names, stat_source)}, growthRate='mediumSlow', genderRatio=127, ability1='ABILITY_LEVITATE', ability2='ABILITY_NONE', friendship=int(fields['friendship']), levelUpMoves=moves, evolutions=evolutions))
+        species.append(dict(definition, evolutions=evolutions))
         names.append(name('src/data/text/species_names.h', symbol))
         held.append(dict(species=symbol, common=fields['itemCommon'], rare=fields['itemRare']))
 

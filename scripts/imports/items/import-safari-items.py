@@ -11,7 +11,7 @@ from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
 spec=importlib.util.spec_from_file_location('safari_meta',ROOT/'scripts/imports/pokemon/import-safari-pokemon.py');meta=importlib.util.module_from_spec(spec);spec.loader.exec_module(meta)
-spec=importlib.util.spec_from_file_location('safari_art',ROOT/'scripts/imports/presentation/import-safari-art.py');art=importlib.util.module_from_spec(spec);spec.loader.exec_module(art)
+from image_io import png as encode_rgba_png
 import machine_catalog as shared_machines
 
 COMMIT=meta.COMMIT;TREE=meta.TREE;PROFILE='firered-safari-items-v1'
@@ -48,7 +48,7 @@ def generate(root,dependency_root=None):
   p='src/data/item_icon_table.h';im=one(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,im);image_symbol,palette_symbol=im.groups();paths=[]
   for asset_symbol in (image_symbol,palette_symbol):
    p='src/data/graphics/items.h';am=one(p,r'^const u32 '+asset_symbol+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,asset_symbol,am));paths.append(am[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
-  image_path,palette_path=paths;image=Image.open(io.BytesIO(raw[image_path]));meta.require(image.mode=='P' and image.size==(24,24),'Source icon shape differs');palette=[tuple(map(int,line.split())) for line in text[palette_path].splitlines()[3:]];pixels=bytes(c for i in image.get_flattened_data() for c in (*[(v>>3)*255//31 for v in palette[i]],0 if i==0 else 255));png=art.png(24,24,pixels);out='item_'+short.lower()+'.png';outputs[out]=png
+  image_path,palette_path=paths;image=Image.open(io.BytesIO(raw[image_path]));meta.require(image.mode=='P' and image.size==(24,24),'Source icon shape differs');palette=[tuple(map(int,line.split())) for line in text[palette_path].splitlines()[3:]];pixels=bytes(c for i in image.get_flattened_data() for c in (*[(v>>3)*255//31 for v in palette[i]],0 if i==0 else 255));png=encode_rgba_png(24,24,pixels);out='item_'+short.lower()+'.png';outputs[out]=png
   icons.append(dict(item=ident(symbol), width=24, height=24, pngPath=out))
  additions=shared_machines.compatibility_additions(dependency_root or root, 'content/generated/data/items/safari/machines.json')
  itemdoc=dict(schemaVersion=1,items=items,icons=icons,outputs=[dict(path=p) for p,b in sorted(outputs.items())])

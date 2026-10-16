@@ -13,6 +13,7 @@ import argparse
 import json
 import re
 from pathlib import Path
+from import_canonical_pokemon import Sources
 from pokemon_import_io import safe, read_source, write_files
 from machine_catalog import compatibility_additions
 
@@ -91,20 +92,17 @@ def generate(reference, dependency, raw=None):
     need({'pret:' + s for s in metadata_species} <= owned, 'Every retained inactive encounter species already exists')
     need(not {'pret:' + s for s in additions} & opponents, 'No added opponent overlaps')
 
+    source = Sources({path: read(path) for path in (
+        'src/data/pokemon/species_info.h', 'src/data/pokemon/level_up_learnset_pointers.h',
+        'src/data/pokemon/level_up_learnsets.h', 'include/constants/species.h',
+        'include/constants/pokemon.h', 'include/constants/abilities.h')}, {})
     species_rows = []
     for name in additions:
         original, meta = species[name], metadata[name]
-        info = one('src/data/pokemon/species_info.h', r'^    \[' + name + r'\] =\n    \{\n(.*?)^    \},')
-        source_fields = dict(re.findall(r'^        \.(\w+) = (.*),$', info[1], re.M))
-
-        for source_key, key in [('baseHP','hp'),('baseAttack','attack'),('baseDefense','defense'),('baseSpeed','speed'),('baseSpAttack','specialAttack'),('baseSpDefense','specialDefense')]:
-            need(original['baseStats'][key] == int(source_fields[source_key]), 'Base stats: ' + name)
-        need(source_fields['abilities'] == '{ABILITY_PRESSURE, ABILITY_NONE}' and original['ability1'] == 'ABILITY_PRESSURE' and original['ability2'] == 'ABILITY_NONE', 'Pressure identity')
-        need(int(one('include/constants/species.h', r'^#define ' + name + r'\s+(\d+)\s*$')[1]) == original['sourceSpeciesId'], 'Numeric species identity')
-        pointer = one('src/data/pokemon/level_up_learnset_pointers.h', r'^    \[' + name + r'\] = (\w+),$')[1]
-        moves = one('src/data/pokemon/level_up_learnsets.h', r'^static const u16 ' + pointer + r'\[\] = \{\n(.*?)^\};')
-        raw_moves = [(int(l), 'pret:' + m) for l, m in re.findall(r'LEVEL_UP_MOVE\(\s*(\d+), (MOVE_\w+)\)', moves[1])]
-        need(raw_moves == [(m['level'], m['move']['value']) for m in original['levelUpMoves']], 'Complete natural learnset')
+        parsed, _ = source.species_definition(name)
+        need(parsed == original, 'Canonical source mechanics differ: ' + name)
+        need((parsed['ability1'], parsed['ability2']) == ('ABILITY_PRESSURE', 'ABILITY_NONE'), 'Pressure identity')
+        raw_moves = [(row['level'], row['move']['value']) for row in parsed['levelUpMoves']]
         need(not meta['sourceEvolutions'] and not original['evolutions'], 'Terminal Mewtwo evolution')
         need(not re.search(r'^    \[' + name + r'\]', read('src/data/pokemon/evolution.h'), re.M), 'No source evolution declaration')
         initial = []

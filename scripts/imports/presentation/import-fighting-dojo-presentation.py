@@ -6,6 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
+from presentation_pixels import PixelReader
 import argparse
 import importlib.util
 import io
@@ -55,18 +56,8 @@ def build(target, dependency, reference, check):
         inherited[path] = dict(path=path)
         return data
 
-    def palette(path, floor):
-        lines = source.text(path).splitlines()
-        need(lines[:2] == ['JASC-PAL', '0100'] and len(lines) == int(lines[2]) + 3, 'Source palette differs')
-        return [tuple((int(c) >> 3) * 255 // 31 if floor else ((int(c) >> 3) << 3) | ((int(c) >> 3) >> 2)
-                      for c in line.split()) for line in lines[3:]]
-
-    def indexed(image, pal, shape, floor, first_frame=False):
-        im = Image.open(io.BytesIO(source.read(image)))
-        need(im.mode == 'P' and im.size == shape and max(im.tobytes()) < 16, 'Source indexed image differs: ' + image)
-        indices = im.tobytes()[:1024] if first_frame else im.tobytes()
-        colors = palette(pal, floor)
-        return bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
+    pixels = PixelReader(source)
+    palette, indexed = pixels.palette, pixels.pixels
 
     league_base = 'content/generated/sprites/pokemon/pokemon-league/'
     league = json.loads(reuse(league_base + 'manifest.json'))

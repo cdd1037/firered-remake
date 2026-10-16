@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""Regenerate trainer bindings and story contributions from retained source inputs."""
+import importlib.util
+import json
+import re
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'scripts/lib'))
+from shared_trainers import read_trainers, trainer_json
+from trainer_import import TextSources, generate, natural_moves, selected_trainers
+
+RAW = ROOT / 'content/raw/pokefirered/037335f4'
+REGIONS = ('bill', 'vermilion', 'route11', 'rocktunnel', 'ssanne',
+           'celadon-gym', 'vermilion-gym', 'fuchsia-gym', 'pokemon-tower')
+
+
+def load(relative):
+    spec = importlib.util.spec_from_file_location(Path(relative).stem, ROOT / 'scripts' / relative)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class TrainerImportTests(unittest.TestCase):
+    def test_all_regional_cli_outputs_and_shared_contributions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = Path(temporary) / 'generated'
+            for region in REGIONS:
+                with self.subTest(region=region):
+                    recipe = ROOT / f'scripts/recipes/trainers/{region}.json'
+                    command = [sys.executable, str(ROOT / 'scripts/imports/trainers/import-trainer-battles.py'),
+                               '--recipe', str(recipe), '--generated-root', str(generated)]
+                    subprocess.run(command, cwd=temporary, check=True, capture_output=True)
+                    relative = json.loads(recipe.read_text())['output']
+                    self.assertEqual((ROOT / 'content/generated' / relative).read_bytes(),
+                                     (generated / relative).read_bytes())
+                    subprocess.run([*command, '--check'], cwd=temporary, check=True, capture_output=True)
+            shared = read_trainers(generated)
+            current = read_trainers(ROOT / 'content/generated')
+            self.assertTrue(shared)
+            self.assertEqual(shared, {identity: current[identity] for identity in shared})
+
+    def test_story_contributions_preserve_bindings_and_shared_definitions(self):
+        for region in ('four-island', 'five-island', 'six-island', 'seven-island',
+                       'fighting-dojo', 'viridian-gym', 'seafoam', 'victory-road', 'pokemon-league', 'league-rematch', 'sevii-ruby'):
+            with self.subTest(region=region):
+                module = load(f'imports/story/import-{region}-rules.py')
+                args = [RAW, ROOT] + ([ROOT] if region in ('victory-road', 'sevii-ruby') else [])
+                result = module.generate(*args)
+                docs = result[0] if isinstance(result, tuple) else result
+                document = docs['trainers.json']
+                self.assertTrue(document['trainers'])
+                actual = trainer_json(ROOT / 'content/generated', document, check=True)
+                self.assertEqual((ROOT / f'content/generated/data/regions/{region}/trainers.json').read_bytes(), actual)
+
+    def test_vs_seeker_raw_cli_preserves_all_parties_and_occurrences(self):
+        subprocess.run([sys.executable, str(ROOT / 'scripts/imports/trainers/import-vs-seeker-parties.py'),
+                        '--raw-root', str(RAW), '--dependency-root', str(ROOT),
+                        '--rules-root', str(ROOT), '--check'], check=True, capture_output=True)
+
+    def test_route16_double_team_uses_shared_parser(self):
+        importer = load('imports/story/import-route16-fly-house.py')
+        reader = load('imports/source/import-cinnabar-source-preparation.py')
+        document = importer.trainer_inventory(reader.Source(raw_root=RAW))
+        self.assertEqual(1, len(document['trainers']))
+        self.assertTrue(document['trainers'][0]['doubleBattle'])
+        self.assertEqual(2, len(document['battles']))
+        trainer_json(ROOT / 'content/generated', document, check=True)
+
+    def test_all_shared_party_shapes_names_and_move_slots(self):
+        current = read_trainers(ROOT / 'content/generated')
+        rebuilt = generate(RAW, current)
+        self.assertEqual(current, {row['id']['value']: row for row in rebuilt})
+        self.assertEqual({0, 1, 2, 3}, {row['partyFlags'] for row in rebuilt})
+        self.assertTrue(any(row['doubleBattle'] for row in rebuilt))
+        self.assertTrue(any("'" in member['speciesName'] for row in rebuilt for member in row['party']))
+        self.assertTrue(any(slot['value'] == 'pret:MOVE_NONE' for row in rebuilt
+                            for member in row['party'] for slot in member['customMoves']))
+
+    def test_selection_order_is_not_numeric_catalog_order(self):
+        identities = list(read_trainers(ROOT / 'content/generated'))[:3][::-1]
+        result = selected_trainers(lambda path: (RAW / path).read_text(), [x[5:] for x in identities])
+        self.assertEqual(identities, [row['id']['value'] for row in result])
+
+    def test_integrated_item_catalog_trainer_bindings(self):
+        cases = [('rocket-hideout-catalog', 'data/trainer-battles/rocket-hideout/trainers.json'),
+                 ('silph-catalogs', 'data/regions/silph/trainers.json'),
+                 ('saffron-gym-catalogs', 'data/regions/saffron-gym/trainers.json')]
+        for stem, relative in cases:
+            with self.subTest(stem=stem):
+                module = load(f'imports/items/import-{stem}.py')
+                sources = TextSources(lambda path: (RAW / path).read_text())
+                if not module.TRAINERS:
+                    module.TRAINERS = tuple(symbol[8:] for path in module.SCRIPT_PATHS for symbol in
+                        re.findall(r'trainerbattle_(?:single|no_intro) (TRAINER_\w+)', sources[path].decode()))
+                document = module.trainer_convert(sources)
+                actual = trainer_json(ROOT / 'content/generated', document, check=True)
+                self.assertEqual((ROOT / 'content/generated' / relative).read_bytes(), actual)
+
+    def test_late_rival_special_bindings(self):
+        module = load('imports/story/import-league-rival-rules.py')
+        document = module.extract(RAW)
+        actual = trainer_json(ROOT / 'content/generated', document, check=True)
+        self.assertEqual((ROOT / 'content/generated/data/trainer-battles/league-rival-rules.json').read_bytes(), actual)
+
+    def test_early_prepared_catalogs_current_layout(self):
+        module = load('imports/trainers/import-early-trainer-catalogs.py')
+        for region, count in module.COUNTS.items():
+            with self.subTest(region=region):
+                document = module.compile_catalog(ROOT, region)
+                self.assertEqual(count, len(document['battles']))
+                actual = trainer_json(ROOT / 'content/generated', document, check=True)
+                target = ROOT / 'content/generated/data/trainer-battles' / (region + '.json')
+                self.assertEqual(target.read_bytes(), actual)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / 'scripts/imports/trainers/import-early-trainer-catalogs.py'), '--check'],
+            check=True, capture_output=True, text=True)
+        self.assertEqual({'catalogs': 5, 'trainers': 30, 'checked': True}, json.loads(result.stdout))
+        with tempfile.TemporaryDirectory() as temporary:
+            isolated = Path(temporary)
+            for region in module.COUNTS:
+                relative = Path('content/generated/maps/regions') / region / 'dependencies.json'
+                target = isolated / relative
+                target.parent.mkdir(parents=True)
+                target.write_bytes((ROOT / relative).read_bytes())
+            # Exercise the actual writer against an isolated project root, with only
+            # its five prepared inputs rather than copied golden output files.
+            command = [sys.executable, '-c',
+                       "import runpy,sys; from pathlib import Path; "
+                       "m=runpy.run_path(sys.argv.pop(1)); "
+                       "m['main'].__globals__['ROOT']=Path(sys.argv.pop(1)); m['main']()",
+                       str(ROOT / 'scripts/imports/trainers/import-early-trainer-catalogs.py'), temporary]
+            subprocess.run(command, check=True, capture_output=True)
+            for region in module.COUNTS:
+                relative = Path('content/generated/data/trainer-battles') / (region + '.json')
+                self.assertEqual((ROOT / relative).read_bytes(), (isolated / relative).read_bytes())
+            rebuilt = read_trainers(isolated / 'content/generated')
+            current = read_trainers(ROOT / 'content/generated')
+            self.assertEqual(30, len(rebuilt))
+            self.assertEqual(rebuilt, {identity: current[identity] for identity in rebuilt})
+            subprocess.run([*command, '--check'], check=True, capture_output=True)
+
+    def test_lab_custom_early_rival_dispatch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = Path(temporary) / 'generated'
+            target = generated / 'data/trainer-battles/lab'
+            command = [sys.executable, str(ROOT / 'scripts/imports/trainers/import-lab-trainers.py'),
+                       '--raw-root', str(RAW), '--out-root', str(target)]
+            subprocess.run(command, check=True, capture_output=True)
+            actual = json.loads((target / 'lab-trainers.json').read_bytes())
+            expected = json.loads((ROOT / 'content/generated/data/trainer-battles/lab/lab-trainers.json').read_bytes())
+            self.assertEqual(expected, actual)
+            current = read_trainers(ROOT / 'content/generated')
+            rebuilt = read_trainers(generated)
+            self.assertEqual(rebuilt, {identity: current[identity] for identity in rebuilt})
+            self.assertFalse((target.parent / 'data/trainers.json').exists())
+            before = {path: path.read_bytes() for path in generated.rglob('*') if path.is_file()}
+            subprocess.run([*command, '--check'], check=True, capture_output=True)
+            self.assertEqual(before, {path: path.read_bytes() for path in generated.rglob('*') if path.is_file()})
+
+    def test_lost_cave_and_route8_cli_bindings(self):
+        for stem, source_flag, output_flag, relative in (
+                ('lost-cave-encounter-rules', '--reference-root', '--project-root', 'data/encounters/lost-cave.json'),
+                ('route8-twins', '--source', '--output-root', 'data/trainer-battles/route8-twins.json')):
+            with self.subTest(stem=stem), tempfile.TemporaryDirectory() as temporary:
+                subprocess.run([sys.executable, str(ROOT / f'scripts/imports/story/import-{stem}.py'),
+                                source_flag, str(RAW), output_flag, temporary], check=True, capture_output=True)
+                generated = Path(temporary) / 'content/generated'
+                self.assertEqual((ROOT / 'content/generated' / relative).read_bytes(),
+                                 (generated / relative).read_bytes())
+                current, rebuilt = read_trainers(ROOT / 'content/generated'), read_trainers(generated)
+                self.assertEqual(rebuilt, {identity: current[identity] for identity in rebuilt})
+
+    def test_source_learnset_uses_firered_branch(self):
+        sources = {
+            'src/data/pokemon/level_up_learnset_pointers.h': '    [SPECIES_TEST] = sTest,\n',
+            'src/data/pokemon/level_up_learnsets.h': 'static const u16 sTest[] = {\n#if defined(FIRERED)\n    LEVEL_UP_MOVE(1, MOVE_TACKLE),\n#elif defined(LEAFGREEN)\n    LEVEL_UP_MOVE(1, MOVE_GROWL),\n#endif\n    LEVEL_UP_END\n};\n',
+        }
+        self.assertEqual(['MOVE_TACKLE'], natural_moves(sources.__getitem__, 'SPECIES_TEST', 5))
+        sources['src/data/pokemon/level_up_learnsets.h'] = sources['src/data/pokemon/level_up_learnsets.h'].replace('#endif', '#unsupported')
+        with self.assertRaises(ValueError):
+            natural_moves(sources.__getitem__, 'SPECIES_TEST', 5)
+
+    def test_missing_inputs_fail_before_output(self):
+        importer = load('imports/trainers/import-trainer-battles.py')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaises(FileNotFoundError):
+                importer.run(ROOT / 'scripts/recipes/trainers/bill.json', root / 'raw',
+                             generated_root=root / 'generated')
+            self.assertFalse((root / 'generated').exists())
+
+    def test_unsafe_output_and_empty_or_duplicate_selection_fail(self):
+        from trainer_import import convert_battles
+        for trainers in ([], ['LASS_KAY', 'LASS_KAY']):
+            with self.assertRaisesRegex(ValueError, 'nonempty and unique'):
+                convert_battles({'trainers': trainers}, {})
+        importer = load('imports/trainers/import-trainer-battles.py')
+        with self.assertRaisesRegex(ValueError, 'generated-root'):
+            importer.run(ROOT / 'scripts/recipes/trainers/bill.json', RAW, out=Path('/tmp/custom-trainers.json'))
+
+
+if __name__ == '__main__':
+    unittest.main()

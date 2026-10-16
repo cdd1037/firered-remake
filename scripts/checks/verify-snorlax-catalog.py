@@ -14,8 +14,9 @@ def load(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--dependency-project-root',type=pathlib.Path);p.add_argument('--reference-root',type=pathlib.Path);a=p.parse_args()
- m=load('snorlax_metadata_verify',ROOT/'scripts/imports/pokemon/import-snorlax-pokemon.py');art=load('snorlax_art_verify',ROOT/'scripts/imports/presentation/import-snorlax-art.py')
- outputs=m.generate(ROOT);pixels=art.build(ROOT)
+ m=load('snorlax_metadata_verify',ROOT/'scripts/imports/pokemon/import-snorlax-pokemon.py')
+ from species_art import build as build_art
+ outputs=m.generate(ROOT);pixels=build_art(ROOT, 'snorlax')
  for relative,b in outputs.items():assert (ROOT/relative).read_bytes()==b,relative
  for relative,b in pixels.items():assert (ROOT/'content/generated/sprites/pokemon/snorlax'/relative).read_bytes()==b,relative
  doc=json.loads(outputs['content/generated/data/pokemon/snorlax.json']);fixture=json.loads(outputs['tests/fixtures/snorlax/catalog-source-fixtures.json']);manifest=json.loads(pixels['manifest.json'])

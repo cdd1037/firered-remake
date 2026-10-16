@@ -8,6 +8,14 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task ScriptLayout() => Run("test-script-layout.py");
     [TestMethod]
+    public async Task SharedTrainerImporters()
+    {
+        await Run("test-trainer-import.py");
+        await Run("test-trainer-portraits.py");
+    }
+    [TestMethod]
+    public Task SharedPokemonPresentation() => Run("test-pokemon-import.py");
+    [TestMethod]
     public Task StoryMenus() => Run("test-story-menus.py");
     [TestMethod]
     public Task SingleFileImportPublishing() => Run("test-single-file-imports.py");
@@ -19,6 +27,8 @@ public sealed class ResourceImportTests
     public Task MapAtlases() => Run("test-map-atlases.py");
     [TestMethod]
     public Task Route15GateSourceAndRegeneration() => Run("test-route15-gate-import.py");
+    [TestMethod]
+    public Task SharedMapImporters() => Run("test-map-consolidation.py");
     [TestMethod]
     public Task MapImporterUnification() => Run("verify-map-importer-unification.py");
     [TestMethod]
@@ -44,10 +54,14 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task CompactUiJson() => Run("test-compact-ui-json.py");
     [TestMethod]
+    public Task SharedRegionalItems() => Run("test-regional-item-effects.py");
+    [TestMethod]
     public Task ItemCatalog() => Run("test-item-catalog-import.py");
 
     [TestMethod]
     public Task RuntimeProofRetirement() => Run("test-runtime-proof-retirement.py");
+    [TestMethod]
+    public Task SharedPresentationPixels() => Run("test-presentation-pixels.py");
     [TestMethod]
     public Task PresentationImportMetadata() => Run("test-presentation-import-metadata.py");
     [TestMethod]

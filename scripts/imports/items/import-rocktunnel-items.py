@@ -6,12 +6,14 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, inventory_item, item_json
-import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
+from item_effects import read_effects_text
+from item_source import ItemSource
+from item_catalog import item_definition as shared_item, item_json
+import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 sys.path.insert(0, str(ROOT/'scripts/lib'))
-from item_icon_exports import item_icon_path, output_materials
+from item_icon_exports import output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-rocktunnel-items-v1'
@@ -70,39 +72,8 @@ def convert(lock,data):
  def constant(p,s):
   m=match(p,r'^#define '+s+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m));return int(m[1])
  all_items=json.loads(text['src/data/items.json'],object_pairs_hook=pairs)['items']
- codec_path=ROOT/'scripts/imports/presentation/import-lab-battle-ui.py'
- spec=importlib.util.spec_from_file_location('ssanne_items_existing_png_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
- effect_constants={m[1]:m[2].split('//')[0].strip() for m in re.finditer(r'^#define (ITEM[3456]_\w+)[ \t]+([^\n]+)',text['include/constants/item_effects.h'],re.M)}
- def expression(e):
-  e=e.strip()
-  if re.fullmatch(r'\(u8\) -[123]',e):return int(e[5:]) & 255
-  if e.startswith('(') and e.endswith(')'):return expression(e[1:-1])
-  if e in effect_constants:return expression(effect_constants[e])
-  if '<<' in e:
-   left,right=e.split('<<')
-   return expression(left) << expression(right)
-  if '|' in e:
-   v=0
-   for part in e.split('|'):v|=expression(part)
-   return v
-  if re.fullmatch(r'0x[0-9A-Fa-f]+|\d+',e):return int(e,0)
-  raise ValueError('Unsupported effect expression: '+e)
- def effect(name):
-  p='src/data/pokemon/item_effects.h';m=match(p,r'^static const u8 sItemEffect_'+name+r'\[(\d+)\] = \{\n(.*?)^\};');arr=[0]*int(m[1]);seen=set()
-  body=m[2].replace('STAT_BOOST_FRIENDSHIP_CHANGE,','STAT_BOOST_FRIENDSHIP_CHANGE')
-  if 'STAT_BOOST_FRIENDSHIP_CHANGE' in body:
-   macro=match(p,r'^#define STAT_BOOST_FRIENDSHIP_CHANGE[^\n]*\n(.*?)(?=^#define|^$)')
-   rules.append(ref(p,'STAT_BOOST_FRIENDSHIP_CHANGE',macro))
-   body=body.replace('STAT_BOOST_FRIENDSHIP_CHANGE',macro[1].replace('\\',''))
-  for line in body.splitlines():
-   line=re.sub(r'/\*.*?\*/','',line.split('//')[0]).strip()
-   if not line:continue
-   part=re.fullmatch(r'\[(\d+)\] = ([^,]+),?',line)
-   if part is None:raise ValueError('Unsupported effect syntax')
-   index=int(part[1]);value=expression(part[2])
-   if index in seen or not 0<=index<len(arr) or not 0<=value<=255:raise ValueError('Invalid effect index/value')
-   seen.add(index);arr[index]=value
-  return arr,ref(p,'sItemEffect_'+name,m)
+ item_source=ItemSource(data)
+ source_effects=read_effects_text(text['include/constants/item_effects.h'],text['src/data/pokemon/item_effects.h'])
  effects={'MAX_ETHER':'MaxEther','PERSIM_BERRY':'PersimBerry','REVIVE':'Revive'}
  defs=[];icons=[];outputs={}
  for name in ITEMS:
@@ -110,27 +81,13 @@ def convert(lock,data):
   if len(chosen)!=1:raise ValueError('Nonunique item')
   i=chosen[0];p='src/data/items.json';m=match(p,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}');source=ref(p,symbol,m)
   definition=shared_item(symbol)
-  declaration=i['description_english'].replace('\\n','\n');effect_bytes,effect_source=effect(effects[name]) if name in effects else ([],None)
+  declaration=i['description_english'].replace('\\n','\n');effect_bytes=source_effects[symbol] if name in effects else []
   if name in effects:
    p='src/data/pokemon/item_effects.h';em=match(p,r'^    \['+symbol+r' - ITEM_POTION\][ \t]*= sItemEffect_'+effects[name]+',');rules.append(ref(p,symbol+' effect binding',em))
   defs.append(dict(metadata=dict(item=definition,description=declaration), effectBytes=effect_bytes))
-  p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);symbols=m.groups();paths=[]
-  for sym in symbols:
-   p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
-  image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
-  if (w,h)!=(24,24):raise ValueError('Item icon dimensions differ')
-  png=codec.png(w,h,rgba);png_name=item_icon_path(image,palette);outputs[png_name]=png
-  icons.append(dict(item=ident(symbol), width=w, height=h, pngPath=png_name))
- pickups=[]
- for map_name in MAPS:
-  p='data/maps/'+map_name+'/map.json';d=json.loads(text[p],object_pairs_hook=pairs)
-  for n,o in enumerate(d['object_events']):
-   if o.get('graphics_id')!='OBJ_EVENT_GFX_ITEM_BALL':continue
-   sp='data/scripts/item_ball_scripts.inc';m=match(sp,r'^'+o['script']+r'::\n\tfinditem (ITEM_\w+)\n\tend$')
-   pickups.append(dict(map=map_name,kind='visible',item=ident(m[1]),quantity=1,localObjectId=n+1,x=o['x'],y=o['y'],elevation=o['elevation'],flag=o['flag'],underfoot=False,script=o['script'],source=ref(p,o['flag']),scriptSource=ref(sp,o['script'],m)))
-  for o in d['bg_events']:
-   if o['type']!='hidden_item':continue
-   pickups.append(dict(map=map_name,kind='hidden',item=ident(o['item']),quantity=o['quantity'],localObjectId=None,x=o['x'],y=o['y'],elevation=o['elevation'],flag=o['flag'],underfoot=o['underfoot'],script=None,source=ref(p,o['flag']),scriptSource=None))
+  icon,icon_png=item_source.icon(symbol)
+  icons.append(icon);outputs[icon['pngPath']]=icon_png
+ pickups=item_source.pickups(MAPS)
  if len(pickups)!=15 or sum(x['kind']=='hidden' for x in pickups)!=8 or any(x['quantity']!=1 for x in pickups):raise ValueError('Pickup scope differs')
  for p,s,pat in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','CheckBagHasSpace',r'^bool8 CheckBagHasSpace\(.*?^\}'),('src/pokemon.c','PokemonUseItemEffects',r'^bool8 PokemonUseItemEffects\([^;]*?\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pat)))
  for p in ['include/constants/item_effects.h','src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
@@ -139,14 +96,9 @@ def convert(lock,data):
  if '.equ REQUIRED_OWNED_MONS, 20' not in aide_text or 'checkitemspace ITEM_EVERSTONE' not in aide_text or 'setflag FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE' not in aide_text:raise ValueError('Everstone aide source differs')
  doc=dict(schemaVersion=1,items=defs[:-1],icons=icons[:-1],pickups=pickups)
  outputs['rocktunnel-items.json']=runtime_json_bytes(doc, default=item_json)
- machine_codec=ROOT/'scripts/imports/items/import-ssanne-machines.py'
- spec=importlib.util.spec_from_file_location('rocktunnel_existing_machine_codec',machine_codec);machines=importlib.util.module_from_spec(spec);spec.loader.exec_module(machines)
- machines.PROFILE='firered-rocktunnel-machines-v1'
- machines.SPECIES += 'DIGLETT DUGTRIO MAGNETON POLIWAG POLIWHIRL VULPIX CUBONE ELECTRODE HYPNO LICKITUNG MACHOKE MAROWAK PRIMEAPE RHYHORN SEADRA SEAKING TENTACRUEL VENOMOTH VENONAT WEEZING'.split()
- machines.MACHINES += [('TM34','SHOCK_WAVE',351,20),('HM05','FLASH',148,20),('TM40','AERIAL_ACE',332,20)]
- machine_outputs=machines.convert(lock,data)
- machine_doc=json.loads(machine_outputs['ssanne.json'],object_pairs_hook=pairs)
- machine_doc['icons']=[icons[-1]]
+ from machine_catalog import machine_definitions
+ machine_doc=dict(schemaVersion=1,machines=machine_definitions(ROOT,
+  'content/generated/data/items/rocktunnel/rocktunnel-machines.json','machines'),icons=[icons[-1]])
  outputs['rocktunnel-machines.json']=encoded(machine_doc)
  outputs['manifest.json']=encoded(dict(schemaVersion=1,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs

@@ -286,6 +286,8 @@ def learn_rows(text, learn):
         elif line == '    LEVEL_UP_END\n':
             if ended or conditional or not active: raise ValueError('Unexpected learnset terminator')
             ended = True
+        elif not line.strip():
+            pass  # Offset-preserving edition selection leaves blank source rows.
         else:
             m = re.compile(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),\n').match(text, offset, offset + len(line))
             if m is None or m.end() != offset + len(line) or ended: raise ValueError('Unsupported or incomplete source learnset line')
