@@ -7,10 +7,6 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private bool IsSeafoamDoubleTrainer(TrainerId id) => _content.SeafoamEnabled && SeafoamDoubleTrainerEncounter.TrainerIds.Contains(id);
-    private string SeafoamDoubleTrainerClass(TrainerId id) => DoubleTrainer(id).TrainerClass switch
-    { "TRAINER_CLASS_SIS_AND_BRO" => "SIS AND BRO", _ => throw new InvalidDataException("seafoam_double_class") };
-    private string SeafoamDoubleEncounterMusic(TrainerId id) => (DoubleTrainer(id).EncounterMusicGender & 0x7f) switch
-    { 1 or 2 or 9 => "MUS_ENCOUNTER_GIRL", 0 or 4 or 5 or 8 or 10 or 11 or 12 or 13 => "MUS_ENCOUNTER_BOY", _ => "MUS_ENCOUNTER_ROCKET" };
     private static bool SeafoamTrainerMap(MapId map) => map.Value is "map.route-19" or "map.route-20";
     private static bool SeafoamTrainerActorMap(MapId map, string script) =>
         (map.Value == "map.route-19" && script.StartsWith("Route19_EventScript_", StringComparison.Ordinal)) ||
@@ -42,16 +38,6 @@ public sealed partial class CampaignSession
     private void RequireSeafoamTrainerOccurrence(CampaignState state, TrainerId trainer,
         ForestTrainerBattleDefinition source, bool noIntro) =>
         RequireOrdinaryTrainerOccurrence(state, trainer, source, noIntro, "seafoam_trainer_source_occurrence");
-
-    private void RequireSeafoamDoubleOccurrence(CampaignState state, StoryEffect effect, string script, bool rematch)
-    {
-        if (!IsSeafoamDoubleScript(script) || !SeafoamTrainerActorMap(state.World.Player.MapId, script) ||
-            state.Script.Wait?.Kind != StoryWaitKind.Battle || state.LastTalked is not { } id ||
-            !state.Actors.TryGetValue(id, out var actor) || !actor.Active || actor.ScriptId != script ||
-            state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") != actor.SourceLocalId ||
-            effect.Source.Line != SeafoamTrainerSourceLine(script + (rematch ? "Rematch" : "")))
-            throw new InvalidDataException("seafoam_double_source_occurrence");
-    }
 
     private void RequireSeafoamRematchQuery(CampaignState state, StoryEffect effect)
     {

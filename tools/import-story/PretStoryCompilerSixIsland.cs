@@ -30,17 +30,6 @@ public static partial class PretStoryCompiler
                 throw new InvalidDataException("six_island_braille_operands");
             return (StoryOp.Special,1,1);
         }
-        if (FirstSeviiSource(file,"data/scripts/trainers.inc") &&
-            (label,opcode) is
-                ("SixIsland_WaterPath_EventScript_Miu","trainerbattle_double") or
-                ("SixIsland_WaterPath_EventScript_Mia","trainerbattle_double") or
-                ("SixIsland_WaterPath_EventScript_MiuRematch","trainerbattle_rematch_double") or
-                ("SixIsland_WaterPath_EventScript_MiaRematch","trainerbattle_rematch_double"))
-        {
-            if (operands.Length != 4 || operands[0] != "TRAINER_TWINS_MIU_MIA")
-                throw new InvalidDataException("six_island_double_operands");
-            return (StoryOp.TrainerBattle,4,4);
-        }
         return null;
     }
 }

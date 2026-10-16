@@ -55,7 +55,7 @@ def generate(reference,root):
    return flag_value(add[1])+int(add[2])
   info=metadata(item)['item'];need(quantity==1 and (not hidden or event['underfoot']==False),'Pickup bounds')
   pickups.append(dict(id='six-island:'+flag,mapSymbol=map_symbol,hidden=hidden,sourceLocalId=local_id,x=event['x'],y=event['y'],elevation=event['elevation'],script='EventScript_HiddenItemScript' if hidden else event['script'],itemSymbol=item,sourceItemId=info['sourceItemId'],item=info['id'],itemName=info['name'],pocket=info['pocket'],quantity=quantity,flag=flag,sourceFlagId=flag_value(flag)))
- for name in ['SixIsland','SixIsland_WaterPath','SixIsland_RuinValley','SixIsland_GreenPath','SixIsland_PatternBush']:
+ for name in ['SixIsland','SixIsland_WaterPath','SixIsland_RuinValley','SixIsland_GreenPath','SixIsland_PatternBush','SixIsland_OutcastIsland','SixIsland_AlteringCave']:
   mapping=json.loads(source('data/maps/'+name+'/map.json'));scripts=source('data/scripts/item_ball_scripts.inc')
   for local_id,event in enumerate(mapping['object_events'],1):
    if event['graphics_id']!='OBJ_EVENT_GFX_ITEM_BALL':continue
@@ -73,7 +73,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__)
  for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
  p.add_argument('--check',action='store_true');a=p.parse_args();doc,evidence=generate(a.reference,a.dependency)
- files={'content/generated/data/items/six-island.json':(json.dumps(value,ensure_ascii=False,indent=2, default=item_json)+'\n').encode() for name,value in [('items.json',doc)]}
+ files={'content/generated/data/items/six-island.json':(json.dumps(value,ensure_ascii=False,separators=(',', ':'), default=item_json)+'\n').encode() for name,value in [('items.json',doc)]}
  lock=dict(sourceCommit=COMMIT,profile='firered-six-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())])
  for name,data in files.items():
   dest=a.output/name

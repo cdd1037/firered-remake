@@ -32,9 +32,11 @@ public sealed partial class CampaignSession
         {
             if (IsMemorialPillarTrainerMap(state.World.Player.MapId)) RequireMemorialPillarRematchQuery(state,effect);
             if (_content.SeafoamEnabled && SeafoamTrainerMap(state.World.Player.MapId)) RequireSeafoamRematchQuery(state,effect);
-            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.Route16FlyTrainers is not null&&state.World.Player.MapId.Value=="map.route-16"||_content.SeafoamEnabled&&SeafoamTrainerMap(state.World.Player.MapId)||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"||_content.SeviiRubyEnabled&&state.World.Player.MapId.Value=="map.one-island-kindle-road"||_content.SixIslandEnabled&&state.World.Player.MapId.Value=="map.six-island-water-path")&&
-                state.LastTalked is {} twinsActor&&state.Actors.TryGetValue(twinsActor,out var twins)&&IsTwinsScript(twins.ScriptId))
+            if (_content.PresetDoublesEnabled && a[0] == "VAR_RESULT" &&
+                state.LastTalked is { } twinsActor && state.Actors.TryGetValue(twinsActor, out var twins) &&
+                IsTwinsScript(twins.ScriptId))
             {
+                RequireDoubleTrainerRematchQuery(state, effect, twins.ScriptId);
                 next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",
                     state.BattledTrainers.Contains(DoubleTrainerId(twins.ScriptId).Value)?1:0)}};
                 return true;

@@ -46,6 +46,7 @@ public sealed partial class PretSixIslandRegion
         "MAP_SIX_ISLAND_DOTTED_HOLE_B3F" => new("map.six-island-dotted-hole-b3f"),
         "MAP_SIX_ISLAND_DOTTED_HOLE_B4F" => new("map.six-island-dotted-hole-b4f"),
         "MAP_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM" => new("map.six-island-dotted-hole-sapphire-room"),
+        "MAP_SIX_ISLAND_ALTERING_CAVE" => new("map.six-island-altering-cave"),
         "MAP_SIX_ISLAND_PATTERN_BUSH" => new("map.six-island-pattern-bush"),
         "MAP_SIX_ISLAND_OUTCAST_ISLAND" => new("map.six-island-outcast-island"),
         "MAP_SIX_ISLAND_GREEN_PATH" => new("map.six-island-green-path"),

@@ -15,6 +15,23 @@ OUTPUT = ROOT / 'content/generated/data/encounters/fishing.json'
 
 
 class FishingImportTests(unittest.TestCase):
+    def test_default_altering_cave_omits_external_distribution_variants(self):
+        sys.path.insert(0, str(ROOT / 'scripts/lib'))
+        from wild_encounter_headers import default_version_headers
+        groups = json.loads((RAW / 'src/data/wild_encounters.json').read_text())['wild_encounter_groups']
+        cave = 'MAP_SIX_ISLAND_ALTERING_CAVE'
+        source = [h for g in groups for h in g['encounters']
+                  if h['map'] == cave and h['base_label'].endswith('_FireRed')]
+        self.assertEqual(9, len(source))
+        selected = default_version_headers(groups, [cave])
+        self.assertEqual([source[0]], selected)
+        self.assertEqual({'SPECIES_ZUBAT'}, {m['species'] for m in selected[0]['land_mons']['mons']})
+        self.assertIn('VarSet(VAR_ALTERING_CAVE_WILD_SET, 0);', (RAW / 'src/event_data.c').read_text())
+        runtime = json.loads((ROOT / 'content/generated/maps/regions/six-island/encounters.json').read_text())
+        self.assertEqual(selected, [h for h in runtime if h['map'] == cave])
+        with self.assertRaisesRegex(ValueError, 'Duplicate ordinary'):
+            default_version_headers([{'encounters': selected + selected}], [cave])
+
     def test_regeneration_is_deterministic_and_check_rejects_change(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / 'fishing.json'
@@ -68,7 +85,7 @@ class FishingImportTests(unittest.TestCase):
         self.assertIn('map.one-island-treasure-beach', added)
         for name in ['map.six-island-outcast-island']:
             self.assertIn(name, tables)
-            self.assertNotIn(name, loaded)
+            self.assertIn(name, loaded)
 
 
 if __name__ == '__main__':

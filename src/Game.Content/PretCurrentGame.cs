@@ -293,7 +293,6 @@ public sealed partial class PretCampaignCatalog
             maps = maps.AddRange(sixIsland.NewMaps);
         }
 
-        var fiveIslandPredecessorMaps = maps;
         {
             ValidateFiveIslandAnchors(fiveIsland, maps);
             maps = maps.AddRange(fiveIsland.NewMaps);
@@ -500,7 +499,7 @@ public sealed partial class PretCampaignCatalog
 
             sixIslandItems = PretSixIslandItems.Load(sixIsland, gamePokemon, earlyShop.Catalog, machines, compiled, projectRoot);
 
-            ValidateSixIslandComposition(fiveIslandPredecessorMaps, sixIslandTrainers, compiled);
+            ValidateSixIslandComposition(sixIslandTrainers, compiled);
         }
 
         FiveIslandItemContent fiveIslandItems;

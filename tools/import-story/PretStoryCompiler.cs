@@ -216,35 +216,15 @@ public static partial class PretStoryCompiler
                                 throw ContentJson.Error("safari_setwarp_operands",$"{file.Path}:{lineNumber}",opcode);
                             (kind,min,max)=(StoryOp.Special,3,3);
                         }
-                        if(includePresetDoubleOpcodes&&opcode is "trainerbattle_double" or "trainerbattle_rematch_double"&&file.Path=="data/scripts/trainers.inc"&&
-                            label is "Route8_EventScript_Eli" or "Route8_EventScript_Anne" or "Route8_EventScript_EliRematch" or "Route8_EventScript_AnneRematch")
+                        // The macro shape is shared by every selected source wrapper. Runtime
+                        // admission still binds the imported trainer, actor and exact instruction.
+                        if (includePresetDoubleOpcodes && opcode is "trainerbattle_double" or "trainerbattle_rematch_double" &&
+                            (FirstSeviiSource(file, "data/scripts/trainers.inc") || IsMapScriptSource(file) && FirstSeviiSource(file, file.Path)))
                         {
-                            if(operands.Length!=4||operands[0]!="TRAINER_TWINS_ELI_ANNE")
-                                throw ContentJson.Error("preset_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
-                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
-                        }
-                        if(includePresetDoubleOpcodes && opcode is "trainerbattle_double" or "trainerbattle_rematch_double" &&
-                            file.Path=="data/scripts/trainers.inc" &&
-                            label is "Route16_EventScript_Lea" or "Route16_EventScript_Jed" or "Route16_EventScript_LeaRematch" or "Route16_EventScript_JedRematch")
-                        {
-                            if(operands.Length!=4 || operands[0]!="TRAINER_YOUNG_COUPLE_LEA_JED")
-                                throw ContentJson.Error("route16_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
-                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
-                        }
-                        if(includeCinnabarData&&includePresetDoubleOpcodes&&opcode is "trainerbattle_double" or "trainerbattle_rematch_double"&&
-                            file.Path=="data/scripts/trainers.inc"&&
-                            label is "Route21_North_EventScript_Lil" or "Route21_North_EventScript_Ian" or "Route21_North_EventScript_LilRematch" or "Route21_North_EventScript_IanRematch")
-                        {
-                            if(operands.Length!=4||operands[0]!="TRAINER_SIS_AND_BRO_LIL_IAN")throw ContentJson.Error("cinnabar_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
-                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
-                        }
-                        if(includeVictoryRoad&&includePresetDoubleOpcodes&&opcode=="trainerbattle_double"&&
-                            FirstSeviiSource(file,"data/maps/VictoryRoad_3F/scripts.inc")&&
-                            label is "VictoryRoad_3F_EventScript_Ray" or "VictoryRoad_3F_EventScript_Tyra")
-                        {
-                            if(operands.Length!=4||operands[0]!="TRAINER_COOL_COUPLE_RAY_TYRA")
-                                throw ContentJson.Error("victory_road_double_operands",$"{file.Path}:{lineNumber}",opcode);
-                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
+                            if (operands.Length != 4 || !operands[0].StartsWith("TRAINER_", StringComparison.Ordinal) ||
+                                operands.Skip(1).Any(string.IsNullOrWhiteSpace))
+                                throw ContentJson.Error("preset_double_script_operands", $"{file.Path}:{lineNumber}", opcode);
+                            (kind, min, max) = (StoryOp.TrainerBattle, 4, 4);
                         }
                         // The successor only admits the two pinned static Snorlax call sites
                         // and the already-supported Tower preparation. Earlier profiles keep

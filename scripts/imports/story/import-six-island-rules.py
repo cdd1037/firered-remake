@@ -15,7 +15,7 @@ import subprocess
 from pathlib import Path
 
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-MAPS = ('SixIsland_WaterPath', 'SixIsland_RuinValley', 'SixIsland_GreenPath', 'SixIsland_PatternBush')
+MAPS = ('SixIsland_WaterPath', 'SixIsland_RuinValley', 'SixIsland_GreenPath', 'SixIsland_PatternBush', 'SixIsland_OutcastIsland')
 
 
 def need(value, message):
@@ -122,7 +122,6 @@ def generate(reference, dependency):
             battles.append(battle)
             actors.append(dict(map=mapping['id'],localId=local_id,x=actor['x'],y=actor['y'],movementType=actor['movement_type'],sight=actor['trainer_sight_or_berry_tree_id'],script=label,trainer=identity(args[0])))
     need(trainers and len(battles)==len(actor_scripts), 'Every trainer actor must bind a battle')
-    need(sum(t['doubleBattle'] for t in trainers)==1 and sum(b['mode']==4 for b in battles)==2,'Original Miu/Mia double shape')
     docs={
       'trainers.json':dict(trainers=trainers,battles=battles),
       'rules.json':dict(trainerActors=actors)}

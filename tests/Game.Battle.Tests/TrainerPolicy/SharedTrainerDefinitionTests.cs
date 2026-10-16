@@ -97,6 +97,32 @@ public sealed class SharedTrainerDefinitionTests
         Assert.AreEqual(new RngState(42), single.Rng);
     }
 
+    [TestMethod]
+    public void DoubleEntryAndAiUseSourceTrainerIdentityWithoutAnEmbeddedAllowlist()
+    {
+        var original = PretSixIslandRules.LoadTrainers(TestAssets.Root);
+        var source = original.BattlesByScript.Values.First(battle => battle.Mode == 4);
+        var trainer = original.Trainers[source.Trainer] with { Id = new("pret:TRAINER_SOURCE_DEFINED_PAIR") };
+        var script = source with { Trainer = trainer.Id, ScriptEntry = "AnotherMap_EventScript_Pair" };
+        var catalog = new SixIslandTrainerCatalog(
+            ImmutableDictionary<TrainerId, TrainerDefinition>.Empty.Add(trainer.Id, trainer),
+            ImmutableDictionary<string, CeruleanTrainerBattleDefinition>.Empty.Add(script.ScriptEntry, script));
+        WildBattleCalledPartyMember Player(uint personality) => new(SourcePokemonFactory.Create(Mechanics,
+            new(new("pret:SPECIES_CLEFAIRY"), 60, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(personality)), new(1)).Pokemon);
+        ImmutableArray<WildBattleCalledPartyMember> party = [Player(0), Player(2)];
+        var entry = SixIslandDoubleTrainerEncounter.Begin(catalog, Opponents, script.ScriptEntry, party, new(42));
+        Assert.IsTrue(entry.Succeeded, entry.Fault);
+        Assert.IsNull(SixIslandDoubleTrainerEncounter.ValidateFrame(catalog, Opponents, trainer.Id, entry.State!));
+        var actions = SixIslandDoubleTrainerEncounter.ChooseEnemyActions(catalog, Opponents, trainer.Id,
+            entry.State!, entry.State!.Revision);
+        Assert.IsTrue(actions.Succeeded, actions.Fault);
+        Assert.AreEqual(2, actions.Choices.Length);
+        Assert.IsNotNull(SixIslandDoubleTrainerEncounter.ValidateFrame(catalog, Opponents, source.Trainer, entry.State!));
+        Assert.IsFalse(SixIslandDoubleTrainerEncounter.Begin(catalog, Opponents, source.ScriptEntry, party, new(42)).Succeeded);
+        var single = catalog with { Trainers = catalog.Trainers.SetItem(trainer.Id, trainer with { DoubleBattle = false }) };
+        Assert.IsFalse(SixIslandDoubleTrainerEncounter.Begin(single, Opponents, script.ScriptEntry, party, new(42)).Succeeded);
+    }
+
     private sealed record FactoryFixture(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
         Func<TrainerDefinition, TrainerPartyCreationResult> Create);
 
@@ -163,11 +189,11 @@ public sealed class SharedTrainerDefinitionTests
                 return new(victory.Trainers[vId], trainer => VictoryRoadDoubleTrainerEncounter.Begin(V(trainer), Opponents, vScript, party, new(42)),
                     (trainer, frame) => VictoryRoadDoubleTrainerEncounter.ValidateFrame(V(trainer), Opponents, frame));
             case "six-island":
-                var six = PretSixIslandRules.LoadTrainers(TestAssets.Root); var sId = SixIslandDoubleTrainerEncounter.TrainerId;
+                var six = PretSixIslandRules.LoadTrainers(TestAssets.Root); var sId = new TrainerId("pret:TRAINER_TWINS_MIU_MIA");
                 var sScript = six.BattlesByScript.Values.First(battle => battle.Trainer == sId).ScriptEntry;
                 SixIslandTrainerCatalog S(TrainerDefinition trainer) => six with { Trainers = six.Trainers.SetItem(sId, trainer) };
                 return new(six.Trainers[sId], trainer => SixIslandDoubleTrainerEncounter.Begin(S(trainer), Opponents, sScript, party, new(42)),
-                    (trainer, frame) => SixIslandDoubleTrainerEncounter.ValidateFrame(S(trainer), Opponents, frame));
+                    (trainer, frame) => SixIslandDoubleTrainerEncounter.ValidateFrame(S(trainer), Opponents, sId, frame));
             case "sevii-ruby":
                 var ruby = PretSeviiRubyRules.LoadTrainers(TestAssets.Root); var rId = SeviiRubyDoubleTrainerEncounter.TrainerId;
                 var rScript = ruby.BattlesByScript.Values.First(battle => battle.Trainer == rId).ScriptEntry;

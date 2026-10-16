@@ -7,6 +7,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from map_runtime import publish_map_package, generated_root
 
 from shared_constants import package_documents
+from wild_encounter_headers import default_version_headers
 import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
@@ -17,12 +18,13 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 CORE = ['SixIsland', 'SixIsland_Harbor', 'SixIsland_WaterPath', 'SixIsland_RuinValley',
         'SixIsland_DottedHole_1F', 'SixIsland_DottedHole_B1F', 'SixIsland_DottedHole_B2F',
         'SixIsland_DottedHole_B3F', 'SixIsland_DottedHole_B4F', 'SixIsland_DottedHole_SapphireRoom',
-        'SixIsland_GreenPath', 'SixIsland_PatternBush']
+        'SixIsland_GreenPath', 'SixIsland_PatternBush', 'SixIsland_OutcastIsland', 'SixIsland_AlteringCave']
 SUPPORT = ['SixIsland_PokemonCenter_1F', 'SixIsland_Mart']
 ANCHOR = []
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_Building':'primary/building',
             'gTileset_SeviiIslands67':'secondary/sevii_islands_67',
             'gTileset_NavelRock':'secondary/navel_rock',
+            'gTileset_RockTunnel':'secondary/rock_tunnel',
             'gTileset_ViridianForest':'secondary/viridian_forest',
             'gTileset_IslandHarbor':'secondary/island_harbor',
             'gTileset_PokemonCenter':'secondary/pokemon_center', 'gTileset_Mart':'secondary/mart'}
@@ -135,7 +137,7 @@ def declarations(src, scripts, worlds, proof):
             partySource=src.ref(pp, pname, src.text(pp).count('\n', 0, pm.start())+1)))
     symbols = {w['events']['id'] for w in worlds}; encounters=[]; slots=[]
     for group in src.json('src/data/wild_encounters.json')['wild_encounter_groups']:
-        chosen=[e for e in group['encounters'] if e['map'] in symbols and e['base_label'].endswith('_FireRed')]
+        chosen=default_version_headers([group], symbols)
         if chosen: encounters.extend(chosen); slots.append({k:v for k,v in group.items() if k!='encounters'})
     wild = {m['species'] for e in encounters for t in e.values() if isinstance(t,dict) and 'mons' in t for m in t['mons']}
     evolution = set(wild)

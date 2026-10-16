@@ -7,13 +7,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Trainers;
 
-/// <summary>Exact Water Path Miu/Mia admission over the existing shared four-slot owner.</summary>
+/// <summary>Source-defined Six Island double admission over the shared four-slot owner.</summary>
 public static class SixIslandDoubleTrainerEncounter
 {
     public const string Version = "firered-six-island-double-encounter-v1";
-    public static TrainerId TrainerId { get; } = new("pret:TRAINER_TWINS_MIU_MIA");
-    public const int SharedTrainerFlag = 0x500 + 580;
-    public const int VictoryMoney = 1200;
     public static SourceTwinsEncounterResult Begin(SixIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, string battleScript,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
         bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass)
@@ -23,9 +20,9 @@ public static class SixIslandDoubleTrainerEncounter
             return Fail("six_island_double_catalog");
         try { SixIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("six_island_double_source"); }
-        if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Trainer != TrainerId || battle.Mode != 4)
+        if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Mode != 4)
             return Fail("six_island_double_script");
-        if (!trainers.Trainers.TryGetValue(TrainerId, out var definition) || !definition.DoubleBattle || definition.Party.Length < 2)
+        if (!trainers.Trainers.TryGetValue(battle.Trainer, out var definition) || !definition.DoubleBattle || definition.Party.Length < 2)
             return Fail("six_island_double_roster");
         var owned = opponents.Owned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
@@ -50,7 +47,7 @@ public static class SixIslandDoubleTrainerEncounter
                 var draw = Gen3Rng.Next(generationRng, $"six-island-double.entry.ai-setup.slot-{slot}", 16);
                 generationRng = draw.State; setupTrace.Add(draw.Trace);
             }
-            var generated = SixIslandTrainerPartyFactory.Create(trainers, opponents, TrainerId, generationRng);
+            var generated = SixIslandTrainerPartyFactory.Create(trainers, opponents, battle.Trainer, generationRng);
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
@@ -80,28 +77,29 @@ public static class SixIslandDoubleTrainerEncounter
     }
 
     public static SourceTwinsAiResult ChooseEnemyActions(SixIslandTrainerCatalog trainers,
-        GameOpponentPokemonCatalog opponents, SourceBattleFrame frame, long expectedRevision,
+        GameOpponentPokemonCatalog opponents, TrainerId trainer, SourceBattleFrame frame, long expectedRevision,
         string? knownPlayerAbility = null)
     {
-        if (ValidateFrame(trainers, opponents, frame) is { } error) return new(frame, [], [], error);
-        var result = SourceFourTrainerAi.ChooseMoves(opponents.Mechanics.Catalog, trainers.Trainers[TrainerId], frame,
+        if (ValidateFrame(trainers, opponents, trainer, frame) is { } error) return new(frame, [], [], error);
+        var result = SourceFourTrainerAi.ChooseMoves(opponents.Mechanics.Catalog, trainers.Trainers[trainer], frame,
             expectedRevision, knownPlayerAbility);
         return new(result.State,result.Choices.Select(c => new SourceTwinsEnemyChoice(c.Actor,c.ScoredTarget,
             c.Selection,c.Scores,c.SimulatedDamagePercent,c.AbilityReads)).ToImmutableArray(),result.Trace,result.Fault);
     }
 
-    public static string? ValidateFrame(SixIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, SourceBattleFrame frame)
+    public static string? ValidateFrame(SixIslandTrainerCatalog trainers, GameOpponentPokemonCatalog opponents, TrainerId trainerId, SourceBattleFrame frame)
     {
         if (opponents is null)
             return "six_island_double_catalog";
         try { SixIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "six_island_double_source"; }
-        if (frame is null ||
+        if (frame is null || frame.Layout != SourceBattleLayout.PresetDoubles ||
+            frame.KoReplacementTiming != KoReplacementTiming.EndOfTurn ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "six_island_double_frame";
         if (frame.Campaign is null || frame.SourceCampaignRulesVersion != opponents.RulesVersion) return "source_double_campaign_context";
         if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "six_island_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
-        if (!trainers.Trainers.TryGetValue(TrainerId, out var trainer) || !trainer.DoubleBattle ||
+        if (!trainers.Trainers.TryGetValue(trainerId, out var trainer) || !trainer.DoubleBattle ||
             members.Length != trainer.Party.Length) return "six_island_double_roster";
         uint hash = 0;
         for (int i = 0; i < members.Length; i++)

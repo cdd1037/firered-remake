@@ -6,10 +6,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Trainers;
 
-/// <summary>Original first teams, including one Miu/Mia double, through shared source construction.</summary>
+/// <summary>Original first teams through shared source construction.</summary>
 public static class SixIslandTrainerPartyFactory
 {
-    public static TrainerId DoubleTrainer { get; } = new("pret:TRAINER_TWINS_MIU_MIA");
     public static int BasePrize(SixIslandTrainerCatalog trainers, TrainerId id)
     {
         ValidateCatalog(trainers);
@@ -40,7 +39,7 @@ public static class SixIslandTrainerPartyFactory
     public static void ValidateBattle(CeruleanTrainerBattleDefinition battle)
     {
         if (battle is null || string.IsNullOrWhiteSpace(battle.ScriptEntry) ||
-            battle.Mode is not (0 or 4) || battle.Mode == 4 && battle.Trainer != DoubleTrainer)
+            battle.Mode is not (0 or 4) || battle.Mode == 4 && string.IsNullOrWhiteSpace(battle.NotEnoughMonsText))
             throw new NotSupportedException("six_island_trainer_battle_source");
     }
 }

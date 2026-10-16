@@ -7,10 +7,11 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
+from wild_encounter_headers import default_version_headers
 import argparse,  json, re, subprocess
 from pathlib import Path
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-MAPS = ["MAP_SIX_ISLAND_WATER_PATH", "MAP_SIX_ISLAND_RUIN_VALLEY", "MAP_SIX_ISLAND_GREEN_PATH"]
+MAPS = ["MAP_SIX_ISLAND_WATER_PATH", "MAP_SIX_ISLAND_RUIN_VALLEY", "MAP_SIX_ISLAND_GREEN_PATH", "MAP_SIX_ISLAND_OUTCAST_ISLAND"]
 def generate(reference):
     inputs = {}
     def read(path):
@@ -18,7 +19,7 @@ def generate(reference):
         inputs[path] = dict(path=path)
         return data.decode()
     raw = read("src/data/wild_encounters.json")
-    encounters = [e for group in json.loads(raw)["wild_encounter_groups"] for e in group["encounters"] if e["map"] in MAPS and e["base_label"].endswith("_FireRed")]
+    encounters = default_version_headers(json.loads(raw)["wild_encounter_groups"], MAPS)
     assert len(encounters) == len(MAPS)
     encounters.sort(key=lambda e: MAPS.index(e["map"]))
     def map_id(symbol): return "map." + symbol[4:].lower().replace("_", "-")

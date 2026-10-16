@@ -301,7 +301,7 @@ public sealed partial class CampaignSession
         : this(content,options,BindCurrentCatalog(content)) { }
     private CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options,CampaignCatalogBinding binding)
     {
-        _content=content;_binding=binding;_ = TrainerOccurrences;options??=new();
+        _content=content;_binding=binding;_ = TrainerOccurrences;_ = DoubleTrainers;options??=new();
         if(!ValidTrainerName(options.PlayerName)||!ValidTrainerName(options.RivalName)||options.PlayerGender is <0 or >1)throw new ArgumentException("Invalid explicit new-game identity.");
         var id=content.MapFromSourceSymbol("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");var map=content.Maps[id];var tile=map.GetTile(6,6)??throw new InvalidDataException("Initial player room coordinate missing.");
         var initial=new CampaignState(new(RuleVersions.GridWorldV0,0,0,new(id,6,6,tile.Elevation,Direction.South),new(1)),StoryState.Empty with{Fame=FameCheckerRules.Reset()},ImmutableSortedDictionary<string,CampaignActor>.Empty,[],null,null,null,[],0,"HEAL_LOCATION_PALLET_TOWN","NPC_TEXT_COLOR_NEUTRAL","MUS_PALLET","RED","BLUE",3000,"MUS_DUMMY",[],true);
@@ -319,7 +319,7 @@ public sealed partial class CampaignSession
     }
     private CampaignSession(ICampaignCatalog content,CampaignState state,long revision,CampaignCatalogBinding binding)
     {
-        _content=content;_binding=binding;_ = TrainerOccurrences;state=BindBattleContext(state);state=state with {MapLayout=RestoreMapLayout(state)};var error=ValidatePlayerSave(state, layoutResolved: true);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
+        _content=content;_binding=binding;_ = TrainerOccurrences;_ = DoubleTrainers;state=BindBattleContext(state);state=state with {MapLayout=RestoreMapLayout(state)};var error=ValidatePlayerSave(state, layoutResolved: true);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
     // Runtime catalog context is deliberately not persisted; restoration supplies the current
