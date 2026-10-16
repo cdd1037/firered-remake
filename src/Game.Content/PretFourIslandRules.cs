@@ -28,5 +28,4 @@ public static class PretFourIslandRules
         var result = new FourIslandTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         FourIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

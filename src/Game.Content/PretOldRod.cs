@@ -25,7 +25,7 @@ public sealed class PretOldRod
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         byte[] Read(string path)
         {
-            return File.ReadAllBytes(SafeFile(root, path));
+            return File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
         }
         var document = ContentJson.ParseStrict<OldRodDocument>(Encoding.UTF8.GetString(Read("content/generated/data/services/old-rod.json")), ContentJson.CreateOptions());
                 if (document.SchemaVersion != 1 ||
@@ -41,14 +41,4 @@ public sealed class PretOldRod
                 return new(document.Tables.ToImmutableDictionary(t => t.Map),document.Texts);
     }
 
-    private static string SafeFile(string root, string relative)
-    {
-        if (Path.IsPathRooted(relative) || relative.Contains('\\') || relative.Split('/').Any(p => p is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Old Rod path.");
-        var file = new FileInfo(Path.GetFullPath(Path.Combine(root, relative)));
-        if (file.LinkTarget is not null) throw new InvalidDataException("Old Rod symlink rejected.");
-        for (var d = file.Directory; d is not null; d = d.Parent)
-            if (d.LinkTarget is not null) throw new InvalidDataException("Old Rod parent symlink rejected.");
-        return file.FullName;
-    }
 }

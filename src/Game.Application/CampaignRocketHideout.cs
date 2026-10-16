@@ -21,7 +21,7 @@ public sealed partial class CampaignSession
     private const string RocketElevatorSource="data/maps/RocketHideout_Elevator/scripts.inc";
     private const string RocketB4Source="data/maps/RocketHideout_B4F/scripts.inc";
     private static bool RocketMap(MapId id)=>id.Value.StartsWith("map.rocket-hideout-",StringComparison.Ordinal)||id.Value=="map.celadon-city-game-corner";
-    private bool IsRocketHideoutButton(CampaignState state)=>_content.RocketHideoutEnabled&&state.World.Player.MapId.Value=="map.rocket-hideout-b4f"&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&state.Script.Stack.LastOrDefault()?.ProgramId=="RocketHideout_B4F_EventScript_Giovanni";
+    private bool IsRocketHideoutButton(CampaignState state)=>state.World.Player.MapId.Value=="map.rocket-hideout-b4f"&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&state.Script.Stack.LastOrDefault()?.ProgramId=="RocketHideout_B4F_EventScript_Giovanni";
     private Decision<CampaignState> DecideRocketHideoutButton(CampaignState state,CampaignCommand command)
     {
         if(!IsRocketHideoutButton(state)||command.Text is not("A" or "B"))return new(CommandStatus.Rejected,state,"rocket_giovanni_button_invalid");
@@ -32,7 +32,6 @@ public sealed partial class CampaignSession
     private ImmutableSortedDictionary<string,FieldMetatileEdit> RocketExpectedEdits(CampaignState state)
     {
         var result=ImmutableSortedDictionary<string,FieldMetatileEdit>.Empty;
-        if(!_content.RocketHideoutEnabled)return result;
         foreach(var patch in _content.RocketHideoutInitialPatches(state.Script.Flags.GetValueOrDefault("FLAG_OPENED_ROCKET_HIDEOUT"),state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_12"),state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_16")&&state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_17")))
             if(patch.MapId==state.World.Player.MapId)
                 foreach(var c in patch.Cells)result=result.SetItem(c.X+":"+c.Y,new(c.X,c.Y,c.SourceMetatileId,c.Collision==0?0:3,c.Elevation));
@@ -40,8 +39,7 @@ public sealed partial class CampaignSession
     }
     private bool TryApplyRocketHideoutEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.RocketHideoutEnabled)return false;
-        var a=effect.Args;int Value(string t)=>RocketValue(state,t);
+        next=state;        var a=effect.Args;int Value(string t)=>RocketValue(state,t);
         bool mapSource=effect.Source.Path.StartsWith("data/maps/RocketHideout_",StringComparison.Ordinal)||effect.Source.Path=="data/maps/CeladonCity_GameCorner/scripts.inc";
         if(mapSource&&!RocketMap(state.World.Player.MapId))throw new InvalidDataException("rocket_effect_map_context");
         if(mapSource&&effect.Opcode is "call_if_defeated" or "call_if_not_defeated")
@@ -118,7 +116,6 @@ public sealed partial class CampaignSession
     private string? ValidateRocketHideoutProgress(CampaignState state)
     {
         if(state.RocketSpin is not null)return "save_rocket_spin_active";
-        if(!_content.RocketHideoutEnabled)return state.RocketElevator is not null?"save_rocket_profile_missing":null;
         bool Won(string trainer)=>state.BattledTrainers.Contains("pret:"+trainer);
         bool flag(string name)=>state.Script.Flags.GetValueOrDefault(name);
         int Count(string item)=>OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],new("pret:ITEM_"+item));

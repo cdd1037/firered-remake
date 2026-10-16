@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
     private string? ValidateCityServiceInventory(InventoryState inventory)
     {
         foreach(var stack in inventory.KeyItems??[])
-            if(stack is not null&&IsCityServiceItem(stack.Item)&&(!_content.CityServicesEnabled||stack.Item==GoodRodId&&!_content.GoodRodEnabled||stack.Item==SuperRodId&&!_content.SuperRodEnabled||stack.Item==GameCornerCoinSource.CoinCase&&!_content.GameCornerCoinsEnabled||stack.Quantity!=1))
+            if(stack is not null&&IsCityServiceItem(stack.Item)&&(stack.Quantity!=1))
                 return "inventory_city_service_item_invalid";
         return null;
     }
@@ -31,18 +31,14 @@ public sealed partial class CampaignSession
         bool goodRod=state.Script.Flags.GetValueOrDefault("FLAG_GOT_GOOD_ROD");
         bool superRod=state.Script.Flags.GetValueOrDefault("FLAG_GOT_SUPER_ROD");
         int Count(ItemId id)=>OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],id);
-        if(!_content.SuperRodEnabled&&(superRod||Count(SuperRodId)!=0))return "save_super_rod_profile_missing";
-        if(_content.SuperRodEnabled&&Count(SuperRodId)!=(superRod?1:0))return "save_super_rod_reward_mismatch";
-        if(!_content.GoodRodEnabled&&(goodRod||Count(GoodRodId)!=0))return "save_good_rod_profile_missing";
-        if(_content.GoodRodEnabled&&Count(GoodRodId)!=(goodRod?1:0))return "save_good_rod_reward_mismatch";
-        if(!_content.CityServicesEnabled)return voucher||bike||rod||Count(BikeVoucherId)!=0||Count(BicycleId)!=0||Count(OldRodId)!=0?"save_city_services_profile_missing":null;
+        if(Count(SuperRodId)!=(superRod?1:0))return "save_super_rod_reward_mismatch";
+        if(Count(GoodRodId)!=(goodRod?1:0))return "save_good_rod_reward_mismatch";
         return bike&&!voucher||Count(BikeVoucherId)!=(voucher&&!bike?1:0)||Count(BicycleId)!=(bike?1:0)||Count(OldRodId)!=(rod?1:0)
             ?"save_city_services_reward_mismatch":null;
     }
     private bool TryApplyCityServicesEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.CityServicesEnabled)return false;
-        var a=effect.Args;
+        next=state;        var a=effect.Args;
         int Value(string token)=>int.TryParse(token,out int n)?n:state.Script.Variables.TryGetValue(token,out int v)?v:_content.TryConstant(token,out int c)?c:throw new InvalidDataException("city_service_operand_unknown: "+token);
         CampaignState Result(int value)=>state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",value)}};
         if(effect.Source.Path==BikeShopSource)

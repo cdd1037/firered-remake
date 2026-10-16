@@ -179,47 +179,14 @@ public sealed class PretCanonicalPokemonCatalog
 
     private static T Parse<T>(byte[] bytes)
     {
-        using var json = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 64 });
-        CheckUnique(json.RootElement);
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,PropertyNameCaseInsensitive = false,UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,RespectNullableAnnotations = true,RespectRequiredConstructorParameters = true,MaxDepth = 64,Converters = { new ExactGrowthRateConverter() }
-        };
-        return JsonSerializer.Deserialize<T>(bytes, options) ?? throw new InvalidDataException("Null canonical document.");
+        var options = ContentJson.CreateOptions();
+        options.Converters.Add(new ExactEnumConverter<GrowthRate>());
+        return ContentJson.ParseStrict<T>(bytes, options);
     }
 
-    private static void CheckUnique(JsonElement element)
+    private static byte[] Read(string root, string relative) => GeneratedResourceFile.Read(root, relative);
+    private static void Require(bool condition, string message)
     {
-        if (element.ValueKind == JsonValueKind.Object)
-        {
-            var names = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var property in element.EnumerateObject())
-            {
-                Require(names.Add(property.Name), "Duplicate canonical JSON property: " + property.Name);
-                CheckUnique(property.Value);
-            }
-        }
-        else if (element.ValueKind == JsonValueKind.Array)
-            foreach (var child in element.EnumerateArray()) CheckUnique(child);
-    }
-
-    private static byte[] Read(string root, string relative)
-    {
-        Require(!Path.IsPathRooted(relative) && !relative.Split('/').Any(part => part is ".." or "." or ""),
-            "Invalid canonical source path.");
-        return File.ReadAllBytes(Path.Combine(root, relative));
-    }
-    private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
-    private sealed class ExactGrowthRateConverter : JsonConverter<GrowthRate>
-    {
-        public override GrowthRate Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
-        {
-            if (reader.TokenType == JsonTokenType.String)
-                foreach (var value in Enum.GetValues<GrowthRate>())
-                    if (JsonNamingPolicy.CamelCase.ConvertName(value.ToString()) == reader.GetString()) return value;
-            throw new JsonException("Expected exact source growth curve.");
-        }
-        public override void Write(Utf8JsonWriter writer, GrowthRate value, JsonSerializerOptions options) =>
-            throw new NotSupportedException("Authenticated source loader is read-only.");
+        if (!condition) throw new InvalidDataException(message);
     }
 }

@@ -37,4 +37,30 @@ public sealed class WaterEncounterAdmissionTests
             Pending = new(new(table.Map, 0, slot.Species, checked((byte)(slot.MaximumLevel + 1))), 0)
         }, table));
     }
+    [TestMethod]
+    public void SharedCatalogAcceptsNewDefinitionsAndIdempotentOverlapButRejectsConflicts()
+    {
+        var first = CinnabarWaterEncounterCatalog.SourceAdditions[0];
+        var source = WaterEncounterCatalog.Authenticate([first]);
+        var edited = first with { Map = new("map.additional-surf"), RawEncounterRate = 17 };
+        var added = source.Add([edited]);
+        Assert.AreSame(edited, added.Tables[edited.Map]);
+        Assert.AreEqual(2, added.Tables.Count);
+        var repeated = added.Add([first with { Slots = first.Slots.ToImmutableArray() }]);
+        Assert.AreSame(first, repeated.Tables[first.Map]);
+        Assert.Throws<ArgumentException>(() => added.Add([first with { RawEncounterRate = 17 }]));
+        Assert.Throws<ArgumentException>(() => source.Add([edited, edited]));
+        Assert.Throws<ArgumentException>(() => source.Add([edited with { RawEncounterRate = 0 }]));
+        Assert.Throws<ArgumentException>(() => source.Add([edited with { Slots = edited.Slots.RemoveAt(4) }]));
+        Assert.Throws<ArgumentException>(() => source.Add([edited with {
+            Slots = edited.Slots.SetItem(0, edited.Slots[0] with { MinimumLevel = 101, MaximumLevel = 101 }) }]));
+    }
+
+    [TestMethod]
+    public void BareWalkingProfilesRejectUnverifiedAbilityAndItemNames()
+    {
+        EarlyLandEncounterRules.ValidateProfile(new(LeadAbility: "ABILITY_STENCH", LeadHeldItem: "ITEM_CLEANSE_TAG"));
+        Assert.Throws<NotSupportedException>(() => EarlyLandEncounterRules.ValidateProfile(new(LeadAbility: "ABILITY_NOT_REAL")));
+        Assert.Throws<NotSupportedException>(() => EarlyLandEncounterRules.ValidateProfile(new(LeadHeldItem: "ITEM_NOT_REAL")));
+    }
 }

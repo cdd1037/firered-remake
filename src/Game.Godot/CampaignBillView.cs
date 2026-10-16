@@ -142,18 +142,17 @@ public partial class CampaignView
     private void SynchronizeBillPresentation(CampaignState? before, CampaignState after)
     {
         if (before is null || before.World.Player.MapId != after.World.Player.MapId) _billTimeline.Reset();
-        if (_catalog.BillEnabled && after.World.Player.MapId.Value == BillSourcePresentation.Cottage) _billTimeline.Observe(after.PresentationEffects);
+        if (after.World.Player.MapId.Value == BillSourcePresentation.Cottage) _billTimeline.Observe(after.PresentationEffects);
         string? wait = BillPcMenuActive ? after.Script.Wait!.CorrelationId : null;
         if (wait != _billMenuWait) { _billMenuWait = wait; _billPcCursor = 0; }
     }
 
     private void ProcessBillPresentation(double delta)
     {
-        if (_catalog.BillEnabled && _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage) _billTimeline.Advance(delta);
+        if (_session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage) _billTimeline.Advance(delta);
     }
 
-    private Vector2 BillCameraFocus(Vector2 playerPosition) => _catalog.BillEnabled &&
-        _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage &&
+    private Vector2 BillCameraFocus(Vector2 playerPosition) => _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage &&
         _session.State.Actors.TryGetValue(BillSourcePresentation.CameraActor, out var actor) && actor.Active && actor.Invisible &&
         _poses.TryGetValue(BillSourcePresentation.CameraActor, out var pose) ? pose.Position : playerPosition;
 
@@ -185,12 +184,12 @@ public partial class CampaignView
         }
     }
 
-    private bool BillPcMenuActive => _catalog.BillEnabled && _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage &&
+    private bool BillPcMenuActive => _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage &&
         _session.State.Script.Wait?.Kind == StoryWaitKind.MenuChoice && !_session.State.Script.Stack.IsEmpty &&
         _session.State.Script.Stack[^1].ProgramId == BillPcProgram;
     private bool BillPcMenuVisible => BillPcMenuActive && FieldTextComplete &&
         _session.State.Dialogue?.Page + 1 == _session.State.Dialogue?.Pages.Length;
-    private bool BillPcPictureActive => _catalog.BillEnabled && _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage &&
+    private bool BillPcPictureActive => _session.State.World.Player.MapId.Value == BillSourcePresentation.Cottage &&
         _session.State.Script.Wait?.Kind == StoryWaitKind.ButtonPress && _session.State.MonPicture is { } picture &&
         _billPictures.ContainsKey(picture.SourceSpeciesId);
     private int BillPcWidth => ((int)BillPcRows.Max(row => _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(row), fontSize: _sourceNormal.Size).X) + 9) / 8 * 8 + 8;
@@ -241,7 +240,7 @@ public partial class CampaignView
 
     private bool DrawBillPcPicture()
     {
-        if (!_catalog.BillEnabled || _session.State.World.Player.MapId.Value != BillSourcePresentation.Cottage ||
+        if (_session.State.World.Player.MapId.Value != BillSourcePresentation.Cottage ||
             _session.State.MonPicture is not { } picture || !_billPictures.TryGetValue(picture.SourceSpeciesId, out var texture)) return false;
         var position = new Vector2(picture.X * 8, picture.Y * 8);
         _battleSkin.DrawUserFrame(this, new(position, new(80, 80)));

@@ -12,7 +12,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -24,9 +23,8 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 REPOSITORY = 'pret/pokefirered'
 PROFILE = 'firered-lab-battle-static-v1'
 NAMES = (('Bulbasaur', 1), ('Charmander', 4), ('Squirtle', 7))
-_spec = importlib.util.spec_from_file_location('local_starter_pixels', ROOT / 'scripts/imports/presentation/import-starter-art.py')
-pixels = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(pixels)
+from image_io import png
+from pokemon_import import battle_indices, battle_palette, rgba_pixels, section, display_contract
 REQUIRED_PATHS = {
     f'graphics/pokemon/{name.lower()}/{filename}'
     for name, _ in NAMES for filename in ('front.png', 'back.png', 'normal.pal', 'shiny.pal')
@@ -77,67 +75,6 @@ def load_inputs(lock_path, project_lock_path, raw):
     return lock, sources
 
 
-def reference(lock, sources, path, symbol, needle=None):
-    entry = next(entry for entry in lock['files'] if entry['path'] == path)
-    result = dict(kind='pret', repository=REPOSITORY, commit=COMMIT, path=path,
-                  symbol=symbol,
-                  url=f'https://github.com/{REPOSITORY}/blob/{COMMIT}/{path}')
-    if needle is not None:
-        text = sources[path].decode('utf-8')
-        if text.count(needle) != 1:
-            raise ValueError('Missing/ambiguous source binding: ' + symbol)
-        result['startLine'] = text.count('\n', 0, text.index(needle)) + 1
-        result['endLine'] = result['startLine'] + needle.count('\n')
-        result['url'] += f'#L{result["startLine"]}-L{result["endLine"]}'
-    return result
-
-
-def section(text, signature):
-    if text.count(signature) != 1:
-        raise ValueError('Missing/ambiguous source function: ' + signature)
-    start = text.index(signature)
-    return text[start:text.index('\n}', start) + 2]
-
-
-def display_contract(lock, sources):
-    path = 'src/battle_anim_mons.c'
-    source = sources[path].decode()
-    coords = section(source, 'static const struct UCoords8 sBattlerCoords[][MAX_BATTLERS_COUNT] =')
-    single = re.search(r'\{ // Single battle\s*((?:\{ \d+, \d+ \},\s*){4})\}', coords)
-    if single is None:
-        raise ValueError('Unsupported single-battle coordinates')
-    points = [tuple(map(int, pair)) for pair in re.findall(r'\{ (\d+), (\d+) \}', single.group(1))]
-    constants = sources['include/constants/battle.h'].decode()
-    for symbol, index in [('B_POSITION_PLAYER_LEFT', 0), ('B_POSITION_OPPONENT_LEFT', 1)]:
-        if re.search(r'^#define ' + symbol + r'\s+' + str(index) + r'$', constants, re.M) is None:
-            raise ValueError('Unsupported battler position mapping')
-    default = section(source, 'u8 GetBattlerSpriteDefault_Y(u8 battlerId)\n')
-    getter = section(source, 'u8 GetBattlerSpriteCoord(u8 battlerId, u8 coordType)\n')
-    delta = section(source, 'static u8 GetBattlerYDelta(u8 battlerId, u16 species)\n')
-    final = section(source, 'static u8 GetBattlerSpriteFinal_Y(u8 battlerId, u16 species, bool8 a3)\n')
-    elevation = section(source, 'static u8 GetBattlerElevation(u8 battlerId, u16 species)\n')
-    expected = [(default, 'return GetBattlerSpriteCoord(battlerId, BATTLER_COORD_Y_PIC_OFFSET_DEFAULT);'),
-                (getter, 'retVal = GetBattlerSpriteFinal_Y(battlerId, species, FALSE);'),
-                (delta, 'ret = gMonBackPicCoords[species].y_offset;'),
-                (delta, 'ret = gMonFrontPicCoords[species].y_offset;'),
-                (final, 'offset -= GetBattlerElevation(battlerId, species);'),
-                (final, 'y = offset + sBattlerCoords[IS_DOUBLE_BATTLE()][GetBattlerPosition(battlerId)].y;'),
-                (elevation, 'ret = gEnemyMonElevation[species];')]
-    if any(needle not in text for text, needle in expected):
-        raise ValueError('Unsupported battle-coordinate semantics')
-    for controller in ('player', 'opponent'):
-        cpath = f'src/battle_controller_{controller}.c'
-        text = section(sources[cpath].decode(), 'static void StartSendOutAnim(u8 battlerId, bool8 dontClearSubstituteBit)\n')
-        if 'GetBattlerSpriteCoord(battlerId, BATTLER_COORD_X_2)' not in text or 'GetBattlerSpriteDefault_Y(battlerId)' not in text:
-            raise ValueError('Unsupported send-out coordinate binding')
-    return dict(logicalWidth=240, logicalHeight=160, frameWidth=64, frameHeight=64,
-                playerBaseCenter={'x': points[0][0], 'y': points[0][1]},
-                opponentBaseCenter={'x': points[1][0], 'y': points[1][1]},
-                playerSide='back', opponentSide='front', textureFilter='nearest', flipH=False,
-                frameIndex=0, applySourceYOffset=True, applyAnimationTargetExtra8=False,
-                centerFormula='baseCenterY + sourceYOffset - sourceEnemyElevation')
-
-
 def convert(lock, sources):
     display = display_contract(lock, sources)
     sprites, outputs = [], {}
@@ -164,7 +101,7 @@ def convert(lock, sources):
             if coordinates is None:
                 raise ValueError('Missing source image coordinates')
             width, height, offset = map(int, coordinates.groups())
-            indices = pixels.indexed_png(sources[image_path])
+            indices = battle_indices(sources[image_path])
             opaque = [i for i, index in enumerate(indices) if index]
             if not opaque:
                 raise ValueError('Empty battle sprite')
@@ -175,10 +112,10 @@ def convert(lock, sources):
             center = {'x': base['x'], 'y': base['y'] + offset - elevation}
             for variant in ('normal', 'shiny'):
                 palette_path = f'graphics/pokemon/{stem}/{variant}.pal'
-                colors, words = pixels.palette(sources[palette_path])
-                rgba = pixels.rgba_pixels(indices, colors)
+                colors, words = battle_palette(sources[palette_path])
+                rgba = rgba_pixels(indices, colors)
                 filename = f'{stem}-{side}-{variant}.png'
-                outputs[filename] = pixels.rgba_png(rgba)
+                outputs[filename] = png(64, 64, rgba)
                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=sid, side=side,
                                     paletteVariant=variant, texturePath=filename,
                                     sourceImagePath=image_path, sourcePalettePath=palette_path,

@@ -7,6 +7,13 @@ internal abstract partial class SourceRecipeContext
 {
     internal static bool HasGroundSpreadRecipe(string effect) => effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE";
 
+    private static (int Magnitude, int Power) MagnitudeStrength(int roll) => roll switch
+    {
+        < 0 or >= 100 => throw new ArgumentOutOfRangeException(nameof(roll)),
+        < 5 => (4, 10), < 15 => (5, 30), < 35 => (6, 50), < 65 => (7, 70),
+        < 85 => (8, 90), < 95 => (9, 110), _ => (10, 150)
+    };
+
     // BattleScript_HitsAllWithUndergroundBonusLoop. The action owner calls this once;
     // the script owns numeric all-other traversal, while the existing move-end/faint
     // owner retains target receipts, rewards and deferred replacement scheduling.
@@ -19,7 +26,7 @@ internal abstract partial class SourceRecipeContext
         int? power = null;
         if (move.Effect == "EFFECT_MAGNITUDE")
         {
-            var strength = MtMoonBattleData.Magnitude(Draw($"{purpose}.magnitude", 100) % 100);
+            var strength = MagnitudeStrength(Draw($"{purpose}.magnitude", 100) % 100);
             power = strength.Power;
             Add(n => new SourceMagnitudeEvent(n, Turn, actor, strength.Magnitude, strength.Power));
         }

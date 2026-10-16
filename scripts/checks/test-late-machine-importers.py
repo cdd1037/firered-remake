@@ -14,7 +14,9 @@ import ast
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -82,6 +84,45 @@ def item_wrappers(value):
 
 
 class LateMachineImporterTests(unittest.TestCase):
+    def test_retained_item_clis_generate_and_check_without_writes(self):
+        cases = (
+            ('silph-catalogs', 'data/regions/silph/items.json', '--project-root', True),
+            ('saffron-gym-catalogs', 'data/regions/saffron-gym/items.json', '--project-root', True),
+            ('cinnabar-items', 'data/items/cinnabar/items.json', '--project-root', True),
+            ('fuchsia-gym-items', 'data/items/fuchsia-gym/fuchsia-gym-items.json', '--target-root', False),
+        )
+        for name, item_path, output_flag, dependency in cases:
+            with self.subTest(importer=name), tempfile.TemporaryDirectory() as temporary:
+                project = Path(temporary)
+                command = [sys.executable, str(ROOT / f'scripts/imports/items/import-{name}.py'),
+                           output_flag, str(project), '--raw-root', str(RAW)]
+                if dependency:
+                    command += ['--dependency-root', str(ROOT)]
+                def invoke(*arguments):
+                    return subprocess.run(command + list(arguments), cwd=temporary,
+                                          capture_output=True, text=True, timeout=30)
+                missing = invoke('--check')
+                self.assertNotEqual(0, missing.returncode, 'Missing output passed --check')
+                self.assertEqual([], list(project.rglob('*')))
+                generated = invoke()
+                self.assertEqual(0, generated.returncode, generated.stdout + generated.stderr)
+                target = project / 'content/generated' / item_path
+                self.assertTrue(target.is_file())
+                before = {str(path.relative_to(project)): (path.read_bytes(), path.stat().st_mtime_ns)
+                          for path in project.rglob('*') if path.is_file()}
+                checked = invoke('--check')
+                self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+                after = {str(path.relative_to(project)): (path.read_bytes(), path.stat().st_mtime_ns)
+                         for path in project.rglob('*') if path.is_file()}
+                self.assertEqual(before, after)
+                altered = json.loads(target.read_bytes())
+                altered['schemaVersion'] = -1
+                target.write_text(json.dumps(altered))
+                broken = target.read_bytes(), target.stat().st_mtime_ns
+                rejected = invoke('--check')
+                self.assertNotEqual(0, rejected.returncode, 'Corrupt output passed --check')
+                self.assertEqual(broken, (target.read_bytes(), target.stat().st_mtime_ns))
+
     def compare(self, relative, value):
         expected = references(json.loads((ROOT / relative).read_bytes()))
         actual = references(value)
@@ -94,8 +135,10 @@ class LateMachineImporterTests(unittest.TestCase):
         lock = json.loads((ROOT / 'scripts/recipes/items/fuchsia-gym-items.lock.json').read_bytes())
         files = {row['path']: (RAW / row['path']).read_bytes() for row in lock['files']}
         outputs = module.item_outputs(lock, files, ROOT)
-        self.compare('content/generated/data/items/fuchsia-gym/fuchsia-gym-machines.json',
-                     json.loads(outputs['fuchsia-gym-machines.json']))
+        expected = json.loads((ROOT / 'content/generated/data/items/fuchsia-gym/fuchsia-gym-items.json').read_bytes())
+        actual = json.loads(outputs['fuchsia-gym-items.json'])
+        self.assertEqual(expected['items'], actual['items'])
+        self.assertNotIn('fuchsia-gym-machines.json', outputs)
         module = load('imports/story/import-vermilion-gym-assets.py')
         lock = module.read_lock()
         sources, local_inputs = module.authenticated_inputs(lock, RAW, root=ROOT)
@@ -105,22 +148,21 @@ class LateMachineImporterTests(unittest.TestCase):
         outputs = load('imports/items/import-safari-items.py').generate(ROOT)
         self.compare('content/generated/data/items/safari/machines.json',
                      json.loads(outputs['content/generated/data/items/safari/machines.json']))
+        from item_catalog import item_json
         for family in ('silph', 'saffron-gym'):
             with self.subTest(family=family):
-                _, _, machines = load(f'imports/items/import-{family}-catalogs.py').metadata(RawSource(), ROOT)
-                self.compare(f'content/generated/data/regions/{family}/machines.json', machines)
-        _, machines = load('imports/items/import-cinnabar-items.py').convert(RawSource(), ROOT)
-        self.compare('content/generated/data/items/cinnabar/machines.json', machines)
+                items = load(f'imports/items/import-{family}-catalogs.py').metadata(RawSource(), ROOT)
+                expected = json.loads((ROOT / f'content/generated/data/regions/{family}/items.json').read_bytes())
+                expected.pop('icons', None)  # Saffron's image binding has its own source conversion.
+                self.assertEqual(expected, json.loads(json.dumps(items, default=item_json)))
+        items = load('imports/items/import-cinnabar-items.py').convert(RawSource(), ROOT)
+        self.assertEqual(json.loads((ROOT / 'content/generated/data/items/cinnabar/items.json').read_bytes()),
+                         json.loads(json.dumps(items, default=item_json)))
         with patch('subprocess.check_output', read_source):
             outputs = load('imports/story/import-viridian-gym-rules.py').generate(ROOT, ROOT)
             self.compare('content/generated/data/regions/viridian-gym/machines.json', outputs['machines.json'])
             outputs = load('imports/story/import-victory-road-rules.py').generate(RAW, ROOT)
             self.compare('content/generated/data/regions/victory-road/machines.json', outputs['machines.json'])
-
-    def test_sevii_species_machine_outputs_use_direct_shared_views(self):
-        with patch('subprocess.check_output', read_source):
-            document, _ = load('imports/pokemon/import-event-island-species.py').generate(ROOT, ROOT)
-            self.compare('content/generated/data/pokemon/event-island.json', document)
 
     def test_current_rosters_replace_historical_species_chains(self):
         from runtime_json import runtime_json_bytes

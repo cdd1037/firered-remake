@@ -22,7 +22,6 @@ public sealed class PretEvolutionArt
     public ImmutableArray<ForestPokemonSprite> Sprites { get; }
     public JsonElement BattleArt { get; }
     public string GeneratedDirectory { get; }
-    public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory, "manifest.json");
 
     private PretEvolutionArt(string directory, ImmutableArray<ForestPokemonSprite> sprites,
@@ -38,7 +37,7 @@ public sealed class PretEvolutionArt
         var directory = Path.Combine(project, "content/generated/sprites/pokemon/evolution");
         byte[] ReadPinned(string root,string path)
         {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
+            var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
@@ -93,19 +92,4 @@ public sealed class PretEvolutionArt
     /// <summary>Returns a fresh copy of the authenticated 64×64 RGBA8 bytes captured at Load time.</summary>
 
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe evolution art path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Evolution art directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Evolution art file symlink is unsupported: " + path);
-        }
-        return result;
-    }
 }

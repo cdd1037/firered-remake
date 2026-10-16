@@ -25,7 +25,7 @@ public partial class CampaignView
     private int _rocketSpinDurationTicks;
     private bool RocketInputLocked=>_session?.State.RocketSpin is not null||RocketElevatorAnimating;
     private static readonly string[] RocketElevatorRows=["B1F","B2F","B4F","EXIT"];
-    private bool RocketElevatorMenuActive=>_catalog.RocketHideoutEnabled&&_session.State.World.Player.MapId==PretRocketHideoutRegion.ElevatorMapId&&
+    private bool RocketElevatorMenuActive=>_session.State.World.Player.MapId==PretRocketHideoutRegion.ElevatorMapId&&
         _session.State.Script.Wait?.Kind==StoryWaitKind.MenuChoice&&_session.State.RocketElevator?.MenuDefault is not null;
     private bool RocketElevatorMenuVisible=>RocketElevatorMenuActive&&FieldTextComplete&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length;
     private int RocketElevatorMenuWidth=>(((int)RocketElevatorRows.Max(row=>_sourceNormal.Font.GetStringSize(row,fontSize:_sourceNormal.Size).X)+9)/8+1)*8;
@@ -44,35 +44,11 @@ public partial class CampaignView
         new(0,_rocketElevatorTicks<3?0:((int)Math.Floor(_rocketElevatorTicks/3)%2==0?1:-1));
     private void LoadRocketHideoutPresentation()
     {
-        if(!_catalog.RocketHideoutEnabled)return;
         var source=_catalog.RocketHideoutPokemon??throw new InvalidDataException("Missing RocketHideout Pokemon.");
-        Image Decode(byte[] bytes,int width,int height)
-        {
-            var image=new Image();
-            if(image.LoadPngFromBuffer(bytes)!=Error.Ok){image.Dispose();throw new InvalidDataException("Invalid RocketHideout PNG.");}
-            image.Convert(Image.Format.Rgba8);
-            if(image.GetWidth()!=width||image.GetHeight()!=height)
-            {image.Dispose();throw new InvalidDataException("RocketHideout source pixels differ.");}
-            return image;
-        }
-        foreach(var sprite in source.Sprites)
-        {
-            using var image=Decode(source.ReadSpriteTexture(new(sprite.SpeciesId),sprite.Side,sprite.PaletteVariant=="shiny"),64,64);
-            _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(SceneTextures.FromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach(var footprint in source.Footprints)
-        {
-            using var image=Decode(source.ReadFootprintTexture(footprint.SourceSpeciesId),16,16);
-            _route22Footprints.Add(footprint.SourceSpeciesId,ImageTexture.CreateFromImage(image));
-        }
-        foreach(var icon in source.Icons)
-        {
-            using var image=Decode(source.ReadIconTexture(new(icon.SpeciesId)),32,32);
-            var rgba=image.GetData();
-            for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)for(int c=0;c<3;c++){int value=rgba[i+c]>>3;rgba[i+c]=(byte)((value<<3)|(value>>2));}
-            using var display=Image.CreateFromData(32,32,false,Image.Format.Rgba8,rgba);
-            _storageIcons.Add(new(icon.SpeciesId),ImageTexture.CreateFromImage(display));
-        }
+
+        RegisterPokemonSprites(source);
+
+        RegisterPokemonIcons(source);
         var art=RocketHideoutPresentationAssets.Load(_root,portraits:true).Files;
         foreach(var id in new[]{"rocket-grunt-m-front","giovanni-front"})
         {
@@ -127,7 +103,7 @@ public partial class CampaignView
     }
     private bool TryRocketPatch(Image canvas,Game.Domain.World.FieldMetatileEdit edit,int layer,string mapId)
     {
-        if(!_catalog.RocketHideoutEnabled||_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(new(mapId))!=true)return false;
+        if(_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(new(mapId))!=true)return false;
         string tileset=mapId=="map.celadon-city-game-corner"?"game_corner":"silph_co";
         if(!_rocketTiles.TryGetValue((tileset,edit.SourceMetatileId),out var source))throw new InvalidDataException("Rocket metatile art missing: "+edit.SourceMetatileId);
         using var atlas=_rocketTileLayers[tileset][layer].GetImage();
@@ -135,7 +111,6 @@ public partial class CampaignView
     }
     private void SynchronizeRocketPresentation(CampaignState? before,CampaignState after)
     {
-        if(!_catalog.RocketHideoutEnabled)return;
         if(after.RocketSpin?.PresentationId!=_rocketSpinWait)
         {
             _rocketSpinWait=after.RocketSpin?.PresentationId;_rocketSpinTicks=0;_rocketSpinBlocked=null;
@@ -167,14 +142,14 @@ public partial class CampaignView
     }
     private void ProcessRocketPresentation(double delta)
     {
-        if(!_catalog.RocketHideoutEnabled||_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId||_rocketElevatorDistance==0)return;
+        if(_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId||_rocketElevatorDistance==0)return;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
         _rocketElevatorTicks=Math.Min(RocketElevatorDuration,_rocketElevatorTicks+delta*60);
         if(!_rocketElevatorDing&&_rocketElevatorTicks+1e-8>=RocketElevatorDuration){_rocketElevatorDing=true;SourceSound("SE_DING_DONG");}
     }
     private bool DrawRocketElevatorLayer(Texture2D original,Vector2 camera,int layer)
     {
-        if(!_catalog.RocketHideoutEnabled||_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId||_rocketElevatorDistance==0)return false;
+        if(_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId||_rocketElevatorDistance==0)return false;
         // The source animation changes the nine window cells, preserving all other layers.
         int phase=RocketElevatorWindowPhase;
         for(int y=0;y<_art.Source.Height;y++)for(int x=0;x<_art.Source.Width;x++)
@@ -221,7 +196,7 @@ public partial class CampaignView
         _rocketSpinTicks=Math.Min(_rocketSpinDurationTicks,_rocketSpinTicks+delta*60);
         ApplyRocketSpinPose(pending,(int)Math.Floor(_rocketSpinTicks+1e-8));return true;
     }
-    private ForestMessage? RocketHideoutWildMessage(WildBattleEvent current)=>!_catalog.RocketHideoutEnabled?null:current switch
+    private ForestMessage? RocketHideoutWildMessage(WildBattleEvent current)=>current switch
     {
         WildBattleMoveFailedEvent {Reason:"not-first-turn"}=>new("sText_ButItFailed"),
         WildBattleAbilityPreventedEvent {Ability:"ABILITY_INNER_FOCUS"} ability=>new("sText_PkmnsXPreventsFlinching",
@@ -230,7 +205,6 @@ public partial class CampaignView
     };
     private bool TryRocketInput(InputEventKey key)
     {
-        if(!_catalog.RocketHideoutEnabled)return false;
         if(_session.State.World.Player.MapId.Value=="map.rocket-hideout-b4f"&&_session.State.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&
             _session.State.Dialogue?.TextSymbol=="RocketHideout_B4F_Text_GiovanniIntro"&&key.Keycode is Key.Enter or Key.Backspace)
         {
@@ -255,7 +229,7 @@ public partial class CampaignView
         MouseSelect(point,ref _rocketElevatorCursor,4,8,8,RocketElevatorMenuWidth,14);
     private void DrawRocketElevatorMenu()
     {
-        if(!_catalog.RocketHideoutEnabled||_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId)return;
+        if(_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId)return;
         if(_session.State.RocketElevator?.FloorWindowVisible==true)
         {
             _battleSkin.DrawUserFrame(this,new(168,0,72,48));

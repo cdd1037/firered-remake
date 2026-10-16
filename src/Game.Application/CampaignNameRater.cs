@@ -17,8 +17,7 @@ public sealed partial class CampaignSession
     private const string NameRaterSharedPath = "data/event_scripts.s";
     private const string NameRaterShared = "EventScript_ChangePokemonNickname";
 
-    private bool InNameRaterScript(CampaignState state) => _content.RegionalInteriorServicesEnabled &&
-        _content.NameRaterSource is not null && state.World.Player.MapId.Value == NameRaterMap &&
+    private bool InNameRaterScript(CampaignState state) => _content.NameRaterSource is not null && state.World.Player.MapId.Value == NameRaterMap &&
         state.LastTalked is { } actor && state.Actors.TryGetValue(actor, out var npc) &&
         npc.Active && npc.SourceLocalId == 1 && npc.GraphicsId == "OBJ_EVENT_GFX_GENTLEMAN" &&
         npc.ScriptId == NameRaterEntry && npc.TemplateX == 4 && npc.TemplateY == 4 && npc.Elevation == 3 &&
@@ -105,7 +104,6 @@ public sealed partial class CampaignSession
     private bool TryApplyNameRaterEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.RegionalInteriorServicesEnabled) return false;
         var a = effect.Args;
         if (effect.Opcode == "waitstate" && state.NameRater is { ChoosingParty: true })
         {

@@ -5,7 +5,7 @@ public sealed partial class CampaignSession
     /// <summary>Presentation may offer field Switch only at this authoritative stable boundary.</summary>
     public bool CanReorderFieldParty
     {
-        get{var state=State;return _content.EarlyStarterEnabled&&state.Party.Length>1&&IsStableFieldForParty(state);}
+        get{var state=State;return state.Party.Length>1&&IsStableFieldForParty(state);}
     }
 
     private static bool IsStableFieldForParty(CampaignState state)=>
@@ -19,7 +19,6 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> DecideFieldParty(CampaignState state,CampaignCommand command)
     {
-        if(!_content.EarlyStarterEnabled)return new(CommandStatus.Rejected,state,"field_party_not_enabled");
         if(!IsStableFieldForParty(state))return new(CommandStatus.Rejected,state,"field_party_event_active");
         if(state.Party.IsEmpty)return new(CommandStatus.Rejected,state,"field_party_empty");
         if(command.Choice is not {} source||source<0||source>=state.Party.Length||command.PartyIndex<0||command.PartyIndex>=state.Party.Length)

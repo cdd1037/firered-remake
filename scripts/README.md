@@ -43,7 +43,9 @@ python scripts/imports/rebuild-resources.py audio-cues --check
 python scripts/imports/source/materialize-source.py --recipe scripts/recipes/source/fetch-story.lock.json --offline
 ```
 
-输入版本在配方／共用源配置中明确。优先使用已有 raw，按具体转换器支持情况可读取固定版本 Git blobs。不得执行上游仓库脚本。物化工具默认不联网，只有显式 `--download` 才取缺失文件。
+输入版本在配方／共用源配置中明确。默认使用已有 raw；显式 `--reference-root` 时，以固定版本 Git blobs 为准。不得执行上游仓库脚本。物化工具默认不联网，只有显式 `--download` 才取缺失文件。
+
+connected-field、route1-encounter、route1-whiteout 和 wild-battle 的旧 fetch 包装入口已移除；使用同一物化命令并显式选择原有配方。输出不得与参考仓库或缓存目录重叠，输入／输出路径拒绝符号链接。
 
 现有部分 `.lock.json` 是历史命名的实际输入选择或转换配置，并非包管理器锁文件。不要新增只有文件清单、重复版本或转换回执作用的配方。源码来源和转换信息留在工具层，不混入运行资源。
 
@@ -61,6 +63,7 @@ python scripts/checks/test-pokemon-import.py
 python scripts/checks/test-trainer-import.py
 python scripts/checks/test-trainer-portraits.py
 python scripts/checks/test-presentation-pixels.py
+python scripts/checks/verify-snorlax-catalog.py
 python scripts/checks/test-machine-importers.py
 ```
 

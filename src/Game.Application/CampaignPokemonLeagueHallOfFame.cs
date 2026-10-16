@@ -98,14 +98,12 @@ public sealed partial class CampaignSession
         next=EnterMap(next,Direction.South) with{EntryPrograms=[],ArrivalFacing=null};
         return RefreshActors(next);
     }
-    private bool PokemonLeagueCompletedContinue(CampaignState state)=>_content.PokemonLeagueEnabled&&state.HallOfFame is not null&&
+    private bool PokemonLeagueCompletedContinue(CampaignState state)=>state.HallOfFame is not null&&
         state.PokemonLeagueCompletion is null&&
-        state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")&&(_content.NationalDexEnabled||
-            !state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")&&state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")==0);
+        state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR");
     private bool TryDecidePokemonLeague(CampaignState state,CampaignCommand command,out Decision<CampaignState> decision)
     {
         decision=new(CommandStatus.Rejected,state,"pokemon_league_command_not_available");
-        if(!_content.PokemonLeagueEnabled)return command.Kind.StartsWith("league_",StringComparison.Ordinal);
         var pending=state.PokemonLeagueCompletion;
         if(pending is null)
         {
@@ -157,8 +155,7 @@ public sealed partial class CampaignSession
                  state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0||state.GameStats?.GetValueOrDefault(FirstHallOfFameTimeStat)>0)?"save_pokemon_league_hof_missing":null;
         if(!PokemonLeagueCompletedContinue(state)||archive.Teams.IsDefault||archive.Teams.Length is <1 or >50||
             archive.Teams.Length!=Math.Min(50,completions.Length)||archive.Teams.Any(t=>t is null)||
-            !ValidHallOfFamePlayTime(state,archive)||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
+            !ValidHallOfFamePlayTime(state,archive)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
 
             state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=Math.Min(999,completions.Length))return "save_pokemon_league_hof_state";
         if(!archive.Teams.Select(t=>t.ChallengeNumber).SequenceEqual(completions.TakeLast(50).Select(r=>r.ChallengeNumber)))return "save_pokemon_league_hof_receipt";

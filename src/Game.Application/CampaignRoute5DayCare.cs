@@ -30,7 +30,6 @@ public sealed partial class CampaignSession
     // migrates an old content fingerprint: SaveCodec retains its strict version admission.
     private string? ValidateRoute5DayCare(CampaignState state)
     {
-        if (!_content.Route5DayCareEnabled) return state.Route5DayCare is not null ? "save_daycare_content_missing" : null;
         if (state.DayCareInteraction is not null) return "save_event_active";
         if (state.Storage is null) return "save_daycare_storage_missing";
         var error = Route5DayCareRules.Validate(_content.PokemonContent!, _binding.Ownership,
@@ -43,7 +42,7 @@ public sealed partial class CampaignSession
 
     private CampaignState ApplyRoute5DayCareWalkingStep(CampaignState state)
     {
-        if (!_content.Route5DayCareEnabled || state.Route5DayCare?.Resident is null) return state;
+        if (state.Route5DayCare?.Resident is null) return state;
         // Callers have already declined trainer, frame, coordinate, forced movement and poison
         // scripts. Vs Seeker/Union Room are not admitted in the current composition.
         if (state.Script.QuestLogState != 0 || state.FieldPoison is not null || !state.Script.Completed ||
@@ -54,7 +53,7 @@ public sealed partial class CampaignSession
 
     private bool InRoute5DayCareScript(CampaignState state)
     {
-        if (!_content.Route5DayCareEnabled || state.World.Player.MapId.Value != DayCareMap ||
+        if (state.World.Player.MapId.Value != DayCareMap ||
             !state.Script.Locked || state.Script.Completed || state.Script.QuestLogState != 0 ||
             state.LastTalked is not {} id || !state.Actors.TryGetValue(id, out var actor) ||
             !actor.Active || actor.Invisible || actor.SourceLocalId != 1 || actor.GraphicsId != "OBJ_EVENT_GFX_GENTLEMAN" ||

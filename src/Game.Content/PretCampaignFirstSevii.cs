@@ -13,12 +13,11 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string FirstSeviiContentProfile="firered-first-sevii-campaign-v1";
-    public PretFirstSeviiRegion? FirstSeviiRegion { get; }
+    public PretFirstSeviiRegion FirstSeviiRegion { get; }
     public FirstSeviiTrainerCatalog? FirstSeviiTrainerParties { get; }
     public FirstSeviiItemCatalog? FirstSeviiItems { get; }
-    public FirstSeviiWaterEncounterCatalog? FirstSeviiWaterEncounters { get; }
+    public WaterEncounterCatalog? FirstSeviiWaterEncounters { get; }
     public PretFirstSeviiPresentation? FirstSeviiPresentation { get; }
-    public bool FirstSeviiEnabled=>FirstSeviiRegion is not null;
 
 
     private static IEnumerable<FieldPickupDefinition> FirstSeviiPickupDefinitions(PretFirstSeviiRegion region,FirstSeviiItemCatalog items,EarlyShopCatalog shop,PretStoryCompilation scripts)

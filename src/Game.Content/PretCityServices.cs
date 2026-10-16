@@ -47,7 +47,7 @@ public sealed class PretCityServices
 
         byte[] ReadPinned(string root,string path)
         {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
+            var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
             return bytes;
         }
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal)
@@ -74,25 +74,10 @@ public sealed class PretCityServices
                 !item.CanToss && !item.CanGive && !item.CanSell && item.SecondaryId == 0 && item.BattleUsage == 0 &&
                 item.Registrability == (i == 0 ? 0 : 1), "City-service key item declaration differs.");
             Require(icon.Item == item.Id && icon.Width == 24 && icon.Height == 24 &&
-                File.Exists(SafeFile(icon.PngPath.StartsWith("content/generated/", StringComparison.Ordinal) ? project : directory, icon.PngPath)) ,
+                File.Exists(GeneratedResourceFile.SafePath(icon.PngPath.StartsWith("content/generated/", StringComparison.Ordinal) ? project : directory, icon.PngPath)) ,
                 "City-service icon identity differs.");
         }
         return new(directory, maps, constants.ToImmutable(), itemDocument);
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe City services path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("City services directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("City services file symlink is unsupported: " + path);
-        }
-        return result;
-    }
 }

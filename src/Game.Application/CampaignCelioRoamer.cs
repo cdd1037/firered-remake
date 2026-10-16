@@ -24,7 +24,6 @@ public sealed partial class CampaignSession
 
     private CampaignState ApplyCelioRoamerTransition(CampaignState state, RoamerTransition transition)
     {
-        if (!_content.CelioEnabled) return state;
         var result = SourceRoamerRules.Transition(state.Roamer ?? RoamerState.Empty,
             transition, CelioSourceMap(state.World.Player.MapId), state.World.Rng);
         return state with { Roamer = result.State, World = state.World with { Rng = result.Rng } };
@@ -33,7 +32,7 @@ public sealed partial class CampaignSession
     private CampaignState BeginCelioRoamerBattle(CampaignState state,
         RoamerEncounterCandidate candidate, RoamerEncounterMethod method, ImmutableArray<EncounterRandomTrace> gateTrace)
     {
-        if (!_content.CelioEnabled || !CelioCompleted(state) || state.Roamer is not {} roamer ||
+        if (!CelioCompleted(state) || state.Roamer is not {} roamer ||
             candidate.Individual != roamer.Individual || roamer.Runtime.Location != CelioSourceMap(state.World.Player.MapId) ||
             method is not (RoamerEncounterMethod.Land or RoamerEncounterMethod.Surfing) ||
             state.SafariVisit is { Active: true } || long.MaxValue - Revision < 4096)
@@ -75,7 +74,7 @@ public sealed partial class CampaignSession
         var battle = state.WildBattle!;
         if (battle.CelioRoamer is not {} origin) return state;
         if (battle.CelioRoamerSettlement is not null) return state;
-        if (!_content.CelioEnabled || state.Roamer is not {} before || state.World.Rng != battle.Frame!.Rng ||
+        if (state.Roamer is not {} before || state.World.Rng != battle.Frame!.Rng ||
             origin.Map != state.World.Player.MapId || origin.Individual != before.Individual ||
             battle.Frame!.WildEncounter?.CelioRoamer?.Individual != origin.Individual)
             throw new InvalidDataException("celio_roamer_settlement_context");
@@ -89,7 +88,7 @@ public sealed partial class CampaignSession
 
     private bool IsCelioRoamerHistory(CampaignState state, CampaignWildHistory history)
     {
-        if (!_content.CelioEnabled || history.CelioRoamer is not {} receipt ||
+        if (history.CelioRoamer is not {} receipt ||
             state.CelioHandoff?.Initialization is not {} initialization || history.FiveIsland is not null ||
             history.SixIsland is not null || history.FourIsland is not null || history.SeviiRuby is not null ||
             history.VictoryRoad is not null || history.LostelleHypno is not null || history.Safari ||
@@ -128,7 +127,6 @@ public sealed partial class CampaignSession
     private string? ValidateCelioRoamerProgress(CampaignState state)
     {
         var latest = state.Exploration!.Battles.LastOrDefault(h => h.CelioRoamer is not null);
-        if (!_content.CelioEnabled) return latest is null ? null : "save_celio_roamer_profile_missing";
         // Roamer is the authoritative live individual. Movement changes its runtime route
         // without changing HP/status/identity, so only the latest settlement's individual
         // must agree. Old encounters are not a proof chain from initialization to now.

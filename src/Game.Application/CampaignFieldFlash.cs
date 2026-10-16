@@ -47,7 +47,6 @@ public sealed partial class CampaignSession
 
     private string? FieldFlashCommandError(CampaignState state,int partyIndex)
     {
-        if(!_content.RockTunnelEnabled)return "field_flash_not_enabled";
         if(!IsStableFieldForParty(state)||state.FlashEffect is not null||state.Fishing is not null||state.CutEffect is not null||
             state.Pc is not null||state.TownMap is not null||state.Repel is not null||state.FieldEffectArguments is not null)
             return "field_flash_event_active";
@@ -96,7 +95,7 @@ public sealed partial class CampaignSession
         if(command.Kind!="field_flash_complete")return new(CommandStatus.Rejected,state,"field_flash_event_active");
         var flash=state.FlashEffect??throw new InvalidDataException("field_flash_effect_missing");
         if(command.Text!=flash.WaitId)return new(CommandStatus.Rejected,state,"field_flash_callback_mismatch");
-        if(!_content.RockTunnelEnabled||!state.Script.Locked||flash.MapId!=state.World.Player.MapId||
+        if(!state.Script.Locked||flash.MapId!=state.World.Player.MapId||
             !_content.MapDefinition(flash.MapId).RequiresFlash||flash.PartyIndex<0||flash.PartyIndex>=state.Party.Length||
             state.Party[flash.PartyIndex].InstanceId!=flash.InstanceId||!KnowsFieldFlash(state.Party[flash.PartyIndex])||
             state.FlashLevel!=flash.InitialLevel||flash.InitialLevel!=FieldFlashSourcePresentation.MaximumLevel)
@@ -131,7 +130,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFieldFlashEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.RockTunnelEnabled||effect.Source.Path!=FieldFlashScriptPath||effect.Source.Symbol!=FieldFlashProgram)return false;
+        if(effect.Source.Path!=FieldFlashScriptPath||effect.Source.Symbol!=FieldFlashProgram)return false;
         if(effect.Opcode is not ("animateflash" or "setflashlevel"))return false;
         if(state.FlashEffect is not {Phase:FieldFlashSourcePresentation.Illuminate} flash||
             effect.Args.Length!=1||effect.Args[0]!="0"||!state.Script.Flags.GetValueOrDefault(FieldFlashSourcePresentation.ActiveFlag))
@@ -148,7 +147,6 @@ public sealed partial class CampaignSession
     /// <summary>Call on real map entry, never on save restore. Matches LoadMapFromWarp.</summary>
     private CampaignState ApplyFieldFlashMapEntry(CampaignState state)
     {
-        if(!_content.RockTunnelEnabled)return state;
         if(state.FlashEffect is not null)throw new InvalidDataException("field_flash_map_entry_while_active");
         var map=_content.MapDefinition(state.World.Player.MapId);var flags=state.Script.Flags;
         // Clearing an absent source bit is a no-op; do not modify untouched predecessor payloads.
@@ -165,7 +163,6 @@ public sealed partial class CampaignSession
     {
         if(state.FlashEffect is not null)return "save_field_flash_active";
         bool active=state.Script.Flags.GetValueOrDefault(FieldFlashSourcePresentation.ActiveFlag);
-        if(!_content.RockTunnelEnabled)return state.FlashLevel==0&&!active?null:"save_field_flash_profile_missing";
         if(state.FlashLevel is <0 or >FieldFlashSourcePresentation.MaximumLevel)return "save_field_flash_level_invalid";
         var map=_content.MapDefinition(state.World.Player.MapId);
         if(IsFlashOutdoors(map)&&active)return "save_field_flash_outdoor_flag_invalid";

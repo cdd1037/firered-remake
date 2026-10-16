@@ -6,7 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-import argparse,  importlib.util, json, os, pathlib, re, subprocess, sys
+import argparse, json, os, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -34,8 +34,7 @@ src/battle_anim_mons.c
 src/battle_anim_special.c
 src/battle_controller_oak_old_man.c
 src/pokeball.c'''.splitlines())
-spec = importlib.util.spec_from_file_location('old_man_art_codec', ROOT/'scripts/imports/presentation/import-lab-battle-ui.py')
-codec = importlib.util.module_from_spec(spec); spec.loader.exec_module(codec)
+import ui_tiles as codec
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2)+'\n').encode()
 def pairs(values):

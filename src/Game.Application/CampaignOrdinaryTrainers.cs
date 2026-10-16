@@ -5,15 +5,15 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private int HighestSupportedBadge=>_content.ViridianGymEnabled?8:_content.CinnabarEnabled?7:_content.SaffronGymEnabled?6:_content.FuchsiaGymEnabled?5:_content.CeladonGymEnabled?4:_content.VermilionGymEnabled?3:_content.CeruleanEnabled?2:_content.PewterEnabled?1:0;
+    private int HighestSupportedBadge=>8;
     private bool HasUnimplementedBadge(CampaignState state)=>Enumerable.Range(HighestSupportedBadge+1,8-HighestSupportedBadge)
         .Any(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"));
     public int WhiteOutMoneyLoss=>WhiteOutLoss(State);
-    private int WhiteOutLoss(CampaignState state)=>_content.ViridianGymEnabled?ViridianGymWhiteoutRules.Loss(state.Money,state.Party.Max(p=>p.Pokemon.Level),Enumerable.Range(1,8).Count(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"))):Math.Min(state.Money,state.Party.Max(p=>p.Pokemon.Level)*(_content.CinnabarEnabled?4*new[]{2,4,6,9,12,16,20,25}[Enumerable.Range(1,7).Count(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"))]:_content.SaffronGymEnabled?4*new[]{2,4,6,9,12,16,20}[Enumerable.Range(1,6).Count(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"))]:_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET")?64:_content.CeladonGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET")?48:_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")?36:_content.CeruleanEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET")?24:_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET")?16:8));
-    private bool IsVictoryRoadTrainer(TrainerId id)=>_content.VictoryRoadEnabled&&_content.VictoryRoadTrainerParties?.Trainers.TryGetValue(id,out var trainer)==true&&!trainer.DoubleBattle;
-    private bool IsLeagueRivalTrainer(TrainerId id)=>_content.LeagueRivalEnabled&&_content.LeagueRivalTrainerParties?.Trainers.ContainsKey(id)==true;
-    private bool IsViridianGymTrainer(TrainerId id)=>_content.ViridianGymEnabled&&_content.ViridianGymTrainerParties?.Trainers.ContainsKey(id)==true;
-    private bool IsFirstSeviiTrainer(TrainerId id)=>_content.FirstSeviiEnabled&&_content.FirstSeviiTrainerParties?.Trainers.TryGetValue(id,out var trainer)==true&&!trainer.DoubleBattle;
+    private int WhiteOutLoss(CampaignState state)=>ViridianGymWhiteoutRules.Loss(state.Money,state.Party.Max(p=>p.Pokemon.Level),Enumerable.Range(1,8).Count(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET")));
+    private bool IsVictoryRoadTrainer(TrainerId id)=>_content.VictoryRoadTrainerParties?.Trainers.TryGetValue(id,out var trainer)==true&&!trainer.DoubleBattle;
+    private bool IsLeagueRivalTrainer(TrainerId id)=>_content.LeagueRivalTrainerParties?.Trainers.ContainsKey(id)==true;
+    private bool IsViridianGymTrainer(TrainerId id)=>_content.ViridianGymTrainerParties?.Trainers.ContainsKey(id)==true;
+    private bool IsFirstSeviiTrainer(TrainerId id)=>_content.FirstSeviiTrainerParties?.Trainers.TryGetValue(id,out var trainer)==true&&!trainer.DoubleBattle;
     private bool IsCinnabarTrainer(TrainerId id)=>_content.CinnabarTrainerParties?.Trainers.TryGetValue(id,out var trainer)==true&&!trainer.DoubleBattle;
     private bool IsSaffronGymTrainer(TrainerId id)=>_content.SaffronGymTrainerParties?.Trainers.ContainsKey(id)==true;
     private bool IsSilphTrainer(TrainerId id)=>_content.SilphTrainerParties?.Trainers.ContainsKey(id)==true;

@@ -6,15 +6,14 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-import argparse,  importlib.util, json, pathlib, re, subprocess, sys
+import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-center-healing-art-v1'
 PATHS = frozenset(['src/field_effect.c', 'src/sprite.c', 'src/sound.c', 'data/field_effect_scripts.s',
     'graphics/field_effects/pics/pokeball_glow.png', 'graphics/field_effects/pics/pokemoncenter_monitor.png'])
-spec = importlib.util.spec_from_file_location('center_healing_codec', ROOT/'scripts/imports/presentation/import-lab-battle-ui.py')
-codec = importlib.util.module_from_spec(spec); spec.loader.exec_module(codec)
+import ui_tiles as codec
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2)+'\n').encode()
 def pairs(values):

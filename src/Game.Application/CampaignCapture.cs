@@ -39,9 +39,9 @@ public sealed record CampaignCapturedPokemon(long InstanceId,string BattleId,int
 public sealed partial class CampaignSession
 {
     private bool AdditionalCaptureBallSupported(string? symbol)=>
-        symbol=="ITEM_GREAT_BALL"&&_content.CeladonApproachEnabled||
-        (symbol is "ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL")&&_content.SilphEnabled||
-        symbol=="ITEM_LUXURY_BALL"&&_content.LostCaveEnabled;
+        symbol=="ITEM_GREAT_BALL"||
+        (symbol is "ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL")||
+        symbol=="ITEM_LUXURY_BALL";
     private static string? CaptureBallReceipt(CaptureBall ball)=>ball switch
     {
         CaptureBall.Poke=>null,
@@ -54,7 +54,7 @@ public sealed partial class CampaignSession
     private CampaignState BeginCapturePresentation(CampaignState state)
     {
         var b=state.WildBattle!;
-        if(!_content.CaptureEnabled||b.Origin is null||state.Exploration!.Captured is null||CaptureCapacityError(state) is not null||b.Capture is not null)throw new InvalidDataException("capture_delivery_context_invalid");
+        if(b.Origin is null||state.Exploration!.Captured is null||CaptureCapacityError(state) is not null||b.Capture is not null)throw new InvalidDataException("capture_delivery_context_invalid");
         var captured=SourceWildBattlePolicy.CapturedMember(b.Frame??throw new InvalidDataException("canonical_wild_frame_required"));var capturedPokemon=captured.Pokemon;bool first=!state.CaughtSpecies.Contains(capturedPokemon.SourceSpeciesId);
         var ball=b.Events.OfType<WildBattleCaptureResultEvent>().Single(e=>e.Outcome==CaptureOutcome.Caught).Ball;
         if(ball!=CaptureBall.Poke&&!AdditionalCaptureBallSupported(CaptureBallReceipt(ball)))throw new InvalidDataException("capture_ball_unsupported");
@@ -95,12 +95,12 @@ public sealed partial class CampaignSession
         var pokemon=c.Pokemon with{OriginalTrainerId=state.TrainerId};
         var owned=new PartyPokemon(state.NextPokemonId,pokemon,nickname,state.PlayerName,state.PlayerGender,2,c.Origin.MetLocation,c.Origin.MetLevel,4,c.Ball??"ITEM_POKE_BALL",c.HeldItem){Status=c.Status};
         if(b.Frame.WildEncounter?.Seafoam is not null)owned=owned with{ModernFatefulEncounter=false};
-        if(b.Frame.WildEncounter?.PowerPlant is {} plantOrigin)owned=PowerPlantPokemonFactory.PreserveCaughtMetadata(_content.PowerPlantOwnership!,plantOrigin,owned);
-        if(b.Frame.WildEncounter?.EventIsland is {} eventOrigin)owned=EventIslandPokemonFactory.PreserveCaughtMetadata(_content.EventIslandOwnership!,eventOrigin,owned);
+        if(b.Frame.WildEncounter?.PowerPlant is {} plantOrigin)owned=PowerPlantPokemonFactory.PreserveCaughtMetadata(_content.GamePokemon!,plantOrigin,owned);
+        if(b.Frame.WildEncounter?.EventIsland is {} eventOrigin)owned=EventIslandPokemonFactory.PreserveCaughtMetadata(_content.GamePokemon!,eventOrigin,owned);
         var error=PokemonStateValidator.ValidateParty(_content.PokemonContent,owned);if(error is not null)throw new InvalidDataException(error);
         var record=new CampaignCapturedPokemon(owned.InstanceId,b.Id,pokemon.SourceSpeciesId,pokemon.Personality,pokemon.Ivs,c.Origin.MetLevel,c.Origin.MetLocation){RockSmash=b.Frame.WildEncounter?.RockSmash,SourceTable=b.Frame.WildEncounter?.SourceTable,Seafoam=b.Frame.WildEncounter?.Seafoam,Fishing=b.Frame.WildEncounter?.Fishing,PowerPlant=b.Frame.WildEncounter?.PowerPlant,EventIsland=b.Frame.WildEncounter?.EventIsland,SevenIsland=b.Frame!.WildEncounter?.SevenIsland,CeruleanCaveOrigin=b.Frame!.WildEncounter?.CeruleanCave,CelioRoamer=b.CelioRoamer,Ball=c.Ball,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland};
         var history=new CampaignWildHistory(b.Id,pokemon.SourceSpeciesId,pokemon.Level,WildBattleOutcome.Caught,0){RockSmashReceipt=b.RockSmashReceipt,SourceTableReceipt=b.SourceTableReceipt,SeafoamReceipt=b.SeafoamReceipt,Fishing=b.Frame.WildEncounter?.Fishing,PowerPlantReceipt=b.PowerPlantReceipt,EventIslandReceipt=b.EventIslandReceipt,SevenIsland=b.Frame!.WildEncounter?.SevenIsland,CeruleanCaveOrigin=b.Frame!.WildEncounter?.CeruleanCave,SevenIslandReceipt=b.SevenIslandReceipt,MewtwoReceipt=b.MewtwoReceipt,CelioRoamer=b.CelioRoamerSettlement,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland,SeviiRuby=b.Frame!.WildEncounter?.SeviiRuby,VictoryRoad=b.Frame!.WildEncounter?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute};
-        var received=_content.PokemonStorageEnabled?PokemonStorageRules.Receive(_content.PokemonContent,state.Party,state.Storage!,owned):null;
+        var received=PokemonStorageRules.Receive(_content.PokemonContent,state.Party,state.Storage!,owned);
         if(received is {Succeeded:false})throw new InvalidDataException(received.Diagnostic!.Code);
         var next=state with{Party=received?.Party??state.Party.Add(owned),Storage=received?.Storage??state.Storage,NextPokemonId=checked(state.NextPokemonId+1),Exploration=state.Exploration with{Captured=captures.Add(record),Battles=state.Exploration.Battles.Add(history)},WildBattle=b with{Capture=null}};
         if(received?.Outcome==PokemonStorageOutcome.ReceivedInBox)
@@ -143,7 +143,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateCapturedParty(CampaignState state)
     {
-        if(!_content.CaptureEnabled)return state.Exploration?.Captured is null?null:"save_capture_profile_missing";
         var allOwned=OwnedPokemon(state);
         if(state.Exploration?.Captured is not {} captures||captures.IsDefault)return "save_capture_party_count";
         if(captures.Length>0&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return "save_capture_before_pokedex";

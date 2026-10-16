@@ -39,13 +39,5 @@
     {
       "path": "src/data/trainers.h"
     }
-  ],
-  "inputs": [
-    {
-      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
-    },
-    {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    }
   ]
 }

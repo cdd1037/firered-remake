@@ -40,8 +40,6 @@ public sealed record WildBattleCalledPartyState(ImmutableArray<WildBattleCalledP
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? OpponentUsedHeldItem { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledPendingSwitch? PendingSwitch { get; init; }
 }
-public sealed record WildBattleCalledPartySwitchAction(WildBattleSide Side, int PartyIndex,
-    string RulesVersion = WildBattleRules.CalledMoveKernelRulesVersion);
 public sealed record WildBattleCalledOverlayChangedEvent(long Sequence, int Turn, WildBattleSide Side,
     MoveId Move, WildBattleCalledOverlay? Before, WildBattleCalledOverlay? After) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleCalledPartyChangedEvent(long Sequence, int Turn, WildBattleSide Side, int PartyIndex,

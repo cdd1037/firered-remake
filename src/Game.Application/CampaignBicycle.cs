@@ -8,7 +8,7 @@ public sealed partial class CampaignSession
     {
         if(state.IsCycling&&state.IsSurfing)return "save_conflicting_movement_modes";
         if(!state.IsCycling)return null;
-        if(!_content.CityServicesEnabled||OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],BicycleId)!=1)
+        if(OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],BicycleId)!=1)
             return "save_bicycle_not_owned";
         if(!_content.AllowsCycling(state.World.Player.MapId))return "save_bicycle_map_disallowed";
         return null;
@@ -16,7 +16,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> UseFieldBicycle(CampaignState state,CampaignCommand command)
     {
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
-        if(!_content.CityServicesEnabled||state.ItemMenu is not {Origin:"bag",View:"bag"}||command.Text!=BicycleId.Value)
+        if(state.ItemMenu is not {Origin:"bag",View:"bag"}||command.Text!=BicycleId.Value)
             return No("bicycle_context_invalid");
         if(OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],BicycleId)!=1)return No("bicycle_not_owned");
         var p=state.World.Player;

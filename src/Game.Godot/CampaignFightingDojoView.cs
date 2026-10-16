@@ -10,9 +10,6 @@ public partial class CampaignView
 
     private void LoadFightingDojoPresentation()
     {
-        if (!_catalog.FightingDojoEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.TrainerTowerEnabled)
-            throw new InvalidDataException("Fighting Dojo requires its current Trainer Tower presentation predecessor.");
         var art = FightingDojoPresentationAssets.Load(_root);
         var trainers = _catalog.FightingDojoTrainers;
         foreach (var row in art.Manifest.GetProperty("trainers").EnumerateArray())
@@ -55,11 +52,9 @@ public partial class CampaignView
             _route22Footprints.Add(row.GetProperty("sourceSpeciesId").GetInt32(), SceneTextures.FromImage(image));
         }
         _fightingDojoArt = art;
-        Write("fightingDojoPresentation", new {             nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
-    private string? VisibleFightingDojoTrainerText(string key) => _session.State.ForestTrainerBattle is { } battle &&
-        _fightingDojoTrainers.TryGetValue(battle.Trainer.Value, out var row) ? row.GetProperty(key).GetString() : null;
     private CaptureDexEntry? FightingDojoCaptureDexEntry(int species) => _fightingDojoArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
         new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
             e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);

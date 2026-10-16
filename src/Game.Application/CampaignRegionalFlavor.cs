@@ -42,7 +42,7 @@ public sealed partial class CampaignSession
         FieldBackgroundTrigger? background, int x, int y)
     {
         var player = state.World.Player;
-        if (!_content.RegionalFlavorEnabled || !_content.SupportsRegionalFlavor(player.MapId))
+        if (!_content.SupportsRegionalFlavor(player.MapId))
             throw new InvalidDataException("regional_flavor_context_invalid");
         if (background?.HiddenItem is not null)
             return BeginHiddenPickup(RegionalFacing(state), background);
@@ -55,10 +55,10 @@ public sealed partial class CampaignSession
             return new(CommandStatus.Accepted, Pump(StartStory(context, background.ScriptId)));
         }
         // Keep the existing reviewed PC service, at its source metatile precedence.
-        if (_content.PokemonStorageEnabled && IsSupportedHealingCenter(player.MapId) && behavior == 0x83)
+        if (IsSupportedHealingCenter(player.MapId) && behavior == 0x83)
             return new(CommandStatus.Accepted, Pump(StartStory(RegionalFacing(state), CenterPcScript)));
         string? script = RegionalFlavorRules.ScriptFor(behavior, player.Facing);
-        if (script is null || behavior == 0x85 && (!_content.TownMapEnabled || _content.FindProgram(script) is null))
+        if (script is null || behavior == 0x85 && (_content.FindProgram(script) is null))
             return new(CommandStatus.Rejected, state, "nothing_to_interact");
         var next = RegionalFacing(state);
         // Source MsgSetSignpost applies to the exterior Center/Mart signs.

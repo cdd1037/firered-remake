@@ -7,11 +7,9 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public bool LeagueRematchEnabled => LeagueRematchTrainerParties is not null;
-    public LeagueRematchTrainerCatalog? LeagueRematchTrainerParties { get; }
-    public GameOpponentPokemonCatalog? LeagueRematchOpponents { get; }
+    public LeagueRematchTrainerCatalog LeagueRematchTrainerParties { get; }
 
-    private static void ValidateLeagueRematchComposition(LeagueRematchTrainerCatalog trainers,GameOpponentPokemonCatalog opponents,CeruleanCavePokemonContent cave,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidateLeagueRematchComposition(LeagueRematchTrainerCatalog trainers,GameOpponentPokemonCatalog opponents,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
         LeagueRematchTrainerPartyFactory.ValidateCatalog(trainers);
         if (            trainers.Trainers.Count != 7 || trainers.Trainers.Values.Sum(t => t.Party.Length) != 38 ||

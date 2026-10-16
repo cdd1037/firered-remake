@@ -93,7 +93,7 @@ public sealed partial class CampaignSession
         int mart=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_VIRIDIAN_CITY_MART"),lab=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB");
         int parcel=QuestQuantity(catalog,state.Inventory!,QuestItemRules.ParcelSymbol);
         if(!dex&&QuestQuantity(catalog,state.Inventory!,QuestItemRules.PokeBallSymbol)!=0)return "save_balls_before_pokedex";
-        if(mart is <0 or >2||mart==0&&(parcel!=0||dex||lab>4)||mart==1&&(parcel!=1||dex||lab!=5)||mart==2&&(parcel!=0||!dex||lab!=6&&!(_content.NationalDexEnabled&&lab is 8 or 9)))return "save_parcel_progress_inconsistent";
+        if(mart is <0 or >2||mart==0&&(parcel!=0||dex||lab>4)||mart==1&&(parcel!=1||dex||lab!=5)||mart==2&&(parcel!=0||!dex||lab!=6&&!(lab is 8 or 9)))return "save_parcel_progress_inconsistent";
         if(state.GcnLinkFlags!=(dex?CelioCompleted(state)?0x803f:0x31:0))return "save_pokedex_link_flags_inconsistent";
         if(state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POKEDEX")!=dex)return "save_pokedex_objects_flag_inconsistent";
         if(state.World.Player.MapId.Value=="map.professor-oaks-lab")
@@ -110,7 +110,7 @@ public sealed partial class CampaignSession
         {
             if(state.MapEdits is null||state.MapEdits.Count!=2||!state.MapEdits.TryGetValue("1:3",out var top)||!state.MapEdits.TryGetValue("1:4",out var bottom)||top!=new FieldMetatileEdit(1,3,0x2bf,3,3)||bottom!=new FieldMetatileEdit(1,4,0x2c0,3,0))return "save_mart_counter_edits_invalid";
         }
-        else if(state.MapEdits is {Count:>0}&&!(_content.SeafoamEnabled&&state.World.Player.MapId==SeafoamFieldRules.B4F)&&!(_content.TrainerTowerEnabled&&state.World.Player.MapId.Value==TrainerTowerLobby)&&!(_content.VermilionGymEnabled&&state.World.Player.MapId.Value==VermilionGymMap)&&!(_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId))&&!(_content.SilphEnabled&&SilphFieldRules.IsSilphMap(state.World.Player.MapId))&&!(_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId))&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))&&!(_content.PokemonLeagueEnabled&&PokemonLeagueRoomIndex(state.World.Player.MapId)>=0)&&!(_content.SeviiRubyEnabled&&SeviiRubyEditedMap(state.World.Player.MapId))&&!(_content.FiveIslandEnabled&&FiveIslandEditedMap(state.World.Player.MapId))&&!(_content.SixIslandEnabled&&state.World.Player.MapId.Value==SixIslandRuinMap)&&!(_content.FourIslandEnabled&&state.World.Player.MapId==FourIslandFieldSource.FirstFloor))return "save_map_edits_unexpected";
+        else if(state.MapEdits is {Count:>0}&&!(state.World.Player.MapId==SeafoamFieldRules.B4F)&&!(state.World.Player.MapId.Value==TrainerTowerLobby)&&!(state.World.Player.MapId.Value==VermilionGymMap)&&!(RocketMap(state.World.Player.MapId))&&!(SilphFieldRules.IsSilphMap(state.World.Player.MapId))&&!(CinnabarFieldMap(state.World.Player.MapId))&&!(VictoryRoadFieldMap(state.World.Player.MapId))&&!(PokemonLeagueRoomIndex(state.World.Player.MapId)>=0)&&!(SeviiRubyEditedMap(state.World.Player.MapId))&&!(FiveIslandEditedMap(state.World.Player.MapId))&&!(state.World.Player.MapId.Value==SixIslandRuinMap)&&!(state.World.Player.MapId==FourIslandFieldSource.FirstFloor))return "save_map_edits_unexpected";
         return null;
     }
 }

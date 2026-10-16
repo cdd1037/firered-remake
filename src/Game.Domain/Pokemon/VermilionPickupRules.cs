@@ -13,7 +13,6 @@ public static class VermilionPickupRules
     public static ImmutableArray<string> Items { get; } = ["ITEM_ORAN_BERRY","ITEM_CHERI_BERRY","ITEM_CHESTO_BERRY",
         "ITEM_PECHA_BERRY","ITEM_RAWST_BERRY","ITEM_ASPEAR_BERRY","ITEM_PERSIM_BERRY","ITEM_TM10","ITEM_PP_UP",
         "ITEM_RARE_CANDY","ITEM_NUGGET","ITEM_SPELON_BERRY","ITEM_PAMTRE_BERRY","ITEM_WATMEL_BERRY","ITEM_DURIN_BERRY","ITEM_BELUE_BERRY"];
-    public static bool IsKnownHeldItem(string item) => VermilionBattleScope.SupportsHeldItem(item);
     private static readonly int[] thresholds=[15,25,35,45,55,65,75,80,85,90,95,96,97,98,99];
     public static string ItemForRoll(int roll)
     {

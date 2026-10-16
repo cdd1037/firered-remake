@@ -18,7 +18,6 @@ public sealed partial class CampaignSession
 {
     private const string PowerPlantMap = "map.power-plant";
     private const string PowerPlantSource = "data/maps/PowerPlant/scripts.inc";
-    public bool PowerPlantEnabled => _content.PowerPlantEnabled;
     private sealed record PowerPlantStatic(string Caller, string Fought, string Hidden, int LocalId, string Species);
     private static PowerPlantStatic PowerPlantEvent(PowerPlantEncounterKind kind) => kind switch
     {
@@ -34,8 +33,8 @@ public sealed partial class CampaignSession
 
     private static void ValidatePowerPlantCatalog(ICampaignCatalog content)
     {
-        if (!content.PowerPlantEnabled || content.PowerPlantOwnership is not { } owned ||
-            content.PowerPlantOpponents is not { } opponents || content.PowerPlantMachines is not { } machines ||
+        if (content.GamePokemon is not { } owned ||
+            content.OpponentPokemon is not { } opponents || content.Machines is not { } machines ||
             !content.Inventory.Items.ContainsKey(ItemIds.ThunderStoneId) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
@@ -65,7 +64,7 @@ public sealed partial class CampaignSession
     private void RequirePowerPlantCaller(CampaignState state, StoryEffect effect, PowerPlantEncounterKind kind)
     {
         var source = PowerPlantEvent(kind);
-        if (!_content.PowerPlantEnabled || state.World.Player.MapId.Value != PowerPlantMap ||
+        if (state.World.Player.MapId.Value != PowerPlantMap ||
             effect.Source.Path != PowerPlantSource || effect.Source.Symbol != source.Caller ||
             state.LastTalked is not { } id || !state.Actors.TryGetValue(id, out var actor) ||
             actor.SourceLocalId != source.LocalId || actor.ScriptId != source.Caller ||
@@ -76,7 +75,7 @@ public sealed partial class CampaignSession
     private bool TryApplyPowerPlantEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.PowerPlantEnabled || effect.Source.Path != PowerPlantSource) return false;
+        if (effect.Source.Path != PowerPlantSource) return false;
         var a = effect.Args;
         if (effect.Opcode == "specialvar" && a.SequenceEqual(new[] { "VAR_RESULT", "GetBattleOutcome" }))
         {
@@ -108,7 +107,7 @@ public sealed partial class CampaignSession
                 state.PowerPlantPreparation is not null || state.PowerPlantReturn is not null || !state.Script.Locked ||
                 state.Script.Flags.GetValueOrDefault(source.Fought) || state.Script.Flags.GetValueOrDefault(source.Hidden) ||
                 state.Script.Flags.GetValueOrDefault(SpecialWildFlag)) throw new InvalidDataException("power_plant_preparation_context");
-            var made = PowerPlantPokemonFactory.GenerateStatic(_content.PowerPlantOwnership!, kind, state.World.Rng, state.TrainerId);
+            var made = PowerPlantPokemonFactory.GenerateStatic(_content.GamePokemon!, kind, state.World.Rng, state.TrainerId);
             next = state with { PowerPlantPreparation = new(new(PowerPlantWildBattleContract.Origin(kind), state.World.Rng,
                 made.GlobalRng, made.Pokemon), made), World = state.World with { Rng = made.GlobalRng } };
             return true;
@@ -127,8 +126,7 @@ public sealed partial class CampaignSession
         return false;
     }
 
-    private bool PowerPlantButtonWait(CampaignState state) => _content.PowerPlantEnabled &&
-        state.World.Player.MapId.Value == PowerPlantMap && state.Script.Wait?.Kind == StoryWaitKind.ButtonPress &&
+    private bool PowerPlantButtonWait(CampaignState state) => state.World.Player.MapId.Value == PowerPlantMap && state.Script.Wait?.Kind == StoryWaitKind.ButtonPress &&
         !state.Script.Stack.IsEmpty && state.Script.Stack[^1].ProgramId == "PowerPlant_EventScript_Zapdos";
     private Decision<CampaignState> DecidePowerPlantButton(CampaignState state, CampaignCommand command)
     {
@@ -160,7 +158,7 @@ public sealed partial class CampaignSession
 
     private bool IsPowerPlantHistory(CampaignWildHistory history)
     {
-        if (!_content.PowerPlantEnabled || history.PowerPlantReceipt is not { } receipt || receipt.Origin is not { } origin ||
+        if (history.PowerPlantReceipt is not { } receipt || receipt.Origin is not { } origin ||
             !Enum.IsDefined(origin.Kind) || history.EventIslandReceipt is not null || history.SevenIsland is not null || history.SevenIslandReceipt is not null ||
             history.CeruleanCaveOrigin is not null || history.MewtwoReceipt is not null || history.CelioRoamer is not null || history.FiveIsland is not null ||
             history.SixIsland is not null || history.FourIsland is not null || history.SeviiRuby is not null || history.VictoryRoad is not null ||
@@ -168,12 +166,12 @@ public sealed partial class CampaignSession
             history.Outcome == WildBattleOutcome.Ongoing || history.Outcome != WildBattleOutcome.Won && history.ExperienceGained != 0 ||
             receipt.InitialPokemon is not { } initial || initial.SourceSpeciesId != history.SourceSpeciesId || initial.Level != history.Level ||
             receipt.RngBefore.AlgorithmId != Gen3Rng.AlgorithmId || receipt.RngAfter.AlgorithmId != Gen3Rng.AlgorithmId ||
-            receipt.RngBefore.Cursor >= receipt.RngAfter.Cursor || !PowerPlantPokemonFactory.SourceInitialInstance(_content.PowerPlantOwnership!, origin, initial)) return false;
+            receipt.RngBefore.Cursor >= receipt.RngAfter.Cursor || !PowerPlantPokemonFactory.SourceInitialInstance(_content.GamePokemon!, origin, initial)) return false;
         try
         {
             var made = origin.Kind == PowerPlantEncounterKind.Land
-                ? PowerPlantPokemonFactory.GenerateSourceSlot(_content.PowerPlantOwnership!, origin, checked((byte)initial.Level), receipt.RngBefore, initial.OriginalTrainerId)
-                : PowerPlantPokemonFactory.GenerateStatic(_content.PowerPlantOwnership!, origin.Kind, receipt.RngBefore, initial.OriginalTrainerId);
+                ? PowerPlantPokemonFactory.GenerateSourceSlot(_content.GamePokemon!, origin, checked((byte)initial.Level), receipt.RngBefore, initial.OriginalTrainerId)
+                : PowerPlantPokemonFactory.GenerateStatic(_content.GamePokemon!, origin.Kind, receipt.RngBefore, initial.OriginalTrainerId);
             return made.GlobalRng == receipt.RngAfter && SameSourceOwnedPokemon(made.Pokemon, initial);
         }
         catch (Exception e) when (e is ArgumentException or InvalidOperationException or NotSupportedException or OverflowException) { return false; }

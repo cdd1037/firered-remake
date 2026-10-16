@@ -12,7 +12,8 @@ public partial class CampaignView
     private PretSilphInterface? _silphInterface;
     private Texture2D? _silphScrollUp, _silphScrollDown;
 
-    private int PresentedSpeciesId(SpeciesId species) => _catalog.FiveIslandOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.SixIslandOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.PokemonLeagueOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.VictoryRoadOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.CinnabarArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.SaffronGymArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.SilphArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.PokemonContent!.Catalog.Species[species].SourceSpeciesId;
+    private int PresentedSpeciesId(SpeciesId species) => _catalog.OpponentPokemon?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId
+        ?? _catalog.PokemonContent!.Catalog.Species[species].SourceSpeciesId;
 
     private void DisposeSilphPresentation()
     {
@@ -24,27 +25,9 @@ public partial class CampaignView
 
     private void LoadSilphPresentation()
     {
-        if (!_catalog.SilphEnabled) return;
         var art = _catalog.SilphArt ?? throw new InvalidDataException("Silph art catalog missing.");
-        foreach (var sprite in art.Sprites)
-        {
-            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"), new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var icon in art.Icons)
-        {
-            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
-            for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), SceneTextures.FromImage(image));
-        }
-        foreach (var footprint in art.Footprints)
-        {
-            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
-            _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
-        }
-        foreach (int species in new[] { 65, 122, 131 }) _portraits.Add(species, _battleArt[(species, "front", false)].Texture);
+        RegisterPokemonArt(art.Sprites, art.Icons, art.Footprints, art.Files);
+
         LoadSilphTrainerArt(); LoadSilphItemArt();
         _silphInterface = PretSilphInterface.Load(_root);
         using (var image = NativeImages.LoadPng(_silphInterface.Files[_silphInterface.Up.TexturePath], 16, 16)) _silphScrollUp = SceneTextures.FromImage(image);
@@ -57,7 +40,7 @@ public partial class CampaignView
             using var image = NativeImages.LoadPng(doors.Files[row.TexturePath], row.Width, row.Height);
             _silphDoorLayers[layer] = SceneTextures.FromImage(image);
         }
-        Write("silphPresentation", new { enemyOnlySpecies = new[] { 65, 122 }, audibleOutputVerified = false, originalVisualParityVerified = false });
+
     }
     private void LoadSilphTrainerArt()
     {
@@ -102,7 +85,7 @@ public partial class CampaignView
     }
     private bool TrySilphPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId mapId)
     {
-        if (!_catalog.SilphEnabled || _catalog.SilphRegion?.NewMaps.ContainsKey(mapId) != true) return false;
+        if (_catalog.SilphRegion?.NewMaps.ContainsKey(mapId) != true) return false;
         if (!_silphDoorTiles.TryGetValue(edit.SourceMetatileId, out var tile)) throw new InvalidDataException("Silph metatile art missing: " + edit.SourceMetatileId);
         using var atlas = _silphDoorLayers[layer].GetImage(); canvas.BlitRect(atlas, new(tile.X, tile.Y, tile.Width, tile.Height), new(edit.X * 16, edit.Y * 16)); return true;
     }

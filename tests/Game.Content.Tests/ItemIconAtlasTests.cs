@@ -69,7 +69,7 @@ public sealed class ItemIconAtlasTests
         {
             string[] resources = ["data/items.json", "data/machines.json",
                 "data/machine-learning/pewter.json", "data/machine-learning/bill.json",
-                "data/machine-learning/cerulean.json", "data/machine-learning/ssanne.json",
+                "data/machine-learning/cerulean.json",
                 "data/machine-learning/route11.json"];
             foreach (string relative in resources)
             {
@@ -83,7 +83,6 @@ public sealed class ItemIconAtlasTests
             Assert.AreEqual(2, pewter.Icons.Length);
             Assert.AreEqual(8, PretBillMachines.LoadProject(root).Machines.Length);
             Assert.AreEqual(5, PretCeruleanMachines.LoadProject(root).Machines.Length);
-            Assert.AreEqual(11, PretSsAnneMachines.LoadProject(root).Machines.Length);
             Assert.AreEqual(13, PretRoute11Machines.LoadProject(root).Machines.Length);
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "scripts")));

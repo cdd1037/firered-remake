@@ -31,7 +31,7 @@ public static class PretEarlyStarterStatusUi
     public static EarlyStarterStatusUiDocument Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var generated = SafeFile(project, Generated);
+        var generated = GeneratedResourceFile.SafePath(project, Generated);
         using var manifest = JsonDocument.Parse(ReadPinned(generated,"manifest.json"));
         var catalogBytes = ReadPinned(generated,"early-starter-status-ui.json");
         var doc = ContentJson.ParseStrict<EarlyStarterStatusUiDocument>(Utf8.GetString(catalogBytes), ContentJson.CreateOptions());
@@ -78,7 +78,7 @@ public static class PretEarlyStarterStatusUi
 
     private static byte[] ReadPinned(string root,string path)
     {
-        var filename = SafeFile(root, path);
+        var filename = GeneratedResourceFile.SafePath(root, path);
         var info = new FileInfo(filename);
         Require(info.Length is > 0 and <= 1_000_000 ,
             "Early-starter status file size differs: " + path);
@@ -86,19 +86,6 @@ public static class PretEarlyStarterStatusUi
         return bytes;
     }
 
-    private static string SafeFile(string root, string relative)
-    {
-        Require(!string.IsNullOrWhiteSpace(relative) && !Path.IsPathRooted(relative) && !relative.Contains('\\')
-            && !relative.Split('/').Any(p => p is ".." or "." or ""), "Unsafe early-starter status path.");
-        var directory = Path.GetFullPath(root);
-        var path = Path.GetFullPath(Path.Combine(directory, relative));
-        Require(path.StartsWith(directory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal),
-            "Early-starter status path escapes its root.");
-        Require(new FileInfo(path).LinkTarget is null, "Early-starter status file symlink rejected.");
-        for (var current = new DirectoryInfo(Path.GetDirectoryName(path)!); current is not null; current = current.Parent)
-            Require(current.LinkTarget is null, "Early-starter status directory symlink rejected.");
-        return path;
-    }
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidDataException(message);

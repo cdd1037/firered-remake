@@ -218,7 +218,7 @@ public sealed class StoneEvolutionTests
         Refuses(() => ItemEvolutionRules.Eligibility(content, nidorino with { Pokemon = nidorino.Pokemon with { Species = new("pret:SPECIES_SUNKERN"), SourceSpeciesId = 191 } }), "opponent-only species cannot borrow ownership");
         Refuses(() => ItemEvolutionRules.Eligibility(content, nidorino, "ITEM_KINGS_ROCK"), "trade evolution item refused");
         Refuses(() => ItemEvolutionRules.SourceEvolution(content, new("pret:SPECIES_SUNKERN"), ItemEvolutionRules.SunStone), "trainer-only Sunkern cannot use source edge as ownership");
-        var edge = SixIslandItemEvolutionRules.EvolutionEdge(catalog.SixIslandOwnership!);
+        var edge = SixIslandItemEvolutionRules.EvolutionEdge(catalog.GamePokemon!);
         Assert.AreEqual("EVO_ITEM", edge.Method);
         Assert.AreEqual("ITEM_SUN_STONE", edge.Parameter);
         Assert.AreEqual("pret:SPECIES_BELLOSSOM", edge.Target.Value);

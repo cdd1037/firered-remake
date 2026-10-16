@@ -3,7 +3,7 @@ using Game.Domain.World;
 
 public partial class CampaignView
 {
-    private bool CyclingRoadSlope => _catalog.CyclingRoadEnabled && _session.State.IsCycling &&
+    private bool CyclingRoadSlope => _session.State.IsCycling &&
         CyclingRoadRules.IsSlope(_catalog.SourceMaps[_session.State.World.Player.MapId]
             .SourceBehaviorAt(_session.State.World.Player.X, _session.State.World.Player.Y));
 

@@ -29,5 +29,4 @@ public static class PretSixIslandRules
         var result = new SixIslandTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         SixIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

@@ -8,13 +8,11 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretSnorlaxRegion? SnorlaxRegion { get; }
-    public PretSnorlaxPokemon? SnorlaxPokemon { get; }
+    public PretSnorlaxRegion SnorlaxRegion { get; }
     public PretSnorlaxArt? SnorlaxArt { get; }
-    public bool SnorlaxEnabled => SnorlaxRegion is not null;
 
     public bool IsSnorlaxStablePosition(MapId map,int x,int y) =>
-        CyclingRoadEnabled && PretCyclingRoadRegion.IsRoadOrGate(map) || IsCurrentStaticWarpCellResolved(map,x,y) || Route16FlyHouse.AllowsAdditionalFootDestination(map,x,y) || FuchsiaRouteEnabled&&map.Value=="map.route-12" || SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
+        PretCyclingRoadRegion.IsRoadOrGate(map) || IsCurrentStaticWarpCellResolved(map,x,y) || Route16FlyHouse.AllowsAdditionalFootDestination(map,x,y) || map.Value=="map.route-12" || SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
 
     public bool IsSnorlaxWarpAllowed(MapId map,int sourceWarpId) =>
         SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) ||

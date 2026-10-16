@@ -30,7 +30,6 @@ public sealed partial class CampaignSession
     // release/NPC exchange can prune breeding receipts; never reconstruct totals from them.
     private string? ValidateHatchedEggCount(CampaignState state)
     {
-        if (!_content.FourIslandDayCareEnabled) return null;
         if (state.GameStats?.TryGetValue(HatchedEggsStat, out int count) != true)
             return "save_hatched_egg_count_missing_migration_required";
         int retained = Math.Min(0xffffff, (state.DayCareEggs ?? []).Count(e => e.Hatch is not null) +
@@ -69,9 +68,6 @@ public sealed partial class CampaignSession
     private string? ValidateGiftEggReceipts(CampaignState state)
     {
         var receipts = state.GiftEggs ?? [];
-        if (!_content.LostCaveEnabled)
-            return state.GiftEggs is not null || state.Script.Flags.GetValueOrDefault(GiftEggReceivedFlag) ||
-                state.Script.Flags.GetValueOrDefault(GiftEggNoRoomFlag) ? "save_gift_egg_content_missing" : null;
         if (receipts.IsDefault || receipts.Length > 1 || receipts.Any(e => e is null)) return "save_gift_egg_receipts";
         if (state.Script.Flags.GetValueOrDefault(GiftEggReceivedFlag) != (receipts.Length == 1)) return "save_gift_egg_flag";
         foreach (var receipt in receipts)
@@ -117,8 +113,7 @@ public sealed partial class CampaignSession
         return null;
     }
 
-    private bool InGiftEggScript(CampaignState state, bool requireLock) => _content.LostCaveEnabled &&
-        (!requireLock || state.Script.Locked) && !state.Script.Completed && state.Script.QuestLogState == 0 &&
+    private bool InGiftEggScript(CampaignState state, bool requireLock) => (!requireLock || state.Script.Locked) && !state.Script.Completed && state.Script.QuestLogState == 0 &&
         state.Script.Wait?.Kind == StoryWaitKind.NativeEffect && state.World.Player.MapId.Value == GiftEggMap &&
         state.LastTalked is {} id && state.Actors.TryGetValue(id, out var actor) && actor.Active && !actor.Invisible &&
         actor.SourceLocalId == 1 && actor.GraphicsId == "OBJ_EVENT_GFX_GENTLEMAN" &&
@@ -130,7 +125,7 @@ public sealed partial class CampaignSession
     private bool TryApplyGiftEggEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.LostCaveEnabled || effect.Source.Path != GiftEggPath ||
+        if (effect.Source.Path != GiftEggPath ||
             effect.Opcode is not ("special" or "specialvar" or "getpartysize" or "giveegg")) return false;
         bool cut = effect.Opcode == "special" && effect.Source.Symbol == GiftEggPrefix + "EggGentleman" &&
             effect.Args.SequenceEqual(new[] { "QuestLog_CutRecording" });

@@ -18,7 +18,7 @@ public sealed partial class CampaignSession
         if (request.Lesson.DemonstrationKind == TeachyTvDemonstrationKind.PokedudeBattle)
             return BeginTeachyTvBattle(state, request);
         var data = TeachyTvFieldDemoRules.CreateData(_content.QuestItems!, _content.EarlyShop!,
-            _content.PewterMachines!, _content.PokemonContent!.Catalog);
+            _content.Machines!, _content.PokemonContent!.Catalog);
         var field = TeachyTvFieldDemoRules.Begin(request.Ticket, request.Lesson.DemonstrationKind, data);
         return new(CommandStatus.Accepted, state with { TeachyTv = state.TeachyTv! with { Field = new(field, []) } });
     }

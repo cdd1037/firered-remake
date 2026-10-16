@@ -9,7 +9,7 @@ public sealed partial class CampaignSession
 {
     private IReadOnlyDictionary<MapId,IFieldMap> RocketMovementMaps(CampaignState state)
     {
-        if(!_content.RocketHideoutEnabled||state.MapEdits is not {Count:>0}||!RocketMap(state.World.Player.MapId))return SeafoamRawMaps(state);
+        if(state.MapEdits is not {Count:>0}||!RocketMap(state.World.Player.MapId))return SeafoamRawMaps(state);
         var maps=SeafoamRawMaps(state).ToDictionary(x=>x.Key,x=>x.Value);
         maps[state.World.Player.MapId]=new RocketEditedMap(maps[state.World.Player.MapId],state.MapEdits,_content);
         return maps;
@@ -29,7 +29,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState RecordRocketElevatorEntrance(CampaignState previous,CampaignState moved)
     {
-        if(!_content.RocketHideoutEnabled||moved.World.Player.MapId.Value!=RocketElevatorMap||previous.World.Player.MapId==moved.World.Player.MapId)return moved;
+        if(moved.World.Player.MapId.Value!=RocketElevatorMap||previous.World.Player.MapId==moved.World.Player.MapId)return moved;
         var p=previous.World.Player;var(dx,dy)=Delta(p.Facing);
         var entrance=_content.RocketHideoutElevatorEntrances.SingleOrDefault(e=>e.SourceMapId==p.MapId&&e.ReturnX==p.X+dx&&e.ReturnY==p.Y+dy)??throw new InvalidDataException("rocket_elevator_entry_warp");
         var floor=_content.RocketHideoutElevatorFloors.Single(f=>f.DestinationMapId==p.MapId);
@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
     }
     private Decision<CampaignState>? TryRocketDynamicExit(CampaignState state,CampaignCommand command)
     {
-        if(!_content.RocketHideoutEnabled||command.Kind!="move"||state.World.Player.MapId.Value!=RocketElevatorMap)return null;
+        if(command.Kind!="move"||state.World.Player.MapId.Value!=RocketElevatorMap)return null;
         var p=state.World.Player;
         if(command.Direction!=Direction.South||p.Facing!=Direction.South||_content.Maps[p.MapId].SourceBehaviorAt(p.X,p.Y)!=0x65)return null;
         if(!_content.RocketHideoutDynamicExits.Any(e=>e.X==p.X&&e.Y==p.Y&&e.SourceWarpId==127)||state.RocketElevator is not {} target)return new(CommandStatus.Fault,state,"rocket_dynamic_destination_missing");

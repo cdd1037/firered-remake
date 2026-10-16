@@ -21,7 +21,6 @@ public sealed partial class CampaignSession
 {
     private const string TrainerTowerLobby = "map.trainer-tower-lobby";
     private const string TrainerTowerShared = "data/scripts/trainer_tower.inc";
-    public bool TrainerTowerEnabled => _content.TrainerTowerEnabled;
     private static bool IsTrainerTowerMap(MapId map) => map.Value.StartsWith("map.trainer-tower-", StringComparison.Ordinal);
     private static int TrainerTowerFloorNumber(MapId map) => map.Value == "map.trainer-tower-roof" ? 9 :
         map.Value.Length == "map.trainer-tower-1f".Length && map.Value.StartsWith("map.trainer-tower-", StringComparison.Ordinal) &&
@@ -42,21 +41,19 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId,IFieldMap> TrainerTowerMovementMaps(CampaignState state)
     {
-        if (!_content.TrainerTowerEnabled) return _content.Maps;
         var maps = _content.Maps.ToDictionary(p=>p.Key,p=>p.Value);
         for (int i=1;i<=8;i++) { MapId id=new($"map.trainer-tower-{i}f"); maps[id]=_content.TrainerTowerMap(id,TrainerTowerLayout(state,id))!; }
         return maps;
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> TrainerTowerConnectedMaps(CampaignState state)
     {
-        if (!_content.TrainerTowerEnabled) return _content.ConnectedFieldMaps!;
         var maps = _content.ConnectedFieldMaps!.ToDictionary(p=>p.Key,p=>p.Value);
         for (int i=1;i<=8;i++) { MapId id=new($"map.trainer-tower-{i}f"); maps[id]=_content.TrainerTowerConnectedMap(id,TrainerTowerLayout(state,id))!; }
         return maps;
     }
     private Decision<CampaignState> DecideTrainerTowerTime(CampaignState state, CampaignCommand command)
     {
-        if (!_content.TrainerTowerEnabled || command.Quantity is < 1 or > 3600 || command.Choice is not null || command.Text is not null)
+        if (command.Quantity is < 1 or > 3600 || command.Choice is not null || command.Text is not null)
             return new(CommandStatus.Rejected,state,"trainer_tower_elapsed_frames_invalid");
         if (state.TrainerTower is not {TimerRunning:true} tower) return new(CommandStatus.Accepted,state,"trainer_tower_clock_stopped");
         return new(CommandStatus.Accepted,state with { TrainerTower=TrainerTowerProgressRules.AdvanceElapsedFrames(tower,command.Quantity) });
@@ -64,7 +61,6 @@ public sealed partial class CampaignSession
     private string? ValidateTrainerTowerProgress(CampaignState state)
     {
         if (ValidateTrainerTowerFieldSave(state) is {} fieldError) return fieldError;
-        if (!_content.TrainerTowerEnabled) return null;
         try { if (state.TrainerTower is {} tower) TrainerTowerProgressRules.ValidateStableSave(tower,_content.TrainerTowerCatalog!); }
         catch (Exception ex) when (ex is ArgumentException or InvalidDataException or InvalidOperationException) { return "save_trainer_tower_progress"; }
         if (IsTrainerTowerMap(state.World.Player.MapId) && (!RainbowQuestComplete(state) || state.TrainerTower is null)) return "save_trainer_tower_access";
@@ -88,8 +84,7 @@ public sealed partial class CampaignSession
 
     private bool TryApplyTrainerTowerEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.TrainerTowerEnabled)return false;
-        bool source=effect.Source.Path==TrainerTowerShared||effect.Source.Path.StartsWith("data/maps/TrainerTower_",StringComparison.Ordinal);
+        next=state;        bool source=effect.Source.Path==TrainerTowerShared||effect.Source.Path.StartsWith("data/maps/TrainerTower_",StringComparison.Ordinal);
         if(!source)return false;
         if(TryApplyTrainerTowerElevatorEffect(state,effect,out next))return true;
         if(!IsTrainerTowerMap(state.World.Player.MapId))throw new InvalidDataException("trainer_tower_source_map");

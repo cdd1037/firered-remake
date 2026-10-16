@@ -16,7 +16,6 @@ public partial class CampaignView
     private void LoadCenterHealingPresentation()
     {
         DisposeCenterHealingPresentation();
-        if (!_catalog.ViridianCenterEnabled) return;
         var directory = System.IO.Path.Combine(_root, "content/generated/ui/center-healing-art");
         var document = PretCenterHealingArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "center-healing-art.json")));
         try
@@ -56,7 +55,7 @@ public partial class CampaignView
     private void SynchronizeCenterHealing(CampaignState? before, CampaignState after)
     {
         var effect = after.HealingEffect;
-        if (effect is null || !_catalog.ViridianCenterEnabled || !(after.World.Player.MapId.Value==CenterHealingMap||_catalog.PewterEnabled&&after.World.Player.MapId.Value=="map.pewter-pokemon-center-1f"||_catalog.Route3Enabled&&after.World.Player.MapId.Value=="map.route-4-pokemon-center-1f"||_catalog.CeruleanEnabled&&after.World.Player.MapId.Value=="map.cerulean-city-pokemon-center-1f"||_catalog.VermilionEnabled&&after.World.Player.MapId.Value=="map.vermilion-city-pokemon-center-1f"||_catalog.PokemonLeagueEnabled&&after.World.Player.MapId.Value=="map.indigo-plateau-pokemon-center-1f"))
+        if (effect is null || !(after.World.Player.MapId.Value==CenterHealingMap||after.World.Player.MapId.Value=="map.pewter-pokemon-center-1f"||after.World.Player.MapId.Value=="map.route-4-pokemon-center-1f"||after.World.Player.MapId.Value=="map.cerulean-city-pokemon-center-1f"||after.World.Player.MapId.Value=="map.vermilion-city-pokemon-center-1f"||after.World.Player.MapId.Value=="map.indigo-plateau-pokemon-center-1f"))
         { ResetCenterHealing(); return; }
         if (_centerHealingArt is null) throw new InvalidDataException("Healing presentation assets are not loaded.");
         if (effect.Symbol != "FLDEFF_POKECENTER_HEAL" || effect.PartyCount is < 1 or > 6)

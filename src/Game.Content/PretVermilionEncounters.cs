@@ -16,7 +16,7 @@ public sealed class PretVermilionEncounters
     {
         byte[] Read(string path)
         {
-            return File.ReadAllBytes(SafeFile(root, path));
+            return File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
         }
         var d=ContentJson.ParseStrict<VermilionEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/data/encounters/vermilion.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=2 ||
@@ -30,13 +30,5 @@ public sealed class PretVermilionEncounters
             EarlyLandEncounterRules.ValidateTable(t);
         }
                 return new(d.Tables.ToImmutableDictionary(t=>t.Map));
-    }
-    private static string SafeFile(string root,string relative)
-    {
-        if(Path.IsPathRooted(relative)||relative.Contains('\\')||relative.Split('/').Any(p=>p is "" or "." or "..")) throw new InvalidDataException("Unsafe Vermilion encounter path.");
-        var f=new FileInfo(Path.GetFullPath(Path.Combine(root,relative)));
-        if(f.LinkTarget is not null) throw new InvalidDataException("Vermilion encounter symlink rejected.");
-        for(var d=f.Directory;d is not null;d=d.Parent) if(d.LinkTarget is not null) throw new InvalidDataException("Vermilion encounter parent symlink rejected.");
-        return f.FullName;
     }
 }

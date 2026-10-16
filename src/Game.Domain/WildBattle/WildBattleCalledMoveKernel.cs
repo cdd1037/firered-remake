@@ -41,18 +41,6 @@ public sealed record WildBattleSourceMoveHistory
     public MoveId? LastTakenFromOpponent { get; init; }
 }
 
-/// <summary>A supplied Metronome result, not the random-selection command or an entire turn.</summary>
-public sealed record WildBattleCalledMoveAction(WildBattleSide Actor, int ChosenSlot, MoveId CurrentMove,
-    string RulesVersion = WildBattleRules.CalledMoveKernelRulesVersion)
-{
-    public WildBattleCalledActionContext Context { get; init; } = new();
-}
-public sealed record WildBattleCalledMoveResult(WildBattleResult Battle, WildBattleMoveInvocation? Invocation)
-{
-    public bool Succeeded => Battle.Succeeded;
-    public WildBattleState? State => Battle.State;
-    public string? Fault => Battle.Fault;
-}
 public sealed record WildBattleTargetResolution(WildBattleSide Target, RngState Rng, ImmutableArray<RandomTrace> Trace);
 public sealed record WildBattlePpReduction(int Before, int After, int CommandCost, WildBattleInvocationFlags FlagsAfter);
 public sealed record WildBattleCalledMoveTransitionEvent(long Sequence, int Turn, WildBattleMoveInvocation Invocation) : WildBattleEvent(Sequence, Turn);

@@ -24,7 +24,7 @@ public sealed partial class CampaignSession
     private string? ValidateSafariInventory(InventoryState inventory)
     {
         var teeth = (inventory.KeyItems ?? []).Where(s => s is not null && s.Item == GoldTeeth).ToArray();
-        return teeth.Length > 0 && (!_content.SafariEnabled || teeth.Length != 1 || teeth[0].Quantity != 1)
+        return teeth.Length > 0 && (teeth.Length != 1 || teeth[0].Quantity != 1)
             ? "inventory_safari_teeth_invalid" : null;
     }
 
@@ -52,11 +52,11 @@ public sealed partial class CampaignSession
     }
 
     private IReadOnlyDictionary<MapId, IFieldMap> SafariMovementMaps(IReadOnlyDictionary<MapId, IFieldMap> maps) =>
-        !_content.SafariEnabled ? maps : maps.ToDictionary(p => p.Key, p =>
+        maps.ToDictionary(p => p.Key, p =>
             SafariFieldMovementRules.ForFieldMovement(p.Value, EarlyLandEncounterRules.SafariRulesVersion));
 
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> SafariConnectedMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps) =>
-        !_content.SafariEnabled ? maps : maps.ToDictionary(p => p.Key, p =>
+        maps.ToDictionary(p => p.Key, p =>
             SafariFieldMovementRules.ForConnectedMovement(p.Value, EarlyLandEncounterRules.SafariRulesVersion));
 
     private bool CanReceiveSafariPokemon(CampaignState state) => state.Party.Length < 6 ||
@@ -67,8 +67,6 @@ public sealed partial class CampaignSession
         bool enabled = state.Script.Flags.GetValueOrDefault(SafariFlag);
         bool surf = state.Script.Flags.GetValueOrDefault("FLAG_GOT_HM03");
         bool strength = state.Script.Flags.GetValueOrDefault("FLAG_GOT_HM04");
-        if (!_content.SafariEnabled)
-            return state.SafariVisit is not null || state.SafariBattle is not null || state.SafariExitPending || enabled || surf || strength ? "save_safari_profile_missing" : null;
         if (state.SafariVisit is not null || state.SafariBattle is not null || state.SafariExitPending || enabled || InSafariArea(state)) return "save_safari_game_active";
         int hm03 = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], new("pret:ITEM_HM03"));
         int hm04 = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], new("pret:ITEM_HM04"));
@@ -83,7 +81,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> DecideSafariRetire(CampaignState state)
     {
-        if (!_content.SafariEnabled || state.SafariVisit is not { Active: true, Balls: > 0, Steps: > 0 } ||
+        if (state.SafariVisit is not { Active: true, Balls: > 0, Steps: > 0 } ||
             !state.Script.Flags.GetValueOrDefault(SafariFlag) || !InSafariArea(state))
             return new(CommandStatus.Rejected, state, "safari_game_not_active");
         if (!IsStableFieldForParty(state) || state.SafariExitPending || state.SafariBattle is not null ||
@@ -97,7 +95,7 @@ public sealed partial class CampaignSession
     private CampaignState ApplySafariWalkingStep(CampaignState state)
     {
         if (state.SafariVisit is not { Active: true } visit) return state;
-        if (!_content.SafariEnabled || !state.Script.Flags.GetValueOrDefault(SafariFlag) ||
+        if (!state.Script.Flags.GetValueOrDefault(SafariFlag) ||
             visit.Steps is < 1 or > 600 || visit.Balls is < 1 or > 30 || !InSafariArea(state))
             throw new InvalidDataException("safari_step_context");
         state = state with { SafariVisit = visit with { Steps = visit.Steps - 1 } };
@@ -106,7 +104,7 @@ public sealed partial class CampaignSession
 
     private CampaignState CompleteSafariExitWarp(CampaignState state)
     {
-        if (!_content.SafariEnabled || state.SafariVisit is not null || state.Script.Flags.GetValueOrDefault(SafariFlag) ||
+        if (state.SafariVisit is not null || state.Script.Flags.GetValueOrDefault(SafariFlag) ||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE") != 3)
             throw new InvalidDataException("safari_exit_warp_context");
         var destination = _content.MapFromSourceSymbol("MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE");
@@ -119,7 +117,6 @@ public sealed partial class CampaignSession
     private bool TryApplySafariEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.SafariEnabled) return false;
         var a = effect.Args;
         int Value(string token) => token.StartsWith("VAR_", StringComparison.Ordinal)
             ? state.Script.Variables.GetValueOrDefault(token)
@@ -256,11 +253,11 @@ public sealed partial class CampaignSession
                 if (effect.Opcode == "removeitem" || state.Script.Flags.GetValueOrDefault(surf ? "FLAG_GOT_HM03" : "FLAG_GOT_HM04") ||
                     strength && !state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFARI_ZONE_WEST_GOLD_TEETH"))
                     throw new InvalidDataException("safari_hm_reward_context");
-                if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
+                if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.Machines!, inventory, machine) ? 1 : 0;
                 else
                 {
                     if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], machine) != 0) throw new InvalidDataException("safari_hm_duplicate");
-                    var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
+                    var added = MachineRules.AddMachine(_content.Machines!, inventory, machine);
                     next = state with { Inventory = added.State }; result = added.Succeeded ? 1 : 0;
                 }
             }

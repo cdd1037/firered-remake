@@ -21,13 +21,8 @@ public sealed partial class CampaignSession
 
     private static void ValidateLeagueRivalCatalog(ICampaignCatalog content)
     {
-        if(!content.LeagueRivalEnabled)
-        {
-            if(content.LeagueRivalTrainerParties is not null)throw new InvalidDataException("league_rival_profile_missing");
-            return;
-        }
-        if(!content.ViridianGymEnabled||content.LeagueRivalTrainerParties is null||content.CinnabarOwnership is null||
-            content.CinnabarOpponents is null||!ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))
+        if(content.LeagueRivalTrainerParties is null||content.GamePokemon is null||
+            content.OpponentPokemon is null||!ReferenceEquals(content.GamePokemon,content.OpponentPokemon.Owned))
             throw new InvalidDataException("league_rival_source_profile_missing");
         LeagueRivalTrainerPartyFactory.ValidateCatalog(content.LeagueRivalTrainerParties);
         var map=content.MapDefinition(LeagueRivalMap);
@@ -71,8 +66,7 @@ public sealed partial class CampaignSession
         // itself turns the player upward; no invented trigger direction is required.
     }
 
-    private bool LeagueRivalVictory(CampaignState state)=>_content.LeagueRivalEnabled&&
-        (state.ForestTrainerHistory??[]).Any(h=>h is not null&&h.TrainerId is not null&&
+    private bool LeagueRivalVictory(CampaignState state)=>(state.ForestTrainerHistory??[]).Any(h=>h is not null&&h.TrainerId is not null&&
             IsLeagueRivalTrainer(new(h.TrainerId))&&h.Outcome==WildBattleOutcome.Won);
 
     private bool LeagueRivalHistoryOriginMatches(CampaignForestTrainerHistory history) =>
@@ -87,13 +81,13 @@ public sealed partial class CampaignSession
             if(history.TrainerId==ViridianGymTrainerPartyFactory.Giovanni.Value&&history.Outcome==WildBattleOutcome.Won)giovanniWon=true;
             if(!LeagueRivalTrainerPartyFactory.SupportedTrainers.Any(t=>t.Value==history.TrainerId))continue;
             int starter=state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON");
-            if(!_content.LeagueRivalEnabled||!giovanniWon||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET")||lateWon||
+            if(!giovanniWon||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET")||lateWon||
                 starter is <0 or >2||history.TrainerId!=LeagueRivalForStarter(starter).Value||
                 !LeagueRivalHistoryOriginMatches(history))return "save_league_rival_history_invalid";
             lateWon=history.Outcome==WildBattleOutcome.Won;
         }
         foreach(var trainer in LeagueRivalTrainerPartyFactory.SupportedTrainers)
-            if(state.BattledTrainers.Contains(trainer.Value)&&(!_content.LeagueRivalEnabled||!lateWon||
+            if(state.BattledTrainers.Contains(trainer.Value)&&(!lateWon||
                 state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON") is <0 or >2||
                 trainer!=LeagueRivalForStarter(state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON"))))
                 return "save_league_rival_flag_invalid";

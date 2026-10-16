@@ -5,7 +5,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-import argparse,importlib.util,io,json,pathlib,re,sys
+import argparse, io, json, pathlib, re, sys
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT;COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -23,15 +23,15 @@ def resolve(roots,p):
 def authenticated(roots):
  raw=safe(roots[0],'scripts/recipes/presentation/pokemon-tower-art.lock.json').read_bytes()
  lock=json.loads(raw)
- if (lock['schemaVersion'],lock['repository'],lock['commit'],len(lock['files']),len(lock['inputs']))!=(1,'pret/pokefirered',COMMIT,25,2):raise ValueError('Tower art inventory differs')
+ if (lock['schemaVersion'],lock['repository'],lock['commit'])!=(1,'pret/pokefirered',COMMIT):raise ValueError('Tower art inventory differs')
  sources={}
- for row in lock['files']+lock['inputs']:
+ for row in lock['files']:
   b=resolve(roots,row.get('localPath',row['path'])).read_bytes()
   sources[row['path']]=b
  return lock,sources
 
 def build(roots):
- lock,s=authenticated(roots);p=resolve(roots,'scripts/imports/presentation/import-lab-battle-ui.py');spec=importlib.util.spec_from_file_location('tower_art_codec',p);ui=importlib.util.module_from_spec(spec);spec.loader.exec_module(ui)
+ lock,s=authenticated(roots);import ui_tiles as ui
  def need(v,m):
   if not v:raise ValueError(m)
  def palette(path):

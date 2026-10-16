@@ -18,7 +18,7 @@ public sealed partial class CampaignSession
         map.Value.StartsWith("map.five-island-", StringComparison.Ordinal);
     private static bool FiveIslandEditedMap(MapId map) => map.Value is FiveIslandMeadowMap or FiveIslandWarehouseMap;
     private static bool FiveIslandSource(string path) => path.StartsWith("data/maps/FiveIsland", StringComparison.Ordinal);
-    private bool InFiveIslandScript(CampaignState state) => _content.FiveIslandEnabled && state.Script.Stack.Any(f =>
+    private bool InFiveIslandScript(CampaignState state) => state.Script.Stack.Any(f =>
         _content.FindProgram(f.ProgramId)?.Instructions.Any(i => FiveIslandSource(i.Source.Path)) == true);
 
     private ImmutableSortedDictionary<string, FieldMetatileEdit> FiveIslandExpectedEdits(CampaignState state, MapId? mapId = null)
@@ -46,7 +46,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFiveIslandFieldEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.FiveIslandEnabled || !FiveIslandSource(effect.Source.Path)) return false;
+        if (!FiveIslandSource(effect.Source.Path)) return false;
         bool warehouse = effect.Source.Path == FiveIslandWarehouseSource;
         bool meadow = effect.Source.Path == FiveIslandMeadowSource;
         if (!warehouse && !meadow) return false;

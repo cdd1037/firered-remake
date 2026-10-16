@@ -68,7 +68,7 @@ public sealed class RetiredSpecialEncounterTests
     {
         var original = CurrentCampaignFixture.Checkpoint.State;
         var origin = new SevenIslandWildOrigin(new("map.seven-island-tanoby-ruins-monean-chamber"), SevenIslandEncounterKind.Land, 0);
-        var made = SevenIslandWildPokemonFactory.GenerateSourceSlot(CurrentCampaignFixture.Catalog.SevenIslandOwnership!,
+        var made = SevenIslandWildPokemonFactory.GenerateSourceSlot(CurrentCampaignFixture.Catalog.GamePokemon!,
             origin, 25, original.World.Rng, original.TrainerId);
         var history = new CampaignWildHistory("wild-battle:1", 201, 25,
             caught ? WildBattleOutcome.Caught : WildBattleOutcome.Escaped, 0)

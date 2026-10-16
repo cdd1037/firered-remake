@@ -280,7 +280,6 @@ public sealed partial class CampaignSession
     public const string SilphRulesVersion="fr-silph-campaign-v1";
     public const string SurfRulesVersion="fr-surf-campaign-v1";
     public string RulesVersion=>_binding.RulesVersion;
-    public bool IsCurrentGame=>true;
     private readonly CampaignCatalogBinding _binding;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
@@ -308,9 +307,9 @@ public sealed partial class CampaignSession
         var id=content.MapFromSourceSymbol("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");var map=content.Maps[id];var tile=map.GetTile(6,6)??throw new InvalidDataException("Initial player room coordinate missing.");
         var initial=new CampaignState(new(RuleVersions.GridWorldV0,0,0,new(id,6,6,tile.Elevation,Direction.South),new(1)),StoryState.Empty with{Fame=FameCheckerRules.Reset()},ImmutableSortedDictionary<string,CampaignActor>.Empty,[],null,null,null,[],0,"HEAL_LOCATION_PALLET_TOWN","NPC_TEXT_COLOR_NEUTRAL","MUS_PALLET","RED","BLUE",3000,"MUS_DUMMY",[],true);
         initial=initial with{Inventory=content.OpeningItems is {} items?OpeningInventoryRules.NewGame(items):null,TrainerId=options.TrainerId,PlayerName=options.PlayerName,RivalName=options.RivalName,PlayerGender=options.PlayerGender,World=initial.World with{Rng=new(options.RngSeed)}};
-        if(content.PokemonStorageEnabled)initial=initial with{Storage=PokemonStorageState.Empty};
+        initial=initial with{Storage=PokemonStorageState.Empty};
         if(content.ConnectedFieldMaps is not null)initial=InitializeExploration(initial);
-        if(content.OldManTutorialEnabled)initial=initial with{ObjectSlots=EmptyObjectPool};
+        initial=initial with{ObjectSlots=EmptyObjectPool};
         initial=InitializeRenewableHiddenItems(initial);
         initial=InitializeTrainerFanClub(initial);
         initial=InitializeHatchedEggCount(initial);
@@ -418,11 +417,10 @@ public sealed partial class CampaignSession
         var allOwned=OwnedPokemon(s);
         if(allOwned.Length>0)
         {
-            if(!_content.ForestEnabled&&s.Party.Any(p=>p.Status!=0))return "party_status_unsupported";
             var partyError=PokemonStateValidator.ValidatePartyCollection(_content.PokemonContent,s.Party,s.NextPokemonId);if(partyError is not null)return partyError;
             if(allOwned.Any(p=>!p.IsEgg&&!s.CaughtSpecies.Contains(p.Pokemon.SourceSpeciesId)))return "save_party_dex_invalid";
             // Held items are mutable ownership; the original trainer/met/capture identity remains fixed.
-            if(allOwned.Any(p=>!HasSupportedCampaignOriginalTrainer(s,p)||p.Language!=(p.IsEgg?1:2)||p.MetGame!=4||((!_content.CaptureEnabled||p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL"&&_content.SafariEnabled)))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
+            if(allOwned.Any(p=>!HasSupportedCampaignOriginalTrainer(s,p)||p.Language!=(p.IsEgg?1:2)||p.MetGame!=4||((p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL")))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
         }
         else if(s.NextPokemonId<1)return "save_party_serial_invalid";
         if(_content.OpeningItems is {} items){var inventoryError=ValidateCampaignInventory(s.Inventory);if(inventoryError is not null)return inventoryError;}
@@ -443,10 +441,10 @@ public sealed partial class CampaignSession
         {
             if(!OwnedPokemon(state).IsEmpty||state.NextPokemonId!=1||Obtained||!state.SeenSpecies.IsEmpty||!state.CaughtSpecies.IsEmpty||choices.Any(c=>state.Script.Flags.GetValueOrDefault(c.BallHideFlag)))return "save_starter_not_yet_given_inconsistent";
         }
-        else if(scene is 3 or 4 or 5 or 6||_content.NationalDexEnabled&&scene is 7 or 8 or 9)
+        else if(scene is 3 or 4 or 5 or 6||scene is 7 or 8 or 9)
         {
-            if(!state.Script.Variables.TryGetValue("VAR_STARTER_MON",out var index)||index is <0 or >2||(_content.CaptureEnabled?state.Party.Length is <1 or >6:state.Party.Length!=1)||!Obtained||!state.Script.Flags.GetValueOrDefault("FLAG_PALLET_LADY_NOT_BLOCKING_SIGN"))return "save_starter_given_inconsistent";
-            if(scene>=4&&(_content.BattleContent is null||!state.Script.Flags.GetValueOrDefault("FLAG_BEAT_RIVAL_IN_OAKS_LAB")||state.NextBattleId<2||state.SettledBattles.Count!=1||state.BattledTrainers.Count!=1+(_content.ForestTrainersEnabled?OrdinaryWonFlagCount(state)+TwinsWonFlagCount(state):0)||state.BattleHistory.Length!=1))return "save_first_battle_progress_inconsistent";
+            if(!state.Script.Variables.TryGetValue("VAR_STARTER_MON",out var index)||index is <0 or >2||(state.Party.Length is <1 or >6)||!Obtained||!state.Script.Flags.GetValueOrDefault("FLAG_PALLET_LADY_NOT_BLOCKING_SIGN"))return "save_starter_given_inconsistent";
+            if(scene>=4&&(_content.BattleContent is null||!state.Script.Flags.GetValueOrDefault("FLAG_BEAT_RIVAL_IN_OAKS_LAB")||state.NextBattleId<2||state.SettledBattles.Count!=1||state.BattledTrainers.Count!=1+(OrdinaryWonFlagCount(state)+TwinsWonFlagCount(state))||state.BattleHistory.Length!=1))return "save_first_battle_progress_inconsistent";
             if(scene==3&&(state.SettledBattles.Count!=0||state.BattledTrainers.Count!=0||state.NextBattleId!=1||state.BattleHistory.Length!=0))return "save_first_battle_not_completed_inconsistent";
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
@@ -597,8 +595,6 @@ public sealed partial class CampaignSession
                 if(wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.MessagePrinting && state.Dialogue is {} d&&d.Page+1<d.Pages.Length)return new(CommandStatus.Accepted,state with{Dialogue=d with{Page=d.Page+1}});
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&state.MonPicture is{SourceSpeciesId:1 or 4 or 7})
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
-                if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&!_content.FirstSeviiEnabled&&CinnabarFerryChoice(state))
-                    return new(CommandStatus.Rejected,state,"sevii_first_visit_not_yet_available");
                 if(PrizeMenu(state) is {} prizeMenu && command.Choice is not 127 &&
                     (command.Choice is not {} prizeChoice || prizeChoice < 0 || prizeChoice >= prizeMenu.MenuLabels.Length))
                     return new(CommandStatus.Rejected,state,"game_corner_prize_choice_invalid");
@@ -672,7 +668,7 @@ public sealed partial class CampaignSession
             if(command.Kind=="interact")
             {
                 var p=state.World.Player;var (dx,dy)=Delta(p.Facing);int actorX=p.X+dx,actorY=p.Y+dy;
-                if(!_content.SupportsRegionalFlavor(p.MapId)&&_content.PokemonStorageEnabled&&IsSupportedHealingCenter(p.MapId)&&SourceBehavior(state,actorX,actorY)==0x83)
+                if(!_content.SupportsRegionalFlavor(p.MapId)&&IsSupportedHealingCenter(p.MapId)&&SourceBehavior(state,actorX,actorY)==0x83)
                     return new(CommandStatus.Accepted,Pump(StartStory(state,CenterPcScript)));
                 if(_content.QuestItems is not null&&SourceBehavior(state,actorX,actorY)==0x80&&(!_content.SupportsRegionalFlavor(p.MapId)||VisibleActorAt(state,actorX,actorY) is null)){actorX+=dx;actorY+=dy;}
                 var actor=VisibleActorAt(state,actorX,actorY);
@@ -687,8 +683,7 @@ public sealed partial class CampaignSession
                 if(actor is not null)
                 {
                     if(_content.DeferredRegionalServiceReason(p.MapId,actor.ScriptId) is {} unavailable)return new(CommandStatus.Rejected,state,unavailable);
-                    if(_content.CeladonApproachEnabled&&!_content.PresetDoublesEnabled&&actor.ScriptId is "Route8_EventScript_Eli" or "Route8_EventScript_Anne")return new(CommandStatus.Rejected,state,"celadon_approach_double_battle_not_implemented");
-                    if(_content.RocketHideoutEnabled&&actor.ScriptId is "RocketHideout_B4F_EventScript_LiftKey" or "RocketHideout_B4F_EventScript_SilphScope"&&
+                    if(actor.ScriptId is "RocketHideout_B4F_EventScript_LiftKey" or "RocketHideout_B4F_EventScript_SilphScope"&&
                         (state.Inventory?.KeyItems??[]).Length>=ShopCatalog.QuestLimits.KeyItemSlots)
                         return new(CommandStatus.Rejected,state,"inventory_destination_full");
                     PreflightOakInteraction(state,actor);
@@ -725,13 +720,13 @@ public sealed partial class CampaignSession
         var flags=state.Script.Flags.RemoveRange(state.Script.Flags.Keys.Where(k=>k.StartsWith("FLAG_TEMP_",StringComparison.Ordinal)));
         var actors=definition.Actors.ToImmutableSortedDictionary(a=>a.LocalId,a=>new CampaignActor(a.LocalId,a.SourceLocalId,a.GraphicsId,a.X,a.Y,a.Elevation,DirectionFromType(a.MovementType),a.MovementType,a.ScriptId,a.HideFlag,false,false,a.X,a.Y),StringComparer.Ordinal);
         var queue=ImmutableArray.CreateBuilder<string>();if(definition.Programs.OnLoad is {} onLoad)queue.Add(onLoad);if(definition.Programs.OnTransition is {} onTransition)queue.Add(onTransition);
-        if(_content.FirstSeviiEnabled)queue.Add("@renewable-hidden-items");
-        if(_content.ViridianCenterEnabled&&definition.Programs.OnResume is {} onResume)queue.Add(onResume);
+        queue.Add("@renewable-hidden-items");
+        if(definition.Programs.OnResume is {} onResume)queue.Add(onResume);
         queue.Add("@spawn");
-        if(_content.EventIslandsEnabled&&definition.Programs.OnReturnToField is {} onReturn)queue.Add(onReturn);
+        if(definition.Programs.OnReturnToField is {} onReturn)queue.Add(onReturn);
         // Markers evaluate conditional tables after transition flags/vars have committed.
         if(definition.Programs.OnWarpTable is {} onWarp)queue.Add("@table:"+onWarp);
-        return state with{MapLayout=null,BicycleSlope=false,IsSurfing=false,SurfEffect=null,Music=state.IsSurfing?definition.Music:state.Music,IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=_content.FiveIslandEnabled&&FiveIslandEditedMap(state.World.Player.MapId)?FiveIslandExpectedEdits(state):_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId)?CinnabarExpectedEdits(state):_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
+        return state with{MapLayout=null,BicycleSlope=false,IsSurfing=false,SurfEffect=null,Music=state.IsSurfing?definition.Music:state.Music,IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=FiveIslandEditedMap(state.World.Player.MapId)?FiveIslandExpectedEdits(state):CinnabarFieldMap(state.World.Player.MapId)?CinnabarExpectedEdits(state):RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
     }
     private CampaignState Pump(CampaignState state) => PumpWithCameraStep(state, null);
 
@@ -925,7 +920,7 @@ public sealed partial class CampaignSession
                     if(Int(a[0]) is <1 or >411)throw new InvalidDataException("audio_cry_species_invalid");break;
                 case "waitmoncry":break;
                 case "playse":case "playfanfare":case "waitfanfare":case "waitse":break; // Semantic effects preserved in transition; actual audio remains an explicit P0 gap.
-                case "msgbox":case "message":var textSymbol=a[0]=="0x0"?state.MessagePointer??throw new InvalidDataException("message_pointer_missing"):a[0];state=state with{Dialogue=new(textSymbol,textSymbol=="gStringVar4"&&state.TextBuffers.TryGetValue(textSymbol,out var bufferedTowerSpeech)?[bufferedTowerSpeech]:_content.TextPages(textSymbol),0,a.Length>1&&a[1]=="MSGBOX_YESNO",effect.Opcode=="msgbox"&&a.Length>1&&(a[1] is "MSGBOX_NPC" or "MSGBOX_SIGN"||_content.ForestTrainersEnabled&&a[1]=="MSGBOX_AUTOCLOSE"))};if(textSymbol=="gStringVar4")state=state with{TextBuffers=state.TextBuffers.Remove(textSymbol)};break;
+                case "msgbox":case "message":var textSymbol=a[0]=="0x0"?state.MessagePointer??throw new InvalidDataException("message_pointer_missing"):a[0];state=state with{Dialogue=new(textSymbol,textSymbol=="gStringVar4"&&state.TextBuffers.TryGetValue(textSymbol,out var bufferedTowerSpeech)?[bufferedTowerSpeech]:_content.TextPages(textSymbol),0,a.Length>1&&a[1]=="MSGBOX_YESNO",effect.Opcode=="msgbox"&&a.Length>1&&(a[1] is "MSGBOX_NPC" or "MSGBOX_SIGN"||a[1]=="MSGBOX_AUTOCLOSE"))};if(textSymbol=="gStringVar4")state=state with{TextBuffers=state.TextBuffers.Remove(textSymbol)};break;
                 case "waitmessage":if(state.Dialogue is null)throw new InvalidDataException("waitmessage_without_text");break;
                 case "closemessage":state=state with{Dialogue=null};break;
                 case "delay":state=state with{PresentationTicks=Math.Max(state.PresentationTicks,Int(a[0]))};break;
@@ -962,7 +957,7 @@ public sealed partial class CampaignSession
                     // Source map loading initializes the script context and unlocks field controls
                     // (overworld.c CB2_LoadMap, lines 1568-1572). Safari's lockall/warp/waitstate/end scripts rely
                     // on that reset rather than an explicit releaseall in the old map.
-                    if(_content.SafariEnabled&&(effect.Source.Path is SafariEntranceSource or SafariSharedSource)&&
+                    if((effect.Source.Path is SafariEntranceSource or SafariSharedSource)&&
                         (destination.Value is "map.safari-zone-center" or SafariEntranceMap))
                         state=state with{Script=state.Script with{Locked=false}};
                     state=EnterMap(state,facing);break;
@@ -1032,7 +1027,7 @@ public sealed partial class CampaignSession
         path.Add(position);
         bool visible=actor is null?state.PlayerVisible:!actor.Invisible;
         bool facingLocked=false;
-        bool dottedThiefFall=_content.SixIslandEnabled&&sourceProgram=="SixIsland_DottedHole_SapphireRoom_Movement_ThiefFallIn"&&
+        bool dottedThiefFall=sourceProgram=="SixIsland_DottedHole_SapphireRoom_Movement_ThiefFallIn"&&
             actorId=="LOCALID_DOTTED_HOLE_THIEF"&&position.MapId.Value==SixIslandSapphireMap&&position.X==5&&position.Y==0&&
             actions.SequenceEqual(new[]{"face_down","disable_anim","slide_down","slide_down","slide_down","slide_down","slide_down","slide_down","slide_down","slide_down","slide_down","restore_anim","step_end"});
         foreach(var action in actions)
@@ -1043,7 +1038,7 @@ public sealed partial class CampaignSession
             if(action=="unlock_facing_direction"){facingLocked=false;continue;}
             if(action is "set_invisible" or "set_visible"){visible=action=="set_visible";continue;}
             if(action is "emote_exclamation_mark" or "emote_question_mark"||action.StartsWith("delay_",StringComparison.Ordinal))continue;
-            if(action=="nurse_joy_bow"){if(!_content.ViridianCenterEnabled||!IsSupportedHealingCenter(state.World.Player.MapId)||actor is null||actor.LocalId!=HealingNurse(state.World.Player.MapId).LocalId)throw new InvalidDataException("nurse_bow_context_invalid");position=position with{Facing=facingLocked?position.Facing:Direction.South};path.Add(position);continue;}
+            if(action=="nurse_joy_bow"){if(!IsSupportedHealingCenter(state.World.Player.MapId)||actor is null||actor.LocalId!=HealingNurse(state.World.Player.MapId).LocalId)throw new InvalidDataException("nurse_bow_context_invalid");position=position with{Facing=facingLocked?position.Facing:Direction.South};path.Add(position);continue;}
             if(action=="face_original_direction")
             {
                 // Source event_object_movement.c uses the current movement type's initial
@@ -1054,7 +1049,7 @@ public sealed partial class CampaignSession
                 position=position with{Facing=facingLocked?position.Facing:DirectionFromType(actor.MovementType)};path.Add(position);continue;
             }
             if(action=="face_player"){position=position with{Facing=facingLocked?position.Facing:Opposite(state.World.Player.Facing)};continue;}
-            if(action=="jump_2_down"&&_content.ViridianGymEnabled)
+            if(action=="jump_2_down")
             {
                 if(actor is not null||sourceProgram!="ViridianCity_Movement_JumpDownLedge"||position.MapId.Value!="map.viridian-city"||
                     position.X!=36||position.Y!=11||position.Elevation!=3||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_VIRIDIAN_CITY_GYM_DOOR")!=0||
@@ -1072,7 +1067,7 @@ public sealed partial class CampaignSession
             // beyond the 24-cell map. Its authenticated border blocks have elevation
             // zero, so the source object retains its elevation. This exception never
             // admits a player, a general object, or an arbitrary off-map movement.
-            bool boatBorder=tile is null&&_content.FirstSeviiEnabled&&actorId=="LOCALID_CINNABAR_SEAGALLOP"&&
+            bool boatBorder=tile is null&&actorId=="LOCALID_CINNABAR_SEAGALLOP"&&
                 sourceProgram=="CinnabarIsland_Movement_BoatArrive"&&position.MapId.Value=="map.cinnabar-island"&&
                 actor is {TemplateX:30,Elevation:1}&&actor.TemplateY==position.Y&&position.Y is 8 or 12&&
                 position.X is >=26 and <=30&&dx==-1&&dy==0;
@@ -1104,7 +1099,7 @@ public sealed partial class CampaignSession
     }
     private static CampaignState Face(CampaignState state,string actorId,Direction direction)=>actorId=="LOCALID_PLAYER"?state with{World=state.World with{Player=state.World.Player with{Facing=direction}}}:state with{Actors=state.Actors.SetItem(actorId,state.Actors[actorId] with{Facing=direction})};
     private static CampaignActor? VisibleActorAt(CampaignState state,int x,int y)=>state.Actors.Values.FirstOrDefault(a=>a.Active&&a.X==x&&a.Y==y);
-    private Direction DirectionFromType(string type)=>_content.Route3Enabled&&type is "MOVEMENT_TYPE_WANDER_UP_AND_DOWN" or "MOVEMENT_TYPE_WALK_UP_AND_DOWN" or "MOVEMENT_TYPE_FACE_UP_AND_LEFT" or "MOVEMENT_TYPE_FACE_UP_AND_RIGHT" or "MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT"?Direction.North:_content.Route3Enabled&&type is "MOVEMENT_TYPE_WANDER_LEFT_AND_RIGHT" or "MOVEMENT_TYPE_WALK_LEFT_AND_RIGHT" or "MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT"?Direction.West:_content.Route3Enabled&&type is "MOVEMENT_TYPE_WANDER_RIGHT_AND_LEFT" or "MOVEMENT_TYPE_WALK_RIGHT_AND_LEFT"?Direction.East:type=="MOVEMENT_TYPE_FACE_DOWN_AND_UP"?Direction.South:type.EndsWith("_UP",StringComparison.Ordinal)?Direction.North:type.EndsWith("_LEFT",StringComparison.Ordinal)?Direction.West:type.EndsWith("_RIGHT",StringComparison.Ordinal)?Direction.East:Direction.South;
+    private Direction DirectionFromType(string type)=>type is "MOVEMENT_TYPE_WANDER_UP_AND_DOWN" or "MOVEMENT_TYPE_WALK_UP_AND_DOWN" or "MOVEMENT_TYPE_FACE_UP_AND_LEFT" or "MOVEMENT_TYPE_FACE_UP_AND_RIGHT" or "MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT"?Direction.North:type is "MOVEMENT_TYPE_WANDER_LEFT_AND_RIGHT" or "MOVEMENT_TYPE_WALK_LEFT_AND_RIGHT" or "MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT"?Direction.West:type is "MOVEMENT_TYPE_WANDER_RIGHT_AND_LEFT" or "MOVEMENT_TYPE_WALK_RIGHT_AND_LEFT"?Direction.East:type=="MOVEMENT_TYPE_FACE_DOWN_AND_UP"?Direction.South:type.EndsWith("_UP",StringComparison.Ordinal)?Direction.North:type.EndsWith("_LEFT",StringComparison.Ordinal)?Direction.West:type.EndsWith("_RIGHT",StringComparison.Ordinal)?Direction.East:Direction.South;
     private static int SourceDirectionValue(Direction direction)=>direction switch{Direction.South=>1,Direction.North=>2,Direction.West=>3,_=>4};
     private static Direction SourceDirection(int value)=>value switch{1=>Direction.South,2=>Direction.North,3=>Direction.West,4=>Direction.East,_=>throw new InvalidDataException("source_direction_invalid")};
     private static Direction Opposite(Direction d)=>d switch{Direction.North=>Direction.South,Direction.South=>Direction.North,Direction.East=>Direction.West,_=>Direction.East};

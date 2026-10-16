@@ -8,7 +8,7 @@ import re
 
 from image_io import indexed_png, png
 from item_icon_exports import item_icon_path
-from presentation_pixels import palette, rgba
+from presentation_pixels import PixelReader, palette, rgba
 
 
 def unique_pairs(rows):
@@ -39,7 +39,7 @@ class ItemSource:
                     startLine=1 if match is None else text.count('\n', 0, match.start()) + 1,
                     endLine=max(1, text.count('\n')) if match is None else text.count('\n', 0, match.end()) + 1)
 
-    def icon(self, symbol, output_path=None):
+    def icon_sources(self, symbol):
         binding = self.match('src/data/item_icon_table.h',
             r'^    \[' + re.escape(symbol) + r'\][ \t]*= \{(\w+), (\w+)\},')
         paths = []
@@ -47,6 +47,10 @@ class ItemSource:
             graphic = self.match('src/data/graphics/items.h',
                 r'^const u32 ' + re.escape(asset) + r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);')
             paths.append(graphic[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
+        return paths
+
+    def icon(self, symbol, output_path=None):
+        paths = self.icon_sources(symbol)
         image, colors = paths
         width, height, indices, _ = indexed_png(self.read(image))
         if (width, height) != (24, 24):
@@ -80,3 +84,21 @@ class ItemSource:
                     elevation=event['elevation'], flag=event['flag'], underfoot=event['underfoot'],
                     script=None, source=self.ref(path, event['flag']), scriptSource=None))
         return result
+
+
+def selected_item_art(source, selection, emit):
+    """Build selected regional item descriptions and exact 24px source icons."""
+    items = []
+    icons = ItemSource(source.read)
+    pixels = PixelReader(source)
+    data = json.loads(source.read('src/data/items.json'))['items']
+    for name in selection:
+        symbol = 'ITEM_' + name
+        paths = icons.icon_sources(symbol)
+        _, image = pixels.indexed(*paths, (24, 24))
+        row = next(row for row in data if row['itemId'] == symbol)
+        items.append(dict(item='pret:' + symbol, name=row['english'],
+            description=row['description_english'].replace('\\n', '\n'),
+            pocket=row['pocket'], fieldUseFunction=row['fieldUseFunc'],
+            **emit('item-' + name.lower().replace('_', '-'), 24, 24, image, paths)))
+    return items

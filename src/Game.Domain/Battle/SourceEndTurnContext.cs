@@ -6,7 +6,6 @@ using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
 // Names and order are DoFieldEndTurnEffects / DoBattlerEndTurnEffects at the pinned source.
-internal enum SourceFieldEndTurnStep { Reflect, LightScreen, Mist, Safeguard, Wish, Rain, Sandstorm, Sun, Hail }
 internal enum SourceBattlerEndTurnStep { Ingrain, Abilities, Items1, LeechSeed, Poison, Toxic, Burn, Nightmare,
     Curse, Wrap, Uproar, Thrash, Disable, Encore, LockOn, Charge, Taunt, Yawn, Items2 }
 

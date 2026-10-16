@@ -36,25 +36,13 @@ public static class FiveIslandTrainerPartyFactory
     {
         ValidateCatalog(trainers);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("five_island_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
     public static TrainerPartyCreationResult Create(FiveIslandTrainerCatalog trainers,
         GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("five_island_trainer_catalog");
-        foreach (var member in trainer.Party)
-        {
-            if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("five_island_trainer_species");
-            if (member.CustomMoves.Any(m => !opponents.Mechanics.Catalog.Moves.TryGetValue(m, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
-                throw new NotSupportedException("five_island_trainer_move_source");
-        }
-        var made = TrainerPartyFactory.CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);
-        if ((trainer.PartyFlags & 1) == 0) return made;
-        return made with { Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.Where(m => m.Value != "pret:MOVE_NONE").Select(m => new PokemonMoveSlot(m,
-                opponents.Mechanics.Catalog.Moves[m].Pp, opponents.Mechanics.Catalog.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
     public static void ValidateCatalog(FiveIslandTrainerCatalog catalog)
     {

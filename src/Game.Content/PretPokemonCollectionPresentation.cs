@@ -109,13 +109,8 @@ public sealed class PretPokemonCollectionPresentation
 
     private static string SafeFile(string root, string path)
     {
-        if (!path.StartsWith("content/generated/", StringComparison.Ordinal) || Path.IsPathRooted(path) ||
-            path.Contains('\\') || path.Contains(':') || path.Split('/').Any(part => part is "" or "." or ".."))
+        if (!path.StartsWith("content/generated/", StringComparison.Ordinal))
             throw new InvalidDataException("pokemon_collection_art_path");
-        var file = new FileInfo(Path.Combine(Path.GetFullPath(root), path));
-        if (file.LinkTarget is not null) throw new InvalidDataException("pokemon_collection_art_symlink");
-        for (var directory = file.Directory; directory is not null; directory = directory.Parent)
-            if (directory.LinkTarget is not null) throw new InvalidDataException("pokemon_collection_art_symlink");
-        return file.FullName;
+        return GeneratedResourceFile.SafePath(root, path);
     }
 }

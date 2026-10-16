@@ -13,7 +13,7 @@ public partial class CampaignView
     private bool _eventThunderPlayed;
     private readonly Dictionary<(Texture2D Texture,int Blend),ImageTexture> _eventWhiteTextures=[];
     private static int EventFrame(double frames)=>(int)Math.Floor(frames+1e-7);
-    private Vector2 EventIslandCameraFocus(Vector2 playerPosition)=>_catalog.EventIslandsEnabled&&_session.State.World.Player.MapId.Value==EventSummitMap&&
+    private Vector2 EventIslandCameraFocus(Vector2 playerPosition)=>_session.State.World.Player.MapId.Value==EventSummitMap&&
         _session.State.Actors.TryGetValue("LOCALID_CAMERA",out var camera)&&camera.Active&&camera.Invisible&&_poses.TryGetValue("LOCALID_CAMERA",out var pose)
             ?pose.Position:playerPosition;
     private Vector2 EventIslandCameraOffset
@@ -26,7 +26,6 @@ public partial class CampaignView
     }
     private void SynchronizeEventIslandFieldPresentation(CampaignState? before,CampaignState after)
     {
-        if(!_catalog.EventIslandsEnabled)return;
         if(before?.World.Player.MapId!=after.World.Player.MapId){long seen=_eventFieldSequence;ResetEventIslandFieldPresentation();_eventFieldSequence=seen;}
         if(after.DeoxysRockEffect is null)
         {
@@ -94,7 +93,6 @@ public partial class CampaignView
     }
     private bool DrawEventIslandActor(string id,SpriteAsset asset,Pose pose,Vector2 camera)
     {
-        if(!_catalog.EventIslandsEnabled)return false;
         if(_session.State.World.Player.MapId.Value==EventSummitMap&&id=="LOCALID_NAVEL_ROCK_HO_OH"&&pose.Frame>0)
         {
             int frame=(pose.Frame-1)%2==0?3:4;

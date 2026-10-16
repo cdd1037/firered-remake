@@ -119,7 +119,7 @@ public sealed partial class CampaignSession
             Add(pokemonTower.Trainers.Values, pokemonTower.Battles.Values.Select(ProjectTrainerScript),
                 (trainer, rng) => PokemonTowerTrainerPartyFactory.Create(pokemonTower, _binding.Ownership.Opponents.Catalog, trainer, rng), "pokemon-tower-trainer");
         }
-        if (_content.FuchsiaRouteEnabled && _content.FuchsiaRouteTrainers is { } fuchsiaRoute)
+        if (_content.FuchsiaRouteTrainers is { } fuchsiaRoute)
         {
             Add(fuchsiaRoute.Trainers.Values, fuchsiaRoute.Battles.Values.Select(ProjectTrainerScript),
                 (trainer, rng) => FuchsiaRouteTrainerPartyFactory.Create(fuchsiaRoute, _binding.Ownership.Opponents.Catalog, trainer, rng), "fuchsia-route-trainer");
@@ -142,80 +142,80 @@ public sealed partial class CampaignSession
         if (_content.CinnabarTrainerParties is { } cinnabar)
         {
             Add(cinnabar.Trainers.Values, cinnabar.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => CinnabarTrainerPartyFactory.Create(cinnabar, _content.CinnabarOpponents!, trainer, rng), "cinnabar-trainer");
+                (trainer, rng) => CinnabarTrainerPartyFactory.Create(cinnabar, _content.OpponentPokemon!, trainer, rng), "cinnabar-trainer");
         }
-        if (_content.FirstSeviiEnabled && _content.FirstSeviiTrainerParties is { } firstSevii)
+        if (_content.FirstSeviiTrainerParties is { } firstSevii)
         {
             Add(firstSevii.Trainers.Values, firstSevii.BattlesBySource.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => FirstSeviiTrainerPartyFactory.Create(firstSevii, _content.CinnabarOpponents!, trainer, rng), "first-sevii-trainer");
+                (trainer, rng) => FirstSeviiTrainerPartyFactory.Create(firstSevii, _content.OpponentPokemon!, trainer, rng), "first-sevii-trainer");
         }
-        if (_content.ViridianGymEnabled && _content.ViridianGymTrainerParties is { } viridianGym)
+        if (_content.ViridianGymTrainerParties is { } viridianGym)
         {
             Add(viridianGym.Trainers.Values, viridianGym.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => ViridianGymTrainerPartyFactory.Create(viridianGym, _content.CinnabarOpponents!, trainer, rng), "viridian-gym-trainer");
+                (trainer, rng) => ViridianGymTrainerPartyFactory.Create(viridianGym, _content.OpponentPokemon!, trainer, rng), "viridian-gym-trainer");
         }
-        if (_content.LeagueRivalEnabled && _content.LeagueRivalTrainerParties is { } leagueRival)
+        if (_content.LeagueRivalTrainerParties is { } leagueRival)
         {
             Add(leagueRival.Trainers.Values, leagueRival.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => LeagueRivalTrainerPartyFactory.Create(leagueRival, _content.CinnabarOpponents!, trainer, rng), "league-rival-trainer");
+                (trainer, rng) => LeagueRivalTrainerPartyFactory.Create(leagueRival, _content.OpponentPokemon!, trainer, rng), "league-rival-trainer");
         }
-        if (_content.VictoryRoadEnabled && _content.VictoryRoadTrainerParties is { } victoryRoad)
+        if (_content.VictoryRoadTrainerParties is { } victoryRoad)
         {
             Add(victoryRoad.Trainers.Values, victoryRoad.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => VictoryRoadTrainerPartyFactory.Create(victoryRoad, _content.VictoryRoadOpponents!, trainer, rng), "victory-road-trainer");
+                (trainer, rng) => VictoryRoadTrainerPartyFactory.Create(victoryRoad, _content.OpponentPokemon!, trainer, rng), "victory-road-trainer");
         }
-        if (_content.PokemonLeagueEnabled && _content.PokemonLeagueTrainerParties is { } pokemonLeague)
+        if (_content.PokemonLeagueTrainerParties is { } pokemonLeague)
         {
             Add(pokemonLeague.Trainers.Values, pokemonLeague.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => PokemonLeagueTrainerPartyFactory.Create(pokemonLeague, _content.PokemonLeagueOpponents!, trainer, rng), "pokemon-league-trainer");
+                (trainer, rng) => PokemonLeagueTrainerPartyFactory.Create(pokemonLeague, _content.OpponentPokemon!, trainer, rng), "pokemon-league-trainer");
         }
-        if (_content.LeagueRematchEnabled && _content.LeagueRematchTrainerParties is { } rematch)
+        if (_content.LeagueRematchTrainerParties is { } rematch)
         {
             Add(rematch.Trainers.Values, rematch.Battles.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => LeagueRematchTrainerPartyFactory.Create(rematch, _content.LeagueRematchOpponents!, trainer, rng), "league-rematch-trainer");
+                (trainer, rng) => LeagueRematchTrainerPartyFactory.Create(rematch, _content.OpponentPokemon!, trainer, rng), "league-rematch-trainer");
         }
-        if (_content.SeviiRubyEnabled && _content.SeviiRubyTrainers is { } seviiRuby)
+        if (_content.SeviiRubyTrainers is { } seviiRuby)
         {
             Add(seviiRuby.Trainers.Values, seviiRuby.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SeviiRubyTrainerPartyFactory.Create(seviiRuby, _content.SeviiRubyOpponents!, trainer, rng), "sevii-ruby-trainer");
+                (trainer, rng) => SeviiRubyTrainerPartyFactory.Create(seviiRuby, _content.OpponentPokemon!, trainer, rng), "sevii-ruby-trainer");
         }
-        if (_content.FourIslandEnabled && _content.FourIslandTrainers is { } fourIsland)
+        if (_content.FourIslandTrainers is { } fourIsland)
         {
             Add(fourIsland.Trainers.Values, fourIsland.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => FourIslandTrainerPartyFactory.Create(fourIsland, _content.FourIslandOpponents!, trainer, rng), "four-island-trainer");
+                (trainer, rng) => FourIslandTrainerPartyFactory.Create(fourIsland, _content.OpponentPokemon!, trainer, rng), "four-island-trainer");
         }
-        if (_content.FiveIslandEnabled && _content.FiveIslandTrainers is { } fiveIsland)
+        if (_content.FiveIslandTrainers is { } fiveIsland)
         {
             Add(fiveIsland.Trainers.Values, fiveIsland.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => FiveIslandTrainerPartyFactory.Create(fiveIsland, _content.FiveIslandOpponents!, trainer, rng), "five-island-trainer");
+                (trainer, rng) => FiveIslandTrainerPartyFactory.Create(fiveIsland, _content.OpponentPokemon!, trainer, rng), "five-island-trainer");
         }
-        if (_content.SixIslandEnabled && _content.SixIslandTrainers is { } sixIsland)
+        if (_content.SixIslandTrainers is { } sixIsland)
         {
             Add(sixIsland.Trainers.Values, sixIsland.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SixIslandTrainerPartyFactory.Create(sixIsland, _content.SixIslandOpponents!, trainer, rng), "six-island-trainer");
+                (trainer, rng) => SixIslandTrainerPartyFactory.Create(sixIsland, _content.OpponentPokemon!, trainer, rng), "six-island-trainer");
         }
-        if (_content.SevenIslandEnabled && _content.SevenIslandTrainers is { } sevenIsland)
+        if (_content.SevenIslandTrainers is { } sevenIsland)
         {
             Add(sevenIsland.Trainers.Values, sevenIsland.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SevenIslandTrainerPartyFactory.Create(sevenIsland, _content.SevenIslandOpponents!, trainer, rng), "seven-island-trainer");
+                (trainer, rng) => SevenIslandTrainerPartyFactory.Create(sevenIsland, _content.OpponentPokemon!, trainer, rng), "seven-island-trainer");
         }
-        if (_content.FightingDojoEnabled && _content.FightingDojoTrainers is { } fightingDojo)
+        if (_content.FightingDojoTrainers is { } fightingDojo)
         {
             Add(fightingDojo.Trainers.Values, fightingDojo.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => FightingDojoTrainerPartyFactory.Create(fightingDojo, _content.FightingDojoOpponents!, trainer, rng), "fighting-dojo-trainer");
+                (trainer, rng) => FightingDojoTrainerPartyFactory.Create(fightingDojo, _content.OpponentPokemon!, trainer, rng), "fighting-dojo-trainer");
         }
-        if (_content.SeafoamEnabled && _content.SeafoamTrainers is { } seafoam)
+        if (_content.SeafoamTrainers is { } seafoam)
         {
             Add(seafoam.Trainers.Values, seafoam.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => SeafoamTrainerPartyFactory.Create(seafoam, _content.SeafoamOpponents!, trainer, rng), "seafoam-trainer");
+                (trainer, rng) => SeafoamTrainerPartyFactory.Create(seafoam, _content.OpponentPokemon!, trainer, rng), "seafoam-trainer");
         }
         if (_content.MemorialPillarTrainers is { } memorial)
         {
             Add(memorial.Trainers.Values, memorial.BattlesByScript.Values.Select(ProjectTrainerScript),
-                (trainer, rng) => MemorialPillarTrainerPartyFactory.Create(memorial, _content.MemorialPillarOpponents!, trainer, rng),
+                (trainer, rng) => MemorialPillarTrainerPartyFactory.Create(memorial, _content.OpponentPokemon!, trainer, rng),
                 "memorial-pillar-trainer");
         }
-        if (_content.LostCaveEnabled && _content.LostCaveTrainers is { } lostCave)
+        if (_content.LostCaveTrainers is { } lostCave)
         {
             Add(lostCave.Trainers.Values, lostCave.BattlesByScript.Values.Select(ProjectTrainerScript),
                 (trainer, rng) => LostCaveTrainerPartyFactory.Create(lostCave, _binding.Ownership, trainer, rng),

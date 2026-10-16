@@ -17,13 +17,12 @@ public sealed partial class CampaignSession
         if ((state.Inventory?.KeyItems ?? []).Count(s => s.Item == GameCornerCoinSource.CoinCase) > 1) return "save_coin_case_duplicate";
         bool gifts = GameCornerCoinSource.GiftFlags.Any(f => state.Script.Flags.GetValueOrDefault(f)) ||
             _content.FieldPickups.Any(p => IsHiddenCoinPickup(p) && state.Script.Flags.GetValueOrDefault(p.Flag));
-        if (!_content.GameCornerCoinsEnabled) return received || quantity != 0 || gifts || state.Coins != 0 ? "save_game_corner_coins_missing" : null;
         return quantity != (received ? 1 : 0) || !received && (gifts || state.Coins != 0) ? "save_coin_case_receipt" : null;
     }
 
     private bool AtCoinServiceActor(CampaignState state, string map, string script, int localId, string graphics, int x, int y, int elevation)
     {
-        if (!_content.GameCornerCoinsEnabled || state.World.Player.MapId.Value != map || state.Script.Completed ||
+        if (state.World.Player.MapId.Value != map || state.Script.Completed ||
             state.LastTalked is not {} id || !state.Actors.TryGetValue(id, out var actor) || !actor.Active || actor.Invisible ||
             actor.SourceLocalId != localId || actor.ScriptId != script || actor.GraphicsId != graphics ||
             actor.TemplateX != x || actor.TemplateY != y || actor.Elevation != elevation) return false;
@@ -59,7 +58,7 @@ public sealed partial class CampaignSession
         bool coins = effect.Opcode is "showcoinsbox" or "hidecoinsbox" or "updatecoinsbox" or "checkcoins" or "addcoins";
         bool money = effect.Opcode is "showmoneybox" or "hidemoneybox" or "updatemoneybox" or "checkmoney" or "removemoney";
         if (!(caseItem || own && (coins || money || effect.Opcode == "multichoice"))) return false;
-        if (!_content.GameCornerCoinsEnabled || !state.Script.Locked || state.Coins is < 0 or > GameCornerCoinSource.Maximum)
+        if (!state.Script.Locked || state.Coins is < 0 or > GameCornerCoinSource.Maximum)
             throw new InvalidDataException("game_corner_coins_context");
         RequireCoinEffect(state, effect);
         if (caseItem) return ApplyCoinCaseItem(state, effect, out next);
@@ -158,7 +157,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> UseCoinCase(CampaignState state, CampaignCommand command)
     {
-        if (!_content.GameCornerCoinsEnabled || command.Text != GameCornerCoinSource.CoinCase.Value ||
+        if (command.Text != GameCornerCoinSource.CoinCase.Value ||
             state.ItemMenu is not { Origin: "bag", View: "bag" } menu || ValidateCampaignInventory(state.Inventory) is not null ||
             ValidateGameCornerCoins(state) is not null || !state.Script.Flags.GetValueOrDefault(GameCornerCoinSource.CaseFlag))
             return new(CommandStatus.Rejected, state, "coin_case_use_context");

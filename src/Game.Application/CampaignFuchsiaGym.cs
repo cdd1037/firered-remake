@@ -11,8 +11,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId KogaMachine=new("pret:ITEM_TM06");
     private bool TryApplyFuchsiaGymEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.FuchsiaGymEnabled)return false;
-        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetFuchsiaGymTrainers")
+        next=state;        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetFuchsiaGymTrainers")
         {
             if(effect.Args.Length!=1||effect.Args[0] is not("TRAINER_TAMER_PHIL" or "TRAINER_TAMER_EDGAR" or "TRAINER_JUGGLER_KIRK" or "TRAINER_JUGGLER_SHAWN" or "TRAINER_JUGGLER_KAYDEN" or "TRAINER_JUGGLER_NATE")||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"))
                 throw new InvalidDataException("fuchsia_gym_trainer_flag_context");
@@ -30,7 +29,7 @@ public sealed partial class CampaignSession
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
+            var machines=_content.Machines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"))throw new InvalidDataException("fuchsia_gym_tm_reward_context");
             if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(machines,inventory,KogaMachine)?1:0;
@@ -44,7 +43,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateFuchsiaGymProgress(CampaignState state)
     {
-        if(!_content.FuchsiaGymEnabled)return null;
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET");
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==FuchsiaGymTrainerPartyFactory.Koga.Value&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_KOGA")!=won)return "save_koga_badge_history_mismatch";

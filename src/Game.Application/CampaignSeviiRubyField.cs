@@ -9,7 +9,6 @@ public sealed partial class CampaignSession
 {
     private IReadOnlyDictionary<MapId, IFieldMap> SeviiRubyMovementMaps(IReadOnlyDictionary<MapId, IFieldMap> maps, CampaignState state)
     {
-        if (!_content.SeviiRubyEnabled) return maps;
         var result = maps.ToDictionary(p => p.Key, p => p.Value);
         foreach (var pair in maps.Where(p => SeviiRubyMap(p.Key) || p.Key.Value == RubyCenterMap))
         {
@@ -44,7 +43,6 @@ public sealed partial class CampaignSession
 
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> SeviiRubyWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
-        if (!_content.SeviiRubyEnabled) return maps;
         var result = maps.ToDictionary(p => p.Key, p => p.Value);
         foreach (var pair in maps.Where(p => p.Key.Value is "map.one-island-kindle-road" or "map.one-island-kindle-road-ember-spa" or "map.mt-ember-exterior"))
         {
@@ -96,10 +94,10 @@ public sealed partial class CampaignSession
         return null;
     }
 
-    private bool RubyBrailleWait(CampaignState state) => _content.SeviiRubyEnabled && InSeviiRubyScript(state) && state.Script.Locked &&
+    private bool RubyBrailleWait(CampaignState state) => InSeviiRubyScript(state) && state.Script.Locked &&
         state.World.Player.MapId.Value is "map.mt-ember-ruby-path-b4f" or "map.mt-ember-ruby-path-b5f" &&
         state.Script.Wait?.Kind == StoryWaitKind.ButtonPress && state.Dialogue?.TextSymbol.StartsWith("Braille_Text_", StringComparison.Ordinal) == true;
-    private bool RubyPasswordWait(CampaignState state) => _content.SeviiRubyEnabled && state.Script.Locked &&
+    private bool RubyPasswordWait(CampaignState state) => state.Script.Locked &&
         state.World.Player.MapId.Value == RubyExteriorMap && state.Script.Wait?.Kind == StoryWaitKind.ButtonPress &&
         state.Script.Stack.LastOrDefault()?.ProgramId == "MtEmber_Exterior_EventScript_RocketPasswordScene" &&
         state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_MT_EMBER_EXTERIOR") == 1 &&

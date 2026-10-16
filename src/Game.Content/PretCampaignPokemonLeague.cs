@@ -13,11 +13,9 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string PokemonLeagueContentProfile="firered-pokemon-league-first-clear-v1";
-    public PretPokemonLeagueRegion? PokemonLeagueRegion { get; }
+    public PretPokemonLeagueRegion PokemonLeagueRegion { get; }
     public PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties { get; }
-    public GameOpponentPokemonCatalog? PokemonLeagueOpponents { get; }
     public PokemonLeagueMartStock? PokemonLeagueMartStock { get; }
-    public bool PokemonLeagueEnabled=>PokemonLeagueRegion is not null;
 
 
     private static PokemonLeagueMartStock CreatePokemonLeagueMartStock(PretPokemonLeagueRegion region,EarlyShopCatalog shop,PretStoryCompilation scripts)

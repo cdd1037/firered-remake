@@ -10,10 +10,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretSuperRodService SuperRodService { get; }
-    public bool SuperRodEnabled => true;
-    public GamePokemonCatalog SuperRodOwnership { get; }
-    public GameOpponentPokemonCatalog SuperRodOpponents { get; }
-    public MachineCatalog SuperRodMachines { get; }
     public ImmutableDictionary<MapId, OldRodEncounterTable> SuperRodEncounters { get; }
 
     private static void ValidateSuperRodComposition(PretSuperRodService service,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)

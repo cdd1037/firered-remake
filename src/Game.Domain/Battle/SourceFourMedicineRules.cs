@@ -16,69 +16,6 @@ public sealed record SourceFourMedicineResult(SourceFourActionResult Battle, Inv
 /// no-effect item marker ahead of moves. No battle-only duplicate healing/inventory engine.</summary>
 public static partial class SourceFourMedicineRules
 {
-    public static SourceFourMedicineResult Select(EarlyShopCatalog shop, OpeningItemsCatalog opening,
-        CampaignPokemonContent content, PokemonCatalog battleCatalog, SourceBattleFrame frame,
-        long expectedRevision, OccupantToken actor, InventoryState inventory,
-        ImmutableArray<PartyPokemon> party, BattleMedicineSelection? selection)
-    {
-        SourceFourMedicineResult Fail(string error) => new(new(frame, [], [], error), inventory, party, null);
-        if (SourceFourActionTurns.ValidateCapability(battleCatalog, frame) is { } error) return Fail(error);
-        if (frame.Revision != expectedRevision) return Fail("source_medicine_stale_revision");
-        if (frame.FourTurn is not null || !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty ||
-            frame.Outcome != WildBattleOutcome.Ongoing || frame.DeferredKoVacancyMask != 0)
-            return Fail("source_medicine_selection_phase");
-        if (!frame.IsCurrent(actor) || actor.Slot.Side != BattleSide.Player || !CanSelect(frame,actor.Slot) ||
-            frame.Get(actor.Slot).Registers.Turn?.Lock is not null) return Fail("source_medicine_actor");
-        if ((frame.PreparedMedicines ?? []).Any(p => p.Actor.Slot == actor.Slot)) return Fail("source_medicine_already_selected");
-        if (selection is null) return Fail("battle_medicine_cancelled");
-        var actual = frame.Party(BattleSide.Player);
-        if (party.IsDefaultOrEmpty || party.Length != actual.Members.Length) return Fail("source_item_party_context");
-        var identities = new HashSet<long>();
-        for (int i = 0; i < party.Length; i++)
-        {
-            var owned = party[i]; var member = actual.Members[i];
-            if (owned?.Pokemon is null || !WildBattleSourcePartyEffects.SamePokemon(owned.Pokemon, member.Pokemon) ||
-                owned.Status != member.Status || owned.IsEgg != member.IsEgg ||
-                owned.HeldItem != WildBattleSourcePartyEffects.PersistentHeldItem(member)) return Fail("source_item_party_projection");
-            if (PokemonStateValidator.ValidateParty(content, owned) is { } invalid) return Fail(invalid);
-            if (!identities.Add(owned.InstanceId)) return Fail("source_item_duplicate_identity");
-        }
-        int index = Enumerable.Range(0, party.Length).FirstOrDefault(i => party[i].InstanceId == selection.TargetInstanceId, -1);
-        if (index < 0) return Fail("battle_medicine_target_identity");
-        try
-        {
-            var before = party[index];
-            var medicine = EarlyShopMedicineRules.Use(shop, opening, content, inventory, before, selection.Item, PotionUseContext.Battle);
-            if (!medicine.Succeeded) return Fail(medicine.Error ?? "battle_medicine_no_effect");
-            var after = medicine.Pokemon;
-            var target = new PartyMemberKey(BattleSide.Player, index);
-            var cell = frame.Slots.FirstOrDefault(c => c.Member == target);
-            var next = frame with { Revision = checked(frame.Revision + 1),
-                Parties = frame.Parties.SetItem(0, actual with { Members = actual.Members.SetItem(index,
-                    actual.Members[index] with { Pokemon = after.Pokemon, Status = after.Status }) }),
-                PreparedMedicines = (frame.PreparedMedicines ?? []).Add(new(actor, selection.Item, target)) };
-            if (cell is not null)
-            {
-                bool cured = before.Status != after.Status;
-                var active = WildBattleTransformationRules.ApplyPersistentPokemon(cell.Body!, after.Pokemon);
-                active = active with { Status = cured ? after.Status : cell.Body!.Status,
-                    Nightmare = cured && !WildBattleStatus.IsSleeping(after.Status) ? false : cell.Body!.Nightmare,
-                    SourcePartyStatusOverride = cured ? null : cell.Body!.SourcePartyStatusOverride,
-                    Transform = active.Transform is { } form ? form with {
-                        PartyStatusOverride = cured ? null : cell.Body!.Transform?.PartyStatusOverride } : null };
-                next = next with { Slots = next.Slots.SetItem(cell.Slot.Value, cell with { Body = active }) };
-            }
-            var published = SourceBattleEventHooks.Publish(next, (n, t) => new SourceMedicineAppliedEvent(n, t,
-                selection.Item, before.InstanceId, index, cell is not null,
-                before.Pokemon.CurrentHp, after.Pokemon.CurrentHp, before.Status, after.Status));
-            if (SourceFourActionTurns.ValidateCapability(battleCatalog, published.State) is { } invalid) return Fail(invalid);
-            return new(new(published.State, [published.Event], [], null), medicine.Inventory,
-                party.SetItem(index, after), new(actor, SourceActionKind.Item, Item: selection.Item));
-        }
-        catch (OverflowException) { return Fail("source_four_action_counter_exhausted"); }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException) { return Fail("source_medicine_content_unsupported"); }
-    }
-
     internal static string? Validate(SourceBattleFrame frame)
     {
         if (frame.PreparedMedicines is not { } prepared) return null;

@@ -21,7 +21,6 @@ public sealed class PretEeveeArt
     public ImmutableArray<Route3PokemonFootprint> Footprints=>Document.Footprints;
     public ImmutableDictionary<int,PokedexMenuEntry> DexEntries { get; }
     public ImmutableDictionary<int,CaptureDexEntry> CaptureDexEntries { get; }
-    public ImmutableDictionary<SpeciesId,int> WeightsHectograms { get; }
     private PretEeveeArt(EeveeArtDocument doc,JsonElement manifest,ImmutableDictionary<string,byte[]> files,PretPokedexMenu dex)
     {
         Document=doc; Manifest=manifest; Files=files;
@@ -30,7 +29,6 @@ public sealed class PretEeveeArt
         DexEntries=ImmutableDictionary<int,PokedexMenuEntry>.Empty.Add(133,d);
         CaptureDexEntries=ImmutableDictionary<int,CaptureDexEntry>.Empty.Add(133,new(d.SourceSpeciesId,d.NationalNumber,d.Name,d.Category,d.DisplayCategory,
             d.HeightDecimeters,d.WeightHectograms,d.HeightDisplay,d.WeightDisplay,d.Description,d.Footprint!.TexturePath,d.Portrait!.TexturePath,d.HabitatTitle));
-        WeightsHectograms=ImmutableDictionary<SpeciesId,int>.Empty.Add(new("pret:SPECIES_EEVEE"),doc.Dex.WeightHectograms);
     }
     public static PretEeveeArt Load(string projectRoot,string? dependencyProjectRoot=null,PretPokedexMenu? pokedexMenu=null)
     {

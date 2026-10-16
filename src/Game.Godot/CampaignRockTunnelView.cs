@@ -9,37 +9,11 @@ public partial class CampaignView
 {
     private void LoadRockTunnelPresentation()
     {
-        if (!_catalog.RockTunnelEnabled) return;
         var source = _catalog.RockTunnelPokemon ?? throw new InvalidDataException("RockTunnel Pokemon presentation is missing.");
-        Image Decode(byte[] bytes, int width, int height)
-        {
-            var image = new Image();
-            if (image.LoadPngFromBuffer(bytes) != Error.Ok) { image.Dispose(); throw new InvalidDataException("Invalid RockTunnel PNG."); }
-            image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != width || image.GetHeight() != height)
-            { image.Dispose(); throw new InvalidDataException("RockTunnel source pixels differ."); }
-            return image;
-        }
-        foreach (var sprite in source.Sprites)
-        {
-            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var footprint in source.Footprints)
-        {
-            using var image = Decode(source.ReadFootprintTexture(footprint.SourceSpeciesId), 16, 16);
-            _route22Footprints.Add(footprint.SourceSpeciesId, ImageTexture.CreateFromImage(image));
-        }
-        foreach (var icon in source.Icons)
-        {
-            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32);
-            var rgba = image.GetData();
-            for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
-            using var display = Image.CreateFromData(32, 32, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), ImageTexture.CreateFromImage(display));
-        }
+
+        RegisterPokemonSprites(source);
+
+        RegisterPokemonIcons(source);
         var assets=RockTunnelPresentationAssets.Load(_root);
         using(var image=NativeImages.LoadPng(assets["pokemaniac-front.png"], 64, 64))_forestTrainerPortraits.Add("pokemaniac-front",ImageTexture.CreateFromImage(image));
         using(var image=NativeImages.LoadPng(assets["indoor-streaks.png"], 256, 80))_fieldFlashStreaks=ImageTexture.CreateFromImage(image);
@@ -84,7 +58,7 @@ public partial class CampaignView
     // Original SetFlashScanlineEffectWindowBoundaries integer raster and right-exclusive GBA window.
     private void DrawFieldFlashMask()
     {
-        if(!_catalog.RockTunnelEnabled||_session.State.FlashLevel==0)return;
+        if(_session.State.FlashLevel==0)return;
         int radius=FieldFlashRadius;
         if(radius!=_fieldFlashMaskRadius)
         {
@@ -114,7 +88,7 @@ public partial class CampaignView
         int xMon=slide<FieldFlashSourcePresentation.MonSlideInFrames?Math.Max(120,320-slide*20):exit<0?120:120-exit*20;
         var mon=_session.State.Party[partyIndex].Pokemon;DrawTexture(_battleArt[(PresentedRenderSpecies(mon),"front",mon.IsShiny)].Texture,new(xMon-32,48));
     }
-    private ForestMessage? RockTunnelWildMessage(WildBattleEvent current)=>!_catalog.RockTunnelEnabled?null:current switch
+    private ForestMessage? RockTunnelWildMessage(WildBattleEvent current)=>current switch
     {
         WildBattleProtectAttemptEvent=>new(""),
         WildBattleMtMoonVolatileEvent {Volatile:"protect",Reason:"move"} p=>new("sText_PkmnProtectedItself2",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(p.Side))),

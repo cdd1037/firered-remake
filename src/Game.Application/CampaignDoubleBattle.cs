@@ -49,13 +49,10 @@ public sealed partial class CampaignSession
         _content.Route16FlyTrainers?.BattlesByScript.ContainsKey(script) == true;
     private bool IsRoute16FlyDoubleTrainer(TrainerId trainer) =>
         _content.Route16FlyTrainers?.Trainers.ContainsKey(trainer) == true;
-    private bool IsSeviiRubyDoubleScript(string script)=>_content.SeviiRubyEnabled&&
-        _content.SeviiRubyTrainers?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
-    private bool IsVictoryRoadDoubleScript(string script)=>_content.VictoryRoadEnabled&&_content.VictoryRoadTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
-    private bool IsCinnabarDoubleScript(string script)=>_content.CinnabarEnabled&&
-        _content.CinnabarTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
-    private bool IsFirstSeviiDoubleScript(string script)=>_content.FirstSeviiEnabled&&
-        _content.FirstSeviiTrainerParties!.BattlesBySource.Values.Any(b=>b.ScriptEntry==script&&b.Mode==4);
+    private bool IsSeviiRubyDoubleScript(string script)=>_content.SeviiRubyTrainers?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
+    private bool IsVictoryRoadDoubleScript(string script)=>_content.VictoryRoadTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
+    private bool IsCinnabarDoubleScript(string script)=>_content.CinnabarTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
+    private bool IsFirstSeviiDoubleScript(string script)=>_content.FirstSeviiTrainerParties!.BattlesBySource.Values.Any(b=>b.ScriptEntry==script&&b.Mode==4);
     private Game.Domain.Trainers.CeruleanTrainerBattleDefinition FirstSeviiDoubleScript(string script)=>
         _content.FirstSeviiTrainerParties!.BattlesBySource.Values.Single(b=>b.ScriptEntry==script&&b.Mode==4);
     private bool IsTwinsScript(string script) => DoubleTrainers.Scripts.ContainsKey(script);
@@ -73,7 +70,7 @@ public sealed partial class CampaignSession
     private int DoublePrize(TrainerId trainer) => checked(8 * DoubleTrainer(trainer).BaseMoney * DoubleTrainer(trainer).Party[^1].Level);
     private SourceTwinsEncounterResult PrepareDoubleBattle(CampaignState state,string battleScript)
     {
-        if (!_content.PresetDoublesEnabled || !DoubleTrainerActorMap(state.World.Player.MapId, battleScript) ||
+        if (!DoubleTrainerActorMap(state.World.Player.MapId, battleScript) ||
             state.DoubleBattle is not null||state.ForestTrainerBattle is not null||state.WildBattle is not null||state.Battle is not null||
             state.Party.Any(p=>!HasSupportedCampaignOriginalTrainer(state,p)))
             throw new InvalidDataException("preset_double_entry_context");
@@ -83,31 +80,31 @@ public sealed partial class CampaignSession
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsSeafoamDoubleScript(battleScript)?
-            SeafoamDoubleTrainerEncounter.Begin(_content.SeafoamTrainers!,_content.SeafoamOpponents!,battleScript,party,state.World.Rng,
+            SeafoamDoubleTrainerEncounter.Begin(_content.SeafoamTrainers!,_content.OpponentPokemon!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsSevenIslandDoubleScript(battleScript)?
-            SevenIslandDoubleTrainerEncounter.Begin(_content.SevenIslandTrainers!,_content.SevenIslandOpponents!,battleScript,party,state.World.Rng,
+            SevenIslandDoubleTrainerEncounter.Begin(_content.SevenIslandTrainers!,_content.OpponentPokemon!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsSixIslandDoubleScript(battleScript)?
-            SixIslandDoubleTrainerEncounter.Begin(_content.SixIslandTrainers!,_content.SixIslandOpponents!,battleScript,party,state.World.Rng,
+            SixIslandDoubleTrainerEncounter.Begin(_content.SixIslandTrainers!,_content.OpponentPokemon!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsSeviiRubyDoubleScript(battleScript)?
-            SeviiRubyDoubleTrainerEncounter.Begin(_content.SeviiRubyTrainers!,_content.SeviiRubyOpponents!,battleScript,party,state.World.Rng,
+            SeviiRubyDoubleTrainerEncounter.Begin(_content.SeviiRubyTrainers!,_content.OpponentPokemon!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsVictoryRoadDoubleScript(battleScript)?
-            VictoryRoadDoubleTrainerEncounter.Begin(_content.VictoryRoadTrainerParties!,_content.CinnabarOpponents!,battleScript,party,state.World.Rng,
+            VictoryRoadDoubleTrainerEncounter.Begin(_content.VictoryRoadTrainerParties!,_content.OpponentPokemon!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsFirstSeviiDoubleScript(battleScript)?
-            FirstSeviiDoubleTrainerEncounter.Begin(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,battleScript,FirstSeviiDoubleScript(battleScript).Source.StartLine,party,state.World.Rng,
+            FirstSeviiDoubleTrainerEncounter.Begin(_content.FirstSeviiTrainerParties!,_content.OpponentPokemon!,battleScript,FirstSeviiDoubleScript(battleScript).Source.StartLine,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             IsCinnabarDoubleScript(battleScript)?
-            CinnabarDoubleTrainerEncounter.Begin(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,battleScript,party,state.World.Rng,
+            CinnabarDoubleTrainerEncounter.Begin(_content.CinnabarTrainerParties!,_content.OpponentPokemon!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
             SourceTwinsTrainerEncounter.Begin(DoubleBattlePokemon,TwinsDefinition,party,state.World.Rng,
@@ -125,7 +122,7 @@ public sealed partial class CampaignSession
 
     private CampaignState BeginDoubleBattle(CampaignState state,StoryEffect effect)
     {
-        if(!_content.PresetDoublesEnabled||effect.Args.Length!=4||state.Script.Wait?.Kind!=StoryWaitKind.Battle||
+        if(effect.Args.Length!=4||state.Script.Wait?.Kind!=StoryWaitKind.Battle||
             state.LastTalked is not {} actorId||!state.Actors.TryGetValue(actorId,out var actor)||!IsTwinsScript(actor.ScriptId)||
             !DoubleTrainerActorMap(state.World.Player.MapId, actor.ScriptId))throw new InvalidDataException("preset_double_source_context");
         var trainerId=DoubleTrainerId(actor.ScriptId);
@@ -161,7 +158,7 @@ public sealed partial class CampaignSession
     {
         var b=state.DoubleBattle!;
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
-        if(!_content.PresetDoublesEnabled||state.Script.Wait?.Kind!=StoryWaitKind.Battle)return No("preset_double_script_context");
+        if(state.Script.Wait?.Kind!=StoryWaitKind.Battle)return No("preset_double_script_context");
         if(b.Stage==CampaignDoubleBattleStage.Intro)
         {
             if(command.Kind!="ack")return No("preset_double_intro_pending");
@@ -281,19 +278,19 @@ public sealed partial class CampaignSession
             :IsRoute16FlyDoubleTrainer(b.Trainer)
             ?Route16FlyDoubleTrainerEncounter.ChooseEnemyActions(_content.Route16FlyTrainers!,_binding.Ownership,b.Trainer,frame,frame.Revision)
             :IsSeafoamDoubleTrainer(b.Trainer)
-            ?SeafoamDoubleTrainerEncounter.ChooseEnemyActions(_content.SeafoamTrainers!,_content.SeafoamOpponents!,b.Trainer,frame,frame.Revision)
+            ?SeafoamDoubleTrainerEncounter.ChooseEnemyActions(_content.SeafoamTrainers!,_content.OpponentPokemon!,b.Trainer,frame,frame.Revision)
             :IsSevenIslandDoubleTrainer(b.Trainer)
-            ?SevenIslandDoubleTrainerEncounter.ChooseEnemyActions(_content.SevenIslandTrainers!,_content.SevenIslandOpponents!,b.Trainer,frame,frame.Revision)
+            ?SevenIslandDoubleTrainerEncounter.ChooseEnemyActions(_content.SevenIslandTrainers!,_content.OpponentPokemon!,b.Trainer,frame,frame.Revision)
             :IsSixIslandDoubleTrainer(b.Trainer)
-            ?SixIslandDoubleTrainerEncounter.ChooseEnemyActions(_content.SixIslandTrainers!,_content.SixIslandOpponents!,b.Trainer,frame,frame.Revision)
+            ?SixIslandDoubleTrainerEncounter.ChooseEnemyActions(_content.SixIslandTrainers!,_content.OpponentPokemon!,b.Trainer,frame,frame.Revision)
             :b.Trainer==SeviiRubyDoubleTrainerEncounter.TrainerId
-            ?SeviiRubyDoubleTrainerEncounter.ChooseEnemyActions(_content.SeviiRubyTrainers!,_content.SeviiRubyOpponents!,frame,frame.Revision)
+            ?SeviiRubyDoubleTrainerEncounter.ChooseEnemyActions(_content.SeviiRubyTrainers!,_content.OpponentPokemon!,frame,frame.Revision)
             :b.Trainer==VictoryRoadDoubleTrainerEncounter.TrainerId
-            ?VictoryRoadDoubleTrainerEncounter.ChooseEnemyActions(_content.VictoryRoadTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
+            ?VictoryRoadDoubleTrainerEncounter.ChooseEnemyActions(_content.VictoryRoadTrainerParties!,_content.OpponentPokemon!,frame,frame.Revision)
             :b.Trainer==FirstSeviiDoubleTrainerEncounter.TrainerId
-            ?FirstSeviiDoubleTrainerEncounter.ChooseEnemyActions(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
+            ?FirstSeviiDoubleTrainerEncounter.ChooseEnemyActions(_content.FirstSeviiTrainerParties!,_content.OpponentPokemon!,frame,frame.Revision)
             :b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId
-            ?CinnabarDoubleTrainerEncounter.ChooseEnemyActions(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
+            ?CinnabarDoubleTrainerEncounter.ChooseEnemyActions(_content.CinnabarTrainerParties!,_content.OpponentPokemon!,frame,frame.Revision)
             :SourceTwinsTrainerEncounter.ChooseEnemyActions(DoubleBattlePokemon,TwinsDefinition,frame,frame.Revision);
         if(!ai.Succeeded)return No(ai.Fault!);
         var begun=SourceFourActionTurns.BeginActions(DoubleBattlePokemon,ai.State,ai.State.Revision,selections.AddRange(ai.Selections));
@@ -501,7 +498,6 @@ public sealed partial class CampaignSession
         var history=state.DoubleBattleHistory??[];
         var ids=SupportedDoubleTrainerIds.ToHashSet();
         var recorded=state.BattledTrainers.Where(id=>ids.Contains(new TrainerId(id))).ToHashSet(StringComparer.Ordinal);
-        if(!_content.PresetDoublesEnabled)return history.Length!=0||state.BattledTrainers.Contains(SourceTwinsTrainerEncounter.TrainerId.Value)||state.DoubleBattle is not null?"save_preset_double_profile_missing":null;
         if(history.IsDefault)return "save_preset_double_history_invalid";
         var winners=new HashSet<string>(StringComparer.Ordinal);
         for(int i=0;i<history.Length;i++)

@@ -35,28 +35,14 @@ public static class PokemonLeagueTrainerPartyFactory
     {
         ValidateCatalog(trainers);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("pokemon_league_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
 
     public static TrainerPartyCreationResult Create(PokemonLeagueTrainerCatalog trainers,
         GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("pokemon_league_trainer_catalog");
-        var source = opponents.Mechanics;
-        foreach (var member in trainer.Party)
-        {
-            if (!opponents.Catalog.Species.ContainsKey(member.Species))
-                throw new NotSupportedException("pokemon_league_trainer_species");
-            if (member.CustomMoves.Any(m => !source.Catalog.Moves.TryGetValue(m, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
-                throw new NotSupportedException("pokemon_league_trainer_move_source");
-        }
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        // Source ITEM_CUSTOM_MOVES replaces all four natural moves only after CreateMon.
-        return made with { Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.Select(m => new PokemonMoveSlot(m,
-                source.Catalog.Moves[m].Pp, source.Catalog.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
 
     public static void ValidateCatalog(PokemonLeagueTrainerCatalog catalog)

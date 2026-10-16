@@ -1,88 +1,62 @@
 #!/usr/bin/env python3
-"""Authenticated one-item Fuchsia Gym TM06 source candidate; no gameplay activation."""
-import sys as _bootstrap_sys
-from pathlib import Path as _BootstrapPath
-_bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
-from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+"""Regenerate the Fuchsia Gym TM06 item description and exact source icon."""
+import argparse
+import json
+from pathlib import Path
+import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'lib'))
+from item_catalog import described_items, item_json
+from item_source import ItemSource
+from pokemon_import_io import safe, load_recipe, read_sources, write_files
+from presentation_source import SOURCE_COMMIT
+from project_paths import PROJECT_ROOT
 from runtime_json import runtime_json_bytes
+from generated_output_compare import check_item_outputs
 
-from item_catalog import item_json
-import argparse,base64,importlib.util,json,pathlib,re,subprocess
-ROOT=_PROJECT_ROOT
-import machine_catalog as shared_machines
+PROFILE = 'firered-fuchsia-gym-items-v1'
 
-COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
-PROFILE='firered-fuchsia-gym-items-v1'
-def canonical(d):return (json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False,default=item_json)+'\n').encode()
-def safe(root,rel):
- if pathlib.PurePosixPath(rel).is_absolute() or '\\' in rel or ':' in rel or any(x in ('','.','..') for x in rel.split('/')):raise ValueError('Unsafe path')
- p=pathlib.Path(root).absolute()/rel
- if any(x.is_symlink() for x in (p,*p.parents)):raise ValueError('Symlink rejected')
- return p
-def load_module(path, name):
- spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
-def item_outputs(lock,sources,project):
-    text={p:b.decode() for p,b in sources.items() if not p.endswith('.png')};entries={e['path']:e for e in lock['files']}
-    rules=[]
-    def match(path,pattern):
-        found=list(re.finditer(pattern,text[path],re.M|re.S))
-        if len(found)!=1:raise ValueError('Nonunique source match '+path+' '+pattern)
-        return found[0]
-    def ref(path,symbol,m=None):return dict(path=path,symbol=symbol,startLine=1 if m is None else text[path].count('\n',0,m.start())+1,endLine=max(1,text.get(path,'').count('\n')) if m is None else text[path].count('\n',0,m.end())+1)
-    def ident(s):return dict(value='pret:'+s)
-    def constant(path,symbol):
-        m=match(path,r'^#define '+symbol+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(path,symbol,m));return int(m[1])
-    catalog = shared_machines.load_catalog(project)
-    wrapped = catalog.machines['pret:ITEM_TM06']['machine']
-    values = shared_machines.machine_definitions(project, 'content/generated/data/items/fuchsia-gym/fuchsia-gym-machines.json', 'machines')
-    path='src/data/item_icon_table.h';m=match(path,r'^    \[ITEM_TM06\][ \t]*= \{(\w+), (\w+)\},');binding=ref(path,'ITEM_TM06',m);icon_symbols=m.groups();paths=[]
-    for symbol in icon_symbols:
-        path='src/data/graphics/items.h';m=match(path,r'^const u32 '+symbol+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(path,symbol,m));paths.append(m[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
-    image,palette=paths;codec=load_module(project / 'scripts/imports/presentation/import-lab-battle-ui.py', 'fuchsia_gym_item_codec')
-    w,h,indices,_=codec.indexed_png(sources[image]);rgba=codec.rgba(indices,codec.palette(sources[palette]));png=codec.png(w,h,rgba)
-    if (w,h)!=(24,24):raise ValueError('TM06 icon size differs')
-    icon=dict(item=ident('ITEM_TM06'), width=w, height=h, pngPath='item_tm06.png')
-    for path,symbol,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('data/maps/FuchsiaCity_Gym/scripts.inc','FuchsiaCity_Gym_EventScript_GiveTM06',r'^FuchsiaCity_Gym_EventScript_GiveTM06::.*?^\tend$')]:rules.append(ref(path,symbol,match(path,pattern)))
-    limitations=['Exactly one source TM06/Toxic reward item with its original 24x24 icon and 107 source compatibility rows.','Metadata does not enable the reward, teaching, battle effects, field permissions or a campaign profile.']
-    return {'fuchsia-gym-items.json':runtime_json_bytes(dict(schemaVersion=1,items=[dict(metadata=wrapped,effectBytes=[])],icons=[icon]), sort_keys=True, default=item_json),
-      'fuchsia-gym-machines.json':runtime_json_bytes(dict(schemaVersion=1,machines=values,icons=[icon]), sort_keys=True, default=item_json),'item_tm06.png':png}
 
-def run(root,reference=None,check=False):
- root=pathlib.Path(root).absolute();safe(root,"sentinel");root=root.resolve();lockBytes=safe(ROOT,'scripts/recipes/items/fuchsia-gym-items.lock.json').read_bytes()
- lock=json.loads(lockBytes)
- if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision'], len(lock['files'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0, 16):raise ValueError('Source identity differs')
- raw=safe(root,'content/raw/pokefirered/037335f4');out=safe(root,'content/generated/data/items/fuchsia-gym')
- def overlaps(a,b):return a==b or a.is_relative_to(b) or b.is_relative_to(a)
- for p in ('scripts','src','tests','.git','scripts/recipes/config'):
-  if overlaps(raw,ROOT/p) or overlaps(out,ROOT/p):raise ValueError('Protected project path overlap')
- for kind in ('raw','generated'):
-  for directory in (ROOT/'content'/kind).iterdir():
-   if directory.is_dir() and directory.name!='fuchsia-gym-items' and (overlaps(raw,directory.resolve()) or overlaps(out,directory.resolve())):raise ValueError('Historical content trees are protected')
- if reference:
-  reference=pathlib.Path(reference).resolve()
-  if overlaps(reference,raw) or overlaps(reference,out):raise ValueError('Reference overlap')
-  if subprocess.check_output(['git', '-C', str(reference), 'rev-parse', 'HEAD']).decode().strip() != COMMIT:raise ValueError('Reference identity differs')
- sources={}
- for e in lock['files']:
-  p=e['path']
-  if reference:
-   b=subprocess.check_output(['git','-C',str(reference),'cat-file','blob',COMMIT + ':' + e['path']])
-  else:b=safe(raw,p).read_bytes()
-  if p in sources:raise ValueError('Duplicate input')
-  sources[p]=b
- outputs=item_outputs(lock,sources,ROOT)
- manifest=canonical(dict(schemaVersion=1,inputCount=16,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
- outputs['manifest.json']=manifest
- rawManifest=canonical(dict(schemaVersion=1,inputCount=16))
- materials={(out,p):b for p,b in outputs.items()}
- if reference:materials.update({(raw,p):b for p,b in sources.items()})
- for (directory,path),data in materials.items():
-  target=safe(directory,path)
-  if check:
-   if target.read_bytes()!=data:raise ValueError('Generated bytes differ: '+path)
-  else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
- return dict(profile=PROFILE,inputCount=16,outputCount=len(outputs))
-if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--target-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference-repo',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.target_root,a.reference_repo,a.check),sort_keys=True))
+def item_outputs(lock, sources, project):
+    items = described_items(sources.__getitem__, ['ITEM_TM06'], project)
+    icon, png = ItemSource(sources).icon('ITEM_TM06', 'item_tm06.png')
+    return {'fuchsia-gym-items.json': runtime_json_bytes(
+                dict(schemaVersion=1, items=items, icons=[icon]), sort_keys=True, default=item_json),
+            'item_tm06.png': png}
+
+
+def run(root, reference=None, check=False, raw_root=None):
+    root = safe(root)
+    raw = safe(raw_root or PROJECT_ROOT / 'content/raw/pokefirered/037335f4')
+    output = safe(root, 'content/generated/data/items/fuchsia-gym')
+    if raw.resolve().is_relative_to(output.resolve()) or output.resolve().is_relative_to(raw.resolve()):
+        raise ValueError('Raw and output directories must be disjoint')
+    if reference is not None:
+        repository = safe(reference).resolve()
+        if repository.is_relative_to(output.resolve()) or output.resolve().is_relative_to(repository):
+            raise ValueError('Output must not overlap the reference repository')
+    recipe = load_recipe(PROJECT_ROOT / 'scripts/recipes/items/fuchsia-gym-items.lock.json',
+                         commit=SOURCE_COMMIT, profile=PROFILE)
+    sources = read_sources(recipe, raw, reference)
+    outputs = item_outputs(recipe, sources, PROJECT_ROOT)
+    if check:
+        check_item_outputs(root / 'content/generated', {'data/items/fuchsia-gym/' + path: data for path, data in outputs.items()})
+        return dict(inputCount=len(sources), outputCount=len(outputs), checked=True)
+    outputs['manifest.json'] = (json.dumps(dict(schemaVersion=1, inputCount=len(sources),
+        outputs=[dict(path=path) for path in sorted(outputs)]), sort_keys=True, separators=(',', ':')) + '\n').encode()
+    write_files(output, outputs)
+    return dict(inputCount=len(sources), outputCount=len(outputs), checked=check)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--target-root', type=Path, default=PROJECT_ROOT)
+    parser.add_argument('--raw-root', type=Path)
+    parser.add_argument('--reference-repo', type=Path)
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    print(json.dumps(run(args.target_root, args.reference_repo, args.check, args.raw_root), sort_keys=True))
+
+
+if __name__ == '__main__':
+    main()

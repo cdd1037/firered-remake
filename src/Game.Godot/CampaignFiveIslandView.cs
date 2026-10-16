@@ -11,7 +11,6 @@ using Godot;
 /// <summary>Five Island authenticated source textures and display catalogs. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private bool FiveIslandPresentationProfile => _catalog.FiveIslandEnabled && _catalog.SixIslandEnabled && (_session.RulesVersion == CampaignSession.FiveIslandRulesVersion || CelioPresentationProfile);
     private FiveIslandPresentationData? _fiveIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _fiveIslandDex = [];
     private readonly Dictionary<string,JsonElement> _fiveIslandTrainers = new(StringComparer.Ordinal);
@@ -20,27 +19,12 @@ public partial class CampaignView
 
     private void LoadFiveIslandPresentation()
     {
-        if (!_catalog.FiveIslandEnabled) return;
-        if (!FiveIslandPresentationProfile)
-            throw new InvalidDataException("Five Island requires its complete Six Island predecessor.");
         _fiveIslandArt = FiveIslandPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_fiveIslandArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_fiveIslandArt.Files, row, replicatePalette);
         foreach (var row in FiveIslandManifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
-            if (_catalog.FiveIslandOpponents?.Catalog.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
+            if (_catalog.OpponentPokemon?.Catalog.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
                 throw new InvalidDataException("Five Island sprite is outside its opponent catalog.");
             string side = row.GetProperty("side").GetString()!; bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
             var texture = Pixels(row); var position = new Vector2(row.GetProperty("x").GetInt32(),row.GetProperty("y").GetInt32());
@@ -61,11 +45,14 @@ public partial class CampaignView
         }
         foreach (var row in FiveIslandManifest.GetProperty("portraits").EnumerateArray())
         {
-            string id = row.GetProperty("id").GetString()!; var texture = Pixels(row);
+            string id = row.GetProperty("id").GetString()!;
             bool inheritedExpected=row.GetProperty("inherited").GetBoolean();
             bool exists=_forestTrainerPortraits.TryGetValue(id,out var inherited);
             if (exists!=inheritedExpected) throw new InvalidDataException("Five Island portrait predecessor scope differs: "+id);
-            if(!(exists))_forestTrainerPortraits.Add(id,(ImageTexture)texture);
+            if (exists && (inherited!.GetWidth() != row.GetProperty("width").GetInt32() ||
+                inherited.GetHeight() != row.GetProperty("height").GetInt32()))
+                throw new InvalidDataException("Five Island inherited portrait dimensions differ: " + id);
+            if (!exists) _forestTrainerPortraits.Add(id, (ImageTexture)Pixels(row));
         }
         foreach (var row in FiveIslandManifest.GetProperty("trainers").EnumerateArray())
         {
@@ -79,13 +66,16 @@ public partial class CampaignView
         foreach (var row in FiveIslandManifest.GetProperty("items").EnumerateArray())
         {
             string item = row.GetProperty("item").GetString()!, asset = "five-island-" + item[5..].ToLowerInvariant();
-            var icon = (ImageTexture)Pixels(row);
-            if(!(_earlyItemIcons.TryGetValue(new(item), out var inherited)))_earlyItemIcons.Add(new(item), icon);
+            if (!_earlyItemIcons.TryGetValue(new(item), out var icon))
+            {
+                icon = (ImageTexture)Pixels(row);
+                _earlyItemIcons.Add(new(item), icon);
+            }
             if (row.GetProperty("pocket").GetString() != "POCKET_KEY_ITEMS") continue;
             var document = _questPocketUi ?? throw new InvalidDataException("Five Island key-item pocket missing.");
             if (document.Items.Any(i => i.Id == item)) throw new InvalidDataException("Duplicated Five Island key item.");
             var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
-            using var image = icon.GetImage(); _questPocketTextures.Add(asset, SceneTextures.FromImage(image));
+            _questPocketTextures.Add(asset, icon);
             _questPocketUi = document with
             {
                 Items = document.Items.Add(new(item, item[5..], row.GetProperty("name").GetString()!, row.GetProperty("description").GetString()!, asset, row.GetProperty("fieldUseFunction").GetString()!)),
@@ -93,7 +83,7 @@ public partial class CampaignView
             };
         }
         foreach (var row in FiveIslandManifest.GetProperty("layers").EnumerateArray()) _fiveIslandDoorLayers.Add((row.GetProperty("metatileId").GetInt32(),row.GetProperty("layer").GetInt32()),Pixels(row));
-        Write("fiveIslandPresentation",new { nativeWindowVerified=false, physicalAudioVerified=false });
+
     }
 
     private CaptureDexEntry? FiveIslandCaptureDexEntry(int species) => !_fiveIslandDex.TryGetValue(species,out var e) ? null :
@@ -109,8 +99,7 @@ public partial class CampaignView
         _fiveIslandDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ||
         _fiveIslandArt is not null && FiveIslandManifest.GetProperty("newOpponentOnlySpecies").EnumerateArray().Any(s=>FiveIslandDexPortrait(s.GetInt32())==texture)
             ? _fiveIslandArt!.Files[texture.TexturePath] : null;
-    private string? VisibleFiveIslandTrainerText(string key) => _session.State.ForestTrainerBattle is {} battle && _fiveIslandTrainers.TryGetValue(battle.Trainer.Value,out var row) ? row.GetProperty(key).GetString() : null;
-    private bool IsFiveIslandPatchedMap(MapId map) => _catalog.FiveIslandEnabled && map.Value is "map.five-island-meadow" or "map.five-island-rocket-warehouse";
+    private bool IsFiveIslandPatchedMap(MapId map) => map.Value is "map.five-island-meadow" or "map.five-island-rocket-warehouse";
     private bool TryFiveIslandPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
     {
         if (!IsFiveIslandPatchedMap(map)) return false;
@@ -135,8 +124,6 @@ public partial class CampaignView
         };
     }
 
-    private string? FiveIslandSpeciesName(int species) => _catalog.FiveIslandOpponents?.Catalog.Species.Values.Any(s=>s.SourceSpeciesId==species)==true
-        ? _pokedexMenu?.Entries.GetValueOrDefault(species)?.Name : null;
     private void DisposeFiveIslandPresentation()
     {
         _fiveIslandArt=null; _fiveIslandDex.Clear(); _fiveIslandTrainers.Clear(); _fiveIslandDoorLayers.Clear();

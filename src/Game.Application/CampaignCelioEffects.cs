@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
     private void RequireCelioEffect(CampaignState state, StoryEffect effect)
     {
         var instruction = _content.FindProgram(effect.Source.Symbol)?.Instructions.SingleOrDefault(i => i.Source == effect.Source);
-        if (!_content.CelioEnabled || effect.Source.Path != RubyCenterSource || state.World.Player.MapId.Value != RubyCenterMap ||
+        if (effect.Source.Path != RubyCenterSource || state.World.Player.MapId.Value != RubyCenterMap ||
             instruction is null || instruction.Opcode != effect.Opcode || !instruction.Args.SequenceEqual(effect.Args) ||
             state.Script.Stack.LastOrDefault() is not {} frame || frame.ProgramId != effect.Source.Symbol ||
             frame.InstructionIndex <= 0 || _content.FindProgram(frame.ProgramId)!.Instructions[frame.InstructionIndex - 1] != instruction)
@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
     private bool TryApplyCelioEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.CelioEnabled || effect.Source.Path != RubyCenterSource) return false;
+        if (effect.Source.Path != RubyCenterSource) return false;
         var a = effect.Args;
         if (effect.Opcode == "removeitem" && effect.Source.Symbol == CelioHandoffScript)
         {

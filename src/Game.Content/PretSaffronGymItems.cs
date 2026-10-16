@@ -1,22 +1,12 @@
 using System.Collections.Immutable;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 
 namespace Game.Content;
 
-public sealed record PretSaffronGymItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons)
-{
-    [JsonIgnore] public SaffronGymMachinesDocument Machines { get; internal init; } = null!;
-}
-public sealed record SaffronGymMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<MachineDefinition> NewMachines)
-{
-    [JsonIgnore] public ImmutableArray<MachineDefinition> Machines => NewMachines;
-}
+public sealed record PretSaffronGymItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons);
 
-/// <summary>Source TM04 and MAX_REPEL metadata. Application grants and field use remain separate.</summary>
 public static class PretSaffronGymItems
 {
     public const string Profile = "firered-saffron-gym-items-v1";
@@ -42,15 +32,7 @@ public static class PretSaffronGymItems
         var icon = d.Icons[0];
         SilphSourcePackage.Need(icon.Item == Tm04Id && icon.Width == 24 && icon.Height == 24 && icon.Region is not null , "TM04 source icon differs.");
 PretPewterMachines.ValidateIcon(icon);
-        var machines = source.Parse<SaffronGymMachinesDocument>("machines.json");
-        SilphSourcePackage.Need(machines.SchemaVersion == 1 &&
-            machines.InheritedItemIds.Length == 27 && machines.InheritedItemIds.Distinct().Count() == 27 && machines.Additions.IsEmpty && machines.NewMachines.Length == 1, "Saffron Gym machine scope differs.");
-        var machine = machines.NewMachines[0];
-        SilphSourcePackage.Need(machine.Machine == d.Items[0].Metadata && machine.Move.Value == "pret:MOVE_CALM_MIND" && machine.SourceMoveId == 347 && machine.MovePp == 20 &&
-            machine.Compatibility.Length == 113 && machine.Compatibility.Select(c => c.Species).Distinct().Count() == 113 && machine.Compatibility.Count(c => c.CanLearn) == 10 &&
-            machine.Compatibility.Select(c => c.SourceSpeciesId).SequenceEqual(machine.Compatibility.Select(c => c.SourceSpeciesId).Order()) &&
-            !machine.Compatibility.Any(c => c.SourceSpeciesId is 65 or 80 or 122), "TM04 source mapping/ownership differs.");
-        return d with { Machines = machines};
+        return d;
     }
     public static EarlyShopItemDefinition Definition(PretSaffronGymItemsDocument document, ItemId id)
     {
@@ -64,9 +46,4 @@ PretPewterMachines.ValidateIcon(icon);
     }
     /// <summary>Exactly one ordinary item, retaining all predecessor objects by reference. Caller authenticates successor shop proof.</summary>
 
-}
-public static class PretSaffronGymMachines
-{
-    public const string Profile = "firered-saffron-gym-teaching-v1";
-    public static SaffronGymMachinesDocument LoadProject(string root) => PretSaffronGymItems.LoadProject(root).Machines;
 }

@@ -6,9 +6,6 @@ using Game.Domain.Rules;
 
 namespace Game.Domain.WildBattle;
 
-/// <summary>Source singles action position and actual party slot. A full-turn caller must supply both.</summary>
-public sealed record WildBattleCalledActionContext(int ActionOrderIndex = 0, int ActorPartyIndex = 0);
-
 /// <summary>Battler-local registers cleared by ordinary departure/faint, independently of delayed slot effects.</summary>
 public sealed record WildBattleCalledVolatileState
 {

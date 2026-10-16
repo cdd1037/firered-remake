@@ -24,6 +24,7 @@ public sealed record SourceWildEncounterContext
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceWildBattleOutcome? SourceOutcome { get; init; }
     [JsonIgnore] public FishingTaskProfile? FishingTables { get; init; }
     [JsonIgnore] public OrdinaryLandBattleBinding? OrdinaryLand { get; init; }
+    [JsonIgnore] public OrdinaryWaterBattleBinding? OrdinaryWater { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceTableWildOrigin? SourceTable { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public RockSmashWildOrigin? RockSmash { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public FishingEncounterOrigin? Fishing { get; init; }
@@ -108,12 +109,6 @@ public static partial class SourceWildBattlePolicy
             opponent.Pokemon.SourceSpeciesId != 129 || opponent.Pokemon.Level is < 5 or > 10))
             return EntryFail("wild_battle_old_rod_context_unsupported");
         if (ValidateSpecialEntry(encounter, opponent) is { } special) return EntryFail(special);
-        bool origin = encounter.OrdinaryLand is not null || encounter.RockSmash is not null || encounter.SourceTable is not null || encounter.Seafoam is not null || encounter.Fishing is not null || encounter.PowerPlant is not null || encounter.EventIsland is not null || encounter.SevenIsland is not null || encounter.CeruleanCave is not null || encounter.CelioRoamer is not null || encounter.VictoryRoad is not null || encounter.SeviiRuby is not null ||
-            encounter.FourIsland is not null || encounter.SixIsland is not null || encounter.FiveIsland is not null;
-        if (owned is not null && !origin && !oldRodFishing && !encounter.ScriptedSnorlax &&
-            encounter.TowerBattleKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) && !(encounter.FirstSeviiWild
-            ? FirstSeviiWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) : owned.SupportsOrdinaryWildOpponent(opponent.Pokemon)))
-            return EntryFail("wild_battle_opponent_species_unsupported");
         WildBattleCalledPartyMember Member(WildBattleCombatant mon) => new(mon.Pokemon, mon.HeldItem, mon.Status, mon.IsEgg);
         var frame = new SourceBattleFrame {
             Layout = SourceBattleLayout.Singles, KoReplacementTiming = KoReplacementTiming.SourceImmediate,
@@ -158,6 +153,8 @@ public static partial class SourceWildBattlePolicy
 
     private static string HeldItem(SourceWildEncounterContext context, PokemonInstance mon, int roll, GamePokemonCatalog owned) => context switch {
         { OrdinaryLand: { } ordinary } => ordinary.HeldItem(owned, roll),
+        { OrdinaryWater: { } water } => water.HeldItem(owned, roll),
+        { CelioRoamer: not null } => CanonicalWildPokemonFactory.HeldItem(owned, mon.Species, roll),
         { RockSmash: { } rock } => RockSmashWildBattleContract.HeldItem(rock, roll),
         { SourceTable: { } sourceTable } => SourceTableWildBattleContract.HeldItem(sourceTable, roll),
         { Seafoam: { Kind: SeafoamEncounterKind.OldRod or SeafoamEncounterKind.GoodRod } seafoam, FishingTables: { } tables } =>
@@ -170,19 +167,13 @@ public static partial class SourceWildBattlePolicy
         { CeruleanCave: not null } => CeruleanCaveWildPokemonFactory.HeldItem(mon.Species, roll),
         { ScriptedSnorlax: true } => SnorlaxBattleContract.WildHeldItem(roll),
         { TowerBattleKind: not null } => PokemonTowerBattleContract.WildHeldItem(mon.SourceSpeciesId, roll),
-        { FiveIsland: not null } => FiveIslandWildPokemonFactory.HeldItem(mon.Species, roll),
-        { SixIsland: not null } => SixIslandWildPokemonFactory.HeldItem(mon.Species, roll),
-        { FourIsland: not null } => FourIslandWildPokemonFactory.HeldItem(mon.Species, roll),
-        { SeviiRuby: not null } => SeviiRubyWildPokemonFactory.HeldItem(mon.Species, roll),
-        { VictoryRoad: not null } => VictoryRoadWildPokemonFactory.HeldItem(mon.Species, roll),
+        { FiveIsland: not null } => CanonicalWildPokemonFactory.HeldItem(owned, mon.Species, roll),
+        { SixIsland: not null } => CanonicalWildPokemonFactory.HeldItem(owned, mon.Species, roll),
+        { FourIsland: not null } => CanonicalWildPokemonFactory.HeldItem(owned, mon.Species, roll),
+        { SeviiRuby: not null } => CanonicalWildPokemonFactory.HeldItem(owned, mon.Species, roll),
+        { VictoryRoad: not null } => CanonicalWildPokemonFactory.HeldItem(owned, mon.Species, roll),
         { FirstSeviiWild: true } => FirstSeviiWildPokemonFactory.HeldItem(mon.Species, roll),
-        _ when CinnabarWildPokemonFactory.WildSpecies.Contains(mon.Species) => CinnabarWildPokemonFactory.HeldItem(mon.Species, roll),
-        _ => mon.SourceSpeciesId switch {
-            132 => roll >= 95 ? "ITEM_METAL_POWDER" : "ITEM_NONE",
-            93 or 104 or 105 => PokemonTowerBattleContract.WildHeldItem(mon.SourceSpeciesId, roll),
-            58 => roll is >= 45 and <= 94 ? "ITEM_RAWST_BERRY" : "ITEM_NONE",
-            95 => roll >= 95 ? "ITEM_HARD_STONE" : "ITEM_NONE", 52 => roll >= 95 ? "ITEM_NUGGET" : "ITEM_NONE",
-            _ => MtMoonBattleData.WildHeldItem(mon.SourceSpeciesId, roll) }
+        _ => throw new ArgumentException("source_wild_encounter_origin_required")
     };
 
     internal static string? ValidateFrame(SourceBattleFrame frame)
@@ -199,10 +190,11 @@ public static partial class SourceWildBattlePolicy
                 SourceWildBattleOutcome.Drew => WildBattleOutcome.Draw,
                 SourceWildBattleOutcome.Caught => WildBattleOutcome.Caught,
                 _ => WildBattleOutcome.Escaped }))) return "source_wild_terminal_outcome";
-        int origins = new object?[] { context.OrdinaryLand, context.RockSmash, context.SourceTable, context.Seafoam, context.Fishing, context.CelioRoamer, context.VictoryRoad, context.SeviiRuby, context.FourIsland,
+        int origins = new object?[] { context.OrdinaryLand, context.OrdinaryWater, context.RockSmash, context.SourceTable, context.Seafoam, context.Fishing, context.CelioRoamer, context.VictoryRoad, context.SeviiRuby, context.FourIsland,
             context.SixIsland, context.FiveIsland, context.PowerPlant, context.EventIsland, context.SevenIsland, context.CeruleanCave, context.TowerBattleKind }.Count(x => x is not null) +
             (context.ScriptedSnorlax ? 1 : 0) + (context.FirstSeviiWild ? 1 : 0);
         if (origins > 1) return "source_wild_conflicting_origins";
+        if (origins == 0 && frame.Campaign is not null) return "source_wild_encounter_origin_required";
         var mon = frame.Party(BattleSide.Opponent).Members[0].Pokemon;
         if (context.LostelleHypno && (!context.FirstSeviiWild || mon.SourceSpeciesId != 97 || mon.Level != 30)) return "first_sevii_hypno_source_identity";
         if (context.ScriptedSnorlax && (mon.SourceSpeciesId != 143 || mon.Level != 30)) return "snorlax_scripted_identity";
@@ -210,6 +202,9 @@ public static partial class SourceWildBattlePolicy
         if (context.OrdinaryLand is { } ordinary && (!ordinary.Matches(mon) ||
             frame.Campaign?.Catalog.Species.ContainsKey(mon.Species) != true))
             return "source_wild_ordinary_land_origin";
+        if (context.OrdinaryWater is { } water && (!water.Matches(mon) ||
+            frame.Campaign?.Catalog.Species.ContainsKey(mon.Species) != true))
+            return "source_wild_ordinary_water_origin";
         if (context.SourceTable is { } sourceTable && (!SourceTableWildBattleContract.Matches(sourceTable, mon) ||
             !SourceTableWildBattleContract.IsAdmittedProfile(frame.SourceCampaignRulesVersion)))
             return "source_wild_table_origin";

@@ -87,3 +87,27 @@ def inventory_item(item, description, heal_hp, cure_status, effect_bytes, use_su
 def compile_catalog(project_root=ROOT):
     return dict(schemaVersion=1,
                 items=[item.fields for item in definitions(Path(project_root).resolve()).values()])
+
+
+def described_items(read, symbols, project_root=ROOT):
+    """Source descriptions plus shared item identities, without regional copies."""
+    rows = json.loads(read('src/data/items.json'))['items']
+    selected = list(symbols)
+    if not selected or len(selected) != len(set(selected)):
+        raise ValueError('Item selection must be nonempty and unique')
+    result = []
+    for symbol in selected:
+        matches = [row for row in rows if row['itemId'] == symbol]
+        if len(matches) != 1:
+            raise ValueError('Expected one item declaration: ' + symbol)
+        item = matches[0]
+        description = item['description_english'].replace('\\n', '\n')
+        if re.fullmatch(r'ITEM_(?:TM|HM)\d+', symbol):
+            source = read('src/move_descriptions.c').decode('utf-8')
+            matches = list(re.finditer(r'^const u8 gMoveDescription_' + re.escape(item['moveId']) +
+                                      r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$', source, re.M))
+            if len(matches) != 1:
+                raise ValueError('Expected one machine move description: ' + symbol)
+            description = json.loads(matches[0][1])
+        result.append(dict(metadata=dict(item=item_definition(symbol, project_root), description=description), effectBytes=[]))
+    return result

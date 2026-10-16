@@ -12,7 +12,7 @@ public partial class CampaignView
     private void LoadBreedingPresentation()
     {
         if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
-        if (!_session.IsCurrentGame || _gameCornerArt is null)
+        if (_gameCornerArt is null)
             throw new InvalidDataException("Breeding presentation requires its authenticated Game Corner predecessor.");
         var art = PretBreedingPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)
@@ -24,11 +24,7 @@ public partial class CampaignView
         {            if (texture.GetWidth() != row.GetProperty("width").GetInt32() || texture.GetHeight() != row.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Breeding inherited pixels differ.");
 }
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -79,7 +75,7 @@ public partial class CampaignView
         foreach (var row in art.Manifest.GetProperty("eggAssets").EnumerateArray())
             _breedingEggTextures.Add(row.GetProperty("id").GetString()!, Pixels(row));
         _breedingArt = art;
-        Write("breedingPresentation", new {             nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void VerifyBreedingMoveGeometry()
@@ -102,7 +98,6 @@ public partial class CampaignView
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     private byte[]? ReadBreedingDexTexture(PokedexMenuTexture texture) => _breedingArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
-    private string? BreedingSpeciesName(int species) => _breedingArt?.DexEntries.GetValueOrDefault(species)?.Name;
     // Callers must select these assets using the authoritative Egg marker before looking up real species.
     // No species parameter is accepted, so an Egg texture cannot disclose its hidden species or shiny flag.
     private Texture2D BreedingEggShell() => _breedingEggTextures["egg-front"];

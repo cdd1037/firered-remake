@@ -15,17 +15,14 @@ from generated_output_compare import generated_output_matches
 from image_io import png
 from project_paths import PROJECT_ROOT
 from runtime_json import runtime_json_bytes
+from presentation_pixels import PixelReader
+from presentation_source import canonical, need
 
 GRAPHICS = 'src/data/graphics/trainers.h'
 CONSTANTS = 'include/constants/trainers.h'
 FRONT_TABLE = 'src/data/trainer_graphics/front_pic_tables.h'
 BACK_TABLE = 'src/data/trainer_graphics/back_pic_tables.h'
 PALETTE_EXPANSION = '(rgb5 << 3) | (rgb5 >> 2)'
-
-
-def canonical(value):
-    """Human-readable recipe serialization, also used by the S.S. Anne importer."""
-    return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 
 
 def safe(root, relative):
@@ -216,3 +213,63 @@ def publish(outputs, output, *, check=False):
         for path, data in targets:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
+
+
+def selected_trainer_art(source, selection, inherited, emit, assets):
+    """Resolve selected trainer names/portraits while preserving inherited pixels.
+
+    This reads presentation fields only; trainer_import owns complete battle
+    parties. The selected source records determine IDs, music and battle mode.
+    """
+    indexed = PixelReader(source).indexed
+    trainers, portraits = [], []
+    trainer_source, trainer_constants = source.text('src/data/trainers.h'), source.text('include/constants/trainers.h')
+    opponents, classes = source.text('include/constants/opponents.h'), source.text('src/data/text/trainer_class_names.h')
+    trainer_graphics = source.text('src/data/graphics/trainers.h')
+    picture_table = source.text('src/data/trainer_graphics/front_pic_tables.h')
+    coords = re.findall(r'\{\.size = (\d+), \.y_offset = (\d+)\}', picture_table.split('const struct CompressedSpriteSheet')[0])
+    trainer_pics = {}
+    for name in selection:
+        symbol = 'TRAINER_' + name
+        match = re.search(r'\[' + symbol + r'\]\s*=\s*\{(.*?)\n    \}', trainer_source, re.S)
+        need(match, 'Trainer source record missing: ' + symbol)
+        body = match[1]
+        cls, pic = re.search(r'\.trainerClass = (\w+)', body)[1], re.search(r'\.trainerPic = (\w+)', body)[1]
+        display_name = re.search(r'\.trainerName = _\("([^\"]+)"\)', body)[1]
+        cls_name = re.search(r'\[' + cls + r'\]\s*= _\("([^\"]+)"\)', classes)[1]
+        source_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)\s*$', opponents, re.M)[1])
+        pic_id = int(re.search(r'^#define ' + pic + r'\s+(\d+)\s*$', trainer_constants, re.M)[1])
+        music = re.search(r'\.encounterMusic_gender = ([^,]+),', body)[1]
+        music_value = 0
+        for part in music.split('|'):
+            part = part.strip()
+            music_value |= 128 if part == 'F_TRAINER_FEMALE' else int(re.search(r'^#define ' + part + r'\s+(\d+)', trainer_constants, re.M)[1])
+        key = pic.removeprefix('TRAINER_PIC_')
+        portrait_id = PurePosixPath(inherited[key]).stem if key in inherited else key.lower().replace('_', '-') + '-front'
+        trainers.append(dict(trainer='pret:' + symbol, sourceTrainerId=source_id, name=display_name,
+            trainerClass=cls, className=cls_name, trainerPic=pic, portrait=portrait_id,
+            encounterMusicGender=music_value, doubleBattle='.doubleBattle = TRUE,' in body))
+        trainer_pics[pic] = pic_id
+    for pic, number in sorted(trainer_pics.items()):
+        key = pic.removeprefix('TRAINER_PIC_')
+        pic_symbol = re.search(r'TRAINER_SPRITE\(' + key + r', (\w+), 0x800\)', picture_table)[1]
+        pal_symbol = re.search(r'TRAINER_PAL\(' + key + r', (\w+)\)', picture_table)[1]
+        paths = []
+        for symbol in (pic_symbol, pal_symbol):
+            match = re.search(r'const u32 ' + symbol + r'\[\]\s*= INCBIN_U32\("([^\"]+)"\)', trainer_graphics)
+            need(match, 'Trainer graphic path missing')
+            paths.append(match[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
+        _, rgba = indexed(*paths, (64, 64))
+        identity = PurePosixPath(inherited[key]).stem if key in inherited else key.lower().replace('_', '-') + '-front'
+        if key in inherited:
+            path = inherited[key]
+            need(Image.open(io.BytesIO(source.reuse(path))).convert('RGBA').tobytes() == rgba, 'Inherited trainer source pixels differ: ' + key)
+            asset = dict(id=identity, width=64, height=64, texturePath=path)
+            assets.append(asset)
+        else:
+            asset = emit(identity, 64, 64, rgba, paths)
+        need(coords[number][0] == '8', 'Trainer portrait source size differs')
+        portraits.append(dict(trainerPic=pic, sourceTrainerPicId=number, inherited=key in inherited,
+                              x=144, y=8, sourceYOffset=int(coords[number][1]), **asset))
+
+    return trainers, portraits

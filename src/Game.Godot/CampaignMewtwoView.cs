@@ -11,24 +11,10 @@ public partial class CampaignView
 
     private void LoadMewtwoPresentation()
     {
-        if (!_catalog.CeruleanCaveEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.CelioEnabled ||
-            _catalog.PokemonContent?.Catalog.Species.GetValueOrDefault(new("pret:SPECIES_MEWTWO"))?.SourceSpeciesId != 150)
+        if (_catalog.PokemonContent?.Catalog.Species.GetValueOrDefault(new("pret:SPECIES_MEWTWO"))?.SourceSpeciesId != 150)
             throw new InvalidDataException("Mewtwo requires its complete current Celio predecessor and owned catalog entry.");
         _mewtwoArt = MewtwoPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_mewtwoArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_mewtwoArt.Files, row, replicatePalette);
         foreach (var row in MewtwoManifest.GetProperty("sprites").EnumerateArray())
         {
             string side = row.GetProperty("side").GetString()!;
@@ -49,7 +35,7 @@ public partial class CampaignView
             _route22Footprints.Add(150, Pixels(row));
             _mewtwoDex[150] = _mewtwoDex[150] with { Footprint = SeviiRubyDexTexture(row) };
         }
-        Write("mewtwoPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private CaptureDexEntry? MewtwoCaptureDexEntry(int species) => !_mewtwoDex.TryGetValue(species, out var e) ? null :
@@ -58,11 +44,9 @@ public partial class CampaignView
             e.HabitatTitle);
     private byte[]? ReadMewtwoDexTexture(PokedexMenuTexture texture) =>
         _mewtwoDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? _mewtwoArt!.Files[texture.TexturePath] : null;
-    private string? MewtwoSpeciesName(int species) => _mewtwoDex.GetValueOrDefault(species)?.Name;
 
     private void VerifyMewtwoMoveGeometry()
     {
-        if (!_catalog.CeruleanCaveEnabled) return;
         foreach (var row in MewtwoManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
         {
             var key = (150, row.GetProperty("side").GetString()!);

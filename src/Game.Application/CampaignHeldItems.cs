@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public bool CanGiveHeldItem(ItemId item) => CanGiveMail(item) || _content.EarlyShop is {} shop && HeldItemTransferRules.CanHold(shop, item, _content.PewterMachines);
+    public bool CanGiveHeldItem(ItemId item) => CanGiveMail(item) || _content.EarlyShop is {} shop && HeldItemTransferRules.CanHold(shop, item, _content.Machines);
 
     private Decision<CampaignState> OpenPartyItemMenu(CampaignState state, CampaignCommand command)
     {
@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
         if (!take && (string.IsNullOrEmpty(command.Text) || !CanGiveHeldItem(new(command.Text)))) return No("held_item_not_holdable");
         if (!take && CanGiveMail(new(command.Text!)))
             return fromPc ? No("mail_give_from_bag_required") : OpenMailComposer(state, command, false);
-        bool offeredMachine = !take && _content.PewterMachines is {} machines && MachineRules.Definition(machines, new(command.Text!)) is not null;
+        bool offeredMachine = !take && _content.Machines is {} machines && MachineRules.Definition(machines, new(command.Text!)) is not null;
         if (!take && (menu.View == "machines") != offeredMachine) return No("held_item_context_invalid");
         if (!take && menu.View == "berries" && shop.Items.FirstOrDefault(i => i.Id.Value == command.Text)?.Pocket != "POCKET_BERRY_POUCH")
             return No("berry_item_context_invalid");
@@ -46,8 +46,8 @@ public sealed partial class CampaignSession
         var owned = state.Party[command.PartyIndex];
         // Shared transactions consume the complete validated inventory directly.
         var inventory = state.Inventory;
-        var result = take ? HeldItemTransferRules.Take(shop, inventory, owned, _content.PewterMachines)
-            : HeldItemTransferRules.Give(shop, inventory, owned, new(command.Text!), fromPc, command.Choice == 1, _content.PewterMachines);
+        var result = take ? HeldItemTransferRules.Take(shop, inventory, owned, _content.Machines)
+            : HeldItemTransferRules.Give(shop, inventory, owned, new(command.Text!), fromPc, command.Choice == 1, _content.Machines);
         if (!result.Succeeded) return No(result.Error!);
         return new(CommandStatus.Accepted, state with { Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),

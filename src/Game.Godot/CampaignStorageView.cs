@@ -11,7 +11,6 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _storageAssets=new(StringComparer.Ordinal);
     private void LoadStoragePresentation()
     {
-        if(!_catalog.PokemonStorageEnabled)return;
         var source=PretStorageArt.Load(_root);
         Texture2D Decode(byte[] png)
         {

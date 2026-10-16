@@ -12,7 +12,6 @@ public sealed partial class CampaignSession
     private const string PokemonLeagueHallEntry="PokemonLeague_HallOfFame_EventScript_EnterRoom";
     private IReadOnlyDictionary<MapId,IFieldMap> PokemonLeagueMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> source,CampaignState state,CampaignCommand command)
     {
-        if(!_content.PokemonLeagueEnabled)return source;
         var p=state.World.Player;int room=PokemonLeagueRoomIndex(p.MapId);
         Dictionary<MapId,IFieldMap>? maps=null;
         if(room is >=0 and <=3&&state.MapEdits is {Count:>0})
@@ -77,8 +76,7 @@ public sealed partial class CampaignSession
     }
     private bool TryApplyPokemonLeagueEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.PokemonLeagueEnabled)return false;
-        var a=effect.Args;string path=effect.Source.Path,symbol=effect.Source.Symbol;int room=PokemonLeagueRoomIndex(state.World.Player.MapId);
+        next=state;        var a=effect.Args;string path=effect.Source.Path,symbol=effect.Source.Symbol;int room=PokemonLeagueRoomIndex(state.World.Player.MapId);
         bool shared=path==PokemonLeagueSharedSource,hall=path==PokemonLeagueHallSource;
         bool roomSource=path.StartsWith("data/maps/PokemonLeague_",StringComparison.Ordinal)&&PokemonLeagueMap(state.World.Player.MapId);
         bool exterior=path=="data/maps/IndigoPlateau_Exterior/scripts.inc"&&state.World.Player.MapId.Value=="map.indigo-plateau-exterior";
@@ -146,7 +144,6 @@ public sealed partial class CampaignSession
             }
             if(a.SequenceEqual(new[]{"VAR_RESULT","IsNationalPokedexEnabled"})&&(hall||center))
             {
-                if(!_content.NationalDexEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX"))throw new InvalidDataException("pokemon_league_national_dex_not_admitted");
                 next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",NationalDexEnabledIn(state)?1:0)}};return true;
             }
             return false;

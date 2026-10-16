@@ -11,39 +11,14 @@ internal sealed record ViridianGymPresentationData(Dictionary<string, byte[]> Fi
 /// <summary>Exact local source closure; two new portraits and authenticated predecessor resources.</summary>
 internal static class ViridianGymPresentationAssets
 {
-    internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
     internal const string Base = "content/generated/ui/viridian-gym-presentation/";
 
     internal static ViridianGymPresentationData Load(string root)
     {
-        byte[] Read(string path)
-        {
-            if (Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(p => p is "" or "." or ".."))
-                throw new InvalidDataException("Unsafe Viridian Gym presentation path/size.");
-            var file = new FileInfo(Path.Combine(root, path));
-            if (file.LinkTarget is not null) throw new InvalidDataException("Viridian Gym resource symlink rejected.");
-            for (var parent = file.Directory; parent is not null; parent = parent.Parent)
-                if (parent.LinkTarget is not null) throw new InvalidDataException("Viridian Gym resource directory symlink rejected.");
-            byte[] bytes = File.ReadAllBytes(file.FullName);
-            return bytes;
-        }
-        using var manifest = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var m = manifest.RootElement;
-        if (m.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Viridian Gym presentation identity differs.");
-        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in m.GetProperty("outputs").EnumerateArray())
-        {
-            string path = Base + row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
-        foreach (var asset in new[] { "portraits" }
-            .SelectMany(kind => m.GetProperty(kind).EnumerateArray()))
-        {
-            string path = asset.GetProperty("texturePath").GetString()!;
-            if (!files.ContainsKey(path)) files.Add(path, Read(path));
-        }
+        var package = PresentationPackage.Load(root, Base, false, "portraits");
+        var m = package.Manifest;
+        var files = package.Files;
         var trainers = new Dictionary<string, ViridianGymTrainerPresentation>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("trainers").EnumerateArray())
         {
@@ -55,7 +30,7 @@ internal static class ViridianGymPresentationAssets
         var portraits = m.GetProperty("portraits").EnumerateArray().Select(row => new ViridianGymPortraitPresentation(
             row.GetProperty("id").GetString()!, row.GetProperty("trainerPic").GetString()!, row.GetProperty("sourceTrainerPicId").GetInt32(),
             row.GetProperty("texturePath").GetString()!, row.GetProperty("inherited").GetBoolean())).ToArray();
-        if (portraits.Any(p => !files.TryGetValue(p.TexturePath, out var rgba) || !NativeImages.HasSize(rgba, 64, 64)))
+        if (portraits.Any(p => !files.ContainsKey(p.TexturePath)))
             throw new InvalidDataException("Viridian Gym portrait dimensions differ.");
         if (!portraits.Select(p => p.SourceTrainerPicId).ToHashSet().SetEquals([103, 105, 108, 110]))
             throw new InvalidDataException("Viridian Gym presentation inventory differs.");

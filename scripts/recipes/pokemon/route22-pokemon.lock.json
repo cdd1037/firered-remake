@@ -92,15 +92,6 @@
       "path": "include/pokemon.h"
     },
     {
-      "path": "sound/direct_sound_samples/cries/fearow.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/mankey.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/spearow.wav"
-    },
-    {
       "path": "src/battle_anim_mons.c"
     },
     {
@@ -126,9 +117,6 @@
     },
     {
       "path": "src/data/pokemon/level_up_learnsets.h"
-    },
-    {
-      "path": "src/data/pokemon/pokedex_entries.h"
     },
     {
       "path": "src/data/pokemon/pokedex_text_fr.h"

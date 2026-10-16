@@ -7,7 +7,6 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _trainerCardTextures=new(StringComparer.Ordinal);
     private void LoadTrainerCardPresentation()
     {
-        if(!_catalog.PokemonStorageEnabled)return;
         _trainerCard=PretTrainerCard.Load(_root);
         foreach(var asset in _trainerCard.Assets)
         {

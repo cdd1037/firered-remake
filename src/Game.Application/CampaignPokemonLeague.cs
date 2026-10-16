@@ -30,9 +30,8 @@ public sealed partial class CampaignSession
     private static readonly string[] PokemonLeagueChampionSymbols=["TRAINER_CHAMPION_FIRST_SQUIRTLE","TRAINER_CHAMPION_FIRST_BULBASAUR","TRAINER_CHAMPION_FIRST_CHARMANDER","TRAINER_CHAMPION_REMATCH_SQUIRTLE","TRAINER_CHAMPION_REMATCH_BULBASAUR","TRAINER_CHAMPION_REMATCH_CHARMANDER"];
     private static int PokemonLeagueRoomIndex(MapId map)=>Array.IndexOf(PokemonLeagueRooms,map.Value.StartsWith("map.pokemon-league-",StringComparison.Ordinal)&&map.Value.EndsWith("-room",StringComparison.Ordinal)?map.Value[19..^5]:"");
     private static bool PokemonLeagueMap(MapId map)=>map.Value is PokemonLeagueCenterMap or PokemonLeagueHallMap||PokemonLeagueRoomIndex(map)>=0;
-    private bool IsPokemonLeagueRematchTrainer(TrainerId id)=>_content.LeagueRematchEnabled&&_content.LeagueRematchTrainerParties?.Trainers.ContainsKey(id)==true;
-    private bool IsPokemonLeagueTrainer(TrainerId id)=>_content.PokemonLeagueEnabled&&
-        (_content.PokemonLeagueTrainerParties?.Trainers.ContainsKey(id)==true||IsPokemonLeagueRematchTrainer(id));
+    private bool IsPokemonLeagueRematchTrainer(TrainerId id)=>_content.LeagueRematchTrainerParties?.Trainers.ContainsKey(id)==true;
+    private bool IsPokemonLeagueTrainer(TrainerId id)=>(_content.PokemonLeagueTrainerParties?.Trainers.ContainsKey(id)==true||IsPokemonLeagueRematchTrainer(id));
     private bool IsPokemonLeagueChampion(TrainerId id)=>IsPokemonLeagueTrainer(id)&&PokemonLeagueChampionSymbols.Contains(id.Value[5..]);
     private static int PokemonLeagueChallenge(CampaignState state)=>state.PokemonLeague?.ChallengeNumber??1;
     private static TrainerId PokemonLeagueChampion(int starter,bool rematch=false)=>new("pret:TRAINER_CHAMPION_"+(rematch?"REMATCH_":"FIRST_")+(starter switch
@@ -62,7 +61,7 @@ public sealed partial class CampaignSession
         if(receipts.Any(r=>r.ChallengeNumber==challenge))return state;
         if((state.ForestTrainerHistory??[]).Any(h=>h.PokemonLeagueChallenge==challenge))return state;
         bool rematch=state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS");
-        if(rematch&&(!_content.LeagueRematchEnabled||!CelioCompleted(state)))throw new InvalidDataException("pokemon_league_rematch_unlock");
+        if(rematch&&(!CelioCompleted(state)))throw new InvalidDataException("pokemon_league_rematch_unlock");
         return state with{PokemonLeague=progress with{Challenges=receipts.Add(new(challenge,(state.ForestTrainerHistory??[]).Length,rematch))}};
     }
     private CeruleanTrainerBattleDefinition? PokemonLeagueBattle(TrainerId id)=>
@@ -96,22 +95,15 @@ public sealed partial class CampaignSession
     }
     private static void ValidatePokemonLeagueCatalog(ICampaignCatalog content)
     {
-        if(!content.PokemonLeagueEnabled)
-        {
-            if(content.PokemonLeagueTrainerParties is not null||content.PokemonLeagueOpponents is not null||content.LeagueRematchEnabled||content.LeagueRematchTrainerParties is not null||content.LeagueRematchOpponents is not null)throw new InvalidDataException("pokemon_league_profile_missing");
-            return;
-        }
-        if(!content.VictoryRoadEnabled||content.PokemonLeagueTrainerParties is null||content.PokemonLeagueOpponents is null||content.PokemonLeagueMartStock is null)
+        if(content.PokemonLeagueTrainerParties is null||content.OpponentPokemon is null||content.PokemonLeagueMartStock is null)
             throw new InvalidDataException("pokemon_league_catalog_scope");
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(content.PokemonLeagueTrainerParties);
         content.PokemonLeagueMartStock.Validate(content.EarlyShop!);
-        if(content.LeagueRematchEnabled)
         {
-            if(content.LeagueRematchTrainerParties is null||content.LeagueRematchOpponents is null||!content.CeruleanCaveEnabled)
+            if(content.LeagueRematchTrainerParties is null||content.OpponentPokemon is null)
                 throw new InvalidDataException("pokemon_league_rematch_catalog_scope");
             LeagueRematchTrainerPartyFactory.ValidateCatalog(content.LeagueRematchTrainerParties);
         }
-        else if(content.LeagueRematchTrainerParties is not null||content.LeagueRematchOpponents is not null)throw new InvalidDataException("pokemon_league_rematch_profile_missing");
         foreach(var b in content.PokemonLeagueTrainerParties.Battles.Values.Concat(content.LeagueRematchTrainerParties?.Battles.Values??[]))
         {
             var call=content.FindProgram(b.ScriptEntry)?.Instructions.SingleOrDefault(i=>i.Op==StoryOp.TrainerBattle);
@@ -123,7 +115,6 @@ public sealed partial class CampaignSession
     }
     private CampaignState ResetPokemonLeague(CampaignState state,string reason)
     {
-        if(!_content.PokemonLeagueEnabled)return state;
         var progress=state.PokemonLeague??new(1,[]);int history=(state.ForestTrainerHistory??[]).Length;
         var flags=state.Script.Flags;
         foreach(string flag in PokemonLeagueDefeatedFlags)flags=flags.Remove(flag);
@@ -135,10 +126,7 @@ public sealed partial class CampaignSession
 
     private string? ValidatePokemonLeagueProgress(CampaignState state)
     {
-        if(!_content.PokemonLeagueEnabled)return state.PokemonLeague is not null||state.HallOfFame is not null||state.PokemonLeagueCompletion is not null||
-            OwnedPokemon(state).Any(p=>p.ChampionRibbon)||(state.ForestTrainerHistory??[]).Any(h=>h?.PokemonLeagueChallenge is not null)?"save_pokemon_league_profile_missing":null;
-        if(state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS")&&!CelioCompleted(state)||!_content.NationalDexEnabled&&(state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")||
-            state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")!=0))return "save_pokemon_league_postgame_not_admitted";
+        if(state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS")&&!CelioCompleted(state))return "save_pokemon_league_postgame_not_admitted";
         var progress=state.PokemonLeague??new(1,[]);var history=state.ForestTrainerHistory??[];
         if(progress.Resets.IsDefault||progress.ChallengeNumber<1||progress.ChallengeNumber!=progress.Resets.Length+1)return "save_pokemon_league_challenge";
         if(history.IsDefault||history.Any(h=>h is null||h.TrainerId is null))return "save_pokemon_league_history_order";
@@ -158,7 +146,7 @@ public sealed partial class CampaignSession
             int lower=entry.ChallengeNumber==1?0:progress.Resets.ElementAtOrDefault(entry.ChallengeNumber-2)?.TrainerHistoryCount??-1;
             int upper=entry.ChallengeNumber==progress.ChallengeNumber?history.Length:progress.Resets.ElementAtOrDefault(entry.ChallengeNumber-1)?.TrainerHistoryCount??-1;
             if(entry.ChallengeNumber<1||entry.ChallengeNumber>progress.ChallengeNumber||lower<0||upper<0||entry.TrainerHistoryCount<lower||entry.TrainerHistoryCount>upper||
-                entry.Rematch&&(!_content.LeagueRematchEnabled||!CelioCompleted(state)))return "save_pokemon_league_entry_receipt";
+                entry.Rematch&&(!CelioCompleted(state)))return "save_pokemon_league_entry_receipt";
         }
         int next=0,activeChallenge=1;
         for(int i=0;i<history.Length;i++)

@@ -25,7 +25,6 @@ public sealed class PretSnorlaxArt
     public ImmutableArray<Route3PokemonFootprint> Footprints=>Document.Footprints;
     public ImmutableDictionary<int,PokedexMenuEntry> DexEntries { get; }
     public ImmutableDictionary<int,CaptureDexEntry> CaptureDexEntries { get; }
-    public ImmutableDictionary<SpeciesId,int> WeightsHectograms { get; }
     private PretSnorlaxArt(SnorlaxArtDocument doc,JsonElement manifest,ImmutableDictionary<string,byte[]> files,PretPokedexMenu dex)
     {
         Document=doc; Manifest=manifest; Files=files;
@@ -34,7 +33,6 @@ public sealed class PretSnorlaxArt
         DexEntries=ImmutableDictionary<int,PokedexMenuEntry>.Empty.Add(143,d);
         CaptureDexEntries=ImmutableDictionary<int,CaptureDexEntry>.Empty.Add(143,new(d.SourceSpeciesId,d.NationalNumber,d.Name,d.Category,d.DisplayCategory,
             d.HeightDecimeters,d.WeightHectograms,d.HeightDisplay,d.WeightDisplay,d.Description,d.Footprint!.TexturePath,d.Portrait!.TexturePath,d.HabitatTitle));
-        WeightsHectograms=ImmutableDictionary<SpeciesId,int>.Empty.Add(new("pret:SPECIES_SNORLAX"),doc.Dex.WeightHectograms);
     }
     public static PretSnorlaxArt Load(string projectRoot,string? dependencyProjectRoot=null,PretPokedexMenu? pokedexMenu=null)
     {

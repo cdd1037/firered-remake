@@ -55,19 +55,4 @@ public sealed class PretFuchsiaGymRegion
         return new(directory, maps, constants.ToImmutable(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Fuchsia Gym path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Fuchsia Gym directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Fuchsia Gym file symlink is unsupported: " + path);
-        }
-        return result;
-    }
 }

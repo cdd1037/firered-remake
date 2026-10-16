@@ -41,7 +41,7 @@ public sealed class PretTrainerCard
         var directory=Path.Combine(project,"content/generated/ui/trainer-card");
         byte[] ReadPinned(string root,string path)
         {
-            var bytes=File.ReadAllBytes(SafeFile(root,path));
+            var bytes=File.ReadAllBytes(GeneratedResourceFile.SafePath(root,path));
             return bytes;
         }
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
@@ -98,21 +98,6 @@ public sealed class PretTrainerCard
     public static bool IsNationalDexEnabled(byte nationalMagic,ushort nationalDexVariable,bool nationalDexFlag) =>
         nationalMagic==0xb9 && nationalDexVariable==0x6258 && nationalDexFlag;
     private static void Require(bool condition,string message) { if(!condition) throw new InvalidDataException(message); }
-    private static string SafeFile(string root,string path)
-    {
-        if(string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(p=>p is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Trainer Card path: "+path);
-        for(var cursor=new DirectoryInfo(root);cursor is not null;cursor=cursor.Parent)
-            if(cursor.LinkTarget is not null) throw new InvalidDataException("Trainer Card directory symlink is unsupported.");
-        var result=root;
-        foreach(var segment in path.Split('/'))
-        {
-            result=Path.Combine(result,segment);
-            if(new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Trainer Card symlink is unsupported: "+path);
-        }
-        return result;
-    }
 }
 
 public sealed record TrainerCardPoint(int X,int Y);

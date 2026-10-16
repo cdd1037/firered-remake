@@ -5,12 +5,11 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretRoute11Region? Route11Region { get; }
-    public PretRoute11Pokemon? Route11Pokemon { get; }
+    public PretRoute11Region Route11Region { get; }
+    public PokemonPresentationPackage? Route11Pokemon { get; }
     public PretRoute11ItemsDocument? Route11Items { get; }
     public PretRoute11Encounters? Route11Encounters { get; }
     public Route11TrainerCatalog? Route11Trainers { get; }
-    public bool Route11Enabled => Route11Region is not null;
 
     private static IEnumerable<FieldPickupDefinition> Route11PickupDefinitions(
         PretRoute11ItemsDocument items,PretStoryCompilation scripts)

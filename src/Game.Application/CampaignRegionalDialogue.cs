@@ -9,7 +9,7 @@ public sealed partial class CampaignSession
     private bool TryApplyRegionalDialogueEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.RegionalFlavorEnabled || effect.Opcode != "checkplayergender") return false;
+        if (effect.Opcode != "checkplayergender") return false;
         const string script = "PokemonTower_1F_EventScript_Woman2";
         if (effect.Source.Path != "data/maps/PokemonTower_1F/scripts.inc" || effect.Source.Symbol != script)
             return false;

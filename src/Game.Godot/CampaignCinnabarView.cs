@@ -20,36 +20,14 @@ public partial class CampaignView
     private bool CinnabarLanding => _session?.State.CinnabarFall is {Landing:true};
     private bool CinnabarInputLocked => _session?.State.CinnabarFall is not null;
     private Vector2 CinnabarCameraOffset => CinnabarLanding ? new(0,CinnabarFallPose.CameraY) : Vector2.Zero;
-    private bool IsCinnabarGymLeader(string id) => _catalog.CinnabarEnabled && id == "pret:TRAINER_LEADER_BLAINE";
+    private bool IsCinnabarGymLeader(string id) => id == "pret:TRAINER_LEADER_BLAINE";
     private void LoadCinnabarPresentation()
     {
-        if (!_catalog.CinnabarEnabled) return;
         var art = _catalog.CinnabarArt ?? throw new InvalidDataException("Cinnabar art catalog missing.");
-        foreach (var sprite in art.Sprites)
-        {
-            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var icon in art.Icons)
-        {
-            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
-            for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), SceneTextures.FromImage(image));
-        }
-        foreach (var footprint in art.Footprints)
-        {
-            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
-            _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
-        }
-        foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
-            _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
+        RegisterPokemonArt(art.Sprites, art.Icons, art.Footprints, art.Files);
+
         LoadCinnabarTrainerAndFieldArt();LoadCinnabarItemArt();
-        Write("cinnabarPresentation", new { newSpecies = new[] {38,59,78,91,98,99}, battleSprites = _battleArt.Count,
-            icons = _storageIcons.Count, footprints = _route22Footprints.Count, playableMaps = _catalog.CinnabarRegion!.NewMaps.Count,
-        reusedDust = true, badgeFlag = "FLAG_BADGE07_GET", audibleOutputVerified = false });
+
     }
     private void LoadCinnabarTrainerAndFieldArt()
     {
@@ -77,7 +55,7 @@ public partial class CampaignView
     private Texture2D DoubleTrainerPortrait => Route16FlyDoubleTrainer is not null ? _forestTrainerPortraits["young-couple-front"] : TrainerTowerTrainerPortrait ?? SeafoamDoubleTrainerPortrait ?? SevenIslandDoublePortrait ?? SixIslandDoublePortrait ?? SeviiRubyDoublePortrait ?? VictoryRoadDoublePortrait ?? FirstSeviiDoublePortrait ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _forestTrainerPortraits[_cinnabarTrainerPortraits[trainer.TrainerPic]] : _doubleTextures["twins-front"]);
     private bool TryCinnabarPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
     {
-        if(!_catalog.CinnabarEnabled||_catalog.CinnabarRegion?.NewMaps.ContainsKey(map)!=true)return false;
+        if(_catalog.CinnabarRegion?.NewMaps.ContainsKey(map)!=true)return false;
         string family=map.Value.StartsWith("map.pokemon-mansion-",StringComparison.Ordinal)?"mansion":map.Value=="map.cinnabar-island-gym"?"gym":throw new InvalidDataException("Cinnabar map has no patch atlas.");
         if(!_cinnabarTiles.TryGetValue((family,edit.SourceMetatileId),out var tile))throw new InvalidDataException("Cinnabar metatile pixels missing.");
         using var atlas=_cinnabarTileLayers[(family,layer)].GetImage();canvas.BlitRect(atlas,new(tile.X,tile.Y,16,16),new(edit.X*16,edit.Y*16));return true;
@@ -96,7 +74,6 @@ public partial class CampaignView
     }
     private bool ProcessCinnabarPresentation(double delta)
     {
-        if(!_catalog.CinnabarEnabled)return false;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
         _cinnabarDustFrames=Math.Min(24,_cinnabarDustFrames+delta*60);
         if(!CinnabarLanding)return false;

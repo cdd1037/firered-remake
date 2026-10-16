@@ -44,12 +44,7 @@ public static class Route22TrainerPartyFactory
                 if (!pokemon.Moves.TryGetValue(id, out var move) || !Route22TrainerAi.ValidMove(move))
                     throw new NotSupportedException("Rival custom move metadata differs from the pinned source.");
         }
-        var created = TrainerPartyFactory.CreateValidated(trainer, pokemon, rng);
-        // Source SetMonData follows CreateMon. Compact persisted slots omit two trailing MOVE_NONE.
-        return created with { Party = created.Party.Select((member, i) => member with {
-            Pokemon = member.Pokemon with { Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m, pokemon.Moves[m].Pp, pokemon.Moves[m].Pp)).ToImmutableArray() }
-        }).ToImmutableArray() };
+        return TrainerPartyFactory.CreateValidated(trainer, pokemon, rng);
     }
 
     public static void ValidateCatalog(Route22TrainerCatalog catalog)

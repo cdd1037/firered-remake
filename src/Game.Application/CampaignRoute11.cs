@@ -17,7 +17,6 @@ public sealed partial class CampaignSession
     {
         bool got = state.Script.Flags.GetValueOrDefault("FLAG_GOT_HM05");
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], Hm05);
-        if (!_content.Route11Enabled) return got || quantity != 0 ? "save_route11_profile_missing" : null;
         if (quantity != (got ? 1 : 0)) return "save_route11_hm05_reward_mismatch";
         if (got && (!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET") ||
                     _content.EvaluateOakRating(state.SeenSpecies, state.CaughtSpecies).Caught < 10))
@@ -28,7 +27,6 @@ public sealed partial class CampaignSession
     private bool TryApplyRoute11Effect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.Route11Enabled) return false;
         var a = effect.Args;
         int Value(string token) => token.StartsWith("VAR_", StringComparison.Ordinal)
             ? state.Script.Variables.GetValueOrDefault(token)
@@ -38,7 +36,7 @@ public sealed partial class CampaignSession
         {
             if (state.World.Player.MapId.Value != "map.route-2-east-building" || state.LastTalked is null ||
                 !state.Actors.TryGetValue(state.LastTalked, out var actor) || actor.ScriptId != FlashAideEntry ||
-                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state) && !_content.NationalDexEnabled)
+                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state) && false)
                 throw new InvalidDataException("route11_aide_context");
         }
         CampaignState Result(CampaignState basis, int value) => basis with
@@ -86,9 +84,9 @@ public sealed partial class CampaignSession
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var error = ValidateCampaignInventory(inventory); if (error is not null) throw new InvalidDataException(error);
         if (effect.Opcode == "checkitemspace")
-        { next = Result(state, MachineRules.CanAddMachine(_content.PewterMachines!, inventory, Hm05) ? 1 : 0); return true; }
+        { next = Result(state, MachineRules.CanAddMachine(_content.Machines!, inventory, Hm05) ? 1 : 0); return true; }
         if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], Hm05) != 0) throw new InvalidDataException("route11_aide_duplicate_hm05");
-        var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, Hm05);
+        var added = MachineRules.AddMachine(_content.Machines!, inventory, Hm05);
         if (!added.Succeeded) throw new InvalidDataException("route11_aide_reward_failed: " + added.Error);
         next = Result(state with { Inventory = added.State }, 1); return true;
     }

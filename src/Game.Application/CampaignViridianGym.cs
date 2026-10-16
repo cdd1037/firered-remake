@@ -19,11 +19,10 @@ public sealed partial class CampaignSession
     {
         ValidateVictoryRoadCatalog(content);
         ValidateLeagueRivalCatalog(content);
-        if(!content.ViridianGymEnabled)return;
-        if(!content.FirstSeviiEnabled||!content.CinnabarEnabled||content.ViridianGymTrainerParties is null||
-            content.CinnabarOwnership is null||content.CinnabarOpponents is null||
-            !ReferenceEquals(content.CinnabarOpponents.Owned,content.CinnabarOwnership)||
-            content.PewterMachines is not {} proof||
+        if(content.ViridianGymTrainerParties is null||
+            content.GamePokemon is null||content.OpponentPokemon is null||
+            !ReferenceEquals(content.OpponentPokemon.Owned,content.GamePokemon)||
+            content.Machines is not {} proof||
             !content.Maps.ContainsKey(new(ViridianGymMap))||content.Maps.ContainsKey(new("map.viridian-gym"))||
             content.MapFromSourceSymbol("MAP_VIRIDIAN_CITY_GYM").Value!=ViridianGymMap||
             content.MapDefinition(new(ViridianGymMap)).Actors.Length!=10||!content.SupportsRegionalFlavor(new(ViridianGymMap)))
@@ -41,8 +40,7 @@ public sealed partial class CampaignSession
 
     private bool TryApplyViridianGymEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.ViridianGymEnabled)return false;
-        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetViridianGymTrainers")
+        next=state;        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetViridianGymTrainers")
         {
             if(effect.Args.Length!=1||!ViridianGymTrainerPartyFactory.GymTrainers.Any(t=>t.Value=="pret:"+effect.Args[0])||
                 state.World.Player.MapId.Value!=ViridianGymMap||!ViridianGymVictory(state)||
@@ -66,7 +64,7 @@ public sealed partial class CampaignSession
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
+            var machines=_content.Machines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||state.Script.Flags.GetValueOrDefault(GiovanniRewardFlag)||
                 effect.Opcode=="additem"&&OpeningInventoryRules.Quantity(inventory.Machines??[],GiovanniMachine)!=0)
@@ -87,7 +85,6 @@ public sealed partial class CampaignSession
         bool badge=Flag("FLAG_BADGE08_GET"),defeated=Flag("FLAG_DEFEATED_LEADER_GIOVANNI"),got=Flag(GiovanniRewardFlag),
             hidden=Flag("FLAG_HIDE_VIRIDIAN_GIOVANNI"),rockets=Flag("FLAG_HIDE_MISC_KANTO_ROCKETS");
         int quantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],GiovanniMachine);
-        if(!_content.ViridianGymEnabled)return badge||defeated||got||hidden||rockets||quantity!=0?"save_viridian_gym_profile_missing":null;
         if(Flag("FLAG_HIDDEN_ITEM_VIRIDIAN_CITY_GYM_MACHO_BRACE")&&!ItemfinderEnabled)return "save_viridian_gym_itemfinder_profile_missing";
         bool won=ViridianGymVictory(state);
         if(badge!=won||defeated!=won||rockets!=won)return "save_giovanni_badge_history_mismatch";

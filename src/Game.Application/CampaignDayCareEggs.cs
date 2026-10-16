@@ -32,7 +32,6 @@ public sealed partial class CampaignSession
     private CampaignState ApplyDayCareWalkingStep(CampaignState state)
     {
         state = ApplyRoute5DayCareWalkingStep(state);
-        if (!_content.FourIslandDayCareEnabled) return state;
         if (state.Script.QuestLogState != 0 || state.FieldPoison is not null || !state.Script.Completed || state.Script.Locked ||
             state.Script.Wait is not null || state.DayCareInteraction is not null || state.EggHatch is not null)
             throw new InvalidDataException("daycare_step_context");
@@ -134,7 +133,7 @@ public sealed partial class CampaignSession
     private bool TryApplyEggHatchEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.FourIslandDayCareEnabled || effect.Source.Path != DayCarePath || effect.Source.Symbol != "EventScript_EggHatch" ||
+        if (effect.Source.Path != DayCarePath || effect.Source.Symbol != "EventScript_EggHatch" ||
             effect.Opcode is not ("special" or "waitstate")) return false;
         var instruction = DayCareInstruction(state);
         if (instruction is null || instruction.Source != effect.Source || instruction.Opcode != effect.Opcode || !instruction.Args.SequenceEqual(effect.Args) ||

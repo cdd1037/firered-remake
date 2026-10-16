@@ -25,13 +25,6 @@ public sealed partial class CampaignSession
 
     private static void ValidateCeruleanCaveCatalog(ICampaignCatalog content)
     {
-        if(!content.CeruleanCaveEnabled||content.CeruleanCaveOwnership is not{} owned||
-            content.CeruleanCaveOpponents is not{} opponents||content.CeruleanCaveMachines is not{} machines||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon)||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon)||!ReferenceEquals(owned, content.PokemonContent?.Pokemon)||
-            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents)||
-            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents))
-            throw new InvalidDataException("cerulean_cave_source_binding");
         var program=content.FindProgram(MewtwoScript);
         if(program?.Instructions.Count(i=>i.Opcode=="setwildbattle"&&i.Op==StoryOp.Special&&
             i.Args.SequenceEqual(new[]{"SPECIES_MEWTWO","70"})&&i.Source.Path==MewtwoSource)!=1||
@@ -42,7 +35,7 @@ public sealed partial class CampaignSession
 
     private void RequireMewtwoCaller(CampaignState s,StoryEffect e)
     {
-        if(!_content.CeruleanCaveEnabled||s.World.Player.MapId.Value!=MewtwoMap||!CelioCompleted(s)||
+        if(s.World.Player.MapId.Value!=MewtwoMap||!CelioCompleted(s)||
             e.Source.Path!=MewtwoSource||e.Source.Symbol!=MewtwoScript||
             s.LastTalked is not{} actorId||!s.Actors.TryGetValue(actorId,out var actor)||actor.SourceLocalId!=3||
             actor.ScriptId!=MewtwoScript||s.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED")!=3)
@@ -52,7 +45,7 @@ public sealed partial class CampaignSession
     private bool TryApplyMewtwoEffect(CampaignState s,StoryEffect e,out CampaignState next)
     {
         next=s;
-        if(!_content.CeruleanCaveEnabled||e.Source.Path!=MewtwoSource)return false;
+        if(e.Source.Path!=MewtwoSource)return false;
         var a=e.Args;bool caller=e.Source.Symbol==MewtwoScript;
         if(e.Opcode=="specialvar"&&a.SequenceEqual(new[]{"VAR_RESULT","GetBattleOutcome"}))
         {
@@ -86,7 +79,7 @@ public sealed partial class CampaignSession
             if(!a.SequenceEqual(new[]{"SPECIES_MEWTWO","70"})||s.MewtwoPreparation is not null||s.MewtwoReturn is not null||
                 s.Script.Flags.GetValueOrDefault(MewtwoFought)||s.Script.Flags.GetValueOrDefault(MewtwoHide)||s.Script.Flags.GetValueOrDefault(SpecialWildFlag))
                 throw new InvalidDataException("mewtwo_preparation_context");
-            var made=CeruleanCaveWildPokemonFactory.GenerateMewtwo(_content.CeruleanCaveOwnership!,s.World.Rng,s.TrainerId);
+            var made=CeruleanCaveWildPokemonFactory.GenerateMewtwo(_content.GamePokemon!,s.World.Rng,s.TrainerId);
             next=s with{MewtwoPreparation=new(new(s.World.Rng,made.GlobalRng,made.Pokemon),made),World=s.World with{Rng=made.GlobalRng}};
             return true;
         }
@@ -103,8 +96,7 @@ public sealed partial class CampaignSession
         return false;
     }
 
-    private bool MewtwoButtonWait(CampaignState state)=>_content.CeruleanCaveEnabled&&
-        state.World.Player.MapId.Value==MewtwoMap&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&
+    private bool MewtwoButtonWait(CampaignState state)=>state.World.Player.MapId.Value==MewtwoMap&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&
         !state.Script.Stack.IsEmpty&&state.Script.Stack[^1].ProgramId==MewtwoScript;
 
     private Decision<CampaignState> DecideMewtwoButton(CampaignState state,CampaignCommand command)
@@ -142,8 +134,8 @@ public sealed partial class CampaignSession
             history.Outcome!=WildBattleOutcome.Won&&history.ExperienceGained!=0||
             receipt.RngBefore.AlgorithmId!=Gen3Rng.AlgorithmId||receipt.RngBefore.Cursor>ulong.MaxValue-4||
             receipt.InitialPokemon is null||!CeruleanCaveWildPokemonFactory.SourceInitialInstance(
-                _content.CeruleanCaveOwnership!,CeruleanCaveWildBattleContract.MewtwoOrigin,receipt.InitialPokemon))return false;
-        var made=CeruleanCaveWildPokemonFactory.GenerateMewtwo(_content.CeruleanCaveOwnership!,receipt.RngBefore,receipt.InitialPokemon.OriginalTrainerId);
+                _content.GamePokemon!,CeruleanCaveWildBattleContract.MewtwoOrigin,receipt.InitialPokemon))return false;
+        var made=CeruleanCaveWildPokemonFactory.GenerateMewtwo(_content.GamePokemon!,receipt.RngBefore,receipt.InitialPokemon.OriginalTrainerId);
         return made.GlobalRng==receipt.RngAfter&&SameSourceOwnedPokemon(made.Pokemon,receipt.InitialPokemon);
     }
 

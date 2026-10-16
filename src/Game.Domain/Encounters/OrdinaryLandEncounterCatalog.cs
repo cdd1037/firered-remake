@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
-using Game.Domain.Growth;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.World;
@@ -69,6 +68,7 @@ public sealed class OrdinaryLandEncounterDefinition
 {
     public EarlyLandEncounterTable Table { get; }
     private readonly PokemonCatalog _pokemon;
+    private readonly ImmutableHashSet<string> _abilities;
     private readonly ImmutableHashSet<(byte Behavior, EncounterTileType Terrain)> _attributes;
 
     internal OrdinaryLandEncounterDefinition(EarlyLandEncounterTable table,
@@ -76,6 +76,7 @@ public sealed class OrdinaryLandEncounterDefinition
     {
         Table = table;
         _pokemon = pokemon;
+        _abilities = pokemon.Species.Values.SelectMany(species => new[] { species.Ability1, species.Ability2 }).ToImmutableHashSet(StringComparer.Ordinal);
         _attributes = attributes;
     }
 
@@ -112,6 +113,21 @@ public sealed class OrdinaryLandEncounterDefinition
         return new(_pokemon, candidate);
     }
 
+    internal EarlyLandEncounterProfile FieldEffects(EarlyLandEncounterProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        if (profile.LeadAbility is not ("ABILITY_NONE" or "ABILITY_STENCH" or "ABILITY_ILLUMINATE") &&
+            !_abilities.Contains(profile.LeadAbility))
+            throw new ArgumentException("ordinary_land_lead_ability");
+        if (profile.LeadHeldItem is not ("ITEM_NONE" or "ITEM_CLEANSE_TAG") &&
+            !Game.Domain.Battle.SourceHeldItemCatalog.Supported(_pokemon, profile.LeadHeldItem))
+            throw new ArgumentException("ordinary_land_lead_held_item");
+        return profile with {
+            LeadAbility = profile.LeadAbility is "ABILITY_STENCH" or "ABILITY_ILLUMINATE" ? profile.LeadAbility : "ABILITY_NONE",
+            LeadHeldItem = profile.LeadHeldItem == "ITEM_CLEANSE_TAG" ? profile.LeadHeldItem : "ITEM_NONE"
+        };
+    }
+
     internal void ValidateCheck(EarlyLandEncounterCheck check)
     {
         if (check.Map != Table.Map || check.EncounterType is not (EncounterTileType.None or EncounterTileType.Land) ||
@@ -136,23 +152,14 @@ public sealed class OrdinaryLandBattleBinding
         pokemon.Species == _candidate.Species && pokemon.Level == _candidate.Level &&
         pokemon.SourceSpeciesId == _pokemon.Species[_candidate.Species].SourceSpeciesId;
 
-    public bool SourceInitialInstance(GamePokemonCatalog owned, PokemonInstance pokemon)
-    {
-        if (owned is null || !ReferenceEquals(_pokemon, owned.Catalog) || !Matches(pokemon) ||
-            SourcePokemonValidator.ValidatePermanent(owned.Mechanics, pokemon) is not null) return false;
-        var source = owned.Mechanics.Catalog.Species[pokemon.Species];
-        return pokemon.NpcTradeOrigin is null && pokemon.ContestConditions is null && pokemon.StatCalculationEvs is null &&
-            pokemon.Evs == SixStats.Zero && pokemon.CurrentHp == pokemon.Stats.MaxHp && pokemon.Friendship == source.Friendship &&
-            pokemon.Experience == GrowthRules.ExperienceAtLevel(source.GrowthRate, pokemon.Level) &&
-            pokemon.Moves.SequenceEqual(PokemonMoveRules.InitialMovesCore(owned.Mechanics.Catalog, source, pokemon.Level));
-    }
+    public bool SourceInitialInstance(GamePokemonCatalog owned, PokemonInstance pokemon) =>
+        owned is not null && ReferenceEquals(_pokemon, owned.Catalog) && Matches(pokemon) &&
+        CanonicalWildPokemonFactory.IsInitialInstance(owned, pokemon);
 
     public string HeldItem(GamePokemonCatalog owned, int roll)
     {
-        if (owned is null || !ReferenceEquals(_pokemon, owned.Catalog) || roll is < 0 or > 99)
+        if (owned is null || !ReferenceEquals(_pokemon, owned.Catalog))
             throw new ArgumentException("ordinary_land_held_item");
-        var source = owned.Mechanics.SpeciesMechanics[_candidate.Species];
-        return source.ItemCommon == source.ItemRare ? source.ItemCommon :
-            roll < 45 ? "ITEM_NONE" : roll < 95 ? source.ItemCommon : source.ItemRare;
+        return CanonicalWildPokemonFactory.HeldItem(owned, _candidate.Species, roll);
     }
 }

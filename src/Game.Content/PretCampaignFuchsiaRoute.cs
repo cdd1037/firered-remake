@@ -6,11 +6,9 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretFuchsiaRouteRegion? FuchsiaRouteRegion {get;}
-    public PretFuchsiaRoutePokemon? FuchsiaRoutePokemon {get;}
+    public PretFuchsiaRouteRegion FuchsiaRouteRegion {get;}
     public PretFuchsiaRouteArt? FuchsiaRouteArt {get;}
-    public bool FuchsiaRouteEnabled=>FuchsiaRouteRegion is not null;
-    public FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>FuchsiaRoutePokemon?.Trainers;
+    public FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers { get; }
     // These are source-package completeness boundaries, not story locks. Resolve
     // static doors against the authenticated current graph, so newly implemented
     // destinations do not require another historical feature-name exception.

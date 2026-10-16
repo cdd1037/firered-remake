@@ -9,7 +9,6 @@ public partial class CampaignView
 
     private void LoadSnorlaxPresentation()
     {
-        if(!_catalog.SnorlaxEnabled)return;
         var art=_catalog.SnorlaxArt??throw new InvalidDataException("Snorlax art catalog missing.");
         foreach(var sprite in art.Sprites)
         {
@@ -32,7 +31,7 @@ public partial class CampaignView
     }
 
     private bool SnorlaxSilentEvent(CampaignWildBattle battle)=>WildCurrentEvent(battle) is {} current&&SnorlaxWildMessage(current) is {Symbol.Length:0};
-    private ForestMessage? SnorlaxWildMessage(WildBattleEvent current)=>!_catalog.SnorlaxEnabled?null:current switch
+    private ForestMessage? SnorlaxWildMessage(WildBattleEvent current)=>current switch
     {
         WildBattleYawnEvent {Reason:"move",Before:0,After:2} yawn=>new("sText_PkmnWasMadeDrowsy",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(Opposite(yawn.Side))),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(yawn.Side))),
         WildBattleYawnEvent or WildBattleSleepTalkEvent=>new(""),

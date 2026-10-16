@@ -45,26 +45,11 @@ public static class PretBillMachines
 
     private static byte[] Read(string root,string path)
     {
-        var p = SafeFile(root, path);
+        var p = GeneratedResourceFile.SafePath(root, path);
         var info = new FileInfo(p);
         Require(info.Length <= ContentJson.MaximumJsonBytes , "Bill machine file length differs: " + path);
         var bytes = File.ReadAllBytes(p);
         return bytes;
-    }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Bill machine path.");
-        for (var d = new DirectoryInfo(root); d is not null; d = d.Parent)
-            if (d.LinkTarget is not null) throw new InvalidDataException("Bill machine directory symlink rejected.");
-        var result = root;
-        foreach (var part in path.Split('/'))
-        {
-            result = Path.Combine(result, part);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Bill machine symlink rejected.");
-        }
-        return result;
     }
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
 }

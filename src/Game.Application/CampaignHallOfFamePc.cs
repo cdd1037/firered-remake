@@ -58,7 +58,6 @@ public static class CampaignHallOfFamePcProjection
 public sealed partial class CampaignSession
 {
     private const string HallPcSourceEntry = "EventScript_AccessHallOfFame";
-    public bool HallOfFamePcEnabled => _content.PokemonStorageEnabled && _content.PokemonLeagueEnabled;
     public CampaignHallOfFamePcView? HallOfFamePcView => State.Pc is { View: CampaignPcView.HallOfFame, HallOfFame.Cursor: {} cursor }
         ? CampaignHallOfFamePcProjection.Create(State.HallOfFame, cursor) : null;
 
@@ -67,7 +66,7 @@ public sealed partial class CampaignSession
         next = state;
         if (effect.Source.Path != CenterPcSource || effect.Source.Symbol != HallPcSourceEntry || effect.Opcode != "special") return false;
         if (effect.Args[0] is not ("BackupHelpContext" or "Script_SetHelpContext" or "HallOfFamePCBeginFade" or "RestoreHelpContext")) return false;
-        if (!HallOfFamePcEnabled || !state.PcPoweredOn || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR") ||
+        if (!state.PcPoweredOn || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR") ||
             !IsSupportedHealingCenter(state.World.Player.MapId)) throw new InvalidDataException("hall_pc_source_context_invalid");
         switch (effect.Args[0])
         {
@@ -97,7 +96,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideHallOfFamePc(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!HallOfFamePcEnabled || state.Pc is not { View: CampaignPcView.HallOfFame, HallOfFame: { Cursor: {} cursor, ReturnPending: false } pending } pc ||
+        if (state.Pc is not { View: CampaignPcView.HallOfFame, HallOfFame: { Cursor: {} cursor, ReturnPending: false } pending } pc ||
             state.HelpContext != "HELPCONTEXT_PC_MISC" || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")) return No("hall_pc_callback_context_invalid");
         if (command.Kind != "pc_hall_input" || command.Choice is not {} keys || keys < 0 || (keys & ~195) != 0)
             return No("hall_pc_input_required");

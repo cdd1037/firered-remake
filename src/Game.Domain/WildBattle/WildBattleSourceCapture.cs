@@ -15,14 +15,3 @@ namespace Game.Domain.WildBattle;
 /// </summary>
 public sealed record WildBattleCaptureContext(bool IsUnderwater, ImmutableHashSet<SpeciesId> CaughtSpecies,
     CaptureEncounterKind Encounter = CaptureEncounterKind.OrdinaryWild);
-
-/// <summary>
-/// A capture does not generate a replacement Pokémon. These delivery values are the exact persistent
-/// enemy party member after the successful throw, including its HP, PP, identity, status and held item.
-/// The caller remains responsible for inventory, capture metadata, Pokédex and party/PC delivery.
-/// </summary>
-public sealed record WildBattleCaptureActionResult(WildBattleResult Battle, PokemonInstance? CapturedPokemon,
-    uint? CapturedStatus, string? CapturedHeldItem)
-{
-    public bool Succeeded => Battle.Succeeded;
-}

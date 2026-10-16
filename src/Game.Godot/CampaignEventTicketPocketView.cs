@@ -7,7 +7,6 @@ public partial class CampaignView
 
     private void ExtendEventTicketQuestPocket(ref QuestItemUiDocument document)
     {
-        if (!_catalog.EventIslandsEnabled) return;
         var catalog = _catalog.EarlyShop ?? throw new InvalidDataException("Event-ticket item catalog missing.");
         const string directory = "content/generated/ui/event-ticket-ui";
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, directory, "event-ticket-ui.json"));

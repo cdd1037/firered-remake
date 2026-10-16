@@ -16,7 +16,7 @@ public sealed class PokemonAdmissionParityTests
         var expected = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics, trades);
         var campaign = PretCampaignCatalog.LoadCurrent(TestAssets.Root);
         Check(expected.Catalog, campaign.PokemonContent!.Catalog);
-        Check(expected.Opponents.Catalog, campaign.VsSeekerOpponents!.Catalog);
+        Check(expected.Opponents.Catalog, campaign.OpponentPokemon!.Catalog);
         Check(expected.TrainerTowerOpponents.Catalog, campaign.TrainerTowerOpponents.Catalog);
         Assert.IsTrue(campaign.BreedingMetadata!.Species.Keys.ToHashSet().SetEquals(expected.Catalog.Species.Keys));
         Assert.AreEqual(9, campaign.NpcTrades.Definitions.Count);

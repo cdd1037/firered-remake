@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 
@@ -59,10 +60,13 @@ public static class OldManTutorialRules
             throw new ArgumentException("Select the first living non-egg member before starting the tutorial.", nameof(hiddenPlayerPokemon));
         // The forced catch has no damage, weather turn, contact or escape phase. Retain the
         // implemented tutorial item/entry-ability boundary; ownership alone does not enable effects.
-        if (hiddenPlayerPokemon.HeldItem != "ITEM_NONE" && !Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem) ||
+        if (hiddenPlayerPokemon.HeldItem != "ITEM_NONE" && (!SourceBattleAdmission.SupportsHeldItem(catalog, hiddenPlayerPokemon.HeldItem) ||
+                SourceBattleHeldItems.OrderEffect(hiddenPlayerPokemon.HeldItem) is not null) ||
             hiddenPlayerPokemon.Status != 0 || hiddenPlayerPokemon.Mail != 255)
             throw new NotSupportedException("Tutorial excludes unmodeled held items, status and mail.");
-        if (!Game.Domain.WildBattle.FuchsiaBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId))
+        if (!SourceBattleAdmission.SupportsAbility(catalog, hiddenPlayerPokemon.Pokemon.AbilityId) ||
+            hiddenPlayerPokemon.Pokemon.AbilityId != "ABILITY_INTIMIDATE" &&
+                SourceFourEntryAbilities.HasEntryAbility(hiddenPlayerPokemon.Pokemon.AbilityId))
             throw new NotSupportedException("Unmodeled tutorial entry ability.");
         if (species.SourceSpeciesId != 13 || species.GenderRatio != 127 || species.Ability1 != "ABILITY_SHIELD_DUST")
             throw new ArgumentException("Unexpected tutorial Weedle definition.", nameof(catalog));

@@ -11,7 +11,8 @@ from PIL import Image
 from image_io import png
 from pokemon_import import battle_palette, footprint_indices
 from project_paths import PROJECT_ROOT
-from presentation_source import safe
+from presentation_source import safe, need
+from presentation_pixels import PixelReader
 
 
 
@@ -112,3 +113,57 @@ def build(root, profile, raw_root=None):
         dex=dex[0] if recipe.get('singleDex') else dex, outputs=[dict(path=p) for p in sorted(output)])
     output['manifest.json'] = (json.dumps(manifest, sort_keys=True, separators=(',', ':'), ensure_ascii=False)+'\n').encode()
     return output
+
+
+def selected_species_art(source, selection, footprint_species, emit):
+    """Build ordinary 64px battle art, frame-zero icons and selected footprints.
+
+    Species and owned-footprint selections belong to the caller. Palette expansion
+    stays floor RGB5 here; trainer/UI bit replication is a separate conversion.
+    """
+    pixels = PixelReader(source)
+    palette, indexed = pixels.palette, pixels.indexed
+    sprites, icons, footprints = [], [], []
+    graphics = source.text('src/data/graphics/pokemon.h')
+    constants = source.text('include/constants/species.h')
+    for name, species in selection:
+        stem, symbol = name.lower(), 'SPECIES_' + name.upper()
+        need(re.search(r'^#define ' + symbol + r'\s+' + str(species) + r'\s*$', constants, re.M), 'Species ID differs')
+        elevation_match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+)', source.text('src/data/pokemon_graphics/enemy_mon_elevation.h'))
+        elevation = int(elevation_match[1]) if elevation_match else 0
+        for side in ('front', 'back'):
+            coordinates = 'src/data/pokemon_graphics/' + side + '_pic_coordinates.h'
+            match = re.search(r'\[' + symbol + r'\]\s*=\s*\{\s*\.size = MON_COORDS_SIZE\((\d+), (\d+)\),\s*\.y_offset = (\d+)', source.text(coordinates))
+            need(match, 'Species coordinates missing')
+            width, height, y_offset = map(int, match.groups())
+            image = f'graphics/pokemon/{stem}/{side}.png'
+            need(f'gMon{side.title()}Pic_{name}[] = INCBIN_U32("{image[:-4]}.4bpp.lz")' in graphics, 'Species image binding differs')
+            for variant in ('normal', 'shiny'):
+                pal = f'graphics/pokemon/{stem}/{variant}.pal'
+                palette_symbol = 'gMonPalette_' if variant == 'normal' else 'gMonShinyPalette_'
+                need(f'{palette_symbol}{name}[] = INCBIN_U32("{pal[:-4]}.gbapal.lz")' in graphics, 'Species palette binding differs')
+                indices, rgba = indexed(image, pal, (64, 64), floor=True)
+                x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
+                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, side=side, paletteVariant=variant,
+                    x=x, y=y, sourceWidth=width, sourceHeight=height, sourceYOffset=y_offset, sourceEnemyElevation=elevation,
+                     sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)',
+                    transparentIndex=0, **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
+        icon_table = source.text('src/pokemon_icon.c')
+        match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', icon_table)
+        need(match and re.search(r'\[' + symbol + r'\]\s*=\s*gMonIcon_' + name + r',', icon_table), 'Species icon binding differs')
+        pal_index = int(match[1])
+        image, pal = f'graphics/pokemon/{stem}/icon.png', f'graphics/pokemon/icon_palettes/icon_palette_{pal_index}.pal'
+        need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
+        indices, rgba = indexed(image, pal, (32, 64), floor=True, first_frame=True)
+        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
+                          sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
+        if (name, species) not in footprint_species:
+            continue
+        image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
+        need('[' + symbol + '] = gMonFootprint_' + name + ',' in source.text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
+        indices = footprint_indices(source.read(image))
+        colors = palette(pal, floor=True)
+        rgba = bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
+        footprints.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, **emit(stem + '-footprint', 16, 16, rgba, [image, pal])))
+
+    return sprites, icons, footprints

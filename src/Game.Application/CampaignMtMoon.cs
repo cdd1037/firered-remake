@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool IsMtMoonButton(CampaignState state)=>_content.MtMoonEnabled&&state.World.Player.MapId.Value=="map.mt-moon-b2f"&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&!state.Script.Stack.IsEmpty&&state.Script.Stack[^1].ProgramId=="MtMoon_B2F_EventScript_BattleMiguel";
+    private bool IsMtMoonButton(CampaignState state)=>state.World.Player.MapId.Value=="map.mt-moon-b2f"&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&!state.Script.Stack.IsEmpty&&state.Script.Stack[^1].ProgramId=="MtMoon_B2F_EventScript_BattleMiguel";
     private Decision<CampaignState> DecideMtMoonButton(CampaignState state,CampaignCommand command)
     {
         if(!IsMtMoonButton(state)||command.Text is not("A" or "B"))return new(CommandStatus.Rejected,state,"mtmoon_button_invalid");
@@ -14,8 +14,7 @@ public sealed partial class CampaignSession
     }
     private bool TryApplyMtMoonEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.MtMoonEnabled)return false;
-        var a=effect.Args;
+        next=state;        var a=effect.Args;
         if(effect.Opcode=="waitbuttonpress"&&effect.Source.Path=="data/maps/MtMoon_B2F/scripts.inc")
         {
             if(!IsMtMoonButton(state)||state.Dialogue?.TextSymbol!="MtMoon_B2F_Text_MiguelIntro")throw new InvalidDataException("mtmoon_button_context_invalid");
@@ -63,7 +62,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateMtMoonProgress(CampaignState state)
     {
-        if(!_content.MtMoonEnabled)return null;
         bool won=state.BattledTrainers.Contains("pret:TRAINER_SUPER_NERD_MIGUEL");
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_MT_MOON_B2F");
         if(scene is <0 or >1||won!=(scene==1))return "save_mtmoon_miguel_scene_invalid";

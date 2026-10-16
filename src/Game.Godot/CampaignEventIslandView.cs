@@ -11,24 +11,9 @@ public partial class CampaignView
     private readonly Dictionary<int,Texture2D> _eventRockFragments=[];
     private JsonElement EventIslandManifest=>_eventIslandArt?.Manifest??throw new InvalidDataException("Event Island presentation missing.");
 
-    private Texture2D EventIslandPixels(JsonElement row,bool replicatePalette=false)
-    {
-        int width=row.GetProperty("width").GetInt32(),height=row.GetProperty("height").GetInt32();
-        using var image = NativeImages.LoadPng(_eventIslandArt!.Files[row.GetProperty("texturePath").GetString()!], width, height);
-        if(replicatePalette)
-        {
-            var rgba = image.GetData();
-            for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)
-                for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
-            image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-        }
-        return SceneTextures.FromImage(image);
-    }
+    private Texture2D EventIslandPixels(JsonElement row,bool replicatePalette=false) => PresentationTexture(_eventIslandArt!.Files, row, replicatePalette);
     private void LoadEventIslandPresentation()
     {
-        if(!_catalog.EventIslandsEnabled)return;
-        if(!_session.IsCurrentGame||!_catalog.SevenIslandEnabled)
-            throw new InvalidDataException("Event islands require their complete Seven Island presentation predecessor.");
         _eventIslandArt=EventIslandPresentationAssets.Load(_root);
         foreach(var row in EventIslandManifest.GetProperty("sprites").EnumerateArray())
         {
@@ -55,7 +40,7 @@ public partial class CampaignView
             _eventTriangleTextures.Add(row.GetProperty("interactionNumber").GetInt32(),EventIslandPixels(row));
         foreach(var row in EventIslandManifest.GetProperty("fragments").EnumerateArray())
             _eventRockFragments.Add(row.GetProperty("ordinal").GetInt32(),EventIslandPixels(row));
-        Write("eventIslandPresentation",new{nativeWindowVerified=false,physicalAudioVerified=false});
+
     }
     private CaptureDexEntry? EventIslandCaptureDexEntry(int species)=>!_eventIslandDex.TryGetValue(species,out var e)?null:
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,
@@ -64,10 +49,8 @@ public partial class CampaignView
         ?page with{Portrait=e.Portrait,Footprint=page.Caught?e.Footprint:null}:null;
     private byte[]? ReadEventIslandDexTexture(PokedexMenuTexture texture)=>_eventIslandArt is not null&&
         _eventIslandDex.Values.Any(e=>e.Portrait==texture||e.Footprint==texture)?_eventIslandArt.Files[texture.TexturePath]:null;
-    private string? EventIslandSpeciesName(int species)=>_eventIslandDex.GetValueOrDefault(species)?.Name;
     private void VerifyEventIslandMoveGeometry()
     {
-        if(!_catalog.EventIslandsEnabled)return;
         foreach(var row in EventIslandManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
         {
             var key=(row.GetProperty("species").GetInt32(),row.GetProperty("side").GetString()!);

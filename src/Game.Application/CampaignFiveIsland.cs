@@ -12,22 +12,11 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     public const string FiveIslandRulesVersion = "firered-five-island-campaign-v1";
-    public bool FiveIslandEnabled => _content.FiveIslandEnabled;
     private static readonly ItemId SapphireItem = new("pret:ITEM_SAPPHIRE");
 
     private static void ValidateFiveIslandCatalog(ICampaignCatalog content)
     {
-        if (!content.FiveIslandEnabled)
-        {
-            if (content.FiveIslandOwnership is not null || content.FiveIslandOpponents is not null || content.FiveIslandTrainers is not null)
-                throw new InvalidDataException("five_island_profile_missing");
-            return;
-        }
-        if (!content.SixIslandEnabled || content.FiveIslandOwnership is not {} owned ||
-            content.FiveIslandOpponents is not {} opponents || content.FiveIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
-            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.UpGradeId))
+        if (content.FiveIslandTrainers is not {} trainers || !content.Inventory.Items.ContainsKey(ItemIds.UpGradeId))
             throw new InvalidDataException("five_island_source_profile_missing");
         FiveIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }
@@ -38,9 +27,6 @@ public sealed partial class CampaignSession
         bool door = Flag(FiveIslandDoorFlag), defeated = Flag(FiveIslandRocketsFlag), recovered = Flag(FiveIslandSapphireFlag);
         int scene = state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROCKET_WAREHOUSE");
         int sapphire = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], SapphireItem);
-        if (!_content.FiveIslandEnabled)
-            return door || defeated || recovered || scene != 0 || sapphire != 0 || FiveIslandMap(state.World.Player.MapId)
-                ? "save_five_island_profile_missing" : null;
         if (scene is < 0 or > 1) return "save_five_island_scene";
         if ((door || defeated || recovered || scene != 0 || FiveIslandMap(state.World.Player.MapId)) &&
             (!NationalDexEnabledIn(state) || !RainbowQuestComplete(state) ||

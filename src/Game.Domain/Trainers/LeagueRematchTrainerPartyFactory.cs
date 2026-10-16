@@ -36,22 +36,7 @@ public static class LeagueRematchTrainerPartyFactory
         GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer))
-            throw new NotSupportedException("league_rematch_trainer_catalog");
-        var source = opponents.Mechanics;
-        foreach (var member in trainer.Party)
-        {
-            if (!opponents.Catalog.Species.ContainsKey(member.Species))
-                throw new NotSupportedException("league_rematch_trainer_species");
-            if (member.CustomMoves.Any(m => !source.Catalog.Moves.TryGetValue(m, out var move) || !SourceMoveDefinitionRules.IsValid(move)))
-                throw new NotSupportedException("league_rematch_trainer_move_source");
-        }
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        // ITEM_CUSTOM_MOVES replaces the natural moves only after CreateMon consumes its OT draws.
-        return made with { Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.Select(m => new PokemonMoveSlot(m,
-                source.Catalog.Moves[m].Pp, source.Catalog.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
 
     public static void ValidateCatalog(LeagueRematchTrainerCatalog catalog)

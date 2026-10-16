@@ -16,7 +16,7 @@ public static class PretVermilionGymTrainers
     {
         byte[] Read(string path)
         {
-            return File.ReadAllBytes(SafeFile(root, path));
+            return File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
         }
         var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/vermilion-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
                 if(doc.SchemaVersion!=1) throw new InvalidDataException("VermilionGym trainer document identity differs.");
@@ -44,15 +44,7 @@ public static class PretVermilionGymTrainers
     }
     private static VermilionGymTrainerDocument ReadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
-        var bytes=File.ReadAllBytes(SafeFile(root,"content/generated/data/trainer-battles/vermilion-gym.json"));
+        var bytes=File.ReadAllBytes(GeneratedResourceFile.SafePath(root,"content/generated/data/trainer-battles/vermilion-gym.json"));
         return ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(bytes),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
-    }
-    private static string SafeFile(string root,string relative)
-    {
-        if(Path.IsPathRooted(relative)||relative.Contains('\\')||relative.Split('/').Any(p=>p is "" or "." or "..")) throw new InvalidDataException("Unsafe VermilionGym trainer path.");
-        var f=new FileInfo(Path.GetFullPath(Path.Combine(root,relative)));
-        if(f.LinkTarget is not null) throw new InvalidDataException("VermilionGym trainer symlink rejected.");
-        for(var d=f.Directory;d is not null;d=d.Parent) if(d.LinkTarget is not null) throw new InvalidDataException("VermilionGym trainer parent symlink rejected.");
-        return f.FullName;
     }
 }

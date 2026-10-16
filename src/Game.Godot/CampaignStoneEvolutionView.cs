@@ -11,7 +11,7 @@ public partial class CampaignView
     private void LoadStoneEvolutionPresentation()
     {
         if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
-        if (!_session.IsCurrentGame || _qwilfishArt is null)
+        if (_qwilfishArt is null)
             throw new InvalidDataException("Stone evolution presentation requires the current Qwilfish predecessor.");
         var art = PretStoneEvolutionPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)
@@ -23,11 +23,7 @@ public partial class CampaignView
         {            if (texture.GetWidth() != row.GetProperty("width").GetInt32() || texture.GetHeight() != row.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Stone evolution inherited pixels differ.");
 }
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("inheritedSprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -65,7 +61,7 @@ public partial class CampaignView
             else _route22Footprints.Add(species, Pixels(row));
         }
         _stoneEvolutionArt = art;
-        Write("stoneEvolutionPresentation", new {             nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void VerifyStoneEvolutionMoveGeometry()
@@ -88,6 +84,5 @@ public partial class CampaignView
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     private byte[]? ReadStoneEvolutionDexTexture(PokedexMenuTexture texture) => _stoneEvolutionArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
-    private string? StoneEvolutionSpeciesName(int species) => _stoneEvolutionArt?.DexEntries.GetValueOrDefault(species)?.Name;
     private void DisposeStoneEvolutionPresentation() => _stoneEvolutionArt = null;
 }

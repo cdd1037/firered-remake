@@ -11,10 +11,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretFossilLabRegion FossilLabRegion { get; }
-    public bool FossilLabEnabled => FossilLabRegion is not null;
-    public GamePokemonCatalog FossilLabOwnership { get; }
-    public GameOpponentPokemonCatalog FossilLabOpponents { get; }
-    public MachineCatalog FossilLabMachines { get; }
 
     private static void ValidateFossilLabComposition(PretFossilLabRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {

@@ -14,7 +14,6 @@ public sealed partial class CampaignSession
         ("map.birth-island-exterior", 0x0c) or ("map.two-island-cape-brink", 0x0c);
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> PostgameWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
-        if (!_content.SevenIslandEnabled) return maps;
         var result = maps.ToDictionary(p => p.Key, p => p.Value);
         foreach (var pair in maps.Where(p => PostgameGroundMap(p.Key) || p.Key.Value == TanobyKeyMap))
             result[pair.Key] = pair.Value with { Cells = pair.Value.Cells.Select(c =>
@@ -27,7 +26,6 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId, IFieldMap> PostgameMovementMaps(IReadOnlyDictionary<MapId, IFieldMap> maps)
     {
-        if (!_content.SevenIslandEnabled) return maps;
         var result = maps.ToDictionary(p => p.Key, p => p.Value);
         foreach (var pair in maps.Where(p => PostgameGroundMap(p.Key))) result[pair.Key] = new PostgameMovementMap(pair.Value);
         return result;

@@ -10,7 +10,7 @@ public sealed record CampaignFishing(OldRodFishingState State, string WaitId,
 
 public sealed partial class CampaignSession
 {
-    public bool CanUseOldRod => _content.CityServicesEnabled && State.Fishing is null &&
+    public bool CanUseOldRod => State.Fishing is null &&
         State.Inventory is {} inventory && OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], OldRodId) == 1;
 
     // Context selection is independent from rod and region. Both contexts use the same task rules.
@@ -23,12 +23,10 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> StartFieldFishing(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.CityServicesEnabled || _content.FishingTables is null) return No("fishing_not_enabled");
+        if (_content.FishingTables is null) return No("fishing_not_enabled");
         bool goodRod = command.Text == GoodRodId.Value;
         bool superRod = command.Text == SuperRodId.Value;
         var rod = superRod ? FishingRod.Super : goodRod ? FishingRod.Good : FishingRod.Old;
-        if (goodRod && !_content.GoodRodEnabled) return No("good_rod_not_enabled");
-        if (superRod && !_content.SuperRodEnabled) return No("super_rod_not_enabled");
         if (command.Kind != "field_fish" || (command.Text != OldRodId.Value && !goodRod && !superRod) ||
             state.ItemMenu is not { Origin: "bag", View: "bag" }) return No("fishing_bag_context_invalid");
         if (state.Fishing is not null || !IsStableFieldForParty(state with { ItemMenu = null }) ||
@@ -86,7 +84,7 @@ public sealed partial class CampaignSession
         if (InSafariArea(state) && !SafariFishingActive(state)) throw new InvalidDataException("safari_fishing_context_changed");
         var profile = FishingProfile(state);
         profile.ValidateState(fishing.State);
-        if (!_content.CityServicesEnabled || fishing.State.Map != state.World.Player.MapId ||
+        if (fishing.State.Map != state.World.Player.MapId ||
             fishing.State.Status != OldRodFishingStatus.Running || state.ItemMenu is not null ||
             state.Battle is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null)
             throw new InvalidDataException("fishing_context_changed");

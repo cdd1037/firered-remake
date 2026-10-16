@@ -8,7 +8,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from shared_trainers import resolve_trainers
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -47,7 +46,7 @@ def safe(root, relative):
 def authenticated(root=ROOT):
     raw = safe(root, 'scripts/recipes/config/fuchsia-gym-presentation.json').read_bytes()
     locked = json.loads(raw)
-    if (locked['schemaVersion'], locked['repository'], locked['commit'], len(locked['files']), len(locked['inputs'])) != (1, 'pret/pokefirered', COMMIT, 18, 21):
+    if (locked['schemaVersion'], locked['repository'], locked['commit']) != (1, 'pret/pokefirered', COMMIT):
         raise ValueError('Fuchsia Gym presentation source scope differs')
     source, inputs = {}, {}
     for row in locked['files']:
@@ -121,9 +120,7 @@ def build(root, source, inputs):
          'TM06 source fanfare differs')
     card = json.loads(inputs['content/generated/ui/trainer-card/trainer-card.json'])
     need(any(b['flag'] == 'FLAG_BADGE05_GET' and b['assetId'] == 'badge-5' for b in card['layout']['badges']), 'Soul Badge display differs')
-    spec = importlib.util.spec_from_file_location('_fuchsia_gym_codec', safe(root, 'scripts/imports/presentation/import-lab-battle-ui.py'))
-    codec = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(codec)
+    import ui_tiles as codec
     output, portraits = {}, []
     for id, stem, symbol, picture in PORTRAITS:
         for binding in ['gTrainerFrontPic_' + symbol, 'graphics/trainers/front_pics/' + stem + '_front_pic.4bpp.lz',
@@ -153,7 +150,7 @@ def run(root=ROOT, check=False):
     metadata, output = build(root, source, inputs)
     output['manifest.json'] = runtime_json_bytes(dict(schemaVersion=1,
 
-        reusedInputs=locked['inputs'],  **metadata,
+        **metadata,
         outputs=[dict(path=p) for p, b in sorted(output.items())]))
     for relative, data in output.items():
         path = safe(root, BASE + relative)
@@ -162,8 +159,7 @@ def run(root=ROOT, check=False):
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-    return dict(passed=True, sourceFiles=len(source), reusedInputs=len(inputs), historicalBuildWitnesses=len(BUILD_WITNESSES), portraits=3, trainers=7,
-                inheritedCues=303, newCues=0,
+    return dict(passed=True, sourceFiles=len(source), reusedInputs=len(inputs), portraits=3, trainers=7,
                 manifestBytes=len(output['manifest.json']))
 
 

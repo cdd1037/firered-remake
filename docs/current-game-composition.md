@@ -17,13 +17,15 @@ python dev run /path/to/current-checkpoint.json
 
 GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游戏。current是正常模式，probe/harness仅为显式工程夹具，不能拿它们通过代替Current可运行。
 
-旧地区启动参数和互相冲突的选择会明确失败。编辑器默认定位工程根，成品默认读取可执行文件旁的 content/generated；FIRERED_PROJECT_ROOT 仅作显式开发覆盖。完整交付边界见[质量审核Q04](project-quality-review.md)。
+旧地区启动参数和互相冲突的选择会明确失败。编辑器默认定位工程根，成品默认读取可执行文件旁的 content/generated；FIRERED_PROJECT_ROOT 仅作显式开发覆盖。完整交付边界见[交付与维护边界](project-quality-review.md)。
 
 ## 应用与状态
 
 - CampaignSession.CreateCurrent创建当前新游戏。
 - CampaignSession.RestoreCurrent恢复已验证状态，不借恢复再次执行地图剧情或消费RNG。
 - CampaignCatalogBinding在创建/恢复时绑定当前目录。
+- 组合只公开一份 GamePokemon、OpponentPokemon 和 Machines；TrainerTower 的特殊对手目录单独保留。地区资源在单一构造入口装载，不再通过历史 Enabled 开关或前驱版本组合。
+- 普通遇敌必须绑定真实表与候选；物种存在不等于允许任意战斗来源。玩家徽章、剧情和图鉴解锁仍按状态判断。
 - 普通单/双打走共享内核；教程/特殊模式边界见[架构](architecture.md)。
 
 ## 存档与显式转换

@@ -9,7 +9,7 @@ public sealed partial class CampaignSession
     {
         if (InSafariArea(state)) return BeginSafariFishingBattle(state, fishing);
         var profile = FishingProfile(state);
-        if (!_content.CityServicesEnabled || state.Fishing is null || fishing.Status != OldRodFishingStatus.EncounterReady ||
+        if (state.Fishing is null || fishing.Status != OldRodFishingStatus.EncounterReady ||
             fishing.Map != state.World.Player.MapId || !profile.HasTable(fishing.Rod, fishing.Map))
             throw new InvalidDataException("fishing_encounter_context_invalid");
         var candidate = profile.GenerateCandidate(fishing, state.World.Rng);

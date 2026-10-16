@@ -13,14 +13,11 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string SeviiRubyContentProfile = "firered-sevii-ruby-campaign-v1";
-    public PretSeviiRubyRegion? SeviiRubyRegion { get; }
-    public GamePokemonCatalog? SeviiRubyOwnership { get; }
-    public GameOpponentPokemonCatalog? SeviiRubyOpponents { get; }
+    public PretSeviiRubyRegion SeviiRubyRegion { get; }
     public SeviiRubyTrainerCatalog? SeviiRubyTrainers { get; }
     public SeviiRubyTrainerCatalog? SeviiRubyTrainerParties => SeviiRubyTrainers;
-    public SeviiRubyWaterEncounterCatalog? SeviiRubyWaterEncounters { get; }
+    public WaterEncounterCatalog? SeviiRubyWaterEncounters { get; }
     public SeviiRubyItemContent? SeviiRubyItems { get; }
-    public bool SeviiRubyEnabled => SeviiRubyRegion is not null;
 
 
 

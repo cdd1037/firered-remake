@@ -13,12 +13,9 @@ public partial class CampaignView
 
     private void LoadVictoryRoadPresentation()
     {
-        if (!_catalog.VictoryRoadEnabled) return;
-        if (!_catalog.LeagueRivalEnabled || _session.RulesVersion != CampaignSession.VictoryRoadRulesVersion && !(_catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.PokemonLeagueRulesVersion) && !(_catalog.NationalDexEnabled && _catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.NationalDexRulesVersion) && !SeviiRubyPresentationProfile && !FourIslandPresentationProfile)
-            throw new InvalidDataException("Victory Road presentation requires its authenticated successor profile.");
         var art = VictoryRoadPresentationAssets.Load(_root);
         var source = _catalog.VictoryRoadTrainerParties ?? throw new InvalidDataException("Victory Road trainers missing.");
-        var opponents = _catalog.VictoryRoadOpponents ?? throw new InvalidDataException("Victory Road opponents missing.");
+        var opponents = _catalog.OpponentPokemon ?? throw new InvalidDataException("Victory Road opponents missing.");
         foreach (var sprite in art.Sprites)
         {
             if (!opponents.Catalog.Species.TryGetValue(new(sprite.SpeciesId), out var species) || species.SourceSpeciesId != sprite.SourceSpeciesId)
@@ -29,7 +26,7 @@ public partial class CampaignView
         }
         foreach (var icon in art.PokemonIcons)
         {
-            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath]);
+            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], 32, 32);
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                 for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
             using var image = Image.CreateFromData(32, 32, false, Image.Format.Rgba8, rgba);
@@ -66,15 +63,11 @@ public partial class CampaignView
             _victoryRoadTileLayers.Add(layer.Layer, SceneTextures.FromImage(image));
         }
         _victoryRoadPresentation = art;
-        Write("victoryRoadPresentation", new { VictoryRoadPresentationAssets.SourceCommit,             newSpecies = new[] { 87, 103 },
-            additionalCueIds = new[] { "SE_ICE_BREAK" }, physicalAudioVerified = false });
+
     }
 
-    // Names come from the already authenticated 386-entry dex, gated by the bounded opponent catalog.
-    private string PresentedBattleSpeciesName(int species) => GiftEggSpeciesName(species) ?? MemorialPillarSpeciesName(species) ?? OrdinaryEvolutionSpeciesName(species) ?? BreedingSpeciesName(species) ?? GameCornerSpeciesName(species) ?? StoneEvolutionSpeciesName(species) ?? QwilfishSpeciesName(species) ?? SeafoamSpeciesName(species) ?? TrainerTowerSpeciesName(species) ?? PowerPlantSpeciesName(species) ?? EventIslandSpeciesName(species) ?? SevenIslandSpeciesName(species) ?? LeagueRematchSpeciesName(species) ?? MewtwoSpeciesName(species) ?? CelioSpeciesName(species) ?? FiveIslandSpeciesName(species) ?? SixIslandSpeciesName(species) ?? PokemonLeagueSpeciesName(species) ?? (species is 87 or 103 &&
-        _catalog.VictoryRoadOpponents?.Catalog.Species.Values.Any(s => s.SourceSpeciesId == species) == true
-        ? (_pokedexMenu ?? throw new InvalidDataException("Victory Road species names missing.")).Entries[species].Name
-        : _catalog.PresentedSpeciesName(species));
+    private string PresentedBattleSpeciesName(int species) =>
+        _pokedexMenu?.Entries.GetValueOrDefault(species)?.Name ?? _catalog.PresentedSpeciesName(species);
 
     private PokedexMenuTexture? VictoryRoadDexPortrait(int species)
     {
@@ -91,7 +84,7 @@ public partial class CampaignView
 
     private VictoryRoadTrainerPresentation? VictoryRoadTrainer(string? id)
     {
-        if (id is null || !_catalog.VictoryRoadEnabled || _catalog.VictoryRoadTrainerParties?.Trainers.ContainsKey(new(id)) != true) return null;
+        if (id is null || _catalog.VictoryRoadTrainerParties?.Trainers.ContainsKey(new(id)) != true) return null;
         return _victoryRoadPresentation?.Trainers.GetValueOrDefault(id) ?? throw new InvalidDataException("Victory Road visible trainer is not authenticated.");
     }
     private VictoryRoadTrainerPresentation? VisibleVictoryRoadTrainer() => VictoryRoadTrainer(_session.State.ForestTrainerBattle?.Trainer.Value);
@@ -100,7 +93,7 @@ public partial class CampaignView
 
     private bool TryVictoryRoadPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
     {
-        if (!_catalog.VictoryRoadEnabled || !IsVictoryRoadCave(map)) return false;
+        if (!IsVictoryRoadCave(map)) return false;
         if (!_victoryRoadTiles.TryGetValue(edit.SourceMetatileId, out var tile)) throw new InvalidDataException("Victory Road metatile pixels missing.");
         // BlitRect replaces alpha as well as RGB, so cleared top/middle pixels cannot retain the old barrier.
         using var atlas = _victoryRoadTileLayers[layer].GetImage();

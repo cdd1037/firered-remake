@@ -30,4 +30,28 @@ public sealed class OldManCurrentCatalogTests
         Assert.AreEqual(pokemon, player.Pokemon);
         Assert.AreEqual(result.Rng, OldManTutorialRules.Finish(result).Rng);
     }
+
+    [TestMethod]
+    [DataRow("ITEM_ORAN_BERRY", true)]
+    [DataRow("ITEM_TM10", true)]
+    [DataRow("ITEM_QUICK_CLAW", false)]
+    [DataRow("ITEM_MACHO_BRACE", false)]
+    [DataRow("ITEM_HM01", false)]
+    public void TutorialAdmitsPassiveHoldableItemsButRejectsUnmodeledEntryOrdering(string item, bool accepted)
+    {
+        var owned = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root)).PokemonContent!.Pokemon;
+        var pokemon = SourcePokemonFactory.Create(owned.Mechanics,
+            new(new("pret:SPECIES_CHARMANDER"), 5, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
+        var player = new PartyPokemon(1, pokemon, "CHARMANDER", "RED", 0, 2,
+            "MAPSEC_PALLET_TOWN", 5, 4, "ITEM_POKE_BALL", item);
+        if (!accepted)
+        {
+            Assert.Throws<NotSupportedException>(() => OldManTutorialRules.Start(owned, player, new(0)));
+            return;
+        }
+        var result = OldManTutorialRules.Start(owned, player, new(0));
+        Assert.AreEqual(new RngState(2440580858, 18), result.Rng);
+        Assert.AreEqual(item, player.HeldItem);
+    }
+
 }

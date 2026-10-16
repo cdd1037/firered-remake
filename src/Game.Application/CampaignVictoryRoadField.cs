@@ -76,7 +76,7 @@ public sealed partial class CampaignSession
     }
     private bool TryApplyVictoryRoadFieldEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.VictoryRoadEnabled||!VictoryRoadFieldMap(state.World.Player.MapId))return false;
+        next=state;if(!VictoryRoadFieldMap(state.World.Player.MapId))return false;
         var button=VictoryRoadSwitches.SingleOrDefault(b=>b.Map==state.World.Player.MapId.Value&&b.Source==effect.Source.Path&&
             (b.Press==effect.Source.Symbol||b.Barrier==effect.Source.Symbol));
         if(button is null)return false;
@@ -106,7 +106,7 @@ public sealed partial class CampaignSession
     }
     private bool VictoryRoadBoulderFallSupported(CampaignState state,CampaignActor actor,TilePosition target)
     {
-        if(!_content.VictoryRoadEnabled||state.World.Player.MapId.Value!="map.victory-road-3f"||actor.SourceLocalId!=8||
+        if(state.World.Player.MapId.Value!="map.victory-road-3f"||actor.SourceLocalId!=8||
             target.MapId!=state.World.Player.MapId||target.X!=34||target.Y!=18)return false;
         var d=_content.MapDefinition(target.MapId).Actors.Single(a=>a.SourceLocalId==8);
         return VictoryRoadBoulderDefinition(d,target.MapId)&&actor.HideFlag==VictoryRoadUpperHide&&
@@ -114,7 +114,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState CompleteVictoryRoadBoulderPush(CampaignState state,CampaignActor boulder)
     {
-        if(!_content.VictoryRoadEnabled||!VictoryRoadFieldMap(state.World.Player.MapId))return state;
+        if(!VictoryRoadFieldMap(state.World.Player.MapId))return state;
         var map=state.World.Player.MapId;var cell=EditedFieldMaps(state)[map].CellAt(boulder.X,boulder.Y)!;
         if(cell.SourceBehavior==FieldHmSourceRules.FallWarpBehavior)
         {
@@ -138,7 +138,7 @@ public sealed partial class CampaignSession
     }
     private void ValidateVictoryRoadMapEntry(CampaignState state)
     {
-        if(!_content.VictoryRoadEnabled||state.World.Player.MapId.Value!="map.route-23")return;
+        if(state.World.Player.MapId.Value!="map.route-23")return;
         var definition=_content.MapDefinition(state.World.Player.MapId);
         var program=_content.FindProgram("Route23_OnTransition");
         string[] expected=["clearflag "+VictoryRoadUpperHide,"setflag "+VictoryRoadLowerHide,
@@ -148,7 +148,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateVictoryRoadFieldProgress(CampaignState state)
     {
-        if(!_content.VictoryRoadEnabled)return null;
         if(VictoryRoadSwitches.Any(b=>state.Script.Variables.GetValueOrDefault(b.Variable) is not (0 or 100)))return "save_victory_road_switch_scene";
         var map=state.World.Player.MapId;if(!VictoryRoadFieldMap(map))return null;
         if(state.Script.Flags.GetValueOrDefault(VictoryRoadUpperHide)==state.Script.Flags.GetValueOrDefault(VictoryRoadLowerHide))return "save_victory_road_fall_flags";
@@ -168,7 +167,6 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> VictoryRoadWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        if(!_content.VictoryRoadEnabled)return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
         foreach(var pair in maps.Where(p=>VictoryRoadFieldMap(p.Key)))
             result[pair.Key]=pair.Value with{Cells=pair.Value.Cells.Select(c=>c.SourceBehavior==VictoryRoadButtonBehavior?c with{SourceBehavior=0x08}:c).ToImmutableArray()};
@@ -183,7 +181,7 @@ public sealed partial class CampaignSession
     }
     private TilePosition VictoryRoadPlayerFallDestination(TilePosition hole)
     {
-        if(!_content.VictoryRoadEnabled||hole.MapId.Value!="map.victory-road-3f"||hole.X!=34||hole.Y!=18||hole.Elevation!=3||
+        if(hole.MapId.Value!="map.victory-road-3f"||hole.X!=34||hole.Y!=18||hole.Elevation!=3||
             _content.Maps[hole.MapId].SourceBehaviorAt(hole.X,hole.Y)!=FieldHmSourceRules.FallWarpBehavior)
             throw new InvalidDataException("victory_road_player_fall_source");
         var warp=_content.Maps[hole.MapId].FieldWarps.SingleOrDefault(w=>w.Index==4);

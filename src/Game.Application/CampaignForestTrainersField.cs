@@ -16,7 +16,7 @@ public sealed partial class CampaignSession
 
     private CampaignState CheckForestTrainerSight(CampaignState state)
     {
-        if (!_content.ForestTrainersEnabled || !HasRegisteredTrainerSight(state.World.Player.MapId) ||
+        if (!HasRegisteredTrainerSight(state.World.Player.MapId) ||
             !state.Script.Completed || state.Script.Wait is not null || state.Dialogue is not null ||
             state.DoubleBattle is not null || state.ForestTrainerBattle is not null || state.WildBattle is not null || state.FieldPoison is not null) return state;
         var definitions = _content.MapDefinition(state.World.Player.MapId).Actors.ToDictionary(a => a.LocalId);
@@ -31,7 +31,7 @@ public sealed partial class CampaignSession
             // profiles leave these actors visible and report their original boundary;
             // this successor admits their shared roster only with two usable members.
             bool twins=IsTwinsScript(actor.ScriptId);
-            if(twins&&(!_content.PresetDoublesEnabled||state.Party.Count(p=>!p.IsEgg&&p.Pokemon.CurrentHp>0)<2))continue;
+            if(twins&&(state.Party.Count(p=>!p.IsEgg&&p.Pokemon.CurrentHp>0)<2))continue;
             if(_content.FuchsiaRouteTrainers?.Battles.TryGetValue(actor.ScriptId,out var fuchsiaEntry)==true&&fuchsiaEntry.Mode==4)continue;
             TrainerOccurrences.ByActor.TryGetValue((state.World.Player.MapId, actor.LocalId), out var occurrence);
             var battle = occurrence?.Source.Definition;
@@ -77,7 +77,7 @@ public sealed partial class CampaignSession
         bool supported = _content.MapDefinition(map).Actors.Any(actor =>
             actor.TrainerType == "TRAINER_TYPE_NORMAL" &&
             (TrainerOccurrences.ByActor.ContainsKey((map, actor.LocalId)) ||
-                _content.PresetDoublesEnabled && IsTwinsScript(actor.ScriptId)));
+                IsTwinsScript(actor.ScriptId)));
         _registeredTrainerSightMaps.Add(map, supported);
         return supported;
     }
@@ -95,7 +95,7 @@ public sealed partial class CampaignSession
         };
         if (distance == 0 || distance > sight || actor.Facing == Direction.South && sight > 3 &&
             (state.ObjectSlots?.Count ?? state.Actors.Values.Count(a => a.Active) + 1) >= 16) return 0;
-        var map = (_content.RocketHideoutEnabled?EditedFieldMaps(state):_content.ConnectedFieldMaps!)[player.MapId]; var origin = map.CellAt(actor.X, actor.Y);
+        var map = (EditedFieldMaps(state))[player.MapId]; var origin = map.CellAt(actor.X, actor.Y);
         if (origin is null || BlocksForestTrainerEdge(origin.SourceBehavior, actor.Facing)) return 0;
         for (int step = 0; step <= distance; step++)
         {
@@ -118,7 +118,7 @@ public sealed partial class CampaignSession
 
     private CampaignState ReleaseForestTrainerPostDialogue(CampaignState before, CampaignState next)
     {
-        if (_content.ForestTrainersEnabled && before.ForestTrainerBattle is null &&
+        if (before.ForestTrainerBattle is null &&
             before.Dialogue is { CloseOnCompletion: true } dialogue && dialogue.Page + 1 == dialogue.Pages.Length)
         {
             var frame = before.Script.Stack.IsEmpty ? null : before.Script.Stack[^1];
@@ -136,8 +136,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateForestTrainerHistory(CampaignState state)
     {
-        if (!_content.ForestTrainersEnabled)
-            return state.ForestTrainerHistory is not null || state.ForestTrainerBattle is not null ? "save_forest_trainer_profile_missing" : null;
         var history = state.ForestTrainerHistory ?? [];
         if (history.IsDefault) return "save_forest_trainer_history_invalid";
         if(ValidateFirstSeviiTrainerHistory(state) is {} firstSeviiError)return firstSeviiError;
@@ -148,7 +146,7 @@ public sealed partial class CampaignSession
             if (h is null || h.Id != "forest-trainer-battle:" + (i + 1) || h.TrainerId is null ||
                 !OrdinaryTrainerIds.Contains(new TrainerId(h.TrainerId)) ||
                 h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
-                h.ExperienceGained < 0 || h.MoneyGained < 0 || h.MoneyMultiplier is not (null or 2) || h.MoneyMultiplier is not null && !_content.PresetDoublesEnabled || h.OpponentsSent.IsDefaultOrEmpty ||
+                h.ExperienceGained < 0 || h.MoneyGained < 0 || h.MoneyMultiplier is not (null or 2) || h.OpponentsSent.IsDefaultOrEmpty ||
                 h.OpponentsSent[0] != 0 || h.OpponentsSent.Length > OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length ||
                 h.OpponentsSent.Distinct().Count() != h.OpponentsSent.Length ||
                 h.OpponentsSent.Any(n => n < 0 || n >= OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length) || winners.Contains(h.TrainerId)&&h.VsSeeker is null&&!IsFirstSeviiBikerHistory(h)&&!IsPokemonLeagueTrainer(new(h.TrainerId)))
@@ -170,23 +168,23 @@ public sealed partial class CampaignSession
                 return "save_forest_trainer_reward_invalid";
             if (h.Outcome == WildBattleOutcome.Won) winners.Add(h.TrainerId);
         }
-        if(_content.PewterEnabled&&winners.Contains(PewterTrainerPartyFactory.Brock.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))
+        if(winners.Contains(PewterTrainerPartyFactory.Brock.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))
             winners.Add(PewterTrainerPartyFactory.Liam.Value);
-        if(_content.CeruleanEnabled&&winners.Contains(CeruleanTrainerPartyFactory.Misty.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
+        if(winners.Contains(CeruleanTrainerPartyFactory.Misty.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
         {winners.Add(CeruleanTrainerPartyFactory.Diana.Value);winners.Add(CeruleanTrainerPartyFactory.Luis.Value);}
-        if(_content.VermilionGymEnabled&&winners.Contains(VermilionGymTrainerPartyFactory.LtSurge.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))
+        if(winners.Contains(VermilionGymTrainerPartyFactory.LtSurge.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))
             foreach(var id in VermilionGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(_content.CeladonGymEnabled&&winners.Contains(CeladonGymTrainerPartyFactory.Erika.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET"))
+        if(winners.Contains(CeladonGymTrainerPartyFactory.Erika.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET"))
             foreach(var id in CeladonGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(_content.FuchsiaGymEnabled&&winners.Contains(FuchsiaGymTrainerPartyFactory.Koga.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"))
+        if(winners.Contains(FuchsiaGymTrainerPartyFactory.Koga.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"))
             foreach(var id in FuchsiaGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(_content.SaffronGymEnabled&&winners.Contains(SaffronGymTrainerPartyFactory.Sabrina.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET"))
+        if(winners.Contains(SaffronGymTrainerPartyFactory.Sabrina.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET"))
             foreach(var id in SaffronGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(_content.CinnabarEnabled&&winners.Contains(CinnabarTrainerPartyFactory.Blaine.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"))
+        if(winners.Contains(CinnabarTrainerPartyFactory.Blaine.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"))
             foreach(var symbol in CinnabarGymTrainerSymbols)winners.Add("pret:"+symbol);
-        if(_content.ViridianGymEnabled&&winners.Contains(ViridianGymTrainerPartyFactory.Giovanni.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET"))
+        if(winners.Contains(ViridianGymTrainerPartyFactory.Giovanni.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET"))
             foreach(var id in ViridianGymTrainerPartyFactory.GymTrainers)winners.Add(id.Value);
-        if(_content.PokemonLeagueEnabled)winners.RemoveWhere(id=>IsPokemonLeagueChampion(new(id))&&!state.BattledTrainers.Contains(id));
+        winners.RemoveWhere(id=>IsPokemonLeagueChampion(new(id))&&!state.BattledTrainers.Contains(id));
         var recorded = state.BattledTrainers.Where(id => OrdinaryTrainerIds.Contains(new TrainerId(id)));
         return winners.SetEquals(recorded) ? null : "save_forest_trainer_flag_mismatch";
     }

@@ -26,7 +26,6 @@ public sealed partial class CampaignSession
     private bool TryApplyDepartmentStoreEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.RegionalInteriorServicesEnabled)return false;
         bool ownSource=effect.Source.Path==DepartmentElevatorSource;
         // The shared helper also serves Rocket Hideout. Claim it only in this exact map.
         bool sharedSource=state.World.Player.MapId.Value==DepartmentElevatorMap&&
@@ -84,7 +83,7 @@ public sealed partial class CampaignSession
 
     private CampaignState RecordDepartmentElevatorEntrance(CampaignState previous,CampaignState moved)
     {
-        if(!_content.RegionalInteriorServicesEnabled||moved.World.Player.MapId.Value!=DepartmentElevatorMap||
+        if(moved.World.Player.MapId.Value!=DepartmentElevatorMap||
             previous.World.Player.MapId==moved.World.Player.MapId)return moved;
         var p=previous.World.Player;var(dx,dy)=Delta(p.Facing);
         var entrance=_content.DepartmentStoreElevatorEntrances.SingleOrDefault(e=>
@@ -104,7 +103,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState>? TryDepartmentDynamicExit(CampaignState state,CampaignCommand command)
     {
-        if(!_content.RegionalInteriorServicesEnabled||command.Kind!="move"||state.World.Player.MapId.Value!=DepartmentElevatorMap)return null;
+        if(command.Kind!="move"||state.World.Player.MapId.Value!=DepartmentElevatorMap)return null;
         var p=state.World.Player;var source=_content.Maps[p.MapId];
         if(command.Direction!=Direction.South||p.Facing!=Direction.South||source.SourceBehaviorAt(p.X,p.Y)!=0x65)return null;
         var exit=_content.DepartmentStoreDynamicExits.SingleOrDefault(e=>e.X==p.X&&e.Y==p.Y&&
@@ -144,7 +143,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateDepartmentElevatorProgress(CampaignState state)
     {
-        if(!_content.RegionalInteriorServicesEnabled)return state.DepartmentElevator is not null?"save_department_profile_missing":null;
         bool inside=state.World.Player.MapId.Value==DepartmentElevatorMap;
         if(state.DepartmentElevator is not {} elevator)return inside?"save_department_elevator_return_missing":null;
         if(elevator.FloorWindowVisible||elevator.MenuDefault is not null)return "save_department_elevator_menu_active";

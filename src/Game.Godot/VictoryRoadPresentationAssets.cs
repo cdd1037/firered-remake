@@ -17,39 +17,14 @@ internal sealed record VictoryRoadPresentationData(Dictionary<string, byte[]> Fi
 /// <summary>Presentation asset bindings. No gameplay state or collision decisions.</summary>
 internal static class VictoryRoadPresentationAssets
 {
-    internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
     internal const string Base = "content/generated/sprites/pokemon/victory-road/";
 
     internal static VictoryRoadPresentationData Load(string root)
     {
-        byte[] Read(string path)
-        {
-            if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') || path.Split('/').Any(p => p is "" or "." or ".."))
-                throw new InvalidDataException("Unsafe Victory Road resource path or size.");
-            var file = new FileInfo(Path.Combine(root, path));
-            if (file.LinkTarget is not null) throw new InvalidDataException("Victory Road resource symlink rejected.");
-            for (var parent = file.Directory; parent is not null; parent = parent.Parent)
-                if (parent.LinkTarget is not null) throw new InvalidDataException("Victory Road resource directory symlink rejected.");
-            byte[] bytes = File.ReadAllBytes(file.FullName);
-            return bytes;
-        }
-        using var manifest = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var m = manifest.RootElement;
-        if (m.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Victory Road presentation identity differs.");
-        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in m.GetProperty("outputs").EnumerateArray())
-        {
-            string path = Base + row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
-        }
-        foreach (var asset in new[] { "portraits", "items", "layers", "sprites", "pokemonIcons" }
-            .SelectMany(kind => m.GetProperty(kind).EnumerateArray()))
-        {
-            string path = asset.GetProperty("texturePath").GetString()!;
-            if (!files.ContainsKey(path)) files.Add(path, Read(path));
-        }
+        var package = PresentationPackage.Load(root, Base, false, "portraits", "items", "layers", "sprites", "pokemonIcons");
+        var m = package.Manifest;
+        var files = package.Files;
         var trainers = new Dictionary<string, VictoryRoadTrainerPresentation>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("trainers").EnumerateArray())
         {
@@ -70,17 +45,16 @@ internal static class VictoryRoadPresentationAssets
         var expectedSprites = (from species in new[] { 87, 103 } from side in new[] { "front", "back" }
             from variant in new[] { "normal", "shiny" } select (species, side, variant)).ToHashSet();
         if (sprites.Any(s => s.SpeciesId != (s.SourceSpeciesId == 87 ? "pret:SPECIES_DEWGONG" : "pret:SPECIES_EXEGGUTOR") ||
-                !NativeImages.HasSize(files[s.TexturePath], 64, 64) || !files.ContainsKey(s.TexturePath)))
+                !files.ContainsKey(s.TexturePath)))
             throw new InvalidDataException("Victory Road sprite format differs.");
         if (!layers.Select(layer => layer.Layer).ToHashSet().SetEquals([0, 1, 2]) ||
-            layers.Any(layer => layer.Width != 64 || layer.Height != 16 || !NativeImages.HasSize(files[layer.TexturePath], 64, 16)))
+            layers.Any(layer => layer.Width != 64 || layer.Height != 16))
             throw new InvalidDataException("Victory Road layer format differs.");
         if (!sprites.Select(s => (s.SourceSpeciesId, s.Side, s.PaletteVariant)).ToHashSet().SetEquals(expectedSprites) || !pokemonIcons.Select(i => i.SourceSpeciesId).ToHashSet().SetEquals([87, 103]) ||
-            pokemonIcons.Any(i => i.SpeciesId != (i.SourceSpeciesId == 87 ? "pret:SPECIES_DEWGONG" : "pret:SPECIES_EXEGGUTOR") || !NativeImages.HasSize(files[i.TexturePath], 32, 32)) ||
+            pokemonIcons.Any(i => i.SpeciesId != (i.SourceSpeciesId == 87 ? "pret:SPECIES_DEWGONG" : "pret:SPECIES_EXEGGUTOR")) ||
             !m.GetProperty("trainerOnlySpecies").EnumerateArray().Select(s => s.GetInt32()).SequenceEqual([87, 103]))
             throw new InvalidDataException("Victory Road trainer-only Pokemon presentation differs.");
         if (!portraits.Select(p => p.SourceTrainerPicId).ToHashSet().SetEquals([88, 102, 103, 105, 110, 111, 128]) ||
-            portraits.Any(p => !NativeImages.HasSize(files[p.TexturePath], 64, 64)) || items.Any(i => !NativeImages.HasSize(files[i.TexturePath], 24, 24)) ||
             !tiles.Select(t => t.MetatileId).ToHashSet().SetEquals([721, 737, 775, 791]))
             throw new InvalidDataException("Victory Road presentation inventory differs.");
         return new(files, trainers, portraits, items, tiles, layers, sprites, pokemonIcons);

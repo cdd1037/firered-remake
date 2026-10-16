@@ -6,8 +6,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool IsSeviiRubyTrainer(TrainerId trainer) => _content.SeviiRubyEnabled &&
-        _content.SeviiRubyTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
+    private bool IsSeviiRubyTrainer(TrainerId trainer) => _content.SeviiRubyTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
 
     private int SeviiRubyTrainerSourceLine(string script) => _content.FindProgram(script)?.Instructions
         .Single(i => i.Op == StoryOp.TrainerBattle).Source.Line ?? throw new InvalidDataException("sevii_ruby_trainer_program_missing");

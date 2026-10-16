@@ -13,15 +13,8 @@ public partial class CampaignView
 
     private void LoadFossilLabPresentation()
     {
-        if (!_catalog.FossilLabEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.FightingDojoEnabled)
-            throw new InvalidDataException("Fossil Lab requires its current Fighting Dojo presentation predecessor.");
         var art = PretFossilLabPresentation.Load(_root);
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -63,8 +56,7 @@ public partial class CampaignView
                 throw new InvalidDataException("Fossil Lab dex metadata differs from the authenticated source menu.");
         _fossilLabArt = art;
         LoadOldAmberPocket(art);
-        Write("fossilLabPresentation", new {             oldAmberPocket = true,
-            nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void LoadOldAmberPocket(FossilLabPresentationData art)
@@ -114,7 +106,7 @@ public partial class CampaignView
         _fossilLabArt = null; _fossilLabMenuWait = null; _fossilLabCursor = 0;
     }
 
-    private bool FossilLabMenuActive => _catalog.FossilLabEnabled && _session.State.FossilMenu is not null;
+    private bool FossilLabMenuActive => _session.State.FossilMenu is not null;
     private bool FossilLabMenuVisible => FossilLabMenuActive && FieldTextComplete &&
         (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length);
     private int FossilLabMenuWidth => ((int)_session.State.FossilMenu!.Options.Max(row =>

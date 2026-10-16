@@ -11,7 +11,6 @@ using Godot;
 /// <summary>Four Island source pixels and correlated forced-movement presentation. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private bool FourIslandPresentationProfile => _catalog.FourIslandEnabled && _catalog.SeviiRubyEnabled && (_session.RulesVersion == CampaignSession.FourIslandRulesVersion || SixIslandPresentationProfile);
     private FourIslandPresentationData? _fourIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _fourIslandDex = [];
     private readonly Dictionary<string,JsonElement> _fourIslandTrainers = new(StringComparer.Ordinal);
@@ -27,23 +26,8 @@ public partial class CampaignView
 
     private void LoadFourIslandPresentation()
     {
-        if (!_catalog.FourIslandEnabled) return;
-        if (!FourIslandPresentationProfile)
-            throw new InvalidDataException("Four Island requires its complete Ruby predecessor.");
         _fourIslandArt = FourIslandPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_fourIslandArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_fourIslandArt.Files, row, replicatePalette);
         foreach (var row in FourIslandManifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -90,15 +74,14 @@ public partial class CampaignView
         foreach (var row in FourIslandManifest.GetProperty("items").EnumerateArray()) _earlyItemIcons.Add(new(row.GetProperty("item").GetString()!),(ImageTexture)Pixels(row));
         foreach (var row in FourIslandManifest.GetProperty("layers").EnumerateArray()) _fourIslandIceLayers.Add((row.GetProperty("metatileId").GetInt32(),row.GetProperty("layer").GetInt32()),Pixels(row));
         foreach (var row in FourIslandManifest.GetProperty("terrains").EnumerateArray()) _fourIslandTerrains.Add(row.GetProperty("terrainId").GetInt32(),Pixels(row));
-        Write("fourIslandPresentation",new { inheritedDewgong=true, nativeWindowVerified=false, physicalAudioVerified=false });
+
     }
 
     private CaptureDexEntry? FourIslandCaptureDexEntry(int species) => !_fourIslandDex.TryGetValue(species,out var e) ? null :
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,e.HeightDisplay,e.WeightDisplay,e.Description,
             e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
     private byte[]? ReadFourIslandDexTexture(PokedexMenuTexture texture) => _fourIslandDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? _fourIslandArt!.Files[texture.TexturePath] : null;
-    private string? VisibleFourIslandTrainerText(string key) => _session.State.ForestTrainerBattle is {} battle && _fourIslandTrainers.TryGetValue(battle.Trainer.Value,out var row) ? row.GetProperty(key).GetString() : null;
-    private bool IsFourIslandPatchedMap(MapId map) => _catalog.FourIslandEnabled && map == FourIslandFieldSource.FirstFloor;
+    private bool IsFourIslandPatchedMap(MapId map) => map == FourIslandFieldSource.FirstFloor;
     private bool TryFourIslandPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
     {
         if (!IsFourIslandPatchedMap(map)) return false;
@@ -175,7 +158,7 @@ public partial class CampaignView
     }
     private bool TryFourIslandButtonInput(InputEventKey key)
     {
-        if (!_catalog.FourIslandEnabled || _session.State.Script.Wait?.Kind != StoryWaitKind.ButtonPress ||
+        if (_session.State.Script.Wait?.Kind != StoryWaitKind.ButtonPress ||
             _session.State.Dialogue?.TextSymbol != "FourIsland_IcefallCave_Back_Text_LoreleiWellDeepFreezeYou" || key.Keycode is Key.Escape or Key.F12 or Key.F5 or Key.F9) return false;
         _held = null; _repeat = 0;
         if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace && FieldTextComplete &&

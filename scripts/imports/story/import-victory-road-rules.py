@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Compile Victory Road battles, encounters and pickups directly from pinned raw source."""
+"""Compile Victory Road battles and pickups directly from pinned raw source."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
-from trainer_import import selected_trainers, resolved_parties, natural_moves
+from trainer_import import selected_trainers, resolved_parties
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
@@ -43,11 +43,6 @@ def generate(raw_root, dependency):
         return dict(value="pret:" + symbol)
     trainers = selected_trainers(read, ["TRAINER_" + short for short in TRAINERS])
     resolved = resolved_parties(read, trainers)
-    def dependent(root, path):
-        return json.loads((root / path).read_bytes())
-    canonical = dependent(dependency, 'content/generated/data/pokemon/canonical/catalog.json')
-    owned = {row['id']['value'][5:] for row in dependent(dependency, 'data/game-pokemon.json')['owned']}
-    species = {s['id']['value'][5:]: s for s in canonical['species']}
     from source_features import script_blocks
     names = ('Route23', 'VictoryRoad_1F', 'VictoryRoad_2F', 'VictoryRoad_3F', 'IndigoPlateau_Exterior')
     blocks = {b['label']: b for b in script_blocks(source, names)['blocks']}
@@ -88,47 +83,7 @@ def generate(raw_root, dependency):
         trainers=trainers, battles=battles, resolvedMoves=resolved)
 
     # Full original FireRed table declarations, including rods whose acquisition is not yet admitted.
-    wild_path = 'src/data/wild_encounters.json'
-    wild_source = json.loads(read(wild_path))
-    headers = next(g for g in wild_source['wild_encounter_groups'] if g['label'] == 'gWildMonHeaders')
-    source_encounters = [e for e in headers['encounters'] if e.get('base_label') in
-        {'sVictoryRoad1F_FireRed','sVictoryRoad2F_FireRed','sVictoryRoad3F_FireRed','sRoute23_FireRed'}]
-    weights = {f['type']: f['encounter_rates'] for f in headers['fields']}
     map_ids = {'MAP_ROUTE23': 'map.route-23', **{f'MAP_VICTORY_ROAD_{n}F': f'map.victory-road-{n}f' for n in range(1,4)}}
-    land, water, fishing, pairs = [], [], [], set()
-    for e in source_encounters:
-        for field, dest in [('land_mons', land), ('water_mons', water), ('fishing_mons', fishing)]:
-            if field not in e: continue
-            v=e[field]; rows=[]
-            for i,s in enumerate(v['mons']):
-                rows.append(dict(index=i,species=identity(s['species']), minimumLevel=s['min_level'], maximumLevel=s['max_level'], weight=weights[field][i]))
-                pairs.update((s['species'],lv) for lv in range(s['min_level'],s['max_level']+1))
-            table=dict(map=dict(value=map_ids[e['map']]),rawEncounterRate=v['encounter_rate'],slots=rows)
-            if field == 'fishing_mons': table['rodGroups'] = next(f['groups'] for f in headers['fields'] if f['type']==field)
-            dest.append(table)
-    initial=[]
-    for symbol,lv in sorted(pairs):
-        mon=species[symbol]; moves=natural_moves(read,symbol,lv)
-        canonical_moves=[]
-        for entry in mon['levelUpMoves']:
-            m=entry['move']['value'][5:]
-            if entry['level']<=lv and m not in canonical_moves:canonical_moves=(canonical_moves+[m])[-4:]
-        need(moves==canonical_moves,'Canonical initial moves differ')
-        initial.append(dict(species=identity(symbol),level=lv,moves=[identity(m) for m in moves]))
-    wild_species=sorted({symbol for symbol,lv in pairs})
-    need(set(wild_species) <= owned and set(wild_species) <= species.keys(), 'Wild species missing from current admitted canonical catalog')
-    need(len(wild_species)==19 and len(pairs)==122, 'Wild encounter scope')
-    wild_dependencies=[]
-    for symbol in wild_species:
-        p=species[symbol]
-        source_path='src/data/pokemon/species_info.h'
-        source=one(source_path,r'^    \['+symbol+r'\] =\n    \{(.*?)^    \},')
-        held=re.search(r'\.itemCommon = (ITEM_\w+),\n\s*\.itemRare = (ITEM_\w+),',source[1])
-        need(held,'Missing held slots')
-        wild_dependencies.append(dict(species=identity(symbol),sourceSpeciesId=p['sourceSpeciesId'],ability1=p['ability1'],ability2=p['ability2'],
-            itemCommon=held[1],itemRare=held[2],source=ref(source_path,symbol,source)))
-    wild_doc=dict(land=land,water=water,fishing=fishing,
-        initialMoves=initial,species=wild_dependencies)
 
     item_path='src/data/items.json'; source_items=json.loads(read(item_path))['items']
     placements=[]
@@ -160,7 +115,7 @@ def generate(raw_root, dependency):
         renewable=False)
     machines = shared_machines.machine_definitions(dependency, 'content/generated/data/regions/victory-road/machines.json', 'machines')
     machine_doc = dict(  machines=machines)
-    outputs={'trainers.json':trainer_doc,'wild.json':wild_doc,'items.json':item_doc,'machines.json':machine_doc}
+    outputs={'trainers.json':trainer_doc,'items.json':item_doc,'machines.json':machine_doc}
     return outputs
 
 def main():

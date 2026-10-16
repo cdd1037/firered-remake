@@ -24,7 +24,7 @@ public sealed partial class CampaignSession
     private string? ValidateRegionalTeaInventory(InventoryState inventory)
     {
         var tea = (inventory.KeyItems ?? []).Where(s => s is not null && s.Item == TeaId).ToArray();
-        return tea.Length > 0 && (!_content.RegionalServicesEnabled || tea.Length != 1 || tea[0].Quantity != 1)
+        return tea.Length > 0 && (tea.Length != 1 || tea[0].Quantity != 1)
             ? "inventory_regional_tea_invalid" : null;
     }
 
@@ -33,8 +33,6 @@ public sealed partial class CampaignSession
         bool received = state.Script.Flags.GetValueOrDefault("FLAG_GOT_TEA");
         int scene = state.Script.Variables.GetValueOrDefault(SharedTeaGateScene);
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], TeaId);
-        if (!_content.RegionalServicesEnabled)
-            return received || scene != 0 || quantity != 0 ? "save_regional_tea_profile_missing" : null;
         // Source sets the gift flag before giveitem; full bag legitimately leaves zero Tea.
         // All four guards test that flag, ignore failed removeitem, and share scene 1.
         return scene is < 0 or > 1 || quantity is < 0 or > 1 || quantity > 0 && !received ||
@@ -44,7 +42,7 @@ public sealed partial class CampaignSession
     private bool TryApplyRegionalTeaEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.RegionalServicesEnabled || effect.Opcode is not ("checkitemspace" or "additem" or "removeitem" or "checkitemtype" or "bufferitemname" or "bufferitemnameplural")) return false;
+        if (effect.Opcode is not ("checkitemspace" or "additem" or "removeitem" or "checkitemtype" or "bufferitemname" or "bufferitemnameplural")) return false;
         var a = effect.Args;
         int Value(string token) => int.TryParse(token, out int n) ? n : state.Script.Variables.TryGetValue(token, out int v) ? v :
             _content.TryConstant(token, out int c) ? c : throw new InvalidDataException("regional_tea_operand_unknown: " + token);

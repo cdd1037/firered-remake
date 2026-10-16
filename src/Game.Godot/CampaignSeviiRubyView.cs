@@ -8,8 +8,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private bool SeviiRubyPresentationProfile => _catalog.SeviiRubyEnabled && _catalog.NationalDexEnabled &&
-        _catalog.PokemonLeagueEnabled && (_session.RulesVersion == CampaignSession.SeviiRubyRulesVersion || FourIslandPresentationProfile);
     private SeviiRubyPresentationData? _seviiRubyArt;
     private readonly Dictionary<string,JsonElement> _seviiRubyTrainers = new(StringComparer.Ordinal);
     private readonly Dictionary<int,PokedexMenuEntry> _seviiRubyDex = [];
@@ -19,23 +17,8 @@ public partial class CampaignView
 
     private void LoadSeviiRubyPresentation()
     {
-        if (!_catalog.SeviiRubyEnabled) return;
-        if (!SeviiRubyPresentationProfile)
-            throw new InvalidDataException("Sevii Ruby requires its complete National Dex predecessor.");
         _seviiRubyArt = SeviiRubyPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_seviiRubyArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_seviiRubyArt.Files, row, replicatePalette);
         foreach (var row in SeviiRubyManifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -97,8 +80,7 @@ public partial class CampaignView
         _seviiRubyBrailleFont = Pixels(braille.GetProperty("asset"));
         _seviiRubyBrailleCursor = Pixels(braille.GetProperty("cursor"));
         _seviiRubyBrailleFrame = Pixels(braille.GetProperty("frame"));
-        Write("seviiRubyPresentation", new {             battleSprites = _battleArt.Count, icons = _storageIcons.Count, footprints = _route22Footprints.Count,
-            newSpecies = new[] { 218, 219 }, inheritedRapidash = true,             nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private static PokedexMenuTexture SeviiRubyDexTexture(JsonElement row) => new(row.GetProperty("texturePath").GetString()!,row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32());
@@ -112,10 +94,9 @@ public partial class CampaignView
     private byte[]? ReadSeviiRubyDexTexture(PokedexMenuTexture texture) => _seviiRubyDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture)
         ? _seviiRubyArt!.Files[texture.TexturePath] : null;
     private string? SeviiRubyTrainerText(string? id, string key) => id is not null && _seviiRubyTrainers.TryGetValue(id, out var row) ? row.GetProperty(key).GetString() : null;
-    private string? VisibleSeviiRubyTrainerText(string key) => SeviiRubyTrainerText(_session.State.ForestTrainerBattle?.Trainer.Value, key);
     private string? SeviiRubyDoubleText(string key) => SeviiRubyTrainerText(_session.State.DoubleBattle?.Trainer.Value, key);
     private Texture2D? SeviiRubyDoublePortrait => SeviiRubyDoubleText("portrait") is {} id ? _forestTrainerPortraits[id] : null;
-    private bool IsSeviiRubyPatchedMap(MapId map) => _catalog.SeviiRubyEnabled && map.Value is "map.mt-ember-exterior" or "map.one-island-pokemon-center-1f";
+    private bool IsSeviiRubyPatchedMap(MapId map) => map.Value is "map.mt-ember-exterior" or "map.one-island-pokemon-center-1f";
     private bool TrySeviiRubyPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
     {
         if (!IsSeviiRubyPatchedMap(map)) return false;
@@ -126,7 +107,7 @@ public partial class CampaignView
         canvas.BlitRect(image, new(0, 0, 16, 16), new(edit.X * 16, edit.Y * 16));
         return true;
     }
-    private bool SeviiRubyBrailleVisible => _catalog.SeviiRubyEnabled && FieldDialogueVisible &&
+    private bool SeviiRubyBrailleVisible => FieldDialogueVisible &&
         _session.State.Dialogue?.TextSymbol.StartsWith("Braille_Text_", StringComparison.Ordinal) == true;
     private bool TrySeviiRubyBrailleInput(InputEventKey key)
     {
@@ -173,7 +154,7 @@ public partial class CampaignView
         get
         {
             var fade = _session.State.PresentationEffects.LastOrDefault(e => e.Opcode is "fadescreen" or "fadescreenspeed");
-            bool white = _catalog.SeviiRubyEnabled && fade?.Args.FirstOrDefault() is "FADE_TO_WHITE" or "FADE_FROM_WHITE" or "2" or "3";
+            bool white = fade?.Args.FirstOrDefault() is "FADE_TO_WHITE" or "FADE_FROM_WHITE" or "2" or "3";
             return white ? new Color(1,1,1,PokemonLeagueFieldFadeAlpha) : new Color(0,0,0,PokemonLeagueFieldFadeAlpha);
         }
     }

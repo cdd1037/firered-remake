@@ -43,32 +43,13 @@ public static class VictoryRoadTrainerPartyFactory
     {
         ValidateCatalog(trainers);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("victory_road_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
-    /// <summary>Preserves the existing Cinnabar-scoped Ray/Tyra construction and predecessor callers.</summary>
     public static TrainerPartyCreationResult Create(VictoryRoadTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
-        if (opponents is null)
-            throw new NotSupportedException("victory_road_trainer_catalog");
-        return CreateCore(trainers, opponents.Catalog, opponents.Mechanics, id, rng);
-    }
-
-    private static TrainerPartyCreationResult CreateCore(VictoryRoadTrainerCatalog trainers, PokemonCatalog opponents,
-        SourceMechanicsCatalog source, TrainerId id, RngState rng)
-    {
         ValidateCatalog(trainers);
-        if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("victory_road_trainer_catalog");
-        bool customMoves = (trainer.PartyFlags & 1) != 0;
-        foreach (var member in trainer.Party)
-            if (!opponents.Species.ContainsKey(member.Species)) throw new NotSupportedException("victory_road_trainer_species");
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        // PartyFlags=2 has a held item but retains the NPC factory's level-up moves.
-        if (!customMoves) return made;
-        return made with { Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m, source.Catalog.Moves[m].Pp, source.Catalog.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
     public static void ValidateCatalog(VictoryRoadTrainerCatalog catalog)
     {

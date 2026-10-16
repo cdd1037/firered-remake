@@ -27,12 +27,11 @@ public sealed partial class CampaignSession
     private CampaignActor? AdjacentFieldStrengthBoulder(CampaignState state,Direction? direction=null)
     {
         var p=state.World.Player;
-        if(!_content.SafariEnabled)return null;
-        if(_content.SeafoamEnabled&&SeafoamFieldRules.IsCave(p.MapId))return AdjacentSeafoamBoulder(state,direction??p.Facing);
-        if(_content.SevenIslandEnabled&&SevenIslandStrengthMap(p.MapId))return AdjacentSevenIslandBoulder(state,direction??p.Facing);
-        if(_content.SixIslandEnabled&&p.MapId.Value==SixIslandRuinMap)return AdjacentSixIslandBoulder(state,direction??p.Facing);
-        if(_content.SeviiRubyEnabled&&SeviiRubyMap(p.MapId))return AdjacentSeviiRubyBoulder(state,direction??p.Facing);
-        if(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(p.MapId))return AdjacentVictoryRoadBoulder(state,direction??p.Facing);
+        if(SeafoamFieldRules.IsCave(p.MapId))return AdjacentSeafoamBoulder(state,direction??p.Facing);
+        if(SevenIslandStrengthMap(p.MapId))return AdjacentSevenIslandBoulder(state,direction??p.Facing);
+        if(p.MapId.Value==SixIslandRuinMap)return AdjacentSixIslandBoulder(state,direction??p.Facing);
+        if(SeviiRubyMap(p.MapId))return AdjacentSeviiRubyBoulder(state,direction??p.Facing);
+        if(VictoryRoadFieldMap(p.MapId))return AdjacentVictoryRoadBoulder(state,direction??p.Facing);
         if(p.MapId.Value!=FieldStrengthMap)return null;
         var definition=_content.MapDefinition(p.MapId).Actors.SingleOrDefault(a=>a.SourceLocalId==2);
         if(definition is null||definition.GraphicsId!=FieldHmSourceRules.BoulderGraphics||definition.ScriptId!="EventScript_StrengthBoulder"||
@@ -46,7 +45,6 @@ public sealed partial class CampaignSession
 
     private string? FieldStrengthCommandError(CampaignState state,int partyIndex)
     {
-        if(!_content.SafariEnabled)return "field_strength_not_enabled";
         if(state.IsSurfing)return "field_strength_while_surfing";
         if(!IsStableFieldForParty(state)||state.StrengthEffect is not null||state.FlashEffect is not null||state.CutEffect is not null||
             state.Fishing is not null||state.FieldEffectArguments is not null||state.Pc is not null||state.TownMap is not null||state.Repel is not null)
@@ -75,7 +73,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFieldStrengthEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.SafariEnabled||effect.Source.Path!=FieldStrengthSource||effect.Source.Symbol is not
+        if(effect.Source.Path!=FieldStrengthSource||effect.Source.Symbol is not
             ("EventScript_StrengthBoulder" or "EventScript_FldEffStrength" or "EventScript_UseStrength" or "EventScript_CantMoveBoulder" or
              "EventScript_AlreadyUsedStrength" or "EventScript_DontUseStrength"))return false;
         var a=effect.Args;
@@ -130,7 +128,7 @@ public sealed partial class CampaignSession
         {
             // The compact interpreter projects msgbox as one wait. Strength's source
             // MSGBOX_SIGN owns Std_MsgboxSign's releaseall after its final text page.
-            if(_content.SafariEnabled&&(before.World.Player.MapId.Value==FieldStrengthMap||_content.SeafoamEnabled&&SeafoamFieldRules.IsCave(before.World.Player.MapId)||_content.SevenIslandEnabled&&SevenIslandStrengthMap(before.World.Player.MapId)||_content.SixIslandEnabled&&before.World.Player.MapId.Value==SixIslandRuinMap||_content.SeviiRubyEnabled&&SeviiRubyMap(before.World.Player.MapId)||_content.VictoryRoadEnabled&&VictoryRoadFieldMap(before.World.Player.MapId))&&
+            if((before.World.Player.MapId.Value==FieldStrengthMap||SeafoamFieldRules.IsCave(before.World.Player.MapId)||SevenIslandStrengthMap(before.World.Player.MapId)||before.World.Player.MapId.Value==SixIslandRuinMap||SeviiRubyMap(before.World.Player.MapId)||VictoryRoadFieldMap(before.World.Player.MapId))&&
                 before.Script.Wait?.Kind==StoryWaitKind.Dialog&&before.Dialogue is {CloseOnCompletion:true} dialogue&&
                 dialogue.TextSymbol is "Text_MonUsedStrengthCanMoveBoulders" or "Text_MonMayPushBoulder" or "Text_StrengthMadeMovingBouldersPossible"&&
                 !before.Script.Stack.IsEmpty)
@@ -214,7 +212,7 @@ public sealed partial class CampaignSession
     {
         if(state.StrengthEffect is not null)throw new InvalidDataException("field_strength_map_entry_while_active");
         ValidateVictoryRoadMapEntry(state);
-        return _content.SafariEnabled&&state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthActiveFlag)
+        return state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthActiveFlag)
             ?state with{Script=state.Script with{Flags=state.Script.Flags.SetItem(FieldHmSourceRules.StrengthActiveFlag,false)}}:state;
     }
 
@@ -222,13 +220,12 @@ public sealed partial class CampaignSession
     {
         if(state.StrengthEffect is not null)return "save_field_strength_active";
         bool active=state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthActiveFlag);
-        if(!_content.SafariEnabled)return active?"save_field_strength_profile_missing":null;
-        if(active&&(state.World.Player.MapId.Value!=FieldStrengthMap&&!(_content.SeafoamEnabled&&SeafoamFieldRules.IsCave(state.World.Player.MapId))&&!(_content.SevenIslandEnabled&&SevenIslandStrengthMap(state.World.Player.MapId))&&!(_content.SixIslandEnabled&&state.World.Player.MapId.Value==SixIslandRuinMap)&&!(_content.SeviiRubyEnabled&&SeviiRubyMap(state.World.Player.MapId))&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthBadge)))return "save_field_strength_flag_invalid";
-        if(_content.SeafoamEnabled&&SeafoamFieldRules.IsCave(state.World.Player.MapId))return ValidateSeafoamBoulders(state);
-        if(_content.SevenIslandEnabled&&SevenIslandStrengthMap(state.World.Player.MapId))return ValidateSevenIslandBoulders(state);
-        if(_content.SixIslandEnabled&&state.World.Player.MapId.Value==SixIslandRuinMap)return ValidateSixIslandBoulders(state);
-        if(_content.SeviiRubyEnabled&&SeviiRubyMap(state.World.Player.MapId))return ValidateSeviiRubyBoulders(state);
-        if(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))return ValidateVictoryRoadBoulders(state);
+        if(active&&(state.World.Player.MapId.Value!=FieldStrengthMap&&!(SeafoamFieldRules.IsCave(state.World.Player.MapId))&&!(SevenIslandStrengthMap(state.World.Player.MapId))&&!(state.World.Player.MapId.Value==SixIslandRuinMap)&&!(SeviiRubyMap(state.World.Player.MapId))&&!(VictoryRoadFieldMap(state.World.Player.MapId))||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthBadge)))return "save_field_strength_flag_invalid";
+        if(SeafoamFieldRules.IsCave(state.World.Player.MapId))return ValidateSeafoamBoulders(state);
+        if(SevenIslandStrengthMap(state.World.Player.MapId))return ValidateSevenIslandBoulders(state);
+        if(state.World.Player.MapId.Value==SixIslandRuinMap)return ValidateSixIslandBoulders(state);
+        if(SeviiRubyMap(state.World.Player.MapId))return ValidateSeviiRubyBoulders(state);
+        if(VictoryRoadFieldMap(state.World.Player.MapId))return ValidateVictoryRoadBoulders(state);
         if(state.World.Player.MapId.Value!=FieldStrengthMap)return null;
         var boulder=state.Actors.Values.SingleOrDefault(a=>a.SourceLocalId==2);
         if(boulder is null||boulder.TemplateX!=11||boulder.TemplateY!=6||boulder.Elevation!=3||boulder.Invisible||

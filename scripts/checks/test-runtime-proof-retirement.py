@@ -54,7 +54,6 @@ class RuntimeProofRetirementTests(unittest.TestCase):
                     result = module.generate(ROOT, ROOT)
                 documents = result if isinstance(result, dict) else result[0]
                 expected_names = {'trainers.json'}
-                if family == 'pokemon-league': expected_names.add('pokemon.json')
                 if family == 'seven-island':
                     expected_names |= {'encounters.json', 'items.json'}
                 self.assertEqual(expected_names, documents.keys())
@@ -151,22 +150,34 @@ class RuntimeProofRetirementTests(unittest.TestCase):
                    if name.endswith('trainers.json') else module.encode(value) for name, value in outputs.items()}
         check_item_outputs(ROOT / 'content/generated', encoded)
 
-    def test_pokemon_outputs_are_only_runtime_catalogs(self):
+    def test_retired_species_overlays_leave_live_encounters_and_trainers(self):
+        from runtime_json import runtime_json_bytes
+        from safari_features import compile_safari_encounters
+        from shared_trainers import trainer_json
+        from world_source import WorldSource
+        raw = ROOT / 'content/raw/pokefirered/037335f4'
+        generated = ROOT / 'content/generated'
         for family in ('safari', 'surf', 'fuchsia-route'):
             with self.subTest(family=family):
-                prefix = 'content/generated/data/pokemon/' + family
-                module = load('imports/pokemon/import-' + family + '-pokemon.py')
-                outputs = module.generate(ROOT)
-                if family == 'fuchsia-route':
-                    trainer_path = prefix + '/trainers.json'
-                    outputs[trainer_path] = module.trainer_json(ROOT / 'content/generated', json.loads(outputs[trainer_path]), check=True)
-                expected = {prefix + ('/catalog.json' if family == 'fuchsia-route' else '.json')}
-                if family == 'fuchsia-route':
-                    expected.add(prefix + '/trainers.json')
-                self.assertEqual(expected, outputs.keys())
-                self.assertFalse((ROOT / prefix / 'source-fixtures.json').exists())
-                for path, data in outputs.items():
-                    self.assertEqual((ROOT / path).read_bytes(), data, path)
+                prefix = generated / 'data/pokemon' / family
+                overlay = prefix / 'catalog.json' if family == 'fuchsia-route' else prefix.with_suffix('.json')
+                self.assertFalse(overlay.exists())
+                self.assertFalse((prefix / 'source-fixtures.json').exists())
+                relative = {'safari': 'maps/regions/safari/encounters.json',
+                            'surf': 'data/encounters/surf.json',
+                            'fuchsia-route': 'data/pokemon/fuchsia-route/trainers.json'}[family]
+                target = generated / relative
+                before = target.read_bytes(), target.stat().st_mtime_ns
+                if family == 'safari':
+                    data = runtime_json_bytes(compile_safari_encounters(WorldSource(raw)), sort_keys=True)
+                elif family == 'surf':
+                    data = load('imports/story/import-surf-encounters.py').build(ROOT)
+                else:
+                    module = load('imports/trainers/import-fuchsia-route-trainers.py')
+                    self.assertEqual(relative, module.RESOURCE)
+                    data = trainer_json(generated, module.generate(raw), check=True)
+                self.assertEqual(before[0], data, relative)
+                self.assertEqual(before, (target.read_bytes(), target.stat().st_mtime_ns))
 
     def test_mail_compilers_preserve_live_values_and_pixels(self):
         from generated_output_compare import check_item_outputs

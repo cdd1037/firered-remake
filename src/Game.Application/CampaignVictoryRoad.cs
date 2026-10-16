@@ -14,14 +14,9 @@ public sealed partial class CampaignSession
     private static void ValidateVictoryRoadCatalog(ICampaignCatalog content)
     {
         ValidatePokemonLeagueCatalog(content);
-        if(!content.VictoryRoadEnabled)
-        {
-            if(content.VictoryRoadTrainerParties is not null||content.VictoryRoadOpponents is not null)throw new InvalidDataException("victory_road_profile_missing");
-            return;
-        }
-        if(!content.LeagueRivalEnabled||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
-            content.VictoryRoadTrainerParties is null||content.VictoryRoadOpponents is null||
-            !content.Inventory.Items.ContainsKey(ItemIds.GuardSpecId) || content.PewterMachines is null)throw new InvalidDataException("victory_road_catalog_scope");
+        if(content.GamePokemon is null||content.OpponentPokemon is null||
+            content.VictoryRoadTrainerParties is null||content.OpponentPokemon is null||
+            !content.Inventory.Items.ContainsKey(ItemIds.GuardSpecId) || content.Machines is null)throw new InvalidDataException("victory_road_catalog_scope");
         VictoryRoadTrainerPartyFactory.ValidateCatalog(content.VictoryRoadTrainerParties);
         var route=content.MapDefinition(new("map.route-23"));
         int[] triggerCounts=[5,4,4,10,7,4,8];
@@ -37,7 +32,7 @@ public sealed partial class CampaignSession
     private bool TryApplyVictoryRoadGateEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.VictoryRoadEnabled||effect.Opcode!="bufferstdstring"||effect.Source.Path!="data/maps/Route23/scripts.inc")return false;
+        if(effect.Opcode!="bufferstdstring"||effect.Source.Path!="data/maps/Route23/scripts.inc")return false;
         int badge=state.Script.Variables.GetValueOrDefault("VAR_TEMP_1");
         if(state.World.Player.MapId.Value!="map.route-23"||badge is <2 or >8||effect.Args.Length!=2||effect.Args[0]!="STR_VAR_1"||
             effect.Args[1]!="STDSTRING_"+VictoryRoadBadgeNames[badge-1]+"_BADGE")throw new InvalidDataException("victory_road_badge_string_context");
@@ -51,7 +46,6 @@ public sealed partial class CampaignSession
     {
         string map=state.World.Player.MapId.Value;
         int gate=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE23");
-        if(!_content.VictoryRoadEnabled)return VictoryRoadDestination(map)||gate>1?"save_victory_road_profile_missing":null;
         if(VictoryRoadDestination(map)&&(gate!=8||!Enumerable.Range(1,8).All(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"))))
             return "save_victory_road_badges_unrecognized";
         if(state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_INDIGO_PLATEAU_EXTERIOR")!=0)

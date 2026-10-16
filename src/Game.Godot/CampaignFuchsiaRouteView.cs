@@ -10,44 +10,22 @@ public partial class CampaignView
 
     private void LoadFuchsiaRoutePresentation()
     {
-        if (!_catalog.FuchsiaRouteEnabled) return;
         var art = _catalog.FuchsiaRouteArt ?? throw new InvalidDataException("Fuchsia route art catalog missing.");
-        foreach (var sprite in art.Sprites)
-        {
-            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var icon in art.Icons)
-        {
-            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
-            for (int i = 0; i < rgba.Length; i += 4)
-                if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), SceneTextures.FromImage(image));
-        }
-        foreach (var footprint in art.Footprints)
-        {
-            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
-            _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
-        }
-        foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
-            _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
-        Write("fuchsiaRoutePresentation", new {             maps = _catalog.FuchsiaRouteRegion!.NewMaps.Count});
+        RegisterPokemonArt(art.Sprites, art.Icons, art.Footprints, art.Files);
+
     }
 
-    private bool FuchsiaTransformCuePending(CampaignWildBattle battle) => _catalog.FuchsiaRouteEnabled && WildCurrentEvent(battle) is WildBattleTransformedEvent && _wildElapsed < 49.0 / 60;
+    private bool FuchsiaTransformCuePending(CampaignWildBattle battle) => WildCurrentEvent(battle) is WildBattleTransformedEvent && _wildElapsed < 49.0 / 60;
 
     private void ProcessFuchsiaTransformAudio()
     {
-        if (!_catalog.FuchsiaRouteEnabled || PresentedWildBattle is not { Phase: CampaignBattlePhase.Events } battle || WildCurrentEvent(battle) is not WildBattleTransformedEvent transformed) return;
+        if (PresentedWildBattle is not { Phase: CampaignBattlePhase.Events } battle || WildCurrentEvent(battle) is not WildBattleTransformedEvent transformed) return;
         string key = $"{battle.Id}:transform:{transformed.Sequence}";
         if (_audioTrainerOneShots.Add(key + ":start")) SourceSound("SE_M_TELEPORT");
         if (_wildElapsed >= 48.0 / 60 && _audioTrainerOneShots.Add(key + ":48")) SourceSound("SE_M_MINIMIZE");
     }
 
-    private ForestMessage? FuchsiaRouteWildMessage(WildBattleEvent current) => !_catalog.FuchsiaRouteEnabled ? null : current switch
+    private ForestMessage? FuchsiaRouteWildMessage(WildBattleEvent current) => current switch
     {
         WildBattleTransformedEvent transformed => new("sText_PkmnTransformedInto",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(transformed.Actor)),
@@ -73,7 +51,7 @@ public partial class CampaignView
 
     private bool IsFuchsiaLedgeStep(CampaignState? before, CampaignState after)
     {
-        if (!_catalog.FuchsiaRouteEnabled || before is null || before.World.Player.MapId != after.World.Player.MapId || !after.Motions.IsEmpty) return false;
+        if (before is null || before.World.Player.MapId != after.World.Player.MapId || !after.Motions.IsEmpty) return false;
         int dx = after.World.Player.X - before.World.Player.X, dy = after.World.Player.Y - before.World.Player.Y;
         if (!(Math.Abs(dx) == 2 && dy == 0 || Math.Abs(dy) == 2 && dx == 0)) return false;
         int? behavior = _catalog.SourceMaps[before.World.Player.MapId].SourceBehaviorAt(before.World.Player.X + dx / 2, before.World.Player.Y + dy / 2);

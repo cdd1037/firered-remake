@@ -42,7 +42,6 @@ public partial class CampaignView
     private bool InitializePlayerEntry(string checkpoint,bool force=false)
     {
         if(!force&&(OS.GetEnvironment("FIRERED_PLAYER_ENTRY")=="0"||checkpoint.Length!=0))return false;
-        if(!_catalog.PokemonStorageEnabled)throw new InvalidDataException("Player entry requires the current complete menu profile.");
         _entrySource=PretMainMenuSource.Load(_root);
         static Color Rgb(System.Collections.Immutable.ImmutableArray<int> c)=>Color.Color8((byte)c[0],(byte)c[1],(byte)c[2]);
         var palette=_entrySource.Palettes["sTextbox_Pal"].Rgb8;var colors=_entrySource.TextColors["sTextColor1"];
@@ -355,7 +354,7 @@ public partial class CampaignView
         _startupExited=true;_startupReady=false;_catalogLoad=null;
         DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();DisposeFameCheckerPresentation();DisposeTeachyTvPresentation();DisposeVsSeekerPresentation();
         _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
-        DisposeMailPresentation();_pokemonCollectionArt=null;_sharedTrainerPresentation.Clear();DisposeGiftEggPresentation();DisposeMemorialPillarPresentation();DisposeOrdinaryEvolutionPresentation();DisposeBreedingPresentation();DisposeGameCornerPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
+        DisposeMailPresentation();_pokemonCollectionArt=null;_earlyDex.Clear();_sharedTrainerPresentation.Clear();_registeredTrainerPresentation.Clear();DisposeGiftEggPresentation();DisposeMemorialPillarPresentation();DisposeOrdinaryEvolutionPresentation();DisposeBreedingPresentation();DisposeGameCornerPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
         DisposeOptionsPresentation();DisposeCapturePresentation();DisposeStorageCustomizationPresentation();
         DisposePokemonTowerPresentation();DisposeCenterHealingPresentation();DisposeOldManPresentation();
         DisposeBattlePresentation();DisposeCorePresentation();

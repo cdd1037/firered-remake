@@ -26,7 +26,7 @@ public sealed partial class CampaignSession
                 fishingOrigin.Map == state.World.Player.MapId && IsTypedFishingOrigin(fishingOrigin) &&
                 FishingBattleContract.Matches(fishingOrigin, made.Pokemon, _content.FishingTables);
             // Route16 retains the separately authenticated scripted Snorlax encounter.
-            bool route16Snorlax = scriptedSnorlax && _content.SnorlaxEnabled && state.World.Player.MapId == Route16LandEncounterTables.Map;
+            bool route16Snorlax = scriptedSnorlax && state.World.Player.MapId == Route16LandEncounterTables.Map;
             if (IsSourceTableMap(state.World.Player.MapId) && !typedFishing && !route16Snorlax && !rockSmash)
                 throw new InvalidDataException("source_table_wild_missing_origin");
             return null;

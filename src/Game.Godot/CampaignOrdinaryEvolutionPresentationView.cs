@@ -11,7 +11,7 @@ public partial class CampaignView
     private void LoadOrdinaryEvolutionPresentation()
     {
         if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
-        if (!_session.IsCurrentGame || _breedingArt is null)
+        if (_breedingArt is null)
             throw new InvalidDataException("Ordinary evolution presentation requires its authenticated Breeding predecessor.");
         var art = PretOrdinaryEvolutionPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)
@@ -23,11 +23,7 @@ public partial class CampaignView
         {            if (texture.GetWidth() != row.GetProperty("width").GetInt32() || texture.GetHeight() != row.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Ordinary evolution inherited pixels differ.");
 }
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("inheritedSprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -65,7 +61,7 @@ public partial class CampaignView
             else _route22Footprints.Add(species, Pixels(row));
         }
         _ordinaryEvolutionArt = art;
-        Write("ordinaryEvolutionPresentation", new {             nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void VerifyOrdinaryEvolutionMoveGeometry()
@@ -88,6 +84,5 @@ public partial class CampaignView
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     private byte[]? ReadOrdinaryEvolutionDexTexture(PokedexMenuTexture texture) => _ordinaryEvolutionArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
-    private string? OrdinaryEvolutionSpeciesName(int species) => _ordinaryEvolutionArt?.DexEntries.GetValueOrDefault(species)?.Name;
     private void DisposeOrdinaryEvolutionPresentation() => _ordinaryEvolutionArt = null;
 }

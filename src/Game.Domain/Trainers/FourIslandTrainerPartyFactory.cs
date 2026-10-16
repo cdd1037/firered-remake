@@ -24,10 +24,7 @@ public static class FourIslandTrainerPartyFactory
         GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("four_island_trainer_catalog");
-        if (trainer.Party.Any(member => !opponents.Catalog.Species.ContainsKey(member.Species)))
-            throw new NotSupportedException("four_island_trainer_species");
-        return TrainerPartyFactory.CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
     public static void ValidateCatalog(FourIslandTrainerCatalog catalog)
     {

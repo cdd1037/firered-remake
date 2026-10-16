@@ -39,7 +39,6 @@ public sealed partial class CampaignSession
 
     private CampaignState ApplySelphyWalkingStep(CampaignState state)
     {
-        if (!_content.LostCaveEnabled) return state;
         var before = SelphyRequest(state);
         var after = SelphyRequestRules.AdvanceEligibleStep(before);
         return after == before ? state : WriteSelphyRequest(state, after);
@@ -47,7 +46,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateSelphyRequest(CampaignState state)
     {
-        if (!_content.LostCaveEnabled) return null;
         try
         {
             var request = SelphyRequest(state);
@@ -65,7 +63,7 @@ public sealed partial class CampaignSession
 
     private bool InSelphyRequestScript(CampaignState state)
     {
-        if (!_content.LostCaveEnabled || state.World.Player.MapId.Value != SelphyHouseMap ||
+        if (state.World.Player.MapId.Value != SelphyHouseMap ||
             state.Script.Completed || !state.Script.Locked || state.Script.QuestLogState != 0 ||
             state.Script.Flags.GetValueOrDefault(SelphyRequestRules.HiddenInsideFlag) ||
             state.LastTalked is not {} id || !state.Actors.TryGetValue(id, out var actor) ||
@@ -80,7 +78,7 @@ public sealed partial class CampaignSession
     {
         next = state;
         if (TryApplyLostCaveFieldEffect(state, effect, out next)) return true;
-        if (!_content.LostCaveEnabled || effect.Source.Path != SelphyRequestRules.ScriptPath ||
+        if (effect.Source.Path != SelphyRequestRules.ScriptPath ||
             effect.Opcode is not ("special" or "specialvar")) return false;
         bool sample = effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "SampleResortGorgeousMonAndReward" });
         bool contains = effect.Opcode == "specialvar" && effect.Args.SequenceEqual(new[] { "VAR_RESULT", "DoesPlayerPartyContainSpecies" });
@@ -118,7 +116,6 @@ public sealed partial class CampaignSession
     private bool TryApplyLostCaveFieldEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.LostCaveEnabled) return false;
         const string room10 = "data/maps/FiveIsland_LostCave_Room10/scripts.inc";
         if (effect.Source.Path == room10 && effect.Opcode == "call_if_defeated")
         {

@@ -207,8 +207,6 @@ public partial class CampaignView
         }
         return true;
     }
-    private void BattleBox(Rect2 rectangle)
-    {DrawRect(rectangle,new Color("324451"));DrawRect(rectangle.Grow(-2),new Color("fffbe7"));}
     private void DrawBattle()
     {
         var b=_session.State.Battle!;

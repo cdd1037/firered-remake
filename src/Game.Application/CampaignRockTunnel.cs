@@ -16,7 +16,6 @@ public sealed partial class CampaignSession
     private string? ValidateRockTunnelProgress(CampaignState state)
     {
         bool got = state.Script.Flags.GetValueOrDefault("FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE");
-        if (!_content.RockTunnelEnabled) return got ? "save_rocktunnel_profile_missing" : null;
         // The original flag remains after the gift is held, sold or discarded.
         if (got && (!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET") ||
                     _content.EvaluateOakRating(state.SeenSpecies, state.CaughtSpecies).Caught < 20))
@@ -27,7 +26,6 @@ public sealed partial class CampaignSession
     private bool TryApplyRockTunnelEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.RockTunnelEnabled) return false;
         var a = effect.Args;
         int Value(string token) => token.StartsWith("VAR_", StringComparison.Ordinal)
             ? state.Script.Variables.GetValueOrDefault(token)
@@ -37,7 +35,7 @@ public sealed partial class CampaignSession
         {
             if (state.World.Player.MapId.Value != "map.route-10-pokemon-center-1f" || state.LastTalked is null ||
                 !state.Actors.TryGetValue(state.LastTalked, out var actor) || actor.ScriptId != EverstoneAideEntry ||
-                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state) && !_content.NationalDexEnabled)
+                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state) && false)
                 throw new InvalidDataException("rocktunnel_aide_context");
         }
         CampaignState Result(CampaignState basis, int value) => basis with

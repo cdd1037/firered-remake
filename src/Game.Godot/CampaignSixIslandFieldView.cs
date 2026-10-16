@@ -37,7 +37,7 @@ public partial class CampaignView
             }
         }
         var shake=after.PresentationEffects.LastOrDefault(e=>e.Opcode=="special" && e.Args.SequenceEqual(new[]{"ShakeScreen"}));
-        if (_catalog.SixIslandEnabled && after.World.Player.MapId.Value=="map.six-island-dotted-hole-sapphire-room" && shake is not null && shake.Sequence!=_sixIslandShakeSequence)
+        if (after.World.Player.MapId.Value=="map.six-island-dotted-hole-sapphire-room" && shake is not null && shake.Sequence!=_sixIslandShakeSequence)
         {
             if (!new[]{"VAR_0x8004","VAR_0x8005","VAR_0x8006","VAR_0x8007"}.Select(v=>after.Script.Variables.GetValueOrDefault(v)).SequenceEqual(new[]{3,0,12,3}))
                 throw new InvalidDataException("Six Island screen-shake source context differs.");
@@ -120,7 +120,7 @@ public partial class CampaignView
     private double? SixIslandMotionSeconds(CampaignState after,string actor,string action)
     {
         if (actor=="LOCALID_PLAYER" && CommonFall(after)?.Phase==DottedHoleFallPhase.EntryStep) return after.PresentationTicks/60d;
-        if (!_catalog.SixIslandEnabled || after.World.Player.MapId.Value!="map.six-island-dotted-hole-sapphire-room") return null;
+        if (after.World.Player.MapId.Value!="map.six-island-dotted-hole-sapphire-room") return null;
         return action=="slide_down"?2d/60:action.StartsWith("face_",StringComparison.Ordinal)?1d/60:null;
     }
     private float? SixIslandStepFraction(string actor,string action,double elapsed)

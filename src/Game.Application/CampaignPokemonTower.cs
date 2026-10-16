@@ -14,7 +14,7 @@ public sealed partial class CampaignSession
     private const string TowerHouseSource="data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc";
     private static bool TowerMap(string map)=>map.StartsWith("map.pokemon-tower-",StringComparison.Ordinal);
     private bool HasSilphScope(CampaignState s)=>OpeningInventoryRules.Quantity(s.Inventory?.KeyItems??[],RocketHideoutItemRules.SilphScopeId)==1;
-    private bool IsTowerButton(CampaignState s)=>_content.PokemonTowerEnabled&&s.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&s.World.Player.MapId.Value=="map.pokemon-tower-6f"&&!s.Script.Stack.IsEmpty&&s.Script.Stack[^1].ProgramId=="PokemonTower_6F_EventScript_DefeatedMarowakGhost";
+    private bool IsTowerButton(CampaignState s)=>s.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&s.World.Player.MapId.Value=="map.pokemon-tower-6f"&&!s.Script.Stack.IsEmpty&&s.Script.Stack[^1].ProgramId=="PokemonTower_6F_EventScript_DefeatedMarowakGhost";
     private Decision<CampaignState> DecideTowerButton(CampaignState s,CampaignCommand c)
     {
         if(!IsTowerButton(s)||c.Text is not("A" or "B"))return new(CommandStatus.Rejected,s,"tower_button_invalid");
@@ -22,8 +22,7 @@ public sealed partial class CampaignSession
     }
     private bool TryApplyTowerEffect(CampaignState s,StoryEffect e,out CampaignState next)
     {
-        next=s;if(!_content.PokemonTowerEnabled)return false;
-        var a=e.Args;int Value(string t)=>s.Script.Variables.TryGetValue(t,out int v)?v:int.TryParse(t,out v)?v:_content.TryConstant(t,out v)?v:throw new InvalidDataException("tower_operand: "+t);
+        next=s;        var a=e.Args;int Value(string t)=>s.Script.Variables.TryGetValue(t,out int v)?v:int.TryParse(t,out v)?v:_content.TryConstant(t,out v)?v:throw new InvalidDataException("tower_operand: "+t);
         CampaignState Result(bool ok)=>s with{Script=s.Script with{Variables=s.Script.Variables.SetItem("VAR_RESULT",ok?1:0)}};
         bool six=e.Source.Path==TowerSixSource;
         if(e.Opcode=="getplayerxy"&&e.Source.Path=="data/maps/PokemonTower_7F/scripts.inc")
@@ -80,7 +79,6 @@ public sealed partial class CampaignSession
     private string? ValidateTowerProgress(CampaignState s)
     {
         if(s.TowerWildPreparation is not null||s.ScreenIsWhite)return "save_tower_event_active";
-        if(!_content.PokemonTowerEnabled)return null;
         bool Flag(string f)=>s.Script.Flags.GetValueOrDefault(f);
         int Count(string item)=>OpeningInventoryRules.Quantity(s.Inventory?.KeyItems??[],new("pret:ITEM_"+item));
         int rivalScene=s.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_POKEMON_TOWER_2F");

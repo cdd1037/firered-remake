@@ -6,12 +6,11 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-import argparse,importlib.util,json,pathlib,struct,subprocess
+import argparse, json, pathlib, struct, subprocess
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14';TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-rocktunnel-art-v1'
 SOURCES={'graphics/trainers/front_pics/pokemaniac_front_pic.png','graphics/trainers/palettes/pokemaniac.pal','src/data/graphics/trainers.h','src/data/trainer_graphics/front_pic_tables.h','include/constants/trainers.h','graphics/field_effects/pics/field_move_streaks_indoors.png','graphics/field_effects/pics/field_move_streaks_indoors.bin','src/field_effect.c'}
-INPUTS={'scripts/imports/presentation/import-lab-battle-ui.py','scripts/imports/source/fetch-lab-battle-ui.py'}
 def encode(d):return(json.dumps(d,indent=2)+'\n').encode()
 def safe(root,p):
  if not p or pathlib.PurePosixPath(p).is_absolute() or '\\' in p or any(x in ('','.','..') for x in p.split('/')):raise ValueError('Unsafe art path')
@@ -25,7 +24,7 @@ def build(data):
  if 'TRAINER_SPRITE(POKEMANIAC, gTrainerFrontPic_PokeManiac, 0x800)' not in table or 'TRAINER_PAL(POKEMANIAC, gTrainerPalette_PokeManiac)' not in table:raise ValueError('PokeManiac source table differs')
  for token in ['CpuCopy16(sFieldMoveStreaksIndoors_Gfx, (void *)(VRAM + charbase), 0x80);','task->data[1] -= 16;','task->data[4] += 2;','if (task->data[4] >= 32)','WIN_RANGE(0x28, 0x78)']:
   if token not in field:raise ValueError('Indoor source contract differs')
- spec=importlib.util.spec_from_file_location('_rock_art_codec',ROOT/'scripts/imports/presentation/import-lab-battle-ui.py');codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
+ import ui_tiles as codec
  output={};assets=[]
  def add(name,w,h,idx,colors):
   rgba=codec.rgba(idx,colors);png=codec.png(w,h,rgba)
@@ -47,13 +46,11 @@ def build(data):
 def run(reference=None,check=False):
  raw=safe(ROOT,'content/raw/pokefirered/037335f4');out=safe(ROOT,'content/generated/sprites/trainers/rocktunnel');locked=safe(ROOT,'scripts/recipes/presentation/rocktunnel-art.lock.json').read_bytes()
  lock=json.loads(locked)
- if(lock['schemaVersion'], lock['repository'], lock['commit']) != (1, 'pret/pokefirered', COMMIT) or {r['path'] for r in lock['files']} != SOURCES or {r['path'] for r in lock['inputs']} != INPUTS:raise ValueError('Art lock inventory differs')
+ if(lock['schemaVersion'], lock['repository'], lock['commit']) != (1, 'pret/pokefirered', COMMIT) or {r['path'] for r in lock['files']} != SOURCES:raise ValueError('Art lock inventory differs')
  data={}
  for row in lock['files']:
   p=row['path'];b=subprocess.check_output(['git','-C',str(reference),'show',COMMIT+':'+p]) if reference else safe(raw,p).read_bytes()
   data[p]=b
- for row in lock['inputs']:
-  b=safe(ROOT,row['path']).read_bytes()
  assets,output=build(data);output['manifest.json']=runtime_json_bytes(dict(schemaVersion=1,assets=assets,transparentIndex=0,trainerPictureId=88,trainerTopLeft=[144,8],bannerTopLeft=[0,40],outputs=[dict(path=p) for p,b in sorted(output.items())]))
  material={(out,p):b for p,b in output.items()}
  if reference:material.update({(raw,p):b for p,b in data.items()})

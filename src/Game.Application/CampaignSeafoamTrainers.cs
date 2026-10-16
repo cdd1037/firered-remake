@@ -6,16 +6,14 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool IsSeafoamDoubleTrainer(TrainerId id) => _content.SeafoamEnabled && SeafoamDoubleTrainerEncounter.TrainerIds.Contains(id);
+    private bool IsSeafoamDoubleTrainer(TrainerId id) => SeafoamDoubleTrainerEncounter.TrainerIds.Contains(id);
     private static bool SeafoamTrainerMap(MapId map) => map.Value is "map.route-19" or "map.route-20";
     private static bool SeafoamTrainerActorMap(MapId map, string script) =>
         (map.Value == "map.route-19" && script.StartsWith("Route19_EventScript_", StringComparison.Ordinal)) ||
         (map.Value == "map.route-20" && script.StartsWith("Route20_EventScript_", StringComparison.Ordinal));
-    private bool IsSeafoamTrainer(TrainerId trainer) => _content.SeafoamEnabled &&
-        _content.SeafoamTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
+    private bool IsSeafoamTrainer(TrainerId trainer) => _content.SeafoamTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
 
-    private bool IsSeafoamDoubleScript(string script) => _content.SeafoamEnabled &&
-        _content.SeafoamTrainers?.BattlesByScript.TryGetValue(script, out var source) == true &&
+    private bool IsSeafoamDoubleScript(string script) => _content.SeafoamTrainers?.BattlesByScript.TryGetValue(script, out var source) == true &&
         source.Mode == 4 && _content.SeafoamTrainers.Trainers[source.Trainer].DoubleBattle;
 
     private int SeafoamTrainerSourceLine(string script)
@@ -41,7 +39,7 @@ public sealed partial class CampaignSession
 
     private void RequireSeafoamRematchQuery(CampaignState state, StoryEffect effect)
     {
-        if (!_content.SeafoamEnabled || state.LastTalked is not { } id ||
+        if (state.LastTalked is not { } id ||
             !state.Actors.TryGetValue(id, out var actor) || !actor.Active ||
             !SeafoamTrainerActorMap(state.World.Player.MapId, actor.ScriptId) ||
             state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") != actor.SourceLocalId ||

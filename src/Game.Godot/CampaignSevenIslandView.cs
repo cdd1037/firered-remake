@@ -10,7 +10,6 @@ public partial class CampaignView
     private readonly Dictionary<int, PokedexMenuEntry> _sevenIslandDex = [];
     private readonly Dictionary<(int Species, bool Shiny), PokedexMenuTexture> _sevenIslandDexPortraits = [];
     private readonly Dictionary<int, Texture2D> _unownIcons = [];
-    private readonly Dictionary<int, string> _sevenIslandSpeciesNames = [];
     private readonly Dictionary<string, JsonElement> _sevenIslandTrainers = new(StringComparer.Ordinal);
     private JsonElement SevenIslandManifest => _sevenIslandArt?.Manifest ?? throw new InvalidDataException("Seven Island presentation missing.");
 
@@ -24,29 +23,14 @@ public partial class CampaignView
 
     private void LoadSevenIslandPresentation()
     {
-        if (!_catalog.SevenIslandEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.LeagueRematchEnabled)
-            throw new InvalidDataException("Seven Island requires its complete current League-rematch predecessor.");
         _sevenIslandArt = SevenIslandPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width=row.GetProperty("width").GetInt32(), height=row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_sevenIslandArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for(int i=0;i<rgba.Length;i+=4) if(rgba[i+3]!=0)
-                    for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_sevenIslandArt.Files, row, replicatePalette);
         foreach(var row in SevenIslandManifest.GetProperty("sprites").EnumerateArray().Concat(SevenIslandManifest.GetProperty("inheritedSprites").EnumerateArray()))
         {
             int species=row.GetProperty("sourceSpeciesId").GetInt32(),render=row.GetProperty("renderSpeciesId").GetInt32();
             string id=row.GetProperty("speciesId").GetString()!,side=row.GetProperty("side").GetString()!;
             bool shiny=row.GetProperty("paletteVariant").GetString()=="shiny";
-            if(_catalog.SevenIslandOpponents!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId!=species)
+            if(_catalog.OpponentPokemon!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId!=species)
                 throw new InvalidDataException("Seven Island sprite canonical species is not admitted.");
             var position=new Vector2(row.GetProperty("x").GetInt32(),row.GetProperty("y").GetInt32());
             if(row.TryGetProperty("inherited",out var inherited) && inherited.GetBoolean())
@@ -79,8 +63,7 @@ public partial class CampaignView
             int species=row.GetProperty("sourceSpeciesId").GetInt32();_route22Footprints.Add(species,Pixels(row));
             _sevenIslandDex[species]=_sevenIslandDex[species] with{Footprint=SeviiRubyDexTexture(row)};
         }
-        foreach(var row in SevenIslandManifest.GetProperty("speciesNames").EnumerateArray())
-            _sevenIslandSpeciesNames.Add(row.GetProperty("sourceSpeciesId").GetInt32(),row.GetProperty("name").GetString()!);
+
         foreach(var row in SevenIslandManifest.GetProperty("portraits").EnumerateArray())
         {
             string id=row.GetProperty("id").GetString()!;bool exists=_forestTrainerPortraits.TryGetValue(id,out var old);
@@ -99,7 +82,7 @@ public partial class CampaignView
                 throw new InvalidDataException("Seven Island trainer presentation binding differs.");
             _sevenIslandTrainers.Add(id,row);
         }
-        Write("sevenIslandPresentation",new{nativeWindowVerified=false,physicalAudioVerified=false});
+
     }
 
     private CaptureDexEntry? SevenIslandCaptureDexEntry(int species)=>!_sevenIslandDex.TryGetValue(species,out var e)?null:
@@ -113,13 +96,10 @@ public partial class CampaignView
     private byte[]? ReadSevenIslandDexTexture(PokedexMenuTexture texture)=>_sevenIslandArt is not null&&
         (_sevenIslandDexPortraits.Values.Contains(texture)||_sevenIslandDex.Values.Any(e=>e.Footprint==texture))
         ?_sevenIslandArt.Files[texture.TexturePath]:null;
-    private string? SevenIslandSpeciesName(int species)=>_sevenIslandSpeciesNames.GetValueOrDefault(species);
-    private string? VisibleSevenIslandTrainerText(string key)=>_session.State.ForestTrainerBattle is {} battle&&_sevenIslandTrainers.TryGetValue(battle.Trainer.Value,out var row)?row.GetProperty(key).GetString():null;
     private string? SevenIslandDoubleText(string key)=>_session.State.DoubleBattle is {} battle&&_sevenIslandTrainers.TryGetValue(battle.Trainer.Value,out var row)?row.GetProperty(key).GetString():null;
     private Texture2D? SevenIslandDoublePortrait=>SevenIslandDoubleText("portrait") is {} id?_forestTrainerPortraits[id]:null;
     private void VerifySevenIslandMoveGeometry()
     {
-        if(!_catalog.SevenIslandEnabled)return;
         foreach(var row in SevenIslandManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
         {
             var key=(row.GetProperty("species").GetInt32(),row.GetProperty("side").GetString()!);
@@ -130,6 +110,6 @@ public partial class CampaignView
     }
     private void DisposeSevenIslandPresentation()
     {
-        ResetSevenIslandFieldPresentation();_sevenIslandArt=null;_sevenIslandDex.Clear();_sevenIslandDexPortraits.Clear();_unownIcons.Clear();_sevenIslandSpeciesNames.Clear();_sevenIslandTrainers.Clear();
+        ResetSevenIslandFieldPresentation();_sevenIslandArt=null;_sevenIslandDex.Clear();_sevenIslandDexPortraits.Clear();_unownIcons.Clear();_sevenIslandTrainers.Clear();
     }
 }

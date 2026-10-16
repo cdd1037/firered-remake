@@ -29,8 +29,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateFourIslandDayCare(CampaignState state)
     {
-        if (!_content.FourIslandDayCareEnabled) return state.FourIslandDayCare is not null || state.DayCareEggs is not null || state.EggHatch is not null ||
-            state.Script.Flags.GetValueOrDefault(PendingDayCareEggFlag) ? "save_four_island_daycare_content_missing" : null;
         if (state.EggHatch is not null || state.DayCareInteraction is not null) return "save_event_active";
         if (state.Storage is null) return "save_daycare_storage_missing";
         var error = FourIslandDayCareRules.Validate(_content.PokemonContent!, _binding.Ownership,
@@ -47,7 +45,7 @@ public sealed partial class CampaignSession
 
     private bool InFourDayCareScript(CampaignState state, bool woman, bool requireLock = true)
     {
-        if (!_content.FourIslandDayCareEnabled || requireLock && !state.Script.Locked || state.Script.Completed || state.Script.QuestLogState != 0 ||
+        if (requireLock && !state.Script.Locked || state.Script.Completed || state.Script.QuestLogState != 0 ||
             state.World.Player.MapId.Value != (woman ? FourDayCareHouse : FourDayCareTown) || state.LastTalked is not {} id ||
             !state.Actors.TryGetValue(id, out var actor) || !actor.Active || actor.Invisible || actor.SourceLocalId != 1 ||
             actor.GraphicsId != (woman ? "OBJ_EVENT_GFX_OLD_WOMAN" : "OBJ_EVENT_GFX_OLD_MAN_1") ||
@@ -127,7 +125,7 @@ public sealed partial class CampaignSession
         bool man = effect.Source.Path == FourDayCareTownSource && effect.Source.Symbol is
             "FourIsland_EventScript_DaycareMan" or "FourIsland_EventScript_DaycareEggWaiting" or "FourIsland_EventScript_DaycareAcceptEgg" or
             "FourIsland_EventScript_DaycareReceivedEgg" or "FourIsland_EventScript_CheckOnOneMon" or "FourIsland_EventScript_CheckOnTwoMons";
-        if (!_content.FourIslandDayCareEnabled || !woman && !man || effect.Opcode is not ("special" or "specialvar" or "waitstate" or "waitbuttonpress" or "incrementgamestat")) return false;
+        if (!woman && !man || effect.Opcode is not ("special" or "specialvar" or "waitstate" or "waitbuttonpress" or "incrementgamestat")) return false;
         bool beforeLock = man && effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "QuestLog_CutRecording" });
         if (!InFourDayCareScript(state, woman, !beforeLock)) throw new InvalidDataException("daycare_source_context");
         var instruction = DayCareInstruction(state);

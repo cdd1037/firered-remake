@@ -11,7 +11,7 @@ public partial class CampaignView
     private void LoadGameCornerPresentation()
     {
         if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
-        if (!_session.IsCurrentGame || _stoneEvolutionArt is null)
+        if (_stoneEvolutionArt is null)
             throw new InvalidDataException("Game Corner presentation requires its authenticated Stone Evolution predecessor.");
         var art = PretGameCornerPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)
@@ -23,11 +23,7 @@ public partial class CampaignView
         {            if (texture.GetWidth() != row.GetProperty("width").GetInt32() || texture.GetHeight() != row.GetProperty("height").GetInt32())
                 throw new InvalidDataException("Game Corner inherited pixels differ.");
 }
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -71,7 +67,7 @@ public partial class CampaignView
             else _route22Footprints.Add(species, Pixels(row));
         }
         _gameCornerArt = art;
-        Write("gameCornerPresentation", new {             nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void VerifyGameCornerMoveGeometry()
@@ -94,6 +90,5 @@ public partial class CampaignView
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     private byte[]? ReadGameCornerDexTexture(PokedexMenuTexture texture) => _gameCornerArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
-    private string? GameCornerSpeciesName(int species) => _gameCornerArt?.DexEntries.GetValueOrDefault(species)?.Name;
     private void DisposeGameCornerPresentation() => _gameCornerArt = null;
 }

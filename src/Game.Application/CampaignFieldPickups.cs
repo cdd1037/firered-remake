@@ -53,7 +53,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("field_pickup_tm_query_context_invalid");
             // None of the three authenticated early pickup items is a TM/HM. The source
             // helper returns FALSE and leaves the item-name buffer untouched in this case.
-            var tm=_content.MtMoonEnabled?MachineRules.Definition(_content.PewterMachines!,definition.Item):null;
+            var tm=MachineRules.Definition(_content.Machines!,definition.Item);
             next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",tm is null?0:1)},TextBuffers=tm is null?state.TextBuffers:state.TextBuffers.SetItem("STR_VAR_1",_content.BattleContent!.MoveNames[tm.Move.Value])};return true;
         }
         if(effect.Opcode=="special"&&args[0]=="SetHiddenItemFlag")
@@ -80,9 +80,9 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("field_pickup_quantity_or_duplicate");
         var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
         var error=ValidateCampaignInventory(inventory);if(error is not null)throw new InvalidDataException(error);
-        if(_content.MtMoonEnabled&&definition.Pocket=="POCKET_TM_CASE")
+        if(definition.Pocket=="POCKET_TM_CASE")
         {
-            var machines=_content.PewterMachines!;
+            var machines=_content.Machines!;
             var transaction=effect.Opcode=="additem"?MachineRules.AddMachine(machines,inventory,definition.Item,quantity):new InventoryTransactionResult(inventory,MachineRules.CanAddMachine(machines,inventory,definition.Item,quantity),null);
             if(!transaction.Succeeded&&effect.Opcode=="additem")throw new InvalidDataException(transaction.Error??"field_pickup_machine_add_failed");
             bool committed=transaction.Succeeded&&effect.Opcode=="additem";

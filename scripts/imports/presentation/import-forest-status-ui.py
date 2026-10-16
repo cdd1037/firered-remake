@@ -7,7 +7,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -31,9 +30,7 @@ PATHS = frozenset([
     'tools/gbagfx/gfx.c', 'tools/gbagfx/convert_png.c',
     BATTLE + 'healthbox_elements.png', BATTLE + 'healthbox.pal', BATTLE + 'healthbar.pal', PARTY,
 ])
-spec = importlib.util.spec_from_file_location('forest_status_codec', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-codec = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(codec)
+import ui_tiles as codec
 
 
 def canonical(value):

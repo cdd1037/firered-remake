@@ -53,12 +53,7 @@ public static class RockTunnelTrainerPartyFactory
         if (trainer.Party.Any(member => !pokemon.Species.ContainsKey(member.Species)))
             throw new NotSupportedException("trainer_party_species");
         // Source custom parties share the original deterministic PID/OT construction.
-        var created = TrainerPartyFactory.CreateValidated(trainer,pokemon,rng);
-        if (trainer.PartyFlags == 0) return created;
-        return created with { Party = created.Party.Select((member,i) => member with { Pokemon = member.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m,pokemon.Moves[m].Pp,pokemon.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.CreateValidated(trainer,pokemon,rng);
     }
     public static void ValidateCatalog(RockTunnelTrainerCatalog catalog)
     {
@@ -73,39 +68,4 @@ public static class RockTunnelTrainerPartyFactory
             b.Callback!="CB2_EndTrainerBattle" || b.PostBattleScript is not null || b.MusicOption is not null)
             throw new NotSupportedException("RockTunnel initial battle source differs.");
     }
-    private static bool ValidSourceSpecies(PokemonSpeciesDefinition s) => Route11BattleScope.ValidSpecies(s) || s.SourceSpeciesId switch
-    {
-        104 => s.Id.Value == "pret:SPECIES_CUBONE" && (s.Type1,s.Type2,s.Ability1,s.Ability2) == ("TYPE_GROUND","TYPE_GROUND","ABILITY_ROCK_HEAD","ABILITY_LIGHTNING_ROD"),
-        108 => s.Id.Value == "pret:SPECIES_LICKITUNG" && (s.Type1,s.Type2,s.Ability1,s.Ability2) == ("TYPE_NORMAL","TYPE_NORMAL","ABILITY_OWN_TEMPO","ABILITY_OBLIVIOUS"),
-        111 => s.Id.Value == "pret:SPECIES_RHYHORN" && (s.Type1,s.Type2,s.Ability1,s.Ability2) == ("TYPE_GROUND","TYPE_ROCK","ABILITY_LIGHTNING_ROD","ABILITY_ROCK_HEAD"),
-        48 => s.Id.Value == "pret:SPECIES_VENONAT" && (s.Type1,s.Type2,s.Ability1,s.Ability2) == ("TYPE_BUG","TYPE_POISON","ABILITY_COMPOUND_EYES","ABILITY_NONE"),
-        _ => false
-    };
-    private static bool ValidSourceMove(PokemonMoveDefinition m)
-    {
-        if (Route11BattleScope.Supports(m.Id)) return Route11BattleScope.ValidDefinition(m);
-        var expected = m.Id.Value switch
-        {
-            "pret:MOVE_BONE_CLUB" => (125,20,65,85,"TYPE_GROUND","EFFECT_FLINCH_HIT","MOVE_TARGET_SELECTED",10,0),
-            "pret:MOVE_FORESIGHT" => (193,40,0,100,"TYPE_NORMAL","EFFECT_FORESIGHT","MOVE_TARGET_SELECTED",0,0),
-            "pret:MOVE_KNOCK_OFF" => (282,20,20,100,"TYPE_DARK","EFFECT_KNOCK_OFF","MOVE_TARGET_SELECTED",100,0),
-            "pret:MOVE_ODOR_SLEUTH" => (316,40,0,100,"TYPE_NORMAL","EFFECT_FORESIGHT","MOVE_TARGET_SELECTED",0,0),
-            "pret:MOVE_ROCK_BLAST" => (350,10,25,80,"TYPE_ROCK","EFFECT_MULTI_HIT","MOVE_TARGET_SELECTED",0,0),
-            "pret:MOVE_STOMP" => (23,20,65,100,"TYPE_NORMAL","EFFECT_FLINCH_MINIMIZE_HIT","MOVE_TARGET_SELECTED",30,0),
-            _ => default
-        };
-        string[] flags = m.Id.Value switch
-        {
-            "pret:MOVE_BONE_CLUB" => ["FLAG_PROTECT_AFFECTED","FLAG_MIRROR_MOVE_AFFECTED"],
-            "pret:MOVE_FORESIGHT" => ["FLAG_PROTECT_AFFECTED","FLAG_MIRROR_MOVE_AFFECTED"],
-            "pret:MOVE_KNOCK_OFF" => ["FLAG_MAKES_CONTACT","FLAG_PROTECT_AFFECTED","FLAG_MIRROR_MOVE_AFFECTED"],
-            "pret:MOVE_ODOR_SLEUTH" => ["FLAG_PROTECT_AFFECTED","FLAG_MIRROR_MOVE_AFFECTED"],
-            "pret:MOVE_ROCK_BLAST" => ["FLAG_PROTECT_AFFECTED","FLAG_MIRROR_MOVE_AFFECTED","FLAG_KINGS_ROCK_AFFECTED"],
-            "pret:MOVE_STOMP" => ["FLAG_MAKES_CONTACT","FLAG_PROTECT_AFFECTED","FLAG_MIRROR_MOVE_AFFECTED"],
-            _ => []
-        };
-        return expected.Item1 != 0 && (m.SourceMoveId,m.Pp,m.Power,m.Accuracy,m.Type,m.Effect,m.Target,m.SecondaryEffectChance,m.Priority) == expected &&
-            !m.Flags.IsDefault && m.Flags.Length == flags.Length && flags.All(m.Flags.Contains);
-    }
-    private static bool Encode(string text,ImmutableArray<int> bytes) => !bytes.IsDefault && bytes.SequenceEqual(Route3TrainerPartyFactory.Encode(text));
 }

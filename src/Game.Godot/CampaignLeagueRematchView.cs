@@ -6,14 +6,10 @@ using Godot;
 public partial class CampaignView
 {
     private LeagueRematchPresentationData? _leagueRematchArt;
-    private readonly Dictionary<int, string> _leagueRematchSpeciesNames = [];
     private JsonElement LeagueRematchManifest => _leagueRematchArt?.Manifest ?? throw new InvalidDataException("League rematch presentation missing.");
 
     private void LoadLeagueRematchPresentation()
     {
-        if (!_catalog.LeagueRematchEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.CeruleanCaveEnabled)
-            throw new InvalidDataException("League rematch requires its complete current Cerulean Cave predecessor.");
         _leagueRematchArt = LeagueRematchPresentationAssets.Load(_root);
         foreach (var row in LeagueRematchManifest.GetProperty("inheritedSprites").EnumerateArray())
         {
@@ -26,7 +22,7 @@ public partial class CampaignView
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
             string id = row.GetProperty("speciesId").GetString()!;
-            if (_catalog.LeagueRematchOpponents!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId != species)
+            if (_catalog.OpponentPokemon!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId != species)
                 throw new InvalidDataException("League rematch sprite is not an admitted opponent species.");
             string side = row.GetProperty("side").GetString()!;
             bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
@@ -35,13 +31,7 @@ public partial class CampaignView
             _battleArt.Add((species, side, shiny), new(texture, new(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32())));
             if (side == "front" && !shiny) _portraits.Add(species, texture);
         }
-        foreach (var row in LeagueRematchManifest.GetProperty("speciesNames").EnumerateArray())
-        {
-            int species = row.GetProperty("sourceSpeciesId").GetInt32();
-            if (_catalog.LeagueRematchOpponents!.Catalog.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
-                throw new InvalidDataException("League rematch species name is not admitted.");
-            _leagueRematchSpeciesNames.Add(species, row.GetProperty("name").GetString()!);
-        }
+
         var parties = _catalog.LeagueRematchTrainerParties ?? throw new InvalidDataException("League rematch trainers missing.");
         foreach (var row in LeagueRematchManifest.GetProperty("trainers").EnumerateArray())
         {
@@ -53,14 +43,11 @@ public partial class CampaignView
                 throw new InvalidDataException("League rematch trainer presentation binding differs.");
             _leagueTrainers.Add(id, row);
         }
-        Write("leagueRematchPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
-    }
 
-    private string? LeagueRematchSpeciesName(int species) => _leagueRematchSpeciesNames.GetValueOrDefault(species);
+    }
 
     private void VerifyLeagueRematchMoveGeometry()
     {
-        if (!_catalog.LeagueRematchEnabled) return;
         foreach (var row in LeagueRematchManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
         {
             var key = (row.GetProperty("species").GetInt32(), row.GetProperty("side").GetString()!);
@@ -77,6 +64,6 @@ public partial class CampaignView
             foreach (var row in LeagueRematchManifest.GetProperty("trainers").EnumerateArray())
                 _leagueTrainers.Remove(row.GetProperty("trainer").GetString()!);
         _leagueRematchArt = null;
-        _leagueRematchSpeciesNames.Clear();
+
     }
 }

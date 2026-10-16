@@ -18,7 +18,7 @@ public sealed partial class CampaignSession
             return No("storage_item_cursor_context");
         if (ValidateStorageItemOwnership(state) is {} invalid) return No(invalid);
         var content = _content.PokemonContent;
-        var machines = _content.PewterMachines;
+        var machines = _content.Machines;
         Decision<CampaignState> ClearPrompt() => new(CommandStatus.Accepted, state with { Pc = pc with { ItemPrompt = null } });
         Decision<CampaignState> Exit()
         {
@@ -110,11 +110,11 @@ public sealed partial class CampaignSession
             if (pc.ItemPrompt is not null || pc.ItemCursor is not null || target.HeldItemId != "pret:ITEM_NONE") return "storage_item_bag_context";
             var error = PokemonStorageItemRules.CheckGiveFromBagTarget(_content.PokemonContent, _content.EarlyShop,
                 state.Party, state.Storage, state.Inventory, pc.ItemCursor,
-                target.Location, target.InstanceId, _content.PewterMachines);
+                target.Location, target.InstanceId, _content.Machines);
             if (error is not null) return error.Code;
         }
         return ValidateCampaignInventory(state.Inventory) ?? ValidateStorageMoveOwnership(state) ??
             PokemonStorageItemRules.Validate(_content.PokemonContent, _content.EarlyShop, state.Party, state.Storage,
-                state.Inventory, pc.ItemCursor, _content.PewterMachines, state.NextPokemonId)?.Code;
+                state.Inventory, pc.ItemCursor, _content.Machines, state.NextPokemonId)?.Code;
     }
 }

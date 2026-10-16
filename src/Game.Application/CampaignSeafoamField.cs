@@ -17,9 +17,9 @@ public sealed partial class CampaignSession
     {
         var maps = MapLayoutRawMaps(state);
         var id = state.World.Player.MapId;
-        if (!_content.SeafoamEnabled || !SeafoamFieldRules.IsCave(id)) return maps;
+        if (!SeafoamFieldRules.IsCave(id)) return maps;
         var result = maps.ToDictionary(pair => pair.Key, pair => pair.Value);
-        if (_content.SeafoamEnabled && SeafoamFieldRules.IsCave(id))
+        if (SeafoamFieldRules.IsCave(id))
             result[id] = new SeafoamEditedMap(result[id], state.MapEdits, _content);
         return result;
     }
@@ -38,7 +38,6 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> SeafoamWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
-        if (!_content.SeafoamEnabled) return maps;
         var result = maps.ToDictionary(pair => pair.Key, pair => pair.Value);
         foreach (var pair in maps.Where(pair => SeafoamFieldRules.IsWaterFloor(pair.Key)))
             result[pair.Key] = pair.Value with { Cells = pair.Value.Cells.Select(cell => cell.Collision == 0 &&
@@ -47,11 +46,11 @@ public sealed partial class CampaignSession
         if(result.TryGetValue(coast,out var coastMap))result[coast]=coastMap with {Cells=coastMap.Cells.Select(cell=>cell.Collision==0&&cell.SourceBehavior==0x17&&cell.Elevation==3?cell with {SourceBehavior=0}:cell).ToImmutableArray()};
         return result;
     }
-    private bool SeafoamForcedTile(CampaignState state) => _content.SeafoamEnabled && state.IsSurfing &&
+    private bool SeafoamForcedTile(CampaignState state) => state.IsSurfing &&
         SeafoamFieldRules.IsWaterFloor(state.World.Player.MapId) && SeafoamFieldRules.CurrentDirection(SeafoamRawMaps(state)[state.World.Player.MapId].SourceBehaviorAt(state.World.Player.X,state.World.Player.Y)??-1) is not null;
     private Decision<CampaignState>? TrySeafoamHoleStep(CampaignState state, CampaignCommand command)
     {
-        if (!_content.SeafoamEnabled || command.Kind != "move" || !SeafoamFieldRules.IsCave(state.World.Player.MapId)) return null;
+        if (command.Kind != "move" || !SeafoamFieldRules.IsCave(state.World.Player.MapId)) return null;
         var p = state.World.Player; var (dx, dy) = Delta(command.Direction);
         if (!SeafoamFieldRules.Holes.Any(h => h.Map == p.MapId && h.X == p.X + dx && h.Y == p.Y + dy)) return null;
         if (state.Actors.Values.Any(a => a.Active && a.X == p.X + dx && a.Y == p.Y + dy && (a.Elevation == 0 || a.Elevation == p.Elevation))) return null;
@@ -62,7 +61,7 @@ public sealed partial class CampaignSession
     private CampaignState? StartSeafoamCurrent(CampaignState state)
     {
         var p = state.World.Player;
-        if (!_content.SeafoamEnabled || !SeafoamFieldRules.IsWaterFloor(p.MapId) || !state.IsSurfing ||
+        if (!SeafoamFieldRules.IsWaterFloor(p.MapId) || !state.IsSurfing ||
             !state.Script.Completed || state.Script.Wait is not null || state.Script.Locked || state.WildBattle is not null ||
             state.ForestTrainerBattle is not null || state.DoubleBattle is not null ||
             SeafoamFieldRules.CurrentDirection(SeafoamRawMaps(state)[p.MapId].SourceBehaviorAt(p.X,p.Y) ?? -1) is null) return null;
@@ -130,7 +129,7 @@ public sealed partial class CampaignSession
     private bool TryApplySeafoamFieldEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next=state; var map=state.World.Player.MapId;
-        if(!_content.SeafoamEnabled||!SeafoamFieldRules.IsCave(map)||!effect.Source.Path.StartsWith("data/maps/SeafoamIslands_",StringComparison.Ordinal))return false;
+        if(!SeafoamFieldRules.IsCave(map)||!effect.Source.Path.StartsWith("data/maps/SeafoamIslands_",StringComparison.Ordinal))return false;
         var a=effect.Args;
         if(effect.Opcode=="addvar"&&a.SequenceEqual(new[]{"VAR_TEMP_2","1"}))
         {

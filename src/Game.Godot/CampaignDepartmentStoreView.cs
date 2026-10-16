@@ -12,8 +12,7 @@ public partial class CampaignView
     private double _departmentElevatorTicks;
     private int _departmentElevatorDistance,_departmentElevatorDirection,_departmentElevatorDuration;
     private bool _departmentElevatorDing;
-    private bool DepartmentElevatorMenuActive=>_catalog.RegionalInteriorServicesEnabled&&
-        _session.State.World.Player.MapId.Value==DepartmentElevatorMapId&&
+    private bool DepartmentElevatorMenuActive=>_session.State.World.Player.MapId.Value==DepartmentElevatorMapId&&
         _session.State.Script.Wait?.Kind==StoryWaitKind.MenuChoice&&_session.State.DepartmentElevator?.MenuDefault is not null;
     private bool DepartmentElevatorMenuVisible=>DepartmentElevatorMenuActive&&FieldTextComplete&&
         _session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length;
@@ -36,7 +35,6 @@ public partial class CampaignView
 
     private void SynchronizeDepartmentPresentation(CampaignState? before,CampaignState after)
     {
-        if(!_catalog.RegionalInteriorServicesEnabled)return;
         if(before is null||before.World.Player.MapId!=after.World.Player.MapId)
         {
             _departmentElevatorDistance=0;_departmentElevatorTicks=0;_departmentElevatorDuration=0;
@@ -59,7 +57,7 @@ public partial class CampaignView
     }
     private void ProcessDepartmentPresentation(double delta)
     {
-        if(!_catalog.RegionalInteriorServicesEnabled||_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId||_departmentElevatorDistance==0)return;
+        if(_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId||_departmentElevatorDistance==0)return;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
         _departmentElevatorTicks=Math.Min(_departmentElevatorDuration,_departmentElevatorTicks+delta*60);
         if(!_departmentElevatorDing&&_departmentElevatorTicks+1e-8>=_departmentElevatorDuration)
@@ -67,7 +65,7 @@ public partial class CampaignView
     }
     private bool DrawDepartmentElevatorLayer(Texture2D original,Vector2 camera,int layer)
     {
-        if(!_catalog.RegionalInteriorServicesEnabled||_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId||_departmentElevatorDistance==0)return false;
+        if(_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId||_departmentElevatorDistance==0)return false;
         // Both source elevators use the same SilphCo window cells and authenticated atlas.
         int phase=DepartmentElevatorWindowPhase;
         for(int y=0;y<_art.Source.Height;y++)for(int x=0;x<_art.Source.Width;x++)
@@ -101,7 +99,7 @@ public partial class CampaignView
         MouseSelect(point,ref _departmentElevatorCursor,DepartmentElevatorRows.Length,8,8,DepartmentElevatorMenuWidth,14);
     private void DrawDepartmentElevatorMenu()
     {
-        if(!_catalog.RegionalInteriorServicesEnabled||_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId)return;
+        if(_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId)return;
         if(_session.State.DepartmentElevator?.FloorWindowVisible==true)
         {
             _battleSkin.DrawUserFrame(this,new(168,0,72,48));

@@ -30,14 +30,7 @@ public static class PewterTrainerPartyFactory
             foreach (var id in member.CustomMoves.Where(m => m.Value != "pret:MOVE_NONE"))
                 if (!pokemon.Moves.TryGetValue(id, out var move) || !PewterTrainerAi.ValidMove(move))
                     throw new NotSupportedException("Pewter custom move metadata differs from source.");
-        var created = TrainerPartyFactory.CreateValidated(trainer, pokemon, rng);
-        // SetMonMoveSlot after CreateMon changes no PID, IV, OT or RNG. The persisted representation
-        // omits the source trailing MOVE_NONE slots, as the existing PokemonInstance contract requires.
-        return created with { Party = created.Party.Select((member, i) => member with {
-            Pokemon = member.Pokemon with { Moves = trainer.Party[i].CustomMoves
-                .TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m, pokemon.Moves[m].Pp, pokemon.Moves[m].Pp)).ToImmutableArray() }
-        }).ToImmutableArray() };
+        return TrainerPartyFactory.CreateValidated(trainer, pokemon, rng);
     }
 
     public static void ValidateCatalog(PewterTrainerCatalog catalog)

@@ -45,7 +45,7 @@ public static class PretForestStatusUi
     public static ForestStatusUiDocument Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var generated = SafeFile(project, Generated);
+        var generated = GeneratedResourceFile.SafePath(project, Generated);
         using var manifest = JsonDocument.Parse(ReadPinned(generated,"manifest.json"));
         var catalogBytes = ReadPinned(generated,"forest-status-ui.json");
         var doc = ContentJson.ParseStrict<ForestStatusUiDocument>(Utf8.GetString(catalogBytes), ContentJson.CreateOptions());
@@ -91,7 +91,7 @@ public static class PretForestStatusUi
 
     private static byte[] ReadPinned(string root,string path)
     {
-        var filename = SafeFile(root, path);
+        var filename = GeneratedResourceFile.SafePath(root, path);
         var info = new FileInfo(filename);
         Require(info.Length is > 0 and <= 1_000_000 ,
             "Forest status file size differs: " + path);
@@ -99,19 +99,6 @@ public static class PretForestStatusUi
         return bytes;
     }
 
-    private static string SafeFile(string root, string relative)
-    {
-        Require(!string.IsNullOrWhiteSpace(relative) && !Path.IsPathRooted(relative) && !relative.Contains('\\')
-            && !relative.Split('/').Any(p => p is ".." or "." or ""), "Unsafe forest status path.");
-        var directory = Path.GetFullPath(root);
-        var path = Path.GetFullPath(Path.Combine(directory, relative));
-        Require(path.StartsWith(directory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal),
-            "Forest status path escapes its root.");
-        Require(new FileInfo(path).LinkTarget is null, "Forest status file symlink rejected.");
-        for (var current = new DirectoryInfo(Path.GetDirectoryName(path)!); current is not null; current = current.Parent)
-            Require(current.LinkTarget is null, "Forest status directory symlink rejected.");
-        return path;
-    }
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidDataException(message);

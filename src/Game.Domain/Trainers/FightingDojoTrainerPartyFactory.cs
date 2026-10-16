@@ -14,17 +14,13 @@ public static partial class FightingDojoTrainerPartyFactory
     {
         ValidateCatalog(trainers);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("fighting_dojo_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
     public static TrainerPartyCreationResult Create(FightingDojoTrainerCatalog trainers,
         GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("fighting_dojo_trainer_catalog");
-        foreach (var member in trainer.Party)
-            if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("fighting_dojo_trainer_species");
-        var source = opponents.Mechanics;
-        return TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
 
     public static void ValidateCatalog(FightingDojoTrainerCatalog catalog)

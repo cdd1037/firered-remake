@@ -3,6 +3,11 @@ using Godot;
 
 public partial class CampaignView
 {
+    private sealed record RegisteredTrainerPresentation(string ClassName, string Portrait);
+    private readonly Dictionary<string, RegisteredTrainerPresentation> _registeredTrainerPresentation = new(StringComparer.Ordinal);
+    private RegisteredTrainerPresentation? VisibleRegisteredTrainer => _session.State.ForestTrainerBattle is { } battle
+        ? _registeredTrainerPresentation.GetValueOrDefault(battle.Trainer.Value) : null;
+
     private sealed record SharedTrainerPresentation(string ClassName, Texture2D Portrait, Vector2 Position);
     private readonly Dictionary<(string Class, string Picture, int SourcePicture), SharedTrainerPresentation> _sharedTrainerPresentation = new();
 
@@ -11,15 +16,25 @@ public partial class CampaignView
     private void LoadSharedTrainerPresentation()
     {
         _sharedTrainerPresentation.Clear();
+        _registeredTrainerPresentation.Clear();
+        // Keep the old regional first-match precedence once, at composition time.
+        foreach (var rows in new[] { _fightingDojoTrainers, _sevenIslandTrainers, _fiveIslandTrainers,
+            _sixIslandTrainers, _fourIslandTrainers, _seviiRubyTrainers, _leagueTrainers })
+        foreach (var (id, row) in rows)
+            _registeredTrainerPresentation.TryAdd(id, new(row.GetProperty("className").GetString()!,
+                (ReferenceEquals(rows, _leagueTrainers) ? "league-" : "") + row.GetProperty("portrait").GetString()!));
         foreach (var manifest in new[] { SevenIslandManifest, SixIslandManifest })
-        foreach (var row in manifest.GetProperty("trainers").EnumerateArray())
         {
-            string id = row.GetProperty("portrait").GetString()!;
-            var portrait = manifest.GetProperty("portraits").EnumerateArray().Single(p => p.GetProperty("id").GetString() == id);
-            _sharedTrainerPresentation.TryAdd((row.GetProperty("trainerClass").GetString()!,
-                row.GetProperty("trainerPic").GetString()!, portrait.GetProperty("sourceTrainerPicId").GetInt32()),
-                new(row.GetProperty("className").GetString()!, _forestTrainerPortraits[id],
-                    new(portrait.GetProperty("x").GetInt32(), portrait.GetProperty("y").GetInt32())));
+            var portraits = manifest.GetProperty("portraits").EnumerateArray().ToDictionary(p => p.GetProperty("id").GetString()!, StringComparer.Ordinal);
+            foreach (var row in manifest.GetProperty("trainers").EnumerateArray())
+            {
+                string id = row.GetProperty("portrait").GetString()!;
+                var portrait = portraits[id];
+                _sharedTrainerPresentation.TryAdd((row.GetProperty("trainerClass").GetString()!,
+                    row.GetProperty("trainerPic").GetString()!, portrait.GetProperty("sourceTrainerPicId").GetInt32()),
+                    new(row.GetProperty("className").GetString()!, _forestTrainerPortraits[id],
+                        new(portrait.GetProperty("x").GetInt32(), portrait.GetProperty("y").GetInt32())));
+            }
         }
         foreach (var row in _trainerTowerBindings.Values)
         {

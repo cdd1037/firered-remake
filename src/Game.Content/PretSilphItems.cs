@@ -1,15 +1,10 @@
 using System.Collections.Immutable;
-using System.Text.Json.Serialization;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 
 namespace Game.Content;
-public sealed record PretSilphItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items)
-{
-    [JsonIgnore] public SilphMachinesDocument Machines { get; internal init; } = null!;
-}
-public sealed record SilphMachinesDocument(int SchemaVersion, ImmutableArray<ItemId> InheritedItemIds, ImmutableArray<SafariMachineAddition> Additions,
-    ImmutableArray<MachineDefinition> NewMachines);
+public sealed record PretSilphItemsDocument(int SchemaVersion, ImmutableArray<PretBillSourceItem> Items);
+
 public static class PretSilphItems
 {
     public const string Profile = "firered-silph-items-v1";
@@ -28,16 +23,7 @@ public static class PretSilphItems
             var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && i.CanGive == (i.Importance == 0) && i.CanToss == (i.Importance == 0) && i.CanSell == (i.Price != 0),
                 "Silph key/item declaration differs.");
         }
-        var machines = source.Parse<SilphMachinesDocument>("machines.json");
-        SilphSourcePackage.Need(machines.SchemaVersion == 1 &&
-            machines.InheritedItemIds.Length == 24 && machines.Additions.Length == 24 && machines.NewMachines.Select(m => m.Machine.Item.Id.Value).SequenceEqual(["pret:ITEM_TM01","pret:ITEM_TM08","pret:ITEM_TM41"]),
-            "Silph exact27 machine scope differs.");
-        foreach (var m in machines.Additions) { SilphSourcePackage.Need(m.Compatibility.Length == 1 && m.Compatibility[0].Species.Value == "pret:SPECIES_LAPRAS", "Silph inherited row delta differs."); }
-        foreach (var m in machines.NewMachines)
-        {
-            SilphSourcePackage.Need(m.Compatibility.Length == 113 && m.Compatibility.Select(c => c.Species).Distinct().Count() == 113, "Silph machine owned set differs.");
-        }
-        return d with { Machines = machines};
+        return d;
     }
     public static EarlyShopItemDefinition Definition(PretBillSourceItem item)
     {
@@ -46,9 +32,4 @@ public static class PretSilphItems
     }
     public static EarlyShopItemDefinition Definition(PretSilphItemsDocument d, ItemId id) => Definition(d.Items.Single(i => i.Metadata.Item.Id == id));
 
-}
-public static class PretSilphMachines
-{
-    public const string Profile = "firered-silph-teaching-v1";
-    public static SilphMachinesDocument LoadProject(string root) => PretSilphItems.LoadProject(root).Machines;
 }

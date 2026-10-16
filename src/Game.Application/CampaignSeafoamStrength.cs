@@ -21,13 +21,13 @@ public sealed partial class CampaignSession
         return actor;
     }
     private bool SeafoamBoulderFallSupported(CampaignState state, CampaignActor actor, TilePosition target) =>
-        _content.SeafoamEnabled && SeafoamFieldRules.Boulders.Any(b => b.Map == target.MapId &&
+        SeafoamFieldRules.Boulders.Any(b => b.Map == target.MapId &&
             b.LocalId == actor.SourceLocalId && b.Interactable) &&
         SeafoamFieldRules.Holes.Any(h => h.Map == target.MapId && h.X == target.X && h.Y == target.Y);
 
     private CampaignState CompleteSeafoamBoulderPush(CampaignState state, CampaignActor actor)
     {
-        if (!_content.SeafoamEnabled || !SeafoamFieldRules.IsCave(state.World.Player.MapId) ||
+        if (!SeafoamFieldRules.IsCave(state.World.Player.MapId) ||
             EditedFieldMaps(state)[state.World.Player.MapId].CellAt(actor.X, actor.Y)?.SourceBehavior != SeafoamFieldRules.FallBehavior)
             return state;
         var flags = SeafoamFieldRules.CompleteBoulderFall(state.World.Player.MapId, actor.SourceLocalId, actor.X, actor.Y, state.Script.Flags);

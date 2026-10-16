@@ -5,17 +5,12 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || CampaignMailHeldItemSupported(state,owned) || CanGiveHeldItem(new("pret:"+owned.HeldItem)) || _content.SevenIslandEnabled&&(owned.HeldItem is "ITEM_KINGS_ROCK" or "ITEM_LUCKY_PUNCH" or "ITEM_HEART_SCALE" || Game.Domain.Encounters.SevenIslandEncounterTables.HeldItems.Any(s=>s.Common==owned.HeldItem||s.Rare==owned.HeldItem)) || _content.FiveIslandEnabled&&Game.Domain.Encounters.FiveIslandWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SixIslandEnabled&&Game.Domain.Encounters.SixIslandWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.FourIslandEnabled&&Game.Domain.Encounters.FourIslandWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SeviiRubyEnabled&&Game.Domain.Encounters.SeviiRubyWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.VictoryRoadEnabled&&Game.Domain.Encounters.VictoryRoadWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
-        _content.PokemonTowerEnabled&&owned.HeldItem is "ITEM_SPELL_TAG" or "ITEM_THICK_CLUB" or "ITEM_CLEANSE_TAG" or "ITEM_SOOTHE_BELL" ||
-        _content.RockTunnelEnabled&&owned.HeldItem is "ITEM_HARD_STONE" or "ITEM_EVERSTONE" ||
-        _content.VermilionEnabled&&VermilionPickupRules.IsKnownHeldItem(owned.HeldItem)||
-        _content.MtMoonEnabled&&owned.HeldItem is "ITEM_ORAN_BERRY" or "ITEM_TINY_MUSHROOM" or "ITEM_BIG_MUSHROOM" or "ITEM_MOON_STONE" ||
-        _content.Route3Enabled&&owned.HeldItem=="ITEM_ORAN_BERRY"&&
-        state.Exploration?.Captured?.Any(c=>c.InstanceId==owned.InstanceId&&c.SourceSpeciesId==39)==true;
+    private bool OwnedHeldItemSupported(CampaignState state, PartyPokemon owned) =>
+        owned.HeldItem == "ITEM_NONE" || CampaignMailHeldItemSupported(state, owned) ||
+        CanGiveHeldItem(new("pret:" + owned.HeldItem)) || _binding.EncounterAndPickupHeldItems.Contains(owned.HeldItem);
 
     private string? ValidateRoute3Progress(CampaignState state)
     {
-        if(!_content.Route3Enabled)return null;
         var p=state.World.Player;
         if(!_content.IsRoute3StablePosition(p.MapId,p.X,p.Y))return "save_route3_boundary_invalid";
         // The current source program supports first battles and their post-battle branches.
@@ -26,13 +21,12 @@ public sealed partial class CampaignSession
 
     private bool TryApplyRoute3Effect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.Route3Enabled)return false;
-        var a=effect.Args;
+        next=state;        var a=effect.Args;
         if(effect.Opcode=="specialvar"&&a.Length==2&&a[1]=="ShouldTryRematchBattle")
         {
             if (IsMemorialPillarTrainerMap(state.World.Player.MapId)) RequireMemorialPillarRematchQuery(state,effect);
-            if (_content.SeafoamEnabled && SeafoamTrainerMap(state.World.Player.MapId)) RequireSeafoamRematchQuery(state,effect);
-            if (_content.PresetDoublesEnabled && a[0] == "VAR_RESULT" &&
+            if (SeafoamTrainerMap(state.World.Player.MapId)) RequireSeafoamRematchQuery(state,effect);
+            if (a[0] == "VAR_RESULT" &&
                 state.LastTalked is { } twinsActor && state.Actors.TryGetValue(twinsActor, out var twins) &&
                 IsTwinsScript(twins.ScriptId))
             {

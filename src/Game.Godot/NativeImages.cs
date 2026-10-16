@@ -3,6 +3,8 @@ using Godot;
 /// <summary>The engine owns PNG decoding. CPU pixels are requested only by pixel compositors.</summary>
 public static class NativeImages
 {
+    public static long DecodedPngs { get; private set; }
+
     public static Image LoadPng(byte[] png, int? width = null, int? height = null)
     {
         var image = new Image();
@@ -12,6 +14,7 @@ public static class NativeImages
             image.Dispose();
             throw new InvalidDataException("PNG could not be decoded or has unexpected dimensions.");
         }
+        DecodedPngs++;
         image.Convert(Image.Format.Rgba8);
         return image;
     }
@@ -22,9 +25,4 @@ public static class NativeImages
         return image.GetData();
     }
 
-    public static bool HasSize(byte[] png, int width, int height)
-    {
-        using var image = LoadPng(png);
-        return image.GetWidth() == width && image.GetHeight() == height;
-    }
 }

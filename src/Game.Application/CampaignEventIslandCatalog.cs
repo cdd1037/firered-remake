@@ -6,12 +6,11 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public bool EventIslandsEnabled => _content.EventIslandsEnabled;
     private static void ValidateEventIslandCatalog(ICampaignCatalog content)
     {
-        if (!content.EventIslandsEnabled || content.EventIslandField is not { } field ||
-            content.EventIslandOwnership is not { } owned || content.EventIslandOpponents is not { } opponents ||
-            content.EventIslandMachines is not { } machines || content.EarlyShop is not { } shop ||
+        if (content.EventIslandField is not { } field ||
+            content.GamePokemon is not { } owned || content.OpponentPokemon is not { } opponents ||
+            content.Machines is not { } machines || content.EarlyShop is not { } shop ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||

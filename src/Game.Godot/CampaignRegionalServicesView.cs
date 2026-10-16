@@ -7,7 +7,6 @@ public partial class CampaignView
 {
     private void ExtendRegionalServicesQuestPocket(ref QuestItemUiDocument document)
     {
-        if (!_catalog.RegionalServicesEnabled) return;
         var tea = _catalog.TeaItem ?? throw new InvalidDataException("Regional Tea metadata missing.");
         var source = PretRegionalTeaArt.Load(_root, tea);
         var asset = source.Document.Asset;
@@ -28,7 +27,6 @@ public partial class CampaignView
 
     private void LoadRegionalServicesPresentation()
     {
-        if (!_catalog.RegionalServicesEnabled) return;
         var art = _catalog.EeveeArt ?? throw new InvalidDataException("Regional Eevee art catalog missing.");
         foreach (var sprite in art.Sprites)
         {
@@ -52,10 +50,10 @@ public partial class CampaignView
         }
         // Reuse the same owned front texture for a source mon-picture request.
         _portraits.Add(133, _battleArt[(133, "front", false)].Texture);
-        Write("regionalServicesPresentation", new {             maps = PretCampaignCatalog.RegionalServiceMapIds.Length});
+
     }
 
     private bool RegionalServicesActorHasPixels(CampaignActor actor) =>
-        !_catalog.RegionalServicesEnabled || !PretCampaignCatalog.RegionalServiceMapIds.Contains(_session.State.World.Player.MapId) ||
+        !PretCampaignCatalog.RegionalServiceMapIds.Contains(_session.State.World.Player.MapId) ||
         actor.MovementType != "MOVEMENT_TYPE_INVISIBLE";
 }

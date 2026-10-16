@@ -10,8 +10,7 @@ public sealed partial class CampaignSession
 {
     private const string FourIslandGruntActor = "LOCALID_ICEFALL_ROCKET3";
 
-    private bool IsFourIslandTrainer(TrainerId trainer) => _content.FourIslandEnabled &&
-        trainer == FourIslandTrainerPartyFactory.Grunt45 &&
+    private bool IsFourIslandTrainer(TrainerId trainer) => trainer == FourIslandTrainerPartyFactory.Grunt45 &&
         _content.FourIslandTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
 
     private void RequireFourIslandTrainerOccurrence(CampaignState state, TrainerId trainer,

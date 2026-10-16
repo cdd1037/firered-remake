@@ -10,8 +10,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId MistyMachine=new("pret:ITEM_TM03");
     private bool TryApplyCeruleanEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.CeruleanEnabled)return false;
-        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetCeruleanGymTrainers")
+        next=state;        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetCeruleanGymTrainers")
         {
             if(effect.Args.Length!=1||effect.Args[0] is not("TRAINER_PICNICKER_DIANA" or "TRAINER_SWIMMER_MALE_LUIS")||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
                 throw new InvalidDataException("cerulean_gym_trainer_flag_context");
@@ -29,7 +28,7 @@ public sealed partial class CampaignSession
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
+            var machines=_content.Machines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))throw new InvalidDataException("cerulean_tm_reward_context");
             if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(machines,inventory,MistyMachine)?1:0;
@@ -43,7 +42,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateCeruleanProgress(CampaignState state)
     {
-        if(!_content.CeruleanEnabled)return null;
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET");
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==CeruleanTrainerPartyFactory.Misty.Value&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_MISTY")!=won)return "save_misty_badge_history_mismatch";

@@ -13,7 +13,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from presentation_atlas import pack
 from PIL import Image
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -40,9 +39,7 @@ graphics/battle_interface/textbox.png
 graphics/battle_interface/textbox.bin
 graphics/battle_interface/textbox1.pal'''.splitlines()) | frozenset(
     f'graphics/text_window/type{i}.png' for i in range(1, 11))
-_spec = importlib.util.spec_from_file_location('option_frame_pixels', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-pixels = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(pixels)
+import ui_tiles as pixels
 
 
 def canonical(value):

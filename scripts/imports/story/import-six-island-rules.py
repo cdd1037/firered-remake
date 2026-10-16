@@ -59,7 +59,7 @@ def generate(reference, dependency):
             actor_scripts.append((mapping, local_id, actor, path, block, command))
     trainer_symbols = sorted({entry[-1][2].split(', ')[0] for entry in actor_scripts})
     trainers = selected_trainers(read, trainer_symbols)
-    battles=[]; actors=[]
+    battles=[]
     for mapping, local_id, actor, path, block, command in actor_scripts:
             label = actor['script']
             args=command[2].split(', ');double=command[1]=='trainerbattle_double'
@@ -71,11 +71,9 @@ def generate(reference, dependency):
                 callback='CB2_EndTrainerBattle',source=ref(path,label,block),postBattleScript=None,musicOption=None)
             if double:battle['notEnoughMonsText']=args[3]
             battles.append(battle)
-            actors.append(dict(map=mapping['id'],localId=local_id,x=actor['x'],y=actor['y'],movementType=actor['movement_type'],sight=actor['trainer_sight_or_berry_tree_id'],script=label,trainer=identity(args[0])))
     need(trainers and len(battles)==len(actor_scripts), 'Every trainer actor must bind a battle')
     docs={
-      'trainers.json':dict(trainers=trainers,battles=battles),
-      'rules.json':dict(trainerActors=actors)}
+      'trainers.json':dict(trainers=trainers,battles=battles)}
     return docs
 
 def main():
@@ -83,7 +81,6 @@ def main():
     for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency)
     files={'content/generated/data/regions/six-island/'+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else (json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode()) for n,d in docs.items()}
-    lock=dict(sourceCommit=COMMIT,profile='firered-six-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

@@ -5,7 +5,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-import argparse,importlib.util,json,pathlib,re,struct,sys
+import argparse, json, pathlib, re, struct, sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -18,13 +18,11 @@ def safe(root,p):
 def authenticated(root=ROOT):
  b=safe(root,'scripts/recipes/presentation/rocket-hideout-terrain.lock.json').read_bytes()
  lock=json.loads(b)
- if (lock['schemaVersion'],lock['commit'],len(lock['files']),len(lock['inputs']))!=(1,COMMIT,12,2):raise ValueError('Terrain source inventory differs')
+ if (lock['schemaVersion'],lock['commit'])!=(1,COMMIT):raise ValueError('Terrain source inventory differs')
  source={}
  for row in lock['files']:
   b=safe(root,'content/raw/pokefirered/037335f4/'+row['path']).read_bytes()
   source[row['path']]=b
- for row in lock['inputs']:
-  b=safe(root,row['path']).read_bytes()
  return source
 def build(source,root=ROOT):
  text=lambda p:source[p].decode()
@@ -37,7 +35,7 @@ def build(source,root=ROOT):
  for name in ['CeladonCity_GameCorner','RocketHideout_B1F','RocketHideout_B2F','RocketHideout_B3F','RocketHideout_B4F','RocketHideout_Elevator']:
   m=json.loads(source['data/maps/'+name+'/map.json'])
   if m['battle_scene']!=('MAP_BATTLE_SCENE_NORMAL' if name=='CeladonCity_GameCorner' else 'MAP_BATTLE_SCENE_INDOOR_2'):raise ValueError('Rocket map source battle scene differs')
- p=root/'scripts/imports/presentation/import-lab-battle-ui.py';spec=importlib.util.spec_from_file_location('rocket_terrain_codec',p);ui=importlib.util.module_from_spec(spec);spec.loader.exec_module(ui)
+ import ui_tiles as ui
  prefix='graphics/battle_terrain/indoor/';png=source[prefix+'terrain.png'];tilemap=source[prefix+'terrain.bin']
  if ui.indexed_png(png)[:2]!=(64,80) or len(tilemap)!=4096:raise ValueError('Indoor2 source sheet/map size differs')
  tiles=ui.tile_list(png)[:77];palette=ui.palette(source[prefix+'2.pal'])

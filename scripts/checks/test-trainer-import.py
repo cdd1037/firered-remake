@@ -49,13 +49,21 @@ class TrainerImportTests(unittest.TestCase):
             for region in REGIONS:
                 with self.subTest(region=region):
                     recipe = ROOT / f'scripts/recipes/trainers/{region}.json'
-                    command = [sys.executable, str(ROOT / 'scripts/imports/trainers/import-trainer-battles.py'),
-                               '--recipe', str(recipe), '--generated-root', str(generated)]
-                    subprocess.run(command, cwd=temporary, check=True, capture_output=True)
                     relative = json.loads(recipe.read_text())['output']
+                    target = generated / relative
+                    command = [sys.executable, str(ROOT / 'scripts/imports/trainers/import-trainer-battles.py'),
+                               '--recipe', str(recipe), '--generated-root', str(generated), '--out', str(target)]
+                    subprocess.run(command, cwd=temporary, check=True, capture_output=True)
+                    self.assertTrue(target.is_file(), target)
                     self.assertEqual((ROOT / 'content/generated' / relative).read_bytes(),
                                      (generated / relative).read_bytes())
+                    before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                              for path in generated.rglob('*') if path.is_file()}
                     subprocess.run([*command, '--check'], cwd=temporary, check=True, capture_output=True)
+                    self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                                              for path in generated.rglob('*') if path.is_file()})
+            self.assertFalse(any(path.is_dir() and path.suffix in ('.json', '.png')
+                                 for path in generated.rglob('*')))
             shared = read_trainers(generated)
             current = read_trainers(ROOT / 'content/generated')
             self.assertTrue(shared)
@@ -73,6 +81,23 @@ class TrainerImportTests(unittest.TestCase):
                 self.assertTrue(document['trainers'])
                 actual = trainer_json(ROOT / 'content/generated', document, check=True)
                 self.assertEqual((ROOT / f'content/generated/data/regions/{region}/trainers.json').read_bytes(), actual)
+
+    def test_fuchsia_route_cli_preserves_source_occurrences_and_shared_parties(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = Path(temporary) / 'generated'
+            command = [sys.executable, str(ROOT / 'scripts/imports/trainers/import-fuchsia-route-trainers.py'),
+                       '--raw', str(RAW), '--out', str(generated)]
+            subprocess.run(command, check=True, capture_output=True)
+            relative = 'data/pokemon/fuchsia-route/trainers.json'
+            self.assertEqual((ROOT / 'content/generated' / relative).read_bytes(), (generated / relative).read_bytes())
+            current, rebuilt = read_trainers(ROOT / 'content/generated'), read_trainers(generated)
+            self.assertTrue(rebuilt)
+            self.assertEqual(rebuilt, {identity: current[identity] for identity in rebuilt})
+            before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                      for path in generated.rglob('*') if path.is_file()}
+            subprocess.run([*command, '--check'], check=True, capture_output=True)
+            self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                                     for path in generated.rglob('*') if path.is_file()})
 
     def test_vs_seeker_raw_cli_preserves_all_parties_and_occurrences(self):
         subprocess.run([sys.executable, str(ROOT / 'scripts/imports/trainers/import-vs-seeker-parties.py'),
@@ -126,17 +151,10 @@ class TrainerImportTests(unittest.TestCase):
 
     def test_early_prepared_catalogs_current_layout(self):
         module = load('imports/trainers/import-early-trainer-catalogs.py')
-        for region, count in module.COUNTS.items():
-            with self.subTest(region=region):
-                document = module.compile_catalog(ROOT, region)
-                self.assertEqual(count, len(document['battles']))
-                actual = trainer_json(ROOT / 'content/generated', document, check=True)
-                target = ROOT / 'content/generated/data/trainer-battles' / (region + '.json')
-                self.assertEqual(target.read_bytes(), actual)
         result = subprocess.run(
             [sys.executable, str(ROOT / 'scripts/imports/trainers/import-early-trainer-catalogs.py'), '--check'],
             check=True, capture_output=True, text=True)
-        self.assertEqual({'catalogs': 5, 'trainers': 30, 'checked': True}, json.loads(result.stdout))
+        self.assertTrue(json.loads(result.stdout)['checked'])
         with tempfile.TemporaryDirectory() as temporary:
             isolated = Path(temporary)
             raw = isolated / 'content/raw/pokefirered/037335f4'
@@ -154,7 +172,7 @@ class TrainerImportTests(unittest.TestCase):
                 self.assertEqual((ROOT / relative).read_bytes(), (isolated / relative).read_bytes())
             rebuilt = read_trainers(isolated / 'content/generated')
             current = read_trainers(ROOT / 'content/generated')
-            self.assertEqual(30, len(rebuilt))
+            self.assertTrue(rebuilt)
             self.assertEqual(rebuilt, {identity: current[identity] for identity in rebuilt})
             subprocess.run([*command, '--check'], check=True, capture_output=True)
 

@@ -8,7 +8,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretGoodRodService GoodRodService { get; }
-    public bool GoodRodEnabled => GoodRodService is not null;
     public ImmutableDictionary<MapId, OldRodEncounterTable> GoodRodEncounters { get; }
     public FishingTaskProfile FishingTables { get; }
 

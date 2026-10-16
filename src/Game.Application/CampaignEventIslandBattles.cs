@@ -31,7 +31,6 @@ public sealed partial class CampaignSession
     private bool TryApplyEventIslandBattleEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.EventIslandsEnabled) return false;
         var matching = Enum.GetValues<EventIslandEncounterKind>().Where(k => EventLegendary(k).Source == effect.Source.Path).ToArray();
         if (matching.Length != 1) return false;
         var kind = matching[0]; var source = EventLegendary(kind); var origin = EventIslandWildBattleContract.Origin(kind);
@@ -58,7 +57,7 @@ public sealed partial class CampaignSession
             if (!effect.Args.SequenceEqual(new[] { source.Species, EventIslandWildBattleContract.Level(kind).ToString(System.Globalization.CultureInfo.InvariantCulture) }) ||
                 state.EventIslandPreparation is not null || state.EventIslandReturn is not null || state.Script.Flags.GetValueOrDefault(SpecialWildFlag))
                 throw new InvalidDataException("event_island_preparation_context");
-            var generated = EventIslandPokemonFactory.Generate(_content.EventIslandOwnership!, kind, state.World.Rng, state.TrainerId);
+            var generated = EventIslandPokemonFactory.Generate(_content.GamePokemon!, kind, state.World.Rng, state.TrainerId);
             next = state with { EventIslandPreparation = new(new(origin, state.World.Rng, generated.GlobalRng, generated.Pokemon, EventIslandHallEntries(state)), generated),
                 World = state.World with { Rng = generated.GlobalRng } };
             return true;
@@ -94,17 +93,17 @@ public sealed partial class CampaignSession
 
     private bool IsEventIslandHistory(CampaignWildHistory history)
     {
-        if (!_content.EventIslandsEnabled || history.EventIslandReceipt is not { } receipt || receipt.Origin is null ||
+        if (history.EventIslandReceipt is not { } receipt || receipt.Origin is null ||
             history.SevenIsland is not null || history.SevenIslandReceipt is not null || history.CeruleanCaveOrigin is not null || history.MewtwoReceipt is not null ||
             history.CelioRoamer is not null || history.FiveIsland is not null || history.SixIsland is not null || history.FourIsland is not null ||
             history.SeviiRuby is not null || history.VictoryRoad is not null || history.LostelleHypno is not null || history.Safari ||
             history.ScriptedMarowak || history.ScriptedSnorlaxRoute != 0 || !Enum.IsDefined(receipt.Origin.Kind) ||
             receipt.Origin != EventIslandWildBattleContract.Origin(receipt.Origin.Kind) || receipt.InitialPokemon is null ||
-            history.SourceSpeciesId != _content.EventIslandOwnership!.Catalog.Species[EventIslandWildBattleContract.Species(receipt.Origin.Kind)].SourceSpeciesId || history.Level != EventIslandWildBattleContract.Level(receipt.Origin.Kind) ||
+            history.SourceSpeciesId != _content.GamePokemon!.Catalog.Species[EventIslandWildBattleContract.Species(receipt.Origin.Kind)].SourceSpeciesId || history.Level != EventIslandWildBattleContract.Level(receipt.Origin.Kind) ||
             history.Outcome == WildBattleOutcome.Ongoing || history.Outcome != WildBattleOutcome.Won && history.ExperienceGained != 0 ||
             receipt.HallEntries < 1 || receipt.RngBefore.AlgorithmId != Gen3Rng.AlgorithmId || receipt.RngBefore.Cursor > ulong.MaxValue - 4)
             return false;
-        var made = EventIslandPokemonFactory.Generate(_content.EventIslandOwnership!, receipt.Origin.Kind, receipt.RngBefore, receipt.InitialPokemon.OriginalTrainerId);
+        var made = EventIslandPokemonFactory.Generate(_content.GamePokemon!, receipt.Origin.Kind, receipt.RngBefore, receipt.InitialPokemon.OriginalTrainerId);
         return made.GlobalRng == receipt.RngAfter && SameSourceOwnedPokemon(made.Pokemon, receipt.InitialPokemon);
     }
 

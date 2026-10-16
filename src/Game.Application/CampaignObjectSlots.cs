@@ -52,7 +52,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateObjectSlots(CampaignState state)
     {
-        if(!_content.OldManTutorialEnabled)return state.ObjectSlots is not null||state.SelectedObjectSlot!=0?"save_object_pool_profile_missing":null;
         if(state.ObjectSlots is not {} slots||slots.Count is <1 or >16||slots.GetValueOrDefault(0)!="LOCALID_PLAYER"||slots.Keys.Any(x=>x is <0 or >15)||state.SelectedObjectSlot is <0 or >15)return "save_object_pool_invalid";
         if(slots.Values.Distinct(StringComparer.Ordinal).Count()!=slots.Count||slots.Where(x=>x.Key!=0).Any(x=>!state.Actors.TryGetValue(x.Value,out var actor)||!actor.Active)||state.Actors.Values.Any(a=>a.Active&&!slots.Values.Contains(a.LocalId)))return "save_object_pool_actor_mismatch";
         return null;

@@ -28,8 +28,7 @@ public sealed partial class CampaignSession
 
     private RuinValleyDoorSnapshot RuinValleySnapshot(CampaignState state) => new(state.World,
         state.Script.Flags.GetValueOrDefault(RuinValleyCutRules.PermanentFlag), state.GameStats?.GetValueOrDefault(CutUsageStat) ?? 0, state.Party);
-    private bool RuinValleyCutPosition(CampaignState state) => _content.SixIslandEnabled &&
-        RuinValleyCutRules.SourcePositionMatches(state.World.Player, state.Script.Flags.GetValueOrDefault(RuinValleyCutRules.PermanentFlag));
+    private bool RuinValleyCutPosition(CampaignState state) => RuinValleyCutRules.SourcePositionMatches(state.World.Player, state.Script.Flags.GetValueOrDefault(RuinValleyCutRules.PermanentFlag));
     private Decision<CampaignState> DecideRuinValleyCut(CampaignState state, CampaignCommand command)
     {
         var intent = new FourIslandFieldIntent(new("six:cut:" + state.World.Revision), state.World.Revision);
@@ -59,7 +58,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState>? TryDottedHoleStep(CampaignState state, CampaignCommand command)
     {
-        if (!_content.SixIslandEnabled || command.Kind != "move" || !DottedHoleMap(state.World.Player.MapId)) return null;
+        if (command.Kind != "move" || !DottedHoleMap(state.World.Player.MapId)) return null;
         var (dx, dy) = Delta(command.Direction); var p = state.World.Player;
         if (_content.Maps[p.MapId].SourceBehaviorAt(p.X + dx, p.Y + dy) != DottedHoleSource.FallBehavior) return null;
         var result = DottedHoleFallRules.StepOntoHole(state.World, new(new("six:fall:" + state.World.Revision), state.World.Revision),

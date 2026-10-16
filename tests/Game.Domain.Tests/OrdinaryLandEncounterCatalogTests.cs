@@ -94,6 +94,29 @@ public sealed class OrdinaryLandEncounterCatalogTests
         Assert.Throws<ArgumentException>(() => new OrdinaryLandEncounterCatalog(tables, maps, Pokemon(table)));
     }
 
+    [TestMethod]
+    public void CatalogBoundProfilesAuthenticateFullLeadIdentifiersBeforeUsingFieldEffects()
+    {
+        var table = EarlyLandEncounterRules.Route1Table with { Map = new("map.loaded-grass") };
+        var pokemon = Pokemon(table);
+        pokemon = pokemon with { Species = pokemon.Species.ToImmutableDictionary(pair => pair.Key,
+            pair => pair.Value with { Ability1 = "ABILITY_RUN_AWAY" }) };
+        var definition = new OrdinaryLandEncounterCatalog(
+            new Dictionary<MapId, EarlyLandEncounterTable> { [table.Map] = table },
+            new Dictionary<MapId, IFieldMap> { [table.Map] = new TestMap(table.Map, 2) }, pokemon)[table.Map];
+        var state = new EarlyLandEncounterState(new(0), 2, RulesVersion: EarlyLandEncounterRules.FiveIslandRulesVersion);
+        var check = new EarlyLandEncounterCheck(table.Map, EncounterCheckTrigger.WalkingStepCompleted, 2, EncounterTileType.Land);
+        var profile = new EarlyLandEncounterProfile(RulesVersion: state.RulesVersion, LeadAbility: "ABILITY_RUN_AWAY");
+        var actual = EarlyLandEncounterRules.Check(state, definition, check, profile, new(42));
+        var neutral = EarlyLandEncounterRules.Check(state, definition, check, profile with { LeadAbility = "ABILITY_NONE" }, new(42));
+        Assert.AreEqual(neutral.GlobalRng, actual.GlobalRng);
+        Assert.AreEqual(neutral.State, actual.State);
+        Assert.Throws<ArgumentException>(() => EarlyLandEncounterRules.Check(state, definition, check,
+            profile with { LeadAbility = "ABILITY_NOT_LOADED" }, new(42)));
+        Assert.Throws<ArgumentException>(() => EarlyLandEncounterRules.Check(state, definition, check,
+            profile with { LeadHeldItem = "ITEM_NOT_LOADED" }, new(42)));
+    }
+
     internal static OrdinaryLandEncounterDefinition Bind(EarlyLandEncounterTable table, byte behavior) =>
         new OrdinaryLandEncounterCatalog(new Dictionary<MapId, EarlyLandEncounterTable> { [table.Map] = table },
             new Dictionary<MapId, IFieldMap> { [table.Map] = new TestMap(table.Map, behavior) }, Pokemon(table))[table.Map];

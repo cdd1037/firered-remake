@@ -11,10 +11,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretFightingDojoRegion FightingDojoRegion { get; }
-    public bool FightingDojoEnabled => FightingDojoRegion is not null;
-    public GamePokemonCatalog FightingDojoOwnership { get; }
-    public GameOpponentPokemonCatalog FightingDojoOpponents { get; }
-    public MachineCatalog FightingDojoMachines { get; }
     public FightingDojoTrainerCatalog FightingDojoTrainers { get; }
 
     private static void ValidateFightingDojoComposition(PretFightingDojoRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)

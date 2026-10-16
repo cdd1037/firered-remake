@@ -54,22 +54,13 @@ public static class SevenIslandTrainerPartyFactory
     {
         ValidateCatalog(trainers);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("seven_island_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
     public static TrainerPartyCreationResult Create(SevenIslandTrainerCatalog trainers,
         GameOpponentPokemonCatalog opponents, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("seven_island_trainer_catalog");
-        foreach (var member in trainer.Party)
-            if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("seven_island_trainer_species");
-        var source = opponents.Mechanics;
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        // Custom move replacement is applied after CreateMon, without changing its PID or OT draws.
-        return made with { Party = made.Party.Select((p, i) => trainer.Party[i].CustomMoves.IsEmpty ? p : p with {
-            Pokemon = p.Pokemon with { Moves = trainer.Party[i].CustomMoves.Select(m => new PokemonMoveSlot(m,
-                source.Catalog.Moves[m].Pp, source.Catalog.Moves[m].Pp)).ToImmutableArray() }
-        }).ToImmutableArray() };
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
     public static void ValidateCatalog(SevenIslandTrainerCatalog catalog)
     {

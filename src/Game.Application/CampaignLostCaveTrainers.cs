@@ -10,8 +10,7 @@ public sealed partial class CampaignSession
     private const string LostCaveSelphyActor = "LOCALID_LOST_CAVE_SELPHY";
     private const string LostCaveSelphyScene = "FiveIsland_LostCave_Room10_EventScript_FindSelphyScene";
     private const string LostCaveSelphySceneVariable = "VAR_MAP_SCENE_FIVE_ISLAND_LOST_CAVE_ROOM10";
-    private bool IsLostCaveTrainer(TrainerId trainer) => _content.LostCaveEnabled &&
-        _content.LostCaveTrainers?.Trainers.ContainsKey(trainer) == true;
+    private bool IsLostCaveTrainer(TrainerId trainer) => _content.LostCaveTrainers?.Trainers.ContainsKey(trainer) == true;
 
     private void RequireLostCaveTrainerOccurrence(CampaignState state, TrainerId trainer,
         ForestTrainerBattleDefinition source, bool noIntro)

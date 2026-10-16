@@ -19,7 +19,7 @@ public partial class CampaignView
     {
         if (!RegionalSignActive)
         {
-            if (before.SignMessage is { Cancelable: true } && _catalog.RegionalFlavorEnabled)
+            if (before.SignMessage is { Cancelable: true })
             {
                 _regionalSignClosedFrame = Engine.GetProcessFrames();
                 _held = null; _repeat = 0;

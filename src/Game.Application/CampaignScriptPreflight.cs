@@ -9,10 +9,6 @@ public sealed partial class CampaignSession
     private bool _preflightingStory;
     private CampaignState StartStory(CampaignState state,string program)
     {
-        if(_content.ViridianGymEnabled&&!_content.LeagueRivalEnabled&&program.StartsWith("Route22_EventScript_LateRival",StringComparison.Ordinal)&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22")==3)
-            throw new InvalidDataException("route22_league_rival_not_yet_available");
-        if(_content.NationalDexEnabled&&!_content.SeviiRubyEnabled&&NationalDexEnabledIn(state)&&program=="OneIsland_PokemonCenter_1F_EventScript_Celio")
-            throw new InvalidDataException("sevii_ruby_campaign_not_yet_available");
         if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
         state=BeginFieldItemService(state,program);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
@@ -47,11 +43,11 @@ public sealed partial class CampaignSession
                 var roofMenu=DepartmentRooftopSource.Pending(probe.Script,_content);
                 // The authenticated vending loop is transaction-owned; its repeated purchases
                 // are covered by bounded command tests rather than enumerating every wallet/Bag state.
-                if(_content.DepartmentRooftopEnabled && roofMenu?.Vending==true)continue;
+                if(roofMenu?.Vending==true)continue;
                 var sourceMenu=StoryMenuRules.Pending(probe.Script,_content);
                 var gridMenu=StoryGridMenuRules.Pending(probe.Script,_content);
                 bool billMenu=IsBillPreflightMenu(probe);
-                bool finiteLoop=sourceMenu is not null||gridMenu is not null||billMenu||RainbowFerryMenu(probe)||_content.SeviiRubyEnabled&&probe.Dialogue?.TextSymbol=="OneIsland_PokemonCenter_1F_Text_PleaseINeedYourHelp";
+                bool finiteLoop=sourceMenu is not null||gridMenu is not null||billMenu||RainbowFerryMenu(probe)||probe.Dialogue?.TextSymbol=="OneIsland_PokemonCenter_1F_Text_PleaseINeedYourHelp";
                 if(finiteLoop)
                 {
                     // Source topic/sighting menus can return to the same semantic state. Keep every
@@ -93,7 +89,7 @@ public sealed partial class CampaignSession
 
     private bool IsBillPreflightMenu(CampaignState state)
     {
-        if(!_content.BillEnabled||state.World.Player.MapId.Value!=BillSourcePresentation.Cottage||
+        if(state.World.Player.MapId.Value!=BillSourcePresentation.Cottage||
             state.Script.Wait?.Kind!=StoryWaitKind.MenuChoice||state.Script.Stack.IsEmpty)return false;
         var frame=state.Script.Stack[^1];var program=_content.FindProgram(frame.ProgramId);int index=frame.InstructionIndex-1;
         if(program is null||index<0||index>=program.Instructions.Length)return false;

@@ -12,14 +12,10 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretSevenIslandRegion SevenIslandRegion { get; }
-    public bool SevenIslandEnabled => SevenIslandRegion is not null;
     public SevenIslandFieldData SevenIslandField => SevenIslandRegion.Field;
-    public GamePokemonCatalog SevenIslandOwnership { get; }
-    public GameOpponentPokemonCatalog SevenIslandOpponents { get; }
     public SevenIslandTrainerCatalog SevenIslandTrainerParties { get; }
     public SevenIslandTrainerCatalog SevenIslandTrainers => SevenIslandTrainerParties;
-    public MachineCatalog SevenIslandMachines { get; }
-    public SevenIslandWaterEncounterCatalog SevenIslandWaterEncounters { get; }
+    public WaterEncounterCatalog SevenIslandWaterEncounters { get; }
     public SevenIslandItemsDocument SevenIslandItems { get; }
 
     private static void ValidateSevenIslandComposition(PretSevenIslandRegion region, SevenIslandTrainerCatalog trainers, SevenIslandItemsDocument items, PretStoryCompilation scripts)

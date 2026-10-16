@@ -10,15 +10,14 @@ public sealed partial class CampaignSession
 {
     private bool TryApplyPewterGymEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.PewterEnabled)return false;
-        if(effect.Opcode=="settrainerflag")
+        next=state;        if(effect.Opcode=="settrainerflag")
         {
             if(effect.Source.Path!="data/scripts/set_gym_trainers.inc"||effect.Source.Symbol!="EventScript_SetPewterGymTrainers"||
                 effect.Args.Length!=1||effect.Args[0]!="TRAINER_CAMPER_LIAM"||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))
                 throw new InvalidDataException("gym_trainer_flag_context_unsupported");
             next=state with{BattledTrainers=state.BattledTrainers.Add(PewterTrainerPartyFactory.Liam.Value)};return true;
         }
-        if(_content.PewterMachines is not {} machines)return false;
+        if(_content.Machines is not {} machines)return false;
         int Value(string token)=>token.StartsWith("VAR_",StringComparison.Ordinal)?state.Script.Variables.GetValueOrDefault(token):int.TryParse(token,out int n)?n:_content.TryConstant(token,out n)?n:throw new InvalidDataException("gym_item_value_missing: "+token);
         if(effect.Opcode=="bufferstdstring"&&effect.Args[1]=="STDSTRING_TM_CASE")
         {next=state with{TextBuffers=state.TextBuffers.SetItem(effect.Args[0],"TM CASE")};return true;}
@@ -41,7 +40,6 @@ public sealed partial class CampaignSession
     private string? ValidatePewterProgress(CampaignState state)
     {
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET");
-        if(!_content.PewterEnabled)return badge||state.Inventory?.Machines is not null?"save_pewter_profile_missing":null;
         if(HasUnimplementedBadge(state))return "save_badges_outside_pewter_scope";
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==PewterTrainerPartyFactory.Brock.Value&&h.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_BROCK")!=won)return "save_brock_badge_history_mismatch";
@@ -54,7 +52,7 @@ public sealed partial class CampaignSession
         bool aideHidden=state.Script.Flags.GetValueOrDefault("FLAG_HIDE_PEWTER_CITY_RUNNING_SHOES_GUY");
         if(runningShoes&&!won||won&&(shoesSceneComplete!=runningShoes||aideHidden!=runningShoes))
             return "save_running_shoes_progress_mismatch";
-        var machineError=MachineRules.Validate(_content.PewterMachines!,state.Inventory);if(machineError is not null)return machineError;
+        var machineError=MachineRules.Validate(_content.Machines!,state.Inventory);if(machineError is not null)return machineError;
         bool got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM39_FROM_BROCK");
         bool hasCase=(state.Inventory?.KeyItems??[]).Any(s=>s.Item==MachineRules.TmCaseId);
         int tmQuantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],MachineRules.Tm39Id);

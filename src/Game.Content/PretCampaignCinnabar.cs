@@ -11,15 +11,12 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string CinnabarContentProfile="firered-cinnabar-campaign-v1";
-    public PretCinnabarRegion? CinnabarRegion{get;}
+    public PretCinnabarRegion CinnabarRegion{get;}
     public PretCinnabarArt? CinnabarArt{get;}
     public PretCinnabarPresentation? CinnabarPresentation{get;}
     public PretCinnabarItemsDocument? CinnabarItems{get;}
-    public GamePokemonCatalog? CinnabarOwnership{get;}
-    public GameOpponentPokemonCatalog? CinnabarOpponents{get;}
     public CinnabarTrainerCatalog? CinnabarTrainerParties{get;}
-    public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
-    public bool CinnabarEnabled=>CinnabarRegion is not null;
+    public WaterEncounterCatalog? CinnabarWaterEncounters{get;}
 
 
     private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)

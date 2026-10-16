@@ -7,7 +7,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -42,10 +41,8 @@ REQUIRED_PATHS = frozenset([
     *[f'graphics/battle_terrain/{folder}/terrain.{ext}' for folder in ('building', 'sand') for ext in ('png', 'bin')],
     *[v[3] for v in VARIANTS],
 ])
-_spec = importlib.util.spec_from_file_location('city_terrain_ui_pixels', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-ui = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(ui)
-canonical, safe_path = ui.inputs.canonical, ui.inputs.safe_path
+import ui_tiles as ui
+from presentation_source import canonical, safe as safe_path
 
 
 def load_inputs(lock_path, project_path, raw, source_repo=None):

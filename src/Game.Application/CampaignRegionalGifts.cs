@@ -27,13 +27,12 @@ public sealed partial class CampaignSession
             captures.Any(c => c is not null && gifts.Contains(c.InstanceId))) return "save_gift_identity_conflict";
         return null;
     }
-    private bool InEeveeScript(CampaignState state) => _content.RegionalServicesEnabled && state.World.Player.MapId.Value == EeveeMap &&
+    private bool InEeveeScript(CampaignState state) => state.World.Player.MapId.Value == EeveeMap &&
         state.LastTalked is { } actor && state.Actors.TryGetValue(actor, out var value) && value.ScriptId == EeveeBallScript;
 
     private string? ValidateEeveeGift(CampaignState state)
     {
         bool got = state.Script.Flags.GetValueOrDefault("FLAG_GOT_EEVEE"), hidden = state.Script.Flags.GetValueOrDefault("FLAG_HIDE_EEVEE_BALL");
-        if (!_content.RegionalServicesEnabled) return state.EeveeGift is not null || got || hidden ? "save_eevee_profile_missing" : null;
         if ((state.EeveeGift is not null) != got || hidden != got) return "save_eevee_flag_inconsistent";
         if (state.EeveeGift is not { } gift) return null;
         if (gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId || gift.Ivs is null || gift.Ivs.Values.Any(v => v is < 0 or > 31)) return "save_eevee_origin_invalid";
@@ -56,7 +55,7 @@ public sealed partial class CampaignSession
     private bool TryApplyRegionalGiftEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.RegionalServicesEnabled || effect.Opcode != "givemon" || effect.Args.IsDefaultOrEmpty ||
+        if (effect.Opcode != "givemon" || effect.Args.IsDefaultOrEmpty ||
             effect.Args[0] is not ("SPECIES_EEVEE" or "133")) return false;
         if (!InEeveeScript(state) || effect.Source.Path != EeveeSource || effect.Source.Symbol != EeveeBallScript ||
             !effect.Args.SequenceEqual(new[] { "SPECIES_EEVEE", "25" }) || state.EeveeGift is not null ||
@@ -104,7 +103,7 @@ public sealed partial class CampaignSession
     public long? PendingGiftInstanceId => State.GiftDelivery is null ? null : PendingScriptGiftInstanceId(State);
 
     private long? PendingScriptGiftInstanceId(CampaignState state) => InGameCornerPrizeScript(state) ? PendingPrizeGiftInstanceId(state) : InFossilLabScript(state) ? PendingFossilGiftInstanceId(state) : InDojoGiftScript(state) ? state.DojoGift?.InstanceId : InLaprasScript(state) ? state.LaprasGift?.InstanceId : InEeveeScript(state) ? state.EeveeGift?.InstanceId :
-        _content.MagikarpEnabled && InMagikarpScript(state) ? state.MagikarpGift?.InstanceId : null;
+        InMagikarpScript(state) ? state.MagikarpGift?.InstanceId : null;
 
     private bool TryApplySharedScriptGiftEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
@@ -112,7 +111,7 @@ public sealed partial class CampaignSession
         bool handles = effect.Opcode is "getpartysize" or "bufferboxname" or "subvar" ||
             effect.Opcode == "special" && a[0] == "ChangeBoxPokemonNickname" ||
             effect.Opcode == "specialvar" && a[1] is "ShouldShowBoxWasFullMessage" or "GetPCBoxToSendMon";
-        if (!handles || !(_content.MagikarpEnabled && InMagikarpScript(state) || InEeveeScript(state) || InLaprasScript(state) || InDojoGiftScript(state) || InFossilLabScript(state) || InGameCornerPrizeScript(state))) return false;
+        if (!handles || !(InMagikarpScript(state) || InEeveeScript(state) || InLaprasScript(state) || InDojoGiftScript(state) || InFossilLabScript(state) || InGameCornerPrizeScript(state))) return false;
         if (state.GiftDelivery is null || PendingScriptGiftInstanceId(state) is not { } instanceId)
             throw new InvalidDataException("script_gift_pending_missing");
         int Value(string token) => int.TryParse(token, out int n) ? n : state.Script.Variables.TryGetValue(token, out int v) ? v :

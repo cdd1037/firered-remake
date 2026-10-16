@@ -49,7 +49,7 @@ public sealed class PretTownMap
             var project=Path.GetFullPath(projectRoot);        var generated=Path.Combine(project,"content/generated/ui/town-map");
         byte[] Pinned(string root, string relative)
         {
-            var path = SafeFile(root, relative);
+            var path = GeneratedResourceFile.SafePath(root, relative);
             var info = new FileInfo(path);
             Require(info.Exists, "Town Map file size differs: " + relative);
             return File.ReadAllBytes(path);
@@ -129,21 +129,6 @@ public sealed class PretTownMap
         if(x<0 || x>=Layout.Columns || y<0 || y>=Layout.Rows)throw new ArgumentOutOfRangeException(nameof(x),"Town Map cursor outside Kanto grid.");
     }
     private static void Require(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
-    private static string SafeFile(string root,string path)
-    {
-        if(string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(p=>p is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Town Map path: "+path);
-        for(var cursor=new DirectoryInfo(root);cursor is not null;cursor=cursor.Parent)
-            if(cursor.LinkTarget is not null)throw new InvalidDataException("Town Map root symlink is unsupported.");
-        var target=root;
-        foreach(var segment in path.Split('/'))
-        {
-            target=Path.Combine(target,segment);
-            if(new FileInfo(target).LinkTarget is not null || new DirectoryInfo(target).LinkTarget is not null)
-                throw new InvalidDataException("Town Map symlink is unsupported: "+path);
-        }
-        return target;
-    }
 }
 
 public sealed record TownMapPoint(int X,int Y);

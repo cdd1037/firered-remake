@@ -24,7 +24,7 @@ public partial class CampaignView
     private int _silphElevatorDistance, _silphElevatorDirection, _silphElevatorDuration;
     private bool _silphElevatorDing;
     private static readonly string[] SilphFloorLabels = ["11F", "10F", "9F", "8F", "7F", "6F", "5F", "4F", "3F", "2F", "1F", "EXIT"];
-    private bool SilphElevatorMenuActive => _catalog is { SilphEnabled: true } && _session?.State.SilphElevator?.MenuDefault is not null &&
+    private bool SilphElevatorMenuActive => _catalog is not null && _session?.State.SilphElevator?.MenuDefault is not null &&
         _session.State.Script.Wait?.Kind == StoryWaitKind.Presentation && _session.State.World.Player.MapId == SilphElevatorId;
     private bool SilphElevatorMenuVisible => SilphElevatorMenuActive && FieldTextComplete &&
         (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length);
@@ -41,7 +41,7 @@ public partial class CampaignView
         if (after.SilphPad is not { } pad) { _silphPad = null; return false; }
         if (_silphPad?.Pad.PresentationId == pad.PresentationId) return true;
         if (before is null) throw new InvalidDataException("A transient Silph pad cannot be restored as a player save.");
-        if (!_catalog.SilphEnabled || before.World.Player != pad.From || after.World.Player != pad.To)
+        if (before.World.Player != pad.From || after.World.Player != pad.To)
             throw new InvalidDataException("Silph pad presentation endpoints differ.");
         _silphPad = new() { Pad = pad, Origin = before };
         _held = null; _repeat = 0; _tracks.Clear(); _fade = 0;
@@ -49,7 +49,6 @@ public partial class CampaignView
     }
     private bool ProcessSilphPresentation(double delta)
     {
-        if (!_catalog.SilphEnabled) return false;
         if (!double.IsFinite(delta) || delta < 0) throw new ArgumentOutOfRangeException(nameof(delta));
         if (_silphPad is { } animation)
         {
@@ -85,7 +84,6 @@ public partial class CampaignView
     }
     private void SynchronizeSilphPresentation(CampaignState? before, CampaignState after)
     {
-        if (!_catalog.SilphEnabled) return;
         if (before is null || before.World.Player.MapId != after.World.Player.MapId)
         {
             _silphElevatorDistance = 0; _silphElevatorDuration = 0; _silphElevatorTicks = 0; _silphElevatorDing = false;
@@ -130,7 +128,7 @@ public partial class CampaignView
         MouseSelect(point, ref _silphMenuRow, 7, 8, 8, SilphMenuWidth, 14);
     private void DrawSilphElevatorMenu()
     {
-        if (!_catalog.SilphEnabled || _session.State.World.Player.MapId != SilphElevatorId) return;
+        if (_session.State.World.Player.MapId != SilphElevatorId) return;
         if (_session.State.SilphElevator?.FloorWindowVisible == true)
         {
             _battleSkin.DrawUserFrame(this, new(168, 0, 72, 48)); SourceText(_sourceNormal, new(176, 10), "Now on:");
@@ -150,7 +148,7 @@ public partial class CampaignView
     }
     private bool DrawSilphElevatorLayer(Texture2D original, Vector2 camera, int layer)
     {
-        if (!_catalog.SilphEnabled || _session.State.World.Player.MapId != SilphElevatorId || _silphElevatorDistance == 0) return false;
+        if (_session.State.World.Player.MapId != SilphElevatorId || _silphElevatorDistance == 0) return false;
         int count = Math.Min(SilphSourcePresentation.ElevatorWindowCycles(_silphElevatorDistance), Math.Max(0, ((int)Math.Floor(_silphElevatorTicks) - 1) / 6));
         int phase = count % 3; if (_silphElevatorDirection != 0) phase = (3 - phase) % 3;
         for (int y = 0; y < _art.Source.Height; y++) for (int x = 0; x < _art.Source.Width; x++)

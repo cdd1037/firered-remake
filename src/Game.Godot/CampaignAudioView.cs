@@ -37,18 +37,18 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
         outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
         queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
-                if(_catalog.PowerPlantEnabled)Write("powerPlantAudioCatalog",new{audibleOutputVerified=false,recordedFallback=false});
-                if(_catalog.SilphEnabled)Write("silphAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.SurfEnabled)Write("surfAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.SafariEnabled)Write("safariAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.FuchsiaRouteEnabled)Write("fuchsiaRouteAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.RocketHideoutEnabled)Write("rocketHideoutAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.CeladonGymEnabled)Write("celadonGymAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.CeladonApproachEnabled)Write("celadonApproachAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.RockTunnelEnabled)Write("rockTunnelAudioCatalog",new{audibleOutputVerified=false});
-                if(_catalog.Route11Enabled)Write("route11AudioCatalog",new{                    recordedFallback=false,audibleOutputVerified=false});
+                Write("powerPlantAudioCatalog",new{audibleOutputVerified=false,recordedFallback=false});
+                Write("silphAudioCatalog",new{audibleOutputVerified=false});
+                Write("surfAudioCatalog",new{audibleOutputVerified=false});
+                Write("safariAudioCatalog",new{audibleOutputVerified=false});
+                Write("fuchsiaRouteAudioCatalog",new{audibleOutputVerified=false});
+                Write("snorlaxAudioCatalog",new{audibleOutputVerified=false});
+                Write("pokemonTowerAudioCatalog",new{audibleOutputVerified=false});
+                Write("rocketHideoutAudioCatalog",new{audibleOutputVerified=false});
+                Write("celadonGymAudioCatalog",new{audibleOutputVerified=false});
+                Write("celadonApproachAudioCatalog",new{audibleOutputVerified=false});
+                Write("rockTunnelAudioCatalog",new{audibleOutputVerified=false});
+                Write("route11AudioCatalog",new{                    recordedFallback=false,audibleOutputVerified=false});
             }
             catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException or NotSupportedException)
             {
@@ -129,20 +129,20 @@ public partial class CampaignView
         if(s.Battle is {} lab)return lab.Phase==CampaignBattlePhase.Results&&lab.State.Outcome==FirstBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer)
         {
-            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value);
+            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value);
             bool victory=trainer.Combat.Phase==ForestTrainerCombatPhase.Ended&&trainer.Combat.Battle.Outcome==WildBattleOutcome.Won;
             return victory?(leader?"MUS_VICTORY_GYM_LEADER":"MUS_VICTORY_TRAINER"):(leader?"MUS_VS_GYM_LEADER":"MUS_VS_TRAINER");
         }
         if(s.WildBattle is {} wild)
             return wild.Capture is not null?"MUS_CAUGHT":wild.Phase==CampaignBattlePhase.Results&&wild.State.Outcome==WildBattleOutcome.Won?"MUS_VICTORY_WILD":
                 SourceScriptedEncounterRegistry.Find(wild.Frame?.WildEncounter?.SourceTable)?.Legendary==true?"MUS_VS_LEGEND":
-                _catalog.SeafoamEnabled&&wild.Frame?.WildEncounter?.Seafoam?.Kind==SeafoamEncounterKind.Articuno?"MUS_VS_LEGEND":
-                _catalog.PowerPlantEnabled&&wild.Frame?.WildEncounter?.PowerPlant?.Kind==PowerPlantEncounterKind.Zapdos?"MUS_VS_LEGEND":
-                _catalog.EventIslandsEnabled&&wild.EventIslandReceipt is {} eventIsland?(eventIsland.Origin.Kind==EventIslandEncounterKind.Deoxys?"MUS_VS_DEOXYS":"MUS_VS_LEGEND"):
-                _catalog.CeruleanCaveEnabled&&wild.Frame?.WildEncounter?.CeruleanCave?.Kind==CeruleanCaveEncounterKind.Mewtwo?"MUS_VS_MEWTWO":"MUS_VS_WILD";
-        if(_catalog.SeafoamEnabled&&s.IsSurfing&&_catalog.SeafoamRegion.NewMaps.ContainsKey(s.World.Player.MapId))return s.Music;
-        if(_catalog.SsAnneEnabled&&s.World.Player.MapId.Value==SsAnneSourceDeparture.Exterior&&s.Music=="MUS_SURF")return s.Music;
-        if(_catalog.CityServicesEnabled&&s.IsCycling&&(_audioFieldMusic is null||_audioFieldMusic==_catalog.MapDefinition(s.World.Player.MapId).Music))return "MUS_CYCLING";
+                wild.Frame?.WildEncounter?.Seafoam?.Kind==SeafoamEncounterKind.Articuno?"MUS_VS_LEGEND":
+                wild.Frame?.WildEncounter?.PowerPlant?.Kind==PowerPlantEncounterKind.Zapdos?"MUS_VS_LEGEND":
+                wild.EventIslandReceipt is {} eventIsland?(eventIsland.Origin.Kind==EventIslandEncounterKind.Deoxys?"MUS_VS_DEOXYS":"MUS_VS_LEGEND"):
+                wild.Frame?.WildEncounter?.CeruleanCave?.Kind==CeruleanCaveEncounterKind.Mewtwo?"MUS_VS_MEWTWO":"MUS_VS_WILD";
+        if(s.IsSurfing&&_catalog.SeafoamRegion.NewMaps.ContainsKey(s.World.Player.MapId))return s.Music;
+        if(s.World.Player.MapId.Value==SsAnneSourceDeparture.Exterior&&s.Music=="MUS_SURF")return s.Music;
+        if(s.IsCycling&&(_audioFieldMusic is null||_audioFieldMusic==_catalog.MapDefinition(s.World.Player.MapId).Music))return "MUS_CYCLING";
         return _audioFieldMusic??_catalog.MapDefinition(s.World.Player.MapId).Music;
     }
 
@@ -182,7 +182,7 @@ public partial class CampaignView
                 case "fadeinbgm":
                     int fadeInSpeed=int.Parse(effect.Args[0],System.Globalization.CultureInfo.InvariantCulture);
                     _sourceAudio.FadeInMusic(16*(fadeInSpeed==0?4:4*fadeInSpeed)/SourceAudioFramesPerSecond);break;
-                case "showmonpic" when _catalog.BillEnabled&&after.World.Player.MapId.Value==BillSourcePresentation.Cottage:
+                case "showmonpic" when after.World.Player.MapId.Value==BillSourcePresentation.Cottage:
                     SourceCrySymbol(effect.Args[0]);break;
                 case "playse":SourceSound(effect.Args[0]);break;
                 case "playfanfare":SourceSound(effect.Args[0],fanfare:true);break;
@@ -227,15 +227,14 @@ public partial class CampaignView
             if(lab.Events[lab.EventIndex] is FirstBattleStartedEvent)
             {if(_battlePage==1)SourceCry(lab.DisplayOpponent);else if(_battlePage==2)SourceCry(lab.DisplayPlayer);}
         }
-        else if(_catalog.VermilionGymEnabled&&_session.State.ForestTrainerBattle is
+        else if(_session.State.ForestTrainerBattle is
             {CurrentTrainerEvent:ForestTrainerOpponentReplacedEvent replacement} replacing)
         {
             bool forcedOpponent=replacing.Presentation.Events.OfType<WildBattleForcedOutEvent>()
                 .Any(e=>e.TrainerBattle&&e.Target==WildBattleSide.Opponent&&e.Sequence<replacement.Sequence);
             // Match the real message sequence: a living ordinary switch first withdraws;
             // a faint replacement or forced replacement has its send-out page immediately.
-            int page=!forcedOpponent&&!SourceBatonSwitchBefore(replacing.Presentation,WildBattleSide.Opponent,replacement.Sequence)&&
-                _catalog.CeruleanEnabled&&replacement.Previous.Pokemon.CurrentHp>0
+            int page=!forcedOpponent&&!SourceBatonSwitchBefore(replacing.Presentation,WildBattleSide.Opponent,replacement.Sequence)&&replacement.Previous.Pokemon.CurrentHp>0
                 ? WildSourcePages("sText_Trainer1WithdrewPkmn",("B_BUFF1",PresentedBattleSpeciesName(replacement.Previous.Pokemon.SourceSpeciesId))).Length:0;
             if(_wildPage==page&&_audioTrainerOneShots.Add($"{replacing.Id}:opponent-replaced:{replacement.Sequence}"))
                 SourceCry(replacement.Replacement.Pokemon);
@@ -266,11 +265,11 @@ public partial class CampaignView
     }
     private void ProcessSourceLeaderIntroAudio()
     {
-        if(_sourceAudio is null||_audioFaulted||!_catalog.PewterEnabled||!FieldDialogueVisible||
+        if(_sourceAudio is null||_audioFaulted||!FieldDialogueVisible||
             _session.State.ForestTrainerBattle is not {Stage:CampaignForestTrainerStage.Intro} trainer||
             _session.State.Dialogue is not {} dialogue||
             !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||
-              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value)||_leagueTrainers.ContainsKey(trainer.Trainer.Value)))return;
+              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value)||_leagueTrainers.ContainsKey(trainer.Trainer.Value)))return;
         // The admitted source intro controls are at page end. Waiting for the printer's
         // EOS step includes its final glyph delay; page entry or last glyph is too early.
         string raw=dialogue.Pages[dialogue.Page];
@@ -285,10 +284,10 @@ public partial class CampaignView
 
     private void ProcessSourceLeaderBadgeAudio()
     {
-        if(!_catalog.VermilionGymEnabled||_session.State.ForestTrainerBattle is not
+        if(_session.State.ForestTrainerBattle is not
             {Stage:CampaignForestTrainerStage.Finished,Combat.Battle.Outcome:WildBattleOutcome.Won} trainer||
             trainer.Presentation is not {Phase:CampaignBattlePhase.Results} battle||battle.PageIndex<0||battle.PageIndex>=battle.Pages.Length||
-            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value)||_leagueTrainers.ContainsKey(trainer.Trainer.Value)))return;
+            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value)||_leagueTrainers.ContainsKey(trainer.Trainer.Value)))return;
         string raw=battle.Pages[battle.PageIndex].Text;
         int cue=raw.IndexOf("{PLAY_BGM}{MUS_OBTAIN_BADGE}",StringComparison.Ordinal);
         if(cue<0||!raw.Contains("{PAUSE_MUSIC}",StringComparison.Ordinal)||!raw.Contains("{RESUME_MUSIC}",StringComparison.Ordinal))return;

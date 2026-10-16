@@ -11,8 +11,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId SabrinaMachine=new("pret:ITEM_TM04");
     private bool TryApplySaffronGymEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.SaffronGymEnabled)return false;
-        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetSaffronGymTrainers")
+        next=state;        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetSaffronGymTrainers")
         {
             if(effect.Args.Length!=1||effect.Args[0] is not("TRAINER_PSYCHIC_JOHAN" or "TRAINER_PSYCHIC_TYRON" or "TRAINER_PSYCHIC_CAMERON" or "TRAINER_PSYCHIC_PRESTON" or "TRAINER_CHANNELER_AMANDA" or "TRAINER_CHANNELER_STACY" or "TRAINER_CHANNELER_TASHA")||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET"))
                 throw new InvalidDataException("saffron_gym_trainer_flag_context");
@@ -30,7 +29,7 @@ public sealed partial class CampaignSession
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
+            var machines=_content.Machines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET")||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS")||!(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==SaffronGymTrainerPartyFactory.Sabrina.Value&&h.Outcome==WildBattleOutcome.Won))throw new InvalidDataException("saffron_gym_tm_reward_context");
             if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(machines,inventory,SabrinaMachine)?1:0;
@@ -44,7 +43,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateSaffronGymProgress(CampaignState state)
     {
-        if(!_content.SaffronGymEnabled)return state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_SABRINA")||state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET")||state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM04_FROM_SABRINA")||OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],SabrinaMachine)!=0?"save_saffron_gym_profile_missing":null;
         if(state.World.Player.MapId.Value=="map.saffron-city-gym"&&!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS"))return "save_saffron_gym_rocket_blockade";
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET");
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==SaffronGymTrainerPartyFactory.Sabrina.Value&&h.Outcome==WildBattleOutcome.Won);

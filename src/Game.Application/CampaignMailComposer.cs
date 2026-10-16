@@ -41,7 +41,7 @@ public sealed partial class CampaignSession
             if (menu.TargetInstanceId is not null && (menu.TargetInstanceId != command.TargetInstanceId || menu.TargetPartyIndex != command.PartyIndex))
                 return No("held_item_target_stale");
             if (SourceMailComposerRules.CheckGive(_content.EarlyShop, state.Inventory, state.Mail ?? SourceMailState.Empty,
-                state.Party, command.PartyIndex, (ushort)definition.SourceItemId, command.Choice == 1, _content.PewterMachines) is {} error) return No(error);
+                state.Party, command.PartyIndex, (ushort)definition.SourceItemId, command.Choice == 1, _content.Machines) is {} error) return No(error);
         }
         return new(CommandStatus.Accepted, state with { MailComposer = new("mail:" + (Revision + 1), 0,
             preview ? CampaignMailComposePhase.Preview : CampaignMailComposePhase.Edit,
@@ -92,7 +92,7 @@ public sealed partial class CampaignSession
         var author = SourceMailComposerRules.CreateAuthor(_content.MailComposer!, state.PlayerName, state.TrainerId);
         var result = SourceMailComposerRules.Give(_content.EarlyShop!, _content.MailComposer!, MailSelection(state),
             state.Inventory!, state.Mail ?? SourceMailState.Empty, state.Party, draft.PartyIndex,
-            draft.ItemId, draft.Words, author, draft.ReplaceConfirmed, _content.PewterMachines);
+            draft.ItemId, draft.Words, author, draft.ReplaceConfirmed, _content.Machines);
         if (!result.Succeeded) return No(result.Error!);
         return new(CommandStatus.Accepted, state with { MailComposer = null, Mail = result.State, Party = result.Party,
             Inventory = result.Inventory,

@@ -22,16 +22,47 @@ public static class TrainerPartyFactory
         return CreateValidated(trainer, pokemon, rng);
     }
 
-    // Both bounded trainer profiles validate their own roster before reaching this unchanged
-    // source construction path. Sharing it does not widen the public lab catalog contract.
+    /// <summary>Shared ordinary trainer entry. Region catalogs retain encounter occurrences;
+    /// the party definition supplies PID/name hashing, IVs, held items and move format.</summary>
+    public static TrainerPartyCreationResult Create(IReadOnlyDictionary<TrainerId, TrainerDefinition> trainers,
+        GameOpponentPokemonCatalog opponents, TrainerId trainerId, RngState rng)
+    {
+        ArgumentNullException.ThrowIfNull(trainers);
+        ArgumentNullException.ThrowIfNull(opponents);
+        if (!trainers.TryGetValue(trainerId, out var trainer))
+            throw new ArgumentException("trainer_party_id");
+        if (trainer.Party.Any(member => !opponents.Catalog.Species.ContainsKey(member.Species)))
+            throw new ArgumentException("trainer_party_opponent_species");
+        return CreateValidated(trainer, opponents.Mechanics.Catalog, rng, opponents.Mechanics);
+    }
+
+    public static int BasePrize(TrainerDefinition trainer)
+    {
+        ArgumentNullException.ThrowIfNull(trainer);
+        if (trainer.Party.IsDefaultOrEmpty || trainer.BaseMoney < 0)
+            throw new ArgumentException("trainer_prize_definition");
+        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+    }
+
+    // Regional catalogs retain battle identity. This shared construction path owns
+    // the source RNG and both natural/custom party formats.
     internal static TrainerPartyCreationResult CreateValidated(TrainerDefinition trainer, PokemonCatalog pokemon, RngState rng, SourceMechanicsCatalog? source = null)
     {
+        ArgumentNullException.ThrowIfNull(trainer);
+        ArgumentNullException.ThrowIfNull(pokemon);
+        if (trainer.Party.IsDefaultOrEmpty || trainer.Party.Length > 6 || trainer.PartyFlags is < 0 or > 3)
+            throw new ArgumentException("trainer_party_definition");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) throw new NotSupportedException("Unsupported RNG algorithm.");
         if (source is not null && !ReferenceEquals(source.Catalog, pokemon)) throw new ArgumentException("Source mechanics proof belongs to a different catalog.");
         foreach (var member in trainer.Party)
         {
             if (!pokemon.Species.TryGetValue(member.Species, out var species) || species.SourceSpeciesId != member.SourceSpeciesId)
                 throw new ArgumentException("Trainer party refers to missing or inconsistent Pokemon content.");
+            if ((trainer.PartyFlags & 1) != 0 && (member.CustomMoves.IsDefaultOrEmpty ||
+                member.CustomMoves.TakeWhile(move => move.Value != "pret:MOVE_NONE").Any(move =>
+                    !pokemon.Moves.TryGetValue(move, out var definition) ||
+                    !Game.Domain.WildBattle.SourceMoveDefinitionRules.IsValid(definition))))
+                throw new ArgumentException("trainer_party_custom_moves");
         }
         if (rng.Cursor > ulong.MaxValue - (ulong)trainer.Party.Length * 2)
             throw new OverflowException("RNG cursor cannot accommodate the minimum trainer OT draws.");
@@ -67,7 +98,11 @@ public static class TrainerPartyFactory
             var created = source is null ? PokemonFactory.Create(pokemon, request, rng) : SourcePokemonFactory.Create(source, request, rng);
             if (created.Rng != rng || !created.Trace.IsEmpty)
                 throw new InvalidOperationException("Fixed Pokemon creation unexpectedly consumed RNG.");
-            result.Add(new(created.Pokemon, member.HeldItem));
+            var instance = created.Pokemon;
+            if ((trainer.PartyFlags & 1) != 0)
+                instance = instance with { Moves = member.CustomMoves.TakeWhile(move => move.Value != "pret:MOVE_NONE")
+                    .Select(move => new PokemonMoveSlot(move, pokemon.Moves[move].Pp, pokemon.Moves[move].Pp)).ToImmutableArray() };
+            result.Add(new(instance, member.HeldItem));
         }
         var createdParty = new TrainerPartyCreationResult(trainer, result.MoveToImmutable(), rng, trace.ToImmutable());
         return createdParty with { Roster = TrainerEncounterRoster.Create(pokemon, createdParty) };

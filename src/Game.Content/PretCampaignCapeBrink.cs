@@ -12,7 +12,7 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretCapeBrinkTutor CapeBrinkTutor { get; }
-    public CapeBrinkWaterEncounterCatalog CapeBrinkWaterEncounters { get; }
+    public WaterEncounterCatalog CapeBrinkWaterEncounters { get; }
     private ImmutableArray<ItemfinderUnderfoot> CapeBrinkUnderfootItems { get; }
 
     private static void ValidateCapeBrinkComposition(PretCapeBrinkTutor source,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)

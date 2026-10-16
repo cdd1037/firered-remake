@@ -34,42 +34,16 @@ public partial class CampaignView
     private bool IsExtendedFieldTarget(ItemId item) =>
         IsFieldPpBoost(item) || IsFieldVitamin(item) || IsFieldEvolution(item) ||
         FieldMedicineEffectFor(item) is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp ||
-        _catalog.MtMoonEnabled && EarlyItem(item)?.UseSupport == EarlyShopUseSupport.DeferredRareCandy;
+        EarlyItem(item)?.UseSupport == EarlyShopUseSupport.DeferredRareCandy;
     private bool MtMoonTargetActive => _fieldMedicineTargetOpen && IsExtendedFieldTarget(_mtMoonTargetItem);
 
     private void LoadMtMoonPresentation()
     {
         if (_catalog.MtMoonPokemon is not { } source) return;
-        Image Decode(byte[] bytes, int width, int height)
-        {
-            var image = new Image();
-            if (image.LoadPngFromBuffer(bytes) != Error.Ok) { image.Dispose(); throw new InvalidDataException("Invalid MtMoon PNG."); }
-            image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != width || image.GetHeight() != height)
-            { image.Dispose(); throw new InvalidDataException("MtMoon source pixels differ."); }
-            return image;
-        }
-        foreach (var sprite in source.Sprites)
-        {
-            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var foot in source.Footprints)
-        {
-            using var image = Decode(source.ReadFootprintTexture(foot.SourceSpeciesId), 16, 16);
-            _route22Footprints.Add(foot.SourceSpeciesId, ImageTexture.CreateFromImage(image));
-        }
-        foreach (var icon in source.Icons)
-        {
-            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32);
-            var rgba = image.GetData();
-            // Match the existing storage adapter's source RGB5 display expansion.
-            for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
-            using var display = Image.CreateFromData(32, 32, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), ImageTexture.CreateFromImage(display));
-        }
+
+        RegisterPokemonSprites(source);
+
+        RegisterPokemonIcons(source);
         foreach (var asset in PretMtMoonTrainerArt.Load(_root))
         {
             using var image = NativeImages.LoadPng(asset.Png, 64, 64);
@@ -196,7 +170,7 @@ public partial class CampaignView
     }
     private bool MtMoonSilentEvent(CampaignWildBattle battle) => WildCurrentEvent(battle) is { } current && RockTunnelWildMessage(current) is null && MtMoonWildMessage(battle, current) is { Symbol.Length: 0 };
 
-    private ForestMessage? MtMoonWildMessage(CampaignWildBattle battle, WildBattleEvent current) => !_catalog.MtMoonEnabled ? null : current switch
+    private ForestMessage? MtMoonWildMessage(CampaignWildBattle battle, WildBattleEvent current) => current switch
     {
         WildBattleMtMoonVolatileEvent { Volatile: "charge", Reason: "move" } charge => new("sText_PkmnChargingPower", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(charge.Side))),
         WildBattleMtMoonVolatileEvent { Volatile: "water-sport", Reason: "move" } => new("sText_FireWeakened"),

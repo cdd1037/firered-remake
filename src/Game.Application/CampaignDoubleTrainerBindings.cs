@@ -21,7 +21,6 @@ public sealed partial class CampaignSession
     {
         var trainers = ImmutableDictionary.CreateBuilder<TrainerId, TrainerDefinition>();
         var scripts = ImmutableDictionary.CreateBuilder<string, DoubleTrainerOccurrence>(StringComparer.Ordinal);
-        if (!_content.PresetDoublesEnabled) return new(trainers.ToImmutable(), scripts.ToImmutable());
         var actors = _content.Maps.Keys.SelectMany(map => _content.MapDefinition(map).Actors.Select(actor =>
             new TrainerActorLink(map, actor.LocalId, actor.SourceLocalId, actor.ScriptId)))
             .GroupBy(actor => actor.Script, StringComparer.Ordinal)

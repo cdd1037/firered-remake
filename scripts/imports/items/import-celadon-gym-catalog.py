@@ -8,31 +8,17 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-from item_catalog import item_definition as shared_item, inventory_item, item_json
+from item_catalog import item_definition as shared_item, item_json
 
 import argparse,json,pathlib,re,sys
 import pokemon_import as pokemon
-from pokemon_import import learn_rows
-from pokemon_import_io import safe, unique_pairs, load_recipe, read_sources
+from pokemon_presentation import convert as presentation_outputs
+from pokemon_import_io import safe, load_recipe, read_sources
 from image_io import indexed_png, png
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
-import sys
-sys.path.insert(0, str(ROOT / 'scripts/lib'))
-from machine_catalog import load_catalog, machine_reference, compatibility_reference, admission_view, admission_species
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
-PROFILE='firered-celadon-gym-pokemon-v1'
-NEW_SPECIES=('Vileplume','Victreebel','Exeggcute','Tangela')
-ART_SPECIES=(('Vileplume',45),('Victreebel',71),('Exeggcute',102),('Tangela',114))
-TEACHING_MOVES=('MOVE_GIGA_DRAIN',)
-TRAINERS=('TRAINER_LASS_KAY','TRAINER_BEAUTY_BRIDGET','TRAINER_PICNICKER_TINA','TRAINER_BEAUTY_TAMIA','TRAINER_BEAUTY_LORI','TRAINER_LASS_LISA','TRAINER_COOLTRAINER_MARY','TRAINER_LEADER_ERIKA')
-def source_symbol(name):return name.upper()
-def source_stem(name):return name.lower()
 def canonical(data):return (json.dumps(data,sort_keys=True,separators=(',',':'),ensure_ascii=False, default=item_json)+'\n').encode()
-
-
-def read_json(path):return json.loads(safe(path).read_bytes(),object_pairs_hook=unique_pairs)
 
 
 def item_outputs(lock,sources,project):
@@ -46,9 +32,6 @@ def item_outputs(lock,sources,project):
     def ident(s):return dict(value='pret:'+s)
     def constant(path,symbol):
         m=match(path,r'^#define '+symbol+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(path,symbol,m));return int(m[1])
-    target='content/generated/data/items/celadon-gym/celadon-gym-machines.json'
-    values=[admission_view(project,target,'/machines/'+str(index)) for index in range(15)]
-    symbols=[species[5:] for species in admission_species(project,target,'/machines/0')]
     i=next(x for x in json.loads(text['src/data/items.json'])['items'] if x['itemId']=='ITEM_TM19');path='src/data/items.json'
     m=match(path,r'^    \{\n      "english": "TM19",.*?^    \}');source=ref(path,'ITEM_TM19',m)
     definition=shared_item('ITEM_TM19')
@@ -66,9 +49,8 @@ def item_outputs(lock,sources,project):
     if (w,h)!=(24,24):raise ValueError('TM19 icon size differs')
     icon=dict(item=ident('ITEM_TM19'), width=w, height=h, pngPath='item_tm19.png')
     for path,symbol,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('data/maps/CeladonCity_Gym/scripts.inc','CeladonCity_Gym_EventScript_GiveTM19',r'^CeladonCity_Gym_EventScript_GiveTM19::.*?^\tend$')]:rules.append(ref(path,symbol,match(path,pattern)))
-    limitations=['Exactly one TM19 item extends the unchanged 45-item predecessor; all five shop stocks remain unchanged.','Fifteen original machines have exactly 98 source compatibility rows; inherited14x94 records are identical.','TM19 is source Giga Drain, consumed once after successful teaching. No Leaf Stone or department-store stock is introduced.','Catalog metadata alone does not activate rewards, battle effects, field moves or application profiles.']
     return {'celadon-gym-items.json':runtime_json_bytes(dict(schemaVersion=1,items=[dict(metadata=wrapped, effectBytes=[])],icons=[icon]), sort_keys=True, default=item_json),
-      'celadon-gym-machines.json':runtime_json_bytes(dict(schemaVersion=1,machines=values,icons=[icon]), sort_keys=True, default=item_json),'item_tm19.png':image_png}
+      'item_tm19.png':image_png}
 
 
 def load_sources(stem, raw, repo):
@@ -77,30 +59,18 @@ def load_sources(stem, raw, repo):
     return lock, read_sources(lock, raw, repo)
 
 
-def pokemon_outputs(lock,sources,project):
-    outputs = pokemon.battle_art(lock, sources, profile=PROFILE, species=ART_SPECIES,
-        limitation='Four Celadon Gym species, original front/back frame zero, normal and shiny palettes.')
-    outputs['battle-art.json'] = canonical(json.loads(outputs['battle-art.json']))
-    # Preserve the admitted predecessor order, then append this region's additions.
-    previous = tuple(species[13:] for species in admission_species(project,
-        'content/generated/data/items/celadon-gym/celadon-gym-machines.json', '/machines/0')
-        if species[13:] not in {name.upper() for name in NEW_SPECIES})
-    outputs.update(pokemon.supplement(lock, sources, profile=PROFILE, species=ART_SPECIES,
-        weight_species=previous + tuple(name.upper() for name in NEW_SPECIES), natural_level_limit=None))
-    return outputs
-
 def materialize(project,target,repo=None,check=False):
     project,target=safe(project),safe(target);results=[]
     for stem in ('celadon-gym-pokemon','celadon-gym-items'):
-        raw=safe(target,'content/raw/pokefirered/037335f4');out=safe(target, 'content/generated/data/' + ('pokemon/celadon-gym' if stem.endswith('pokemon') else 'items/celadon-gym'))
+        raw=safe(target,'content/raw/pokefirered/037335f4');out=safe(target, 'content/generated/' + ('sprites/pokemon/celadon-gym' if stem.endswith('pokemon') else 'data/items/celadon-gym'))
         if repo is not None:
             repo=safe(repo)
             if any(p==repo or p in repo.parents or repo in p.parents for p in (raw,out)):raise ValueError('Output overlaps source repository')
         lock,sources=load_sources(stem,raw,repo)
         profile='firered-'+stem+'-v1'
-        outputs=pokemon_outputs(lock,sources,project) if stem.endswith('pokemon') else item_outputs(lock,sources,project)
-        manifest=canonical(dict(schemaVersion=1, inputCount=len(sources), outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
-        outputs['manifest.json']=manifest;raw_manifest=canonical(dict(schemaVersion=1, inputCount=len(sources)))
+        outputs=presentation_outputs('celadon-gym',lock,sources) if stem.endswith('pokemon') else item_outputs(lock,sources,project)
+        if 'manifest.json' not in outputs:
+            outputs['manifest.json']=canonical(dict(schemaVersion=1, inputCount=len(sources), outputs=[dict(path=p) for p in sorted(outputs)]))
         materials={(out,p):b for p,b in outputs.items()}
         if repo is not None:materials.update({(raw,p):b for p,b in sources.items()})
         if check:

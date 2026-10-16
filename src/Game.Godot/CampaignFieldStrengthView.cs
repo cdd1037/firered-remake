@@ -14,7 +14,6 @@ public partial class CampaignView
 
     private void LoadFieldStrengthPresentation()
     {
-        if (!_catalog.SafariEnabled) return;
         var rgba = Godot.FileAccess.GetFileAsBytes("res://Assets/Reference/field-strength-dust.rgba");
         if (rgba.Length != 16 * 24 * 4)
             throw new InvalidDataException("Field Strength dust source pixels differ.");

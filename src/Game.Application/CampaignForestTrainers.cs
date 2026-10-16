@@ -50,7 +50,7 @@ public sealed partial class CampaignSession
 
     private void ValidateForestTrainerEntryContext(CampaignState state, TrainerId trainer)
     {
-        if (!_content.ForestTrainersEnabled || state.Party.Length is < 1 or > 6 || state.Battle is not null ||
+        if (state.Party.Length is < 1 or > 6 || state.Battle is not null ||
             state.WildBattle is not null || state.ForestTrainerBattle is not null ||
             state.Script.QuestLogState != 0 || state.Party.All(p => p.IsEgg || p.Pokemon.CurrentHp == 0))
             throw new InvalidDataException("forest_trainer_entry_context");
@@ -58,9 +58,6 @@ public sealed partial class CampaignSession
             long.MaxValue - state.Script.EffectSequence < 4096 || ulong.MaxValue - state.World.Rng.Cursor < (1UL << 32))
             throw new InvalidDataException("forest_trainer_counter_headroom_required");
         var definition = OrdinaryTrainerScript(trainer);
-        // The next city chapter owns the rival's Fame Checker and Rocket TM28 continuations.
-        // Reject before committing their first lock/battle until those complete reward paths exist.
-        if(!_content.BillEnabled&&IsCeruleanTrainer(trainer)&&definition.Mode==3)throw new InvalidDataException("cerulean_north_events_not_implemented");
         if (definition.Mode is not (0 or 1 or 2 or 3 or 9))
             throw new InvalidDataException("forest_trainer_mode_unsupported");
         if(!string.IsNullOrEmpty(definition.IntroText))_ = _content.TextPages(definition.IntroText);
@@ -356,7 +353,7 @@ public sealed partial class CampaignSession
             SourceScriptEntry = trainer.VsSeeker?.ScriptEntry,
             SourceScriptLine = trainer.VsSeeker?.SourceLine
         };
-        if (_content.VermilionEnabled && won)
+        if (won)
         {
             var payday = SourceBattleMoneyRules.SettlePayDay(money, trainer.Frame.Field.PayDayMoney, WildBattleOutcome.Won,trainer.Frame.Field.MoneyMultiplier);
             var pickup = VermilionPickupRules.Apply(_binding.Ownership, state.Party, state.World.Rng, WildBattleOutcome.Won);

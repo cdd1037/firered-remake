@@ -9,8 +9,7 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private const string Route22RivalActor="LOCALID_ROUTE22_RIVAL";
-    private bool IsRoute22GuardButton(CampaignState state)=>_content.Route22Enabled &&
-        state.Script.Wait?.Kind==StoryWaitKind.ButtonPress && !state.Script.Stack.IsEmpty &&
+    private bool IsRoute22GuardButton(CampaignState state)=>state.Script.Wait?.Kind==StoryWaitKind.ButtonPress && !state.Script.Stack.IsEmpty &&
         state.Script.Stack[^1].ProgramId is "Route23_EventScript_MissingBadge" or "Route23_EventScript_MissingBadgeTrigger" or
         "Route23_EventScript_AlreadyRecognizedBoulderBadge" or "Route23_EventScript_RecognizeBoulderBadge" or "Route23_EventScript_RecognizeBoulderBadgeTrigger";
 
@@ -24,7 +23,6 @@ public sealed partial class CampaignSession
     private bool TryApplyRoute22Effect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.Route22Enabled)return false;
         if(effect.Opcode=="waitbuttonpress"&&effect.Source.Path=="data/scripts/route23.inc")
         {
             if(!IsRoute22GuardButton(state)||state.Dialogue is null)throw new InvalidDataException("route22_guard_button_context");
@@ -36,10 +34,6 @@ public sealed partial class CampaignSession
             state.World.Player.MapId.Value=="map.route-22-north-entrance" && effect.Args[1]=="STDSTRING_BOULDER_BADGE";
         bool cascade=effect.Source.Path=="data/maps/Route23/scripts.inc" &&
             state.World.Player.MapId.Value=="map.route-23" && effect.Args[1]=="STDSTRING_CASCADE_BADGE";
-        // The imported Route23 slice ends at the Cascade checkpoint. Do not publish
-        // its now-successful recognition script until the northern slice is admitted.
-        if(cascade&&!_content.VictoryRoadEnabled&&_content.CeruleanEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
-            throw new InvalidDataException("route23_northern_section_not_implemented");
         if(effect.Args.Length!=2||effect.Args[0]!="STR_VAR_1"||!(boulder||cascade))throw new InvalidDataException("route22_badge_string_unsupported");
         next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",boulder?"BOULDERBADGE":"CASCADEBADGE")};
         return true;
@@ -47,7 +41,7 @@ public sealed partial class CampaignSession
 
     private CampaignState BeginRoute22RivalBattle(CampaignState state,StoryEffect effect)
     {
-        if(!_content.Route22Enabled||effect.Args.Length!=4||state.World.Player.MapId.Value!="map.route-22"||
+        if(effect.Args.Length!=4||state.World.Player.MapId.Value!="map.route-22"||
             state.Script.Wait?.Kind!=StoryWaitKind.Battle||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22")!=1||
             !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")||!state.Actors.TryGetValue(Route22RivalActor,out var actor)||!actor.Active)
             throw new InvalidDataException("route22_rival_context_invalid");
@@ -89,19 +83,18 @@ public sealed partial class CampaignSession
 
     private string? ValidateRoute22Progress(CampaignState state)
     {
-        if(!_content.Route22Enabled)return null;
         if(HasUnimplementedBadge(state))return "save_route22_later_badges_unsupported";
         if(ValidateLeagueRivalProgress(state) is {} lateError)return lateError;
         var rivals=(state.ForestTrainerHistory??[]).Where(h=>_content.Route22Trainers!.Trainers.Keys.Any(t=>t.Value==h.TrainerId)).ToArray();
         bool won=rivals.Any(h=>h.Outcome==WildBattleOutcome.Won);
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22");
-        bool northRivalStarted=_content.BillEnabled&&(state.ForestTrainerHistory??[]).Any(h=>IsCeruleanRival(new(h.TrainerId)));
+        bool northRivalStarted=(state.ForestTrainerHistory??[]).Any(h=>IsCeruleanRival(new(h.TrainerId)));
         int expected=state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")?(won||northRivalStarted?2:1):0;
-        if(_content.ViridianGymEnabled&&ViridianGymVictory(state))expected=LeagueRivalVictory(state)?4:3;
+        if(ViridianGymVictory(state))expected=LeagueRivalVictory(state)?4:3;
         if(scene!=expected||rivals.Any(h=>_content.Route22Trainers!.Battles[new(h.TrainerId)].PlayerStarterVar!=state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON")))
             return "save_route22_rival_progress_invalid";
         int gate=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE23");
-        if(gate<0||gate>(_content.VictoryRoadEnabled?8:1)||Enumerable.Range(1,gate).Any(i=>!state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET")))return "save_route23_gate_invalid";
+        if(gate<0||gate>(8)||Enumerable.Range(1,gate).Any(i=>!state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET")))return "save_route23_gate_invalid";
         if(state.World.Player.MapId.Value=="map.route-23"&&(gate<1||!_content.IsRoute22StablePosition(state.World.Player.MapId,state.World.Player.X,state.World.Player.Y)))return "save_route23_boundary_invalid";
         bool extraBalls=state.Script.Flags.GetValueOrDefault("FLAG_GOT_POKEBALLS_FROM_OAK_AFTER_22_RIVAL");
         if(state.Script.Flags.GetValueOrDefault("FLAG_OAK_SKIP_22_RIVAL_CHECK")&&!extraBalls||extraBalls&&!won)

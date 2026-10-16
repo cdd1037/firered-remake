@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using FireRed.Tests;
 
 namespace FireRed.Tests.ResourceImport;
@@ -48,6 +47,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task Learnsets() => Run("test-learnset-import.py");
     [TestMethod]
+    public Task SnorlaxSharedCatalog() => Run("verify-snorlax-catalog.py");
+    [TestMethod]
     public async Task PokemonCollection()
     {
         await Run("test-game-pokemon.py");
@@ -96,42 +97,6 @@ public sealed class ResourceImportTests
     public Task VsSeeker() => Run("test-vs-seeker-importer.py", "--git-dir", TestAssets.Source);
     public TestContext TestContext { get; set; } = null !;
 
-    private async Task Run(string script, params string[] args)
-    {
-        var interpreter = Environment.GetEnvironmentVariable("FIRERED_PYTHON")
-            ?? (OperatingSystem.IsWindows() ? "python" : "python3");
-        var info = new ProcessStartInfo(interpreter)
-        {
-            WorkingDirectory = TestAssets.Root,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = System.Text.Encoding.UTF8,
-            StandardErrorEncoding = System.Text.Encoding.UTF8
-        };
-        info.Environment["PYTHONIOENCODING"] = "utf-8";
-        info.Environment["PYTHONDONTWRITEBYTECODE"] = "1";
-        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts", "checks", script));
-        foreach (var arg in args)
-            info.ArgumentList.Add(arg);
-        using var p = Process.Start(info) ?? throw new InvalidOperationException("Python could not start");
-        var stdout = p.StandardOutput.ReadToEndAsync();
-        var stderr = p.StandardError.ReadToEndAsync();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(6));
-        try
-        {
-            await p.WaitForExitAsync(timeout.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            p.Kill(true);
-            await p.WaitForExitAsync();
-            Assert.Fail("Resource check timed out: " + script);
-        }
-
-        var output = await stdout + await stderr;
-        TestContext.WriteLine(output);
-        Assert.AreEqual(0, p.ExitCode, script + "\n" + output);
-        Assert.IsFalse(string.IsNullOrWhiteSpace(output), "Empty resource check output");
-    }
+    private Task Run(string script, params string[] args) =>
+        PythonResourceCheck.Run(Path.Combine("scripts", "checks", script), args, context: TestContext);
 }

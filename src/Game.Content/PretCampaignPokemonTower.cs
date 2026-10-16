@@ -8,12 +8,10 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretPokemonTowerRegion? PokemonTowerRegion { get; }
-    public PretPokemonTowerPokemon? PokemonTowerPokemon { get; }
+    public PretPokemonTowerRegion PokemonTowerRegion { get; }
     public PretPokemonTowerItemsDocument? PokemonTowerItems { get; }
     public PretPokemonTowerPickupsDocument? PokemonTowerPickups { get; }
     public PokemonTowerTrainerCatalog? PokemonTowerTrainers { get; }
-    public bool PokemonTowerEnabled => PokemonTowerRegion is not null;
     public ImmutableArray<int> PokemonTowerInitiallySetFlags => PokemonTowerRegion?.InitiallySetFlags ?? [];
     private static ImmutableDictionary<MapId,EarlyLandEncounterTable> PokemonTowerEncounterTables(PretPokemonTowerRegion region)
     {

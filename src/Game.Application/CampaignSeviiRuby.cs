@@ -13,7 +13,6 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     public const string SeviiRubyRulesVersion = "firered-sevii-ruby-campaign-v1";
-    public bool SeviiRubyEnabled => _content.SeviiRubyEnabled;
     private const string RubyCenterMap = "map.one-island-pokemon-center-1f";
     private const string RubyExteriorMap = "map.mt-ember-exterior";
     private const string RubyCenterSource = "data/maps/OneIsland_PokemonCenter_1F/scripts.inc";
@@ -25,22 +24,13 @@ public sealed partial class CampaignSession
     private static bool SeviiRubyEditedMap(MapId map) => map.Value is RubyCenterMap or RubyExteriorMap;
     private static bool SeviiRubySource(string path) => path.StartsWith("data/maps/MtEmber_", StringComparison.Ordinal) ||
         path.StartsWith("data/maps/OneIsland_KindleRoad", StringComparison.Ordinal) || path == RubyCenterSource;
-    private bool InSeviiRubyScript(CampaignState state) => _content.SeviiRubyEnabled && state.Script.Stack.Any(f =>
+    private bool InSeviiRubyScript(CampaignState state) => state.Script.Stack.Any(f =>
         _content.FindProgram(f.ProgramId)?.Instructions.Any(i => SeviiRubySource(i.Source.Path)) == true);
 
     private static void ValidateSeviiRubyCatalog(ICampaignCatalog content)
     {
-        if (!content.SeviiRubyEnabled)
-        {
-            if (content.SeviiRubyOwnership is not null || content.SeviiRubyOpponents is not null || content.SeviiRubyTrainers is not null)
-                throw new InvalidDataException("sevii_ruby_profile_missing");
-            return;
-        }
-        if (!content.NationalDexEnabled || content.SeviiRubyOwnership is not { } owned ||
-            content.SeviiRubyOpponents is not { } opponents || content.SeviiRubyTrainers is not { } trainers ||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
-            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.RubyId)) throw new InvalidDataException("sevii_ruby_source_profile_missing");
+        if (content.SeviiRubyTrainers is not {} trainers || !content.Inventory.Items.ContainsKey(ItemIds.RubyId))
+            throw new InvalidDataException("sevii_ruby_source_profile_missing");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
     }
 
@@ -69,9 +59,7 @@ public sealed partial class CampaignSession
         int Count(ItemId item) => OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], item);
         int scene = Var(RubyCenterScene), exterior = Var("VAR_MAP_SCENE_MT_EMBER_EXTERIOR");
         bool got = Flag("FLAG_GOT_RUBY"), rainbow = Flag("FLAG_SYS_SEVII_MAP_4567");
-        if (!_content.SeviiRubyEnabled) return got || rainbow || exterior != 0 || scene > 3 || Count(RubyItem) != 0 || Count(RainbowPassItem) != 0 ||
-            Flag("FLAG_GOT_HM06") ? "save_sevii_ruby_profile_missing" : null;
-        if (!_content.FiveIslandEnabled && Flag("FLAG_RECOVERED_SAPPHIRE") || Flag("FLAG_SYS_CAN_LINK_WITH_RS") && !CelioCompleted(state) || scene > (_content.CelioEnabled ? 7 : 5) || exterior is < 0 or > 2)
+        if (Flag("FLAG_SYS_CAN_LINK_WITH_RS") && !CelioCompleted(state) || scene > (7) || exterior is < 0 or > 2)
             return "save_sevii_sapphire_not_admitted";
         if ((scene >= 4 || got || rainbow || exterior != 0) && !NationalDexEnabledIn(state)) return "save_sevii_ruby_national_gate";
         if (scene < 4 && (exterior != 0 || got || rainbow || Count(RubyItem) != 0 || Count(RainbowPassItem) != 0) ||
@@ -95,7 +83,6 @@ public sealed partial class CampaignSession
     private bool TryApplySeviiRubyEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.SeviiRubyEnabled) return false;
         if (TryApplyRubyBrailleEffect(state, effect, out next)) return true;
         if (TryApplySeviiRubyItemEffect(state, effect, out next)) return true;
         if (TryApplyRainbowFerryEffect(state, effect, out next)) return true;

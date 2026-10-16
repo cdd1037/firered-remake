@@ -5,7 +5,6 @@ public partial class CampaignView
 {
     private void LoadLostCaveItemIcons()
     {
-        if (!_catalog.LostCaveEnabled) return;
         foreach (var icon in PretLostCaveItems.LoadItemsDocument(_root).Icons)
         {
             if (_catalog.EarlyShop!.Items.All(item => item.Id != icon.Item))

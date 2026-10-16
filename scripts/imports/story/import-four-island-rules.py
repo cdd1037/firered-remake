@@ -46,22 +46,6 @@ def generate(reference, dependency):
         return dict(value="pret:" + symbol)
     trainers = selected_trainers(read, ["TRAINER_" + short for short in TRAINERS])
     resolved = resolved_parties(read, trainers)
-    canonical_path = 'content/generated/data/pokemon/canonical/catalog.json'
-    data = (dependency / canonical_path).read_bytes()
-    canonical = json.loads(data)
-    additions = ['SPECIES_SEEL','SPECIES_DEWGONG','SPECIES_WOOPER','SPECIES_QUAGSIRE','SPECIES_SWINUB','SPECIES_PILOSWINE','SPECIES_DELIBIRD']
-    species = {s['id']['value'][5:]:s for s in canonical['species']}
-    metadata = {s['id']['value'][5:]:s for s in canonical['metadata']}
-    edges = []
-    for name in additions:
-        original = species[name]
-        raw_edges = metadata[name]['sourceEvolutions']
-        expected = {'SPECIES_SEEL':(34,'SPECIES_DEWGONG'),'SPECIES_WOOPER':(20,'SPECIES_QUAGSIRE'),'SPECIES_SWINUB':(33,'SPECIES_PILOSWINE')}.get(name)
-        if expected:
-            level,target = expected
-            need(len(raw_edges)==1 and raw_edges[0]['method']=='EVO_LEVEL' and raw_edges[0]['parameterValue']==level and raw_edges[0]['target']['value']=='pret:'+target, 'Evolution source')
-            edges.append(dict(species=identity(name),sourceEvolution=raw_edges[0]))
-        else: need(not raw_edges, 'Unexpected future evolution')
     path='data/maps/FourIsland_IcefallCave_Back/scripts.inc'
     label='FourIsland_IcefallCave_Back_EventScript_LoreleiRocketsScene'
     block=one(path,r'^'+label+r'::\n((?:(?!^\w+::).)*)')
@@ -75,24 +59,8 @@ def generate(reference, dependency):
     trainer=trainers[0]
     need(mode==3 and trainer['sourceTrainerId']==539 and trainer['partyFlags']==0 and not trainer['doubleBattle'] and trainer['aiFlags']==1 and trainer['items']==['ITEM_NONE']*4, 'Exact Grunt45 declaration')
     need([(p['species']['value'],p['level'],p['sourceIv'],p['heldItem']) for p in trainer['party']]==[('pret:SPECIES_ZUBAT',38,0,'ITEM_NONE')]*2+[('pret:SPECIES_GOLBAT',38,0,'ITEM_NONE')], 'Grunt45 party')
-    h=0; members=[]
-    for p,moves in zip(trainer['party'],resolved[0]['party']):
-        h=(h+sum(trainer['encodedTrainerName'])+sum(p['encodedSpeciesName']))&0xffffffff
-        members.append(dict(species=p['species'],level=p['level'],fixedIv=0,personality=(0x88+(h<<8))&0xffffffff,
-            heldItem=p['heldItem'],moves=[identity(m) for m in moves['moves']]))
-    for path in ['src/pokemon.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h']:
-        read(path)
-    docs={
-        'trainers.json':dict(completeSourceRoster=False,
-            trainers=trainers,battles=[battle],resolvedMoves=resolved),
-        'pokemon.json':dict(
-            ownedSpeciesAdded=additions,evolutionEdges=edges),
-        'rules.json':dict(ownedSpeciesCount=125,previousOwnedSpeciesCount=118,
-            opponentSpeciesCount=141,previousOpponentSpeciesCount=135,ownedSpeciesAdded=additions,
-            trainerSpecies=sorted({p['species']['value'] for p in trainer['party']}),
-            trainerMoves=sorted({m for p in resolved[0]['party'] for m in p['moves']}),
-            identities=[dict(trainer=trainer['id'],members=members,basePrize=4*trainer['baseMoney']*38)],
-            naturalLearnsets={s:species[s]['levelUpMoves'] for s in additions})}
+    docs={'trainers.json':dict(completeSourceRoster=False,
+            trainers=trainers,battles=[battle],resolvedMoves=resolved)}
     return docs
 
 def main():
@@ -101,11 +69,9 @@ def main():
     p.add_argument('--check',action='store_true');a=p.parse_args()
     docs=generate(a.reference,a.dependency)
     files={'content/generated/data/regions/four-island/'+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else (json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode()) for n,d in docs.items()}
-    lock=dict(sourceCommit=COMMIT,profile='firered-four-island-rules-v1',
-        files=[dict(path=k) for k,v in sorted(files.items())])
     for name,data in files.items():
         dest=a.output/name
         if a.check: need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else: dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=1,battles=1,owned=125,opponents=141),indent=2))
+    print(json.dumps(dict(checked=a.check,trainers=1,battles=1),indent=2))
 if __name__=='__main__': main()

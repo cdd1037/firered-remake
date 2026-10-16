@@ -38,7 +38,6 @@ public sealed partial class CampaignSession
     private bool TryApplySsAnneEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.SsAnneEnabled) return false;
         var a = effect.Args;
         if(effect.Opcode=="bufferstdstring"&&a.Length==2&&a[1]=="STDSTRING_BERRY_POUCH")
         {
@@ -115,9 +114,9 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("ssanne_hm_reward_operands");
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
         var error = ValidateCampaignInventory(inventory); if (error is not null) throw new InvalidDataException(error);
-        if (effect.Opcode == "checkitemspace") { next = Result(next, MachineRules.CanAddMachine(_content.PewterMachines!, inventory, Hm01) ? 1 : 0); return true; }
+        if (effect.Opcode == "checkitemspace") { next = Result(next, MachineRules.CanAddMachine(_content.Machines!, inventory, Hm01) ? 1 : 0); return true; }
         if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], Hm01) != 0) throw new InvalidDataException("ssanne_hm_duplicate");
-        var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, Hm01);
+        var added = MachineRules.AddMachine(_content.Machines!, inventory, Hm01);
         if (!added.Succeeded) throw new InvalidDataException("ssanne_hm_add_failed: " + added.Error);
         next = state with { Inventory = added.State };
         next = Result(next, 1); return true;
@@ -125,7 +124,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateSsAnneProgress(CampaignState state)
     {
-        if (!_content.SsAnneEnabled) return null;
         int scene = state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_VERMILION_CITY");
         int rival = state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_S_S_ANNE_2F_CORRIDOR");
         int trigger = state.Script.Variables.GetValueOrDefault("VAR_VERMILION_CITY_TICKET_CHECK_TRIGGER");

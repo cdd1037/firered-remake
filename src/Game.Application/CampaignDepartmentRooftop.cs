@@ -12,8 +12,7 @@ public sealed partial class CampaignSession
     private static readonly string[] RoofNames = ["FreshWater", "SodaPop", "Lemonade"];
     private static readonly int[] RoofPrices = [200, 300, 350];
 
-    private bool AtDepartmentRooftop(CampaignState state) => _content.DepartmentRooftopEnabled &&
-        state.World.Player.MapId.Value == DepartmentRooftopSource.Map && !state.Script.Completed;
+    private bool AtDepartmentRooftop(CampaignState state) => state.World.Player.MapId.Value == DepartmentRooftopSource.Map && !state.Script.Completed;
     private bool AtRooftopGirl(CampaignState state)
     {
         if (!AtDepartmentRooftop(state) || state.LastTalked is not {} id || !state.Actors.TryGetValue(id, out var npc) ||
@@ -130,7 +129,7 @@ public sealed partial class CampaignSession
         {
             if (args[0] is not ("STR_VAR_1" or "STR_VAR_2") || args.Length != (effect.Opcode == "bufferitemnameplural" ? 3 : 2) ||
                 args.Length == 3 && DepartmentValue(state, args[2]) != 1) throw new InvalidDataException("department_rooftop_buffer");
-            string name = drink >= 0 ? ShopCatalog.Items.Single(i => i.Id == id).Name : MachineRules.Definition(_content.PewterMachines!, id)!.Machine.Item.Name;
+            string name = drink >= 0 ? ShopCatalog.Items.Single(i => i.Id == id).Name : MachineRules.Definition(_content.Machines!, id)!.Machine.Item.Name;
             next = state with { TextBuffers = state.TextBuffers.SetItem(args[0], name) }; return true;
         }
         int result;
@@ -141,10 +140,10 @@ public sealed partial class CampaignSession
             if (effect.Opcode == "checkitem") result = OpeningInventoryRules.Quantity(inventory.BagItems, id) > 0 ? 1 : 0;
             else if (reward >= 0)
             {
-                if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.PewterMachines!, inventory, id) ? 1 : 0;
+                if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.Machines!, inventory, id) ? 1 : 0;
                 else
                 {
-                    var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, id);
+                    var added = MachineRules.AddMachine(_content.Machines!, inventory, id);
                     if (!added.Succeeded) throw new InvalidDataException("department_rooftop_reward_add:" + added.Error);
                     next = state with { Inventory = added.State }; result = 1;
                 }

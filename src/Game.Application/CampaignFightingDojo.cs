@@ -22,7 +22,7 @@ public sealed partial class CampaignSession
     private static string DojoBallFlag(int species) => species == 106 ? "FLAG_HIDE_DOJO_HITMONLEE_BALL" : "FLAG_HIDE_DOJO_HITMONCHAN_BALL";
     private int? DojoGiftCallerSpecies(CampaignState state)
     {
-        if (!_content.FightingDojoEnabled || state.World.Player.MapId.Value != FightingDojoMap ||
+        if (state.World.Player.MapId.Value != FightingDojoMap ||
             state.LastTalked is not { } id || !state.Actors.TryGetValue(id, out var actor)) return null;
         int species = actor.SourceLocalId switch { 6 => 106, 7 => 107, _ => 0 };
         return species != 0 && actor.ScriptId == DojoBallScript(species) &&
@@ -32,8 +32,8 @@ public sealed partial class CampaignSession
 
     private static void ValidateFightingDojoCatalog(ICampaignCatalog content)
     {
-        if (!content.FightingDojoEnabled || content.FightingDojoOwnership is not { } owned ||
-            content.FightingDojoOpponents is not { } opponents || content.FightingDojoMachines is not { } machines ||
+        if (content.GamePokemon is not { } owned ||
+            content.OpponentPokemon is not { } opponents || content.Machines is not { } machines ||
             content.FightingDojoTrainers is not { } trainers ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
@@ -48,7 +48,6 @@ public sealed partial class CampaignSession
     {
         bool got = state.Script.Flags.GetValueOrDefault(FightingDojoGiftFlag);
         bool lee = state.Script.Flags.GetValueOrDefault(DojoBallFlag(106)), chan = state.Script.Flags.GetValueOrDefault(DojoBallFlag(107));
-        if (!_content.FightingDojoEnabled) return state.DojoGift is not null || got || lee || chan ? "save_dojo_profile_missing" : null;
         if ((state.DojoGift is not null) != got || lee && chan || (lee || chan) != got) return "save_dojo_gift_flags";
         if (state.DojoGift is not { } gift) return null;
         if (gift.SourceSpeciesId is not (106 or 107) || gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId ||
@@ -78,7 +77,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFightingDojoEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.FightingDojoEnabled || effect.Source.Path != FightingDojoSource || effect.Opcode is not ("showmonpic" or "givemon")) return false;
+        if (effect.Source.Path != FightingDojoSource || effect.Opcode is not ("showmonpic" or "givemon")) return false;
         int species = DojoGiftCallerSpecies(state) ?? throw new InvalidDataException("dojo_gift_caller");
         if (state.DojoGift is not null || state.Script.Flags.GetValueOrDefault(FightingDojoGiftFlag) ||
             state.Script.Flags.GetValueOrDefault(DojoBallFlag(106)) || state.Script.Flags.GetValueOrDefault(DojoBallFlag(107)))

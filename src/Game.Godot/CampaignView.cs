@@ -44,10 +44,10 @@ public partial class CampaignView:Node2D
     // CreateYesNoMenu prints at interior y+2 with FONT_NORMAL's 14-pixel row pitch.
     // Keep other field/script choices at their existing positions.
     private bool FieldCutChoice=>_session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&
-        (_catalog.VermilionGymEnabled&&_session.State.Dialogue?.TextSymbol=="Text_CutTreeDown"||
-         _catalog.SafariEnabled&&_session.State.Dialogue?.TextSymbol=="Text_UseStrength"||
-         _catalog.SurfEnabled&&_session.State.Dialogue?.TextSymbol=="Text_WantToSurf"||
-         _catalog.FourIslandEnabled&&_session.State.Dialogue?.TextSymbol=="Text_UseWaterfall");
+        (_session.State.Dialogue?.TextSymbol=="Text_CutTreeDown"||
+         _session.State.Dialogue?.TextSymbol=="Text_UseStrength"||
+         _session.State.Dialogue?.TextSymbol=="Text_WantToSurf"||
+         _session.State.Dialogue?.TextSymbol=="Text_UseWaterfall");
     private int FieldChoiceFrameX=>FieldCutChoice?160:176;
     private int FieldChoiceTextY=>FieldCutChoice?74:73;
     private int FieldChoiceRowHeight=>FieldCutChoice?14:16;
@@ -116,7 +116,7 @@ public partial class CampaignView:Node2D
             _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui/ui-corrections"));
             _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
-            LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();if(_catalog.RegionEnabled)LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
+            LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             _nicknameEdit=new LineEdit{Position=new(20,62),Size=new(200,22),MaxLength=10,Visible=false,PlaceholderText="",CaretBlink=true,KeepEditingOnTextSubmit=true};
             _nicknameEdit.AddThemeFontOverride("font",_font);_nicknameEdit.AddThemeFontSizeOverride("font_size",11);
             _nicknameEdit.TextSubmitted+=SubmitCampaignNickname;_nicknameEdit.GuiInput+=NameRaterNicknameGuiInput;_nicknameEdit.GuiInput+=GiftNicknameGuiInput;_nicknameEdit.GuiInput+=EggNicknameGuiInput;_nicknameEdit.GuiInput+=StorageBoxNameGuiInput;AddChild(_nicknameEdit);
@@ -129,6 +129,7 @@ public partial class CampaignView:Node2D
             }
             LoadSourceAudio();LoadMap(_session.State.World.Player.MapId);if(!InitializePlayerEntry(checkpoint))Synchronize(null,_session.State);
             _startupReady=true;ResetPlayTimeHost();
+            if (_diagnostics.Verbose) Write("presentationResources", new { nativePngDecodes = NativeImages.DecodedPngs, cache = _mapResources.Snapshot });
             Write("ready",_diagnostics.Payload(new{_catalog.ContentVersion,_session.Revision},()=>new{scope="source-driven opening and starter gift/nickname; first lab battle semantic profile; original menu art, animation, audio and exact timing incomplete",_catalog.ContentVersion,state=_session.State}));
         }
         catch(Exception error){FailStartup(error);}
@@ -445,7 +446,7 @@ public partial class CampaignView:Node2D
         var d=key.Keycode switch{Key.Up=>(Direction?)Direction.North,Key.Down=>Direction.South,Key.Left=>Direction.West,Key.Right=>Direction.East,_=>null};
         if(d is {} direction)
         {
-            if(key.Pressed){_held=direction;_repeat=0;if(_session.State.Script.Completed&&_tracks.All(t=>t.Time>=t.Duration))Apply(new(_catalog.RegionEnabled&&_session.State.World.Player.Facing!=direction?"turn":"move",direction));}
+            if(key.Pressed){_held=direction;_repeat=0;if(_session.State.Script.Completed&&_tracks.All(t=>t.Time>=t.Duration))Apply(new(_session.State.World.Player.Facing!=direction?"turn":"move",direction));}
             else if(_held==direction)_held=null;
         }
         else if(key.Pressed)
@@ -559,7 +560,7 @@ public partial class CampaignView:Node2D
         }
         if(!DrawSeviiRubyBraille()&&FieldDialogueVisible&&PresentedFieldText is {} text)
         {
-            if(_catalog.PewterEnabled)text=PewterDisplayText(text);
+            text=PewterDisplayText(text);
             _battleSkin.DrawDialogue(this);
             var color=_session.State.Script.Variables.GetValueOrDefault("VAR_TEXT_COLOR") switch{0=>new Color("345077"),1=>new Color("a44756"),_=>new Color("283840")};
             var lines=text.Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(_sourceNormal,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);

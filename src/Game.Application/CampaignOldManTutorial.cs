@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
 {
     private bool TryApplyOldManEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.OldManTutorialEnabled||effect.Opcode!="special")return false;
+        next=state;if(effect.Opcode!="special")return false;
         if(effect.Args[0]=="QuestLog_CutRecording")
         {
             if(state.Script.QuestLogState!=0)throw new InvalidDataException("quest_log_recording_not_supported");
@@ -58,7 +58,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateOldManProgress(CampaignState state)
     {
-        if(!_content.OldManTutorialEnabled)return state.OldManTutorial is not null||state.OldManCompleted?"save_old_man_profile_missing":null;
         if(state.OldManTutorial is not null)return "save_event_active";
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_VIRIDIAN_CITY_OLD_MAN");
         if(scene is <0 or >2||state.OldManCompleted!=(scene==2))return "save_old_man_scene_inconsistent";

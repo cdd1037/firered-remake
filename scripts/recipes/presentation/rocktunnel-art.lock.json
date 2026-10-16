@@ -27,13 +27,5 @@
     {
       "path": "src/field_effect.c"
     }
-  ],
-  "inputs": [
-    {
-      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
-    },
-    {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    }
   ]
 }

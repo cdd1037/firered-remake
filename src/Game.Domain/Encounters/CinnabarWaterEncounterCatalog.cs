@@ -1,35 +1,17 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
+
 namespace Game.Domain.Encounters;
 
-/// <summary>Validated regional water encounter definitions.</summary>
-public sealed class CinnabarWaterEncounterCatalog
+/// <summary>Source encounter declarations; runtime tables use the shared water catalog.</summary>
+public static class CinnabarWaterEncounterCatalog
 {
-    public WaterEncounterCatalog Predecessor { get; }
-    public ImmutableDictionary<MapId,WaterEncounterTable> Tables { get; }
-    private CinnabarWaterEncounterCatalog(WaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> added)
-    { Predecessor = predecessor; Tables = predecessor.Tables.AddRange(added.Select(t => KeyValuePair.Create(t.Map,t))); }
     public static ImmutableArray<WaterEncounterTable> SourceAdditions { get; } = [
         new(new("map.route-21-north"),2,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
         new(new("map.route-21-south"),2,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
         new(new("map.cinnabar-island"),1,[new(0,new("pret:SPECIES_TENTACOOL"),5,10,60),new(1,new("pret:SPECIES_TENTACOOL"),10,20,30),new(2,new("pret:SPECIES_TENTACOOL"),20,30,5),new(3,new("pret:SPECIES_TENTACOOL"),30,35,4),new(4,new("pret:SPECIES_TENTACOOL"),35,40,1)]),
     ];
-    public static CinnabarWaterEncounterCatalog Authenticate(WaterEncounterCatalog predecessor, ImmutableArray<WaterEncounterTable> additions)
-    {
-        ArgumentNullException.ThrowIfNull(predecessor);
-        if (predecessor.Tables.Count != 21 || predecessor.Tables.Values.Any(t => !WaterEncounterCatalog.IsValidDefinition(t)) ||
-            additions.IsDefault || additions.Length != 3 || additions.Any(t => t is null) || additions.Select(t => t.Map).Distinct().Count() != 3)
-            throw new ArgumentException("cinnabar_water_scope");
-        foreach (var actual in additions)
-        {
-            var expected = SourceAdditions.SingleOrDefault(t => t.Map == actual.Map);
-            if (expected is null || actual.Slots.IsDefault || !actual.Slots.SequenceEqual(expected.Slots) ||
-                !WaterEncounterCatalog.SameDefinition(actual, expected)) throw new ArgumentException("cinnabar_water_source");
-        }
-        var copies = additions.Select(t => t with { }).ToImmutableArray();
-        var proof = new CinnabarWaterEncounterCatalog(predecessor,copies);
-        return proof;
-    }
+
     public static bool MatchesDefinition(WaterEncounterTable? table) =>
         table is not null && SourceAdditions.Any(expected => WaterEncounterCatalog.SameDefinition(table, expected));
 }

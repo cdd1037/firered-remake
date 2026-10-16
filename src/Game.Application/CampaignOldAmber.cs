@@ -13,14 +13,12 @@ public sealed partial class CampaignSession
     private const string OldAmberHidden = "FLAG_HIDE_OLD_AMBER";
     private const string OldAmberObject = "LOCALID_OLD_AMBER";
 
-    private bool InOldAmberScript(CampaignState state) => _content.FossilLabEnabled &&
-        state.World.Player.MapId.Value == OldAmberMuseum && state.LastTalked is { } id &&
+    private bool InOldAmberScript(CampaignState state) => state.World.Player.MapId.Value == OldAmberMuseum && state.LastTalked is { } id &&
         state.Actors.TryGetValue(id, out var scientist) && scientist.Active && scientist.SourceLocalId == 3 &&
         scientist.ScriptId == OldAmberScientist && state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") == 3;
 
     private static void ValidateOldAmberCatalog(ICampaignCatalog content)
     {
-        if (!content.FossilLabEnabled) throw new InvalidDataException("old_amber_current_binding");
         var map = content.MapDefinition(new(OldAmberMuseum));
         if (map.SourceMapSymbol != "MAP_PEWTER_CITY_MUSEUM_1F" ||
             !map.Actors.Any(a => a.SourceLocalId == 3 && a.X == 21 && a.Y == 3 && a.ScriptId == OldAmberScientist) ||
@@ -46,7 +44,6 @@ public sealed partial class CampaignSession
         bool acquired = state.Script.Flags.GetValueOrDefault(OldAmberAcquired);
         bool hidden = state.Script.Flags.GetValueOrDefault(OldAmberHidden);
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], ItemIds.OldAmberId);
-        if (!_content.FossilLabEnabled) return acquired || hidden || quantity != 0 ? "save_old_amber_profile_missing" : null;
         if (acquired != hidden || quantity + DepositedOrRevivedFossils(state, 3) != (acquired ? 1 : 0))
             return "save_old_amber_conservation";
         if (state.World.Player.MapId.Value == OldAmberMuseum &&
@@ -58,7 +55,6 @@ public sealed partial class CampaignSession
     private bool TryApplyOldAmberEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.FossilLabEnabled) return false;
         bool rewardSource = effect.Source.Path == OldAmberSource && effect.Source.Symbol == OldAmberScientist;
         if (rewardSource && effect.Opcode == "lock")
         {

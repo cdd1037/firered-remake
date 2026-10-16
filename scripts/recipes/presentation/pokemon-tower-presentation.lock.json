@@ -138,12 +138,6 @@
   ],
   "inputs": [
     {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    },
-    {
-      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
-    },
-    {
       "path": "content/generated/maps/regions/pokemon-tower/presentation/ghost-front.png"
     },
     {

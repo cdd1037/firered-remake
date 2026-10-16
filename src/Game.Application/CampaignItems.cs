@@ -48,7 +48,7 @@ public sealed partial class CampaignSession
         if(menu.Origin=="bag"&&menu.TargetInstanceId is not null&&command.Kind is not ("menu_back" or "berry_open" or "machine_open"))return No("held_item_selection_active");
         if(command.Kind=="berry_open")
         {
-            if(!_content.SsAnneEnabled||menu.Origin!="bag"||menu.View!="bag"||OpeningInventoryRules.Quantity(state.Inventory!.KeyItems??[],SsAnneItemRules.BerryPouchId)!=1)return No("berry_pouch_context_invalid");
+            if(menu.Origin!="bag"||menu.View!="bag"||OpeningInventoryRules.Quantity(state.Inventory!.KeyItems??[],SsAnneItemRules.BerryPouchId)!=1)return No("berry_pouch_context_invalid");
             return Menu("berries");
         }
         if(command.Kind=="field_vs_seeker")return UseVsSeeker(state,command);
@@ -128,7 +128,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> CloseBedroomPc(CampaignState state)
     {
         if(state.ItemMenu?.Origin!="pc"||state.Script.Wait?.Kind!=StoryWaitKind.Inventory||!state.PcPoweredOn)return new(CommandStatus.Fault,state,"pc_callback_context_invalid");
-        if(_content.PokemonStorageEnabled&&state.Pc?.View==CampaignPcView.PlayerItems)return ResumePcScript(state);
+        if(state.Pc?.View==CampaignPcView.PlayerItems)return ResumePcScript(state);
         // Original Task_PlayerPcTurnOff replaces ScriptContext with the room-specific shutdown
         // script; it does not resume the old waitstate. Retain variables/flags and the lock.
         var next=state with{ItemMenu=null,Dialogue=null,Script=state.Script with{Stack=[],Wait=null,Completed=true}};

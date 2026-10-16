@@ -16,7 +16,6 @@ public sealed partial class CampaignSession
         .ToImmutableSortedDictionary(c=>c.X+":"+c.Y,c=>new FieldMetatileEdit(c.X,c.Y,c.MetatileId,c.Collision,c.Elevation));
     private CampaignState FourIslandMapEntry(CampaignState state)
     {
-        if (!_content.FourIslandEnabled) return state;
         var map=state.World.Player.MapId;
         var ice=map==FourIslandFieldSource.FirstFloor?IcefallIceRules.NewMap(map):null;
         if(ice is not null)
@@ -45,7 +44,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState CompleteIcefallCallbacks(CampaignState state)
     {
-        if(!_content.FourIslandEnabled||state.World.Player.MapId!=FourIslandFieldSource.FirstFloor)return state;
+        if(state.World.Player.MapId!=FourIslandFieldSource.FirstFloor)return state;
         var ice=state.IcefallIce??throw new InvalidDataException("icefall_callback_missing");
         // The public move is a COMPLETED tile action (at least six updates). The
         // original callback observes the destination then completes its five-update
@@ -69,7 +68,6 @@ public sealed partial class CampaignSession
     private IFieldMap IcefallRawMap(CampaignState state) => new FourIslandMapAdapter(_content.Maps[state.World.Player.MapId],state.MapEdits,_content,false);
     private IReadOnlyDictionary<MapId,IFieldMap> FourIslandMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        if(!_content.FourIslandEnabled)return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
         foreach(var pair in maps.Where(p=>FourIslandMap(p.Key)))result[pair.Key]=new FourIslandMapAdapter(pair.Value,
             pair.Key==state.World.Player.MapId?state.MapEdits:null,_content,true);
@@ -91,7 +89,6 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> FourIslandWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        if(!_content.FourIslandEnabled)return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
         foreach(var pair in maps.Where(p=>FourIslandMap(p.Key)))result[pair.Key]=pair.Value with{Cells=pair.Value.Cells.Select(c=>
             c.Collision==0&&c.SourceBehavior is 0x16 or 0x23 or 0x26 or 0x27?c with{SourceBehavior=0}:c).ToImmutableArray()};
@@ -99,7 +96,7 @@ public sealed partial class CampaignSession
     }
     private Decision<CampaignState>? TryFourIslandFieldStep(CampaignState state,CampaignCommand command)
     {
-        if(!_content.FourIslandEnabled||command.Kind!="move")return null;
+        if(command.Kind!="move")return null;
         var p=state.World.Player;var(dx,dy)=Delta(command.Direction);var raw=IcefallRawMap(state);
         if(p.MapId==FourIslandFieldSource.Entrance&&state.IsSurfing&&p.Y==13&&command.Direction==Direction.South&&raw.SourceBehaviorAt(p.X,p.Y+1)==FourIslandFieldSource.Waterfall)
         {

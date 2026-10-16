@@ -22,11 +22,11 @@ public partial class CampaignView
         if (FiveIslandBattleTerrain(mapId) is {} fiveIslandTerrain) return fiveIslandTerrain;
         if (SixIslandBattleTerrain(mapId) is {} sixIslandTerrain) return sixIslandTerrain;
         if (FourIslandBattleTerrain(mapId) is {} fourIslandTerrain) return fourIslandTerrain;
-        if (_catalog.VictoryRoadEnabled && IsVictoryRoadCave(mapId))
+        if (IsVictoryRoadCave(mapId))
             return _mtMoonTerrain ?? throw new InvalidDataException("Victory Road cave terrain was not loaded.");
-        if (_catalog.SurfEnabled && PresentedWildBattle?.State.Terrain is WildBattleTerrain.Water or WildBattleTerrain.Pond)
+        if (PresentedWildBattle?.State.Terrain is WildBattleTerrain.Water or WildBattleTerrain.Pond)
             return _cityBattleScenes[PresentedWildBattle.State.Terrain == WildBattleTerrain.Water ? "water" : "pond"];
-        if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
+        if(PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
         if ((_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true||_catalog.PowerPlantRegion?.NewMaps.ContainsKey(mapId)==true)&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
             return _rocketIndoorTerrain??throw new InvalidDataException("Rocket Indoor2 terrain was not loaded.");
         if (_catalog.SeviiRubyRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.FuchsiaRouteRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
@@ -46,16 +46,16 @@ public partial class CampaignView
                     _ => throw new InvalidDataException("Unsupported committed Route11 terrain.")
                 };
         }
-        if (_catalog.ViridianGymEnabled && mapId.Value == "map.viridian-city-gym" ||
-            _catalog.FuchsiaGymEnabled && mapId.Value == "map.fuchsia-city-gym" ||
-            _catalog.CeladonGymEnabled && mapId.Value == "map.celadon-city-gym" ||
-            _catalog.CeruleanEnabled && PretGymBattleTerrain.AppliesToMap(mapId))
+        if (mapId.Value == "map.viridian-city-gym" ||
+            mapId.Value == "map.fuchsia-city-gym" ||
+            mapId.Value == "map.celadon-city-gym" ||
+            PretGymBattleTerrain.AppliesToMap(mapId))
         {
             bool leader = _session.State.ForestTrainerBattle?.Trainer.Value is
                 "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY" or "pret:TRAINER_LEADER_ERIKA" or "pret:TRAINER_LEADER_KOGA" or "pret:TRAINER_LEADER_GIOVANNI";
             return (leader ? _leaderTerrain : _gymTerrain) ?? throw new InvalidDataException("Gym terrain was not loaded.");
         }
-        if (_catalog.CityServicesEnabled && _cityBattleTerrain is not null && _session.State.World.Player is var player && player.MapId == mapId)
+        if (_cityBattleTerrain is not null && _session.State.World.Player is var player && player.MapId == mapId)
         {
             int? behavior = _session.State.MapEdits?.TryGetValue(player.X+":"+player.Y,out var edit)==true
                 ? _catalog.MetatileDefinition(mapId,edit.SourceMetatileId)?.Behavior
@@ -90,7 +90,6 @@ public partial class CampaignView
             if (_mtMoonTerrain.GetWidth() != 240 || _mtMoonTerrain.GetHeight() != 112)
                 throw new InvalidDataException("MtMoon cave terrain size invalid.");
         }
-        if (_catalog.CeruleanEnabled)
         {
             var gym = PretGymBattleTerrain.Load(_root);
             _gymTerrain = SceneTextures.Texture(gym.GymSceneTexturePath);
@@ -98,7 +97,6 @@ public partial class CampaignView
             if (_gymTerrain.GetWidth() != 240 || _gymTerrain.GetHeight() != 112 || _leaderTerrain.GetWidth() != 240 || _leaderTerrain.GetHeight() != 112)
                 throw new InvalidDataException("Gym terrain size invalid.");
         }
-        if (_catalog.CityServicesEnabled)
         {
             _cityBattleTerrain = PretCityBattleTerrain.Load(_root);
             foreach (var scene in new[]{_cityBattleTerrain.PlainScene,_cityBattleTerrain.SandScene,_cityBattleTerrain.BuildingScene})
@@ -184,7 +182,7 @@ public partial class CampaignView
         void Source(string symbol, params (string Key, string Value)[] values)
         {
             var added = WildSourcePages(symbol, values);
-            if(_catalog.PokemonTowerEnabled&&symbol=="sText_TheGhostWas")added=added.Where(p=>!string.IsNullOrWhiteSpace(p)).ToImmutableArray();
+            if(symbol=="sText_TheGhostWas")added=added.Where(p=>!string.IsNullOrWhiteSpace(p)).ToImmutableArray();
             bool finalWait = _battleText[symbol].EndsWith("\\p", StringComparison.Ordinal) ||
                 _battleText[symbol].EndsWith("\\l", StringComparison.Ordinal) || _battleText[symbol].Contains("{PAUSE_UNTIL_PRESS}", StringComparison.Ordinal);
             for (int i = 0; i < added.Length; i++) if (i + 1 < added.Length || finalWait) _wildArrowPages.Add(pages.Count + i);
@@ -468,8 +466,6 @@ public partial class CampaignView
         }
         if (_wildMenu == "party")
         {
-            if (!_catalog.PartyTrainingEnabled)
-            { if (key.Keycode is Key.Backspace or Key.Enter) { _wildMenu = "actions"; _wildCursor = 0; } return true; }
             int cancel = _session.State.Party.Length;
             if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
             if (key.Keycode == Key.Down) _wildCursor = Math.Min(cancel, _wildCursor + 1);
@@ -571,7 +567,7 @@ public partial class CampaignView
         }
         if (b.Phase != CampaignBattlePhase.ChooseMove) return;
         if (_wildMenu == "medicine-target") WildLines("Use on which POKéMON?");
-        else if (_wildMenu == "party") WildLines(_catalog.CaptureEnabled && !_catalog.PartyTrainingEnabled ? "Party view only. Switching during\na turn is not available yet." : "Choose a POKéMON.");
+        else if (_wildMenu == "party") WildLines("Choose a POKéMON.");
         else if (_wildMenu == "actions")
         {
             _battleSkin.DrawActionMenu(this); WildLines("What will\n" + b.OwnedBefore.Nickname + " do?");
@@ -597,7 +593,7 @@ public partial class CampaignView
     private void DrawWildParty(CampaignWildBattle b)
     {
         if(_wildMenu=="medicine-target"&&_session.BattleMedicineEnabled){DrawCaptureParty(b,true,true);return;}
-        if (_catalog.CaptureEnabled && _wildMenu == "party") { DrawCaptureParty(b, _catalog.PartyTrainingEnabled, _catalog.PartyTrainingEnabled); return; }
+        if (_wildMenu == "party") { DrawCaptureParty(b, true, true); return; }
         // Functional one-member summary; the original full-screen party presentation remains a separate gate.
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112)); var p = b.DisplayPlayer;
         SourceText(_sourceNormal, new(12, 8), $"{b.OwnedBefore.Nickname} {p.CurrentHp}/{p.Stats.MaxHp} HP");

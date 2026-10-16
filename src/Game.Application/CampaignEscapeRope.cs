@@ -10,14 +10,11 @@ public sealed partial class CampaignSession
     private string? ValidateEscapeRopeState(CampaignState state)
     {
         if (state.EscapeRope is not null) return "save_event_active";
-        if (!_content.MtMoonEnabled)
-            return state.EscapeDestination is null ? null : "save_escape_rope_profile_missing";
         return _content.EscapeRoutes.ValidateDestination(state.EscapeDestination);
     }
 
     private CampaignState RecordEscapeWarp(CampaignState before, CampaignState moved, Direction direction)
     {
-        if (!_content.MtMoonEnabled) return moved;
         var p = before.World.Player;
         var map = _content.Maps[p.MapId];
         // Arrow exits trigger from the occupied tile; doors/ladders trigger from the front tile.
@@ -33,7 +30,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> UseFieldEscapeRope(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.MtMoonEnabled || state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
+        if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
             command.Text != EscapeRopeRules.Item.Value || command.Quantity != 1 || command.MoveSlot != -1)
             return No("field_escape_rope_context_invalid");
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
@@ -61,7 +58,7 @@ public sealed partial class CampaignSession
     {
         if (command.Kind is not ("menu_ack" or "menu_back"))
             return new(CommandStatus.Rejected, state, "escape_rope_message_pending");
-        if (!_content.MtMoonEnabled || state.EscapeRope is not { } escape ||
+        if (state.EscapeRope is not { } escape ||
             state.ItemMenu is not { Origin: "bag", View: "message", MessageSymbol: "gText_PlayerUsedVar2" })
             throw new InvalidDataException("escape_rope_context_invalid");
         var flags = state.Script.Flags;

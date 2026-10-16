@@ -26,7 +26,7 @@ public sealed partial class CampaignSession
         ("pret:TRAINER_CUE_BALL_PAXTON",248,"LOCALID_PAXTON")];
 
     private bool IsFirstSeviiBikerHistory(CampaignForestTrainerHistory history) =>
-        _content.FirstSeviiEnabled && FirstSeviiBikers.Any(biker => biker.Trainer == history.TrainerId) &&
+        FirstSeviiBikers.Any(biker => biker.Trainer == history.TrainerId) &&
         RegisteredTrainerHistoryMatches(history);
 
     // Only this exact unconditional source sequence can replay a won trainer. The
@@ -62,20 +62,8 @@ public sealed partial class CampaignSession
         return null;
     }
 
-    private bool IsFirstSeviiWildMap(MapId map)=>_content.FirstSeviiEnabled&&
-        map.Value is "map.one-island" or "map.three-island-bond-bridge" or LostelleMap;
+    private bool IsFirstSeviiWildMap(MapId map)=>map.Value is "map.one-island" or "map.three-island-bond-bridge" or LostelleMap;
 
-    private EarlyLandWildPokemonResult GenerateFirstSeviiLand(CampaignState state,EarlyLandEncounterTable table,EarlyLandEncounterState encounter)
-    {
-        if(FirstSeviiEncounterTables.Land.Any(t=>t.Map==table.Map))
-            return FirstSeviiWildPokemonFactory.Generate(_content.CinnabarOwnership!,table,encounter,state.World.Rng,state.TrainerId);
-        // The successor shares its one field encounter process with all predecessor
-        // maps. Validate the actual successor candidate before ordinary generation.
-        if(encounter.RulesVersion!=EarlyLandEncounterRules.FirstSeviiRulesVersion)throw new InvalidDataException("first_sevii_land_profile");
-        EarlyLandEncounterRules.ValidateState(encounter,table);
-        return CinnabarWildPokemonFactory.Generate(_content.CinnabarOwnership!,table,
-            encounter with { RulesVersion=EarlyLandEncounterRules.CinnabarRulesVersion },state.World.Rng,state.TrainerId);
-    }
 
     private static bool IsLostelleSource(StoryEffect effect)=>effect.Source.Path==FirstSeviiHypnoBattleContract.SourcePath&&
         effect.Source.Symbol==FirstSeviiHypnoBattleContract.ScriptEntry;
@@ -92,7 +80,7 @@ public sealed partial class CampaignSession
 
     private bool TryApplyFirstSeviiBattleEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.FirstSeviiEnabled||!IsLostelleSource(effect))return false;
+        next=state;if(!IsLostelleSource(effect))return false;
         var args=effect.Args;
         int Value(string token)=>state.Script.Variables.TryGetValue(token,out int value)?value:int.TryParse(token,out value)?value:
             _content.TryConstant(token,out value)?value:throw new InvalidDataException("first_sevii_hypno_operand");
@@ -109,7 +97,7 @@ public sealed partial class CampaignSession
             if(effect.Source.Line!=24||args.Length!=2||Value(args[0])!=97||Value(args[1])!=30||state.LostelleHypnoPreparation is not null||
                 (state.Exploration?.Battles??[]).Any(b=>b.LostelleHypno is not null&&b.Outcome is WildBattleOutcome.Won or WildBattleOutcome.Escaped or WildBattleOutcome.Caught))
                 throw new InvalidDataException("first_sevii_hypno_preparation_source");
-            var made=FirstSeviiHypnoBattleContract.Create(_content.CinnabarOwnership!,state.TrainerId,state.World.Rng);
+            var made=FirstSeviiHypnoBattleContract.Create(_content.GamePokemon!,state.TrainerId,state.World.Rng);
             var receipt=new CampaignLostelleHypnoReceipt(LostelleMap,effect.Source.Path,effect.Source.Symbol,effect.Source.Line,state.World.Rng,made.Pokemon);
             next=state with{LostelleHypnoPreparation=new(receipt,new(made.Pokemon,made.Rng,made.Trace)),World=state.World with{Rng=made.Rng}};
             return true;
@@ -148,13 +136,13 @@ public sealed partial class CampaignSession
 
     private bool IsLostelleHypnoHistory(CampaignState state,CampaignWildHistory history)
     {
-        if(!_content.FirstSeviiEnabled||history.LostelleHypno is not {} receipt||history.Safari||history.ScriptedMarowak||history.ScriptedSnorlaxRoute!=0||
+        if(history.LostelleHypno is not {} receipt||history.Safari||history.ScriptedMarowak||history.ScriptedSnorlaxRoute!=0||
             history.SourceSpeciesId!=97||history.Level!=30||history.Outcome==WildBattleOutcome.Ongoing||!Enum.IsDefined(history.Outcome)||
             history.Outcome!=WildBattleOutcome.Won&&history.ExperienceGained!=0||receipt.Map!=LostelleMap||
             receipt.SourcePath!=FirstSeviiHypnoBattleContract.SourcePath||receipt.ScriptEntry!=FirstSeviiHypnoBattleContract.ScriptEntry||receipt.SourceLine!=24||
             receipt.GenerationStart.AlgorithmId!=Gen3Rng.AlgorithmId||receipt.GenerationStart.Cursor>ulong.MaxValue-4||
             receipt.GenerationStart.Cursor+4>state.World.Rng.Cursor||receipt.Generated is null||!FirstSeviiHypnoBattleContract.SourceInitialInstance(receipt.Generated))return false;
-        var made=FirstSeviiHypnoBattleContract.Create(_content.CinnabarOwnership!,state.TrainerId,receipt.GenerationStart);
+        var made=FirstSeviiHypnoBattleContract.Create(_content.GamePokemon!,state.TrainerId,receipt.GenerationStart);
         return made.Rng.Cursor==receipt.GenerationStart.Cursor+4&&SameSourceOwnedPokemon(made.Pokemon,receipt.Generated);
     }
 

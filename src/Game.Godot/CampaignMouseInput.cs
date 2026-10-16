@@ -278,7 +278,7 @@ public partial class CampaignView
                 int count = QuestPocketActions().Length;
                 return PointerRows(point, direction, ref _questPocketAction, count, 168, 154 - count * 16, 72);
             }
-            return PointerList(point, direction, ref _questPocketCursor, QuestPocketStacks.Length, scrolls: _catalog.SsAnneEnabled);
+            return PointerList(point, direction, ref _questPocketCursor, QuestPocketStacks.Length, scrolls: true);
         }
         if (_itemQuantityOpen) return direction != 0 && MouseMessage.HasPoint(point) && MouseNavigationKey(direction);
         if (_itemPopup) return PointerRows(point, direction, ref _itemAction, ItemActionCount, 168, ItemActionY, 72);
@@ -305,11 +305,11 @@ public partial class CampaignView
         if (_wildMenu == "learn-confirm") return PointerYesNo(point, direction, ref _wildCursor);
         if (_wildMenu == "learn-intro" || battle.Phase != CampaignBattlePhase.ChooseMove) return false;
         if (_wildMenu == "bag") return PointerList(point, direction, ref _wildCursor,
-            _catalog.CaptureEnabled ? CaptureBagStacks.Length : _session.State.Inventory?.BagItems.Length ?? 0,
-            scrolls: !_catalog.CaptureEnabled || _captureBagPocket == 0 || _catalog.SsAnneEnabled);
+            CaptureBagStacks.Length,
+            scrolls: true);
         if (_wildMenu == "bag-actions") return PointerRows(point, direction, ref _wildCursor, 2, 168, 130, 72);
         if (_wildMenu == "medicine-move") return PointerRows(point,direction,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
-        if (_wildMenu == "party" && _catalog.CaptureEnabled && _catalog.PartyTrainingEnabled ||
+        if (_wildMenu == "party" ||
             _wildMenu == "medicine-target" && _session.BattleMedicineEnabled)
             return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
         return _wildMenu is "actions" or "moves" && PointerGrid(point, direction, ref _wildCursor, _wildMenu == "moves",
@@ -399,7 +399,7 @@ public partial class CampaignView
                 int count = QuestPocketActions().Length;
                 return MouseSelect(point, ref _questPocketAction, count, 168, 154 - count * 16, 72);
             }
-            return MouseBagArrows(point, _questPocket) || MouseList(point, ref _questPocketCursor, QuestPocketStacks.Length, scrolls: _catalog.SsAnneEnabled);
+            return MouseBagArrows(point, _questPocket) || MouseList(point, ref _questPocketCursor, QuestPocketStacks.Length, scrolls: true);
         }
         if (_itemQuantityOpen) return MouseConfirm(point, MouseMessage);
         if (_itemPopup) return MouseSelect(point, ref _itemAction, ItemActionCount, 168, ItemActionY, 72);
@@ -470,13 +470,12 @@ public partial class CampaignView
         if (battle.Phase != CampaignBattlePhase.ChooseMove) return MouseConfirm(point, MouseMessage);
         if (_wildMenu == "bag")
         {
-            if (_catalog.CaptureEnabled) return !_captureBerries && MouseBagArrows(point, _captureBagPocket) ||
-                MouseList(point, ref _wildCursor, CaptureBagStacks.Length, scrolls: _captureBagPocket == 0 || _catalog.SsAnneEnabled);
-            return MouseList(point, ref _wildCursor, _session.State.Inventory?.BagItems.Length ?? 0);
+            return !_captureBerries && MouseBagArrows(point, _captureBagPocket) ||
+                MouseList(point, ref _wildCursor, CaptureBagStacks.Length, scrolls: true);
         }
         if (_wildMenu == "bag-actions") return MouseSelect(point, ref _wildCursor, 2, 168, 130, 72);
         if (_wildMenu == "medicine-move") return MouseSelect(point,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
-        if (_wildMenu == "party" && _catalog.CaptureEnabled && _catalog.PartyTrainingEnabled)
+        if (_wildMenu == "party")
             return MouseSelect(point, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
         if(_wildMenu=="medicine-target"&&_session.BattleMedicineEnabled)
             return MouseSelect(point,ref _wildCursor,_session.State.Party.Length+1,8,8,224,14);

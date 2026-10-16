@@ -15,7 +15,7 @@ public sealed partial class CampaignSession
         next = state;
         bool capacity = effect.Opcode == "specialvar" && effect.Args.Length == 2 && effect.Args[1] == "CheckAddCoins";
         if (!(capacity || effect.Opcode is "checkcoins" or "addcoins" or "buffernumberstring" or "bufferstdstring")) return false;
-        if (!_content.GameCornerCoinsEnabled || !state.Script.Locked || state.Script.Completed ||
+        if (!state.Script.Locked || state.Script.Completed ||
             effect.Source.Path != "data/scripts/obtain_item.inc" || definition.Script != "EventScript_HiddenItemScript" ||
             definition.Quantity is < 1 or > 127 || state.Script.Flags.GetValueOrDefault(definition.Flag) ||
             state.Script.Variables.GetValueOrDefault("VAR_0x8004") != definition.SourceFlagId ||

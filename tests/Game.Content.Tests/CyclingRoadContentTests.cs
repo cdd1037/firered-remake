@@ -18,7 +18,7 @@ public sealed class CyclingRoadContentTests
         var catalog = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
         var region = catalog.CyclingRoadRegion;
         var id = PretCyclingRoadRegion.Route17MapId;
-        Assert.IsTrue(catalog.CyclingRoadEnabled);
+        Assert.IsNotNull(catalog.CyclingRoadRegion);
         CollectionAssert.AreEquivalent(new[] { id, new MapId("map.route-16-north-entrance-2f") }, region.NewMaps.Keys.ToArray());
         Assert.AreSame(region.NewMaps[id], catalog.SourceMaps[id]);
         Assert.AreEqual(24, catalog.SourceMaps[id].Width);

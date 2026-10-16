@@ -5,13 +5,8 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool TypedFishingEnabled(FishingRod rod) => rod switch
-    {
-        FishingRod.Old => _content.CityServicesEnabled,
-        FishingRod.Good => _content.GoodRodEnabled,
-        FishingRod.Super => _content.SuperRodEnabled,
-        _ => false
-    };
+    private static bool TypedFishingEnabled(FishingRod rod) =>
+        rod is FishingRod.Old or FishingRod.Good or FishingRod.Super;
 
     private bool IsTypedFishingOrigin(FishingEncounterOrigin origin) => TypedFishingEnabled(origin.Rod) &&
         _content.FishingTables?.SourceSlot(origin) is not null;

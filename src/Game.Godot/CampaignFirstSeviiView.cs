@@ -12,7 +12,6 @@ public partial class CampaignView
     private bool FirstSeviiInputLocked=>_session?.State.Seagallop is not null;
     private void LoadFirstSeviiPresentation()
     {
-        if(!_catalog.FirstSeviiEnabled)return;
         var art=_firstSeviiPresentation=_catalog.FirstSeviiPresentation??throw new InvalidDataException("First-Sevii presentation package missing.");
         foreach(var portrait in art.Document.Portraits)
         {
@@ -36,8 +35,7 @@ public partial class CampaignView
                 Assets=document.Assets.Add(new(asset.Id,PretFirstSeviiPresentation.GeneratedDirectory+asset.TexturePath,asset.Width,asset.Height,position.X,position.Y))
             };
         }
-        Write("firstSeviiPresentation",new{trainerTeams=art.Document.Trainers.Length,trainerPortraits=art.Document.Portraits.Length,itemIcons=art.Document.Items.Length,
-        originalFerryAssets=true,physicalAudioVerified=false});
+
     }
     private FirstSeviiPresentationTrainer? FirstSeviiTrainer(string? id)=>id is null?null:_firstSeviiPresentation?.Document.Trainers.SingleOrDefault(t=>t.Id==id);
     private string? VisibleFirstSeviiTrainerClass()=>FirstSeviiTrainer(_session.State.ForestTrainerBattle?.Trainer.Value)?.ClassName;

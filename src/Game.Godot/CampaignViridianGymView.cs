@@ -4,18 +4,11 @@ using Godot;
 public partial class CampaignView
 {
     private ViridianGymPresentationData? _viridianGymPresentation;
-    private bool IsViridianGymLeader(string id) => _catalog.ViridianGymEnabled && id == "pret:TRAINER_LEADER_GIOVANNI";
+    private bool IsViridianGymLeader(string id) => id == "pret:TRAINER_LEADER_GIOVANNI";
     private string SourceLeaderIntroMusic(string id) => IsViridianGymLeader(id) ? "MUS_ENCOUNTER_ROCKET" : "MUS_ENCOUNTER_GYM_LEADER";
 
     private void LoadViridianGymPresentation()
     {
-        if (!_catalog.ViridianGymEnabled) return;
-        if (!_catalog.FirstSeviiEnabled ||
-            _session.RulesVersion != Game.Application.CampaignSession.ViridianGymRulesVersion &&
-            !(_catalog.LeagueRivalEnabled && _session.RulesVersion == Game.Application.CampaignSession.LeagueRivalRulesVersion) &&
-            !(_catalog.VictoryRoadEnabled && _session.RulesVersion == Game.Application.CampaignSession.VictoryRoadRulesVersion) && !(_catalog.PokemonLeagueEnabled && _session.RulesVersion == Game.Application.CampaignSession.PokemonLeagueRulesVersion) &&
-            !(_catalog.NationalDexEnabled && _catalog.PokemonLeagueEnabled && _session.RulesVersion == Game.Application.CampaignSession.NationalDexRulesVersion) && !SeviiRubyPresentationProfile)
-            throw new InvalidDataException("Viridian Gym presentation requires its authenticated successor profile.");
         var art = ViridianGymPresentationAssets.Load(_root);
         var source = _catalog.ViridianGymTrainerParties ?? throw new InvalidDataException("Viridian Gym trainers missing.");
         foreach (var trainer in source.Trainers.Values)
@@ -41,8 +34,7 @@ public partial class CampaignView
         if (!_earlyItemIcons.TryGetValue(new("pret:ITEM_TM28"), out var groundIcon)) throw new InvalidDataException("Inherited Ground machine icon missing.");
         _earlyItemIcons.Add(new("pret:ITEM_TM26"), groundIcon);
         _viridianGymPresentation = art;
-        Write("viridianGymPresentation", new { ViridianGymPresentationAssets.SourceCommit,             map = "map.viridian-city-gym",
-        leaderIntroMusic = "MUS_ENCOUNTER_ROCKET", physicalAudioVerified = false });
+
     }
 
     private ViridianGymTrainerPresentation? VisibleViridianGymTrainer()

@@ -218,10 +218,34 @@ public abstract class WildBattleFixture
                 BagItems = basis.Inventory.BagItems.Add(new(new("pret:ITEM_POTION"), 1))
             }
         };
-        var entry = SourceWildBattlePolicy.StartOwned(ownership, party.Select(p => new WildBattleCombatant(p.Pokemon, HeldItem: p.HeldItem, Status: p.Status)).ToImmutableArray(), 0, new(enemy.Pokemon, HeldItem: enemy.HeldItem, Status: enemy.Status), new(seed));
+        // Explicit test content supplies this controlled opponent's level. Admit its natural
+        // initial instance first, then apply the test's HP/status/move fixture to the live frame.
+        // This is lifecycle coverage, not a claim that Route 1 naturally contains level-30 Pidgey.
+        var mapId = basis.World.Player.MapId;
+        var table = content.LandEncounters![mapId] with { Slots = content.LandEncounters[mapId].Slots.Select(s => s with {
+            Species = enemy.Pokemon.Species, MinimumLevel = (byte)enemy.Pokemon.Level,
+            MaximumLevel = (byte)enemy.Pokemon.Level }).ToImmutableArray() };
+        var definition = new OrdinaryLandEncounterCatalog(new Dictionary<MapId, EarlyLandEncounterTable> { [mapId] = table },
+            new Dictionary<MapId, IFieldMap> { [mapId] = content.Maps[mapId] }, ownership.Catalog)[mapId];
+        var pending = new EarlyLandEncounterState(new(0), 2, Pending: new(new(mapId, 0, enemy.Pokemon.Species,
+            (byte)enemy.Pokemon.Level), 2), RulesVersion: EarlyLandEncounterRules.FiveIslandRulesVersion);
+        var initialEnemy = enemy.Pokemon with { CurrentHp = enemy.Pokemon.Stats.MaxHp,
+            Moves = PokemonMoveRules.InitialMoves(ownership.Catalog, ownership.Catalog.Species[enemy.Pokemon.Species], enemy.Pokemon.Level) };
+        var entry = SourceWildBattlePolicy.StartOwned(ownership,
+            party.Select(p => new WildBattleCombatant(p.Pokemon, HeldItem: p.HeldItem, Status: p.Status)).ToImmutableArray(),
+            0, new(initialEnemy), new(seed), new() { OrdinaryLand = definition.BindBattle(pending) });
         Assert.IsTrue(entry.Succeeded, "controlled source admission: " + entry.Fault);
+        var entered = entry.State!;
+        var enemyCell = entered.Get(new(1));
+        entered = entered with {
+            Slots = entered.Slots.SetItem(1, enemyCell with { Body = enemyCell.Body! with {
+                Pokemon = enemy.Pokemon, HeldItem = enemy.HeldItem, Status = enemy.Status } }),
+            Parties = entered.Parties.SetItem(1, entered.Party(BattleSide.Opponent) with {
+                Members = [new(enemy.Pokemon, enemy.HeldItem, enemy.Status)] })
+        };
+        Assert.IsNull(SourceFourActionTurns.ValidateCapability(catalog, entered));
         var prepare = typeof(CampaignSession).GetMethod("PrepareCanonicalWildFrame", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var frame = (SourceBattleFrame)prepare.Invoke(session, [basis, entry.State!])!;
+        var frame = (SourceBattleFrame)prepare.Invoke(session, [basis, entered])!;
         var view = CampaignWildReadProjection.From(frame);
         var battle = new CampaignWildBattle("wild-battle:" + basis.Exploration!.NextWildBattleId, party[0], frame, entry.Events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), 0, view.Player.Pokemon, view.Opponent.Pokemon, CampaignBattlePhase.Events, [], 0, entry.Trace)
         {

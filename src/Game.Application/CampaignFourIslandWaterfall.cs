@@ -9,7 +9,6 @@ public sealed partial class CampaignSession
     public bool CanUseFieldWaterfall(int partyIndex) => FieldWaterfallError(State,partyIndex) is null;
     private string? FieldWaterfallError(CampaignState state,int index)
     {
-        if(!_content.FourIslandEnabled)return "field_waterfall_not_enabled";
         if(!IsStableFieldForParty(state)||state.FieldEffectArguments is not null||state.Fishing is not null||state.Repel is not null)return "field_waterfall_event_active";
         if(index<0||index>=state.Party.Length)return "field_waterfall_party_index_invalid";
         var p=state.World.Player;var(dx,dy)=Delta(p.Facing);
@@ -33,7 +32,6 @@ public sealed partial class CampaignSession
     }
     private Decision<CampaignState>? TryStartFieldWaterfallInteraction(CampaignState state)
     {
-        if(!_content.FourIslandEnabled)return null;
         var p=state.World.Player;var(dx,dy)=Delta(p.Facing);
         if(_content.Maps[p.MapId].SourceBehaviorAt(p.X+dx,p.Y+dy)!=FourIslandFieldSource.Waterfall)return null;
         bool allowed=state.IsSurfing&&state.Script.Flags.GetValueOrDefault(WaterfallSourceRules.Badge)&&

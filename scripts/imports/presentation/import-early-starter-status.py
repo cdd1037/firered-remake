@@ -7,7 +7,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -27,9 +26,7 @@ PATHS = frozenset([
     'tools/gbagfx/convert_png.c', BATTLE + 'healthbox_elements.png', BATTLE + 'healthbox.pal', PARTY,
 ])
 # Verified with the independent source-index/palette oracle.
-spec = importlib.util.spec_from_file_location('early_starter_status_codec', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-codec = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(codec)
+import ui_tiles as codec
 
 
 def canonical(value):

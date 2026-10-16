@@ -11,8 +11,8 @@ public partial class CampaignView
 
     private void LoadMemorialPillarPresentation()
     {
-        if (_catalog.MemorialPillarOpponents is not { } opponents) return;
-        if (!_session.IsCurrentGame || _ordinaryEvolutionArt is null)
+        if (_catalog.OpponentPokemon is not { } opponents) return;
+        if (_ordinaryEvolutionArt is null)
             throw new InvalidDataException("Memorial Pillar presentation requires current game assets.");
         var art = PretMemorialPillarPresentation.Load(_root);
         foreach (var entry in art.DexEntries.Values)
@@ -34,7 +34,7 @@ public partial class CampaignView
             if (side == "front" && !shiny) _portraits.Add(species, texture);
         }
         _memorialPillarArt = art;
-        Write("memorialPillarPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void AddMemorialPillarMoveGeometry()
@@ -57,6 +57,5 @@ public partial class CampaignView
         _memorialPillarArt?.DexEntries.GetValueOrDefault(species) is { } entry ? page with { Portrait = entry.Portrait, Footprint = null } : null;
     private byte[]? ReadMemorialPillarDexTexture(PokedexMenuTexture texture) => _memorialPillarArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture) ? art.Files[texture.TexturePath] : null;
-    private string? MemorialPillarSpeciesName(int species) => _memorialPillarArt?.DexEntries.GetValueOrDefault(species)?.Name;
     private void DisposeMemorialPillarPresentation() => _memorialPillarArt = null;
 }

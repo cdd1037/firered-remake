@@ -28,7 +28,7 @@ public partial class CampaignView
         if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;_mapEditState=state.MapEdits;return;}
         var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
             ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-        if(definitions is null&&!IsSeafoamPatchedMap(state.World.Player.MapId)&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
+        if(definitions is null&&!IsSeafoamPatchedMap(state.World.Player.MapId)&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
         using var tiles=_mapResources.CreateOwner("map-edit-tiles");
         Texture2D Patch(Texture2D texture,int layer)
@@ -92,7 +92,7 @@ public partial class CampaignView
         if(TrainerTowerGraphics(graphics) is {} towerGraphics)return towerGraphics;
         if(graphics!="OBJ_EVENT_GFX_VAR_0")return graphics;
         var value=_session.State.Script.Variables.GetValueOrDefault("VAR_OBJ_GFX_ID_0");
-        if(_catalog.EventIslandsEnabled&&_session.State.World.Player.MapId.Value=="map.birth-island-exterior"&&
+        if(_session.State.World.Player.MapId.Value=="map.birth-island-exterior"&&
             _catalog.TryConstant("OBJ_EVENT_GFX_DEOXYS_N",out var deoxys)&&value==deoxys)return "OBJ_EVENT_GFX_DEOXYS_N";
         foreach(var candidate in new[]{"OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN","OBJ_EVENT_GFX_OLD_MAN_1","OBJ_EVENT_GFX_OMANYTE","OBJ_EVENT_GFX_KABUTO"})if(_catalog.TryConstant(candidate,out var id)&&id==value)return candidate;
         throw new InvalidDataException("unsupported_dynamic_npc_graphics:"+value);

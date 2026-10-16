@@ -11,8 +11,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId BlaineMachine=new("pret:ITEM_TM38");
     private bool TryApplyCinnabarEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.CinnabarEnabled)return false;
-        if(effect.Opcode=="goto_if_not_defeated")
+        next=state;        if(effect.Opcode=="goto_if_not_defeated")
         {
             if(effect.Source.Path!="data/maps/CinnabarIsland_Gym/scripts.inc"||state.World.Player.MapId.Value!="map.cinnabar-island-gym"||effect.Args.Length!=2)
                 throw new InvalidDataException("cinnabar_quiz_branch_context");
@@ -50,7 +49,7 @@ public sealed partial class CampaignSession
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
+            var machines=_content.Machines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET")||!(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==CinnabarTrainerPartyFactory.Blaine.Value&&h.Outcome==WildBattleOutcome.Won))throw new InvalidDataException("cinnabar_tm_reward_context");
             if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(machines,inventory,BlaineMachine)?1:0;
@@ -68,9 +67,6 @@ public sealed partial class CampaignSession
         bool badge=Flag("FLAG_BADGE07_GET"),got=Flag("FLAG_GOT_TM38_FROM_BLAINE");
         int quantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],BlaineMachine);
         bool key=Flag("FLAG_HIDE_POKEMON_MANSION_B1F_SECRET_KEY");
-        if(!_content.CinnabarEnabled)return badge||got||Flag("FLAG_DEFEATED_BLAINE")||key||quantity!=0||
-            Flag("FLAG_POKEMON_MANSION_SWITCH_STATE")||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")!=0?
-            "save_cinnabar_profile_missing":null;
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==CinnabarTrainerPartyFactory.Blaine.Value&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||Flag("FLAG_DEFEATED_BLAINE")!=won)return "save_blaine_badge_history_mismatch";
         if((won||state.World.Player.MapId.Value=="map.cinnabar-island-gym")&&!key)return "save_cinnabar_gym_without_key";
@@ -78,7 +74,7 @@ public sealed partial class CampaignSession
         if(won&&CinnabarGymTrainerSymbols.Any(id=>!state.BattledTrainers.Contains("pret:"+id)))return "save_blaine_trainer_flags_missing";
         if(got&&!won||!got&&quantity!=0||quantity>1)return "save_blaine_tm_reward_mismatch";
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND");
-        if(scene<0||scene>(_content.FirstSeviiEnabled?4:2)||!won&&scene!=0||won&&scene==0)return "save_cinnabar_bill_scene";
+        if(scene<0||scene>(4)||!won&&scene!=0||won&&scene==0)return "save_cinnabar_bill_scene";
         return null;
     }
     private static readonly string[] CinnabarGymTrainerSymbols=["TRAINER_SUPER_NERD_ERIK","TRAINER_SUPER_NERD_AVERY",
@@ -87,7 +83,7 @@ public sealed partial class CampaignSession
     {
         // Original setobjectxyperm parks the still-hidden boat beyond the 24-wide
         // map before Bill's invitation. Declining keeps that dormant template.
-        if(!_content.CinnabarEnabled||state.World.Player.MapId.Value!="map.cinnabar-island"||
+        if(state.World.Player.MapId.Value!="map.cinnabar-island"||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")!=2||
             actor.LocalId!="LOCALID_CINNABAR_SEAGALLOP"||actor.Active||
             actor.HideFlag!="FLAG_HIDE_CINNABAR_SEAGALLOP"||!state.Script.Flags.GetValueOrDefault(actor.HideFlag))return false;
@@ -98,6 +94,6 @@ public sealed partial class CampaignSession
             source.Instructions.Any(i=>i.Opcode=="setobjectxyperm"&&i.Source.Path=="data/maps/CinnabarIsland/scripts.inc"&&
                 i.Args.SequenceEqual(new[]{actor.LocalId,"30",lower?"12":"8"}));
     }
-    private bool CinnabarFerryChoice(CampaignState state)=>_content.CinnabarEnabled&&state.Dialogue?.TextSymbol is
+    private bool CinnabarFerryChoice(CampaignState state)=>state.Dialogue?.TextSymbol is
         "CinnabarIsland_Text_ComeWithMeToOneIsland" or "CinnabarIsland_PokemonCenter_1F_Text_ReadyToSailToOneIsland";
 }

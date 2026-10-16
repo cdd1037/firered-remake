@@ -5,8 +5,7 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string PresetDoublesContentProfile = "firered-preset-doubles-content-v1";
-    public bool PresetDoublesEnabled => Route8Twins is not null;
-    public SourceTwinsTrainerDefinition? Route8Twins { get; }
+    public SourceTwinsTrainerDefinition Route8Twins { get; }
     public PokemonCatalog? PresetDoublePokemon { get; }
     public SourceMechanicsCatalog? PresetDoubleMechanics { get; }
     public SourceBattleItemCatalog? PresetDoubleItems { get; }

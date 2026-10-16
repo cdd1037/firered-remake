@@ -11,8 +11,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId ErikaMachine=new("pret:ITEM_TM19");
     private bool TryApplyCeladonGymEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.CeladonGymEnabled)return false;
-        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetCeladonGymTrainers")
+        next=state;        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetCeladonGymTrainers")
         {
             if(effect.Args.Length!=1||effect.Args[0] is not("TRAINER_LASS_KAY" or "TRAINER_BEAUTY_BRIDGET" or "TRAINER_PICNICKER_TINA" or "TRAINER_BEAUTY_TAMIA" or "TRAINER_BEAUTY_LORI" or "TRAINER_LASS_LISA" or "TRAINER_COOLTRAINER_MARY")||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET"))
                 throw new InvalidDataException("celadon_gym_trainer_flag_context");
@@ -30,7 +29,7 @@ public sealed partial class CampaignSession
         else
         {
             var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-            var machines=_content.PewterMachines??throw new InvalidDataException("machines_missing");
+            var machines=_content.Machines??throw new InvalidDataException("machines_missing");
             int quantity=effect.Args.Length>1?Value(effect.Args[1]):1;
             if(quantity!=1||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET"))throw new InvalidDataException("celadon_gym_tm_reward_context");
             if(effect.Opcode=="checkitemspace")result=MachineRules.CanAddMachine(machines,inventory,ErikaMachine)?1:0;
@@ -44,7 +43,6 @@ public sealed partial class CampaignSession
     }
     private string? ValidateCeladonGymProgress(CampaignState state)
     {
-        if(!_content.CeladonGymEnabled)return null;
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET");
         bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==CeladonGymTrainerPartyFactory.Erika.Value&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_ERIKA")!=won)return "save_erika_badge_history_mismatch";

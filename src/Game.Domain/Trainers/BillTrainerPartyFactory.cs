@@ -50,10 +50,7 @@ public static class BillTrainerPartyFactory
             throw new NotSupportedException("Bill requires the exact sixty-eight-species catalog and one initial team.");
         if (trainer.Party.Any(member => !pokemon.Species.ContainsKey(member.Species)))
             throw new NotSupportedException("trainer_party_species");
-        var created=TrainerPartyFactory.CreateValidated(trainer,pokemon,rng);
-        return trainer.PartyFlags==0 ? created : created with { Party=created.Party.Select((m,i)=>m with { Pokemon=m.Pokemon with {
-            Moves=trainer.Party[i].CustomMoves.TakeWhile(x=>x.Value!="pret:MOVE_NONE").Select(x=>new PokemonMoveSlot(x,pokemon.Moves[x].Pp,pokemon.Moves[x].Pp)).ToImmutableArray()
-        }}).ToImmutableArray() };
+        return TrainerPartyFactory.CreateValidated(trainer,pokemon,rng);
     }
     public static void ValidateCatalog(BillTrainerCatalog catalog)
     {

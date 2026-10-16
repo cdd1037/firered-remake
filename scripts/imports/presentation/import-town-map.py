@@ -9,7 +9,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 
-import argparse, importlib.util, json, os, pathlib, re, struct, subprocess, sys
+import argparse, json, os, pathlib, re, struct, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -74,8 +74,7 @@ graphics/region_map/dungeon_icon.png
 graphics/region_map/misc_icon.pal
 tools/gbagfx/convert_png.c
 tools/gbagfx/gfx.c""".splitlines()) | frozenset('data/maps/'+name+'/map.json' for name in MAPS)
-_spec=importlib.util.spec_from_file_location('town_map_pixels',ROOT/'scripts/imports/presentation/import-lab-battle-ui.py')
-pixels=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(pixels)
+import ui_tiles as pixels
 
 
 from image_io import png as encode_rgba_png
@@ -120,8 +119,6 @@ def load_lock(path=None):
     return lock
 
 
-
-
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
@@ -139,20 +136,7 @@ def read_sources(lock, raw, repository=None):
     return sources
 
 
-def palette(data, count):
-    # Shared decoder's RGB555 expansion, extended here for the original 80-color map palette.
-    lines=data.decode('ascii').splitlines()
-    if lines[:3] != ['JASC-PAL','0100',str(count)] or len(lines)!=count+3:
-        raise ValueError('Unexpected Town Map palette profile')
-    rows=[]
-    for line in lines[3:]:
-        if not re.fullmatch(r'\d+ \d+ \d+',line): raise ValueError('Malformed palette')
-        row=tuple(map(int,line.split()))
-        if any(v<0 or v>255 for v in row): raise ValueError('Palette range differs')
-        rows.append(row)
-    return pixels.colors(rows)
-
-
+palette = pixels.palette
 compressed_png = encode_rgba_png
 
 

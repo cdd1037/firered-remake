@@ -19,7 +19,6 @@ TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-pokemon-league-trainers-v1'
 TRAINERS = ['ELITE_FOUR_LORELEI','ELITE_FOUR_BRUNO','ELITE_FOUR_AGATHA','ELITE_FOUR_LANCE',
             'CHAMPION_FIRST_SQUIRTLE','CHAMPION_FIRST_BULBASAUR','CHAMPION_FIRST_CHARMANDER']
-MISSING = ['MACHAMP','GENGAR','HITMONLEE','HITMONCHAN','RHYDON','JYNX','AERODACTYL','DRAGONAIR','DRAGONITE']
 
 def need(value, message):
     if not value: raise ValueError(message)
@@ -49,11 +48,8 @@ def generate(reference, dependency):
         data=(dependency/path).read_bytes()
         dependencies.append(dict(path=path));return json.loads(data)
     canonical=dependent('content/generated/data/pokemon/canonical/catalog.json')
-    baseline=dependent('scripts/recipes/story/fuchsia-gym-baseline.lock.json')
+    opponents={row['id']['value'][5:] for row in dependent('data/game-pokemon.json')['opponents']}
     species={s['id']['value'][5:]:s for s in canonical['species']}
-    owned={'SPECIES_'+s for s in baseline['species']+['CHANSEY','SCYTHER','TAUROS','PSYDUCK','GOLDUCK','LAPRAS','KRABBY','KINGLER']}
-    previous=owned|{'SPECIES_'+s for s in ['ALAKAZAM','MR_MIME','SLOWBRO','NINETALES','ARCANINE','RAPIDASH','CLOYSTER','DEWGONG','EXEGGUTOR']}
-    need(len(owned)==115 and len(previous)==124,'Predecessor scope')
     trainers = selected_trainers(read, ['TRAINER_' + short for short in TRAINERS])
     battles, move_defs = [], {}
     for short, trainer in zip(TRAINERS, trainers):
@@ -81,8 +77,7 @@ def generate(reference, dependency):
             postBattleText='',entryScript='EventScript_DoNoIntroTrainerBattle',callback='CB2_EndTrainerBattle',source=ref(script_path,label,script),
             postBattleScript=None,musicOption=None))
     required={m['species']['value'][5:] for t in trainers for m in t['party']}
-    missing=sorted(required-previous,key=lambda s:species[s]['sourceSpeciesId'])
-    need(missing==['SPECIES_'+s for s in MISSING],'New opponent closure differs')
+    need(required <= opponents, 'League trainer species must be admitted by the current game')
     need(len(trainers)==7 and len(required)==25 and sum(len(t['party']) for t in trainers)==38,'League scope differs')
     need([t['sourceTrainerId'] for t in trainers]==[410,411,412,413,438,439,440],'Trainer IDs differ')
     for i,t in enumerate(trainers):
@@ -107,9 +102,7 @@ def generate(reference, dependency):
     need(re.findall(r'SPECIES_\w+',starter_source[1])==['SPECIES_BULBASAUR','SPECIES_SQUIRTLE','SPECIES_CHARMANDER'],'Player starter order differs')
     for value,suffix in [(0,'Charmander'),(1,'Bulbasaur'),(2,'Squirtle')]:
         need('call_if_eq VAR_STARTER_MON, '+str(value)+', PokemonLeague_ChampionsRoom_EventScript_Battle'+suffix in read('data/maps/PokemonLeague_ChampionsRoom/scripts.inc'),'Champion starter mapping differs')
-    outputs={'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs),
-        'pokemon.json':dict(
-            ownedSpeciesAdded=[],opponentSpecies=[dict(id=species[s]['id'],evolutions=species[s]['evolutions']) for s in missing])}
+    outputs={'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs)}
     return outputs,raw
 
 def main():
@@ -119,12 +112,10 @@ def main():
     docs,raw=generate(a.reference,a.dependency)
     files={'content/generated/data/regions/pokemon-league/'+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else runtime_json_bytes(d, sort_keys=True)) for n,d in docs.items()}
     files.update({'content/raw/pokefirered/037335f4/'+n:d for n,d in raw.items()})
-    lock=dict(sourceCommit=COMMIT,profile='firered-pokemon-league-rules-v1',
-        files=[dict(path=k) for k,v in sorted(files.items())])
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=7,members=38,trainerSpecies=25,newOpponentSpecies=9,newOwnedSpecies=0,
+    print(json.dumps(dict(checked=a.check,trainers=7,members=38,trainerSpecies=25,
         moves=len(docs['trainers.json']['resolvedMoves']),sourceInputs=len(raw),files=len(files)),indent=2))
 if __name__=='__main__':main()

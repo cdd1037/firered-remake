@@ -13,7 +13,7 @@ public sealed partial class CampaignSession
     // The prepared Hall save/retry protocol never invokes it again.
     private CampaignState GrantEventIslandTicketsForHall(CampaignState state, bool gaveAtLeastOneRibbon)
     {
-        if (!_content.EventIslandsEnabled || !gaveAtLeastOneRibbon ||
+        if (!gaveAtLeastOneRibbon ||
             OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], EventAuroraTicket) >= 1)
             return state;
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");

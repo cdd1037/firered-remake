@@ -7,7 +7,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -34,9 +33,7 @@ src/text_window.c
 src/text_window_graphics.c
 tools/gbagfx/gfx.c'''.splitlines())
 # Reuse this project's strict PNG/palette codec only, not its UI conversion.
-spec = importlib.util.spec_from_file_location('cursor_png_codec', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-codec = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(codec)
+import ui_tiles as codec
 
 
 def canonical(value):

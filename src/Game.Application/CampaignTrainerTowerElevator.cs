@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
         next=state;
         bool own=effect.Source.Path=="data/maps/TrainerTower_Elevator/scripts.inc";
         bool shared=effect.Source.Path=="data/event_scripts.s"&&effect.Source.Symbol=="EventScript_GetElevatorFloor";
-        if(!_content.TrainerTowerEnabled||state.World.Player.MapId.Value!=TrainerTowerElevator||!own&&!shared)return false;
+        if(state.World.Player.MapId.Value!=TrainerTowerElevator||!own&&!shared)return false;
         var a=effect.Args;int Value(string s)=>DepartmentValue(state,s);
         var elevator=state.TrainerTowerElevator??throw new InvalidDataException("trainer_tower_elevator_entry_missing");
         if(effect.Opcode=="setdynamicwarp")
@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState RecordTrainerTowerElevatorEntrance(CampaignState before,CampaignState moved)
     {
-        if(!_content.TrainerTowerEnabled||moved.World.Player.MapId.Value!=TrainerTowerElevator||before.World.Player.MapId==moved.World.Player.MapId)return moved;
+        if(moved.World.Player.MapId.Value!=TrainerTowerElevator||before.World.Player.MapId==moved.World.Player.MapId)return moved;
         if(before.World.Player.MapId.Value!="map.trainer-tower-roof")throw new InvalidDataException("trainer_tower_elevator_source");
         var map=_content.Maps[before.World.Player.MapId];var warp=map.FieldWarps.Single(w=>w.DestinationMapId.Value==TrainerTowerElevator);
         var tile=map.GetTile(warp.X,warp.Y)!;
@@ -46,7 +46,7 @@ public sealed partial class CampaignSession
     }
     private Decision<CampaignState>? TryTrainerTowerDynamicExit(CampaignState state,CampaignCommand command)
     {
-        if(!_content.TrainerTowerEnabled||command.Kind!="move"||state.World.Player.MapId.Value!=TrainerTowerElevator)return null;
+        if(command.Kind!="move"||state.World.Player.MapId.Value!=TrainerTowerElevator)return null;
         var p=state.World.Player;var map=_content.Maps[p.MapId];
         if(command.Direction!=Direction.South||p.Facing!=Direction.South||map.SourceBehaviorAt(p.X,p.Y)!=0x65)return null;
         if(state.TrainerTowerElevator is not {} target||target.FloorWindowVisible||target.MenuDefault is not null)return new(CommandStatus.Rejected,state,"trainer_tower_elevator_destination");

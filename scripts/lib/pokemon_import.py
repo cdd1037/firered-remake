@@ -14,7 +14,6 @@ from PIL import Image
 from image_io import indexed_png, png
 from pokemon_import_io import canonical
 
-DEX_METADATA_PATH = 'content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json'
 
 
 def source_symbol(name):
@@ -207,17 +206,15 @@ def battle_art(lock, sources, *, profile, species, limitation):
     return outputs
 
 
-def supplement(lock, sources, *, profile, species, weight_species, natural_level_limit,
-               cry_waves=False, cry_source_newline=True):
-    reference = lambda path, symbol, needle=None: local_reference(lock, sources, path, symbol, needle)
+def supplement(sources, *, species):
+    """Only source icons and footprints; shared dex/audio own metadata and cries."""
     icon_text = sources['src/pokemon_icon.c'].decode()
     palette_section = icon_text.split('const u8 gMonIconPaletteIndices[] = {', 1)[1].split('};', 1)[0]
     icon_section = icon_text.split('const u8 *const gMonIconTable[] = {', 1)[1].split('};', 1)[0]
     foot_palette = kanto_palette(sources['graphics/pokedex/kanto_dex_bgpals.pal'])
     graphics = sources['src/data/graphics/pokemon.h'].decode()
     foot_table = sources['src/data/pokemon_graphics/footprint_table.h'].decode()
-    dex_source = sources['src/data/pokemon/pokedex_entries.h'].decode()
-    outputs, icons, assets, cries, weights = {}, [], [], [], []
+    outputs, icons, assets = {}, [], []
     for name, sid in species:
         stem, symbol = source_stem(name), 'SPECIES_' + source_symbol(name)
         image_path = f'graphics/pokemon/{stem}/icon.png'
@@ -243,29 +240,7 @@ def supplement(lock, sources, *, profile, species, weight_species, natural_level
         path = stem + '-footprint'
         outputs[path + '.png'] = png(16, 16, foot)
         assets.append(dict(sourceSpeciesId=sid, texturePath=path + '.png', width=16, height=16))
-        if cry_waves:
-            cry_path = f'sound/direct_sound_samples/cries/{stem}.wav'
-            data = sources[cry_path]
-            if data[:4] != b'RIFF' or data[8:12] != b'WAVE':
-                raise ValueError('Source cry WAV differs')
-            outputs[f'cries/{stem}.wav'] = data
-            cries.append(dict(sourceSpeciesId=sid, wavePath=f'cries/{stem}.wav'))
-        else:
-            cry_table = sources['sound/cry_tables.inc'].decode()
-            cry_name = 'Cry_' + name
-            cry_match = re.search(r'^\tcry ' + cry_name + r'$', cry_table, re.M)
-            cry_rows = re.findall(r'^\tcry (Cry_\w+)$', cry_table, re.M)
-            if cry_rows[sid - 1] != cry_name: raise ValueError('Cry table index differs')
-            if cry_match is None: raise ValueError('Missing source cry identity')
-            cries.append(dict(sourceSpeciesId=sid, cryId=sid, tableIndex=sid - 1, crySymbol=cry_name))
-    for name in weight_species:
-        symbol = 'NATIONAL_DEX_' + name
-        match = re.search(r'    \[' + symbol + r'\] =\s*\{(.*?)\n    \},', dex_source, re.S)
-        if match is None: raise ValueError('Missing weight source')
-        weight = int(re.search(r'\.weight = (\d+),', match[1])[1])
-        species_id = int(re.search(r'^#define SPECIES_' + name + r'\s+(\d+)', sources['include/constants/species.h'].decode(), re.M)[1])
-        weights.append(dict(speciesId='pret:SPECIES_' + name, sourceSpeciesId=species_id, weightHectograms=weight))
-    outputs['supplement.json'] = canonical(dict(schemaVersion=1, dexMetadataDependency=dict(path=DEX_METADATA_PATH), dexSpeciesIds=[sid for _, sid in species], icons=icons, footprints=assets, cries=cries, weights=weights, naturalLevelLimit=natural_level_limit))
+    outputs['supplement.json'] = canonical(dict(schemaVersion=1, dexSpeciesIds=[sid for _, sid in species], icons=icons, footprints=assets))
     return outputs
 
 

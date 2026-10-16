@@ -11,14 +11,10 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string SilphContentProfile="firered-silph-campaign-v1";
-    public PretSilphRegion? SilphRegion { get; }
-    public PretSilphPokemon? SilphPokemon { get; }
+    public PretSilphRegion SilphRegion { get; }
     public PretSilphItemsDocument? SilphItems { get; }
     public SilphTrainerCatalogContent? SilphTrainers { get; }
-    public GamePokemonCatalog? SilphOwnership { get; }
-    public GameOpponentPokemonCatalog? SilphOpponents { get; }
     public PretSilphArt? SilphArt { get; }
-    public bool SilphEnabled=>SilphRegion is not null;
     SilphTrainerCatalog? ICampaignCatalog.SilphTrainerParties=>SilphTrainers is {} t?new(t.Trainers,t.Battles):null;
     public ImmutableArray<SilphWarpPad> SilphWarpPads=>(SilphRegion?.WarpPads??[]).AddRange(SaffronGymWarpPads);
     public ImmutableArray<SilphDoorDefinition> SilphDoors=>SilphRegion?.Doors??[];
@@ -26,8 +22,6 @@ public sealed partial class PretCampaignCatalog
     public ImmutableArray<CampaignSilphElevatorEntrance> SilphElevatorEntrances=>SilphRegion?.ElevatorEntrances??[];
     public ImmutableArray<CampaignSilphDynamicExit> SilphDynamicExits=>SilphRegion?.DynamicExits??[];
     public string PresentedSpeciesName(int species)=>PokemonContent?.SpeciesNames.GetValueOrDefault(species)
-        ??SilphPokemon?.AdditionalSpeciesNames.GetValueOrDefault(species)
-        ??SaffronGymSpeciesNames.GetValueOrDefault(species)
         ??SourceSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
 

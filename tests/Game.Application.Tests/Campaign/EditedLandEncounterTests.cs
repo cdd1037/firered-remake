@@ -66,7 +66,7 @@ public sealed class EditedLandEncounterTests : WildBattleFixture
         Assert.AreEqual(EncounterCheckOutcome.CandidateReady, result.Outcome);
         Assert.AreEqual(new SpeciesId("pret:SPECIES_PIDGEY"), result.Candidate!.Species);
         Assert.AreEqual((byte)15, result.Candidate.Level);
-        var generated = SevenIslandWildPokemonFactory.Generate(content.SevenIslandOwnership!, table, result.State, result.GlobalRng, checkpoint.State.TrainerId);
+        var generated = SevenIslandWildPokemonFactory.Generate(content.GamePokemon!, table, result.State, result.GlobalRng, checkpoint.State.TrainerId);
         Assert.AreEqual(result.Candidate.Species, generated.Pokemon.Species);
         Assert.AreEqual(result.Candidate.Level, generated.Pokemon.Level);
         Assert.IsNull(EarlyLandEncounterRules.CompleteCandidate(result.State, table).Pending);
@@ -75,7 +75,7 @@ public sealed class EditedLandEncounterTests : WildBattleFixture
             table.Slots[result.Candidate.Slot] with { Species = unsupported }) };
         var unsupportedState = result.State with { Pending = result.State.Pending! with {
             Candidate = result.Candidate with { Species = unsupported } } };
-        Assert.Throws<NotSupportedException>(() => SevenIslandWildPokemonFactory.Generate(content.SevenIslandOwnership!,
+        Assert.Throws<NotSupportedException>(() => SevenIslandWildPokemonFactory.Generate(content.GamePokemon!,
             unsupportedTable, unsupportedState, result.GlobalRng, checkpoint.State.TrainerId));
         var fixture = FieldFixture();
         fixture = fixture with {
@@ -84,7 +84,7 @@ public sealed class EditedLandEncounterTests : WildBattleFixture
             FlashLevel = definition.RequiresFlash ? FieldFlashSourcePresentation.MaximumLevel : 0,
             Exploration = fixture.Exploration! with { EarlyEncounter = process }
         };
-        var repelled = EarlyLandEncounterRules.Check(content.PowerPlantOwnership!, process, table,
+        var repelled = EarlyLandEncounterRules.Check(content.GamePokemon!, process, table,
             new(table.Map, EncounterCheckTrigger.TurnInPlaceCompleted, behavior, EncounterTileType.Land),
             fixture.Party, 10, new(3), Game.Domain.Roaming.RoamerState.Empty, new(0, 1), extendedRepel: true);
         Assert.AreEqual(EncounterCheckOutcome.RepelSuppressed, repelled.Outcome);

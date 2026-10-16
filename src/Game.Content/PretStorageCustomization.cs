@@ -38,7 +38,7 @@ public sealed class PretStorageCustomization
         var generated = Path.Combine(root, "content/generated/ui/storage-customization");
         byte[] Read(string directory,string path)
         {
-            byte[] bytes = File.ReadAllBytes(SafeFile(directory, path));
+            byte[] bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(directory, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(Read(generated,"manifest.json"));
@@ -70,21 +70,6 @@ public sealed class PretStorageCustomization
     public byte[] ReadAssetTexture(string id) => [.. outputBytes[Asset(id).TexturePath]];
 
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(p => p is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe customization path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Customization directory symlink is unsupported");
-        var result = root;
-        foreach (var part in path.Split('/'))
-        {
-            result = Path.Combine(result, part);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Customization file symlink is unsupported: " + path);
-        }
-        return result;
-    }
 }
 
 public sealed record StorageCustomizationWallpaper(int Id, string Symbol, string Name, int CategoryId,

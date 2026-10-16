@@ -197,13 +197,16 @@ class LearnsetImportTests(unittest.TestCase):
                          json.loads((GENERATED / 'data/pokemon/power-plant.json').read_bytes()))
         outputs, result = importer.build_power_plant_presentation(lambda path: (RAW / path).read_bytes(), ROOT)
         manifest = result['manifest']
+        self.assertNotIn('sourceLock', result)
+        self.assertNotIn('lockBytes', result['report'])
         self.assertNotIn('inputs', manifest)
         self.assertNotIn('inheritedInputs', manifest)
         self.assertNotIn('cries', manifest['audio'])
         self.assertEqual('CRY_ZAPDOS_ENCOUNTER', manifest['audio']['encounter']['zapdos']['cry'])
         for path, data in outputs.items():
-            if path.startswith('content/generated/') and path.endswith('.json'):
-                self.assertEqual(json.loads(data), json.loads((ROOT / path).read_bytes()), path)
+            if path.startswith('content/generated/'):
+                from generated_output_compare import generated_output_matches
+                self.assertTrue(generated_output_matches(ROOT / path, data), path)
 
     def test_celadon_materializer_and_real_atlas_finalizer_match_runtime_documents(self):
         from item_icon_exports import ATLAS_PATH, pack_project
@@ -228,7 +231,7 @@ class LearnsetImportTests(unittest.TestCase):
             importer.materialize(ROOT, target)
             result = pack_project(target)
             self.assertEqual(1, result['retiredPngFiles'])
-            for name in ('celadon-gym-items.json', 'celadon-gym-machines.json', 'manifest.json'):
+            for name in ('celadon-gym-items.json', 'manifest.json'):
                 path = Path('content/generated/data/items/celadon-gym') / name
                 self.assertEqual(json.loads((ROOT / path).read_bytes()),
                                  json.loads((target / path).read_bytes()), str(path))

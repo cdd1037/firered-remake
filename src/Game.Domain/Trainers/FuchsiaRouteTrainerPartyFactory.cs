@@ -80,8 +80,6 @@ public static class FuchsiaRouteTrainerPartyFactory
         if(!trainers.Trainers.TryGetValue(id,out var trainer))throw new NotSupportedException("Unknown Fuchsia route trainer.");
         if(trainer.DoubleBattle)throw new NotSupportedException("fuchsia_route_preset_double_requires_2v2");
         PokemonFactory.ValidateCatalog(pokemon);
-        var made=TrainerPartyFactory.CreateValidated(trainer,pokemon,rng);
-        if((trainer.PartyFlags&1)==0)return made;
-        return made with {Party=made.Party.Select((p,i)=>p with {Pokemon=p.Pokemon with {Moves=trainer.Party[i].CustomMoves.TakeWhile(m=>m.Value!="pret:MOVE_NONE").Select(m=>new PokemonMoveSlot(m,pokemon.Moves[m].Pp,pokemon.Moves[m].Pp)).ToImmutableArray()}}).ToImmutableArray()};
+        return TrainerPartyFactory.CreateValidated(trainer,pokemon,rng);
     }
 }

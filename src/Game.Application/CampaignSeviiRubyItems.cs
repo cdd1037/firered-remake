@@ -91,10 +91,10 @@ public sealed partial class CampaignSession
             if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
             var machine = new ItemId("pret:ITEM_HM06");
             if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], machine) != 0) throw new InvalidDataException("sevii_ruby_hm06_duplicate");
-            if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
+            if (effect.Opcode == "checkitemspace") result = MachineRules.CanAddMachine(_content.Machines!, inventory, machine) ? 1 : 0;
             else
             {
-                var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
+                var added = MachineRules.AddMachine(_content.Machines!, inventory, machine);
                 next = state with { Inventory = added.State }; result = added.Succeeded ? 1 : 0;
             }
         }

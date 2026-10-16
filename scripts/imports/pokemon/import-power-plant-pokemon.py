@@ -32,122 +32,13 @@ def ident(s):return dict(value='pret:'+s)
 def need(v,m):
  if not v:raise ValueError(m)
 def build_power_plant_presentation(read_source_bytes,dependency_root):
- """Source-authored Power Plant presentation builder; never executes reference code.
-
- build_presentation(read_source_bytes, dependency_root) returns (files, metadata).
- files uses repository-relative paths and includes generated art, raw source cache,
- an authenticated presentation manifest, and its lock. The caller writes files.
- metadata contains the decoded manifest plus lock/report and MtMoon-schema itemIcons.
- The source callback must return bytes from COMMIT; every read is hash authenticated.
- """
- import base64
+ """Build source-derived art and manifests; retain raw bytes for materialization."""
  import io
- import json
- import pathlib
- import re
- import struct
- import zlib
  from PIL import Image
+ from presentation_pixels import PixelReader
 
- COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
- TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
- PROFILE = 'firered-power-plant-presentation-v1'
  BASE = 'content/generated/sprites/pokemon/power-plant/'
- RAW = 'content/raw/pokefirered/037335f4/'
  SPECIES = [('Electabuzz', 125), ('Jolteon', 135), ('Zapdos', 145)]
- SOURCE_PINS = {'graphics/items/icon_palettes/electric_tm_hm.pal': {
-                                                      'path': 'graphics/items/icon_palettes/electric_tm_hm.pal'},
-  'graphics/items/icon_palettes/normal_tm_hm.pal': {
-                                                    'path': 'graphics/items/icon_palettes/normal_tm_hm.pal'},
-  'graphics/items/icon_palettes/thunder_stone.pal': {
-                                                     'path': 'graphics/items/icon_palettes/thunder_stone.pal'},
-  'graphics/items/icons/thunder_stone.png': {
-                                             'path': 'graphics/items/icons/thunder_stone.png'},
-  'graphics/items/icons/tm_hm.png': {
-                                     'path': 'graphics/items/icons/tm_hm.png'},
-  'graphics/pokedex/kanto_dex_bgpals.pal': {
-                                            'path': 'graphics/pokedex/kanto_dex_bgpals.pal'},
-  'graphics/pokemon/electabuzz/back.png': {
-                                           'path': 'graphics/pokemon/electabuzz/back.png'},
-  'graphics/pokemon/electabuzz/footprint.png': {
-                                                'path': 'graphics/pokemon/electabuzz/footprint.png'},
-  'graphics/pokemon/electabuzz/front.png': {
-                                            'path': 'graphics/pokemon/electabuzz/front.png'},
-  'graphics/pokemon/electabuzz/icon.png': {
-                                           'path': 'graphics/pokemon/electabuzz/icon.png'},
-  'graphics/pokemon/electabuzz/normal.pal': {
-                                             'path': 'graphics/pokemon/electabuzz/normal.pal'},
-  'graphics/pokemon/electabuzz/shiny.pal': {
-                                            'path': 'graphics/pokemon/electabuzz/shiny.pal'},
-  'graphics/pokemon/icon_palettes/icon_palette_0.pal': {
-                                                        'path': 'graphics/pokemon/icon_palettes/icon_palette_0.pal'},
-  'graphics/pokemon/icon_palettes/icon_palette_1.pal': {
-                                                        'path': 'graphics/pokemon/icon_palettes/icon_palette_1.pal'},
-  'graphics/pokemon/jolteon/back.png': {
-                                        'path': 'graphics/pokemon/jolteon/back.png'},
-  'graphics/pokemon/jolteon/footprint.png': {
-                                             'path': 'graphics/pokemon/jolteon/footprint.png'},
-  'graphics/pokemon/jolteon/front.png': {
-                                         'path': 'graphics/pokemon/jolteon/front.png'},
-  'graphics/pokemon/jolteon/icon.png': {
-                                        'path': 'graphics/pokemon/jolteon/icon.png'},
-  'graphics/pokemon/jolteon/normal.pal': {
-                                          'path': 'graphics/pokemon/jolteon/normal.pal'},
-  'graphics/pokemon/jolteon/shiny.pal': {
-                                         'path': 'graphics/pokemon/jolteon/shiny.pal'},
-  'graphics/pokemon/zapdos/back.png': {
-                                       'path': 'graphics/pokemon/zapdos/back.png'},
-  'graphics/pokemon/zapdos/footprint.png': {
-                                            'path': 'graphics/pokemon/zapdos/footprint.png'},
-  'graphics/pokemon/zapdos/front.png': {
-                                        'path': 'graphics/pokemon/zapdos/front.png'},
-  'graphics/pokemon/zapdos/icon.png': {
-                                       'path': 'graphics/pokemon/zapdos/icon.png'},
-  'graphics/pokemon/zapdos/normal.pal': {
-                                         'path': 'graphics/pokemon/zapdos/normal.pal'},
-  'graphics/pokemon/zapdos/shiny.pal': {
-                                        'path': 'graphics/pokemon/zapdos/shiny.pal'},
-  'include/constants/items.h': {
-                                'path': 'include/constants/items.h'},
-  'include/constants/species.h': {
-                                  'path': 'include/constants/species.h'},
-  'src/data/graphics/items.h': {
-                                'path': 'src/data/graphics/items.h'},
-  'src/data/graphics/pokemon.h': {
-                                  'path': 'src/data/graphics/pokemon.h'},
-  'src/data/item_icon_table.h': {
-                                 'path': 'src/data/item_icon_table.h'},
-  'src/data/pokemon_graphics/back_pic_coordinates.h': {
-                                                       'path': 'src/data/pokemon_graphics/back_pic_coordinates.h'},
-  'src/data/pokemon_graphics/enemy_mon_elevation.h': {
-                                                      'path': 'src/data/pokemon_graphics/enemy_mon_elevation.h'},
-  'src/data/pokemon_graphics/footprint_table.h': {
-                                                  'path': 'src/data/pokemon_graphics/footprint_table.h'},
-  'src/data/pokemon_graphics/front_pic_coordinates.h': {
-                                                        'path': 'src/data/pokemon_graphics/front_pic_coordinates.h'},
-  'src/data/text/species_names.h': {
-                                    'path': 'src/data/text/species_names.h'},
-  'src/pokemon_icon.c': {
-                         'path': 'src/pokemon_icon.c'}}
- DEPENDENCY_PINS = {'content/generated/sprites/items.png': {'path':'content/generated/sprites/items.png'},'content/generated/battle/art/campaign-hit-art/manifest.json': {
-                                                       'path': 'content/generated/battle/art/campaign-hit-art/manifest.json'},
-  'content/generated/data/items/mtmoon/mtmoon-items.json': {
-                                                   'path': 'content/generated/data/items/mtmoon/mtmoon-items.json'},
-  'content/generated/ui/vermilion-gym-assets/assets.json': {
-                                                           'path': 'content/generated/ui/vermilion-gym-assets/assets.json'}}
-
-
- SOURCE_PINS.update({'data/maps/PowerPlant/map.json': {
-                                    'path': 'data/maps/PowerPlant/map.json'},
-  'data/maps/PowerPlant/scripts.inc': {
-                                       'path': 'data/maps/PowerPlant/scripts.inc'},
-  'src/battle_setup.c': {
-                         'path': 'src/battle_setup.c'}})
- def need(ok, message):
-     if not ok:
-         raise ValueError(message)
-
-
  def encode(value):
      return (json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, default=item_json) + '\n').encode()
 
@@ -155,185 +46,160 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
  png = encode_rgba_png
 
 
- def build_presentation(read_source_bytes, dependency_root):
-     raw, inputs, inherited, out, assets = {}, {}, {}, {}, []
-     dependency_root = pathlib.Path(dependency_root).absolute()
+ raw, inherited, out, assets = {}, {}, {}, []
+ dependency_root = Path(dependency_root).absolute()
 
-     def read(path):
-         if path not in raw:
-             data = read_source_bytes(path)
-             need(isinstance(data, bytes), 'Source callback must return bytes: ' + path)
-             row = dict(path=path)
-             if SOURCE_PINS:
-                 need(SOURCE_PINS.get(path) == row, 'Pinned source bytes differ: ' + path)
-             raw[path], inputs[path] = data, row
-         return raw[path]
+ def read(path):
+     if path not in raw:
+         data = read_source_bytes(path)
+         need(isinstance(data, bytes), 'Source callback must return bytes: ' + path)
+         raw[path] = data
+     return raw[path]
 
-     def text(path):
-         return read(path).decode()
+ def text(path):
+     return read(path).decode()
 
-     def reuse(path):
-         need(':' not in path, 'Unsafe inherited path')
-         data = safe(dependency_root, path).read_bytes()
-         row = dict(path=path)
-         if DEPENDENCY_PINS:
-             need(DEPENDENCY_PINS.get(path) == row, 'Pinned inherited bytes differ: ' + path)
-         inherited[path] = row
-         return data
+ def reuse(path):
+     need(':' not in path, 'Unsafe inherited path')
+     data = safe(dependency_root, path).read_bytes()
+     inherited[path] = data
+     return data
 
-     def ref(path, symbol, match=None):
-         data = read(path)
-         content = '' if path.endswith('.png') else data.decode()
-         return dict(path=path, symbol=symbol, startLine=1 if match is None else content.count('\n', 0, match.start()) + 1,
-                     endLine=max(1, content.count('\n')) if match is None else content.count('\n', 0, match.end()) + 1)
+ def emit(identity, width, height, rgba, paths):
+     need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
+     out[identity + '.png'] = png(width, height, rgba)
+     row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png')
+     assets.append(row)
+     return row
 
-     def emit(identity, width, height, rgba, paths):
-         need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
-         out[identity + '.png'] = png(width, height, rgba)
-         row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png')
-         assets.append(row)
-         return row
+ class Source:
+     def read(self, path):
+         return read(path)
+ reader = PixelReader(Source())
+ def palette(path, floor=True):
+     return reader.palette(path, floor)
+ def indexed(path, pal, shape, floor=True, first_frame=False):
+     return reader.indexed(path, pal, shape, floor=floor, first_frame=first_frame)
 
-     def palette(path, floor=True):
-         lines = text(path).splitlines()
-         need(lines[:2] == ['JASC-PAL', '0100'] and len(lines) == int(lines[2]) + 3, 'Palette framing differs: ' + path)
-         colors = [tuple(map(int, line.split())) for line in lines[3:]]
-         need(all(len(row) == 3 and all(0 <= c <= 255 for c in row) for row in colors), 'Palette channels differ')
-         return [tuple((c >> 3) * 255 // 31 if floor else ((c >> 3) << 3) | ((c >> 3) >> 2) for c in row) for row in colors]
+ sprites, icons, footprints, names = [], [], [], []
+ graphics = text('src/data/graphics/pokemon.h')
+ constants = text('include/constants/species.h')
+ for name, species in SPECIES:
+     stem, symbol = name.lower(), 'SPECIES_' + name.upper()
+     need(re.search(r'^#define ' + symbol + r'\s+' + str(species) + r'\s*$', constants, re.M), 'Species ID differs')
+     elevation_match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+)', text('src/data/pokemon_graphics/enemy_mon_elevation.h'))
+     elevation = int(elevation_match[1]) if elevation_match else 0
+     for side in ('front', 'back'):
+         coordinates = 'src/data/pokemon_graphics/' + side + '_pic_coordinates.h'
+         match = re.search(r'\[' + symbol + r'\]\s*=\s*\{\s*\.size = MON_COORDS_SIZE\((\d+), (\d+)\),\s*\.y_offset = (\d+)', text(coordinates))
+         need(match, 'Species coordinates missing')
+         width, height, y_offset = map(int, match.groups())
+         image = f'graphics/pokemon/{stem}/{side}.png'
+         need(f'gMon{side.title()}Pic_{name}[] = INCBIN_U32("{image[:-4]}.4bpp.lz")' in graphics, 'Species image binding differs')
+         for variant in ('normal', 'shiny'):
+             pal = f'graphics/pokemon/{stem}/{variant}.pal'
+             palette_symbol = 'gMonPalette_' if variant == 'normal' else 'gMonShinyPalette_'
+             need(f'{palette_symbol}{name}[] = INCBIN_U32("{pal[:-4]}.gbapal.lz")' in graphics, 'Species palette binding differs')
+             indices, rgba = indexed(image, pal, (64, 64))
+             x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
+             sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, renderSpeciesId=species, sourceFrameIndex=0, form=None,
+                 side=side, paletteVariant=variant, x=x, y=y, sourceWidth=width, sourceHeight=height,
+                 sourceYOffset=y_offset, sourceEnemyElevation=elevation,  sourceCoordinatePath=coordinates,
+                 paletteExpansion='floor(rgb5 * 255 / 31)', transparentIndex=0,
+                 **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
+     icon_table = text('src/pokemon_icon.c')
+     match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', icon_table)
+     need(match and re.search(r'\[' + symbol + r'\]\s*=\s*gMonIcon_' + name + r',', icon_table), 'Species icon binding differs')
+     pal_index = int(match[1])
+     image, pal = f'graphics/pokemon/{stem}/icon.png', f'graphics/pokemon/icon_palettes/icon_palette_{pal_index}.pal'
+     need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
+     indices, rgba = indexed(image, pal, (32, 64), first_frame=True)
+     icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
+                       sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
+     image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
+     need('[' + symbol + '] = gMonFootprint_' + name + ',' in text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
+     with Image.open(io.BytesIO(read(image))) as im:
+         need(im.mode == '1' and im.size == (16, 16), 'Footprint source differs')
+         indices = bytes(1 if v == 0 else 0 for v in im.get_flattened_data())
+     colors = palette(pal)
+     rgba = bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
+     footprints.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, **emit(stem + '-footprint', 16, 16, rgba, [image, pal])))
+     display = re.search(r'\[' + symbol + r'\]\s*=\s*_\("([^"]+)"\)', text('src/data/text/species_names.h'))
+     need(display, 'Species display name missing')
+     names.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, name=display[1]))
 
-     def indexed(path, pal, shape, floor=True, first_frame=False):
-         with Image.open(io.BytesIO(read(path))) as im:
-             need(im.mode == 'P' and im.size == shape and max(im.tobytes()) < 16, 'Indexed source differs: ' + path)
-             indices = im.tobytes()[:1024] if first_frame else im.tobytes()
-         colors = palette(pal, floor)
-         return indices, bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
+ script_path = 'data/maps/PowerPlant/scripts.inc'
+ script = text(script_path)
+ zapdos = script.split('PowerPlant_EventScript_Zapdos::', 1)[1].split('\nPowerPlant_EventScript_DefeatedZapdos::', 1)[0]
+ need('setwildbattle SPECIES_ZAPDOS, 50' in zapdos and 'playmoncry SPECIES_ZAPDOS, CRY_MODE_ENCOUNTER' in zapdos and
+      'playbgm MUS_ENCOUNTER_GYM_LEADER, 0' in zapdos and 'special StartLegendaryBattle' in zapdos,
+      'Zapdos encounter presentation source differs')
+ for number in (1, 2):
+     electrode = script.split(f'PowerPlant_EventScript_Electrode{number}::', 1)[1].split(f'\nPowerPlant_EventScript_FoughtElectrode{number}::', 1)[0]
+     need('setwildbattle SPECIES_ELECTRODE, 34' in electrode and 'playmoncry SPECIES_ELECTRODE, CRY_MODE_ENCOUNTER' in electrode and
+          '\n\tdowildbattle\n' in electrode and 'StartLegendaryBattle' not in electrode, 'Electrode encounter presentation source differs')
+ need(json.loads(read('data/maps/PowerPlant/map.json'))['music'] == 'MUS_POKE_MANSION', 'Power Plant map music differs')
+ setup_path = 'src/battle_setup.c'
+ setup = text(setup_path)
+ legendary = setup.split('void StartLegendaryBattle(void)', 1)[1].split('void StartGroudonKyogreBattle(void)', 1)[0]
+ need(re.search(r'case SPECIES_ZAPDOS:\s*case SPECIES_HO_OH:\s*case SPECIES_LUGIA:\s*CreateBattleStartTask\(B_TRANSITION_BLUR, MUS_VS_LEGEND\);', legendary),
+      'Zapdos source battle music binding differs')
 
-     sprites, icons, footprints, names = [], [], [], []
-     graphics = text('src/data/graphics/pokemon.h')
-     constants = text('include/constants/species.h')
-     for name, species in SPECIES:
-         stem, symbol = name.lower(), 'SPECIES_' + name.upper()
-         need(re.search(r'^#define ' + symbol + r'\s+' + str(species) + r'\s*$', constants, re.M), 'Species ID differs')
-         elevation_match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+)', text('src/data/pokemon_graphics/enemy_mon_elevation.h'))
-         elevation = int(elevation_match[1]) if elevation_match else 0
-         for side in ('front', 'back'):
-             coordinates = 'src/data/pokemon_graphics/' + side + '_pic_coordinates.h'
-             match = re.search(r'\[' + symbol + r'\]\s*=\s*\{\s*\.size = MON_COORDS_SIZE\((\d+), (\d+)\),\s*\.y_offset = (\d+)', text(coordinates))
-             need(match, 'Species coordinates missing')
-             width, height, y_offset = map(int, match.groups())
-             image = f'graphics/pokemon/{stem}/{side}.png'
-             need(f'gMon{side.title()}Pic_{name}[] = INCBIN_U32("{image[:-4]}.4bpp.lz")' in graphics, 'Species image binding differs')
-             for variant in ('normal', 'shiny'):
-                 pal = f'graphics/pokemon/{stem}/{variant}.pal'
-                 palette_symbol = 'gMonPalette_' if variant == 'normal' else 'gMonShinyPalette_'
-                 need(f'{palette_symbol}{name}[] = INCBIN_U32("{pal[:-4]}.gbapal.lz")' in graphics, 'Species palette binding differs')
-                 indices, rgba = indexed(image, pal, (64, 64))
-                 x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
-                 sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, renderSpeciesId=species, sourceFrameIndex=0, form=None,
-                     side=side, paletteVariant=variant, x=x, y=y, sourceWidth=width, sourceHeight=height,
-                     sourceYOffset=y_offset, sourceEnemyElevation=elevation,  sourceCoordinatePath=coordinates,
-                     paletteExpansion='floor(rgb5 * 255 / 31)', transparentIndex=0,
-                     **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
-         icon_table = text('src/pokemon_icon.c')
-         match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', icon_table)
-         need(match and re.search(r'\[' + symbol + r'\]\s*=\s*gMonIcon_' + name + r',', icon_table), 'Species icon binding differs')
-         pal_index = int(match[1])
-         image, pal = f'graphics/pokemon/{stem}/icon.png', f'graphics/pokemon/icon_palettes/icon_palette_{pal_index}.pal'
-         need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
-         indices, rgba = indexed(image, pal, (32, 64), first_frame=True)
-         icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
-                           sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
-         image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
-         need('[' + symbol + '] = gMonFootprint_' + name + ',' in text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
-         with Image.open(io.BytesIO(read(image))) as im:
-             need(im.mode == '1' and im.size == (16, 16), 'Footprint source differs')
-             indices = bytes(1 if v == 0 else 0 for v in im.get_flattened_data())
-         colors = palette(pal)
-         rgba = bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
-         footprints.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, **emit(stem + '-footprint', 16, 16, rgba, [image, pal])))
-         display = re.search(r'\[' + symbol + r'\]\s*=\s*_\("([^"]+)"\)', text('src/data/text/species_names.h'))
-         need(display, 'Species display name missing')
-         names.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, name=display[1]))
+ geometry_path = 'content/generated/battle/art/campaign-hit-art/manifest.json'
+ geometry = json.loads(reuse(geometry_path))['geometry']
+ geometry_rows = []
+ for row in sprites:
+     if row['paletteVariant'] != 'normal':
+         continue
+     expected = dict(species=row['sourceSpeciesId'], side=row['side'], sourceWidth=row['sourceWidth'], sourceHeight=row['sourceHeight'],
+                     yOffset=row['sourceYOffset'], elevation=row['sourceEnemyElevation'] if row['side'] == 'front' else 0)
+     need(expected in geometry, 'Inherited battle geometry differs')
+     geometry_rows.append(expected)
 
-     script_path = 'data/maps/PowerPlant/scripts.inc'
-     script = text(script_path)
-     zapdos = script.split('PowerPlant_EventScript_Zapdos::', 1)[1].split('\nPowerPlant_EventScript_DefeatedZapdos::', 1)[0]
-     need('setwildbattle SPECIES_ZAPDOS, 50' in zapdos and 'playmoncry SPECIES_ZAPDOS, CRY_MODE_ENCOUNTER' in zapdos and
-          'playbgm MUS_ENCOUNTER_GYM_LEADER, 0' in zapdos and 'special StartLegendaryBattle' in zapdos,
-          'Zapdos encounter presentation source differs')
-     for number in (1, 2):
-         electrode = script.split(f'PowerPlant_EventScript_Electrode{number}::', 1)[1].split(f'\nPowerPlant_EventScript_FoughtElectrode{number}::', 1)[0]
-         need('setwildbattle SPECIES_ELECTRODE, 34' in electrode and 'playmoncry SPECIES_ELECTRODE, CRY_MODE_ENCOUNTER' in electrode and
-              '\n\tdowildbattle\n' in electrode and 'StartLegendaryBattle' not in electrode, 'Electrode encounter presentation source differs')
-     need(json.loads(read('data/maps/PowerPlant/map.json'))['music'] == 'MUS_POKE_MANSION', 'Power Plant map music differs')
-     setup_path = 'src/battle_setup.c'
-     setup = text(setup_path)
-     legendary = setup.split('void StartLegendaryBattle(void)', 1)[1].split('void StartGroudonKyogreBattle(void)', 1)[0]
-     need(re.search(r'case SPECIES_ZAPDOS:\s*case SPECIES_HO_OH:\s*case SPECIES_LUGIA:\s*CreateBattleStartTask\(B_TRANSITION_BLUR, MUS_VS_LEGEND\);', legendary),
-          'Zapdos source battle music binding differs')
+ # Bag icons keep the earlier item importers' replicated-RGB5 palette convention.
+ item_icons = []
+ item_table, item_graphics = text('src/data/item_icon_table.h'), text('src/data/graphics/items.h')
+ for symbol, item_id, inherited_png in [
+     ('ITEM_THUNDER_STONE', 96, None),
+     ('ITEM_TM17', 305, ('content/generated/data/items/mtmoon/mtmoon-items.json','pret:ITEM_TM05')),
+     ('ITEM_TM25', 313, ('content/generated/ui/vermilion-gym-assets/assets.json','pret:ITEM_TM34'))]:
+     need(re.search(r'^#define ' + symbol + r'\s+' + str(item_id) + r'\s*(?://[^\n]*)?$', text('include/constants/items.h'), re.M), 'Item ID differs')
+     binding = re.search(r'^    \[' + symbol + r'\][ \t]*= \{(\w+), (\w+)\},', item_table, re.M)
+     need(binding, 'Item icon binding missing')
+     paths = []
+     for sym in binding.groups():
+         definition = re.search(r'^const u32 ' + sym + r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);', item_graphics, re.M)
+         need(definition, 'Item graphics source missing')
+         paths.append(definition[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
+     image, pal = paths
+     _, rgba = indexed(image, pal, (24, 24), floor=False)
+     if inherited_png:
+         descriptor,item = inherited_png
+         document=json.loads(reuse(descriptor))
+         icon_row=next(i for i in document.get('icons',[document.get('icon')]) if i['item']['value']==item)
+         png_path=icon_row['pngPath'];png_bytes=reuse(png_path)
+         im=decode_icon_page(png_bytes,icon_row)
+         need(im.tobytes()==rgba,'Inherited TM icon differs')
+     else:
+         emitted = emit('items/' + symbol.lower(), 24, 24, rgba, paths)
+         png_path = emitted['texturePath']
+         png_bytes = out['items/' + symbol.lower() + '.png']
+     item_icons.append(dict(item=dict(value='pret:' + symbol), sourceItemId=item_id, width=24, height=24, pngPath=png_path, inherited=bool(inherited_png)))
+     if inherited_png and icon_row.get('region'):item_icons[-1]['region']=icon_row['region']
 
-     geometry_path = 'content/generated/battle/art/campaign-hit-art/manifest.json'
-     geometry = json.loads(reuse(geometry_path))['geometry']
-     geometry_rows = []
-     for row in sprites:
-         if row['paletteVariant'] != 'normal':
-             continue
-         expected = dict(species=row['sourceSpeciesId'], side=row['side'], sourceWidth=row['sourceWidth'], sourceHeight=row['sourceHeight'],
-                         yOffset=row['sourceYOffset'], elevation=row['sourceEnemyElevation'] if row['side'] == 'front' else 0)
-         need(expected in geometry, 'Inherited battle geometry differs')
-         geometry_rows.append(expected)
+ manifest = dict(schemaVersion=1, assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], itemIcons=item_icons, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(   encounter=dict(sourcePath=script_path, battleMusicSourcePath=setup_path, cryMode=2, cryParameters=dict(length=140, release=225, pitch=15600, chorus=20, volume=90), zapdos=dict(species=145, level=50, cry='CRY_ZAPDOS_ENCOUNTER', introductionMusic='MUS_ENCOUNTER_GYM_LEADER', battleMusic='MUS_VS_LEGEND'), electrodes=dict(species=101, level=34, count=2, cry='CRY_ELECTRODE_ENCOUNTER', battleMusic='MUS_VS_WILD'), mapMusic='MUS_POKE_MANSION', playbackAuthority='existing committed presentation effects and typed battle context')), outputs=[dict(path=p) for p, b in sorted(out.items())])
+ manifest_bytes = encode(manifest)
+ out['manifest.json'] = manifest_bytes
+ files = {BASE + p: b for p, b in out.items()}
+ files.update({RAW + p: b for p, b in raw.items()})
+ report = dict(passed=True, sourceFiles=len(raw), inheritedInputs=len(inherited), assets=len(assets), sprites=len(sprites),
+     icons=len(icons), footprints=len(footprints), itemIcons=len(item_icons), inheritedItemIcons=2,
+     geometry=len(geometry_rows), outputs=len(out) - 1,
+      manifestBytes=len(manifest_bytes),
 
-     # Bag icons keep the earlier item importers' replicated-RGB5 palette convention.
-     item_icons = []
-     item_table, item_graphics = text('src/data/item_icon_table.h'), text('src/data/graphics/items.h')
-     for symbol, item_id, inherited_png in [
-         ('ITEM_THUNDER_STONE', 96, None),
-         ('ITEM_TM17', 305, ('content/generated/data/items/mtmoon/mtmoon-items.json','pret:ITEM_TM05')),
-         ('ITEM_TM25', 313, ('content/generated/ui/vermilion-gym-assets/assets.json','pret:ITEM_TM34'))]:
-         need(re.search(r'^#define ' + symbol + r'\s+' + str(item_id) + r'\s*(?://[^\n]*)?$', text('include/constants/items.h'), re.M), 'Item ID differs')
-         binding = re.search(r'^    \[' + symbol + r'\][ \t]*= \{(\w+), (\w+)\},', item_table, re.M)
-         need(binding, 'Item icon binding missing')
-         paths = []
-         for sym in binding.groups():
-             definition = re.search(r'^const u32 ' + sym + r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);', item_graphics, re.M)
-             need(definition, 'Item graphics source missing')
-             paths.append(definition[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
-         image, pal = paths
-         _, rgba = indexed(image, pal, (24, 24), floor=False)
-         if inherited_png:
-             descriptor,item = inherited_png
-             document=json.loads(reuse(descriptor))
-             icon_row=next(i for i in document.get('icons',[document.get('icon')]) if i['item']['value']==item)
-             png_path=icon_row['pngPath'];png_bytes=reuse(png_path)
-             im=decode_icon_page(png_bytes,icon_row)
-             need(im.tobytes()==rgba,'Inherited TM icon differs')
-         else:
-             emitted = emit('items/' + symbol.lower(), 24, 24, rgba, paths)
-             png_path = emitted['texturePath']
-             png_bytes = out['items/' + symbol.lower() + '.png']
-         item_icons.append(dict(item=dict(value='pret:' + symbol), sourceItemId=item_id, width=24, height=24, pngPath=png_path, inherited=bool(inherited_png)))
-         if inherited_png and icon_row.get('region'):item_icons[-1]['region']=icon_row['region']
+      nativeWindowVerified=False)
+ return files, dict(manifest=manifest, report=report, itemIcons=item_icons)
 
-     if SOURCE_PINS:
-         need(set(inputs) == set(SOURCE_PINS), 'Source input inventory differs')
-     if DEPENDENCY_PINS:
-         need(set(inherited) == set(DEPENDENCY_PINS), 'Inherited input inventory differs')
-     lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
-                 files=[inputs[p] for p in sorted(inputs)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
-     lock_bytes = encode(lock)
-     manifest = dict(schemaVersion=1, assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], itemIcons=item_icons, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(   encounter=dict(sourcePath=script_path, battleMusicSourcePath=setup_path, cryMode=2, cryParameters=dict(length=140, release=225, pitch=15600, chorus=20, volume=90), zapdos=dict(species=145, level=50, cry='CRY_ZAPDOS_ENCOUNTER', introductionMusic='MUS_ENCOUNTER_GYM_LEADER', battleMusic='MUS_VS_LEGEND'), electrodes=dict(species=101, level=34, count=2, cry='CRY_ELECTRODE_ENCOUNTER', battleMusic='MUS_VS_WILD'), mapMusic='MUS_POKE_MANSION', playbackAuthority='existing committed presentation effects and typed battle context')), outputs=[dict(path=p) for p, b in sorted(out.items())])
-     manifest_bytes = encode(manifest)
-     out['manifest.json'] = manifest_bytes
-     files = {BASE + p: b for p, b in out.items()}
-     files.update({RAW + p: b for p, b in raw.items()})
-     report = dict(passed=True, sourceFiles=len(raw), inheritedInputs=len(inherited), assets=len(assets), sprites=len(sprites),
-         icons=len(icons), footprints=len(footprints), itemIcons=len(item_icons), inheritedItemIcons=2,
-         geometry=len(geometry_rows), outputs=len(out) - 1,  lockBytes=len(lock_bytes),
-          manifestBytes=len(manifest_bytes),
-
-          nativeWindowVerified=False)
-     return files, dict(manifest=manifest, sourceLock=lock, report=report, itemIcons=item_icons)
- return build_presentation(read_source_bytes,dependency_root)
 
 def generate(reference,dependency,raw=None):
  raw_root=raw if raw is not None else ROOT/RAW

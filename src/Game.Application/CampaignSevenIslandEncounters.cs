@@ -11,7 +11,7 @@ public sealed partial class CampaignSession
 {
     private bool IsSevenIslandWildHistory(CampaignWildHistory history)
     {
-        if (!_content.SevenIslandEnabled || history.SevenIsland is not { } origin || history.SevenIslandReceipt is not { } receipt ||
+        if (history.SevenIsland is not { } origin || history.SevenIslandReceipt is not { } receipt ||
             history.CeruleanCaveOrigin is not null || history.MewtwoReceipt is not null || history.CelioRoamer is not null ||
             history.FiveIsland is not null || history.SixIsland is not null || history.SeviiRuby is not null || history.FourIsland is not null ||
             history.VictoryRoad is not null || history.Safari || history.ScriptedMarowak || history.ScriptedSnorlaxRoute != 0 || history.LostelleHypno is not null ||
@@ -19,10 +19,10 @@ public sealed partial class CampaignSession
             receipt.InitialPokemon is not { } initial || initial.SourceSpeciesId != history.SourceSpeciesId || initial.Level != history.Level ||
             receipt.RngBefore.AlgorithmId != Gen3Rng.AlgorithmId || receipt.RngAfter.AlgorithmId != Gen3Rng.AlgorithmId ||
             receipt.RngBefore.Cursor >= receipt.RngAfter.Cursor ||
-            !SevenIslandWildPokemonFactory.SourceInitialInstance(_content.SevenIslandOwnership!, origin, initial)) return false;
+            !SevenIslandWildPokemonFactory.SourceInitialInstance(_content.GamePokemon!, origin, initial)) return false;
         try
         {
-            var made = SevenIslandWildPokemonFactory.GenerateSourceSlot(_content.SevenIslandOwnership!, origin,
+            var made = SevenIslandWildPokemonFactory.GenerateSourceSlot(_content.GamePokemon!, origin,
                 checked((byte)initial.Level), receipt.RngBefore, initial.OriginalTrainerId);
             return made.GlobalRng == receipt.RngAfter && SameSourceOwnedPokemon(made.Pokemon, initial);
         }

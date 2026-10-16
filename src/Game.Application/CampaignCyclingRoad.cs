@@ -12,8 +12,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateCyclingRoadState(CampaignState state)
     {
-        if (!_content.CyclingRoadEnabled)
-            return state.BicycleSlope ? "save_cycling_road_unavailable" : null;
         int scene = state.Script.Variables.GetValueOrDefault(CyclingRoadScene);
         bool onRoad = state.Script.Flags.GetValueOrDefault(CyclingRoadFlag);
         var p = state.World.Player;
@@ -40,7 +38,7 @@ public sealed partial class CampaignSession
             "map.route-18" => "Route18",
             _ => null
         };
-        if (!_content.CyclingRoadEnabled || source is null ||
+        if (source is null ||
             effect.Source.Path != "data/maps/" + source + "/scripts.inc" ||
             effect.Source.Symbol != source + "_OnWarpCyclingRoad" ||
             state.Script.Variables.GetValueOrDefault(CyclingRoadScene) != 1 ||
@@ -54,7 +52,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideCyclingRoadInput(CampaignState state, CampaignCommand command)
     {
         var p = state.World.Player;
-        if (!_content.CyclingRoadEnabled || !state.IsCycling ||
+        if (!state.IsCycling ||
             !CyclingRoadRules.IsSlope(SourceBehavior(state, p.X, p.Y)) ||
             command.Choice is not (0 or 1) || command.Text is not (null or "idle"))
             return new(CommandStatus.Rejected, state, "cycling_road_input_context");

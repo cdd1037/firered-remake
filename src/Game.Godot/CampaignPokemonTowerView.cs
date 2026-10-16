@@ -17,13 +17,10 @@ public partial class CampaignView
     private long _towerWhiteEffect;
     private string? _towerRevealBattle;
     private bool _towerRevealStartSound, _towerRevealEndSound;
-    private bool PokemonTowerInputLocked => _catalog?.PokemonTowerEnabled == true && (_towerWhiteTicks < _towerWhiteDuration || _session?.State.PokeFlute is not null);
+    private bool PokemonTowerInputLocked => _catalog is not null && (_towerWhiteTicks < _towerWhiteDuration || _session?.State.PokeFlute is not null);
 
     private void LoadPokemonTowerPresentation()
     {
-        if (!_catalog.PokemonTowerEnabled) return;
-        if (_catalog.PokemonTowerPokemon is null)
-            throw new InvalidDataException("Pokemon Tower must extend the 99-species Rocket presentation.");
         var art = PokemonTowerPresentationAssets.Load(_root, art:true);
         ImageTexture Rgba(JsonElement row)
         {
@@ -98,7 +95,6 @@ public partial class CampaignView
     }
     private void SynchronizePokemonTowerPresentation(CampaignState? before,CampaignState after)
     {
-        if(!_catalog.PokemonTowerEnabled)return;
         if(before is null||before.World.Player.MapId!=after.World.Player.MapId)_towerFogTicks=0;
         if(before is null)
         { _towerWhiteFrom=_towerWhiteTo=after.ScreenIsWhite?1:0;_towerWhiteDuration=0;_towerWhiteTicks=0;_towerWhiteEffect=after.Script.EffectSequence; }
@@ -113,7 +109,6 @@ public partial class CampaignView
     private float TowerWhiteAmount => _towerWhiteDuration==0 ? _towerWhiteTo : Mathf.Lerp(_towerWhiteFrom,_towerWhiteTo,(float)Math.Clamp(_towerWhiteTicks/_towerWhiteDuration,0,1));
     private void ProcessPokemonTowerPresentation(double delta)
     {
-        if(!_catalog.PokemonTowerEnabled)return;
         ProcessPokemonTowerFlute(delta);
         _towerFogTicks+=delta*60;_towerWhiteTicks=Math.Min(_towerWhiteDuration,_towerWhiteTicks+delta*60);
         if(PresentedWildBattle is {} b&&TowerRevealing(b))
@@ -125,7 +120,7 @@ public partial class CampaignView
     }
     private void DrawPokemonTowerFog(Vector2 camera)
     {
-        if(!_catalog.PokemonTowerEnabled||!PokemonTowerPresentationModel.HasFog(_session.State.World.Player.MapId.Value))return;
+        if(!PokemonTowerPresentationModel.HasFog(_session.State.World.Player.MapId.Value))return;
         long ticks=(long)_towerFogTicks+1;var blend=PokemonTowerPresentationModel.FogEntryBlend(ticks);
         // Source texture, scroll, grid and EVA progression; Godot alpha approximates the
         // two independent GBA blend coefficients. OBJ priority/palette weather is not emulated here.
@@ -134,14 +129,14 @@ public partial class CampaignView
     }
     private void DrawPokemonTowerWhiteFade()
     {
-        if(_catalog.PokemonTowerEnabled&&TowerWhiteAmount>0)DrawRect(new(0,0,240,160),new Color(1,1,1,TowerWhiteAmount));
+        if(TowerWhiteAmount>0)DrawRect(new(0,0,240,160),new Color(1,1,1,TowerWhiteAmount));
     }
     private bool TowerRevealing(CampaignWildBattle b)=>b.State.TowerBattleKind==PokemonTowerBattleKind.RevealedMarowak&&
         b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is WildBattleStartedEvent&&_wildPage==1;
     private bool PokemonTowerRevealInputLocked(CampaignWildBattle b)=>TowerRevealing(b)&&_towerRevealTicks<94||WildCurrentEvent(b) is WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Played or PokeFluteBattlePhase.Fanfare};
     private PokemonTowerPresentationModel.OpponentAppearance? TowerOpponentAppearance()
     {
-        if(!_catalog.PokemonTowerEnabled||PresentedWildBattle is not {} b||b.State.TowerBattleKind is not {} kind)return null;
+        if(PresentedWildBattle is not {} b||b.State.TowerBattleKind is not {} kind)return null;
         var phase=PokemonTowerPresentationModel.RevealPhase.NotApplicable;
         if(kind==PokemonTowerBattleKind.RevealedMarowak)
         {
@@ -152,14 +147,14 @@ public partial class CampaignView
     }
     private bool PokemonTowerStartedPages(CampaignWildBattle b,Action<string,(string Key,string Value)[]> source)
     {
-        if(!_catalog.PokemonTowerEnabled||b.State.TowerBattleKind is not {} kind)return false;
+        if(b.State.TowerBattleKind is not {} kind)return false;
         source(PokemonTowerPresentationModel.IntroTextSymbol(kind)!,[]);
         if(kind==PokemonTowerBattleKind.RevealedMarowak){source("sText_SilphScopeUnveil",[]);source("sText_TheGhostWas",[]);}
         source("sText_GoPkmn",[]);return true;
     }
     private bool PokemonTowerStartedAudio(CampaignWildBattle b)
     {
-        if(!_catalog.PokemonTowerEnabled||b.State.TowerBattleKind is not {} kind)return false;
+        if(b.State.TowerBattleKind is not {} kind)return false;
         if(_wildPage==(kind==PokemonTowerBattleKind.RevealedMarowak?3:2))SourceCry(b.DisplayPlayer);
         return true;
     }
@@ -228,7 +223,7 @@ public partial class CampaignView
         { _towerFluteBattleDrawnSequence=e.Sequence;_towerFluteBattleDrawnFrame=Engine.GetProcessFrames(); }
     }
     private bool PokemonTowerSilentEvent(CampaignWildBattle b)=>WildCurrentEvent(b) is {} e&&e is not WildBattlePokeFluteEvent&&PokemonTowerWildMessage(e) is {Symbol.Length:0};
-    private ForestMessage? PokemonTowerWildMessage(WildBattleEvent current)=>!_catalog.PokemonTowerEnabled?null:current switch
+    private ForestMessage? PokemonTowerWildMessage(WildBattleEvent current)=>current switch
     {
         WildBattleTowerGhostActionEvent {StringId:"STRINGID_MONTOOSCAREDTOMOVE"} e=>new("sText_TooScaredToMove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
         WildBattleTowerGhostActionEvent {StringId:"STRINGID_GHOSTGETOUTGETOUT"}=>new("sText_GetOutGetOut"),

@@ -11,7 +11,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretTrainerTowerRegion TrainerTowerRegion { get; }
-    public bool TrainerTowerEnabled => TrainerTowerRegion is not null;
     public TrainerTowerCatalog TrainerTowerCatalog { get; }
     public GameOpponentPokemonCatalog TrainerTowerOpponents { get; }
     private readonly ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), ConnectedFieldMap> _trainerTowerConnectedMaps;

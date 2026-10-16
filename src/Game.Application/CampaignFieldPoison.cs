@@ -76,10 +76,9 @@ public sealed partial class CampaignSession
     // A Fainted result owns the field command before encounters are considered.
     private CampaignState ApplyFieldPoisonWalkingStep(CampaignState state)
     {
-        if (!_content.ForestEnabled) return state;
         if (state.FieldPoison is not null || !state.Script.Completed || state.Script.Locked || state.Script.Wait is not null || !state.Script.Stack.IsEmpty || state.Dialogue is not null)
             throw new InvalidDataException("field_poison_step_event_active");
-        var step = CampaignFieldPoisonRules.Walk(state.Script.Variables.GetValueOrDefault(CampaignFieldPoisonRules.CounterVariable), state.Party,_content.EarlyStarterEnabled,_content.Route11Enabled,_content.FuchsiaGymEnabled);
+        var step = CampaignFieldPoisonRules.Walk(state.Script.Variables.GetValueOrDefault(CampaignFieldPoisonRules.CounterVariable), state.Party,true,true,true);
         state = state with { Party = step.Party, Script = state.Script with { Variables = state.Script.Variables.SetItem(CampaignFieldPoisonRules.CounterVariable, step.Counter) } };
         if (step.Effect == FieldPoisonEffect.None) return state;
         // Source FldEffPoison_Start is asynchronous; surviving poison does not stop walking or encounters.
@@ -99,8 +98,7 @@ public sealed partial class CampaignSession
     }
 
     // Source Task_BattleStart clears this at battle admission, not when returning to the field.
-    private CampaignState ResetFieldPoisonCounterForBattle(CampaignState state) => !_content.ForestEnabled ? state :
-        state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(CampaignFieldPoisonRules.CounterVariable, 0) } };
+    private CampaignState ResetFieldPoisonCounterForBattle(CampaignState state) => state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(CampaignFieldPoisonRules.CounterVariable, 0) } };
 
     private Decision<CampaignState> DecideFieldPoison(CampaignState state, CampaignCommand command)
     {
@@ -134,18 +132,18 @@ public sealed partial class CampaignSession
         for (int i = poison.NextPartyIndex; i < state.Party.Length; i++)
         {
             var mon = state.Party[i];
-            if (!CampaignFieldPoisonRules.IsPoisonFaint(mon,_content.FuchsiaGymEnabled)) continue;
+            if (!CampaignFieldPoisonRules.IsPoisonFaint(mon,true)) continue;
             // Task_TryFieldPoisonWhiteOut changes this one slot before its own message,
             // and waits for dismissal before advancing to the next party slot.
             state = state with
             {
-                Party = state.Party.SetItem(i, CampaignFieldPoisonRules.ResolveFaint(mon,_content.FuchsiaGymEnabled)),
+                Party = state.Party.SetItem(i, CampaignFieldPoisonRules.ResolveFaint(mon,true)),
                 FieldPoison = poison with { NextPartyIndex = i + 1 },
                 TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
             };
             return ShowFieldPoisonMessage(state, "gText_PkmnFainted3");
         }
-        bool whiteout = !CampaignFieldPoisonRules.HasUsablePokemon(state.Party,_content.EarlyStarterEnabled,_content.Route11Enabled,_content.FuchsiaGymEnabled);
+        bool whiteout = !CampaignFieldPoisonRules.HasUsablePokemon(state.Party,true,true,true);
         state = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", whiteout ? 1 : 0) } };
         if (!whiteout) return FinishFieldPoison(state);
         // This profile has no badge yet; the shared respawn routine enforces the same restriction.

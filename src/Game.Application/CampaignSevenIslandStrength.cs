@@ -49,7 +49,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState CompleteSevenIslandBoulderPush(CampaignState state, CampaignActor boulder)
     {
-        if (!_content.SevenIslandEnabled || state.World.Player.MapId.Value != TanobyKeyMap) return state;
+        if (state.World.Player.MapId.Value != TanobyKeyMap) return state;
         var puzzle = _content.SevenIslandField!.TanobyKey;
         var map = EditedFieldMaps(state)[puzzle.Map];
         if (map.CellAt(boulder.X, boulder.Y)?.SourceBehavior != puzzle.StrengthBehaviorId) return state;

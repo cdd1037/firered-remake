@@ -21,12 +21,10 @@ public sealed partial class CampaignSession
             .SetItem(TrainerFanClubRules.SceneVariable, fans.Scene) }
     };
 
-    private CampaignState InitializeTrainerFanClub(CampaignState state) => !_content.TrainerFanClubEnabled
-        ? state : WriteTrainerFanClub(state, TrainerFanClubRules.Reset(TrainerFanClubState.Empty));
+    private CampaignState InitializeTrainerFanClub(CampaignState state) => WriteTrainerFanClub(state, TrainerFanClubRules.Reset(TrainerFanClubState.Empty));
 
     private string? ValidateTrainerFanClub(CampaignState state)
     {
-        if (!_content.TrainerFanClubEnabled) return null;
         if (!state.Script.Variables.ContainsKey(TrainerFanClubRules.CounterVariable) ||
             !state.Script.Variables.ContainsKey(TrainerFanClubRules.LoseFanHoursVariable) ||
             !state.Script.Variables.ContainsKey(TrainerFanClubRules.SceneVariable)) return "save_trainer_fan_club_missing";
@@ -43,7 +41,6 @@ public sealed partial class CampaignSession
 
     private CampaignState UpdateTrainerFanClubGameClear(CampaignState state)
     {
-        if (!_content.TrainerFanClubEnabled) throw new InvalidDataException("trainer_fan_club_catalog_missing");
         var result = TrainerFanClubRules.OnGameClear(ReadTrainerFanClub(state), state.PlayTime.Hours);
         var next = WriteTrainerFanClub(state, result.State);
         if (result.FirstFansInitialized) next = next with
@@ -56,7 +53,6 @@ public sealed partial class CampaignSession
 
     private CampaignState TryGainTrainerFanFromLance(CampaignState state)
     {
-        if (!_content.TrainerFanClubEnabled) throw new InvalidDataException("trainer_fan_club_catalog_missing");
         var result = TrainerFanClubRules.TryGainFromCounter(ReadTrainerFanClub(state), 0, state.World.Rng);
         return WriteTrainerFanClub(state, result.State) with { World = state.World with { Rng = result.Rng } };
     }
@@ -65,7 +61,7 @@ public sealed partial class CampaignSession
     {
         next = state;
         if (effect.Source.Path != TrainerFanClubScript || effect.Opcode is not ("special" or "specialvar")) return false;
-        if (!_content.TrainerFanClubEnabled || state.World.Player.MapId.Value != TrainerFanClubMap)
+        if (state.World.Player.MapId.Value != TrainerFanClubMap)
             throw new InvalidDataException("trainer_fan_club_effect_context");
         var source = _content.FindProgram(effect.Source.Symbol)?.Instructions.SingleOrDefault(i =>
             i.Source == effect.Source && i.Opcode == effect.Opcode && i.Args.SequenceEqual(effect.Args));

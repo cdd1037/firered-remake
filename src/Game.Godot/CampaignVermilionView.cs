@@ -9,41 +9,15 @@ public partial class CampaignView
     private void LoadVermilionPresentation()
     {
         if (_catalog.VermilionPokemon is not { } source) return;
-        Image Decode(byte[] bytes, int width, int height)
-        {
-            var image = new Image();
-            if (image.LoadPngFromBuffer(bytes) != Error.Ok) { image.Dispose(); throw new InvalidDataException("Invalid Vermilion PNG."); }
-            image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != width || image.GetHeight() != height)
-            { image.Dispose(); throw new InvalidDataException("Vermilion source pixels differ."); }
-            return image;
-        }
-        foreach (var sprite in source.Sprites)
-        {
-            using var image = Decode(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny"), 64, 64);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var foot in source.Footprints)
-        {
-            using var image = Decode(source.ReadFootprintTexture(foot.SourceSpeciesId), 16, 16);
-            _route22Footprints.Add(foot.SourceSpeciesId, ImageTexture.CreateFromImage(image));
-        }
-        foreach (var icon in source.Icons)
-        {
-            using var image = Decode(source.ReadIconTexture(new(icon.SpeciesId)), 32, 32);
-            var rgba = image.GetData();
-            // Use the same source RGB5 display expansion as the earlier storage icons.
-            for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
-            using var display = Image.CreateFromData(32, 32, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), ImageTexture.CreateFromImage(display));
-        }
+
+        RegisterPokemonSprites(source);
+
+        RegisterPokemonIcons(source);
     }
 
     // Source battle_scripts_1.s:3883 and 4212–4281 select these battle_message.c strings.
     // Status/confusion changes precede their single held-item message in the event stream.
-    private ForestMessage? VermilionWildMessage(WildBattleEvent current) => !_catalog.VermilionEnabled ? null : current switch
+    private ForestMessage? VermilionWildMessage(WildBattleEvent current) => current switch
     {
         WildBattlePayDayEvent => new("sText_CoinsScattered"),
         WildBattleAbilityPreventedEvent { Ability: "ABILITY_LIMBER" } ability => new("sText_PkmnPreventsParalysisWith",
@@ -81,12 +55,11 @@ public partial class CampaignView
         _ => null
     };
 
-    private int VermilionTrainerPayDayPageCount => _catalog.VermilionEnabled &&
-        _session.State.ForestTrainerBattle is { Combat.Battle: { Outcome: WildBattleOutcome.Won, PayDayMoney: > 0 } } ? 1 : 0;
+    private int VermilionTrainerPayDayPageCount => _session.State.ForestTrainerBattle is { Combat.Battle: { Outcome: WildBattleOutcome.Won, PayDayMoney: > 0 } } ? 1 : 0;
 
     private bool VermilionPayDayResultPage(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source)
     {
-        if (battle.Frame?.TrainerTowerEncounter is not null || !_catalog.VermilionEnabled || battle.Phase != CampaignBattlePhase.Results || battle.Pages.IsEmpty ||
+        if (battle.Frame?.TrainerTowerEncounter is not null || battle.Phase != CampaignBattlePhase.Results || battle.Pages.IsEmpty ||
             battle.PageIndex != battle.Pages.Length - 1) return false;
         var trainer = _session.State.ForestTrainerBattle;
         bool settled = trainer is null ? battle.PostBattleItemsSettled : trainer.Stage == CampaignForestTrainerStage.Finished;

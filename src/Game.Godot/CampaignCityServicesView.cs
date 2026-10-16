@@ -16,7 +16,7 @@ public partial class CampaignView
     private int _cityCycleStepPhase,_cityCycleNextStepPhase;
     private SpriteAsset CityCycleSprite=>_cityCycleSprites.TryGetValue(_session.State.PlayerGender,out var sprite)
         ?sprite:throw new InvalidDataException("Bicycle player art was not loaded.");
-    private bool BikeShopMenuActive=>_catalog.CityServicesEnabled&&_session.State.World.Player.MapId.Value=="map.cerulean-city-bike-shop"&&
+    private bool BikeShopMenuActive=>_session.State.World.Player.MapId.Value=="map.cerulean-city-bike-shop"&&
         _session.State.Script.Wait?.Kind==StoryWaitKind.MenuChoice&&_session.State.MoneyBox is not null;
     private bool BikeShopMenuVisible=>BikeShopMenuActive&&FieldTextComplete&&
         _session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length;
@@ -44,7 +44,6 @@ public partial class CampaignView
 
     private void LoadCityServicesPresentation()
     {
-        if(!_catalog.CityServicesEnabled)return;
         var source=PretCityCycleArt.Load(_root);
         foreach(var asset in source.Assets)
         {
@@ -96,8 +95,7 @@ public partial class CampaignView
 
     private bool TryCityServiceItem(string item)
     {
-        if(!_catalog.CityServicesEnabled||item is not ("pret:ITEM_BICYCLE" or "pret:ITEM_OLD_ROD" or "pret:ITEM_GOOD_ROD" or "pret:ITEM_SUPER_ROD"))return false;
-        if(item=="pret:ITEM_SUPER_ROD"&&!_catalog.SuperRodEnabled)return false;
+        if(item is not ("pret:ITEM_BICYCLE" or "pret:ITEM_OLD_ROD" or "pret:ITEM_GOOD_ROD" or "pret:ITEM_SUPER_ROD"))return false;
         if(item=="pret:ITEM_GOOD_ROD"&&_catalog.GoodRodService is null)return false;
         Apply(new(item=="pret:ITEM_BICYCLE"?"field_bicycle":"field_fish",Text:item));
         if(_session.State.ItemMenu is not null)

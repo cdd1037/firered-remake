@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "profile": "firered-celadon-approach-pokemon-v1",
+  "gameEdition": "FIRERED",
+  "romRevision": 0,
+  "files": [
+    {
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal"
+    },
+    {
+      "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal"
+    },
+    {
+      "path": "graphics/pokemon/muk/back.png"
+    },
+    {
+      "path": "graphics/pokemon/muk/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/muk/front.png"
+    },
+    {
+      "path": "graphics/pokemon/muk/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/muk/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/muk/shiny.pal"
+    },
+    {
+      "path": "include/constants/battle.h"
+    },
+    {
+      "path": "include/constants/species.h"
+    },
+    {
+      "path": "src/battle_anim_mons.c"
+    },
+    {
+      "path": "src/battle_controller_opponent.c"
+    },
+    {
+      "path": "src/battle_controller_player.c"
+    },
+    {
+      "path": "src/data/graphics/pokemon.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/footprint_table.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h"
+    },
+    {
+      "path": "src/pokemon_icon.c"
+    }
+  ]
+}

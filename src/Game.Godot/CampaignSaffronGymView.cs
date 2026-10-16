@@ -8,33 +8,13 @@ public partial class CampaignView
 {
     private readonly Dictionary<string, string> _saffronGymTrainerPortraits = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _saffronGymTrainerClasses = new(StringComparer.Ordinal);
-    private bool IsSaffronGymLeader(string id) => _catalog.SaffronGymEnabled && id == "pret:TRAINER_LEADER_SABRINA";
+    private bool IsSaffronGymLeader(string id) => id == "pret:TRAINER_LEADER_SABRINA";
 
     private void LoadSaffronGymPresentation()
     {
-        if (!_catalog.SaffronGymEnabled) return;
         var art = _catalog.SaffronGymArt ?? throw new InvalidDataException("Saffron Gym art catalog missing.");
-        foreach (var sprite in art.Sprites)
-        {
-            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var icon in art.Icons)
-        {
-            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
-            for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), SceneTextures.FromImage(image));
-        }
-        foreach (var footprint in art.Footprints)
-        {
-            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
-            _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
-        }
-        foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
-            _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
+        RegisterPokemonArt(art.Sprites, art.Icons, art.Footprints, art.Files);
+
         LoadSaffronGymTrainerArt(); LoadSaffronGymInterface();
         foreach (var icon in _catalog.SaffronGymItems!.Icons)
         {
@@ -42,8 +22,7 @@ public partial class CampaignView
         }
         if (!_trainerCard!.Badges.Any(b => b.Flag == "FLAG_BADGE06_GET" && _trainerCardTextures.ContainsKey(b.AssetId)))
             throw new InvalidDataException("Original Marsh Badge card pixels missing.");
-        Write("saffronGymPresentation", new { enemyOnlySpecies = new[] { 65, 80, 122 }, playableMaps = _catalog.SaffronGymRegion!.NewMaps.Count,
-        reusedPadAnimation = true, badgeFlag = "FLAG_BADGE06_GET", audibleOutputVerified = false });
+
     }
     private byte[] ReadSaffronPresentation(string path)
     {
@@ -91,7 +70,7 @@ public partial class CampaignView
         {
             string id = row.GetProperty("id").GetString()!, trainerPic = row.GetProperty("trainerPic").GetString()!;
             byte[] png = files[row.GetProperty("texturePath").GetString()!];
-            if (row.GetProperty("width").GetInt32() != 64 || row.GetProperty("height").GetInt32() != 64 || !NativeImages.HasSize(png, 64, 64)) throw new InvalidDataException("Saffron Gym trainer pixels differ.");
+            if (row.GetProperty("width").GetInt32() != 64 || row.GetProperty("height").GetInt32() != 64) throw new InvalidDataException("Saffron Gym trainer pixels differ.");
             if(!(_forestTrainerPortraits.TryGetValue(id, out var old))){ using var image = NativeImages.LoadPng(png, 64, 64); _forestTrainerPortraits.Add(id, (ImageTexture)SceneTextures.FromImage(image)); }
             _saffronGymTrainerPortraits.Add(trainerPic, id);
         }

@@ -76,7 +76,7 @@ public sealed partial class CampaignSession
     private static bool IsBillRival(string id)=>id is "pret:TRAINER_RIVAL_CERULEAN_BULBASAUR" or
         "pret:TRAINER_RIVAL_CERULEAN_CHARMANDER" or "pret:TRAINER_RIVAL_CERULEAN_SQUIRTLE";
 
-    private bool IsBillButton(CampaignState state)=>_content.BillEnabled&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&
+    private bool IsBillButton(CampaignState state)=>state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&
         !state.Script.Stack.IsEmpty&&(state.World.Player.MapId.Value=="map.route-24"&&state.Script.Stack[^1].ProgramId=="Route24_EventScript_BattleRocket"||
         state.World.Player.MapId.Value==BillSourcePresentation.Cottage&&BillViewSpecies(state.Script.Stack[^1].ProgramId)!=0);
 
@@ -89,8 +89,7 @@ public sealed partial class CampaignSession
 
     private bool TryApplyBillEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.BillEnabled)return false;
-        var a=effect.Args;
+        next=state;        var a=effect.Args;
         int Value(string token)=>token.StartsWith("VAR_",StringComparison.Ordinal)?state.Script.Variables.GetValueOrDefault(token):
             int.TryParse(token,NumberStyles.Integer,CultureInfo.InvariantCulture,out int n)?n:
             _content.TryConstant(token,out n)?n:throw new InvalidDataException("bill_operand_missing: "+token);
@@ -304,7 +303,6 @@ public sealed partial class CampaignSession
     private string? ValidateBillProgress(CampaignState state)
     {
         bool received=state.Script.Flags.GetValueOrDefault(BillNuggetReceivedFlag);
-        if(!_content.BillEnabled)return received||state.Actors.ContainsKey(BillSourcePresentation.CameraActor)?"save_bill_profile_missing":null;
         if(state.Actors.ContainsKey(BillSourcePresentation.CameraActor)||state.ObjectSlots?.Values.Contains(BillSourcePresentation.CameraActor)==true)
             return "save_bill_camera_active";
         var history=state.ForestTrainerHistory??[];

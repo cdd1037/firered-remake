@@ -12,8 +12,7 @@ public sealed partial class CampaignSession
     private const string LabDexScene = "PalletTown_ProfessorOaksLab_EventScript_NationalDexScene";
     public bool NationalPokedexEnabled => NationalDexEnabledIn(State);
     public bool NationalDexScenePending => NationalDexScenePendingIn(State);
-    private bool NationalDexScenePendingIn(CampaignState state) => _content.NationalDexEnabled &&
-        state.HallOfFame is not null && state.PokemonLeagueCompletion is null &&
+    private bool NationalDexScenePendingIn(CampaignState state) => state.HallOfFame is not null && state.PokemonLeagueCompletion is null &&
         state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR") &&
         state.World.Player.MapId.Value == "map.pallet-town" &&
         state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK") == 2 &&
@@ -28,8 +27,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateNationalDexProgress(CampaignState state)
     {
-        if (!_content.NationalDexEnabled)
-            return state.NationalDexMagic == 0 ? null : "save_national_dex_profile_missing";
         bool enabled = NationalDexEnabledIn(state);
         bool any = state.NationalDexMagic != 0 || state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX") != 0 ||
             state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX");
@@ -57,7 +54,6 @@ public sealed partial class CampaignSession
             effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "EnableNationalPokedex" });
         if (!grant && !(outside && (effect.Opcode == "buffernumberstring" || effect.Opcode == "specialvar" &&
             effect.Args.SequenceEqual(new[] { "VAR_RESULT", "GetPokedexCount" })))) return false;
-        if (!_content.NationalDexEnabled) throw new InvalidDataException("national_dex_profile_required");
         var instruction = _content.FindProgram(effect.Source.Symbol)?.Instructions.SingleOrDefault(i =>
             i.Source == effect.Source && i.Opcode == effect.Opcode);
         if (instruction is null || !instruction.Args.Select((arg,index) => arg.StartsWith("VAR_",StringComparison.Ordinal) &&

@@ -9,9 +9,9 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public bool BattleMedicineEnabled=>!_content.FieldPickups.IsEmpty&&_content.EarlyPartyEnabled;
+    public bool BattleMedicineEnabled=>!_content.FieldPickups.IsEmpty;
 
-    public bool FullBattleItemsEnabled=>BattleMedicineEnabled&&_content.FuchsiaGymEnabled&&
+    public bool FullBattleItemsEnabled=>BattleMedicineEnabled&&
         _content.PresetDoubleItems is not null&&_content.PresetDoubleMechanics is not null;
 
     private string? ValidateBattleMedicineCommand(CampaignState state,CampaignCommand command)

@@ -20,18 +20,17 @@ public sealed class PretSaffronGymArt
     public ImmutableArray<Route3PokemonFootprint> Footprints=>Document.Footprints;
     public ImmutableDictionary<int,PokedexMenuEntry> DexEntries { get; }
     public ImmutableDictionary<int,CaptureDexEntry> CaptureDexEntries { get; }
-    public ImmutableDictionary<SpeciesId,int> WeightsHectograms { get; }
     private PretSaffronGymArt(SaffronGymArtDocument doc,JsonElement manifest,ImmutableDictionary<string,byte[]> files,PretPokedexMenu dex)
     {
         Document=doc;Manifest=manifest;Files=files;
-        var entries=ImmutableDictionary.CreateBuilder<int,PokedexMenuEntry>();var capture=ImmutableDictionary.CreateBuilder<int,CaptureDexEntry>();var weights=ImmutableDictionary.CreateBuilder<SpeciesId,int>();
+        var entries=ImmutableDictionary.CreateBuilder<int,PokedexMenuEntry>();var capture=ImmutableDictionary.CreateBuilder<int,CaptureDexEntry>();
         foreach(var item in doc.Dex)
         {
             int id=item.SourceSpeciesId;var sprite=Sprites.Single(s=>s.SourceSpeciesId==id&&s.Side=="front"&&s.PaletteVariant=="normal");var foot=Footprints.Single(f=>f.SourceSpeciesId==id);
             var d=dex.Entries[id] with{Portrait=new(GeneratedDirectory+sprite.TexturePath,64,64),Footprint=new(GeneratedDirectory+foot.TexturePath,16,16)};
-            entries.Add(id,d);capture.Add(id,new(d.SourceSpeciesId,d.NationalNumber,d.Name,d.Category,d.DisplayCategory,d.HeightDecimeters,d.WeightHectograms,d.HeightDisplay,d.WeightDisplay,d.Description,d.Footprint!.TexturePath,d.Portrait!.TexturePath,d.HabitatTitle));weights.Add(new(sprite.SpeciesId),d.WeightHectograms);
+            entries.Add(id,d);capture.Add(id,new(d.SourceSpeciesId,d.NationalNumber,d.Name,d.Category,d.DisplayCategory,d.HeightDecimeters,d.WeightHectograms,d.HeightDisplay,d.WeightDisplay,d.Description,d.Footprint!.TexturePath,d.Portrait!.TexturePath,d.HabitatTitle));
         }
-        DexEntries=entries.ToImmutable();CaptureDexEntries=capture.ToImmutable();WeightsHectograms=weights.ToImmutable();
+        DexEntries=entries.ToImmutable();CaptureDexEntries=capture.ToImmutable();
     }
     public static PretSaffronGymArt Load(string projectRoot,string? dependencyProjectRoot=null,PretPokedexMenu? pokedexMenu=null)
     {

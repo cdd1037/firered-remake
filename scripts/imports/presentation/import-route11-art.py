@@ -8,7 +8,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from runtime_json import runtime_json_bytes
 
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -41,10 +40,6 @@ src/data/trainer_graphics/front_pic_tables.h
 src/battle_controller_opponent.c
 include/constants/trainers.h
 src/data/trainers.h'''.splitlines())
-CODECS = (
-    'scripts/imports/presentation/import-lab-battle-ui.py',
-    'scripts/imports/source/fetch-lab-battle-ui.py',
-)
 
 
 def encoded(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -80,11 +75,7 @@ def read_lock(path=ROOT / 'scripts/recipes/presentation/route11-art.lock.json'):
     for e in lock['files']:
         if (e['sourceUrl'] != f"https://github.com/{REPOSITORY}/blob/{COMMIT}/{e['path']}"):
             raise ValueError('Source metadata differs')
-    expected = [dict(path=p) for p in sorted(CODECS)]
-    if lock['inputs'] != expected: raise ValueError('Route11 art codec inventory differs')
     return lock
-
-
 
 
 def read_sources(lock, raw, repository=None):
@@ -103,15 +94,9 @@ def read_sources(lock, raw, repository=None):
     return sources
 
 
-def load_codec(root=ROOT):
-    spec = importlib.util.spec_from_file_location('_route11_art_codec', safe(root, 'scripts/imports/presentation/import-lab-battle-ui.py'))
-    codec = importlib.util.module_from_spec(spec); spec.loader.exec_module(codec)
-    return codec
-
-
-def convert(lock, sources, support_root=ROOT):
+def convert(lock, sources):
     if set(sources) != PATHS: raise ValueError('Incomplete Route11 art source data')
-    codec = load_codec(support_root)
+    import ui_tiles as codec
 
     def require(path, symbol, needle):
         source = sources[path].decode()
@@ -257,12 +242,12 @@ SOURCE_REQUIREMENTS = [('src/battle_interface.c', 'player FRZ tile', '#define B_
   '                                                     GetBattlerSpriteSubpriority(gActiveBattler));')]
 
 
-def run(lock_path, raw, output, repository=None, support_root=ROOT):
+def run(lock_path, raw, output, repository=None):
     raw, output = safe(raw), safe(output)
     if raw == output or raw.is_relative_to(output) or output.is_relative_to(raw):
         raise ValueError('Route11 art raw/output roots overlap')
     lock = read_lock(lock_path); sources = read_sources(lock, raw, repository)
-    outputs = convert(lock, sources, support_root)
+    outputs = convert(lock, sources)
     writes = [(safe(output, p), b) for p, b in outputs.items()]
     if repository: writes += [(safe(raw, p), b) for p, b in sources.items()] + []
     for target, _ in writes: safe(target.parent, target.name + '.tmp')
@@ -278,9 +263,8 @@ def main():
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / GENERATED)
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/recipes/presentation/route11-art.lock.json')
     parser.add_argument('--reference-root', type=pathlib.Path)
-    parser.add_argument('--support-root', type=pathlib.Path, default=ROOT, help='Read-only root containing the authenticated existing PNG codec')
     args = parser.parse_args()
-    result = run(args.lock, args.raw, args.output, args.reference_root, args.support_root)
+    result = run(args.lock, args.raw, args.output, args.reference_root)
     print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=4, outputs=len(result))))
 
 

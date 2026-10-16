@@ -10,20 +10,13 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from shared_trainers import trainer_json
 from trainer_import import convert_battles
 import argparse,json,pathlib,re,sys
-import pokemon_import as pokemon
-from pokemon_import import learn_rows
+from pokemon_presentation import convert as presentation_outputs
 from pokemon_import_io import safe, load_recipe, read_sources
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
-PROFILE='firered-rocket-hideout-pokemon-v1'
-NEW_SPECIES=('Kangaskhan',)
-ART_SPECIES=(('Kangaskhan',115),)
-TEACHING_MOVES=('MOVE_TAUNT','MOVE_FRUSTRATION','MOVE_SNATCH')
 TRAINERS=tuple('TEAM_ROCKET_GRUNT_'+str(i) for i in range(7,19))+('BOSS_GIOVANNI',)
 SCRIPT_PATHS=tuple('data/maps/'+m+'/scripts.inc' for m in ('CeladonCity_GameCorner','RocketHideout_B1F','RocketHideout_B2F','RocketHideout_B3F','RocketHideout_B4F'))
-def source_symbol(name):return name.upper()
 def canonical(v):return (json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
 
 def trainer_convert(sources):
@@ -32,28 +25,17 @@ def trainer_convert(sources):
 
 
 def rebuild(project,target,check=False):
- prior=json.loads(safe(project,'content/generated/sprites/pokemon/celadon-gym/supplement.json').read_bytes())
- previous_species=tuple(w['speciesId'][13:] for w in prior['weights'])
- if len(previous_species)!=98:raise ValueError('Exact 98 prior species required')
  results=[]
  for stem in ('rocket-hideout-pokemon','rocket-hideout-trainers'):
   lock = load_recipe(ROOT / ('scripts/recipes/' + ('pokemon' if stem.endswith('pokemon') else 'trainers' if stem.endswith('trainers') else 'items') + '/' + stem + '.lock.json'), commit=COMMIT, profile='firered-' + stem + '-v1')
   sources = read_sources(lock, target / 'content/raw/pokefirered/037335f4')
-  trainers=trainer_convert(sources)
-  if len(trainers['trainers'])!=13 or sum(len(t['party']) for t in trainers['trainers'])!=36 or len(trainers['moves'])!=38:raise ValueError('Exact source trainer closure differs')
   if stem.endswith('pokemon'):
-   outputs = pokemon.battle_art(lock, sources, profile=PROFILE, species=ART_SPECIES,
-       limitation='Kangaskhan original front/back frame zero, normal and shiny palettes.')
-   # This file historically writes the art document in compact JSON form.
-   outputs['battle-art.json'] = canonical(json.loads(outputs['battle-art.json']))
-   outputs.update(pokemon.supplement(lock, sources, profile=PROFILE, species=ART_SPECIES,
-       weight_species=previous_species + tuple(name.upper() for name in NEW_SPECIES), natural_level_limit=None))
-  else:outputs={'trainers.json':trainer_json(target/'content/generated', trainers, check=check)}
-  profile='firered-'+stem+'-v1'
-  manifest=canonical(dict(schemaVersion=1, inputCount=len(sources), outputs=[dict(path=p) for p, b in sorted(outputs.items())]))
-  outputs['manifest.json']=manifest
-  raw_manifest=canonical(dict(schemaVersion=1, inputCount=len(sources)))
-  directory = 'content/generated/data/' + ('pokemon/rocket-hideout' if stem.endswith('pokemon') else 'trainer-battles/rocket-hideout')
+   outputs = presentation_outputs('rocket-hideout', lock, sources)
+  else:
+   trainers=trainer_convert(sources)
+   outputs={'trainers.json':trainer_json(target/'content/generated', trainers, check=check)}
+   outputs['manifest.json']=canonical(dict(schemaVersion=1, inputCount=len(sources), outputs=[dict(path=p) for p in sorted(outputs)]))
+  directory = 'content/generated/' + ('sprites/pokemon/rocket-hideout' if stem.endswith('pokemon') else 'data/trainer-battles/rocket-hideout')
   materials={directory+'/'+p:b for p,b in outputs.items()}
   for p,b in materials.items():
    dest=safe(target,p)

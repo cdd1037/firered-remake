@@ -32,7 +32,6 @@ public partial class CampaignView
         {
             _earlyItemIcons.Add(icon.Item, ItemTexture(icon.PngPath, icon.Region, icon.Width, icon.Height));
         }
-        if (_catalog.CeruleanEnabled)
         {
             var icon = PretCeruleanItems.LoadProject(_root).Icon;
             
@@ -74,7 +73,7 @@ public partial class CampaignView
         FieldMedicineEffect.HealHp or FieldMedicineEffect.CureStatus or FieldMedicineEffect.CureSleep ||
         _catalog.EarlyShop is {} shop && _catalog.PresetDoubleItems is {} sourceItems && (SourceFieldStatusCureRules.Supports(shop, sourceItems, id) || SourceFieldHpMedicineRules.Supports(shop, sourceItems, id));
     private string InventoryName(ItemId id) => EarlyItem(id)?.Name ??
-        (_catalog.PewterMachines is {} machines ? MachineRules.Definition(machines, id)?.Machine.Item.Name : null) ??
+        (_catalog.Machines is {} machines ? MachineRules.Definition(machines, id)?.Machine.Item.Name : null) ??
         (id == OpeningInventoryRules.PotionId ? _itemSkin.PotionName : _catalog.QuestItems?.Items.SingleOrDefault(i => i.Id == id)?.Name ?? throw new InvalidDataException("inventory_item_name_missing"));
     private string InventoryDescription(ItemId id) => EarlyItem(id)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$') ?? _itemSkin.PotionDescription;
     private void DrawInventoryIcon(ItemId id)

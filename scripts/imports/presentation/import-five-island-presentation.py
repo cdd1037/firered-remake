@@ -7,6 +7,9 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
+from species_art import selected_species_art
+from item_source import selected_item_art
+from trainer_portraits import selected_trainer_art
 from presentation_source import Source, safe, need
 import argparse
 import io
@@ -55,118 +58,10 @@ def build(root, reference, dependency):
     pixels = PixelReader(source)
     palette, indexed = pixels.palette, pixels.indexed
 
-    sprites, icons, footprints = [], [], []
-    graphics = source.text('src/data/graphics/pokemon.h')
-    constants = source.text('include/constants/species.h')
-    for name, species in SPECIES:
-        stem, symbol = name.lower(), 'SPECIES_' + name.upper()
-        need(re.search(r'^#define ' + symbol + r'\s+' + str(species) + r'\s*$', constants, re.M), 'Species ID differs')
-        elevation_match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+)', source.text('src/data/pokemon_graphics/enemy_mon_elevation.h'))
-        elevation = int(elevation_match[1]) if elevation_match else 0
-        for side in ('front', 'back'):
-            coordinates = 'src/data/pokemon_graphics/' + side + '_pic_coordinates.h'
-            match = re.search(r'\[' + symbol + r'\]\s*=\s*\{\s*\.size = MON_COORDS_SIZE\((\d+), (\d+)\),\s*\.y_offset = (\d+)', source.text(coordinates))
-            need(match, 'Species coordinates missing')
-            width, height, y_offset = map(int, match.groups())
-            image = f'graphics/pokemon/{stem}/{side}.png'
-            need(f'gMon{side.title()}Pic_{name}[] = INCBIN_U32("{image[:-4]}.4bpp.lz")' in graphics, 'Species image binding differs')
-            for variant in ('normal', 'shiny'):
-                pal = f'graphics/pokemon/{stem}/{variant}.pal'
-                palette_symbol = 'gMonPalette_' if variant == 'normal' else 'gMonShinyPalette_'
-                need(f'{palette_symbol}{name}[] = INCBIN_U32("{pal[:-4]}.gbapal.lz")' in graphics, 'Species palette binding differs')
-                indices, rgba = indexed(image, pal, (64, 64), floor=True)
-                x, y = (144, 8 + y_offset - elevation) if side == 'front' else (40, 48 + y_offset)
-                sprites.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, side=side, paletteVariant=variant,
-                    x=x, y=y, sourceWidth=width, sourceHeight=height, sourceYOffset=y_offset, sourceEnemyElevation=elevation,
-                     sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)',
-                    transparentIndex=0, **emit(f'{stem}-{side}-{variant}', 64, 64, rgba, [image, pal, coordinates])))
-        icon_table = source.text('src/pokemon_icon.c')
-        match = re.search(r'\[' + symbol + r'\]\s*=\s*(\d+),', icon_table)
-        need(match and re.search(r'\[' + symbol + r'\]\s*=\s*gMonIcon_' + name + r',', icon_table), 'Species icon binding differs')
-        pal_index = int(match[1])
-        image, pal = f'graphics/pokemon/{stem}/icon.png', f'graphics/pokemon/icon_palettes/icon_palette_{pal_index}.pal'
-        need(f'gMonIcon_{name}[] = INCBIN_U8("{image[:-4]}.4bpp")' in graphics, 'Species icon image binding differs')
-        indices, rgba = indexed(image, pal, (32, 64), floor=True, first_frame=True)
-        icons.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, paletteIndex=pal_index, sourceFrameIndex=0,
-                          sourceFrameCount=2,  **emit('icons/' + stem, 32, 32, rgba, [image, pal])))
-        if (name, species) not in OWNED:
-            continue
-        image, pal = f'graphics/pokemon/{stem}/footprint.png', 'graphics/pokedex/kanto_dex_bgpals.pal'
-        need('[' + symbol + '] = gMonFootprint_' + name + ',' in source.text('src/data/pokemon_graphics/footprint_table.h'), 'Species footprint binding differs')
-        im = Image.open(io.BytesIO(source.read(image)))
-        need(im.mode == '1' and im.size == (16, 16), 'Footprint source pixels differ')
-        indices = bytes(1 if v == 0 else 0 for v in im.get_flattened_data())
-        colors = palette(pal, floor=True)
-        rgba = bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
-        footprints.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, **emit(stem + '-footprint', 16, 16, rgba, [image, pal])))
+    sprites, icons, footprints = selected_species_art(source, SPECIES, OWNED, emit)
+    trainers, portraits = selected_trainer_art(source, TRAINERS, INHERITED, emit, assets)
 
-    trainers, portraits = [], []
-    trainer_source, trainer_constants = source.text('src/data/trainers.h'), source.text('include/constants/trainers.h')
-    opponents, classes = source.text('include/constants/opponents.h'), source.text('src/data/text/trainer_class_names.h')
-    trainer_graphics = source.text('src/data/graphics/trainers.h')
-    picture_table = source.text('src/data/trainer_graphics/front_pic_tables.h')
-    coords = re.findall(r'\{\.size = (\d+), \.y_offset = (\d+)\}', picture_table.split('const struct CompressedSpriteSheet')[0])
-    trainer_pics = {}
-    for name in TRAINERS:
-        symbol = 'TRAINER_' + name
-        match = re.search(r'\[' + symbol + r'\]\s*=\s*\{(.*?)\n    \}', trainer_source, re.S)
-        need(match, 'Trainer source record missing: ' + symbol)
-        body = match[1]
-        cls, pic = re.search(r'\.trainerClass = (\w+)', body)[1], re.search(r'\.trainerPic = (\w+)', body)[1]
-        display_name = re.search(r'\.trainerName = _\("([^\"]+)"\)', body)[1]
-        cls_name = re.search(r'\[' + cls + r'\]\s*= _\("([^\"]+)"\)', classes)[1]
-        source_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)\s*$', opponents, re.M)[1])
-        pic_id = int(re.search(r'^#define ' + pic + r'\s+(\d+)\s*$', trainer_constants, re.M)[1])
-        music = re.search(r'\.encounterMusic_gender = ([^,]+),', body)[1]
-        music_value = 0
-        for part in music.split('|'):
-            part = part.strip()
-            music_value |= 128 if part == 'F_TRAINER_FEMALE' else int(re.search(r'^#define ' + part + r'\s+(\d+)', trainer_constants, re.M)[1])
-        key = pic.removeprefix('TRAINER_PIC_')
-        portrait_id = pathlib.PurePosixPath(INHERITED[key]).stem if key in INHERITED else key.lower().replace('_', '-') + '-front'
-        trainers.append(dict(trainer='pret:' + symbol, sourceTrainerId=source_id, name=display_name,
-            trainerClass=cls, className=cls_name, trainerPic=pic, portrait=portrait_id,
-            encounterMusicGender=music_value, doubleBattle='.doubleBattle = TRUE,' in body))
-        trainer_pics[pic] = pic_id
-    need(len(trainers) == 9 and not any(t['doubleBattle'] for t in trainers), 'Trainer cohort differs')
-    for pic, number in sorted(trainer_pics.items()):
-        key = pic.removeprefix('TRAINER_PIC_')
-        pic_symbol = re.search(r'TRAINER_SPRITE\(' + key + r', (\w+), 0x800\)', picture_table)[1]
-        pal_symbol = re.search(r'TRAINER_PAL\(' + key + r', (\w+)\)', picture_table)[1]
-        paths = []
-        for symbol in (pic_symbol, pal_symbol):
-            match = re.search(r'const u32 ' + symbol + r'\[\]\s*= INCBIN_U32\("([^\"]+)"\)', trainer_graphics)
-            need(match, 'Trainer graphic path missing')
-            paths.append(match[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
-        _, rgba = indexed(*paths, (64, 64))
-        identity = pathlib.PurePosixPath(INHERITED[key]).stem if key in INHERITED else key.lower().replace('_', '-') + '-front'
-        if key in INHERITED:
-            path = INHERITED[key]
-            need(Image.open(io.BytesIO(source.reuse(path))).convert('RGBA').tobytes() == rgba, 'Inherited trainer source pixels differ: ' + key)
-            asset = dict(id=identity, width=64, height=64, texturePath=path)
-            assets.append(asset)
-        else:
-            asset = emit(identity, 64, 64, rgba, paths)
-        need(coords[number][0] == '8', 'Trainer portrait source size differs')
-        portraits.append(dict(trainerPic=pic, sourceTrainerPicId=number, inherited=key in INHERITED,
-                              x=144, y=8, sourceYOffset=int(coords[number][1]), **asset))
-
-    items = []
-    item_table, item_graphics = source.text('src/data/item_icon_table.h'), source.text('src/data/graphics/items.h')
-    item_data = json.loads(source.read('src/data/items.json'))['items']
-    for name in ITEMS:
-        symbol = 'ITEM_' + name
-        binding = re.search(r'\[' + symbol + r'\]\s*=\s*\{(\w+),\s*(\w+)\}', item_table)
-        need(binding, 'Item source binding missing')
-        paths = []
-        for graphic in binding.groups():
-            match = re.search(r'const u32 ' + graphic + r'\[\]\s*= INCBIN_U32\("([^\"]+)"\)', item_graphics)
-            need(match, 'Item graphic path missing')
-            paths.append(match[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
-        _, rgba = indexed(*paths, (24, 24))
-        row = next(d for d in item_data if d['itemId'] == symbol)
-        items.append(dict(item='pret:' + symbol, name=row['english'], description=row['description_english'].replace('\\n', '\n'),
-            pocket=row['pocket'], fieldUseFunction=row['fieldUseFunc'], **emit('item-' + name.lower().replace('_', '-'), 24, 24, rgba, paths)))
+    items = selected_item_art(source, ITEMS, emit)
 
     tiles, layers = [], []
     labels = {k: int(v, 16) for k, v in re.findall(r'^#define\s+(METATILE_\w+)\s+(0x[\da-fA-F]+)', source.text('include/constants/metatile_labels.h'), re.M)}

@@ -105,7 +105,7 @@ public sealed class PretOakRating
         string root = Path.GetFullPath(projectRoot);
         byte[] Read(string relative)
         {
-            string path = SafeFile(root, relative);
+            string path = GeneratedResourceFile.SafePath(root, relative);
             var info = new FileInfo(path);
             Require(info.Exists, "Missing Oak rating input: " + relative);
             return File.ReadAllBytes(path);
@@ -134,19 +134,4 @@ public sealed class PretOakRating
         return new(bands, texts.ToImmutable(), constants.ToImmutable(), catalog.Clone());
     }
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(s => s is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Oak rating path.");
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Oak rating directory symlink is unsupported.");
-        string result = root;
-        foreach (string part in path.Split('/'))
-        {
-            result = Path.Combine(result, part);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Oak rating symlink is unsupported.");
-        }
-        return result;
-    }
 }

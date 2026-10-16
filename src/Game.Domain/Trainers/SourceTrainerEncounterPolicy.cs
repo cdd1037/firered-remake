@@ -142,16 +142,8 @@ public sealed record TrainerEncounterRoster(TrainerDefinition Trainer,
     internal static TrainerEncounterRoster CreateTower(TrainerPartyCreationResult expected, TrainerTowerEncounterRoster tower) =>
         new(expected.Trainer, expected.Party, expected.Rng, expected.Trace, tower);
 
-    internal static TrainerEncounterRoster Create(PokemonCatalog catalog, TrainerPartyCreationResult natural)
-    {
-        var party = natural.Party;
-        if ((natural.Trainer.PartyFlags & 1) != 0)
-            party = party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-                Moves = natural.Trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                    .Select(m => new PokemonMoveSlot(m, catalog.Moves[m].Pp, catalog.Moves[m].Pp)).ToImmutableArray()
-            } }).ToImmutableArray();
-        return new(natural.Trainer, party, natural.Rng, natural.Trace);
-    }
+    internal static TrainerEncounterRoster Create(PokemonCatalog catalog, TrainerPartyCreationResult created) =>
+        new(created.Trainer, created.Party, created.Rng, created.Trace);
     internal bool Matches(TrainerPartyCreationResult actual) =>
         SameTrainer(actual.Trainer, Trainer) && actual.Rng == Rng && !actual.Trace.IsDefault && actual.Trace.SequenceEqual(Trace) &&
         !actual.Party.IsDefault && actual.Party.Length == Party.Length && actual.Party.Where((p, i) =>

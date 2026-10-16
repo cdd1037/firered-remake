@@ -19,9 +19,9 @@ public sealed partial class CampaignSession
     private const string MasterBallFlag = "FLAG_GOT_MASTER_BALL_FROM_SILPH";
     private static readonly ItemId SilphMasterBallId = new("pret:ITEM_MASTER_BALL");
 
-    private bool InLaprasScript(CampaignState state) => _content.SilphEnabled && state.World.Player.MapId.Value == LaprasMap &&
+    private bool InLaprasScript(CampaignState state) => state.World.Player.MapId.Value == LaprasMap &&
         state.LastTalked is { } actor && state.Actors.TryGetValue(actor, out var value) && value.SourceLocalId == 2 && value.ScriptId == LaprasScript;
-    private bool InPresidentScript(CampaignState state) => _content.SilphEnabled && state.World.Player.MapId.Value == PresidentMap &&
+    private bool InPresidentScript(CampaignState state) => state.World.Player.MapId.Value == PresidentMap &&
         state.LastTalked is { } actor && state.Actors.TryGetValue(actor, out var value) && value.SourceLocalId == 1 && value.ScriptId == PresidentScript;
 
     private string? ValidateSilphGifts(CampaignState state)
@@ -30,7 +30,6 @@ public sealed partial class CampaignSession
         int balls = OpeningInventoryRules.Quantity(state.Inventory?.Balls ?? [], SilphMasterBallId) +
             OpeningInventoryRules.Quantity(state.Inventory?.PcItems ?? [], SilphMasterBallId) +
             OwnedPokemon(state).Count(p => p.HeldItem == "ITEM_MASTER_BALL");
-        if (!_content.SilphEnabled) return state.LaprasGift is not null || lapras || master || balls != 0 ? "save_silph_gift_profile_missing" : null;
         if (balls > 1 || balls > 0 && !master) return "save_silph_master_ball_reward_mismatch";
         if ((state.LaprasGift is not null) != lapras) return "save_lapras_flag_inconsistent";
         if (state.LaprasGift is not { } gift) return null;
@@ -54,7 +53,6 @@ public sealed partial class CampaignSession
     private bool TryApplySilphGiftEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.SilphEnabled) return false;
         var a = effect.Args;
         if (effect.Opcode == "givemon" && !a.IsDefaultOrEmpty && a[0] is "SPECIES_LAPRAS" or "131")
         {

@@ -19,17 +19,11 @@ public sealed partial class CampaignSession
     private string? ValidateOakRatingState(CampaignState state)
     {
         if (state.OakRatingHelpContextBackup is not null) return "save_oak_rating_context_active";
-        if (!_content.OakRatingEnabled) return null;
         if (state.Script.Flags.GetValueOrDefault(OakPcFlag)) return "save_oak_rating_pc_flag_active";
         if (OakLaterProgress(state)&&!PokemonLeagueCompletedContinue(state)) return "save_oak_rating_later_progress_unsupported";
         // Frozen Oak-only saves cannot acquire the Route22 rival outcome. The explicit
         // Route22 profile validates that outcome against its recorded trainer transaction.
-        if ((!_content.Route22Enabled &&
-             (state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22") != (state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET") ? 1 : 0) ||
-              state.Script.Flags.GetValueOrDefault("FLAG_GOT_POKEBALLS_FROM_OAK_AFTER_22_RIVAL") ||
-              state.Script.Flags.GetValueOrDefault("FLAG_OAK_SKIP_22_RIVAL_CHECK"))) ||
-            (!_content.BillEnabled&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_RIVAL") != 0) ||
-            state.World.Player.MapId.Value == "map.professor-oaks-lab" && state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2"))
+        if (state.World.Player.MapId.Value == "map.professor-oaks-lab" && state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2"))
             return "save_oak_rating_later_progress_unsupported";
 
         try { _ = _content.EvaluateOakRating(state.SeenSpecies, state.CaughtSpecies); }
@@ -47,24 +41,22 @@ public sealed partial class CampaignSession
 
     private void PreflightOakInteraction(CampaignState state, CampaignActor actor)
     {
-        if (!_content.OakRatingEnabled || actor.ScriptId != OakLabEntry) return;
-        if (!_content.NationalDexEnabled && OakLaterProgress(state) || state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2") ||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") > (_content.NationalDexEnabled ? 9 : 6) ||
-            (!_content.BillEnabled&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_RIVAL") != 0))
+        if (actor.ScriptId != OakLabEntry) return;
+        if (state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2") ||
+            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") > (9))
             throw new InvalidDataException("oak_rating_later_progress_unsupported");
     }
 
     private CampaignOakRatingProjection OakProjection(CampaignState state)
     {
-        if (!_content.OakRatingEnabled || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))
+        if (!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))
             throw new InvalidDataException("oak_rating_pokedex_required");
-        if (!_content.NationalDexEnabled && OakLaterProgress(state)) throw new InvalidDataException("oak_rating_later_progress_unsupported");
         if (state.Script.QuestLogState != 0) throw new InvalidDataException("oak_rating_quest_log_unsupported");
         bool pc = state.Script.Flags.GetValueOrDefault(OakPcFlag);
         if (pc ? !state.PcPoweredOn || !IsSupportedHealingCenter(state.World.Player.MapId) :
             state.World.Player.MapId.Value != "map.professor-oaks-lab" || state.LastTalked != "LOCALID_OAKS_LAB_PROF_OAK" ||
             (state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") != 6 &&
-             !(_content.NationalDexEnabled && state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") is 7 or 8 or 9)))
+             !(state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") is 7 or 8 or 9)))
             throw new InvalidDataException("oak_rating_context_invalid");
         return _content.EvaluateOakRating(state.SeenSpecies, state.CaughtSpecies);
     }
@@ -83,7 +75,6 @@ public sealed partial class CampaignSession
             effect.Opcode == "special" && effect.Args[0] is "GetProfOaksRatingMessage" or "BackupHelpContext" or "RestoreHelpContext" ||
             effect.Opcode == "special" && (ratingSource || ballsSource) && effect.Args[0] is "QuestLog_CutRecording" or "Script_SetHelpContext";
         if (!ownedEffect) return false;
-        if (!_content.OakRatingEnabled) throw new InvalidDataException("oak_rating_not_enabled");
         var projection = OakProjection(state);
         int Value(string token) => int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) ? number :
             token.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? Convert.ToInt32(token[2..], 16) :
@@ -113,14 +104,14 @@ public sealed partial class CampaignSession
             case "specialvar":
                 if (effect.Args[0] != "VAR_RESULT" || (!countSource && effect.Source.Symbol != OakRatingEntry))
                     throw new InvalidDataException("oak_rating_national_or_special_unsupported");
-                if (effect.Args[1] == "HasAllMons" && _content.NationalDexEnabled && NationalDexEnabledIn(state))
+                if (effect.Args[1] == "HasAllMons" && NationalDexEnabledIn(state))
                 {
                     next = Result(_content.EvaluateNationalDex(state.SeenSpecies, state.CaughtSpecies).Complete ? 1 : 0);
                     return true;
                 }
                 int selector = state.Script.Variables.GetValueOrDefault("VAR_0x8004");
                 if (effect.Args[1] != "GetPokedexCount" || selector is < 0 or > 1 ||
-                    selector == 1 && (!_content.NationalDexEnabled || !NationalDexEnabledIn(state)))
+                    selector == 1 && (!NationalDexEnabledIn(state)))
                     throw new InvalidDataException("oak_rating_national_or_special_unsupported");
                 var national = selector == 1 ? _content.EvaluateNationalDex(state.SeenSpecies, state.CaughtSpecies) : null;
                 next = Result(NationalDexEnabledIn(state) ? 1 : 0);
@@ -167,7 +158,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> DecideOakRatingButton(CampaignState state, CampaignCommand command)
     {
-        if (!_content.OakRatingEnabled || state.Script.Wait is not { Kind: StoryWaitKind.ButtonPress } wait)
+        if (state.Script.Wait is not { Kind: StoryWaitKind.ButtonPress } wait)
             return new(CommandStatus.Rejected, state, "button_press_not_pending");
         if (command.Text is not ("A" or "B")) return new(CommandStatus.Rejected, state, "button_press_requires_a_or_b");
         _ = OakProjection(state);

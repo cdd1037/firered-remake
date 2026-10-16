@@ -17,9 +17,9 @@ def module(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     result = importlib.util.module_from_spec(spec); spec.loader.exec_module(result); return result
 
-codec = module('correction_codec', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
+import ui_tiles as codec
+from presentation_source import canonical, safe
 items = module('correction_items', ROOT / 'scripts/imports/items/import-item-ui.py')
-canonical = codec.inputs.canonical
 
 def inputs(lock_path, raw, cache=None):
     lock = json.loads(lock_path.read_bytes())
@@ -33,13 +33,13 @@ def inputs(lock_path, raw, cache=None):
         raise ValueError('Correction dependency set differs')
     result = {}
     for e in entries:
-        target = codec.inputs.safe_path(raw, e['path'])
+        target = safe(raw, e['path'])
         if target.exists(): data = target.read_bytes()
         elif cache is not None: data = subprocess.check_output(['git', '-C', str(cache), 'show', COMMIT + ':' + e['path']])
         else: raise FileNotFoundError('Missing correction input: ' + e['path'])
         result[e['path']] = data
     for path, data in result.items():
-        target = codec.inputs.safe_path(raw, path); target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+        target = safe(raw, path); target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
     return lock, result
 
 def convert(lock, sources):
@@ -81,7 +81,7 @@ def main():
         raise ValueError('Raw/output roots overlap')
     lock, sources = inputs(args.lock, args.raw, args.cache); outputs = convert(lock, sources)
     args.output.mkdir(parents=True, exist_ok=True)
-    for path, data in outputs.items(): codec.inputs.safe_path(args.output, path).write_bytes(data)
+    for path, data in outputs.items(): safe(args.output, path).write_bytes(data)
     print(json.dumps(dict(status='imported', assets=2)))
 
 if __name__ == '__main__': main()

@@ -14,15 +14,11 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string FiveIslandContentProfile = "firered-five-island-campaign-v1";
-    public PretFiveIslandRegion? FiveIslandRegion { get; }
-    public GamePokemonCatalog? FiveIslandOwnership { get; }
-    public GameOpponentPokemonCatalog? FiveIslandOpponents { get; }
+    public PretFiveIslandRegion FiveIslandRegion { get; }
     public FiveIslandTrainerCatalog? FiveIslandTrainers { get; }
     public FiveIslandTrainerCatalog? FiveIslandTrainerParties => FiveIslandTrainers;
     public FiveIslandItemContent? FiveIslandItems { get; }
-    public MachineCatalog? FiveIslandMachines => FiveIslandItems?.Machines;
-    public FiveIslandWaterEncounterCatalog? FiveIslandWaterEncounters { get; }
-    public bool FiveIslandEnabled => FiveIslandRegion is not null;
+    public WaterEncounterCatalog? FiveIslandWaterEncounters { get; }
 
     public static ImmutableArray<string> FiveIslandUnsupportedInteractions =>
         ["FiveIsland_WaterLabyrinth", "FiveIsland_MemorialPillar", "FiveIsland_House1", "FiveIsland_House2",

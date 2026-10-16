@@ -13,12 +13,10 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string VictoryRoadContentProfile="firered-victory-road-campaign-v1";
-    public PretVictoryRoadRegion? VictoryRoadRegion { get; }
+    public PretVictoryRoadRegion VictoryRoadRegion { get; }
     public VictoryRoadTrainerCatalog? VictoryRoadTrainerParties { get; }
-    public GameOpponentPokemonCatalog? VictoryRoadOpponents { get; }
     public VictoryRoadItemContent? VictoryRoadItems { get; }
-    public VictoryRoadWaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
-    public bool VictoryRoadEnabled=>VictoryRoadRegion is not null;
+    public WaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
 
 
     private static IEnumerable<FieldPickupDefinition> VictoryRoadPickupDefinitions(PretVictoryRoadRegion region,VictoryRoadItemContent content,EarlyShopCatalog shop,PretStoryCompilation scripts)

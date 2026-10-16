@@ -5,10 +5,10 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-import argparse,  importlib.util, json, pathlib, subprocess, sys
+import argparse, json, pathlib, subprocess, sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
-spec=importlib.util.spec_from_file_location('ui',ROOT/'scripts/imports/presentation/import-lab-battle-ui.py');ui=importlib.util.module_from_spec(spec);spec.loader.exec_module(ui)
+import ui_tiles as ui
 def convert(source,lock):
     data={}
     for path,sha in lock['files'].items():

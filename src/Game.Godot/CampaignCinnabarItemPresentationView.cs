@@ -6,7 +6,6 @@ public partial class CampaignView
     /// <summary>Called by LoadCinnabarPresentation after inherited bag/quest/TM Case initialization.</summary>
     private void LoadCinnabarItemArt()
     {
-        if (!_catalog.CinnabarEnabled) return;
         var items = _catalog.CinnabarItems ?? throw new InvalidDataException("Cinnabar item metadata missing.");
         var art = PretCinnabarItemArt.LoadProject(_root);
         foreach (var icon in art.Icons)
@@ -34,7 +33,6 @@ public partial class CampaignView
             Items = document.Items.Add(new(key.Item.Id.Value, key.Item.SourceItemSymbol, key.Item.Name, key.Description, assetId, key.Item.FieldUseFunction)),
             Assets = document.Assets.Add(new(assetId,keyIcon.PngPath,keyIcon.Width,keyIcon.Height,position.X,position.Y))
         };
-        Write("cinnabarItemPresentation", new { icons = art.Icons.Length, secretKeyPocket = true,
-            machines = new[] { "TM14", "TM22", "TM38" }});
+
     }
 }

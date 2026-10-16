@@ -97,7 +97,7 @@ public sealed class PretMainMenuSource
         var generatedDirectory = Path.Combine(project, "content/generated/ui/main-menu");
         byte[] ReadPinned(string root,string path)
         {
-var bytes = File.ReadAllBytes(SafeFile(root,path));
+var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root,path));
 return bytes;
         }
         using var document = JsonDocument.Parse(ReadPinned(generatedDirectory,"main-menu.json"));
@@ -121,19 +121,4 @@ return bytes;
         return result;
     }
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe main-menu path.");
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Main-menu directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Main-menu file symlink is unsupported.");
-        }
-        return result;
-    }
 }

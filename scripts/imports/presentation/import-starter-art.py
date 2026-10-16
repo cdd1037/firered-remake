@@ -11,7 +11,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import io
 import importlib.util
 import json
 import pathlib
@@ -19,71 +18,14 @@ import re
 import sys
 
 sys.dont_write_bytecode = True
-from PIL import Image
 
 ROOT = _PROJECT_ROOT
 from image_io import png
+from pokemon_import import battle_indices as indexed_png, battle_palette as palette, rgba_pixels
 _spec = importlib.util.spec_from_file_location('starter_art_inputs', ROOT / 'scripts/imports/source/fetch-starter-art.py')
 inputs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(inputs)
 NAMES = (('Bulbasaur', 1), ('Charmander', 4), ('Squirtle', 7))
-
-
-def indexed_png(data):
-    """Read source indices directly; external GBA palettes provide output colors."""
-    with Image.open(io.BytesIO(data)) as image:
-        if image.format != 'PNG' or image.mode != 'P' or image.size != (64, 64):
-            raise ValueError('Expected a 64x64 indexed PNG')
-        if len(image.getpalette('RGB')) != 48 or image.info.get('transparency') != 0:
-            raise ValueError('Expected sixteen colors and transparent palette index zero')
-        indices = image.tobytes()
-        if any(index > 15 for index in indices):
-            raise ValueError('Source palette index exceeds four bits')
-        return indices
-
-
-def palette(data):
-    lines = data.decode('ascii').splitlines()
-    if len(lines) != 19 or lines[:3] != ['JASC-PAL', '0100', '16']:
-        raise ValueError('Expected a sixteen-color JASC-PAL 0100 palette')
-    colors, words = [], []
-    for line in lines[3:]:
-        if not re.fullmatch(r'[0-9]+ [0-9]+ [0-9]+', line):
-            raise ValueError('Invalid JASC RGB row')
-        rgb = [int(channel) for channel in line.split(' ')]
-        if any(channel > 255 for channel in rgb):
-            raise ValueError('Palette channel outside 0..255')
-        five = [channel // 8 for channel in rgb]
-        words.append(five[0] | (five[1] << 5) | (five[2] << 10))
-        # gbagfx WriteGbaPalette then ReadGbaPalette's exact integer mapping.
-        colors.append(tuple(channel * 255 // 31 for channel in five))
-    return colors, words
-
-
-def rgba_pixels(indices, colors):
-    if len(indices) != 4096 or len(colors) != 16 or any(index > 15 for index in indices):
-        raise ValueError('Unsupported pixel/palette profile')
-    return bytes(channel for index in indices for channel in (*colors[index], 0 if index == 0 else 255))
-
-
-def rgba_png(rgba):
-    if len(rgba) != 64 * 64 * 4:
-        raise ValueError('Expected one 64x64 RGBA frame')
-    return png(64, 64, rgba)
-
-
-def reference(lock, sources, path, symbol, needle=None):
-    entry = next(entry for entry in lock['files'] if entry['path'] == path)
-    result = dict(kind='pret', repository=inputs.REPOSITORY, commit=inputs.COMMIT,
-                  path=path, symbol=symbol,  url=entry['sourceUrl'])
-    if needle is not None:
-        text = sources[path].decode('utf-8')
-        if text.count(needle) != 1:
-            raise ValueError('Missing/ambiguous source binding: ' + symbol)
-        result['startLine'] = text.count('\n', 0, text.index(needle)) + 1
-        result['endLine'] = result['startLine'] + needle.count('\n')
-        result['url'] += f'#L{result["startLine"]}-L{result["endLine"]}'
-    return result
 
 
 def convert(lock, sources):
@@ -103,7 +45,7 @@ def convert(lock, sources):
         colors, words = palette(sources[palette_path])
         rgba = rgba_pixels(indices, colors)
         filename = stem + '-front.png'
-        outputs[filename] = rgba_png(rgba)
+        outputs[filename] = png(64, 64, rgba)
         opaque = [i for i, index in enumerate(indices) if index]
         if not opaque:
             raise ValueError('Empty portrait')

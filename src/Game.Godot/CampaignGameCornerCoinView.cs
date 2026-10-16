@@ -6,8 +6,7 @@ public partial class CampaignView
 {
     private int _gameCornerCoinCursor;
     private string? _gameCornerCoinWait;
-    private bool GameCornerCoinMenuActive => _catalog.GameCornerCoinsEnabled &&
-        _session.State.World.Player.MapId.Value == GameCornerCoinSource.Map && GameCornerCoinSource.Pending(_session.State.Script, _catalog);
+    private bool GameCornerCoinMenuActive => _session.State.World.Player.MapId.Value == GameCornerCoinSource.Map && GameCornerCoinSource.Pending(_session.State.Script, _catalog);
     private bool GameCornerCoinMenuVisible => GameCornerCoinMenuActive && FieldTextComplete &&
         _session.State.Dialogue?.Page + 1 == _session.State.Dialogue?.Pages.Length;
     private void SynchronizeGameCornerCoinMenu()
@@ -46,7 +45,7 @@ public partial class CampaignView
     private void DrawGameCornerCoinsBox()
     {
         if (_session.State.CoinsBox is not {} box) return;
-        if (!_catalog.GameCornerCoinsEnabled || box.X != 0 || box.Y is not (0 or 5) || box.Amount is < 0 or > GameCornerCoinSource.Maximum)
+        if (box.X != 0 || box.Y is not (0 or 5) || box.Amount is < 0 or > GameCornerCoinSource.Maximum)
             throw new InvalidDataException("game_corner_coin_box_view");
         // src/coins.c: 8x3 tile interior, x+1/y+1, normal label and small right-aligned amount.
         _itemSkin.DrawStandardFrame(this, new(box.X * 8, box.Y * 8, 80, 40));

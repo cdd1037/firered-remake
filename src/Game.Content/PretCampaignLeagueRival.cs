@@ -9,8 +9,7 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string LeagueRivalContentProfile="firered-league-rival-campaign-v1";
-    public LeagueRivalTrainerCatalog? LeagueRivalTrainerParties { get; }
-    public bool LeagueRivalEnabled=>LeagueRivalTrainerParties is not null;
+    public LeagueRivalTrainerCatalog LeagueRivalTrainerParties { get; }
 
     private static void ValidateLeagueRivalComposition(ImmutableDictionary<MapId,PretWorldMap> maps,LeagueRivalTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder text,CampaignPokemonContent pokemon,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents)
     {

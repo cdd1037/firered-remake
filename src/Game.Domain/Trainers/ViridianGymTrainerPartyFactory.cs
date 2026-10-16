@@ -39,24 +39,13 @@ public static class ViridianGymTrainerPartyFactory
     {
         ValidateCatalog(trainers);
         if (!trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("viridian_gym_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
     public static TrainerPartyCreationResult Create(ViridianGymTrainerCatalog trainers, GameOpponentPokemonCatalog opponents,
         TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers);
-        if (opponents is null || !trainers.Trainers.TryGetValue(id, out var trainer)) throw new NotSupportedException("viridian_gym_trainer_catalog");
-        var source = opponents.Mechanics;
-        bool customMoves = (trainer.PartyFlags & 1) != 0;
-        foreach (var member in trainer.Party)
-            if (!opponents.Catalog.Species.ContainsKey(member.Species)) throw new NotSupportedException("viridian_gym_trainer_species");
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        // PartyFlags=2 has a held item but retains the NPC factory's level-up moves.
-        if (!customMoves) return made;
-        return made with { Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m, source.Catalog.Moves[m].Pp, source.Catalog.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.Create(trainers.Trainers, opponents, id, rng);
     }
     public static void ValidateCatalog(ViridianGymTrainerCatalog catalog)
     {

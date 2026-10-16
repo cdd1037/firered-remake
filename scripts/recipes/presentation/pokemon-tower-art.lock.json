@@ -103,13 +103,5 @@
       "path": "src/data/trainers.h",
       "localPath": "content/raw/pokefirered/037335f4/src/data/trainers.h"
     }
-  ],
-  "inputs": [
-    {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    },
-    {
-      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
-    }
   ]
 }

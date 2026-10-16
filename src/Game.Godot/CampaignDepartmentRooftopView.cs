@@ -7,7 +7,6 @@ public partial class CampaignView
 {
     private void LoadRooftopIcons()
     {
-        if (!_catalog.DepartmentRooftopEnabled) return;
         _earlyItemIcons.Add(new ItemId("pret:ITEM_LEMONADE"), ItemTexture(PretDepartmentRooftopItems.LoadDocument(_root).Icons[0]));
         foreach (var alias in PretDepartmentRooftopItems.LoadMachinesDocument(_root).IconAliases)
         {
@@ -17,8 +16,7 @@ public partial class CampaignView
     }
     private int _rooftopCursor;
     private string? _rooftopWait;
-    private DepartmentRooftopMenu? RooftopMenu => _catalog.DepartmentRooftopEnabled &&
-        _session.State.World.Player.MapId.Value == DepartmentRooftopSource.Map
+    private DepartmentRooftopMenu? RooftopMenu => _session.State.World.Player.MapId.Value == DepartmentRooftopSource.Map
         ? DepartmentRooftopSource.Pending(_session.State.Script, _catalog) : null;
     private bool RooftopMenuActive => RooftopMenu is not null;
     private bool RooftopMenuVisible => RooftopMenuActive && FieldTextComplete &&

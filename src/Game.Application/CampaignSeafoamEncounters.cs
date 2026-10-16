@@ -24,14 +24,13 @@ public sealed partial class CampaignSession
     private const string ArticunoHide = "FLAG_HIDE_ARTICUNO";
     private const string ArticunoFought = "FLAG_FOUGHT_ARTICUNO";
     private const int ArticunoLocalId = 3;
-    public bool SeafoamEnabled => _content.SeafoamEnabled;
     private static bool IsSeafoamMap(MapId map) => SeafoamEncounterTables.Land.Any(t => t.Map == map) || SeafoamEncounterTables.Water.Any(t => t.Map == map);
     private static bool IsArticunoBattle(CampaignWildBattle battle) =>
         battle.Frame.WildEncounter?.Seafoam?.Kind == SeafoamEncounterKind.Articuno;
 
     private static void ValidateSeafoamEncounterCatalog(ICampaignCatalog content)
     {
-        if (!content.SeafoamEnabled || content.SeafoamOwnership is not { } owned ||
+        if (content.GamePokemon is not { } owned ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon))
             throw new InvalidDataException("seafoam_current_binding");
         var definition = content.MapDefinition(new(ArticunoMap));
@@ -49,7 +48,7 @@ public sealed partial class CampaignSession
     {
         var candidate = encounter.Pending?.Candidate ?? throw new InvalidDataException("seafoam_land_candidate_missing");
         var origin = new SeafoamWildOrigin(candidate.Map, SeafoamEncounterKind.Land, candidate.Slot);
-        var made = SeafoamPokemonFactory.GenerateSourceSlot(_content.SeafoamOwnership!, origin,
+        var made = SeafoamPokemonFactory.GenerateSourceSlot(_content.GamePokemon!, origin,
             candidate.Level, state.World.Rng, state.TrainerId);
         if (made.Pokemon.Species != candidate.Species) throw new InvalidDataException("seafoam_land_candidate_species");
         return new(made.Pokemon, made.GlobalRng, made.RandomTrace);
@@ -72,8 +71,8 @@ public sealed partial class CampaignSession
         }
         bool kindMatches = scripted ? origin.Kind == SeafoamEncounterKind.Articuno : surfing ? origin.Kind == SeafoamEncounterKind.Surf :
             fishing ? origin.Kind is SeafoamEncounterKind.OldRod or SeafoamEncounterKind.GoodRod : origin.Kind == SeafoamEncounterKind.Land;
-        if (!_content.SeafoamEnabled || origin.Map != state.World.Player.MapId || !kindMatches ||
-            !SeafoamPokemonFactory.SourceInitialInstance(_content.SeafoamOwnership!, origin, made.Pokemon, _content.FishingTables))
+        if (origin.Map != state.World.Player.MapId || !kindMatches ||
+            !SeafoamPokemonFactory.SourceInitialInstance(_content.GamePokemon!, origin, made.Pokemon, _content.FishingTables))
             throw new InvalidDataException("seafoam_wild_field_origin");
         if (scripted)
         {
@@ -93,7 +92,7 @@ public sealed partial class CampaignSession
 
     private void RequireArticunoCaller(CampaignState state, StoryEffect effect)
     {
-        if (!_content.SeafoamEnabled || state.World.Player.MapId.Value != ArticunoMap ||
+        if (state.World.Player.MapId.Value != ArticunoMap ||
             effect.Source.Path != ArticunoSource || effect.Source.Symbol != ArticunoScript ||
             state.LastTalked is not { } id || !state.Actors.TryGetValue(id, out var actor) ||
             actor.SourceLocalId != ArticunoLocalId || actor.ScriptId != ArticunoScript || !actor.Active ||
@@ -104,7 +103,7 @@ public sealed partial class CampaignSession
     private bool TryApplyArticunoEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.SeafoamEnabled || effect.Source.Path != ArticunoSource) return false;
+        if (effect.Source.Path != ArticunoSource) return false;
         var args = effect.Args;
         bool caller = effect.Source.Symbol == ArticunoScript;
         if (effect.Opcode == "specialvar" && args.SequenceEqual(new[] { "VAR_RESULT", "GetBattleOutcome" }))
@@ -135,7 +134,7 @@ public sealed partial class CampaignSession
                 state.ArticunoPreparation is not null || state.ArticunoReturn is not null ||
                 state.Script.Flags.GetValueOrDefault(ArticunoFought) || state.Script.Flags.GetValueOrDefault(ArticunoHide) ||
                 state.Script.Flags.GetValueOrDefault(SpecialWildFlag)) throw new InvalidDataException("articuno_preparation_context");
-            var made = SeafoamPokemonFactory.GenerateArticuno(_content.SeafoamOwnership!, state.World.Rng, state.TrainerId);
+            var made = SeafoamPokemonFactory.GenerateArticuno(_content.GamePokemon!, state.World.Rng, state.TrainerId);
             next = state with { ArticunoPreparation = new(new(SeafoamWildBattleContract.ArticunoOrigin,
                 state.World.Rng, made.GlobalRng, made.Pokemon), made), World = state.World with { Rng = made.GlobalRng } };
             return true;
@@ -154,8 +153,7 @@ public sealed partial class CampaignSession
         return false;
     }
 
-    private bool ArticunoButtonWait(CampaignState state) => _content.SeafoamEnabled &&
-        state.World.Player.MapId.Value == ArticunoMap && state.Script.Wait?.Kind == StoryWaitKind.ButtonPress &&
+    private bool ArticunoButtonWait(CampaignState state) => state.World.Player.MapId.Value == ArticunoMap && state.Script.Wait?.Kind == StoryWaitKind.ButtonPress &&
         !state.Script.Stack.IsEmpty && state.Script.Stack[^1].ProgramId == ArticunoScript;
     private Decision<CampaignState> DecideArticunoButton(CampaignState state, CampaignCommand command)
     {
@@ -190,16 +188,16 @@ public sealed partial class CampaignSession
 
     private bool IsSeafoamReceipt(CampaignSeafoamReceipt receipt)
     {
-        if (!_content.SeafoamEnabled || receipt.Origin is not { } origin ||
+        if (receipt.Origin is not { } origin ||
             !SeafoamWildBattleContract.IsRuntimeKind(origin.Kind) || receipt.InitialPokemon is not { } initial ||
             receipt.RngBefore.AlgorithmId != Gen3Rng.AlgorithmId || receipt.RngAfter.AlgorithmId != Gen3Rng.AlgorithmId ||
             receipt.RngBefore.Cursor >= receipt.RngAfter.Cursor) return false;
         try
         {
-            if (!SeafoamPokemonFactory.SourceInitialInstance(_content.SeafoamOwnership!, origin, initial, _content.FishingTables)) return false;
+            if (!SeafoamPokemonFactory.SourceInitialInstance(_content.GamePokemon!, origin, initial, _content.FishingTables)) return false;
             var made = origin.Kind == SeafoamEncounterKind.Articuno
-                ? SeafoamPokemonFactory.GenerateArticuno(_content.SeafoamOwnership!, receipt.RngBefore, initial.OriginalTrainerId)
-                : SeafoamPokemonFactory.GenerateSourceSlot(_content.SeafoamOwnership!, origin, checked((byte)initial.Level),
+                ? SeafoamPokemonFactory.GenerateArticuno(_content.GamePokemon!, receipt.RngBefore, initial.OriginalTrainerId)
+                : SeafoamPokemonFactory.GenerateSourceSlot(_content.GamePokemon!, origin, checked((byte)initial.Level),
                     receipt.RngBefore, initial.OriginalTrainerId, _content.FishingTables);
             return made.GlobalRng == receipt.RngAfter && SameSourceOwnedPokemon(made.Pokemon, initial);
         }

@@ -18,6 +18,8 @@ public static partial class SourceWildBattlePolicy
         if (!owned.Catalog.Species.ContainsKey(mon.Species)) return false;
         if (context.OrdinaryLand is { } ordinary)
             return ordinary.SourceInitialInstance(owned, mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
+        if (context.OrdinaryWater is { } water)
+            return water.SourceInitialInstance(owned, mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.RockSmash is { } rock)
             return RockSmashWildBattleContract.SourceInitialInstance(owned, rock, mon) &&
                 opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
@@ -41,7 +43,7 @@ public static partial class SourceWildBattlePolicy
             { SeviiRuby: { } origin } => SeviiRubyWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
             { VictoryRoad: { } origin } => VictoryRoadWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
             { FirstSeviiWild: true } => FirstSeviiWildPokemonFactory.WildSpecies.Contains(mon.Species),
-            _ => owned.AdmitsWildOpponent(mon)
+            _ => context.ScriptedSnorlax || context.TowerBattleKind is not null
         };
         bool regional = context.PowerPlant is not null || context.EventIsland is not null || context.SevenIsland is not null || context.CeruleanCave is not null || context.FiveIsland is not null || context.SixIsland is not null || context.FourIsland is not null ||
             context.SeviiRuby is not null || context.VictoryRoad is not null;

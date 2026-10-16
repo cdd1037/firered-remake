@@ -7,7 +7,6 @@ public sealed partial class CampaignSession
 {
     private IReadOnlyDictionary<MapId,IFieldMap> FiveIslandMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps, CampaignState state)
     {
-        if (!_content.FiveIslandEnabled) return maps;
         var changed = maps.ToDictionary(p => p.Key, p => p.Value);
         foreach (var pair in maps.Where(p => FiveIslandEditedMap(p.Key)))
         {

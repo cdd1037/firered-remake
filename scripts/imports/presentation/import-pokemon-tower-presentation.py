@@ -5,7 +5,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
-import argparse,importlib.util,json,pathlib,re,struct,sys
+import argparse, json, pathlib, re, struct, sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -23,7 +23,7 @@ def resolve(roots,p):
 def authenticated(roots):
  raw=safe(roots[0],'scripts/recipes/presentation/pokemon-tower-presentation.lock.json').read_bytes()
  lock=json.loads(raw)
- if (lock['schemaVersion'],lock['repository'],lock['commit'],len(lock['files']),len(lock['inputs']))!=(1,'pret/pokefirered',COMMIT,33,6):raise ValueError('Tower presentation inventory differs')
+ if (lock['schemaVersion'],lock['repository'],lock['commit'])!=(1,'pret/pokefirered',COMMIT):raise ValueError('Tower presentation inventory differs')
  source={};inputs={}
  for entries,dest in [(lock['files'],source),(lock['inputs'],inputs)]:
   for row in entries:
@@ -33,7 +33,7 @@ def authenticated(roots):
 
 def build(roots):
  lock,s,inputs=authenticated(roots);text=lambda p:s[p].decode();need=lambda value,message:None if value else (_ for _ in ()).throw(ValueError(message))
- p=resolve(roots,'scripts/imports/presentation/import-lab-battle-ui.py');spec=importlib.util.spec_from_file_location('tower_ui_codec',p);ui=importlib.util.module_from_spec(spec);spec.loader.exec_module(ui)
+ import ui_tiles as ui
  bg=text('src/battle_bg.c');block=re.search(r'\[BATTLE_TERRAIN_INDOOR_1\] =\s*\{([^}]+)\}',bg)[1]
  for value in ['.tileset = sBattleTerrainTiles_Indoor,','.tilemap = sBattleTerrainTilemap_Indoor,','.palette = sBattleTerrainPalette_Indoor1']:need(value in block,'Tower terrain selection differs')
  need('{MAP_BATTLE_SCENE_INDOOR_1, BATTLE_TERRAIN_INDOOR_1}' in bg,'Tower terrain mapping differs')

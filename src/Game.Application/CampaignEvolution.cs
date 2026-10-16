@@ -45,8 +45,7 @@ public sealed partial class CampaignSession
 
     // Shared capability and menu label: presentation never infers execution from a historical
     // item's pickup-only UseSupport value or from an opponent-only source species definition.
-    public bool FieldEvolutionSupported(ItemId item) => _content.MtMoonEnabled &&
-        _content.EarlyShop is { } shop && SourceFieldEvolutionRules.Supports(shop, item);
+    public bool FieldEvolutionSupported(ItemId item) => _content.EarlyShop is { } shop && SourceFieldEvolutionRules.Supports(shop, item);
 
     public SpeciesId? FieldEvolutionPartyTarget(PartyPokemon owned, ItemId item)
     {
@@ -60,7 +59,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> UseFieldEvolution(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.MtMoonEnabled || _content.EarlyShop is not { } shop ||
+        if (_content.EarlyShop is not { } shop ||
             state.ItemMenu is not { Origin: "bag", View: "bag" } menu || state.Inventory is null ||
             state.Evolution is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null || state.DoubleBattle is not null)
             return No("field_evolution_context_invalid");
@@ -112,7 +111,6 @@ public sealed partial class CampaignSession
 
     private CampaignState BeginWildEvolution(CampaignState state)
     {
-        if (!_content.ForestEnabled) return ReturnFromWildBattle(state);
         var battle = state.WildBattle!;
         if (battle.Frame is not {Outcome:WildBattleOutcome.Won,Rewards.Pending:null} ||
             battle.EntryLevels.IsDefault||battle.EntryLevels.Length!=state.Party.Length||!battle.PendingMoves.IsEmpty||state.Evolution is not null)
@@ -130,10 +128,10 @@ public sealed partial class CampaignSession
         var scene = state.Evolution!;
         bool itemScene = scene.ItemUse is not null;
         bool candyScene = scene.CandyUse is not null;
-        if (!_content.ForestEnabled || (candyScene
-            ? !_content.MtMoonEnabled || itemScene || scene.BattleId is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null
+        if ((candyScene
+            ? itemScene || scene.BattleId is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null
             : itemScene
-            ? !_content.MtMoonEnabled || scene.BattleId is not null || state.WildBattle is not null ||
+            ? scene.BattleId is not null || state.WildBattle is not null ||
                 state.ForestTrainerBattle is not null || scene.Stage == CampaignEvolutionStage.Proposal
             : scene.BattleId is null || (state.WildBattle?.Id != scene.BattleId && state.ForestTrainerBattle?.Id != scene.BattleId && state.DoubleBattle?.Id != scene.BattleId)))
             return new(CommandStatus.Fault, state, "evolution_context_invalid");
@@ -179,7 +177,7 @@ public sealed partial class CampaignSession
         {
             if (command.MoveSlot < -1 || command.MoveSlot >= owned.Pokemon.Moves.Length)
                 return new(CommandStatus.Rejected, state, "evolution_learning_slot_invalid");
-            if (_content.SsAnneEnabled && command.MoveSlot >= 0 && command.MoveSlot < owned.Pokemon.Moves.Length && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
+            if (command.MoveSlot >= 0 && command.MoveSlot < owned.Pokemon.Moves.Length && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
                 return new(CommandStatus.Rejected, state, "hm_move_cannot_be_forgotten");
             var move = scene.PendingMoves[0];
             if (command.MoveSlot >= 0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon, move.Move))
@@ -254,7 +252,7 @@ public sealed partial class CampaignSession
             throw new ArgumentException(error, nameof(owned));
         if (slot < 0 || slot >= owned.Pokemon.Moves.Length || owned.Pokemon.Moves.Any(m => m.Move == move))
             throw new ArgumentException("Invalid owned level-move replacement.");
-        if (_content.SsAnneEnabled && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[slot].Move))
+        if (PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[slot].Move))
             throw new ArgumentException("An HM move cannot be forgotten here.");
         if (!PokemonMoveRules.IsLearningSupported(BattlePokemon, move))
             throw new NotSupportedException("pokemon_learning_effect_unsupported");
@@ -266,7 +264,7 @@ public sealed partial class CampaignSession
     private bool EvolutionSpeciesMatchesOrigin(CampaignState state, PartyPokemon owned, int originalSpecies)
     {
         int species = originalSpecies;
-        if (_content.ForestEnabled && state.EvolutionHistory is { } history)
+        if (state.EvolutionHistory is { } history)
             foreach (var entry in history.Where(e => e is not null && e.InstanceId == owned.InstanceId))
             {
                 if (entry.PreviousSpeciesId != species) return false;
@@ -292,8 +290,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateEvolutionHistory(CampaignState state)
     {
-        if (!_content.ForestEnabled)
-            return state.Evolution is not null || state.EvolutionHistory is not null ? "save_evolution_profile_missing" : null;
         if (state.Evolution is not null) return "save_event_active";
         var history = state.EvolutionHistory ?? [];
         var allOwned = OwnedPokemon(state);
@@ -310,7 +306,6 @@ public sealed partial class CampaignSession
                 !byNumber.TryGetValue(entry.PreviousSpeciesId, out var previous) || !byNumber.TryGetValue(entry.TargetSpeciesId, out var target))
                 return "save_evolution_history_invalid";
             bool item = entry.Item is not null;
-            if (item && !_content.MtMoonEnabled) return "save_evolution_item_profile_missing";
             int partyIndex = -1;
             for (int i = 0; i < allOwned.Length; i++) if (allOwned[i].InstanceId == entry.InstanceId) partyIndex = i;
             if (partyIndex < 0 || entry.LevelBeforeBattle < allOwned[partyIndex].MetLevel ||
@@ -350,7 +345,7 @@ public sealed partial class CampaignSession
                         if (trainers[i].Id == entry.BattleId && trainers[i].Outcome == WildBattleOutcome.Won && trainers[i].ExperienceGained > 0) battleIndex = i;
                     if(battleIndex>=0)
                     {
-                        if (!_content.ForestTrainersEnabled || battleIndex < lastTrainerBattle) return "save_evolution_battle_invalid";
+                        if (battleIndex < lastTrainerBattle) return "save_evolution_battle_invalid";
                         lastTrainerBattle = battleIndex;
                     }
                     else
@@ -358,12 +353,12 @@ public sealed partial class CampaignSession
                         var doubles=state.DoubleBattleHistory??[];
                         for(int i=0;i<doubles.Length;i++)
                             if(doubles[i].Id==entry.BattleId&&doubles[i].Outcome==WildBattleOutcome.Won&&doubles[i].ExperienceGained>0)battleIndex=i;
-                        if(!_content.PresetDoublesEnabled||battleIndex<0||battleIndex<lastDoubleBattle)return "save_evolution_battle_invalid";
+                        if(battleIndex<0||battleIndex<lastDoubleBattle)return "save_evolution_battle_invalid";
                         lastDoubleBattle=battleIndex;
                     }
                 }
                 // Wild/trainer serials are independent. Storage can later change party order.
-                if (!_content.PokemonStorageEnabled && lastBattleId == entry.BattleId && partyIndex <= lastParty || closedBattles.Contains(entry.BattleId))
+                if (closedBattles.Contains(entry.BattleId))
                     return "save_evolution_battle_invalid";
                 if (lastBattleId is not null && lastBattleId != entry.BattleId) closedBattles.Add(lastBattleId);
                 lastBattleId = entry.BattleId; lastParty = partyIndex;

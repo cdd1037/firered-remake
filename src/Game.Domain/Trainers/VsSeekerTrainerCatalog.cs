@@ -36,7 +36,7 @@ public static class VsSeekerTrainerPartyFactory
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (!catalog.Trainers.TryGetValue(id, out var trainer)) throw new ArgumentException("vs_seeker_trainer_id");
-        return checked((trainer.DoubleBattle ? 8 : 4) * trainer.BaseMoney * trainer.Party[^1].Level);
+        return TrainerPartyFactory.BasePrize(trainer);
     }
 
     /// <summary>Uses the shared original IV/PID/name/OT generator and its receipt. Custom slots
@@ -52,12 +52,6 @@ public static class VsSeekerTrainerPartyFactory
             member.CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
                 .Any(m => !source.Catalog.Moves.ContainsKey(m))))
             throw new ArgumentException("vs_seeker_trainer_moves");
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        return (trainer.PartyFlags & 1) == 0 ? made : made with {
-            Party = made.Party.Select((p, i) => p with { Pokemon = p.Pokemon with {
-                Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE").Select(m => new PokemonMoveSlot(m, source.Catalog.Moves[m].Pp,
-                    source.Catalog.Moves[m].Pp)).ToImmutableArray()
-            } }).ToImmutableArray()
-        };
+        return TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
     }
 }

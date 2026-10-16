@@ -8,7 +8,6 @@ using Godot;
 /// <summary>Original beast art and machine pixels. Authoritative commands own handoff and roaming state.</summary>
 public partial class CampaignView
 {
-    private bool CelioPresentationProfile => _catalog.CelioEnabled && _catalog.FiveIslandEnabled && (_session.IsCurrentGame || _session.RulesVersion == CampaignSession.CelioRulesVersion);
     private CelioPresentationData? _celioArt;
     private readonly Dictionary<int,PokedexMenuEntry> _celioDex = [];
     private readonly Dictionary<(int Tile,int Layer),Texture2D> _celioMachineLayers = [];
@@ -16,24 +15,9 @@ public partial class CampaignView
 
     private void LoadCelioPresentation()
     {
-        if (!_catalog.CelioEnabled) return;
         var pokemon = _catalog.PokemonContent?.Catalog ?? throw new InvalidDataException("Celio owned Pokemon catalog missing.");
-        if (!CelioPresentationProfile)
-            throw new InvalidDataException("Celio requires its complete Five Island predecessor and owned beast catalog.");
         _celioArt = CelioPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_celioArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_celioArt.Files, row, replicatePalette);
         foreach (var row in CelioManifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -57,7 +41,7 @@ public partial class CampaignView
         }
         foreach (var row in CelioManifest.GetProperty("layers").EnumerateArray())
             _celioMachineLayers.Add((row.GetProperty("metatileId").GetInt32(),row.GetProperty("layer").GetInt32()),Pixels(row));
-        Write("celioPresentation",new {             nativeWindowVerified=false, physicalAudioVerified=false });
+
     }
 
     private CaptureDexEntry? CelioCaptureDexEntry(int species) => !_celioDex.TryGetValue(species,out var e) ? null :
@@ -65,11 +49,10 @@ public partial class CampaignView
             e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
     private byte[]? ReadCelioDexTexture(PokedexMenuTexture texture) => _celioDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture)
         ? _celioArt!.Files[texture.TexturePath] : null;
-    private string? CelioSpeciesName(int species) => _celioDex.GetValueOrDefault(species)?.Name;
 
     private bool TryCelioMachinePatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
     {
-        if (!_catalog.CelioEnabled || map.Value != "map.one-island-pokemon-center-1f") return false;
+        if (map.Value != "map.one-island-pokemon-center-1f") return false;
         // The Ruby tile remains owned and authenticated by the predecessor presentation.
         var tile = CelioManifest.GetProperty("tiles").EnumerateArray().SingleOrDefault(t => t.GetProperty("metatileId").GetInt32() == edit.SourceMetatileId);
         if (tile.ValueKind == JsonValueKind.Undefined) return false;
@@ -83,7 +66,6 @@ public partial class CampaignView
 
     private void VerifyCelioMoveGeometry()
     {
-        if (!_catalog.CelioEnabled) return;
         foreach (var row in CelioManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
         {
             var key = (row.GetProperty("species").GetInt32(),row.GetProperty("side").GetString()!);

@@ -8,7 +8,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretCyclingRoadRegion CyclingRoadRegion { get; }
-    public bool CyclingRoadEnabled => CyclingRoadRegion is not null;
     public ImmutableHashSet<MapId> CyclingRoadSceneInteriors { get; private set; } = [];
 
     // The scene remains armed when climbing stairs inside a gate. Derive that

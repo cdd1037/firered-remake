@@ -33,11 +33,20 @@ public static class ContentJson
     {
         if (json is null || Encoding.UTF8.GetByteCount(json) > MaximumJsonBytes)
             throw Error("json_size", "$", "JSON is null or exceeds the 8 MiB engineering limit.");
+        return ParseStrict<T>(Encoding.UTF8.GetBytes(json), options);
+    }
+
+    internal static T ParseStrict<T>(ReadOnlyMemory<byte> json, JsonSerializerOptions options)
+    {
+        if (json.Length > MaximumJsonBytes)
+            throw Error("json_size", "$", "JSON exceeds the 8 MiB engineering limit.");
         try
         {
             using var document = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 64 });
+            if (document.RootElement.ValueKind == JsonValueKind.Null)
+                throw Error("json_null", "$", "The document must not be null.");
             CheckDuplicateProperties(document.RootElement, "$");
-            return JsonSerializer.Deserialize<T>(json, options)
+            return document.RootElement.Deserialize<T>(options)
                 ?? throw Error("json_null", "$", "The document must not be null.");
         }
         catch (JsonException exception)

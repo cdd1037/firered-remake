@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 import unittest
 import tempfile
-from item_catalog import ROOT, RAW, compile_catalog, item_definition, item_json
+from item_catalog import ROOT, RAW, compile_catalog, described_items, item_definition, item_json
 
 
 class ItemCatalogTests(unittest.TestCase):
@@ -69,6 +69,44 @@ class ItemCatalogTests(unittest.TestCase):
         self.assertEqual('"pret:ITEM_POTION"', json.dumps(potion, default=item_json))
         with self.assertRaisesRegex(ValueError, 'Unknown item'):
             item_definition('ITEM_NONE')
+
+    def test_selected_descriptions_preserve_source_and_shared_identity(self):
+        raw = ROOT / RAW
+        rows = json.loads((raw / 'src/data/items.json').read_bytes())['items']
+        descriptions = (raw / 'src/move_descriptions.c').read_text()
+        selected = ('ITEM_CARD_KEY', 'ITEM_TM04')
+        values = described_items(lambda path: (raw / path).read_bytes(), selected)
+        for symbol, value in zip(selected, values):
+            source = next(row for row in rows if row['itemId'] == symbol)
+            if symbol == 'ITEM_TM04':
+                match = re.search(r'gMoveDescription_' + re.escape(source['moveId']) +
+                                  r'\[\] = _\(("(?:[^"\\]|\\.)*")\);', descriptions)
+                expected = json.loads(match[1])
+            else:
+                expected = source['description_english'].replace('\\n', '\n')
+            self.assertIs(item_definition(symbol), value['metadata']['item'])
+            self.assertEqual(expected, value['metadata']['description'])
+            self.assertEqual([], value['effectBytes'])
+            self.assertEqual({'item', 'description'}, value['metadata'].keys())
+
+    def test_selected_descriptions_reject_missing_duplicate_or_ambiguous_source(self):
+        raw = ROOT / RAW
+        source = json.loads((raw / 'src/data/items.json').read_bytes())
+        symbol = 'ITEM_TM04'
+        row = next(row for row in source['items'] if row['itemId'] == symbol)
+        description = (raw / 'src/move_descriptions.c').read_bytes()
+        for selection in ([], [symbol, symbol]):
+            with self.subTest(selection=selection), self.assertRaisesRegex(ValueError, 'nonempty and unique'):
+                described_items(lambda path: (raw / path).read_bytes(), selection)
+        for rows in ([entry for entry in source['items'] if entry['itemId'] != symbol],
+                     source['items'] + [row]):
+            with self.subTest(rows=len(rows)), self.assertRaisesRegex(ValueError, 'one item declaration'):
+                described_items(lambda path: json.dumps(dict(items=rows)).encode(), [symbol])
+        for invalid in (b'', description + b'\n' + description):
+            def read(path):
+                return invalid if path == 'src/move_descriptions.c' else (raw / path).read_bytes()
+            with self.subTest(description_bytes=len(invalid)), self.assertRaisesRegex(ValueError, 'one machine move description'):
+                described_items(read, [symbol])
 
     def test_regional_documents_do_not_own_business_definitions(self):
         count = 0

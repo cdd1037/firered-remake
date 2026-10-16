@@ -33,12 +33,7 @@ public static class CeruleanTrainerPartyFactory
                 throw new NotSupportedException("Cerulean trainer species differs from source.");
 
         }
-        var created = TrainerPartyFactory.CreateValidated(trainer, pokemon, rng);
-        if (trainer.PartyFlags == 0) return created;
-        return created with { Party = created.Party.Select((member, i) => member with { Pokemon = member.Pokemon with {
-            Moves = trainer.Party[i].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m, pokemon.Moves[m].Pp, pokemon.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.CreateValidated(trainer, pokemon, rng);
     }
 
     public static void ValidateCatalog(CeruleanTrainerCatalog catalog)

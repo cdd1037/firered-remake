@@ -27,7 +27,7 @@ public partial class CampaignView
         (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length);
     private bool TrainerTowerMenuReady => TrainerTowerMenuVisible && _waitElapsed >= _waitDuration && _fade <= 0 && _tracks.All(t => t.Time >= t.Duration);
     private int TrainerTowerMenuWidth => (int)_trainerTowerMenu!.Options.Max(t => _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(t), fontSize: _sourceNormal.Size).X);
-    private bool IsTrainerTowerPresentationMap(MapId map) => _catalog.TrainerTowerEnabled && _catalog.TrainerTowerRegion.Maps.ContainsKey(map);
+    private bool IsTrainerTowerPresentationMap(MapId map) => _catalog.TrainerTowerRegion.Maps.ContainsKey(map);
     private string PresentationMapKey(MapId map) => IsTrainerTowerPresentationMap(map)
         ? map.Value + ":" + _catalog.TrainerTowerRegion.LayoutId(map, (PretTrainerTowerLayoutFormat)_session.TrainerTowerLayout(map)) : SeafoamPresentationMapKey(map);
     private PretWorldMap PresentationSourceMap(MapId map) => IsTrainerTowerPresentationMap(map)
@@ -35,9 +35,6 @@ public partial class CampaignView
 
     private void LoadTrainerTowerPresentation()
     {
-        if (!_catalog.TrainerTowerEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.PowerPlantEnabled)
-            throw new InvalidDataException("Trainer Tower requires the current Power Plant presentation predecessor.");
         var catalog = PretTrainerTowerPresentation.Load(_root); _trainerTowerArt = catalog;
         Texture2D TextureFor(JsonElement row)
         {
@@ -71,8 +68,7 @@ public partial class CampaignView
             // Existing regions retain their original textures. New prizes include METAL COAT.
             if (!_earlyItemIcons.ContainsKey(id)) _earlyItemIcons.Add(id, (ImageTexture)TextureFor(row));
         }
-        Write("trainerTowerPresentation", new { trainerPortraits = _trainerTowerPortraits.Count, battleSprites = _battleArt.Count,
-        nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void AddTrainerTowerMoveGeometry()
@@ -109,9 +105,6 @@ public partial class CampaignView
     private Texture2D? TrainerTowerTrainerPortrait => TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraits[id] : null;
     private Vector2 VisibleTrainerPortraitPosition => VisibleSharedTrainer?.Position ?? (TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraitPositions[id] : new(144, 8));
     private Texture2D VisibleTrainerPortrait => VisibleSharedTrainer?.Portrait ?? TrainerTowerTrainerPortrait ?? _forestTrainerPortraits[VisibleTrainerPortraitId];
-    private string? TrainerTowerSpeciesName(int species) => _catalog.TrainerTowerEnabled
-        ? _catalog.TrainerTowerOpponents.Catalog.Species.Values.Any(s => s.SourceSpeciesId == species)
-            ? (_pokedexMenu ?? throw new InvalidDataException("Tower species names missing.")).Entries[species].Name : null : null;
 
     // trainer_tower.c TT_ConvertEasyChatMessageToString keeps Easy Chat words intact,
     // including words whose source spelling contains spaces; it is not ordinary word wrapping.
@@ -182,7 +175,7 @@ public partial class CampaignView
     }
     private void CommitTrainerTowerTime(bool flush)
     {
-        if (_busy || !_session.TrainerTowerEnabled) return;
+        if (_busy) return;
         int frames;
         while ((frames = _trainerTowerFrames.Take(flush)) > 0)
         {

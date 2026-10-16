@@ -11,7 +11,6 @@ using Godot;
 /// <summary>Six Island authenticated source textures and display catalogs. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private bool SixIslandPresentationProfile => _catalog.SixIslandEnabled && _catalog.FourIslandEnabled && (_session.RulesVersion == CampaignSession.SixIslandRulesVersion || FiveIslandPresentationProfile);
     private SixIslandPresentationData? _sixIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _sixIslandDex = [];
     private readonly Dictionary<string,JsonElement> _sixIslandTrainers = new(StringComparer.Ordinal);
@@ -21,27 +20,12 @@ public partial class CampaignView
 
     private void LoadSixIslandPresentation()
     {
-        if (!_catalog.SixIslandEnabled) return;
-        if (!SixIslandPresentationProfile)
-            throw new InvalidDataException("Six Island requires its complete Four Island predecessor.");
         _sixIslandArt = SixIslandPresentationAssets.Load(_root);
-        Texture2D Pixels(JsonElement row, bool replicatePalette = false)
-        {
-            int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            using var image = NativeImages.LoadPng(_sixIslandArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
-            if (replicatePalette)
-            {
-                var rgba = image.GetData();
-                for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-            }
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row, bool replicatePalette = false) => PresentationTexture(_sixIslandArt.Files, row, replicatePalette);
         foreach (var row in SixIslandManifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
-            if (_catalog.SixIslandOpponents?.Catalog.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
+            if (_catalog.OpponentPokemon?.Catalog.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
                 throw new InvalidDataException("Six Island sprite is outside its opponent catalog.");
             string side = row.GetProperty("side").GetString()!; bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
             var texture = Pixels(row); var position = new Vector2(row.GetProperty("x").GetInt32(),row.GetProperty("y").GetInt32());
@@ -62,11 +46,14 @@ public partial class CampaignView
         }
         foreach (var row in SixIslandManifest.GetProperty("portraits").EnumerateArray())
         {
-            string id = row.GetProperty("id").GetString()!; var texture = Pixels(row);
+            string id = row.GetProperty("id").GetString()!;
             bool inheritedExpected=row.GetProperty("inherited").GetBoolean();
             bool exists=_forestTrainerPortraits.TryGetValue(id,out var inherited);
             if (exists!=inheritedExpected) throw new InvalidDataException("Six Island portrait predecessor scope differs: "+id);
-            if(!(exists))_forestTrainerPortraits.Add(id,(ImageTexture)texture);
+            if (exists && (inherited!.GetWidth() != row.GetProperty("width").GetInt32() ||
+                inherited.GetHeight() != row.GetProperty("height").GetInt32()))
+                throw new InvalidDataException("Six Island inherited portrait dimensions differ: " + id);
+            if (!exists) _forestTrainerPortraits.Add(id, (ImageTexture)Pixels(row));
         }
         foreach (var row in SixIslandManifest.GetProperty("trainers").EnumerateArray())
         {
@@ -80,7 +67,7 @@ public partial class CampaignView
         foreach (var row in SixIslandManifest.GetProperty("items").EnumerateArray()) _earlyItemIcons.Add(new(row.GetProperty("item").GetString()!),(ImageTexture)Pixels(row));
         foreach (var row in SixIslandManifest.GetProperty("layers").EnumerateArray()) _sixIslandDoorLayers.Add((row.GetProperty("metatileId").GetInt32(),row.GetProperty("layer").GetInt32()),Pixels(row));
         foreach (var row in SixIslandManifest.GetProperty("terrains").EnumerateArray()) _sixIslandTerrains.Add(row.GetProperty("terrainId").GetInt32(),Pixels(row));
-        Write("sixIslandPresentation",new { nativeWindowVerified=false, physicalAudioVerified=false });
+
     }
 
     private CaptureDexEntry? SixIslandCaptureDexEntry(int species) => !_sixIslandDex.TryGetValue(species,out var e) ? null :
@@ -98,8 +85,7 @@ public partial class CampaignView
             ? _sixIslandArt!.Files[texture.TexturePath] : null;
     private string? SixIslandDoubleText(string key) => _session.State.DoubleBattle is {} battle && _sixIslandTrainers.TryGetValue(battle.Trainer.Value,out var row) ? row.GetProperty(key).GetString() : null;
     private Texture2D? SixIslandDoublePortrait => SixIslandDoubleText("portrait") is {} id ? _forestTrainerPortraits[id] : null;
-    private string? VisibleSixIslandTrainerText(string key) => _session.State.ForestTrainerBattle is {} battle && _sixIslandTrainers.TryGetValue(battle.Trainer.Value,out var row) ? row.GetProperty(key).GetString() : null;
-    private bool IsSixIslandPatchedMap(MapId map) => _catalog.SixIslandEnabled && map.Value == "map.six-island-ruin-valley";
+    private bool IsSixIslandPatchedMap(MapId map) => map.Value == "map.six-island-ruin-valley";
     private bool TrySixIslandPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
     {
         if (!IsSixIslandPatchedMap(map)) return false;
@@ -120,8 +106,6 @@ public partial class CampaignView
         };
     }
 
-    private string? SixIslandSpeciesName(int species) => _catalog.SixIslandOpponents?.Catalog.Species.Values.Any(s=>s.SourceSpeciesId==species)==true
-        ? _pokedexMenu?.Entries.GetValueOrDefault(species)?.Name : null;
     private JsonElement? SixIslandBrailleMessage(string symbol)
     {
         if (_sixIslandArt is null) return null;

@@ -75,14 +75,6 @@
     }
   ],
   "gameVersion": "FIRERED",
-  "inputs": [
-    {
-      "path": "scripts/imports/source/fetch-lab-battle-ui.py"
-    },
-    {
-      "path": "scripts/imports/presentation/import-lab-battle-ui.py"
-    }
-  ],
   "profile": "firered-route11-art-v1",
   "repository": "pret/pokefirered",
   "revision": 0,

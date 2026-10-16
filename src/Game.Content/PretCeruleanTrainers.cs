@@ -20,7 +20,7 @@ public static class PretCeruleanTrainers
         return catalog;
     }
 
-    public static CeruleanTrainerCatalog Load(PretCeruleanRegion region, PretCeruleanPokemon pokemon)
+    public static CeruleanTrainerCatalog Load(PretCeruleanRegion region, PokemonPresentationPackage pokemon)
     {
         ArgumentNullException.ThrowIfNull(region);
         ArgumentNullException.ThrowIfNull(pokemon);

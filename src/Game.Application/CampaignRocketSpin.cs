@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
 {
     private CampaignState StartRocketArrowArrival(CampaignState previous,CampaignState moved)
     {
-        if(!_content.RocketHideoutEnabled||previous.World.Player.MapId!=moved.World.Player.MapId||previous.World.Player==moved.World.Player)return moved;
+        if(previous.World.Player.MapId!=moved.World.Player.MapId||previous.World.Player==moved.World.Player)return moved;
         int behavior=SourceBehavior(moved,moved.World.Player.X,moved.World.Player.Y)??-1;
         if(!RocketSpinRules.IsArrow(behavior))return moved;
         // FieldGetPlayerInput excludes forced-movement tiles before step scripts. The

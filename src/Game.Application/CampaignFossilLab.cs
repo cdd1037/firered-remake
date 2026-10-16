@@ -33,16 +33,15 @@ public sealed partial class CampaignSession
             "FLAG_GOT_OLD_AMBER", "FLAG_REVIVED_AMBER", "ShowOldAmber", "GiveAerodactyl", "MULTICHOICE_AMBER")
     ];
 
-    private bool InFossilLabScript(CampaignState state) => _content.FossilLabEnabled &&
-        state.World.Player.MapId.Value == FossilLabExperiment && state.LastTalked is { } id &&
+    private bool InFossilLabScript(CampaignState state) => state.World.Player.MapId.Value == FossilLabExperiment && state.LastTalked is { } id &&
         state.Actors.TryGetValue(id, out var actor) && actor.Active && actor.SourceLocalId == 2 &&
         actor.ScriptId == FossilLabScientist && state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") == 2;
 
     private static void ValidateFossilLabCatalog(ICampaignCatalog content)
     {
 
-        if (!content.FossilLabEnabled || content.FossilLabOwnership is not { } owned ||
-            content.FossilLabOpponents is not { } opponents || content.FossilLabMachines is not { } machines ||
+        if (content.GamePokemon is not { } owned ||
+            content.OpponentPokemon is not { } opponents || content.Machines is not { } machines ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
@@ -82,10 +81,6 @@ public sealed partial class CampaignSession
         int phase = state.Script.Variables.GetValueOrDefault(FossilLabReviveState);
         int which = state.Script.Variables.GetValueOrDefault(FossilLabWhichFossil);
         var receipts = state.FossilRevivals ?? [];
-        if (!_content.FossilLabEnabled)
-            return phase != 0 || which != 0 || state.FossilRevivals is not null ||
-                FossilLabDefinitions.Any(f => state.Script.Flags.GetValueOrDefault(f.RevivedFlag))
-                ? "save_fossil_lab_profile_missing" : null;
         if (receipts.IsDefault || receipts.Length > 2 || receipts.Any(r => r is null) ||
             receipts.Count(r => r.FossilKind is 1 or 2) > 1) return "save_fossil_lab_receipts_invalid";
         if (phase is < 0 or > 2 || which is < 0 or > 3 || phase != 0 && which == 0)
@@ -127,7 +122,6 @@ public sealed partial class CampaignSession
 
     private int DepositedOrRevivedFossils(CampaignState state, int kind)
     {
-        if (!_content.FossilLabEnabled) return 0;
         var fossil = FossilLabDefinitions.Single(f => f.Kind == kind);
         bool pending = state.Script.Variables.GetValueOrDefault(FossilLabReviveState) is 1 or 2 &&
             state.Script.Variables.GetValueOrDefault(FossilLabWhichFossil) == kind &&
@@ -141,7 +135,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFossilLabEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.FossilLabEnabled || effect.Source.Path != FossilLabSource) return false;
+        if (effect.Source.Path != FossilLabSource) return false;
         // Validate once at the entry before any transient source mutations.
         if (effect.Opcode == "lock" && effect.Source.Symbol == FossilLabScientist)
         {

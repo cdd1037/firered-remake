@@ -111,25 +111,10 @@ public sealed class PretPlayerGenderArt
 
     private static byte[] ReadPinned(string root,string relative,bool texture = false)
     {
-        var path = SafeFile(root, relative);
+        var path = GeneratedResourceFile.SafePath(root, relative);
 var bytes = File.ReadAllBytes(path);
 return bytes;
     }
 
-    private static string SafeFile(string root, string relative)
-    {
-        Require(!string.IsNullOrWhiteSpace(relative) && !Path.IsPathRooted(relative) && !relative.Contains('\\')
-            && !relative.Split('/').Any(s => s is "" or "." or ".."), "Unsafe player art path.");
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            Require(cursor.LinkTarget is null, "Player art root/ancestor symlink rejected.");
-        string path = root;
-        foreach (var segment in relative.Split('/'))
-        {
-            path = Path.Combine(path, segment);
-            Require(new FileInfo(path).LinkTarget is null && new DirectoryInfo(path).LinkTarget is null,
-                "Player art source/output symlink rejected.");
-        }
-        return path;
-    }
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
 }

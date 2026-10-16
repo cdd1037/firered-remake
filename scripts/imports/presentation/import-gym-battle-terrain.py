@@ -7,7 +7,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 import argparse
-import importlib.util
 import json
 import pathlib
 import re
@@ -28,11 +27,8 @@ REQUIRED_PATHS = frozenset([
     'tools/gbagfx/gfx.c', 'tools/gbagfx/convert_png.c', TERRAIN + 'terrain.png',
     TERRAIN + 'terrain.bin', PALETTES + 'gym.pal', PALETTES + 'leader.pal',
 ])
-_spec = importlib.util.spec_from_file_location('local_lab_ui_pixels', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-ui = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(ui)
-canonical = ui.inputs.canonical
-safe_path = ui.inputs.safe_path
+import ui_tiles as ui
+from presentation_source import canonical, safe as safe_path
 
 
 def load_inputs(lock_path, project_path, raw, source_repo=None):

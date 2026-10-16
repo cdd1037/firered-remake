@@ -41,13 +41,10 @@ public sealed partial class CampaignSession
 {
     private CampaignState InitializeExploration(CampaignState state)
     {
-        if(_content.ForestEnabled)
         {
             var early=EarlyLandEncounterRules.SeedFromGlobal(state.World.Rng,rulesVersion:_binding.EncounterRulesVersion);
             return state with{Exploration=new(null,1,[]){EarlyEncounter=early.State,Captured=[]},World=state.World with{Rng=early.GlobalRng}};
         }
-        var seeded=Route1EncounterRules.SeedFromGlobal(state.World.Rng);
-        return state with{Exploration=new CampaignExploration(seeded.State,1,[]){Captured=_content.CaptureEnabled?[]:null},World=state.World with{Rng=seeded.GlobalRng}};
     }
     private string? ValidateCampaignWorld(CampaignState state,IFieldMap map)
     {
@@ -55,34 +52,27 @@ public sealed partial class CampaignSession
             return state.Exploration is not null||state.WildBattle is not null?"save_exploration_content_missing":WorldRules.ValidateState(state.World,map)?.Code;
         if(state.Exploration is not {} exploration||exploration.Battles.IsDefault||exploration.NextWildBattleId<1)return "save_exploration_missing";
         if(state.Script.Variables.GetValueOrDefault("VAR_HAPPINESS_STEP_COUNTER") is <0 or >=128)return "save_happiness_counter_invalid";
-        if(_content.ForestEnabled)
         {
             if(exploration.Encounter is not null||exploration.EarlyEncounter is null)return "save_encounter_profile_invalid";
             try{EarlyLandEncounterRules.ValidateState(exploration.EarlyEncounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
             if(exploration.EarlyEncounter.RulesVersion!=(_binding.EncounterRulesVersion))return "save_encounter_profile_invalid";
             if(exploration.EarlyEncounter.Pending is not null)return "save_encounter_pending";
         }
-        else
-        {
-            if(exploration.EarlyEncounter is not null||exploration.Encounter is null)return "save_encounter_profile_invalid";
-            try{Route1EncounterRules.ValidateState(exploration.Encounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
-            if(exploration.Encounter.Pending is not null)return "save_encounter_pending";
-        }
-        if(!CampaignWildHistoryRetention.HasValidIdentity(exploration)||exploration.Battles.Where(b=>b is null||b.SevenIslandReceipt is not null&&b.SevenIsland is null||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.RockSmashReceipt is not null?IsRockSmashHistory(b):b.SourceTableReceipt is not null?IsSourceTableHistory(b):b.SeafoamReceipt is not null?IsSeafoamHistory(b):b.Fishing is not null?IsTypedFishingHistory(b):b.PowerPlantReceipt is not null?IsPowerPlantHistory(b):b.EventIslandReceipt is not null?IsEventIslandHistory(b):b.SevenIsland is not null?IsSevenIslandWildHistory(b):b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
+        if(!CampaignWildHistoryRetention.HasValidIdentity(exploration)||exploration.Battles.Where(b=>b is null||b.SevenIslandReceipt is not null&&b.SevenIsland is null||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.RockSmashReceipt is not null?IsRockSmashHistory(b):b.SourceTableReceipt is not null?IsSourceTableHistory(b):b.SeafoamReceipt is not null?IsSeafoamHistory(b):b.Fishing is not null?IsTypedFishingHistory(b):b.PowerPlantReceipt is not null?IsPowerPlantHistory(b):b.EventIslandReceipt is not null?IsEventIslandHistory(b):b.SevenIsland is not null?IsSevenIslandWildHistory(b):b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(ValidateRockSmashProgress(state) is {} rockSmashError)return rockSmashError;
         if(ValidateSourceTableProgress(state) is {} sourceTableError)return sourceTableError;
         if(ValidateCelioRoamerProgress(state) is {} roamerError)return roamerError;
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
-        if(_content.TrainerTowerEnabled&&IsTrainerTowerMap(map.Id))map=_content.TrainerTowerMap(map.Id,TrainerTowerLayout(state,map.Id))!;
+        if(IsTrainerTowerMap(map.Id))map=_content.TrainerTowerMap(map.Id,TrainerTowerLayout(state,map.Id))!;
         if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
-        if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
-        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SeafoamWalkingMaps(PostgameWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(EditedFieldMaps(state)))))))),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
+        if(here is >=0x60 and <=0x71)return (FieldMovementRules.ValidateLadderPosition(state.World,map))?.Code;
+        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SeafoamWalkingMaps(PostgameWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(EditedFieldMaps(state)))))))),true,true,enableSpinTiles:true,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
         return check.Status==TransitionStatus.Accepted?null:check.Diagnostic?.Code??"save_connected_invalid";
     }
     private bool IsCeruleanCaveWildHistory(CampaignWildHistory history)
     {
-        if(_content.CeruleanCaveOwnership is not {} owned||history.CeruleanCaveOrigin is not {} origin||
+        if(_content.GamePokemon is not {} owned||history.CeruleanCaveOrigin is not {} origin||
             history.SevenIsland is not null||history.CelioRoamer is not null||history.FiveIsland is not null||history.SixIsland is not null||history.FourIsland is not null||
             history.SeviiRuby is not null||history.VictoryRoad is not null||history.Safari||history.ScriptedMarowak||
             history.ScriptedSnorlaxRoute!=0||history.LostelleHypno is not null||!CeruleanCaveWildBattleContract.IsRuntimeKind(origin.Kind)||
@@ -128,8 +118,8 @@ public sealed partial class CampaignSession
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;
         if(!turn&&SevenIslandBoundary(before.MapId,x,y,before.X,before.Y) is {} boundary)return new(CommandStatus.Rejected,state,boundary);
-        if(!turn&&_content.FuchsiaRouteEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
-        if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
+        if(!turn&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
+        if(!turn&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
         if(TrySilphPadStep(state,command) is {} silphPad)return silphPad;
         if(TryTrainerTowerDynamicExit(state,command) is {} towerExit)return towerExit;
         if(TrySilphDynamicExit(state,command) is {} silphExit)return silphExit;
@@ -145,7 +135,7 @@ public sealed partial class CampaignSession
         var here=map.SourceBehaviorAt(before.X,before.Y);var front=map.SourceBehaviorAt(x,y);
         if(turn&&here is >=0x60 and <=0x71)
         {
-            var error=_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map);if(error is not null)return new(CommandStatus.Fault,state,error.Code);
+            var error=FieldMovementRules.ValidateLadderPosition(state.World,map);if(error is not null)return new(CommandStatus.Fault,state,error.Code);
             if(before.Facing==command.Direction)return new(CommandStatus.Rejected,state,"invalid-turn-action");
             return new(CommandStatus.Accepted,state with{World=state.World with{Revision=checked(state.World.Revision+1),Player=before with{Facing=command.Direction}}});
         }
@@ -154,7 +144,7 @@ public sealed partial class CampaignSession
         if(legacySpecial)
         {
             if(VisibleActorAt(state,x,y) is not null)return new(CommandStatus.Accepted,state with{World=state.World with{Revision=checked(state.World.Revision+1),Player=before with{Facing=command.Direction}}});
-            var transition=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),movementMaps,_content.ForestEnabled,_content.MtMoonEnabled,_content.VermilionGymEnabled, destination => MapLayoutForArrival(state, destination));
+            var transition=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),movementMaps,true,true,true, destination => MapLayoutForArrival(state, destination));
             if(transition.Status!=TransitionStatus.Accepted)return new(transition.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,transition.Diagnostic?.Code);
             moved=state with{World=transition.State};changed=transition.MapChanged;
             if(changed)moved=RecordEscapeWarp(state,moved,command.Direction);
@@ -163,16 +153,16 @@ public sealed partial class CampaignSession
         else
         {
             var action=turn?ConnectedFieldAction.TurnInPlace:ConnectedFieldAction.Walk;
-            var transition=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("field:"+state.World.Revision),state.World.Revision,action,command.Direction),OccupiedFieldMaps(state),_content.MtMoonEnabled,_content.VermilionGymEnabled,biking:_content.CityServicesEnabled&&state.IsCycling,enableSpinTiles:_content.RocketHideoutEnabled,activeSpin:state.RocketSpin?.Forced,enableCardinalLedges:_content.FuchsiaRouteEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
+            var transition=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("field:"+state.World.Revision),state.World.Revision,action,command.Direction),OccupiedFieldMaps(state),true,true,biking:state.IsCycling,enableSpinTiles:true,activeSpin:state.RocketSpin?.Forced,enableCardinalLedges:true,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
             if(transition.Status!=TransitionStatus.Accepted)return new(transition.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,transition.Diagnostic?.Code);
             moved=state with{World=transition.State with{RulesVersion=RuleVersions.GridWorldV0}};changed=transition.MapChanged;checkEncounter=transition.RequiresEncounterCheck;
             trigger=turn?EncounterCheckTrigger.TurnInPlaceCompleted:EncounterCheckTrigger.WalkingStepCompleted;
         }
         if(!_content.IsNpcTradeStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"npc_trade_access_boundary_not_open");
         if(state.IsSurfing&&!SurfRegionAllows(moved.World.Player))return new(CommandStatus.Rejected,state,"field_surf_region_boundary_not_open");
-        if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
-        if(changed&&moved.World.Player.MapId.Value==ViridianGymMap&&(!_content.ViridianGymEnabled||state.Script.Variables.GetValueOrDefault(ViridianGymDoor)!=1||!ViridianGymDoorBadges(state)))return new(CommandStatus.Rejected,state,"viridian_gym_door_locked");
-        if(changed&&moved.World.Player.MapId.Value=="map.saffron-city-gym"&&(!_content.SaffronGymEnabled||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS")))return new(CommandStatus.Rejected,state,"saffron_gym_rocket_blockade");
+        if(!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
+        if(changed&&moved.World.Player.MapId.Value==ViridianGymMap&&(state.Script.Variables.GetValueOrDefault(ViridianGymDoor)!=1||!ViridianGymDoorBadges(state)))return new(CommandStatus.Rejected,state,"viridian_gym_door_locked");
+        if(changed&&moved.World.Player.MapId.Value=="map.saffron-city-gym"&&(!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS")))return new(CommandStatus.Rejected,state,"saffron_gym_rocket_blockade");
         if(changed)
         {
             moved=RecordTrainerTowerElevatorEntrance(state,moved);
@@ -185,7 +175,7 @@ public sealed partial class CampaignSession
             // camera connections enter first, then complete the player-input step.
             if(legacySpecial&&tookStep)moved=ApplyEventIslandWalkingStep(ApplyRenewableHiddenItemWalkingStep(moved),before.MapId.Value);
             moved=EnterSurfConnectionMap(moved,moved.World.Player.Facing,legacySpecial);
-            if(_content.FirstSeviiEnabled&&!legacySpecial&&tookStep)moved=moved with{EntryPrograms=moved.EntryPrograms.Add("@renewable-camera-step")};
+            if(!legacySpecial&&tookStep)moved=moved with{EntryPrograms=moved.EntryPrograms.Add("@renewable-camera-step")};
             moved=PumpWithCameraStep(moved,()=>preempted=true);
         }
         else
@@ -196,7 +186,6 @@ public sealed partial class CampaignSession
             if(moved.ForestTrainerBattle is not null||moved.DoubleBattle is not null)return new(CommandStatus.Accepted,moved);
             // ProcessPlayerFieldInput runs on-frame scripts before completed-step coordinate
             // scripts. Even a synchronous script that ends immediately preempts this input.
-            if(_content.RepelEnabled)
             {
                 var onFrame=Pump(moved);preempted=onFrame.Script.Revision!=moved.Script.Revision;moved=onFrame;
             }
@@ -212,8 +201,7 @@ public sealed partial class CampaignSession
             if(!preempted&&TryStartCinnabarFall(state,moved) is {} cinnabarFall)return new(CommandStatus.Accepted,cinnabarFall);
             moved=Pump(moved);
         }
-        if (!preempted && moved.Script.Completed && moved.Script.Wait is null &&
-            _content.SeafoamEnabled && SeafoamFieldRules.IsWaterFloor(moved.World.Player.MapId) && moved.IsSurfing &&
+        if (!preempted && moved.Script.Completed && moved.Script.Wait is null && SeafoamFieldRules.IsWaterFloor(moved.World.Player.MapId) && moved.IsSurfing &&
             SeafoamFieldRules.CurrentDirection(SeafoamRawMaps(moved)[moved.World.Player.MapId].SourceBehaviorAt(moved.World.Player.X,moved.World.Player.Y)??-1) is not null)
         {
             // Native forcedMove observes the destination even for a player-initiated
@@ -222,7 +210,7 @@ public sealed partial class CampaignSession
             if(StartSeafoamCurrent(moved) is {} current)return new(CommandStatus.Accepted,current);
         }
         // Coordinate/map scripts take precedence over TryStandardWildEncounter.
-        if(!preempted&&(!_content.ForestEnabled||!legacySpecial||!changed)&&moved.Script.Completed&&moved.Script.Wait is null&&moved.Battle is null&&moved.Dialogue is null)
+        if(!preempted&&(!legacySpecial||!changed)&&moved.Script.Completed&&moved.Script.Wait is null&&moved.Battle is null&&moved.Dialogue is null)
         {
             if(moved.World.StepCount>state.World.StepCount)
             {
@@ -238,7 +226,6 @@ public sealed partial class CampaignSession
             // encounter check, cooldown increment, or either encounter RNG stream.
             if(checkEncounter&&moved.FieldPoison is null&&moved.Repel is null&&moved.Script.Completed&&moved.Script.Wait is null)
             {
-                if(_content.RepelEnabled)
                 {
                     var p=moved.World.Player;var (sx,sy)=Delta(p.Facing);
                     if(RegionalWalkIntoSign(moved,p.X+sx,p.Y+sy) is {} regionalSignAfterStep)return new(CommandStatus.Accepted,regionalSignAfterStep);
@@ -249,7 +236,7 @@ public sealed partial class CampaignSession
                 moved=CheckFieldEncounter(moved,trigger);
             }
         }
-        if(_content.FourIslandEnabled&&FourIslandMap(moved.World.Player.MapId))moved=moved with{FourIslandMovementDirection=command.Direction};
+        if(FourIslandMap(moved.World.Player.MapId))moved=moved with{FourIslandMovementDirection=command.Direction};
         return new(CommandStatus.Accepted,moved);
     }
     private CampaignState ApplyWalkingFriendship(CampaignState state)
@@ -272,14 +259,6 @@ public sealed partial class CampaignSession
     private CampaignState CheckFieldEncounter(CampaignState state,EncounterCheckTrigger trigger)
     {
         if(state.IsSurfing)return CheckSurfWaterEncounter(state,trigger);
-        if(_content.ForestEnabled)return CheckEarlyLandEncounter(state,trigger);
-        var p=state.World.Player;var cell=_content.ConnectedFieldMaps![p.MapId].CellAt(p.X,p.Y)!;
-        var exploration=state.Exploration!;
-        if(p.MapId!=Route1EncounterRules.Map)return state with{Exploration=exploration with{Encounter=exploration.Encounter! with{PreviousMetatileBehavior=(ushort)cell.SourceBehavior}}};
-        if(state.Party.IsEmpty||state.Party.Length>6||state.Party.All(p=>p.IsEgg||p.Pokemon.CurrentHp==0)||(!_content.CaptureEnabled&&state.Party.Length!=1))throw new InvalidDataException("wild_encounter_live_single_party_required");
-        var lead=state.Party[0];
-        var result=Route1EncounterRules.Check(exploration.Encounter!,new(p.MapId,trigger,(byte)cell.SourceBehavior,cell.SourceBehavior==2?EncounterTileType.Land:EncounterTileType.None),new(LeadAbility:lead.Pokemon.AbilityId,LeadHeldItem:lead.HeldItem),state.World.Rng);
-        var next=state with{Exploration=exploration with{Encounter=result.State},World=state.World with{Rng=result.GlobalRng}};
-        return result.Candidate is null?next:BeginWildBattle(next);
+        return CheckEarlyLandEncounter(state,trigger);
     }
 }

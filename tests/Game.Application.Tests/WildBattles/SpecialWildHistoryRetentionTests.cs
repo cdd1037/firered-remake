@@ -72,7 +72,7 @@ public sealed class SpecialWildHistoryRetentionTests
         var attempts = ImmutableArray.CreateBuilder<CampaignWildHistory>();
         for (var i = 1; i <= 1000; i++)
         {
-            var made = SeafoamPokemonFactory.GenerateArticuno(catalog.SeafoamOwnership!, rng, original.TrainerId);
+            var made = SeafoamPokemonFactory.GenerateArticuno(catalog.GamePokemon!, rng, original.TrainerId);
             attempts.Add(new("wild-battle:" + i, 144, 50, i == 1000 ? WildBattleOutcome.Escaped : WildBattleOutcome.Lost, 0)
             { SeafoamReceipt = new(SeafoamWildBattleContract.ArticunoOrigin, rng, made.GlobalRng, made.Pokemon) });
             rng = made.GlobalRng;

@@ -117,7 +117,7 @@ class ImporterPngSemanticsTests(unittest.TestCase):
 
     def test_encoder_wrappers_keep_dimensions_and_all_rgba_channels(self):
         for encoder, size in (
-            (STARTER.rgba_png, (64, 64)), (PLAYER.rgba_png, (144, 32)),
+            (lambda pixels: STARTER.png(64, 64, pixels), (64, 64)), (PLAYER.rgba_png, (144, 32)),
             (CYCLE.rgba_png, (288, 32)), (lambda pixels: CYCLE.rgba_png(pixels, 384), (384, 32)),
             (lambda pixels: FONT.encode_png(pixels, 8, 13), (8, 13)),
         ):

@@ -5,7 +5,7 @@ public partial class CampaignView
 {
     private SeagallopDestinationMenu? _seagallopMenu;
     private string? _seagallopMenuWaitId;
-    private bool SeagallopMenuActive=>_catalog.FirstSeviiEnabled&&_session.State.Seagallop is null&&_session.State.SeagallopMenu is not null;
+    private bool SeagallopMenuActive=>_session.State.Seagallop is null&&_session.State.SeagallopMenu is not null;
     private bool SeagallopMenuVisible=>SeagallopMenuActive&&FieldTextComplete&&
         (_session.State.Dialogue is null||_session.State.Dialogue.Page+1==_session.State.Dialogue.Pages.Length);
     private int SeagallopMenuTextWidth=>(int)(_seagallopMenu??throw new InvalidDataException("Ferry menu missing.")).Options.Max(row=>

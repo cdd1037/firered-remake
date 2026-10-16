@@ -16,7 +16,7 @@ public sealed partial class CampaignSession
     private static int SnorlaxRoute(string map)=>map switch{"map.route-12"=>12,"map.route-16"=>16,_=>0};
     private static string SnorlaxHideFlag(int route)=>"FLAG_HIDE_ROUTE_"+route+"_SNORLAX";
     private static string SnorlaxScript(int route)=>"Route"+route+"_EventScript_Snorlax";
-    private bool IsSnorlaxHistory(CampaignWildHistory b)=>_content.SnorlaxEnabled&&b.ScriptedSnorlaxRoute is 12 or 16&&!b.ScriptedMarowak&&b.SourceSpeciesId==143&&b.Level==30&&
+    private bool IsSnorlaxHistory(CampaignWildHistory b)=>b.ScriptedSnorlaxRoute is 12 or 16&&!b.ScriptedMarowak&&b.SourceSpeciesId==143&&b.Level==30&&
         (b.Outcome==WildBattleOutcome.Won||b.ExperienceGained==0);
     private bool IsSnorlaxCapture(CampaignState s,CampaignCapturedPokemon c)=>c.SourceSpeciesId==143&&c.MetLevel==30&&s.Exploration!.Battles.Any(b=>b.Id==c.BattleId&&IsSnorlaxHistory(b)&&b.Outcome==WildBattleOutcome.Caught&&c.MetLocation=="MAPSEC_ROUTE_"+b.ScriptedSnorlaxRoute);
     private void RequireSnorlaxCaller(CampaignState s,StoryEffect e,int route)
@@ -28,8 +28,7 @@ public sealed partial class CampaignSession
     }
     private bool TryApplySnorlaxEffect(CampaignState s,StoryEffect e,out CampaignState next)
     {
-        next=s;if(!_content.SnorlaxEnabled)return false;
-        int route=SnorlaxRoute(s.World.Player.MapId.Value);var a=e.Args;
+        next=s;        int route=SnorlaxRoute(s.World.Player.MapId.Value);var a=e.Args;
         int Value(string token)=>s.Script.Variables.TryGetValue(token,out var n)?n:int.TryParse(token,out n)?n:_content.TryConstant(token,out n)?n:throw new InvalidDataException("snorlax_operand: "+token);
         bool caller=e.Source.Path==$"data/maps/Route{route}/scripts.inc"&&e.Source.Symbol==SnorlaxScript(route);
         if(e.Opcode=="special"&&caller&&a.SequenceEqual(new[]{"QuestLog_CutRecording"}))
@@ -94,7 +93,6 @@ public sealed partial class CampaignSession
     {
         if(s.SnorlaxPreparation is not null||s.SnorlaxReturn is not null)return "save_snorlax_event_active";
         var battles=s.Exploration?.Battles??[];
-        if(!_content.SnorlaxEnabled)return battles.Any(b=>b.ScriptedSnorlaxRoute!=0)||s.Script.Flags.GetValueOrDefault(SnorlaxHideFlag(12))||s.Script.Flags.GetValueOrDefault(SnorlaxHideFlag(16))||s.Script.Flags.GetValueOrDefault("FLAG_WOKE_UP_ROUTE_12_SNORLAX")?"save_snorlax_profile_missing":null;
         if(!_content.IsSnorlaxStablePosition(s.World.Player.MapId,s.World.Player.X,s.World.Player.Y))return "save_snorlax_boundary_invalid";
         if(s.Script.Flags.GetValueOrDefault(SpecialWildFlag))return "save_snorlax_special_flag_active";
         foreach(int route in new[]{12,16})
@@ -105,7 +103,6 @@ public sealed partial class CampaignSession
             if(route==12&&cleared!=s.Script.Flags.GetValueOrDefault("FLAG_WOKE_UP_ROUTE_12_SNORLAX"))return "save_snorlax_wake_flag";
             if(SnorlaxRoute(s.World.Player.MapId.Value)==route&&s.Actors.Values.Any(a=>a.ScriptId==SnorlaxScript(route)&&a.Active&&cleared))return "save_snorlax_actor_visible";
         }
-        if(!_content.CyclingRoadEnabled && s.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE16")!=0)return "save_snorlax_cycling_road_not_open";
         return null;
     }
 }

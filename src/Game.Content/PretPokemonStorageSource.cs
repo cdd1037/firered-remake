@@ -50,7 +50,7 @@ public sealed class PretPokemonStorageSource
         var generatedDirectory = Path.Combine(project, "content/generated/ui/pokemon-storage");
         byte[] Read(string root,string path)
         {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
+            var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
             return bytes;
         }
 
@@ -83,19 +83,4 @@ public sealed class PretPokemonStorageSource
             pcMenus, storageMenu, rules);
     }
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe storage path.");
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Storage directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Storage file symlink is unsupported.");
-        }
-        return result;
-    }
 }

@@ -142,7 +142,7 @@ public sealed class TrainerBattleTests
                     continue;
                 }
 
-                var mechanics = content.FiveIslandOpponents?.Mechanics.Catalog ?? content.FourIslandOpponents!.Mechanics.Catalog;
+                var mechanics = content.OpponentPokemon?.Mechanics.Catalog ?? content.OpponentPokemon!.Mechanics.Catalog;
                 int Score(int slot)
                 {
                     if (slot < 0)

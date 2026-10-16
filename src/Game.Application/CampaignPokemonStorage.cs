@@ -32,7 +32,7 @@ public sealed partial class CampaignSession
 
     private ImmutableArray<PartyPokemon> OwnedPokemon(CampaignState state)
     {
-        var owned = _content.PokemonStorageEnabled && state.Storage is {} storage
+        var owned = state.Storage is {} storage
             ? state.Party.AddRange(storage.Boxes.SelectMany(b => b.Slots).OfType<PartyPokemon>()) : state.Party;
         if (state.Route5DayCare?.Resident is {} resident) owned = owned.Add(resident.Pokemon);
         if (state.FourIslandDayCare?.First is {} first) owned = owned.Add(first.Pokemon);
@@ -43,8 +43,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateStorageState(CampaignState state)
     {
-        if(!_content.PokemonStorageEnabled)return state.Storage is not null||state.Pc is not null?"save_storage_profile_missing":null;
-        if(!_content.EarlyPartyEnabled)return "storage_requires_early_party_profile";
         if(state.Pc?.MoveCursor is not null&&state.Pc.View!=CampaignPcView.Move)return "storage_move_cursor_context";
         if(state.Pc is {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} && state.Pc.View!=CampaignPcView.MoveItems)return "storage_item_cursor_context";
         if(state.Pc?.ReleaseTarget is not null&&state.Pc.View is not (CampaignPcView.Deposit or CampaignPcView.Withdraw or CampaignPcView.Move))return "storage_release_context";
@@ -79,7 +77,7 @@ public sealed partial class CampaignSession
     private bool TryApplyPcEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.PokemonStorageEnabled||effect.Opcode!="special"||effect.Source.Path!=CenterPcSource)return false;
+        if(effect.Opcode!="special"||effect.Source.Path!=CenterPcSource)return false;
         if(!IsSupportedHealingCenter(state.World.Player.MapId))throw new InvalidDataException("pc_source_map_unsupported");
         var error=ValidateStorageState(state);if(error is not null)throw new InvalidDataException(error);
         next=effect.Args[0] switch
@@ -99,7 +97,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecidePc(CampaignState state,CampaignCommand command)
     {
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
-        if(!_content.PokemonStorageEnabled||state.Storage is null||!state.PcPoweredOn||state.Pc is not {} pc||
+        if(state.Storage is null||!state.PcPoweredOn||state.Pc is not {} pc||
             state.Script.Wait is not {Kind:StoryWaitKind.Presentation})return No("pc_callback_context_invalid");
         Decision<CampaignState> View(CampaignPcView view,int? selection=null)=>new(CommandStatus.Accepted,
             state with{Pc=pc with{View=view,StorageMenuSelection=selection??pc.StorageMenuSelection}});
@@ -127,10 +125,8 @@ public sealed partial class CampaignSession
             // Unsupported native screens must leave the recoverable source menu untouched.
             if(row==2&&dex)
             {
-                if(!_content.OakRatingEnabled)return No("pc_oaks_rating_not_implemented");
                 if(!_preflightingStory)PreflightOakPcEntry(state,row);
             }
-            if(row==3&&clear&&!HallOfFamePcEnabled)return No("pc_hall_of_fame_not_enabled");
             return ResumePcScript(state,row);
         }
         if(command.Kind=="storage_select"&&pc.View==CampaignPcView.StorageMenu)
@@ -179,7 +175,6 @@ public sealed partial class CampaignSession
 
     private string? CaptureCapacityError(CampaignState state)
     {
-        if(!_content.PokemonStorageEnabled)return state.Party.Length>=6?"storage_delivery_unsupported":null;
         var error=ValidateStorageState(state);if(error is not null)return error;
         return state.Party.Length>=6&&state.Storage!.Boxes.All(b=>b.Slots.All(p=>p is not null))?"storage_full":null;
     }

@@ -13,14 +13,11 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
 
-    public PretRegionalServiceMaps? RegionalServiceMaps { get; }
-    public PretRegionalGiftContract? RegionalGiftContract { get; }
-    public PretEeveePokemon? EeveePokemon { get; }
+    public PretRegionalServiceMaps RegionalServiceMaps { get; }
+    public PretRegionalGiftContract RegionalGiftContract { get; }
     public PretEeveeArt? EeveeArt { get; }
-    public bool RegionalServicesEnabled => RegionalGiftContract is not null && RegionalServiceMaps is not null;
     /// <summary>Kept outside CityServiceItems: Tea uses its own effect handler.</summary>
     public MachineItem? TeaItem => RegionalGiftContract?.TeaItem;
-    public ImmutableArray<MtMoonDeferredEvolution> EeveeDeferredEvolutions => EeveePokemon?.DeferredEvolutions ?? [];
     public static ImmutableArray<MapId> RegionalServiceMapIds { get; } =
     [
         new("map.celadon-city-condominiums-1f"), new("map.celadon-city-condominiums-2f"),
@@ -29,16 +26,6 @@ public sealed partial class PretCampaignCatalog
     ];
 
 
-
-    private static void MergeRegionalServiceConstants(Dictionary<string, int> constants,IReadOnlyDictionary<string, int> added)
-    {
-        foreach (var (symbol, value) in added)
-        {
-            if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                throw new InvalidDataException("regional_services_constant_conflict: " + symbol);
-            constants[symbol] = value;
-        }
-    }
 
     private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region,PretRegionalGiftContract gift,ImmutableDictionary<MapId, PretWorldMap> maps,CampaignPokemonContent pokemon,CampaignPokemonContent predecessorPokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {

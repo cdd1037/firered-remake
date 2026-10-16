@@ -11,7 +11,7 @@ public partial class CampaignView
 
     private GiftMoneyLayout? MagikarpMoneyLayout()
     {
-        if (!_catalog.MagikarpEnabled || _session.State.MoneyBox is not {} money) return null;
+        if (_session.State.MoneyBox is not {} money) return null;
         // Authenticated src/money.c:73-128: x+1/y+1, 8x3 interior, normal label,
         // small amount at y=12, six decimal cells, right edge of the 64px interior.
         if (money.X != 0 || money.Y != 0 || money.Amount is < 0 or > 999999)
@@ -31,7 +31,7 @@ public partial class CampaignView
         SourceText(_sourceSmall, layout.AmountPosition, layout.Amount);
     }
 
-    private bool GiftNamingActive => _catalog.MagikarpEnabled && _session.State.GiftDelivery is not null &&
+    private bool GiftNamingActive => _session.State.GiftDelivery is not null &&
         _session.State.Nickname is { Submitted: false } && _session.State.Script.Wait?.Kind == StoryWaitKind.Nickname;
 
     private PartyPokemon GiftNicknameTarget()

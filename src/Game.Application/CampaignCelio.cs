@@ -22,7 +22,6 @@ public sealed record CampaignCelioHandoff(int SapphireQuantityBefore, bool Sapph
 public sealed partial class CampaignSession
 {
     public const string CelioRulesVersion = "firered-celio-campaign-v1";
-    public bool CelioEnabled => _content.CelioEnabled;
     private const string CelioHandoffScript = "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire";
     private const string CelioSapphireScript = "OneIsland_PokemonCenter_1F_EventScript_SetSapphireMetatile";
     private const string CelioMachineScript = "OneIsland_PokemonCenter_1F_EventScript_SetNetworkMachineOn";
@@ -34,21 +33,7 @@ public sealed partial class CampaignSession
 
     private static void ValidateCelioCatalog(ICampaignCatalog content)
     {
-        if (!content.CelioEnabled)
-        {
-            if (content.CelioOwnership is not null || content.CelioOpponents is not null ||
-                content.CelioMachines is not null || content.CelioRoamerMaps is not null)
-                throw new InvalidDataException("celio_profile_missing");
-            return;
-        }
-        if (!content.FiveIslandEnabled || content.CelioOwnership is not {} owned ||
-            content.CelioOpponents is not {} opponents || content.CelioMachines is not {} machines ||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
-            !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
-            content.CelioRoamerMaps is not {} maps || maps.Count != content.Maps.Count ||
+        if (content.CelioRoamerMaps is not {} maps || maps.Count != content.Maps.Count ||
             !maps.Keys.ToHashSet().SetEquals(content.Maps.Keys) || maps.Values.Distinct().Count() != maps.Count ||
             maps.Values.Any(m => m.Group is < 0 or > 255 || m.Number is < 0 or > 255))
             throw new InvalidDataException("celio_source_profile_missing");
@@ -62,8 +47,7 @@ public sealed partial class CampaignSession
         }
     }
 
-    private bool CelioCompleted(CampaignState state) => _content.CelioEnabled &&
-        state.CelioHandoff?.Initialization is not null && state.Roamer?.Individual is not null &&
+    private bool CelioCompleted(CampaignState state) => state.CelioHandoff?.Initialization is not null && state.Roamer?.Individual is not null &&
         state.Script.Flags.GetValueOrDefault(CelioLinkFlag) && state.Script.Variables.GetValueOrDefault(RubyCenterScene) is 6 or 7;
 
     private bool RainbowQuestComplete(CampaignState state) =>
@@ -74,9 +58,6 @@ public sealed partial class CampaignSession
         bool Flag(string key) => state.Script.Flags.GetValueOrDefault(key);
         int scene = state.Script.Variables.GetValueOrDefault(RubyCenterScene);
         bool linked = Flag(CelioLinkFlag);
-        if (!_content.CelioEnabled)
-            return state.CelioHandoff is not null || state.Roamer is not null || state.SpecialSaveWarpFlags != 0 ||
-                linked || scene > 5 || Flag(CelioCaveGuardFlag) ? "save_celio_profile_missing" : null;
         try
         {
             if (state.Roamer is {} roamer)

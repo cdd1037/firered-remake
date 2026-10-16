@@ -7,49 +7,12 @@ internal sealed record EventIslandPresentationData(JsonElement Manifest, Diction
 internal static class EventIslandPresentationAssets
 {
     internal const string Base = "content/generated/sprites/pokemon/event-island/";
-    internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
     internal static EventIslandPresentationData Load(string root)
     {
-        byte[] Read(string path)
-        {
-            if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
-                path.Split('/').Any(p => p is "" or "." or ".."))
-                throw new InvalidDataException("Unsafe Event Island presentation resource.");
-            var file = new FileInfo(Path.Combine(root, path));
-            if (file.LinkTarget is not null)
-                throw new InvalidDataException("Event Island presentation symlink rejected.");
-            for (var directory = file.Directory; directory is not null; directory = directory.Parent)
-                if (directory.LinkTarget is not null)
-                    throw new InvalidDataException("Event Island presentation directory symlink rejected.");
-            byte[] data = File.ReadAllBytes(file.FullName);
-            return data;
-        }
-        using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var manifest = document.RootElement;
-        if (manifest.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Event Island presentation identity differs.");
-        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var asset in manifest.GetProperty("assets").EnumerateArray())
-        {
-            string path = asset.GetProperty("texturePath").GetString()!;
-            if (!files.ContainsKey(path)) files.Add(path, Read(path));
-        }
-        foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
-        {
-            string path = Base + row.GetProperty("path").GetString()!;
-            if (!files.ContainsKey(path)) files.Add(path, Read(path));
-        }
-        foreach (var asset in manifest.GetProperty("assets").EnumerateArray())
-        {
-            int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
-            string path = asset.GetProperty("texturePath").GetString()!;
-            if (width is <= 0 or > 256 || height is <= 0 or > 256 || !files.TryGetValue(path, out var rgba) ||
-                !NativeImages.HasSize(rgba, width, height))
-                throw new InvalidDataException("Event Island asset pixels differ: " + path);
-            if (asset.TryGetProperty("texturePath", out var texture) && !files.ContainsKey(texture.GetString()!))
-                throw new InvalidDataException("Missing presentation texture: " + texture.GetString());
-        }
+        var package = PresentationPackage.Load(root, Base, false, "assets");
+        var manifest = package.Manifest;
+        var files = package.Files;
         int[] owned = [249,250,410];
         var sprites = manifest.GetProperty("sprites").EnumerateArray().ToArray();
         var expectedSprites = (from species in owned from side in new[] { "front", "back" }

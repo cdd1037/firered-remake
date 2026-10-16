@@ -11,12 +11,7 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string CelioContentProfile = "firered-celio-sapphire-campaign-v1";
-    public CelioPokemonContent? CelioPokemon { get; }
     public IReadOnlyDictionary<MapId, RoamerMap>? CelioRoamerMaps { get; }
-    public bool CelioEnabled => CelioPokemon is not null;
-    public GamePokemonCatalog? CelioOwnership => CelioPokemon?.Owned;
-    public GameOpponentPokemonCatalog? CelioOpponents => CelioPokemon?.Opponents;
-    public MachineCatalog? CelioMachines => CelioPokemon?.Machines;
 
     // These are separate gameplay gates, not fake implementations of the link flag's consumers.
     public static ImmutableArray<string> CelioUnsupportedInteractions =>
@@ -24,8 +19,4 @@ public sealed partial class PretCampaignCatalog
             .Concat(new[] { "PokemonLeague.Rematch","CeruleanCave","Mewtwo","HoennLink.Multiplayer" })
             .ToImmutableArray();
 
-    private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,CampaignPokemonContent pokemon,CelioPokemonContent celio,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,MachineCatalog machines)
-    {
-        PretCelioStory.Validate(scripts);
-    }
 }

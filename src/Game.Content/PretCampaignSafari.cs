@@ -9,12 +9,10 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string SafariContentProfile = "firered-safari-campaign-v1";
-    public PretSafariRegion? SafariRegion { get; }
-    public PretSafariPokemon? SafariPokemon { get; }
+    public PretSafariRegion SafariRegion { get; }
     public PretSafariArt? SafariArt { get; }
     public PretSafariItems? SafariItems { get; }
     public PretSafariEncounters? SafariEncounters { get; }
-    public bool SafariEnabled => SafariRegion is not null;
 
     private static IEnumerable<FieldPickupDefinition> SafariPickupDefinitions(PretSafariRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretSafariItems items,PretStoryCompilation scripts)
     {

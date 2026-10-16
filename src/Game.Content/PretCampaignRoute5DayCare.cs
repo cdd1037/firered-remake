@@ -7,7 +7,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretRoute5DayCare Route5DayCare { get; }
-    public bool Route5DayCareEnabled => true;
 
     private static void ValidateRoute5DayCareComposition(PretRoute5DayCare daycare,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {

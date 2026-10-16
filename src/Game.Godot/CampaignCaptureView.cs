@@ -18,22 +18,20 @@ public partial class CampaignView
 
     // CampaignView combines this with the existing starter naming condition. The shared
     // LineEdit owns text/edit/submit; global F5/F9/F12/Escape stay with CampaignView.
-    private bool CaptureNamingActive => _catalog.CaptureEnabled &&
-        (_session.State.WildBattle?.Capture?.Stage == CampaignCaptureStage.Naming || _session.State.SafariBattle?.Capture?.Stage == CampaignCaptureStage.Naming);
+    private bool CaptureNamingActive => (_session.State.WildBattle?.Capture?.Stage == CampaignCaptureStage.Naming || _session.State.SafariBattle?.Capture?.Stage == CampaignCaptureStage.Naming);
 
     private void ResetCaptureBag() { _captureBagPocket = 0; _captureBagSelected = 0; _captureBerries = false; }
 
     private void LoadCapturePresentation()
     {
-        if (!_catalog.CaptureEnabled) return;
         var folder = System.IO.Path.Combine(_root, "content/generated/sprites/pokemon/capture-dex");
-        var document = _catalog.ForestEnabled?PretForestCaptureDex.Load(_root):PretCaptureDex.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(folder, "capture-dex.json")));
+        var document = PretForestCaptureDex.Load(_root);
         foreach (var texture in _captureTextures.Values) texture.Dispose();
         _captureTextures.Clear();
         foreach (var asset in document.Assets)
         {
             using var image = new Image();
-            if (image.LoadPngFromBuffer(_catalog.ForestEnabled?PretForestCaptureDex.ReadTexture(_root, asset):PretCaptureDex.ReadTexture(folder, asset)) != Error.Ok ||
+            if (image.LoadPngFromBuffer(PretForestCaptureDex.ReadTexture(_root, asset)) != Error.Ok ||
                 image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8)
                 throw new InvalidDataException("Capture texture pixels differ: " + asset.Id);
             _captureTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
@@ -85,7 +83,6 @@ public partial class CampaignView
 
     private bool TryCaptureWildInput(InputEventKey key, CampaignWildBattle battle)
     {
-        if (!_catalog.CaptureEnabled) return false;
         if (_session.State.ForestTrainerBattle is null && battle.Capture is { } capture)
         {
             if (capture.Stage is CampaignCaptureStage.DexNotice or CampaignCaptureStage.DexEntry or CampaignCaptureStage.SentToPc)
@@ -143,7 +140,7 @@ public partial class CampaignView
                     _wildMedicineItem=enabled?item:null;_wildMenu = "medicine-target"; _wildCursor = enabled?battle.ActivePartyIndex:0; }
                 else if (_captureBagPocket == 1)
                 {
-                    if(_catalog.PokemonTowerEnabled && CaptureBagStacks[_captureBagSelected].Item.Value == "pret:ITEM_POKE_FLUTE")
+                    if(CaptureBagStacks[_captureBagSelected].Item.Value == "pret:ITEM_POKE_FLUTE")
                     { ApplyWildChoice(new("battle_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                     _wildMenu = "bag"; _wildCursor = _captureBagSelected;
                     _wildNotice = "Key items cannot be used\nin this battle.";
@@ -181,7 +178,6 @@ public partial class CampaignView
 
     private bool DrawCaptureWildOverlay(CampaignWildBattle battle)
     {
-        if (!_catalog.CaptureEnabled) return false;
         if (_session.State.ForestTrainerBattle is null && battle.Capture is { } capture)
         {
             if (capture.Stage == CampaignCaptureStage.DexEntry) DrawCaptureDexEntry(capture.Pokemon.SourceSpeciesId);
@@ -249,8 +245,8 @@ public partial class CampaignView
             SourceText(_sourceWhite, OpeningItemUiSkin.BagTitleCenter - new Vector2((int)Math.Ceiling(width / 2), 0), title);
             if (_wildMenu == "bag" && _wildNotice is null)
             { DrawQuestPocketAsset("pocket-left-arrow"); if (_captureBagPocket == 1) _itemSkin.DrawPocketRightArrow(this); }
-            int start = _catalog.SsAnneEnabled ? Math.Max(0, selected - 5) : 0;
-            int visible = _catalog.SsAnneEnabled ? 6 : stacks.Length + 1;
+            int start = Math.Max(0, selected - 5);
+            int visible = 6;
             for (int i = start; i < Math.Min(stacks.Length, start + visible); i++)
             {
                 SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, i - start), QuestPocketItem(stacks[i]).Name);

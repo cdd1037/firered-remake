@@ -13,7 +13,7 @@ public sealed partial class CampaignSession
         var error = _content.Inventory.Validate(inventory);
         if (error is not null) return error;
         // The TM Case and machine stack rules are gameplay constraints, not region provenance.
-        return _content.PewterMachines is {} machines ? MachineRules.Validate(machines, inventory!) : null;
+        return _content.Machines is {} machines ? MachineRules.Validate(machines, inventory!) : null;
     }
     private InventoryState PotionView(InventoryState inventory)
     {
@@ -61,7 +61,7 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (_content.EarlyShop is not { } shop || state.ItemMenu is not { Origin: "bag", View: "bag" or "berries" } menu || string.IsNullOrEmpty(command.Text)) return No("field_medicine_context_invalid");
-        if (menu.View=="berries" && (!_content.SsAnneEnabled||shop.Items.SingleOrDefault(i=>i.Id==new ItemId(command.Text))?.Pocket!="POCKET_BERRY_POUCH")) return No("berry_item_context_invalid");
+        if (menu.View=="berries" && (shop.Items.SingleOrDefault(i=>i.Id==new ItemId(command.Text))?.Pocket!="POCKET_BERRY_POUCH")) return No("berry_item_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");
         var item = new ItemId(command.Text);
         var result = _content.PresetDoubleItems is {} sourceHpItems && SourceFieldHpMedicineRules.Supports(shop, sourceHpItems, item)

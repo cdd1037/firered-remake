@@ -12,9 +12,8 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string ViridianGymContentProfile="firered-viridian-gym-campaign-v1";
-    public PretViridianGymRegion? ViridianGymRegion { get; }
+    public PretViridianGymRegion ViridianGymRegion { get; }
     public ViridianGymTrainerCatalog? ViridianGymTrainerParties { get; }
-    public bool ViridianGymEnabled=>ViridianGymRegion is not null;
 
 
     private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,MachineCatalog machines,GamePokemonCatalog owned)

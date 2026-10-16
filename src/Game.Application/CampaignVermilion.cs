@@ -10,18 +10,13 @@ public sealed partial class CampaignSession
 {
     private string? ValidateVermilionProgress(CampaignState state)
     {
-        if (!_content.VermilionEnabled) return null;
-        // Celadon Tea and the Saffron route are not admitted by this corridor.
-        if (!_content.RegionalServicesEnabled && (state.Script.Flags.GetValueOrDefault("FLAG_GOT_TEA") ||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE5_ROUTE6_ROUTE7_ROUTE8_GATES") != 0))
-            return "save_vermilion_saffron_gate_unsupported";
         return null;
     }
 
     private CampaignState FinishVermilionWildRewards(CampaignState state)
     {
         var battle = state.WildBattle!;
-        if (!_content.VermilionEnabled || battle.PostBattleItemsSettled)
+        if (battle.PostBattleItemsSettled)
             return BeginWildEvolution(state);
         var money = SourceBattleMoneyRules.SettlePayDay(state.Money, battle.Frame!.Field.PayDayMoney, battle.Frame!.Outcome,battle.Frame!.Field.MoneyMultiplier);
         var pickup = VermilionPickupRules.Apply(_binding.Ownership, state.Party, state.World.Rng, battle.Frame!.Outcome);

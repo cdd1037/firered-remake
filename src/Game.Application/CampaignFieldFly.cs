@@ -179,7 +179,7 @@ public sealed partial class CampaignSession
         if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
         if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], new ItemId("pret:ITEM_HM02")) != 0)
             throw new InvalidDataException("field_fly_gift_duplicate_hm02");
-        var added = MachineRules.AddMachine(_content.PewterMachines!, inventory, new ItemId("pret:ITEM_HM02"));
+        var added = MachineRules.AddMachine(_content.Machines!, inventory, new ItemId("pret:ITEM_HM02"));
         if (effect.Opcode == "checkitemspace") { next = Result(state, added.Succeeded ? 1 : 0); return true; }
         if (!added.Succeeded) throw new InvalidDataException("field_fly_gift_failed: " + added.Error);
         next = Result(state with { Inventory = added.State }, 1); return true;

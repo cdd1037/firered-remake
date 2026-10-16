@@ -9,14 +9,14 @@ public partial class CampaignView
     private string? _fieldPrintedText;
     private double _fieldTextFrameRemainder;
     private bool _fieldTextHeld,_fieldTextNewPress;
-    private bool FieldTextProgressEnabled=>_catalog.PokemonStorageEnabled&&!SeviiRubyBrailleVisible;
+    private bool FieldTextProgressEnabled=>!SeviiRubyBrailleVisible;
     private bool FieldTextComplete=>!FieldTextProgressEnabled||_fieldPrintedText is null||_fieldTextProgress.Complete;
     private string FieldRenderedText(string complete)=>FieldTextProgressEnabled&&_fieldPrintedText is not null?_fieldTextProgress.VisibleText:complete;
     private void SynchronizeFieldText()
     {
         if(!FieldTextProgressEnabled)return;
         var dialogue=_session.State.Dialogue;var text=PresentedFieldText;
-        if(text is not null&&_catalog.PewterEnabled)text=PewterDisplayText(text);
+        if(text is not null)text=PewterDisplayText(text);
         if(dialogue==_fieldPrintedDialogue&&text==_fieldPrintedText)return;
         _fieldPrintedDialogue=dialogue;_fieldPrintedText=text;_fieldTextFrameRemainder=0;_fieldTextHeld=false;_fieldTextNewPress=false;
         int speed=_session.EffectiveOptions.TextSpeed switch{SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1};

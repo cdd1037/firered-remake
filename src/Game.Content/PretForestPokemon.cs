@@ -27,7 +27,6 @@ public sealed class PretForestPokemon
     public ImmutableArray<ForestPokemonSprite> Sprites { get; }
     public JsonElement BattleArt { get; }
     public string GeneratedDirectory { get; }
-    public string BattleArtSourcePath => Path.Combine(GeneratedDirectory, "battle-art.json");
 
     private PretForestPokemon(string directory, PokemonCatalog catalog,
         ImmutableArray<ForestPokemonSprite> sprites, JsonElement art)
@@ -43,7 +42,7 @@ public sealed class PretForestPokemon
         var directory = Path.Combine(project, "content/generated/sprites/pokemon/forest");
         byte[] ReadPinned(string root,string path)
         {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
+            var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
@@ -74,19 +73,4 @@ public sealed class PretForestPokemon
     public ForestPokemonSprite Sprite(SpeciesId species, string side, bool shiny = false) =>
         Sprites.Single(s => s.SpeciesId == species.Value && s.Side == side && s.PaletteVariant == (shiny ? "shiny" : "normal"));
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe forest Pokemon path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Forest Pokemon directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Forest Pokemon file symlink is unsupported: " + path);
-        }
-        return result;
-    }
 }

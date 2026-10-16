@@ -150,7 +150,7 @@ public sealed partial class CampaignSession
         return ApplyGameCornerPrizeItem(state, effect, counter, row, authenticated, out next);
     }
     private bool PrizeItemFits(CampaignState state, GameCornerPrizeCounter counter, GameCornerPrizeDefinition row) => counter.Kind == "machines"
-        ? MachineRules.CanAddMachine(_content.PewterMachines!, state.Inventory!, new(row.Reward))
+        ? MachineRules.CanAddMachine(_content.Machines!, state.Inventory!, new(row.Reward))
         : EarlyInventoryAddRules.CheckSpace(ShopCatalog, state.Inventory!, new(row.Reward), 1).Succeeded;
     private bool ApplyGameCornerPrizeItem(CampaignState state, StoryEffect effect, GameCornerPrizeCounter counter,
         GameCornerPrizeDefinition row, bool authenticated, out CampaignState next)
@@ -165,7 +165,7 @@ public sealed partial class CampaignSession
         {
             if (a[0] is not ("STR_VAR_1" or "STR_VAR_2") || a.Length != (effect.Opcode == "bufferitemnameplural" ? 3 : 2) ||
                 a.Length == 3 && DepartmentValue(state, a[2]) != 1) throw new InvalidDataException("prize_item_buffer");
-            string name = machine ? MachineRules.Definition(_content.PewterMachines!, id)!.Machine.Item.Name : ShopCatalog.Items.Single(i => i.Id == id).Name;
+            string name = machine ? MachineRules.Definition(_content.Machines!, id)!.Machine.Item.Name : ShopCatalog.Items.Single(i => i.Id == id).Name;
             next = state with { TextBuffers = state.TextBuffers.SetItem(a[0], name) }; return true;
         }
         int result;
@@ -187,7 +187,7 @@ public sealed partial class CampaignSession
                     throw new InvalidDataException("prize_item_add_context");
                 if (machine)
                 {
-                    var added = MachineRules.AddMachine(_content.PewterMachines!, state.Inventory!, id);
+                    var added = MachineRules.AddMachine(_content.Machines!, state.Inventory!, id);
                     if (!added.Succeeded) throw new InvalidDataException("prize_machine_add:" + added.Error);
                     next = state with { Inventory = added.State };
                 }

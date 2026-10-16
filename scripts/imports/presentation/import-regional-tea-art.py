@@ -6,7 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-import argparse,  importlib.util, json, pathlib, re, subprocess, sys
+import argparse, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -29,8 +29,7 @@ def run(args):
         path=safe(ROOT,'content/raw/pokefirered/037335f4/'+e['path'])
         data=path.read_bytes() if path.exists() else subprocess.check_output(['git','-C',str(args.repository),'show',COMMIT+':'+e['path']]) if args.repository else path.read_bytes()
         source[e['path']]=data;pending.append((path,data))
-    base=args.dependency_root or ROOT
-    spec=importlib.util.spec_from_file_location('_tea_icon_codec',base/'scripts/imports/presentation/import-lab-battle-ui.py');codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
+    import ui_tiles as codec
     items=json.loads(source['src/data/items.json'])['items']; item=next(x for x in items if x.get('itemId')=='ITEM_TEA')
     expected=dict(english='TEA',price=0,importance=1,registrability=1,pocket='POCKET_KEY_ITEMS',type='ITEM_TYPE_BAG_MENU',holdEffect='HOLD_EFFECT_NONE',holdEffectParam=0,fieldUseFunc='FieldUseFunc_OakStopsYou',battleUsage=0,battleUseFunc='NULL',secondaryId=0)
     if any(item[k]!=v for k,v in expected.items()) or items.index(item)!=369: raise ValueError('Tea source metadata differs')
@@ -62,4 +61,4 @@ def run(args):
         for p,b in pending:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
     print(json.dumps(dict(status='verified',sourceFiles=6,sourceBytes=sum(len(b) for b in source.values()),width=w,height=h,outputs=len(outputs))))
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--repository',type=pathlib.Path);p.add_argument('--dependency-root',type=pathlib.Path);p.add_argument('--check',action='store_true');run(p.parse_args())
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--repository',type=pathlib.Path);p.add_argument('--check',action='store_true');run(p.parse_args())

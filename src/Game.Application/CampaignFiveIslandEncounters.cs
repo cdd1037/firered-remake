@@ -11,20 +11,20 @@ public sealed partial class CampaignSession
         IsSeafoamMap(table.Map) ? GenerateSeafoamLand(state,encounter) :
         table.Map==PowerPlantEncounterTables.Land.Map
             ? GeneratePowerPlantLand(state,encounter)
-            : SevenIslandWildPokemonFactory.Generate(_content.SevenIslandOwnership!,table,encounter,state.World.Rng,state.TrainerId);
+            : SevenIslandWildPokemonFactory.Generate(_content.GamePokemon!,table,encounter,state.World.Rng,state.TrainerId);
     private EarlyLandWildPokemonResult GeneratePowerPlantLand(CampaignState state,EarlyLandEncounterState encounter)
     {
-        var made=PowerPlantPokemonFactory.GenerateLand(_content.PowerPlantOwnership!,encounter.Pending!,state.World.Rng,state.TrainerId);
+        var made=PowerPlantPokemonFactory.GenerateLand(_content.GamePokemon!,encounter.Pending!,state.World.Rng,state.TrainerId);
         return new(made.Pokemon,made.GlobalRng,made.RandomTrace);
     }
 
     private bool IsFiveIslandWildHistory(CampaignWildHistory history)
     {
-        if (!_content.FiveIslandEnabled || history.FiveIsland is not {} origin || history.SevenIsland is not null || history.SixIsland is not null || history.SeviiRuby is not null || history.FourIsland is not null || history.VictoryRoad is not null ||
+        if (history.FiveIsland is not {} origin || history.SevenIsland is not null || history.SixIsland is not null || history.SeviiRuby is not null || history.FourIsland is not null || history.VictoryRoad is not null ||
             history.Safari || history.ScriptedMarowak || history.ScriptedSnorlaxRoute!=0 || history.LostelleHypno is not null ||
             origin.Kind is not (FiveIslandEncounterKind.Land or FiveIslandEncounterKind.Surf or FiveIslandEncounterKind.OldRod) ||
             FiveIslandWildBattleContract.SourceSlot(origin) is not {} slot) return false;
-        return _content.FiveIslandOwnership!.Catalog.Species[slot.Species].SourceSpeciesId==history.SourceSpeciesId &&
+        return _content.GamePokemon!.Catalog.Species[slot.Species].SourceSpeciesId==history.SourceSpeciesId &&
             history.Level>=slot.MinimumLevel && history.Level<=slot.MaximumLevel;
     }
 

@@ -79,33 +79,18 @@ public sealed class GeneratedLearnsetTests
                 File.WriteAllText(pathToCatalog, json.ToJsonString());
                 Assert.ThrowsExactly<InvalidDataException>(() => PretCanonicalPokemonCatalog.Load(root, root));
             }
-            foreach (var mutate in InvalidRows().Take(3))
+            foreach (var (mutate, index) in InvalidRows().Take(3).Select((mutate, index) => (mutate, index)))
             {
                 var json = JsonNode.Parse(original)!;
                 mutate(json["species"]![0]!["levelUpMoves"]!.AsArray());
                 File.WriteAllText(pathToCatalog, json.ToJsonString());
-                Assert.ThrowsExactly<JsonException>(() => PretCanonicalPokemonCatalog.Load(root, root));
+                var error = Assert.ThrowsExactly<ContentValidationException>(() => PretCanonicalPokemonCatalog.Load(root, root));
+                var diagnostic = error.Diagnostics.Single();
+                Assert.AreEqual("json_schema", diagnostic.Code);
+                Assert.AreEqual(index == 0 ? "$.species[0].levelUpMoves[0].source" : "$.species[0].levelUpMoves[0]", diagnostic.Path);
             }
         }
         finally { Directory.Delete(root, true); }
-    }
-
-    [TestMethod]
-    public void PowerPlantRuntimeCatalogDoesNotCarryUnusedInputInventories()
-    {
-        var document = PretPowerPlantRules.LoadDocument(TestAssets.Root);
-        Assert.AreEqual(152, document.OwnedSpeciesCount);
-        Assert.AreEqual(186, document.OpponentSpeciesCount);
-        Assert.AreEqual(39, document.Machines.Length);
-        Assert.AreEqual(2, document.NewMachines.Length);
-        Assert.AreEqual(3, document.Items.Length);
-        Assert.AreEqual(7, document.Pickups.Length);
-        using var json = JsonDocument.Parse(JsonSerializer.Serialize(document, ContentJson.CreateOptions()));
-        Assert.IsFalse(json.RootElement.TryGetProperty("inputs", out _));
-        Assert.IsFalse(json.RootElement.TryGetProperty("dependencyInputs", out _));
-        var presentation = PretPowerPlantRules.LoadPresentationDocument(TestAssets.Root);
-        Assert.IsFalse(presentation.TryGetProperty("inputs", out _));
-        Assert.IsFalse(presentation.TryGetProperty("inheritedInputs", out _));
     }
 
     private static Action<JsonArray>[] InvalidRows() => [

@@ -21,7 +21,7 @@ public static class PretMtMoonTrainers
         return catalog;
     }
 
-    public static MtMoonTrainerCatalog Load(PretMtMoonRegion region, PretMtMoonPokemon pokemon)
+    public static MtMoonTrainerCatalog Load(PretMtMoonRegion region, PokemonPresentationPackage pokemon)
     {
         ArgumentNullException.ThrowIfNull(region);
         ArgumentNullException.ThrowIfNull(pokemon);

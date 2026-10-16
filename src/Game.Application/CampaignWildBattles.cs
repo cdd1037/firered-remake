@@ -59,21 +59,20 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,Sourc
 
 public sealed partial class CampaignSession
 {
-    private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null,bool scriptedMarowak=false,int scriptedSnorlaxRoute=0,Route1WildPokemonResult? surfPokemon=null,CampaignLostelleHypnoReceipt? lostelleHypno=null,VictoryRoadWildOrigin? victoryRoadOrigin=null,SeviiRubyWildOrigin? seviiRubyOrigin=null,FourIslandWildOrigin? fourIslandOrigin=null,SixIslandWildOrigin? sixIslandOrigin=null,FiveIslandWildOrigin? fiveIslandOrigin=null,CeruleanCaveWildOrigin? ceruleanCaveOrigin=null,Route1WildPokemonResult? scriptedPokemon=null,CampaignMewtwoReceipt? mewtwoReceipt=null,SevenIslandWildOrigin? sevenIslandOrigin=null,Game.Domain.Randomness.RngState? sevenIslandGenerationRng=null,CampaignEventIslandReceipt? eventIslandReceipt=null,PowerPlantWildOrigin? powerPlantOrigin=null,CampaignPowerPlantReceipt? powerPlantReceipt=null,FishingEncounterOrigin? fishingOrigin=null,SeafoamWildOrigin? seafoamOrigin=null,CampaignSeafoamReceipt? seafoamReceipt=null,RngState? seafoamGenerationRng=null,SourceTableWildOrigin? sourceTableOrigin=null,RngState? sourceTableGenerationRng=null,CampaignRockSmashReceipt? rockSmashReceipt=null)
+    private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null,bool scriptedMarowak=false,int scriptedSnorlaxRoute=0,Route1WildPokemonResult? surfPokemon=null,CampaignLostelleHypnoReceipt? lostelleHypno=null,VictoryRoadWildOrigin? victoryRoadOrigin=null,SeviiRubyWildOrigin? seviiRubyOrigin=null,FourIslandWildOrigin? fourIslandOrigin=null,SixIslandWildOrigin? sixIslandOrigin=null,FiveIslandWildOrigin? fiveIslandOrigin=null,CeruleanCaveWildOrigin? ceruleanCaveOrigin=null,Route1WildPokemonResult? scriptedPokemon=null,CampaignMewtwoReceipt? mewtwoReceipt=null,SevenIslandWildOrigin? sevenIslandOrigin=null,Game.Domain.Randomness.RngState? sevenIslandGenerationRng=null,CampaignEventIslandReceipt? eventIslandReceipt=null,PowerPlantWildOrigin? powerPlantOrigin=null,CampaignPowerPlantReceipt? powerPlantReceipt=null,FishingEncounterOrigin? fishingOrigin=null,SeafoamWildOrigin? seafoamOrigin=null,CampaignSeafoamReceipt? seafoamReceipt=null,RngState? seafoamGenerationRng=null,SourceTableWildOrigin? sourceTableOrigin=null,RngState? sourceTableGenerationRng=null,CampaignRockSmashReceipt? rockSmashReceipt=null,WaterEncounterCandidate? waterCandidate=null)
     {
-        if(_content.ForestEnabled&&long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
+        if(long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
         state=ResetFieldPoisonCounterForBattle(state);
         var exploration=state.Exploration??throw new InvalidDataException("exploration_missing");
-        if(exploration.NextWildBattleId is <1 or long.MaxValue||state.WildBattle is not null||state.Battle is not null||state.Party.IsEmpty||state.Party.Length>6||(!_content.CaptureEnabled&&state.Party.Length!=1))throw new InvalidDataException("wild_battle_context_invalid");
-        int active=_content.CaptureEnabled?Enumerable.Range(0,state.Party.Length).First(i=>!state.Party[i].IsEgg&&state.Party[i].Pokemon.CurrentHp>0):0;
+        if(exploration.NextWildBattleId is <1 or long.MaxValue||state.WildBattle is not null||state.Battle is not null||state.Party.IsEmpty||state.Party.Length>6)throw new InvalidDataException("wild_battle_context_invalid");
+        int active=Enumerable.Range(0,state.Party.Length).First(i=>!state.Party[i].IsEgg&&state.Party[i].Pokemon.CurrentHp>0);
         var owned=state.Party[active];
         if(!HasSupportedCampaignOriginalTrainer(state,owned))throw new InvalidDataException("wild_battle_owned_origin_required");
         Route1WildPokemonResult generated;
         if(scriptedPokemon is not null)generated=scriptedPokemon;
         else if(surfPokemon is not null)generated=surfPokemon;
         else if(fishingPokemon is not null)generated=fishingPokemon;
-        else if(_content.ForestEnabled)
-        {
+        else {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
             var result=GenerateCurrentLand(state,table,early);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
@@ -90,39 +89,38 @@ public sealed partial class CampaignSession
                 sevenIslandOrigin=new(table.Map,SevenIslandEncounterKind.Land,early.Pending!.Candidate.Slot);
             if(CeruleanCaveEncounterTables.Land.Any(t=>t.Map==table.Map))
                 ceruleanCaveOrigin=new(table.Map,CeruleanCaveEncounterKind.Land,early.Pending!.Candidate.Slot);
-            if(_content.FiveIslandEnabled&&FiveIslandEncounterTables.Land.Any(t=>t.Map==table.Map))
+            if(FiveIslandEncounterTables.Land.Any(t=>t.Map==table.Map))
                 fiveIslandOrigin=new(table.Map,FiveIslandEncounterKind.Land,early.Pending!.Candidate.Slot);
-            if(_content.SixIslandEnabled&&SixIslandEncounterTables.Land.Any(t=>t.Map==table.Map))
+            if(SixIslandEncounterTables.Land.Any(t=>t.Map==table.Map))
                 sixIslandOrigin=new(table.Map,SixIslandEncounterKind.Land,early.Pending!.Candidate.Slot);
-            if(_content.FourIslandEnabled&&FourIslandEncounterTables.Land.Any(t=>t.Map==table.Map))
+            if(FourIslandEncounterTables.Land.Any(t=>t.Map==table.Map))
                 fourIslandOrigin=new(table.Map,FourIslandEncounterKind.Land,early.Pending!.Candidate.Slot);
-            if(_content.SeviiRubyEnabled&&SeviiRubyEncounterTables.Land.Any(t=>t.Map==table.Map))
+            if(SeviiRubyEncounterTables.Land.Any(t=>t.Map==table.Map))
                 seviiRubyOrigin=new(table.Map,SeviiRubyEncounterKind.Land,early.Pending!.Candidate.Slot);
-            if(_content.VictoryRoadEnabled&&VictoryRoadEncounterTables.Land.Any(t=>t.Map==table.Map))
+            if(VictoryRoadEncounterTables.Land.Any(t=>t.Map==table.Map))
                 victoryRoadOrigin=new(table.Map,VictoryRoadEncounterKind.Land,early.Pending!.Candidate.Slot);
         }
-        else generated=Route1WildPokemonFactory.Generate(OrdinaryEncounterPokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
-        if(victoryRoadOrigin is not null&&(!_content.VictoryRoadEnabled||victoryRoadOrigin.Map!=state.World.Player.MapId||victoryRoadOrigin.Kind is VictoryRoadEncounterKind.GoodRod or VictoryRoadEncounterKind.SuperRod||
+        if(victoryRoadOrigin is not null&&(victoryRoadOrigin.Map!=state.World.Player.MapId||victoryRoadOrigin.Kind is VictoryRoadEncounterKind.GoodRod or VictoryRoadEncounterKind.SuperRod||
             victoryRoadOrigin.Kind!=(surfPokemon is not null?VictoryRoadEncounterKind.Surf:fishingPokemon is not null?VictoryRoadEncounterKind.OldRod:VictoryRoadEncounterKind.Land)))
             throw new InvalidDataException("victory_road_wild_field_origin");
         seafoamReceipt=PrepareSeafoamReceipt(state,generated,seafoamOrigin,seafoamReceipt,seafoamGenerationRng,
             scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin);
         var sourceTableReceipt=PrepareSourceTableReceipt(state,generated,sourceTableOrigin,sourceTableGenerationRng,
             scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin,scriptedSnorlax:scriptedSnorlaxRoute==16,rockSmash:rockSmashReceipt is not null);
-        bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
+        bool towerBattle=TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
         var encounterKind=surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land;
         if(lostelleHypno is not null||scriptedSnorlaxRoute!=0||scriptedMarowak)encounterKind=FirstSeviiEncounterKind.Land;
         var encounter=CanonicalWildEncounter(state,generated.Pokemon,encounterKind,victoryRoadOrigin,seviiRubyOrigin,
-            fourIslandOrigin,sixIslandOrigin,fiveIslandOrigin,ceruleanCaveOrigin,sevenIslandOrigin,eventIslandReceipt?.Origin,powerPlantOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0,fishingOrigin,seafoamOrigin,sourceTableOrigin,rockSmashReceipt?.Origin);
+            fourIslandOrigin,sixIslandOrigin,fiveIslandOrigin,ceruleanCaveOrigin,sevenIslandOrigin,eventIslandReceipt?.Origin,powerPlantOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0,fishingOrigin,seafoamOrigin,sourceTableOrigin,rockSmashReceipt?.Origin,waterCandidate);
         var started=SourceWildBattlePolicy.StartOwned(SafariOrdinaryOwnership??throw new InvalidDataException("canonical_wild_owned_catalog"),
             SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,encounter,CampaignBattleTerrain(state),encounterKind==FirstSeviiEncounterKind.OldRod&&fishingOrigin is null&&seafoamOrigin?.Kind!=SeafoamEncounterKind.GoodRod);
         if(!started.Succeeded)throw new InvalidDataException(started.Fault);
         var frame=PrepareCanonicalWildFrame(state,started.State!);
         var battle=CampaignWildReadProjection.From(frame);
         var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,frame,ProjectCanonicalWildEvents(started.Events),0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,[],0,[..generated.RandomTrace,..started.Trace])
-        {RockSmashReceipt=rockSmashReceipt,SourceTableReceipt=sourceTableReceipt,SeafoamReceipt=seafoamReceipt,PowerPlantReceipt=powerPlantReceipt,EventIslandReceipt=eventIslandReceipt,SevenIslandReceipt=sevenIslandOrigin is null?null:new(sevenIslandGenerationRng??state.World.Rng,generated.GlobalRng,generated.Pokemon),MewtwoReceipt=mewtwoReceipt,SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
-        if(fishingPokemon is null&&surfPokemon is null&&scriptedPokemon is null)exploration=_content.ForestEnabled?exploration with{EarlyEncounter=CompleteCurrentLandCandidate(exploration.EarlyEncounter!,state.World.Player.MapId)}:exploration with{Encounter=Route1EncounterRules.CompleteCandidate(exploration.Encounter!)};
+        {RockSmashReceipt=rockSmashReceipt,SourceTableReceipt=sourceTableReceipt,SeafoamReceipt=seafoamReceipt,PowerPlantReceipt=powerPlantReceipt,EventIslandReceipt=eventIslandReceipt,SevenIslandReceipt=sevenIslandOrigin is null?null:new(sevenIslandGenerationRng??state.World.Rng,generated.GlobalRng,generated.Pokemon),MewtwoReceipt=mewtwoReceipt,SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]),FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
+        if(fishingPokemon is null&&surfPokemon is null&&scriptedPokemon is null)exploration=exploration with{EarlyEncounter=CompleteCurrentLandCandidate(exploration.EarlyEncounter!,state.World.Player.MapId)};
         return PrepareWildPresentation(state with{WildBattle=b,Exploration=exploration with{NextWildBattleId=checked(exploration.NextWildBattleId+1)},World=state.World with{Rng=battle.Rng},UnownPokedexPersonality=generated.Pokemon.SourceSpeciesId==201&&!state.SeenSpecies.Contains(201)?generated.Pokemon.Personality:state.UnownPokedexPersonality,SeenSpecies=towerBattle&&!PokemonTowerBattleContract.Policy(kind).RegisterSeen?state.SeenSpecies:state.SeenSpecies.Add(battle.Opponent.Pokemon.SourceSpeciesId),Motions=[],PresentationTicks=0});
     }
     private Decision<CampaignState> DecideWildBattle(CampaignState state,CampaignCommand command)
@@ -159,7 +157,7 @@ public sealed partial class CampaignSession
             return CommitCanonicalWildResult(state with{WildBattle=b with{Pages=[],PageIndex=0}},learned);
         }
         if(b.Phase!=CampaignBattlePhase.ChooseMove)return new(CommandStatus.Rejected,state,"battle_presentation_pending");
-        if(command.Kind=="battle_switch"&&_content.PartyTrainingEnabled)return DecideVoluntaryWildSwitch(state,command);
+        if(command.Kind=="battle_switch")return DecideVoluntaryWildSwitch(state,command);
         if(command.Kind=="battle_poke_flute")return DecideWildPokeFlute(state,command);
         if(command.Kind=="battle_medicine")return DecideWildMedicine(state,command);
         if(command.Kind=="battle_menu"&&command.Text is "bag" or "party")return new(CommandStatus.Accepted,state);
@@ -178,14 +176,14 @@ public sealed partial class CampaignSession
             var ball=command.Text switch
             {
                 null or "pret:ITEM_POKE_BALL"=>CaptureBall.Poke,
-                "pret:ITEM_GREAT_BALL" when _content.CeladonApproachEnabled=>CaptureBall.Great,
-                "pret:ITEM_ULTRA_BALL" when _content.SilphEnabled=>CaptureBall.Ultra,
-                "pret:ITEM_MASTER_BALL" when _content.SilphEnabled=>CaptureBall.Master,
-                "pret:ITEM_LUXURY_BALL" when _content.LostCaveEnabled=>CaptureBall.Luxury,
+                "pret:ITEM_GREAT_BALL"=>CaptureBall.Great,
+                "pret:ITEM_ULTRA_BALL"=>CaptureBall.Ultra,
+                "pret:ITEM_MASTER_BALL"=>CaptureBall.Master,
+                "pret:ITEM_LUXURY_BALL"=>CaptureBall.Luxury,
                 _=>(CaptureBall)0
             };
             if(ball==(CaptureBall)0)return new(CommandStatus.Rejected,state,"capture_ball_unsupported");
-            if(!_content.CaptureEnabled||_content.QuestItems is not {} items||state.Inventory is null||!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return new(CommandStatus.Rejected,state,"capture_not_enabled");
+            if(_content.QuestItems is not {} items||state.Inventory is null||!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return new(CommandStatus.Rejected,state,"capture_not_enabled");
             var capacityError=CaptureCapacityError(state);if(capacityError is not null)return new(CommandStatus.Rejected,state,capacityError);
             if(state.NextPokemonId is <2 or long.MaxValue||long.MaxValue-Revision<256)return new(CommandStatus.Rejected,state,"capture_counter_headroom_required");
             if(ball!=CaptureBall.Poke)
@@ -316,8 +314,8 @@ public sealed partial class CampaignSession
         var trainers=state.BattledTrainers;
         foreach(var stage in new[]{"FIRST","REMATCH"})foreach(var species in new[]{"SQUIRTLE","BULBASAUR","CHARMANDER"})trainers=trainers.Remove("pret:TRAINER_CHAMPION_"+stage+"_"+species);
         int lost=WhiteOutLoss(state);
-        bool indigo=_content.PokemonLeagueEnabled&&state.LastHealingLocation==PokemonLeagueHealingLocation;
-        bool oneIsland=_content.FirstSeviiEnabled&&FirstSeviiCenterSourceMap(state)=="MAP_ONE_ISLAND_POKEMON_CENTER_1F";
+        bool indigo=state.LastHealingLocation==PokemonLeagueHealingLocation;
+        bool oneIsland=FirstSeviiCenterSourceMap(state)=="MAP_ONE_ISLAND_POKEMON_CENTER_1F";
         int x=indigo?13:oneIsland?5:center?7:8,y=indigo?12:center?4:5;var map=_content.MapFromSourceSymbol(center?(indigo?"MAP_INDIGO_PLATEAU_POKEMON_CENTER_1F":FirstSeviiCenterSourceMap(state)??(state.LastHealingLocation=="HEAL_LOCATION_CINNABAR_ISLAND"?"MAP_CINNABAR_ISLAND_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_SAFFRON_CITY"?"MAP_SAFFRON_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_FUCHSIA_CITY"?"MAP_FUCHSIA_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_LAVENDER_TOWN"?"MAP_LAVENDER_TOWN_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CELADON_CITY"?"MAP_CELADON_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE10"?"MAP_ROUTE10_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_VERMILION_CITY"?"MAP_VERMILION_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CERULEAN_CITY"?"MAP_CERULEAN_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE4"?"MAP_ROUTE4_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_PEWTER_CITY"?"MAP_PEWTER_CITY_POKEMON_CENTER_1F":"MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F")):"MAP_PALLET_TOWN_PLAYERS_HOUSE_1F");var tile=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("whiteout_spawn_missing");
         var next=state with{WildBattle=null,SafariVisit=null,SafariBattle=null,SafariExitPending=false,Money=state.Money-lost,Party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p)).ToImmutableArray(),BattledTrainers=trainers,
             World=state.World with{Player=new(map,x,y,tile.Elevation,Direction.North)},Script=state.Script with{Flags=flags,Variables=vars},Exploration=ResetEncounterModifiers(state.Exploration!)};

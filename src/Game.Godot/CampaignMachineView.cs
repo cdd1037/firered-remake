@@ -13,23 +13,23 @@ public partial class CampaignView
     private string _machineMode = "list", _machineNoticeReturn = "party";
     private int _machineCursor, _machineListCursor, _machineParty, _machineSlot = -1, _machinePage;
     private ImmutableArray<string> _machinePages = [];
-    private bool MachineActive => _catalog.PewterMachines is not null && _session.State.ItemMenu is { Origin: "bag" } menu
+    private bool MachineActive => _catalog.Machines is not null && _session.State.ItemMenu is { Origin: "bag" } menu
         && (menu.View == "machines" || menu.View == "message" && menu.ReturnView == "machines");
     private ItemId _machineSelected = MachineRules.Tm39Id;
     private InventoryStack[] MachineStacks => (_session.State.Inventory!.Machines ?? []).OrderBy(s => s.Item.Value, StringComparer.Ordinal).ToArray();
-    private MachineDefinition MachineDefinition => MachineRules.Definition(_catalog.PewterMachines!, _machineSelected)
+    private MachineDefinition MachineDefinition => MachineRules.Definition(_catalog.Machines!, _machineSelected)
         ?? throw new InvalidDataException("Selected machine is not in this profile.");
     private string MachineMoveName => MoveName(MachineDefinition.Move);
     private int MachineQuantity => OpeningInventoryRules.Quantity(_session.State.Inventory!.Machines ?? [], _machineSelected);
-    private int MachineListX => _catalog.MtMoonEnabled ? 106 : 36;
-    private int MachineListWidth => _catalog.MtMoonEnabled ? 134 : 196;
-    private int MachineListRowHeight => _catalog.MtMoonEnabled ? 16 : 32;
-    private int MachineListStart => _catalog.SsAnneEnabled ? Math.Max(0, _machineCursor - 6) : 0;
-    private int MachineListVisibleCount => _catalog.SsAnneEnabled ? Math.Min(7, MachineStacks.Length + 1 - MachineListStart) : MachineStacks.Length + 1;
+    private int MachineListX => 106;
+    private int MachineListWidth => 134;
+    private int MachineListRowHeight => 16;
+    private int MachineListStart => Math.Max(0, _machineCursor - 6);
+    private int MachineListVisibleCount => Math.Min(7, MachineStacks.Length + 1 - MachineListStart);
 
     partial void ExtendMachineQuestPocket(ref QuestItemUiDocument document)
     {
-        if (_catalog.PewterMachines is not { } catalog) return;
+        if (_catalog.Machines is not { } catalog) return;
         var machine = PretPewterMachines.LoadDocument(System.IO.File.ReadAllText(System.IO.Path.Combine(_root,
             "content/generated/data/machine-learning/pewter.json")), SharedMachineCatalog.LoadProject(_root));
         string firstIcon = document.Items[0].Icon;
@@ -48,7 +48,7 @@ public partial class CampaignView
 
     private void LoadDepartmentMachineIcon()
     {
-        if (_catalog.PewterMachines is not { } machines || MachineRules.Definition(machines, DepartmentStoreMachineStock.Tm15Id) is null) return;
+        if (_catalog.Machines is not { } machines || MachineRules.Definition(machines, DepartmentStoreMachineStock.Tm15Id) is null) return;
         if (!_earlyItemIcons.TryGetValue(PretDepartmentStoreMachines.ReusedTm15Icon, out var normalIcon))
             throw new InvalidDataException("department_machine_normal_icon_missing");
         _earlyItemIcons.Add(DepartmentStoreMachineStock.Tm15Id, normalIcon);
@@ -197,7 +197,7 @@ public partial class CampaignView
         // Reuse authenticated source menu frames/fonts; this is deliberately not the original case skin.
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         string mode = _session.State.ItemMenu!.View == "message" ? "list" : _machineMode;
-        if (mode == "list" && _catalog.MtMoonEnabled) DrawMtMoonMachineList();
+        if (mode == "list") DrawMtMoonMachineList();
         else if (mode == "list")
         {
             DrawTexture(_questPocketTextures[MachineCaseIcon], new(8, 8));

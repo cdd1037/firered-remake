@@ -1,57 +1,82 @@
 #!/usr/bin/env python3
-"""Verify source metadata, independent boundaries, and pixels offline."""
-import sys as _bootstrap_sys
-from pathlib import Path as _BootstrapPath
-_bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[2] / 'scripts/lib'))
-from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-
+"""Check Snorlax in the shared catalogs and its source-derived presentation."""
+import argparse
 import io
-import argparse, importlib.util, io, json, pathlib, sys
+import json
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts/lib'))
 from PIL import Image
-sys.dont_write_bytecode=True
-ROOT=_PROJECT_ROOT
-def load(name,path):
- s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+from generated_output_compare import generated_output_matches
+from import_canonical_pokemon import Sources
+from pokemon_import_io import safe
+from project_paths import PROJECT_ROOT
+from species_art import build as build_art
+
+
+def verify(root, raw):
+    # Read full species and move definitions from the shared current catalogs;
+    # regional additions now contain references rather than copied definitions.
+    catalog = json.loads(safe(root, 'content/generated/data/pokemon/canonical/catalog.json').read_bytes())
+    species = next(row for row in catalog['species'] if row['id']['value'] == 'pret:SPECIES_SNORLAX')
+    paths = ('src/data/pokemon/species_info.h', 'include/constants/pokemon.h',
+             'include/constants/abilities.h', 'include/constants/species.h',
+             'src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h')
+    source = Sources({path: safe(raw, path).read_text() for path in paths}, {})
+    expected, _ = source.species_definition('SPECIES_SNORLAX')
+    assert species == expected, 'Snorlax shared definition differs from source'
+    assert species['baseStats'] == dict(hp=160, attack=110, defense=65, speed=30, specialAttack=65, specialDefense=110)
+    assert (species['sourceSpeciesId'], species['genderRatio'], species['growthRate'], species['catchRate'], species['experienceYield']) == (143, 31, 'slow', 25, 154)
+    assert (species['ability1'], species['ability2']) == ('ABILITY_IMMUNITY', 'ABILITY_THICK_FAT')
+    expected_moves = [(1,'TACKLE'), (5,'AMNESIA'), (9,'DEFENSE_CURL'), (13,'BELLY_DRUM'),
+                      (17,'HEADBUTT'), (21,'YAWN'), (25,'REST'), (29,'SNORE'), (33,'BODY_SLAM'),
+                      (37,'SLEEP_TALK'), (41,'BLOCK'), (45,'COVET'), (49,'ROLLOUT'), (53,'HYPER_BEAM')]
+    assert [(row['level'], row['move']['value'][10:]) for row in species['levelUpMoves']] == expected_moves
+    moves = {row['id']['value']: row for row in json.loads(
+        safe(root, 'content/generated/data/services/metronome-moves.json').read_bytes())['moves']}
+    for symbol, pp, effect, power in [('SNORE',15,'EFFECT_SNORE',40), ('SLEEP_TALK',10,'EFFECT_SLEEP_TALK',0),
+                                      ('BLOCK',5,'EFFECT_MEAN_LOOK',0), ('COVET',40,'EFFECT_THIEF',40)]:
+        move = moves['pret:MOVE_' + symbol]
+        assert (move['pp'], move['effect'], move['power']) == (pp, effect, power), symbol
+    for level, expected in {1:['TACKLE'], 13:['TACKLE','AMNESIA','DEFENSE_CURL','BELLY_DRUM'],
+                            30:['HEADBUTT','YAWN','REST','SNORE'], 33:['YAWN','REST','SNORE','BODY_SLAM'],
+                            37:['REST','SNORE','BODY_SLAM','SLEEP_TALK'], 40:['REST','SNORE','BODY_SLAM','SLEEP_TALK'],
+                            41:['SNORE','BODY_SLAM','SLEEP_TALK','BLOCK'], 100:['BLOCK','COVET','ROLLOUT','HYPER_BEAM']}.items():
+        learned = [row['move']['value'] for row in species['levelUpMoves'] if row['level'] <= level][-4:]
+        assert learned == ['pret:MOVE_' + symbol for symbol in expected], level
+    assert [moves['pret:MOVE_' + symbol]['pp'] for symbol in ('HEADBUTT','YAWN','REST','SNORE')] == [15,10,10,15]
+
+    pixels = build_art(root, 'snorlax', raw_root=raw)
+    manifest = json.loads(pixels['manifest.json'])
+    for relative, data in pixels.items():
+        assert generated_output_matches(safe(root, 'content/generated/sprites/pokemon/snorlax/' + relative), data), relative
+    dex = json.loads(safe(root, 'content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json').read_bytes())
+    existing = next(row for row in dex['entries'] if row['sourceSpeciesId'] == 143)
+    for key, value in manifest['dex'].items():
+        assert existing[key] == value, key
+    # Independent pixel oracle keeps transparent RGB and floor RGB5 expansion.
+    for sprite in manifest['sprites']:
+        with Image.open(safe(raw, sprite['sourceImagePath'])) as source_image:
+            indices = source_image.tobytes()
+        lines = safe(raw, sprite['sourcePalettePath']).read_text().splitlines()
+        colors = [list(map(int, line.split())) for line in lines[3:]]
+        expected = bytes(channel for index in indices for channel in
+                         (*[(value // 8) * 255 // 31 for value in colors[index]], 255 if index else 0))
+        with Image.open(io.BytesIO(pixels[sprite['texturePath']])) as decoded:
+            assert decoded.size == (64,64) and decoded.convert('RGBA').tobytes() == expected
+    assert manifest['dex']['weightHectograms'] == 4600
+
+
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--dependency-project-root',type=pathlib.Path);p.add_argument('--reference-root',type=pathlib.Path);a=p.parse_args()
- m=load('snorlax_metadata_verify',ROOT/'scripts/imports/pokemon/import-snorlax-pokemon.py')
- from species_art import build as build_art
- outputs=m.generate(ROOT);pixels=build_art(ROOT, 'snorlax')
- for relative,b in outputs.items():assert (ROOT/relative).read_bytes()==b,relative
- for relative,b in pixels.items():assert (ROOT/'content/generated/sprites/pokemon/snorlax'/relative).read_bytes()==b,relative
- doc=json.loads(outputs['content/generated/data/pokemon/snorlax.json']);fixture=json.loads(outputs['tests/fixtures/snorlax/catalog-source-fixtures.json']);manifest=json.loads(pixels['manifest.json'])
- species=doc['species'][0]
- assert species['baseStats']==dict(hp=160,attack=110,defense=65,speed=30,specialAttack=65,specialDefense=110)
- assert (species['sourceSpeciesId'],species['genderRatio'],species['growthRate'],species['catchRate'],species['experienceYield'])==(143,31,'slow',25,154)
- assert (species['ability1'],species['ability2'])==('ABILITY_IMMUNITY','ABILITY_THICK_FAT') and species['evolutions']==[] and doc['deferredEvolutions']==[] and doc['naturalLevelLimit'] is None
- assert [(x['level'],x['move']['value'][10:]) for x in species['levelUpMoves']]==[(1,'TACKLE'),(5,'AMNESIA'),(9,'DEFENSE_CURL'),(13,'BELLY_DRUM'),(17,'HEADBUTT'),(21,'YAWN'),(25,'REST'),(29,'SNORE'),(33,'BODY_SLAM'),(37,'SLEEP_TALK'),(41,'BLOCK'),(45,'COVET'),(49,'ROLLOUT'),(53,'HYPER_BEAM')]
- cases={r['level']:r['moves'] for r in fixture['naturalMoves']}
- for level,expected in {1:['TACKLE'],13:['TACKLE','AMNESIA','DEFENSE_CURL','BELLY_DRUM'],30:['HEADBUTT','YAWN','REST','SNORE'],33:['YAWN','REST','SNORE','BODY_SLAM'],37:['REST','SNORE','BODY_SLAM','SLEEP_TALK'],40:['REST','SNORE','BODY_SLAM','SLEEP_TALK'],41:['SNORE','BODY_SLAM','SLEEP_TALK','BLOCK'],100:['BLOCK','COVET','ROLLOUT','HYPER_BEAM']}.items():assert cases[level]==['pret:MOVE_'+x for x in expected]
- assert len(cases)==17 and fixture['initialLevel30Pp']==[15,10,10,15]
- defs={x['sourceMoveId']:x for x in doc['moves']};assert set(defs)=={173,214,335,343}
- assert [(defs[i]['pp'],defs[i]['effect'],defs[i]['power']) for i in (173,214,335,343)]==[(15,'EFFECT_SNORE',40),(10,'EFFECT_SLEEP_TALK',0),(5,'EFFECT_MEAN_LOOK',0),(40,'EFFECT_THIEF',40)]
- assert all(x['battleEffectImplemented'] is False for x in doc['moves'])
- assert 'TM39_ROCK_TOMB' in fixture['machines']['machineSymbols'] and not any(x.startswith(('HM01_','TM12_','TM19_','TM49_')) for x in fixture['machines']['machineSymbols'])
- if a.dependency_project_root:
-  inherited_species={};inherited_moves={}
-  for path in (a.dependency_project_root/'content/generated').glob('*/catalog.json'):
-   if path.parent.name=='snorlax-pokemon':continue
-   d=json.loads(path.read_bytes())
-   if not isinstance(d,dict) or not isinstance(d.get('species'),list) or not isinstance(d.get('moves'),list):continue
-   for row in d['species']:inherited_species[row['id']['value']]=row
-   for row in d['moves']:
-    key=row['id']['value'];assert key not in inherited_moves or inherited_moves[key]==row,key;inherited_moves[key]=row
-  assert len(inherited_species)==101 and len(inherited_moves)==235
-  added={r['id']['value']:r for r in doc['moves']};assert not added.keys()&inherited_moves.keys()
-  for row in fixture['requiredMoveDefinitions']:assert (added.get(row['id']['value']) or inherited_moves[row['id']['value']])==row
-  dex=json.loads((a.dependency_project_root/'content/generated/sprites/pokemon/pokedex-menu/pokedex-menu.json').read_bytes());existing=next(x for x in dex['entries'] if x['sourceSpeciesId']==143)
-  for key,value in manifest['dex'].items():assert existing[key]==value,key
- # Independent source pixel oracle: do not reuse importer conversion helpers.
- for sprite in manifest['sprites']:
-  im=Image.open(ROOT/'content/raw/pokefirered/037335f4'/sprite['sourceImagePath']);indices=list(im.get_flattened_data());lines=(ROOT/'content/raw/pokefirered/037335f4'/sprite['sourcePalettePath']).read_text().splitlines();colors=[list(map(int,x.split())) for x in lines[3:]]
-  expected=bytes(c for i in indices for c in (*[(v//8)*255//31 for v in colors[i]],255 if i else 0))
-  assert Image.open(io.BytesIO(pixels[sprite['texturePath']])).convert('RGBA').tobytes()==expected
-  decoded=Image.open(io.BytesIO(pixels[sprite['texturePath']]));assert decoded.size==(64,64) and decoded.convert('RGBA').tobytes()==expected
- assert len(manifest['outputs'])==12 and manifest['dex']['weightHectograms']==4600
- print('PASS:31 pinned blobs; species143;14 natural moves;4 absent definitions;17 level fixtures;31 source TM/HM bits;4 independent sprite pixel oracles;12 exact art outputs;full Dex equality.')
-if __name__=='__main__':main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--dependency-project-root', type=Path, default=PROJECT_ROOT)
+    parser.add_argument('--reference-root', type=Path, help='Pinned local raw input directory')
+    args = parser.parse_args()
+    raw = args.reference_root or args.dependency_project_root / 'content/raw/pokefirered/037335f4'
+    verify(args.dependency_project_root, raw)
+    print('PASS: Snorlax shared source definition, natural move boundaries, shared move definitions, Dex and full RGBA art.')
+
+
+if __name__ == '__main__':
+    main()

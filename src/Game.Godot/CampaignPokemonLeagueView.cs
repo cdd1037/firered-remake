@@ -32,8 +32,6 @@ public partial class CampaignView
 
     private void LoadPokemonLeaguePresentation()
     {
-        if(!_catalog.PokemonLeagueEnabled)return;
-        if(!_catalog.VictoryRoadEnabled||_session.RulesVersion!=CampaignSession.PokemonLeagueRulesVersion&&!(_catalog.NationalDexEnabled&&_session.RulesVersion==CampaignSession.NationalDexRulesVersion)&&!SeviiRubyPresentationProfile&&!FourIslandPresentationProfile)throw new InvalidDataException("Pokemon League presentation profile differs.");
         _pokemonLeagueArt=PokemonLeaguePresentationAssets.Load(_root);
         foreach(var a in LeagueManifest.GetProperty("assets").EnumerateArray())
         {
@@ -57,15 +55,13 @@ public partial class CampaignView
         foreach(var p in LeagueManifest.GetProperty("sprites").EnumerateArray())
         {
             int species=p.GetProperty("sourceSpeciesId").GetInt32();string side=p.GetProperty("side").GetString()!;bool shiny=p.GetProperty("paletteVariant").GetString()=="shiny";
-            if(_catalog.PokemonLeagueOpponents?.Catalog.Species.GetValueOrDefault(new(p.GetProperty("speciesId").GetString()!))?.SourceSpeciesId!=species)throw new InvalidDataException("Unadmitted Pokemon League sprite.");
+            if(_catalog.OpponentPokemon?.Catalog.Species.GetValueOrDefault(new(p.GetProperty("speciesId").GetString()!))?.SourceSpeciesId!=species)throw new InvalidDataException("Unadmitted Pokemon League sprite.");
             _battleArt.Add((species,side,shiny),new(_leagueTextures[p.GetProperty("id").GetString()!],new(p.GetProperty("x").GetInt32(),p.GetProperty("y").GetInt32())));
             if(side=="front"&&!shiny)_portraits.Add(species,_leagueTextures[p.GetProperty("id").GetString()!]);
         }
         foreach(var p in LeagueManifest.GetProperty("pokemonIcons").EnumerateArray())_storageIcons.Add(new(p.GetProperty("speciesId").GetString()!),_leagueTextures[p.GetProperty("id").GetString()!]);
-        Write("pokemonLeaguePresentation",new{PokemonLeaguePresentationAssets.SourceCommit,fullOriginalVisualFidelity=false,physicalAudioVerified=false});
+
     }
-    private string? PokemonLeagueSpeciesName(int species) => _catalog.PokemonLeagueOpponents?.Catalog.Species.Values.Any(s=>s.SourceSpeciesId==species)==true
-        ? (_pokedexMenu??throw new InvalidDataException("Pokemon League names missing.")).Entries[species].Name : null;
     private PokedexMenuTexture? PokemonLeagueDexPortrait(int species)
     {
         if(_pokemonLeagueArt is null)return null;
@@ -80,11 +76,6 @@ public partial class CampaignView
         foreach(var row in LeagueManifest.GetProperty("sprites").EnumerateArray())
             if(row.GetProperty("side").GetString()=="front"&&row.GetProperty("paletteVariant").GetString()=="normal"&&texture==PokemonLeagueDexPortrait(row.GetProperty("sourceSpeciesId").GetInt32()))return _pokemonLeagueArt.Files[row.GetProperty("texturePath").GetString()!];
         return null;
-    }
-    private string? VisiblePokemonLeagueTrainerText(string key)
-    {
-        if(_session.State.ForestTrainerBattle is not {} battle||!_leagueTrainers.TryGetValue(battle.Trainer.Value,out var row))return null;
-        string text=row.GetProperty(key).GetString()!;return key=="portrait"?"league-"+text:text;
     }
     private string? PokemonLeagueMusic(CampaignState state)
     {

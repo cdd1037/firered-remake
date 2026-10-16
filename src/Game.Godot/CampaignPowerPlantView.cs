@@ -9,24 +9,9 @@ public partial class CampaignView
     private readonly Dictionary<int,PokedexMenuEntry> _powerPlantDex=[];
     private JsonElement PowerPlantManifest=>_powerPlantArt?.Manifest??throw new InvalidDataException("Power Plant presentation missing.");
 
-    private Texture2D PowerPlantPixels(JsonElement row,bool replicatePalette=false)
-    {
-        int width=row.GetProperty("width").GetInt32(),height=row.GetProperty("height").GetInt32();
-        using var image = NativeImages.LoadPng(_powerPlantArt!.Files[row.GetProperty("texturePath").GetString()!], width, height);
-        if(replicatePalette)
-        {
-            var rgba = image.GetData();
-            for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)
-                for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
-            image.SetData(width, height, false, Image.Format.Rgba8, rgba);
-        }
-        return SceneTextures.FromImage(image);
-    }
+    private Texture2D PowerPlantPixels(JsonElement row,bool replicatePalette=false) => PresentationTexture(_powerPlantArt!.Files, row, replicatePalette);
     private void LoadPowerPlantPresentation()
     {
-        if(!_catalog.PowerPlantEnabled)return;
-        if(!_session.IsCurrentGame||!_catalog.EventIslandsEnabled)
-            throw new InvalidDataException("Power Plant requires its complete Event Island presentation predecessor.");
         _powerPlantArt=PowerPlantPresentationAssets.Load(_root);
         foreach(var row in PowerPlantManifest.GetProperty("sprites").EnumerateArray())
         {
@@ -55,7 +40,7 @@ public partial class CampaignView
             using var image = NativeImages.LoadPng(_powerPlantArt!.Files[row.GetProperty("pngPath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             _earlyItemIcons.Add(new(row.GetProperty("item").GetProperty("value").GetString()!),(ImageTexture)SceneTextures.FromImage(image));
         }
-        Write("powerPlantPresentation",new{nativeWindowVerified=false,physicalAudioVerified=false});
+
     }
     private CaptureDexEntry? PowerPlantCaptureDexEntry(int species)=>!_powerPlantDex.TryGetValue(species,out var e)?null:
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,
@@ -64,10 +49,8 @@ public partial class CampaignView
         ?page with{Portrait=e.Portrait,Footprint=page.Caught?e.Footprint:null}:null;
     private byte[]? ReadPowerPlantDexTexture(PokedexMenuTexture texture)=>_powerPlantArt is not null&&
         _powerPlantDex.Values.Any(e=>e.Portrait==texture||e.Footprint==texture)?_powerPlantArt.Files[texture.TexturePath]:null;
-    private string? PowerPlantSpeciesName(int species)=>_powerPlantDex.GetValueOrDefault(species)?.Name;
     private void VerifyPowerPlantMoveGeometry()
     {
-        if(!_catalog.PowerPlantEnabled)return;
         foreach(var row in PowerPlantManifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
         {
             var key=(row.GetProperty("species").GetInt32(),row.GetProperty("side").GetString()!);

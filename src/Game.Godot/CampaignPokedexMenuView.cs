@@ -20,7 +20,7 @@ public partial class CampaignView
         state.CaughtSpecies.Select(id=>_pokedexMenu?.Entries[id].NationalNumber??id),PokedexAccessFor(state).NationalEnabled);
     private void LoadPokedexMenuPresentation()
     {
-        if(_catalog.PokemonStorageEnabled)_pokedexMenu=_catalog.PokedexMenu?.ForProjectRoot(_root)??PretPokedexMenu.Load(_root);
+        _pokedexMenu=_catalog.PokedexMenu?.ForProjectRoot(_root)??PretPokedexMenu.Load(_root);
     }
     private void OpenPokedexMenu()
     {

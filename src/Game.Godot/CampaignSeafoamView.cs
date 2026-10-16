@@ -11,16 +11,9 @@ public partial class CampaignView
     private SeafoamPresentationData? _seafoamArt;
     private void LoadSeafoamPresentation()
     {
-        if (!_catalog.SeafoamEnabled) return;
-        if (!_session.IsCurrentGame || !_catalog.FossilLabEnabled)
-            throw new InvalidDataException("Seafoam requires its current Fossil Lab presentation predecessor.");
         var art = PretSeafoamPresentation.Load(_root);
         _earlyItemIcons.Add(Game.Domain.Items.ItemIds.WaterStoneId, ItemTexture(PretSeafoamItems.LoadDocument(_root).Icons[0]));
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
@@ -47,7 +40,7 @@ public partial class CampaignView
             if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Seafoam dex metadata differs from the authenticated source menu.");
         _seafoamArt = art;
-        Write("seafoamPresentation", new { nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
     private void VerifySeafoamMoveGeometry()
     {
@@ -69,18 +62,17 @@ public partial class CampaignView
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     private byte[]? ReadSeafoamDexTexture(PokedexMenuTexture texture) => _seafoamArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
-    private string? SeafoamSpeciesName(int species) => _seafoamArt?.DexEntries.GetValueOrDefault(species)?.Name;
     private void DisposeSeafoamPresentation()
     {
         _seafoamArt = null; _seafoamMovementId = null; _seafoamMovementFrames = 0;
     }
 
-    private bool IsSeafoamPresentationMap(MapId map) => _catalog.SeafoamEnabled && _catalog.SeafoamRegion.NewMaps.ContainsKey(map);
+    private bool IsSeafoamPresentationMap(MapId map) => _catalog.SeafoamRegion.NewMaps.ContainsKey(map);
     private string SeafoamPresentationMapKey(MapId map) => map == _session.State.World.Player.MapId && _session.State.MapLayout is {} layout
         ? map.Value + ":" + layout : map.Value;
     private PretWorldMap SeafoamPresentationSourceMap(MapId map) => map == _session.State.World.Player.MapId && _session.State.MapLayout is {} layout
         ? (PretWorldMap)(_catalog.MapLayout(map, layout) ?? throw new InvalidDataException("Map layout art missing.")) : _catalog.SourceMaps[map];
-    private bool IsSeafoamPatchedMap(MapId map) => _catalog.SeafoamEnabled && map == SeafoamFieldRules.B4F;
+    private bool IsSeafoamPatchedMap(MapId map) => map == SeafoamFieldRules.B4F;
     private bool TrySeafoamPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
     {
         if (!IsSeafoamPatchedMap(map)) return false;

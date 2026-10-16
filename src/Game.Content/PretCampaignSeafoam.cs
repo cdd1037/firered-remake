@@ -12,12 +12,8 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretSeafoamRegion SeafoamRegion { get; }
-    public bool SeafoamEnabled => SeafoamRegion is not null;
-    public GamePokemonCatalog SeafoamOwnership { get; }
-    public GameOpponentPokemonCatalog SeafoamOpponents { get; }
-    public MachineCatalog SeafoamMachines { get; }
     public SeafoamTrainerCatalog SeafoamTrainers { get; }
-    public SeafoamWaterEncounterCatalog SeafoamWaterEncounters { get; }
+    public WaterEncounterCatalog SeafoamWaterEncounters { get; }
     public IFieldMap SeafoamMap(MapId map,bool stoppedCurrent) => SeafoamRegion.SeafoamMap(map, stoppedCurrent);
     public ConnectedFieldMap SeafoamConnectedMap(MapId map,bool stoppedCurrent) =>
         PretWorldMapConnections.Create(SeafoamRegion.SeafoamMap(map, stoppedCurrent));

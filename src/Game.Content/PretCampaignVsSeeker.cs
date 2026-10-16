@@ -8,5 +8,4 @@ public sealed partial class PretCampaignCatalog
     public VsSeekerTrainerCatalog? VsSeekerTrainers { get; private init; }
     public ImmutableArray<VsSeekerBattleOccurrence> VsSeekerBattleOccurrences { get; private init; } = [];
     public ImmutableDictionary<string,string> VsSeekerTexts { get; private init; } = ImmutableDictionary<string,string>.Empty;
-    public GameOpponentPokemonCatalog? VsSeekerOpponents { get; private init; }
 }

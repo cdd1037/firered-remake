@@ -8,14 +8,6 @@ using Game.Domain.Rules;
 
 namespace Game.Domain.WildBattle;
 
-/// <summary>An ordinary learned selection in the source action contract, including genuine callers.
-/// The move recipe is shared with supplied called results; this is not a whole-turn scheduler.</summary>
-public sealed record WildBattleSourceMoveAction(WildBattleSide Actor, int ChosenSlot,
-    string RulesVersion = WildBattleRules.CalledMoveKernelRulesVersion)
-{
-    public WildBattleCalledActionContext Context { get; init; } = new();
-}
-
 /// <summary>gProtectStructs damage registers belong to the turn, not last landed move history.</summary>
 public sealed record WildBattleCalledDamageState
 {

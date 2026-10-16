@@ -8,7 +8,7 @@ public sealed partial class CampaignSession
     public bool RegionalSignWalkawayActive => IsRegionalWalkawaySign(State);
 
     private bool IsRegionalWalkawaySign(CampaignState state) =>
-        _content.RegionalFlavorEnabled && _content.SupportsRegionalFlavor(state.World.Player.MapId) &&
+        _content.SupportsRegionalFlavor(state.World.Player.MapId) &&
         state.SignMessage is { Cancelable: true } && !state.Script.Completed &&
         state.Script.Wait is not null && state.Dialogue is not null;
 

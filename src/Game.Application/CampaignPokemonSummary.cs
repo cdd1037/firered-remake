@@ -17,8 +17,7 @@ public sealed partial class CampaignSession
     public PartyPokemon? StorageSummaryPokemon => State.Pc?.Summary is {} summary &&
         ValidateStorageSummaryState(State) is null ? StorageSummaryPokemonAt(State, summary.Location) : null;
 
-    public bool CanReorderFieldSummaryMoves => _content.EarlyStarterEnabled &&
-        !State.Party.IsDefaultOrEmpty && State.Pc is null && IsStableFieldForParty(State);
+    public bool CanReorderFieldSummaryMoves => !State.Party.IsDefaultOrEmpty && State.Pc is null && IsStableFieldForParty(State);
 
     private static bool IsStorageSummaryCommand(string kind) => kind is "storage_summary_open" or
         "storage_summary_page" or "storage_summary_browse" or "storage_summary_swap" or "storage_summary_close";
@@ -140,7 +139,6 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideFieldSummarySwap(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.EarlyStarterEnabled) return No("field_party_not_enabled");
         if (state.Pc is not null || !IsStableFieldForParty(state)) return No("field_party_event_active");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("summary_party_index");
         var pokemon = state.Party[command.PartyIndex];

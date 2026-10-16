@@ -6,7 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
-import argparse,importlib.util,json,pathlib,re,sys
+import argparse, json, pathlib, re, sys
 sys.dont_write_bytecode=True
 ROOT=_PROJECT_ROOT
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14';TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -21,18 +21,16 @@ def safe(base,p):
 def authenticated(root=ROOT,output_root=None):
  out=output_root or root;b=safe(out,'scripts/recipes/presentation/rocket-hideout-art.lock.json').read_bytes()
  lock=json.loads(b)
- if (lock['schemaVersion'], lock['repository'], lock['commit'], len(lock['files']), len(lock['inputs'])) != (1, 'pret/pokefirered', COMMIT, 7, 2):raise ValueError('Art source scope differs')
+ if (lock['schemaVersion'], lock['repository'], lock['commit']) != (1, 'pret/pokefirered', COMMIT):raise ValueError('Art source scope differs')
  data={}
  for row in lock['files']:
   b=safe(out,'content/raw/pokefirered/037335f4/'+row['path']).read_bytes()
   data[row['path']]=b
- for row in lock['inputs']:
-  b=safe(root,row['path']).read_bytes()
  return lock,data
 
 def build(root,data):
  graphics=data['src/data/graphics/trainers.h'].decode();tables=data['src/data/trainer_graphics/front_pic_tables.h'].decode();trainers=data['src/data/trainers.h'].decode()
- spec=importlib.util.spec_from_file_location('_celadon_gym_codec',root/'scripts/imports/presentation/import-lab-battle-ui.py');codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
+ import ui_tiles as codec
  output={};assets=[]
  for id,stem,symbol,picture in PORTRAITS:
   for part in ['gTrainerFrontPic_'+symbol,'graphics/trainers/front_pics/'+stem+'_front_pic.4bpp.lz','gTrainerPalette_'+symbol,'graphics/trainers/palettes/'+stem+'.gbapal.lz']:

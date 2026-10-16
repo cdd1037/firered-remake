@@ -2,6 +2,8 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Content;
 using Game.Domain.Ids;
+using Game.Domain.Encounters;
+using Game.Domain.World;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.Rules;
@@ -262,12 +264,21 @@ public sealed class EggFactoryTests
         {
             IsEgg = true
         }, new(fighter.Pokemon)];
-        var battle = SourceWildBattlePolicy.StartOwned(owned, entryParty, 1, new(enemy), new(99));
+        var campaign = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
+        var mapId = new MapId("map.route-1");
+        var table = campaign.LandEncounters![mapId];
+        var slot = table.Slots.First(s => s.Species == enemy.Species && s.MinimumLevel <= enemy.Level && s.MaximumLevel >= enemy.Level);
+        var definition = new OrdinaryLandEncounterCatalog(new Dictionary<MapId, EarlyLandEncounterTable> { [mapId] = table },
+            new Dictionary<MapId, IFieldMap> { [mapId] = campaign.Maps[mapId] }, owned.Catalog)[mapId];
+        var pendingEncounter = new EarlyLandEncounterState(new(0), 2, Pending: new(new(mapId, slot.Index, enemy.Species,
+            (byte)enemy.Level), 2), RulesVersion: EarlyLandEncounterRules.FiveIslandRulesVersion);
+        var encounter = new SourceWildEncounterContext { OrdinaryLand = definition.BindBattle(pendingEncounter) };
+        var battle = SourceWildBattlePolicy.StartOwned(owned, entryParty, 1, new(enemy), new(99), encounter);
         Assert.IsTrue(battle.Succeeded, "carried egg ordinary wild entry: " + battle.Fault);
         var frame = battle.State!;
         var mechanics = owned.Mechanics;
         Assert.IsTrue(frame.Get(new(0)).Member!.Value.Index == 1 && frame.Party(BattleSide.Player).Members[0].IsEgg && SourceFourActionTurns.ValidateCapability(mechanics.Catalog, frame)is null, "leading egg preserves party indices and valid reserve");
-        Assert.IsTrue(!SourceWildBattlePolicy.StartOwned(owned, entryParty, 0, new(enemy), new(99)).Succeeded && !SourceWildBattlePolicy.StartOwned(owned, [new(egg.Pokemon), new(fighter.Pokemon)], 1, new(enemy), new(99)).Succeeded, "egg active and omitted flag both rejected");
+        Assert.IsTrue(!SourceWildBattlePolicy.StartOwned(owned, entryParty, 0, new(enemy), new(99), encounter).Succeeded && !SourceWildBattlePolicy.StartOwned(owned, [new(egg.Pokemon), new(fighter.Pokemon)], 1, new(enemy), new(99), encounter).Succeeded, "egg active and omitted flag both rejected");
         Assert.IsTrue(!SourceFourActionTurns.BeginActions(mechanics.Catalog, frame, frame.Revision, [new(frame.Get(new(0)).Occupant!.Value, SourceActionKind.Switch, Incoming: new(BattleSide.Player, 0)), new(frame.Get(new(1)).Occupant!.Value, SourceActionKind.Move, 0, new(0))]).Succeeded, "egg cannot be selected for battle switch");
         var items = SourceBattleItemCatalogLoader.LoadAuthenticated(TestAssets.Root);
         var potion = new ItemId("pret:ITEM_POTION");

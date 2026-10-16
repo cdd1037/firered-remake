@@ -36,19 +36,6 @@ public sealed class GamePokemonCatalog
         return new(mechanics, owned, opponents, trainerTower);
     }
 
-    // Unbound legacy grass/water entry keeps its reviewed roster. Catalog-bound ordinary land
-    // and special encounters supply validated encounter contracts to the shared battle policy.
-    internal bool AdmitsWildOpponent(PokemonInstance pokemon) =>
-        Catalog.Species.ContainsKey(pokemon.Species) &&
-        (PokemonFactory.FuchsiaSupportedSpecies.Contains(pokemon.Species) ||
-         pokemon.Species.Value == "pret:SPECIES_PSYDUCK" ||
-         Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
-
-    internal bool SupportsOrdinaryWildOpponent(PokemonInstance pokemon) => AdmitsWildOpponent(pokemon) &&
-        (Game.Domain.WildBattle.FuchsiaBattleScope.SupportsWildOpponent(pokemon.SourceSpeciesId) ||
-         pokemon.SourceSpeciesId is 54 or 72 or 109 ||
-         Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
-
     private static void ValidateDefinitions(SourceMechanicsCatalog mechanics, PokemonCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);

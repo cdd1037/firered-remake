@@ -14,8 +14,7 @@ public sealed partial class CampaignSession
     private const string BillRocketEntry = "CeruleanCity_EventScript_Grunt";
     private const string BillRocketReward = "CeruleanCity_EventScript_GruntDefeated";
 
-    private bool IsBillRocketButton(CampaignState state) => _content.BillEnabled &&
-        state.World.Player.MapId.Value == "map.cerulean-city" &&
+    private bool IsBillRocketButton(CampaignState state) => state.World.Player.MapId.Value == "map.cerulean-city" &&
         state.Script.Wait?.Kind == StoryWaitKind.ButtonPress && !state.Script.Stack.IsEmpty &&
         state.Script.Stack[^1].ProgramId == BillRocketEntry;
 
@@ -31,7 +30,6 @@ public sealed partial class CampaignSession
     private bool TryApplyBillRocketEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.BillEnabled) return false;
         var a = effect.Args;
         if (effect.Opcode == "goto_if_defeated" && effect.Source.Path == BillRocketSource)
         {
@@ -99,7 +97,7 @@ public sealed partial class CampaignSession
             var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
             var invalid = ValidateCampaignInventory(inventory);
             if (invalid is not null) throw new InvalidDataException(invalid);
-            var machines = _content.PewterMachines ?? throw new InvalidDataException("machines_missing");
+            var machines = _content.Machines ?? throw new InvalidDataException("machines_missing");
             if (effect.Opcode == "checkitemspace")
                 result = MachineRules.CanAddMachine(machines, inventory, BillRocketMachine) ? 1 : 0;
             else
@@ -123,8 +121,6 @@ public sealed partial class CampaignSession
         int scene = state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_ROCKET");
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], BillRocketMachine);
         var history = (state.ForestTrainerHistory ?? []).Where(h => h.TrainerId == CeruleanTrainerPartyFactory.Rocket.Value).ToArray();
-        if (!_content.BillEnabled) return got || hidden || scene != 0 || quantity != 0 || history.Length != 0
-            ? "save_bill_rocket_profile_missing" : null;
         bool won = history.Any(h => h.Outcome == WildBattleOutcome.Won);
         if (scene is < 0 or > 1 || won != (scene == 1) ||
             state.BattledTrainers.Contains(CeruleanTrainerPartyFactory.Rocket.Value) != won ||

@@ -11,7 +11,6 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 
 import argparse
-import importlib.util
 import json
 import os
 import pathlib
@@ -62,9 +61,7 @@ graphics/pokemon_storage/wallpapers/forest/tiles.png
 graphics/pokemon_storage/wallpapers/forest/tilemap.bin""".splitlines()) | frozenset(
     f'graphics/pokemon/{name.lower()}/icon.png' for name,_ in SPECIES) | frozenset(
     f'graphics/pokemon/icon_palettes/icon_palette_{i}.pal' for i in range(3))
-_spec = importlib.util.spec_from_file_location('storage_pixels', ROOT / 'scripts/imports/presentation/import-lab-battle-ui.py')
-pixels = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(pixels)
+import ui_tiles as pixels
 
 
 def canonical(value):
@@ -107,8 +104,6 @@ def load_lock(path=None):
     return lock
 
 
-
-
 def read_sources(lock, raw, repository=None):
     safe(raw)
     sources = {}
@@ -124,8 +119,6 @@ def read_sources(lock, raw, repository=None):
                                   check=True, capture_output=True, timeout=30).stdout
         sources[entry['path']] = data
     return sources
-
-
 
 
 def render_tilemap(tiles, data, width, height, palettes, base_tile=0):

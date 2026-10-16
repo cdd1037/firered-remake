@@ -94,10 +94,10 @@ class PokemonConversionTests(unittest.TestCase):
         original = presentation.load_selections()
         cases = []
         recipe = copy.deepcopy(original)
-        recipe['groups']['initial']['include'] = 'forest'
+        recipe['groups']['forest']['include'] = 'forest'
         cases.append(recipe)
         recipe = copy.deepcopy(original)
-        recipe['groups']['forest']['species'].append('Bulbasaur')
+        recipe['groups']['forest']['species'].append('Caterpie')
         cases.append(recipe)
         recipe = copy.deepcopy(original)
         recipe['groups']['forest']['include'] = 'missing'
@@ -106,7 +106,7 @@ class PokemonConversionTests(unittest.TestCase):
         recipe['regions']['forest']['unknown'] = True
         cases.append(recipe)
         recipe = copy.deepcopy(original)
-        recipe['regions']['bill']['supplement']['naturalLevelLimit'] = 101
+        recipe['regions']['bill']['supplement'] = {'naturalLevelLimit': 101}
         cases.append(recipe)
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'recipe.json'
@@ -129,7 +129,7 @@ class PokemonConversionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             presentation.art_species('bill', changed, recipe)
 
-    def test_canonical_and_overlay_species_share_source_parser(self):
+    def test_canonical_species_use_complete_source_parser(self):
         from import_canonical_pokemon import authenticate, extract
         lock, source, moves = authenticate(ROOT, None, ROOT)
         catalog = extract(lock, source, moves)
@@ -139,20 +139,6 @@ class PokemonConversionTests(unittest.TestCase):
         for species in catalog['species']:
             definition, _ = source.species_definition(species['id']['value'][5:])
             self.assertEqual(definition, species)
-        with tempfile.TemporaryDirectory() as temp:
-            for region, filename in (
-                    ('eevee', 'eevee.json'), ('snorlax', 'snorlax.json'),
-                    ('pokemon-tower', 'pokemon-tower.json'), ('safari', 'safari.json'),
-                    ('surf', 'surf.json'), ('fuchsia-route', 'fuchsia-route/catalog.json')):
-                path = ROOT / f'scripts/imports/pokemon/import-{region}-pokemon.py'
-                spec = importlib.util.spec_from_file_location('source_' + region, path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                outputs = module.generate(ROOT)
-                inputs.write_files(Path(temp) / region, outputs)
-                relative = 'content/generated/data/pokemon/' + filename
-                self.assertEqual(json.loads(outputs[relative]), json.loads((ROOT / relative).read_bytes()))
-
     def test_shared_species_parser_rejects_incomplete_and_duplicate_source(self):
         from import_canonical_pokemon import authenticate, Sources, SPECIES_INFO, LEARNSETS
         _, source, _ = authenticate(ROOT, None, ROOT)
@@ -220,7 +206,8 @@ class PokemonConversionTests(unittest.TestCase):
 
     def test_all_regional_outputs_preserve_presentation_without_stage_catalogs(self):
         for region in ('forest', 'pewter', 'route22', 'route3', 'mtmoon', 'cerulean',
-                       'bill', 'vermilion', 'ssanne', 'route11', 'rocktunnel'):
+                       'bill', 'vermilion', 'ssanne', 'route11', 'rocktunnel',
+                       'celadon-approach', 'celadon-gym', 'rocket-hideout'):
             with self.subTest(region=region):
                 lock = presentation.load_lock(region)
                 outputs = presentation.convert(region, lock, inputs.read_sources(lock, RAW))
@@ -317,12 +304,13 @@ class PokemonConversionTests(unittest.TestCase):
     def test_supplement_requires_no_generated_proof_inputs(self):
         lock = presentation.load_lock('bill')
         sources = inputs.read_sources(lock, RAW)
-        outputs = pokemon.supplement(lock, sources, profile='test-bill', species=presentation.art_species('bill', sources, presentation.load_selections()),
-            weight_species=('SLOWPOKE',), natural_level_limit=25)
+        self.assertFalse(any(path.startswith('sound/') or path == 'src/data/pokemon/pokedex_entries.h' for path in sources))
+        outputs = pokemon.supplement(sources, species=presentation.art_species('bill', sources, presentation.load_selections()))
         doc = json.loads(outputs['supplement.json'])
-        self.assertEqual(len(doc['weights']), 1)
-        self.assertEqual(doc['weights'][0]['sourceSpeciesId'], 79)
-        self.assertEqual(doc['weights'][0]['weightHectograms'], 360)
+        self.assertEqual(set(doc), {'schemaVersion', 'dexSpeciesIds', 'icons', 'footprints'})
+        self.assertEqual(doc['dexSpeciesIds'], [79, 44, 70])
+        self.assertFalse(any(path.startswith('cries/') for path in outputs))
+
 
 
 if __name__ == '__main__':

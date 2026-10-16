@@ -67,7 +67,6 @@ public partial class CampaignView
 
     private void LoadVermilionGymPresentation()
     {
-        if(!_catalog.VermilionGymEnabled)return;
         var source=PretVermilionGymAssets.Load(_root);
         foreach(var portrait in source.Portraits)
         {

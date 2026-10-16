@@ -68,7 +68,7 @@ public static class CampaignSlotMachineTransactions
 
     public static bool AtOriginalSign(CampaignState state, ICampaignCatalog content, int signId)
     {
-        if (content.GameCornerSlots is null || !content.GameCornerCoinsEnabled ||
+        if (content.GameCornerSlots is null ||
             state.World.Player.MapId.Value!=GameCornerCoinSource.Map || !state.Script.Locked || state.Script.Completed ||
             !state.Script.Flags.GetValueOrDefault(GameCornerCoinSource.CaseFlag) ||
             OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],GameCornerCoinSource.CoinCase)!=1 ||

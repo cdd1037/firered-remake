@@ -13,7 +13,6 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     public const string SixIslandRulesVersion = "firered-six-island-campaign-v1";
-    public bool SixIslandEnabled => _content.SixIslandEnabled;
     private const string SixIslandRuinMap = "map.six-island-ruin-valley";
     private const string SixIslandSapphireMap = "map.six-island-dotted-hole-sapphire-room";
     private const string SixIslandSapphireSource = "data/maps/SixIsland_DottedHole_SapphireRoom/scripts.inc";
@@ -22,22 +21,12 @@ public sealed partial class CampaignSession
     private static bool SixIslandMap(MapId map) => map.Value == "map.six-island" || map.Value.StartsWith("map.six-island-", StringComparison.Ordinal);
     private static bool DottedHoleMap(MapId map) => map.Value.StartsWith("map.six-island-dotted-hole-", StringComparison.Ordinal);
     private static bool SixIslandSource(string path) => path.StartsWith("data/maps/SixIsland", StringComparison.Ordinal);
-    private bool InSixIslandScript(CampaignState state) => _content.SixIslandEnabled && state.Script.Stack.Any(f =>
+    private bool InSixIslandScript(CampaignState state) => state.Script.Stack.Any(f =>
         _content.FindProgram(f.ProgramId)?.Instructions.Any(i => SixIslandSource(i.Source.Path)) == true);
 
     private static void ValidateSixIslandCatalog(ICampaignCatalog content)
     {
-        if (!content.SixIslandEnabled)
-        {
-            if (content.SixIslandOwnership is not null || content.SixIslandOpponents is not null || content.SixIslandTrainers is not null)
-                throw new InvalidDataException("six_island_profile_missing");
-            return;
-        }
-        if (!content.FourIslandEnabled || content.SixIslandOwnership is not {} owned ||
-            content.SixIslandOpponents is not {} opponents || content.SixIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
-            content.PewterMachines is not {} machines || !content.Inventory.Items.ContainsKey(ItemIds.SunStoneId))
+        if (content.SixIslandTrainers is not {} trainers || !content.Inventory.Items.ContainsKey(ItemIds.SunStoneId))
             throw new InvalidDataException("six_island_source_profile_missing");
         SixIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }
@@ -47,9 +36,6 @@ public sealed partial class CampaignSession
         bool Flag(string name) => state.Script.Flags.GetValueOrDefault(name);
         int center = state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_SIX_ISLAND_POKEMON_CENTER_1F");
         bool cut = Flag(RuinValleyCutRules.PermanentFlag), password = Flag(SixIslandPasswordFlag);
-        if (!_content.SixIslandEnabled)
-            return center != 0 || cut || password || SixIslandMap(state.World.Player.MapId) || state.RuinValleyCut is not null || state.DottedHoleFall is not null
-                ? "save_six_island_profile_missing" : null;
         if (center is < 0 or > 1 || center == 1 && (!Flag("FLAG_HIDE_SIX_ISLAND_POKECENTER_RIVAL") ||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_FOUR_ISLAND") != 1)) return "save_six_island_center_scene";
         if ((center != 0 || cut || password || SixIslandMap(state.World.Player.MapId)) &&
@@ -58,8 +44,6 @@ public sealed partial class CampaignSession
         if (password != Flag("FLAG_HIDE_SAPPHIRE") || password && (!cut || !Flag("FLAG_HIDE_DOTTED_HOLE_SCIENTIST")) ||
             (cut || DottedHoleMap(state.World.Player.MapId)) && !Flag("FLAG_HIDE_RUIN_VALLEY_SCIENTIST"))
             return "save_six_island_theft_progress";
-        if (!_content.FiveIslandEnabled && (Flag("FLAG_UNLOCKED_ROCKET_WAREHOUSE") || Flag("FLAG_DEFEATED_ROCKETS_IN_WAREHOUSE") ||
-            Flag("FLAG_RECOVERED_SAPPHIRE"))) return "save_five_island_not_admitted";
         return ValidateSixIslandField(state);
     }
 
@@ -75,7 +59,6 @@ public sealed partial class CampaignSession
     private bool TryApplySixIslandEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.SixIslandEnabled) return false;
         if (TryApplySixIslandBrailleEffect(state, effect, out next)) return true;
         if (!SixIslandSource(effect.Source.Path)) return false;
         if (effect.Opcode == "setmetatile" && effect.Source.Path == "data/maps/SixIsland_RuinValley/scripts.inc" &&

@@ -23,15 +23,3 @@ public sealed record WildRewardFriendshipEvent(int Before, int After) : WildRewa
 public sealed record WildRewardMoveLearnedEvent(int Level, MoveId Move, int Slot) : WildRewardEvent;
 public sealed record WildRewardMovePendingEvent(int Level, MoveId Move) : WildRewardEvent;
 public sealed record WildPendingMove(int Level, MoveId Move);
-
-/// <summary>
-/// Unhealed reward state. PendingMoves must be retained and resolved in order before returning to
-/// the field; later candidates may become AlreadyKnown after the earlier replacement decisions.
-/// ExperienceGained is the source announcement; ExperienceCredited can be smaller at level 100.
-/// </summary>
-public sealed record WildVictoryRewardResult(PartyPokemon Pokemon, int ExperienceGained, SixStats EvsGained,
-    int LevelsGained, int FriendshipDelta, int HpDelta, ImmutableArray<WildRewardEvent> Events,
-    ImmutableArray<WildPendingMove> PendingMoves)
-{
-    public int ExperienceCredited => Events.OfType<WildRewardExperienceEvent>().Sum(e => checked((int)(e.After - e.Before)));
-}

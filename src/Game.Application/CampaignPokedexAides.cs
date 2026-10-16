@@ -85,7 +85,7 @@ public sealed partial class CampaignSession
         InventoryTransactionResult transaction;
         if (aide.Item.Pocket == "POCKET_TM_CASE")
         {
-            var machines = _content.PewterMachines ?? throw new InvalidDataException("pokedex_aide_machine_catalog_missing");
+            var machines = _content.Machines ?? throw new InvalidDataException("pokedex_aide_machine_catalog_missing");
             transaction = check ? new(inventory, MachineRules.CanAddMachine(machines, inventory, aide.Item.Id, aide.Quantity), null) :
                 MachineRules.AddMachine(machines, inventory, aide.Item.Id, aide.Quantity);
         }

@@ -9,7 +9,6 @@ public sealed partial class CampaignSession
     private static bool SixIslandMountainMap(MapId id)=>id.Value is "map.six-island-water-path" or SixIslandRuinMap;
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> SixIslandWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        if(!_content.SixIslandEnabled)return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
         foreach(var pair in maps.Where(p=>SixIslandMountainMap(p.Key)))result[pair.Key]=pair.Value with{Cells=pair.Value.Cells.Select(c=>
             c.Collision==0&&c.SourceBehavior==0x0c?c with{SourceBehavior=0}:c).ToImmutableArray()};
@@ -17,7 +16,6 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId,IFieldMap> SixIslandMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        if(!_content.SixIslandEnabled)return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
         foreach(var pair in maps.Where(p=>SixIslandMountainMap(p.Key)))result[pair.Key]=new SixIslandMovementMap(pair.Value,
             pair.Key.Value==SixIslandRuinMap?SixIslandDoorEdits(state.Script.Flags.GetValueOrDefault(RuinValleyCutRules.PermanentFlag)):

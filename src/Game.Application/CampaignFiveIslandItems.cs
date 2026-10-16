@@ -8,7 +8,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFiveIslandItemEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.FiveIslandEnabled || state.FieldPickup is not null || !InFiveIslandScript(state) ||
+        if (state.FieldPickup is not null || !InFiveIslandScript(state) ||
             effect.Opcode is not ("checkitem" or "checkitemspace" or "additem" or "checkitemtype" or "bufferitemname" or "bufferitemnameplural")) return false;
         var a = effect.Args;
         bool buffer = effect.Opcode.StartsWith("bufferitem", StringComparison.Ordinal);

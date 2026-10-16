@@ -161,9 +161,6 @@
       "path": "include/pokemon.h"
     },
     {
-      "path": "sound/cry_tables.inc"
-    },
-    {
       "path": "src/battle_ai_script_commands.c"
     },
     {
@@ -201,9 +198,6 @@
     },
     {
       "path": "src/data/pokemon/level_up_learnsets.h"
-    },
-    {
-      "path": "src/data/pokemon/pokedex_entries.h"
     },
     {
       "path": "src/data/pokemon/pokedex_text_fr.h"

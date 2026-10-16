@@ -29,7 +29,7 @@ def safe(root, relative=None):
     target = root
     if relative is not None:
         path = PurePosixPath(relative)
-        if not relative or relative == '.' or path.is_absolute() or '..' in path.parts or '\\' in relative or str(path) != relative:
+        if not relative or relative == '.' or path.is_absolute() or '..' in path.parts or '\\' in relative or ':' in relative or str(path) != relative:
             raise ValueError('Unsafe input/output path: ' + relative)
         target = root / relative
     if any(path.is_symlink() for path in (target, *target.parents)):
@@ -114,3 +114,21 @@ def import_region(raw, out, *, recipe, convert, repository=None, protected=()):
         write_files(raw, sources)
     write_files(out, outputs)
     return dict(profile=recipe['profile'], inputCount=len(sources), outputCount=len(outputs))
+
+
+class SourceReader:
+    """Lazy retained-raw or explicit fixed-revision bytes for offline compilers."""
+    def __init__(self, raw, *, commit, repository=None):
+        self.raw, self.commit, self.repository = raw, commit, repository
+        self.data = {}
+
+    def read(self, path):
+        if path not in self.data:
+            self.data[path] = read_source(self.raw, path, commit=self.commit, repository=self.repository)
+        return self.data[path]
+
+    def text(self, path):
+        return self.read(path).decode('utf-8')
+
+    def json(self, path):
+        return json.loads(self.read(path), object_pairs_hook=unique_pairs)

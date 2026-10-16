@@ -11,11 +11,9 @@ public sealed record CampaignPokeFluteEffect(CampaignPokeFlutePhase Phase, strin
 
 public sealed partial class CampaignSession
 {
-    public bool PokeFluteEnabled => _content.PokemonTowerEnabled;
 
     private string? ValidatePokeFluteCommand(CampaignState state, CampaignCommand command)
     {
-        if (!PokeFluteEnabled) return "poke_flute_not_enabled";
         if (command.Text != PokemonTowerItemRules.PokeFluteId.Value) return "poke_flute_item_invalid";
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return error;
@@ -57,7 +55,7 @@ public sealed partial class CampaignSession
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         var flute = state.PokeFlute!;
         if (command.Text != flute.WaitId) return No("poke_flute_callback_mismatch");
-        if (!PokeFluteEnabled || state.ItemMenu is not { Origin: "bag", View: "message", MessageSymbol: PokeFluteRules.FieldPlayedMessage } menu)
+        if (state.ItemMenu is not { Origin: "bag", View: "message", MessageSymbol: PokeFluteRules.FieldPlayedMessage } menu)
             throw new InvalidDataException("poke_flute_task_context_invalid");
         if (flute.Phase == CampaignPokeFlutePhase.PlayedText)
         {

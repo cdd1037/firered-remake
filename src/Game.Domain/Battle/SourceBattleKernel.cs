@@ -146,7 +146,7 @@ public static class SourceBattleKernel
                 (frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(WildBattleTransformationRules.PersistentPokemon(body).AbilityId) ||
                  frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant))
                 return "source_kernel_ability_not_migrated";
-            if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_NONE" or "ABILITY_WONDER_GUARD" or "ABILITY_SERENE_GRACE" or "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_LIGHTNING_ROD" or "ABILITY_PLUS" or "ABILITY_MINUS" or "ABILITY_SPEED_BOOST" or "ABILITY_RAIN_DISH" or "ABILITY_TRUANT" or "ABILITY_DRIZZLE" or "ABILITY_DROUGHT" or "ABILITY_SAND_STREAM" or "ABILITY_TRACE" or "ABILITY_FORECAST" or "ABILITY_HYPER_CUTTER" or "ABILITY_WHITE_SMOKE" or "ABILITY_MAGMA_ARMOR" or "ABILITY_BATTLE_ARMOR" or "ABILITY_SUCTION_CUPS" or "ABILITY_SHADOW_TAG" or "ABILITY_ARENA_TRAP" or "ABILITY_MAGNET_PULL" or "ABILITY_NATURAL_CURE" or "ABILITY_OWN_TEMPO" or "ABILITY_OBLIVIOUS" or "ABILITY_COLOR_CHANGE"))
+            if (!SupportsAbility(ability))
                 return "source_kernel_ability_not_migrated";
         }
         if (frame.FourTurn is null && frame.Queue.IsEmpty && (actor.HeldItem == "ITEM_KINGS_ROCK" ||
@@ -186,9 +186,38 @@ public static class SourceBattleKernel
         catalog.Moves.TryGetValue(recharge.Move, out var sourceMove) && sourceMove.Effect == "EFFECT_RECHARGE" &&
         SourceMoveDefinitionRules.IsValid(sourceMove);
 
+    /// <summary>Abilities implemented by the shared recipes and lifecycle, including the empty slot.</summary>
+    public static bool SupportsAbility(string ability) => ability is
+        "ABILITY_AIR_LOCK" or "ABILITY_ARENA_TRAP" or "ABILITY_BATTLE_ARMOR" or
+        "ABILITY_BLAZE" or "ABILITY_CHLOROPHYLL" or "ABILITY_CLEAR_BODY" or
+        "ABILITY_CLOUD_NINE" or "ABILITY_COLOR_CHANGE" or "ABILITY_COMPOUND_EYES" or
+        "ABILITY_CUTE_CHARM" or "ABILITY_DAMP" or "ABILITY_DRIZZLE" or
+        "ABILITY_DROUGHT" or "ABILITY_EARLY_BIRD" or "ABILITY_EFFECT_SPORE" or
+        "ABILITY_FLAME_BODY" or "ABILITY_FLASH_FIRE" or "ABILITY_FORECAST" or
+        "ABILITY_GUTS" or "ABILITY_HUGE_POWER" or "ABILITY_HUSTLE" or
+        "ABILITY_HYPER_CUTTER" or "ABILITY_ILLUMINATE" or "ABILITY_IMMUNITY" or
+        "ABILITY_INNER_FOCUS" or "ABILITY_INSOMNIA" or "ABILITY_INTIMIDATE" or
+        "ABILITY_KEEN_EYE" or "ABILITY_LEVITATE" or "ABILITY_LIGHTNING_ROD" or
+        "ABILITY_LIMBER" or "ABILITY_LIQUID_OOZE" or "ABILITY_MAGMA_ARMOR" or
+        "ABILITY_MAGNET_PULL" or "ABILITY_MARVEL_SCALE" or "ABILITY_MINUS" or
+        "ABILITY_NATURAL_CURE" or "ABILITY_NONE" or "ABILITY_OBLIVIOUS" or
+        "ABILITY_OVERGROW" or "ABILITY_OWN_TEMPO" or "ABILITY_PICKUP" or
+        "ABILITY_PLUS" or "ABILITY_POISON_POINT" or "ABILITY_PRESSURE" or
+        "ABILITY_PURE_POWER" or "ABILITY_RAIN_DISH" or "ABILITY_ROCK_HEAD" or
+        "ABILITY_ROUGH_SKIN" or "ABILITY_RUN_AWAY" or "ABILITY_SAND_STREAM" or
+        "ABILITY_SAND_VEIL" or "ABILITY_SERENE_GRACE" or "ABILITY_SHADOW_TAG" or
+        "ABILITY_SHED_SKIN" or "ABILITY_SHELL_ARMOR" or "ABILITY_SHIELD_DUST" or
+        "ABILITY_SOUNDPROOF" or "ABILITY_SPEED_BOOST" or "ABILITY_STATIC" or
+        "ABILITY_STENCH" or "ABILITY_STICKY_HOLD" or "ABILITY_STURDY" or
+        "ABILITY_SUCTION_CUPS" or "ABILITY_SWARM" or "ABILITY_SWIFT_SWIM" or
+        "ABILITY_SYNCHRONIZE" or "ABILITY_THICK_FAT" or "ABILITY_TORRENT" or
+        "ABILITY_TRACE" or "ABILITY_TRUANT" or "ABILITY_VITAL_SPIRIT" or
+        "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB" or "ABILITY_WATER_VEIL" or
+        "ABILITY_WHITE_SMOKE" or "ABILITY_WONDER_GUARD";
+
     public static bool SupportsRecipe(PokemonMoveDefinition move) => SourceMoveDefinitionRules.IsValid(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_RANDOM" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" or "MOVE_TARGET_DEPENDS" &&
-        (SourceRecipeContext.HasFieldUtilityRecipe(move.Effect) || SourceRecipeContext.HasMiscTargetRecipe(move.Effect) || SourceRecipeContext.HasPursuitBeatUpRecipe(move.Effect) || SourceRecipeContext.HasStockpileChargeRecipe(move.Effect) || SourceRecipeContext.HasDelayedRecipe(move.Effect) || move.Effect == "EFFECT_HEAL_BELL" || SourceRecipeContext.HasPreparedMoveRecipe(move.Effect) || SourceRecipeContext.HasConditionalHitRecipe(move.Effect) || SourceRecipeContext.HasAbilityExchangeRecipe(move.Effect) || SourceRecipeContext.HasLateTurnRecipe(move.Effect) || SourceRecipeContext.HasCallerRecipe(move.Effect) || SourceRecipeContext.HasWeatherHitRecipe(move.Effect) || SourceRecipeContext.HasUtilityHpRecipe(move.Effect) || SourceRecipeContext.HasMoveRestrictionRecipe(move.Effect) || SourceRecipeContext.HasGroundSpreadRecipe(move.Effect) || SourceRecipeContext.HasSleepAttackRecipe(move.Effect) || SourceRecipeContext.HasCopyStateRecipe(move.Effect) || SourceRecipeContext.HasRechargeRampageRecipe(move.Effect) || SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
+        (SourceRecipeContext.HasFieldUtilityRecipe(move.Effect) || SourceRecipeContext.HasMiscTargetRecipe(move.Effect) || SourceRecipeContext.HasPursuitBeatUpRecipe(move.Effect) || SourceRecipeContext.HasStockpileChargeRecipe(move.Effect) || SourceRecipeContext.HasDelayedRecipe(move.Effect) || move.Effect == "EFFECT_HEAL_BELL" || SourceRecipeContext.HasPreparedMoveRecipe(move.Effect) || SourceRecipeContext.HasConditionalHitRecipe(move.Effect) || SourceRecipeContext.HasAbilityExchangeRecipe(move.Effect) || SourceRecipeContext.HasLateTurnRecipe(move.Effect) || SourceRecipeContext.HasCallerRecipe(move.Effect) || SourceRecipeContext.HasWeatherHitRecipe(move.Effect) || SourceRecipeContext.HasUtilityHpRecipe(move.Effect) || SourceRecipeContext.HasMoveRestrictionRecipe(move.Effect) || SourceRecipeContext.HasGroundSpreadRecipe(move.Effect) || SourceRecipeContext.HasSleepAttackRecipe(move.Effect) || SourceRecipeContext.HasCopyStateRecipe(move.Effect) || SourceRecipeContext.HasRechargeRampageRecipe(move.Effect) || SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
          SourceRecipeContext.HasTypeChangeRecipe(move.Effect) || SourceRecipeContext.HasRetaliationRecipe(move.Effect) || SourceRecipeContext.HasFixedDamageRecipe(move.Effect) ||
         SourceRecipeContext.HasHitSequenceRecipe(move.Effect) || SourceRecipeContext.HasItemTransferRecipe(move.Effect) || SourceRecipeContext.HasRecoilRecipe(move.Effect) || SourceRecipeContext.HasDynamicTypeRecipe(move.Effect) || SourceRecipeContext.HasDynamicPowerRecipe(move.Effect) ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||

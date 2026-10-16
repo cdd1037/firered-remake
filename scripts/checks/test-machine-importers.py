@@ -25,8 +25,8 @@ def wrappers(value):
 
 class EarlyMachineImporterTests(unittest.TestCase):
  def test_direct_shared_references_match_runtime_membership(self):
-  for name, family, folder in [('pewter-machines', 'items', 'data/machine-learning/pewter.json'), ('mtmoon-items', 'items', 'data/items/mtmoon'), ('cerulean-machines', 'items', 'data/machine-learning/cerulean.json'), ('bill-machines', 'items', 'data/machine-learning/bill.json'), ('vermilion-machines', 'items', 'data/machine-learning/vermilion.json'), ('ssanne-machines', 'items', 'data/machine-learning/ssanne.json'), ('route11-machines', 'items', 'data/machine-learning/route11.json'), ('rocktunnel-items', 'items', 'data/items/rocktunnel'), ('celadon-gym-catalog', 'items', 'data/items/celadon-gym'), ('rocket-hideout-items', 'items', 'data/items/rocket-hideout')]:
-   regional = name in ('cerulean-machines','bill-machines','ssanne-machines','route11-machines')
+  for name, family, folder in [('pewter-machines', 'items', 'data/machine-learning/pewter.json'), ('mtmoon-items', 'items', 'data/items/mtmoon'), ('cerulean-machines', 'items', 'data/machine-learning/cerulean.json'), ('bill-machines', 'items', 'data/machine-learning/bill.json'), ('vermilion-machines', 'items', 'data/machine-learning/vermilion.json'), ('route11-machines', 'items', 'data/machine-learning/route11.json'), ('rocktunnel-items', 'items', 'data/items/rocktunnel'), ('celadon-gym-catalog', 'items', 'data/items/celadon-gym'), ('rocket-hideout-items', 'items', 'data/items/rocket-hideout')]:
+   regional = name in ('cerulean-machines','bill-machines','route11-machines')
    m=load('machine-views' if regional else name, family)
    if regional:outputs=m.convert(name.removesuffix('-machines'),root,raw)
    elif name=='pewter-machines':

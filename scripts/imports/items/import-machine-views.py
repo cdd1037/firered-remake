@@ -18,7 +18,6 @@ from runtime_json import runtime_json_bytes
 ICONS = {
     'cerulean': ('TM03',),
     'bill': ('TM45', 'TM43', 'TM28'),
-    'ssanne': ('TM31', 'TM44', 'HM01'),
     'route11': ('HM05',),
 }
 

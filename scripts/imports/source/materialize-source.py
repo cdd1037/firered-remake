@@ -6,14 +6,24 @@ The recipe is an input selection, not an authentication receipt.
 """
 import argparse
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+import sys
 import subprocess
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / 'scripts/lib'))
+from pokemon_import_io import safe, preflight_directory, write_files
 
 
 def materialize(recipe, raw, reference=None, cache=None, download=False):
+    raw = safe(raw)
+    preflight_directory(raw)
+    for label, source in (('reference repository', reference), ('source cache', cache)):
+        if source is not None:
+            source = safe(source)
+            if raw.resolve().is_relative_to(source.resolve()) or source.resolve().is_relative_to(raw.resolve()):
+                raise ValueError('Output must not overlap the ' + label)
     config = json.loads((ROOT / 'scripts/recipes/config/source.json').read_text(encoding='utf-8'))
     document = json.loads(recipe.read_text(encoding='utf-8'))
     commit = document.get('commit', document.get('sourceCommit'))
@@ -24,29 +34,24 @@ def materialize(recipe, raw, reference=None, cache=None, download=False):
     paths = [row['path'] for row in rows]
     if not paths or len(paths) != len(set(paths)):
         raise ValueError('Recipe input selection is empty or duplicated')
-    pending = []
+    pending = {}
     for relative in paths:
-        path = PurePosixPath(relative)
-        target = raw / path
-        if path.is_absolute() or '..' in path.parts or '\\' in relative or not target.resolve().is_relative_to(raw.resolve()):
-            raise ValueError('Unsafe source path: ' + relative)
-        if target.is_file():
-            data = target.read_bytes()
-        elif reference:
+        target = safe(raw, relative)
+        if reference:
+            # An explicitly selected Git revision is authoritative, even when
+            # output already exists. Never read the reference working tree.
             data = subprocess.check_output(['git', '-C', str(reference), 'show', commit + ':' + relative])
-        elif cache and (cache / path).is_file():
-            if not (cache / path).resolve().is_relative_to(cache.resolve()):
-                raise ValueError('Cache path escapes input directory: ' + relative)
-            data = (cache / path).read_bytes()
+        elif target.is_file():
+            data = target.read_bytes()
+        elif cache and safe(cache, relative).is_file():
+            data = safe(cache, relative).read_bytes()
         elif download:
             with urllib.request.urlopen(f'https://raw.githubusercontent.com/{repository}/{commit}/{relative}', timeout=60) as response:
                 data = response.read()
         else:
             raise FileNotFoundError('Missing pinned source input: ' + str(target))
-        pending.append((target, data))
-    for target, data in pending:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
+        pending[relative] = data
+    write_files(raw, pending)
     return len(pending)
 
 

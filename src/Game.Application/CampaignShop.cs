@@ -24,14 +24,14 @@ public sealed partial class CampaignSession
         DepartmentStoreCounterStock? counter = null;
         OrdinaryMartDefinition? ordinary = null;
         PokeDollShopStock? fourthFloor = null;
-        if(_content.TrainerTowerEnabled && map==TrainerTowerLobby)
+        if(map==TrainerTowerLobby)
         { stockId=ItemIds.TrainerTowerLobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
-        else if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
+        else if (map == PokemonLeagueMartStock.ExpectedMapId)
         {
             var stock=PokemonLeagueStock(PokemonLeagueMartStock.ExpectedStockId)!;
             stockId=stock.Id;sourcePath=PokemonLeagueMartStock.ExpectedSourcePath;clerkScript=PokemonLeagueMartStock.ExpectedClerkScript;
         }
-        else if (_content.FirstSeviiEnabled && map is "map.two-island" or "map.three-island-mart")
+        else if (map is "map.two-island" or "map.three-island-mart")
         {
             bool two=map=="map.two-island";
             stockId=two?(state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_TWO_ISLAND")==2?"TwoIsland_Items_ShopExpanded1":"TwoIsland_Items_ShopInitial"):"ThreeIsland_Mart_Items";
@@ -76,7 +76,7 @@ public sealed partial class CampaignSession
         }
         if (effect.Opcode != "pokemart" || effect.Args.Length != 1 || effect.Args[0] != stockId ||
             effect.Source.Path != sourcePath ||
-            (effect.Source.Symbol != clerkScript && !(_content.FirstSeviiEnabled && map=="map.two-island" &&
+            (effect.Source.Symbol != clerkScript && !(map=="map.two-island" &&
                 effect.Source.Symbol==(stockId=="TwoIsland_Items_ShopExpanded1"?"TwoIsland_EventScript_ShopExpanded1":"TwoIsland_EventScript_ShopInitial"))) || !state.Script.Locked ||
             state.Script.Wait is not { Kind: StoryWaitKind.NativeEffect } wait ||
             state.LastTalked is null || !state.Actors.TryGetValue(state.LastTalked, out var clerk) ||
@@ -129,11 +129,11 @@ public sealed partial class CampaignSession
     private DepartmentStoreMachineStock? DepartmentMachineStock(string shopId)
     {
         if (shopId != DepartmentStoreMachineStock.ExpectedStockId) return null;
-        if (!_content.RegionalInteriorServicesEnabled || _content.PewterMachines is not { } machines)
+        if (_content.Machines is not { } machines)
             throw new InvalidDataException("department_machine_shop_not_admitted");
         return new DepartmentStoreMachineStock(machines);
     }
-    private bool IsShopMachine(ItemId item) => _content.PewterMachines is { } machines &&
+    private bool IsShopMachine(ItemId item) => _content.Machines is { } machines &&
         MachineRules.Definition(machines, item) is not null;
     private DepartmentStoreCounterStock? DepartmentCounterStock(string shopId)
     {
@@ -151,7 +151,7 @@ public sealed partial class CampaignSession
         var inventory = State.Inventory!;
         // Some inherited shop definitions also describe HMs. The authenticated machine
         // owner supplies their move, description and Machines-pocket quantity.
-        if (_content.PewterMachines is { } machines && MachineRules.Definition(machines, id) is { } machine)
+        if (_content.Machines is { } machines && MachineRules.Definition(machines, id) is { } machine)
             return new(id, machine.Machine.Item.Name, machine.Machine.Item.Price, machine.Machine.Description,
                 OpeningInventoryRules.Quantity(inventory.Machines ?? [], id), machine.Move);
         if (ShopCatalog.Items.FirstOrDefault(item => item.Id == id) is { } ordinary)
@@ -164,7 +164,7 @@ public sealed partial class CampaignSession
     private DepartmentStoreOrdinaryStock? DepartmentStock(string shopId)
     {
         if (shopId != DepartmentStoreOrdinaryStock.ExpectedStockId) return null;
-        if (!_content.RegionalInteriorServicesEnabled || _content.DepartmentStoreOrdinaryStock is not { } stock)
+        if (_content.DepartmentStoreOrdinaryStock is not { } stock)
             throw new InvalidDataException("shop_map_unsupported");
         stock.Validate(ShopCatalog);
         return stock;
@@ -172,7 +172,7 @@ public sealed partial class CampaignSession
     private PokemonLeagueMartStock? PokemonLeagueStock(string shopId)
     {
         if(shopId!=PokemonLeagueMartStock.ExpectedStockId)return null;
-        if(!_content.PokemonLeagueEnabled||_content.PokemonLeagueMartStock is not {} stock)throw new InvalidDataException("pokemon_league_shop_not_admitted");
+        if(_content.PokemonLeagueMartStock is not {} stock)throw new InvalidDataException("pokemon_league_shop_not_admitted");
         stock.Validate(ShopCatalog);return stock;
     }
     private EarlyShopQuote QuoteShop(CampaignState state, CampaignShop shop, ItemId item)
@@ -180,7 +180,7 @@ public sealed partial class CampaignSession
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return new(false, 0, 0, error);
         if (shop.Mode != "buy" && IsShopMachine(item))
-            return EarlyShopRules.QuoteSell(ShopCatalog, _content.PewterMachines!, state.Inventory!, state.Money, item);
+            return EarlyShopRules.QuoteSell(ShopCatalog, _content.Machines!, state.Inventory!, state.Money, item);
         if (shop.Mode == "buy" && DepartmentMachineStock(shop.ShopId) is { } machines)
             return EarlyShopRules.QuoteBuy(ShopCatalog, state.Inventory!, state.Money, machines, item);
         var inventory = state.Inventory!;
@@ -251,7 +251,7 @@ public sealed partial class CampaignSession
             var result = shop.Mode == "buy"
                 ? BuyShop(state, shop, item)
                 : machineTransaction
-                ? EarlyShopRules.Sell(ShopCatalog, _content.PewterMachines!, state.Inventory!, state.Money, item, shop.Quantity)
+                ? EarlyShopRules.Sell(ShopCatalog, _content.Machines!, state.Inventory!, state.Money, item, shop.Quantity)
                 : EarlyShopRules.Sell(ShopCatalog, state.Inventory!, state.Money, item, shop.Quantity);
             var next = shop.Mode == "buy" ? CampaignShopStage.Buy : CampaignShopStage.Sell;
             if (!result.Succeeded) return result.Error switch

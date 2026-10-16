@@ -14,15 +14,11 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string SixIslandContentProfile = "firered-six-island-campaign-v1";
-    public PretSixIslandRegion? SixIslandRegion { get; }
-    public GamePokemonCatalog? SixIslandOwnership { get; }
-    public GameOpponentPokemonCatalog? SixIslandOpponents { get; }
+    public PretSixIslandRegion SixIslandRegion { get; }
     public SixIslandTrainerCatalog? SixIslandTrainers { get; }
     public SixIslandTrainerCatalog? SixIslandTrainerParties => SixIslandTrainers;
     public SixIslandItemContent? SixIslandItems { get; }
-    public MachineCatalog? SixIslandMachines => SixIslandItems?.Machines;
-    public SixIslandWaterEncounterCatalog? SixIslandWaterEncounters { get; }
-    public bool SixIslandEnabled => SixIslandRegion is not null;
+    public WaterEncounterCatalog? SixIslandWaterEncounters { get; }
 
 
 

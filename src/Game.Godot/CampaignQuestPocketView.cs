@@ -30,7 +30,6 @@ public partial class CampaignView
                     throw new InvalidDataException("Quest pocket texture pixels differ: " + asset.Id);
                 _questPocketTextures.Add(asset.Id, SceneTextures.FromImage(image));
             }
-            if(_catalog.OldManTutorialEnabled)
             {
                 var oldDirectory=System.IO.Path.Combine(_root,"content/generated/sprites/pokemon/old-man");
                 var oldArt=PretOldManArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(oldDirectory,"old-man-art.json")));
@@ -70,7 +69,7 @@ public partial class CampaignView
     private ImmutableArray<InventoryStack> QuestPocketStacks => (_questPocket == 1
         ? _session.State.Inventory!.KeyItems : _session.State.Inventory!.Balls) ?? [];
 
-    private int QuestPocketListStart => _catalog.SsAnneEnabled ? Math.Max(0, _questPocketCursor - 5) : 0;
+    private int QuestPocketListStart => Math.Max(0, _questPocketCursor - 5);
     private QuestItemUiEntry QuestPocketItem(InventoryStack stack)
         => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value);
 
@@ -136,14 +135,14 @@ public partial class CampaignView
                     if (_questPocketAction == 1 && _session.State.RegisteredItem is not null) _questPocketNotice = "Registered. Press R in the field.";
                     return true;
                 }
-                if (_catalog.GameCornerCoinsEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_COIN_CASE")
+                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_COIN_CASE")
                 { Apply(new("field_coin_case",Text:"pret:ITEM_COIN_CASE")); return true; }
-                if (_catalog.PokemonTowerEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
+                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
                 { Apply(new("field_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                 if (_questPocket == 1 && _questPocketAction == 0 && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;
-                if (_catalog.TownMapEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == QuestItemRules.TownMapId)
+                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == QuestItemRules.TownMapId)
                 { Apply(new("town_map_open",Text:QuestItemRules.TownMapId.Value)); return true; }
-                if (_catalog.SsAnneEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_BERRY_POUCH")
+                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_BERRY_POUCH")
                 { Apply(new("berry_open")); return true; }
                 if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == MachineRules.TmCaseId)
                 { Apply(new("machine_open")); return true; }
@@ -194,7 +193,7 @@ public partial class CampaignView
         var stacks = QuestPocketStacks;
         _questPocketCursor = Math.Min(_questPocketCursor, stacks.Length);
         int start = QuestPocketListStart;
-        int visible = _catalog.SsAnneEnabled ? 6 : stacks.Length + 1;
+        int visible = 6;
         for (var i = start; i < Math.Min(stacks.Length, start + visible); i++)
         {
             var item = QuestPocketItem(stacks[i]);

@@ -15,7 +15,7 @@ public static class PretBillTrainers
     {
         byte[] Read(string path)
         {
-            var bytes=File.ReadAllBytes(SafeFile(root,path));
+            var bytes=File.ReadAllBytes(GeneratedResourceFile.SafePath(root,path));
             return bytes;
         }
         var doc=ContentJson.ParseStrict<BillTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/bill.json")),SharedTrainerCatalog.Options(root));
@@ -26,13 +26,5 @@ public static class PretBillTrainers
         var catalog=new BillTrainerCatalog(doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer))
         { AdditionalOccurrences=doc.AdditionalOccurrences };
         BillTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
-    }
-    private static string SafeFile(string root,string relative)
-    {
-        if(Path.IsPathRooted(relative)||relative.Contains('\\')||relative.Split('/').Any(p=>p is "" or "." or "..")) throw new InvalidDataException("Unsafe Bill trainer path.");
-        var f=new FileInfo(Path.GetFullPath(Path.Combine(root,relative)));
-        if(f.LinkTarget is not null) throw new InvalidDataException("Bill trainer symlink rejected.");
-        for(var d=f.Directory;d is not null;d=d.Parent) if(d.LinkTarget is not null) throw new InvalidDataException("Bill trainer parent symlink rejected.");
-        return f.FullName;
     }
 }

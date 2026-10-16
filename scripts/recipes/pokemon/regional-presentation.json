@@ -1,36 +1,17 @@
 {
   "schemaVersion": 1,
   "groups": {
-    "initial": {
-      "species": [
-        "Bulbasaur",
-        "Ivysaur",
-        "Venusaur",
-        "Charmander",
-        "Charmeleon",
-        "Charizard",
-        "Squirtle",
-        "Wartortle",
-        "Blastoise",
-        "Pidgey",
-        "Pidgeotto",
-        "Pidgeot",
-        "Rattata",
-        "Raticate",
-        "Weedle",
-        "Kakuna",
-        "Beedrill"
-      ]
-    },
     "forest": {
       "species": [
         "Caterpie",
         "Metapod",
         "Butterfree",
+        "Weedle",
+        "Kakuna",
+        "Beedrill",
         "Pikachu",
         "Raichu"
-      ],
-      "include": "initial"
+      ]
     },
     "pewter": {
       "species": [
@@ -41,16 +22,14 @@
         "Sandslash",
         "Onix",
         "Steelix"
-      ],
-      "include": "forest"
+      ]
     },
     "route22": {
       "species": [
         "Spearow",
         "Fearow",
         "Mankey"
-      ],
-      "include": "pewter"
+      ]
     },
     "route3": {
       "species": [
@@ -62,8 +41,7 @@
         "Jigglypuff",
         "Magikarp",
         "Gyarados"
-      ],
-      "include": "route22"
+      ]
     },
     "mtmoon": {
       "species": [
@@ -83,8 +61,7 @@
         "Nidoking",
         "Clefable",
         "Wigglytuff"
-      ],
-      "include": "route3"
+      ]
     },
     "cerulean": {
       "species": [
@@ -97,31 +74,27 @@
         "Goldeen",
         "Staryu",
         "Starmie"
-      ],
-      "include": "mtmoon"
+      ]
     },
     "bill": {
       "species": [
         "Slowpoke",
         "Gloom",
         "Weepinbell"
-      ],
-      "include": "cerulean"
+      ]
     },
     "vermilion": {
       "species": [
         "Meowth",
         "Persian"
-      ],
-      "include": "bill"
+      ]
     },
     "ssanne": {
       "species": [
         "Growlithe",
         "Ponyta",
         "Tentacool"
-      ],
-      "include": "vermilion"
+      ]
     },
     "route11": {
       "species": [
@@ -131,8 +104,7 @@
         "Poliwag",
         "Poliwhirl",
         "Vulpix"
-      ],
-      "include": "ssanne"
+      ]
     },
     "rocktunnel": {
       "species": [
@@ -150,70 +122,65 @@
         "Venomoth",
         "Venonat",
         "Weezing"
-      ],
-      "include": "route11"
+      ]
+    },
+    "celadon-approach": {
+      "species": [
+        "Muk"
+      ]
+    },
+    "celadon-gym": {
+      "species": [
+        "Vileplume",
+        "Victreebel",
+        "Exeggcute",
+        "Tangela"
+      ]
+    },
+    "rocket-hideout": {
+      "species": [
+        "Kangaskhan"
+      ]
     }
   },
   "regions": {
-    "forest": {
-      "artSpecies": [
-        "Caterpie",
-        "Metapod",
-        "Butterfree",
-        "Weedle",
-        "Kakuna",
-        "Beedrill",
-        "Pikachu",
-        "Raichu"
-      ]
-    },
+    "forest": {},
     "pewter": {},
     "route22": {
-      "supplement": {
-        "naturalLevelLimit": 20,
-        "cryWaves": true
-      }
+      "supplement": true
     },
     "route3": {
-      "supplement": {
-        "naturalLevelLimit": 20
-      }
+      "supplement": true
     },
     "mtmoon": {
-      "supplement": {
-        "naturalLevelLimit": 25
-      }
+      "supplement": true
     },
     "cerulean": {
-      "supplement": {
-        "naturalLevelLimit": 25
-      }
+      "supplement": true
     },
     "bill": {
-      "supplement": {
-        "naturalLevelLimit": 25
-      }
+      "supplement": true
     },
     "vermilion": {
-      "supplement": {
-        "naturalLevelLimit": 28
-      }
+      "supplement": true
     },
     "ssanne": {
-      "supplement": {
-        "naturalLevelLimit": null
-      }
+      "supplement": true
     },
     "route11": {
-      "supplement": {
-        "naturalLevelLimit": null
-      }
+      "supplement": true
     },
     "rocktunnel": {
-      "sortPriorWeights": true,
-      "supplement": {
-        "naturalLevelLimit": null
-      }
+      "supplement": true
+    },
+    "celadon-approach": {
+      "supplement": true
+    },
+    "celadon-gym": {
+      "supplement": true
+    },
+    "rocket-hideout": {
+      "supplement": true
     }
   }
 }

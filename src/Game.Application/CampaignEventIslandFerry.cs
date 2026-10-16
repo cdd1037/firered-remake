@@ -23,7 +23,6 @@ public sealed partial class CampaignSession
         _ => false
     };
     private bool EventIslandFerryDeparture(CampaignState state, int origin, int destination) =>
-        _content.EventIslandsEnabled &&
         (origin == 0 && destination is 9 or 10 && state.World.Player.MapId.Value == "map.vermilion-city" &&
             EventTicketFerryStoryGate(state) && EventIslandTicketAvailable(state, destination) ||
          origin is 9 or 10 && destination == 0 && state.World.Player.MapId.Value == EventIslandHarbor(origin));
@@ -31,7 +30,6 @@ public sealed partial class CampaignSession
     private bool TryApplyEventIslandFerryEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.EventIslandsEnabled) return false;
         var a = effect.Args;
         if (effect.Source.Path == EventTicketFerrySource && effect.Opcode == "checkitem" &&
             effect.Source.Symbol is "VermilionCity_EventScript_CheckHasMysticTicket" or "VermilionCity_EventScript_CheckHasAuroraTicket")

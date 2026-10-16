@@ -12,17 +12,14 @@ public sealed partial class PretCampaignCatalog
     public const string FuchsiaGymContentProfile = "firered-fuchsia-gym-source-content-v1";
     public const string FuchsiaGymShopContentProfile = FuchsiaGymItemRules.Profile;
 
-    public PretFuchsiaGymRegion? FuchsiaGymRegion { get; }
+    public PretFuchsiaGymRegion FuchsiaGymRegion { get; }
     public FuchsiaGymTrainerDocument? FuchsiaGymTrainerDocument { get; }
     public FuchsiaGymTrainerCatalogContent? FuchsiaGymTrainers { get; }
     Game.Domain.Trainers.FuchsiaGymTrainerCatalog? Game.Domain.World.ICampaignCatalog.FuchsiaGymTrainerParties =>
         FuchsiaGymTrainers is { } trainers ? new(trainers.Trainers,trainers.Battles) : null;
     public PretFuchsiaGymItemsDocument? FuchsiaGymItems { get; }
-    public PretRockTunnelMachinesDocument? FuchsiaGymMachines { get; }
     /// <summary>Explicit source successor opt-in; native acceptance remains a separate gate.</summary>
-    public bool FuchsiaGymEnabled => FuchsiaGymRegion is not null;
-    public PokemonMoveDefinition? FuchsiaGymToxic => FuchsiaGymEnabled
-        ? PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")] : null;
+    public PokemonMoveDefinition? FuchsiaGymToxic => PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")];
 
     private static void ValidateFuchsiaGymComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FuchsiaGymTrainerDocument trainers, PretStoryCompilation scripts)
     {

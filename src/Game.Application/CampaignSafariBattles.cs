@@ -30,8 +30,7 @@ public sealed partial class CampaignSession
     {
         var exploration = state.Exploration;
         var pending = exploration?.EarlyEncounter?.Pending;
-        if (!_content.SafariEnabled || !_content.CaptureEnabled || !_content.PokemonStorageEnabled ||
-            _content.PresetDoubleMechanics is null || state.SafariVisit is not { Active: true, Balls: > 0 and <= 30, Steps: > 0 and <= 600 } visit ||
+        if (_content.PresetDoubleMechanics is null || state.SafariVisit is not { Active: true, Balls: > 0 and <= 30, Steps: > 0 and <= 600 } visit ||
             !state.Script.Flags.GetValueOrDefault(SafariFlag) || !InSafariArea(state) ||
             state.SafariBattle is not null || state.WildBattle is not null || state.Battle is not null ||
             state.ForestTrainerBattle is not null || state.DoubleBattle is not null || state.Party.IsEmpty ||
@@ -250,7 +249,7 @@ public sealed partial class CampaignSession
 
     private bool SafariOriginSupported(int species, int level, string? location = null) =>
         SurfOriginSupported(species,level,location,safariOnly:true) ||
-        _content.SafariEnabled && (location is null || location == "MAPSEC_KANTO_SAFARI_ZONE") &&
+        (location is null || location == "MAPSEC_KANTO_SAFARI_ZONE") &&
         _content.LandEncounters!.Values.Any(table => _content.MapDefinition(table.Map).SourceMapSymbol.StartsWith("MAP_SAFARI_ZONE_", StringComparison.Ordinal) &&
             table.Slots.Any(slot => _content.PokemonContent!.Catalog.Species[slot.Species].SourceSpeciesId == species && level >= slot.MinimumLevel && level <= slot.MaximumLevel));
 

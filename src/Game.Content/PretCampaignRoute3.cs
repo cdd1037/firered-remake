@@ -10,8 +10,7 @@ public sealed partial class PretCampaignCatalog
 {
     private readonly ImmutableHashSet<(int X,int Y)> _route4WesternPositions;
 
-    public bool IsRoute3StablePosition(MapId map,int x,int y) => Route3Enabled && SourceMaps.ContainsKey(map) &&
-        (map.Value != "map.route-4" || MtMoonEnabled || _route4WesternPositions.Contains((x,y)));
+    public bool IsRoute3StablePosition(MapId map,int x,int y) => SourceMaps.ContainsKey(map);
 
     private static ImmutableHashSet<(int X,int Y)> Route4WesternPositions(PretRoute3Region? region)
     {

@@ -42,11 +42,6 @@ public static class LostCaveTrainerPartyFactory
         {
             return VsSeekerTrainerPartyFactory.Create(trainers.InheritedTrainers, source, id, rng);
         }
-        var made = TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
-        if ((trainer.PartyFlags & 1) == 0) return made;
-        return made with { Party = made.Party.Select((member, index) => member with { Pokemon = member.Pokemon with {
-            Moves = trainer.Party[index].CustomMoves.TakeWhile(m => m.Value != "pret:MOVE_NONE")
-                .Select(m => new PokemonMoveSlot(m, source.Catalog.Moves[m].Pp, source.Catalog.Moves[m].Pp)).ToImmutableArray()
-        } }).ToImmutableArray() };
+        return TrainerPartyFactory.CreateValidated(trainer, source.Catalog, rng, source);
     }
 }

@@ -10,14 +10,13 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    public bool SevenIslandEnabled => _content.SevenIslandEnabled;
     private static bool SevenIslandMap(MapId map) => map.Value == "map.seven-island" || map.Value.StartsWith("map.seven-island-", StringComparison.Ordinal);
 
     private static void ValidateSevenIslandCatalog(ICampaignCatalog content)
     {
-        if (!content.SevenIslandEnabled || content.SevenIslandOwnership is not { } owned ||
-            content.SevenIslandOpponents is not { } opponents || content.SevenIslandTrainers is not { } trainers ||
-            content.SevenIslandMachines is not { } machines ||
+        if (content.GamePokemon is not { } owned ||
+            content.OpponentPokemon is not { } opponents || content.SevenIslandTrainers is not { } trainers ||
+            content.Machines is not { } machines ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) || !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
@@ -43,11 +42,10 @@ public sealed partial class CampaignSession
     // movement, temporary state, RNG or map-entry effects can commit.
     private string? SevenIslandBoundary(MapId map, int x, int y, int oldX, int oldY)
     {
-        if (!_content.SevenIslandEnabled || !SevenIslandMap(map)) return null;
+        if (!SevenIslandMap(map)) return null;
         foreach (var warp in _content.Maps[map].FieldWarps)
         {
             if (!((warp.X == x && warp.Y == y) || (warp.X == oldX && warp.Y == oldY))) continue;
-            if (!_content.TrainerTowerEnabled && map.Value == "map.seven-island-trainer-tower" && warp.Index == 0) return "seven_island_trainer_tower_challenge_not_admitted";
             if (map.Value == "map.seven-island-pokemon-center-1f" && warp.X == 1 && warp.Y == 6) return "seven_island_multiplayer_not_admitted";
             if (map.Value == "map.seven-island-house-room1" && warp.X == 4 && warp.Y == 1) return "seven_island_ereader_room_not_admitted";
         }

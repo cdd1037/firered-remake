@@ -11,6 +11,8 @@ public sealed record EarlyLandEncounterSlot(int Index, SpeciesId Species, byte M
 public sealed record EarlyLandEncounterCandidate(MapId Map, int Slot, SpeciesId Species, byte Level);
 public sealed record PendingEarlyLandEncounter(EarlyLandEncounterCandidate Candidate, byte MetatileBehavior);
 
+/// <summary>Field-effect input. Unbound checks accept only Stench/Illuminate/Cleanse Tag
+/// and NONE; catalog-bound checks also authenticate and normalize full lead identifiers.</summary>
 public sealed record EarlyLandEncounterProfile(
     string RulesVersion = EarlyLandEncounterRules.RulesVersion,
     EncounterMovementMode Movement = EncounterMovementMode.Walking,

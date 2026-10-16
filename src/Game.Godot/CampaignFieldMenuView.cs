@@ -12,7 +12,7 @@ public partial class CampaignView
     private string? _fieldMenuNotice;
     private bool _fieldNoticeCloses;
     private bool FieldMenuOpen => _fieldMenuMode != "closed";
-    private bool CanOpenFieldMenu => _session is not null && _catalog.EarlyStarterEnabled && !_busy &&
+    private bool CanOpenFieldMenu => _session is not null && !_busy &&
         _fade <= 0 && _fanfareRemaining <= 0 && !_nicknameEdit.Visible &&
         _tracks.All(t => t.Time >= t.Duration) && _session.State.HealingEffect is null &&
         _session.State.PlayerVisible && _session.State.HelpContext == "map" &&
@@ -167,12 +167,12 @@ public partial class CampaignView
         var actions=new List<string>{"SUMMARY"};
         if(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&!_session.State.Party[_fieldPartyCursor].IsEgg)
             foreach(var move in _session.State.Party[_fieldPartyCursor].Pokemon.Moves)
-                if(_catalog.VermilionGymEnabled&&move.Move.Value=="pret:MOVE_CUT")actions.Add("CUT");
+                if(move.Move.Value=="pret:MOVE_CUT")actions.Add("CUT");
                 else if(_catalog.FieldFly is not null&&move.Move.Value=="pret:MOVE_FLY")actions.Add("FLY");
-                else if(_catalog.RockTunnelEnabled&&move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
-                else if(_catalog.SafariEnabled&&move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
-                else if(_catalog.SurfEnabled&&move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
-                else if(_catalog.FourIslandEnabled&&move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
+                else if(move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
+                else if(move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
+                else if(move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
+                else if(move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
                 else if(_catalog.FieldRockSmash is not null&&move.Move.Value=="pret:MOVE_ROCK_SMASH")actions.Add("ROCK SMASH");
         actions.Add("SWITCH");
         if(_catalog.EarlyShop is not null)actions.Add(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&
@@ -217,9 +217,9 @@ public partial class CampaignView
                 _fieldMenuMode = "save-confirm"; _fieldSaveChoice = 0;
                 break;
             case "exit": ResetFieldMenu(); break;
-            case "pokedex": if(_catalog.PokemonStorageEnabled)OpenPokedexMenu();else _fieldMenuNotice = "The full POKéDEX screen is\nnot implemented yet."; break;
-            case "player": if(_catalog.PokemonStorageEnabled)OpenTrainerCard();else _fieldMenuNotice = "The TRAINER CARD screen is\nnot implemented yet."; break;
-            case "option": if(_catalog.PokemonStorageEnabled)OpenOptionsMenu();else _fieldMenuNotice = "The OPTION screen is\nnot implemented yet."; break;
+            case "pokedex": OpenPokedexMenu(); break;
+            case "player": OpenTrainerCard(); break;
+            case "option": OpenOptionsMenu(); break;
         }
     }
 
@@ -311,7 +311,6 @@ public partial class CampaignView
 
     // These are live values from the owned instance/catalog, never reconstructed
     // from level or starter choice. Exact original summary/party artwork is pending.
-    private string[] FieldSummaryLines() => PartySummaryLines(_fieldPartyCursor, _fieldSummaryPage);
     private string[] PartySummaryLines(int partyIndex, int page) => OwnedSummaryLines(_session.State.Party[partyIndex], page);
     private string[] OwnedSummaryLines(PartyPokemon owned, int page)
     {

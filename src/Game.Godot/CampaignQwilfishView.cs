@@ -10,8 +10,6 @@ public partial class CampaignView
     private void LoadQwilfishPresentation()
     {
         if (_catalog.PokemonContent?.Catalog.Species.ContainsKey(new("pret:SPECIES_QWILFISH")) != true) return;
-        if (!_session.IsCurrentGame || !_catalog.TrainerTowerEnabled || !_catalog.SeafoamEnabled)
-            throw new InvalidDataException("Qwilfish ownership requires the current Seafoam/Tower presentation predecessor.");
         var art = PretQwilfishPresentation.Load(_root);
         foreach (var row in art.Manifest.GetProperty("inheritedSprites").EnumerateArray())
         {
@@ -25,19 +23,14 @@ public partial class CampaignView
                 throw new InvalidDataException("Qwilfish inherited Tower pixels differ.");
             if (side == "front" && !shiny) _portraits.Add(211, existing.Texture);
         }
-        Texture2D Pixels(JsonElement row)
-        {
-            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return SceneTextures.FromImage(image);
-        }
+        Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         _storageIcons.Add(new("pret:SPECIES_QWILFISH"), Pixels(art.Manifest.GetProperty("pokemonIcons")[0]));
         _route22Footprints.Add(211, Pixels(art.Manifest.GetProperty("footprints")[0]));
         var entry = art.DexEntries[211];
         if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[211])
             throw new InvalidDataException("Qwilfish shared presentation inventory differs.");
         _qwilfishArt = art;
-        Write("qwilfishPresentation", new { inheritedNormalCry = true,
-        nativeWindowVerified = false, physicalAudioVerified = false });
+
     }
 
     private void VerifyQwilfishMoveGeometry()
@@ -60,6 +53,5 @@ public partial class CampaignView
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;
     private byte[]? ReadQwilfishDexTexture(PokedexMenuTexture texture) => _qwilfishArt is { } art &&
         art.DexEntries.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? art.Files[texture.TexturePath] : null;
-    private string? QwilfishSpeciesName(int species) => _qwilfishArt?.DexEntries.GetValueOrDefault(species)?.Name;
     private void DisposeQwilfishPresentation() => _qwilfishArt = null;
 }

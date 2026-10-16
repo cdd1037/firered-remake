@@ -50,7 +50,7 @@ public sealed class PretVermilionGymRegion
 
         byte[] ReadPinned(string root,string path)
         {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
+            var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
             return bytes;
         }
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal)
@@ -96,10 +96,10 @@ public sealed class PretVermilionGymRegion
             {
                 var path = tile.GetProperty(name + "TexturePath").GetString()!;
                 Require(path == $"beam-metatiles/{id:x3}-{name}.png", "Vermilion Gym beam image path differs.");
-                var png = File.ReadAllBytes(SafeFile(directory, path));
+                var png = File.ReadAllBytes(GeneratedResourceFile.SafePath(directory, path));
                 Require(png.Length > 33 && png.AsSpan(0, 8).SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 }) &&
                     BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(16, 4)) == 16 && BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(20, 4)) == 16, "Vermilion Gym beam image format differs.");
-                return SafeFile(directory, path);
+                return GeneratedResourceFile.SafePath(directory, path);
             }
             definitions.Add(id, new(id, attribute, behavior, behavior == 0 ? "MB_NORMAL" : "MB_" + behavior, terrain, encounter, layer, values,
                 Texture("bottom"), Texture("middle"), Texture("top")));
@@ -128,19 +128,4 @@ public sealed class PretVermilionGymRegion
         return definitions.ToImmutable();
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe Vermilion Gym path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Vermilion Gym directory symlink is unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Vermilion Gym file symlink is unsupported: " + path);
-        }
-        return result;
-    }
 }

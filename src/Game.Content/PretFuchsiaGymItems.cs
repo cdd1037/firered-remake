@@ -31,24 +31,3 @@ PretPewterMachines.ValidateIcon(icon);
     public static EarlyShopItemDefinition Definition(PretFuchsiaGymItemsDocument document)=>PretSsAnneItems.Definition(document.Items.Single());
     private static void Need(bool condition,string message)=>PretCeladonApproachSource.Require(condition,message);
 }
-
-/// <summary>One TM06 entry and all 107 source compatibility rows. The caller owns campaign composition.</summary>
-public static class PretFuchsiaGymMachines
-{
-    public const string Profile="firered-fuchsia-gym-machines-v1";
-    public static PretRockTunnelMachinesDocument LoadProject(string root, SharedMachineCatalog? shared = null)
-    {
-        var items=PretFuchsiaGymItems.LoadProject(root);
-        var bytes=PretCeladonApproachSource.Read(root,"content/generated/data/items/fuchsia-gym/fuchsia-gym-machines.json");
-        var document=ContentJson.ParseStrict<PretRockTunnelMachinesDocument>(Encoding.UTF8.GetString(bytes),(shared ?? SharedMachineCatalog.LoadProject(root)).CreateJsonOptions());
-        void Need(bool value,string message)=>PretCeladonApproachSource.Require(value,message);
-        Need(document.SchemaVersion==1&&
-            document.Machines.Length==1&&document.Icons.Length==1,"Fuchsia Gym machine scope differs.");
-        Need(JsonSerializer.Serialize(document.Icons)==JsonSerializer.Serialize(items.Icons),"Fuchsia Gym machine icon provenance differs.");
-        var machine=document.Machines.Single();
-        Need(machine.Machine==items.Items.Single().Metadata&&machine.Move.Value=="pret:MOVE_TOXIC"&&machine.SourceMoveId==92&&machine.MovePp==10&&
-            machine.Compatibility.Length==107&&machine.Compatibility.Select(c=>c.Species).Distinct().Count()==107&&
-            machine.Compatibility.Select(c=>c.SourceSpeciesId).SequenceEqual(machine.Compatibility.Select(c=>c.SourceSpeciesId).Order()),"TM06 mapping/compatibility differs.");
-        return document;
-    }
-}

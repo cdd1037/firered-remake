@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
 
     // This projection is derived from saved native variables, so Continue and UI-only
     // party returns restore the same palette without resetting map-entry state.
-    public int? BirthIslandTrianglePalette => _content.EventIslandsEnabled && State.World.Player.MapId.Value == BirthIslandTriangleRules.Map
+    public int? BirthIslandTrianglePalette => State.World.Player.MapId.Value == BirthIslandTriangleRules.Map
         ? State.Script.Variables.GetValueOrDefault(BirthIslandTriangleRules.InteractionVariable) : null;
     private static BirthIslandTriangleState TriangleState(CampaignState state) => new(
         state.Script.Variables.GetValueOrDefault(BirthIslandTriangleRules.InteractionVariable),
@@ -27,25 +27,24 @@ public sealed partial class CampaignSession
         state.Script.Flags.GetValueOrDefault(BirthIslandTriangleRules.AwakenedFlag));
     private CampaignState ApplyEventIslandWalkingStep(CampaignState state, string? sourceMap = null)
     {
-        if (!_content.EventIslandsEnabled || (sourceMap ?? state.World.Player.MapId.Value) != BirthIslandTriangleRules.Map) return state;
+        if ((sourceMap ?? state.World.Player.MapId.Value) != BirthIslandTriangleRules.Map) return state;
         var next = BirthIslandTriangleRules.CountStep(TriangleState(state));
         return state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(BirthIslandTriangleRules.StepVariable, next.Steps) } };
     }
     private CampaignState ApplyEventIslandMapEntry(CampaignState state) => state with
     {
         DeoxysRockEffect = null,
-        FieldWeather = _content.EventIslandsEnabled && state.World.Player.MapId.Value == NavelSummitMap ? "WEATHER_SHADE" : state.FieldWeather
+        FieldWeather = state.World.Player.MapId.Value == NavelSummitMap ? "WEATHER_SHADE" : state.FieldWeather
     };
     private CampaignState ReturnToEventIslandField(CampaignState state)
     {
-        if (!_content.EventIslandsEnabled || _content.MapDefinition(state.World.Player.MapId).Programs.OnReturnToField is not {} callback) return state;
+        if (_content.MapDefinition(state.World.Player.MapId).Programs.OnReturnToField is not {} callback) return state;
         if (!state.Script.Completed || state.Script.Wait is not null || state.Script.Locked) throw new InvalidDataException("event_island_return_while_script_active");
         return Pump(StartStory(state, callback));
     }
     private string? ValidateEventIslandField(CampaignState state)
     {
         if (state.DeoxysRockEffect is not null) return "save_deoxys_rock_effect_active";
-        if (!_content.EventIslandsEnabled) return null;
         if (state.World.Player.MapId.Value == NavelSummitMap)
         {
             if (state.FieldWeather is not (null or "WEATHER_SHADE") ||
@@ -87,7 +86,6 @@ public sealed partial class CampaignSession
     private bool TryApplyEventIslandFieldEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
-        if (!_content.EventIslandsEnabled) return false;
         var a = effect.Args;
         bool birth = state.World.Player.MapId.Value == BirthIslandTriangleRules.Map && effect.Source.Path == BirthIslandSource;
         bool hooh = state.World.Player.MapId.Value == NavelSummitMap && effect.Source.Path == NavelSummitSource && effect.Source.Symbol == NavelHoOhScript;

@@ -17,7 +17,6 @@ public sealed partial class CampaignSession
     private string? ValidateMagikarpGift(CampaignState state)
     {
         bool bought=state.Script.Flags.GetValueOrDefault("FLAG_BOUGHT_MAGIKARP");
-        if(!_content.MagikarpEnabled)return state.MagikarpGift is not null||bought?"save_magikarp_profile_missing":null;
         if((state.MagikarpGift is not null)!=bought)return "save_magikarp_flag_inconsistent";
         if(state.MagikarpGift is not {} gift)return null;
         if(gift.InstanceId<2||gift.InstanceId>=state.NextPokemonId||gift.Ivs is null || gift.Ivs.Values.Any(v => v is < 0 or > 31))return "save_magikarp_origin_invalid";
@@ -30,8 +29,7 @@ public sealed partial class CampaignSession
         state.LastTalked is {} actor&&state.Actors.TryGetValue(actor,out var value)&&value.ScriptId=="Route4_PokemonCenter_1F_EventScript_MagikarpSalesman";
     private bool TryApplyMagikarpEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.MagikarpEnabled)return false;
-        var a=effect.Args;
+        next=state;        var a=effect.Args;
         bool handles=effect.Opcode is "showmoneybox" or "hidemoneybox" or "updatemoneybox" or "checkmoney" or "removemoney" or "checkplayergender" ||
             effect.Opcode=="givemon"&&a[0]=="SPECIES_MAGIKARP";
         if(!handles)return false;

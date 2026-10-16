@@ -11,6 +11,11 @@ from pathlib import Path
 SOURCE_COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 
 
+def canonical(value):
+    """Readable presentation/recipe JSON; runtime compact encoding stays separate."""
+    return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+
+
 def need(condition, message):
     if not condition:
         raise ValueError(message)

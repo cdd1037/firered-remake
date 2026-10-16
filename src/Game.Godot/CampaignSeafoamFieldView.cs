@@ -27,7 +27,7 @@ public partial class CampaignView
     private string? _seafoamMovementId;
     private double _seafoamMovementFrames;
     private bool SeafoamFieldLocked => _session?.State.SeafoamMovement is not null || SeafoamDismountOrigin is not null;
-    private Vector2? SeafoamDismountOrigin => _session is not null && _catalog.SeafoamEnabled && SeafoamFieldRules.IsCave(_session.State.World.Player.MapId)
+    private Vector2? SeafoamDismountOrigin => _session is not null && SeafoamFieldRules.IsCave(_session.State.World.Player.MapId)
         ? _tracks.FirstOrDefault(t => t.Actor == "LOCALID_PLAYER" && t.Time + 1e-9 < t.Duration &&
             t.Clips.Count == 1 && t.Clips[0].Action.StartsWith("jump_special_with_effect_", StringComparison.Ordinal))?.Clips[0].From : null;
 
@@ -52,7 +52,7 @@ public partial class CampaignView
     }
     private double? SeafoamMotionSeconds(CampaignState after, string actor, string action)
     {
-        if (!_catalog.SeafoamEnabled || actor != "LOCALID_PLAYER" || !SeafoamFieldRules.IsCave(after.World.Player.MapId)) return null;
+        if (actor != "LOCALID_PLAYER" || !SeafoamFieldRules.IsCave(after.World.Player.MapId)) return null;
         if (action.StartsWith("jump_special_", StringComparison.Ordinal)) return FieldSurfSourcePresentation.JumpCueFrames / 60d;
         if (action.StartsWith("ride_water_current_", StringComparison.Ordinal)) return FourIslandForcedMovementRules.Fast2Pixels.Length / 60d;
         if (after.SeafoamMovement?.Movement.Phase == SeafoamMovementPhase.EntryStep) return after.PresentationTicks / 60d;
@@ -60,7 +60,7 @@ public partial class CampaignView
     }
     private float? SeafoamStepFraction(string actor, string action, double elapsed)
     {
-        if (!_catalog.SeafoamEnabled || actor != "LOCALID_PLAYER" || !SeafoamFieldRules.IsCave(_session.State.World.Player.MapId)) return null;
+        if (actor != "LOCALID_PLAYER" || !SeafoamFieldRules.IsCave(_session.State.World.Player.MapId)) return null;
         ImmutableArray<int> pixels = action.StartsWith("ride_water_current_", StringComparison.Ordinal) ? FourIslandForcedMovementRules.Fast2Pixels :
             action.StartsWith("walk_fast_", StringComparison.Ordinal) || action.StartsWith("player_run_", StringComparison.Ordinal) ? FourIslandForcedMovementRules.Fast1Pixels : [];
         if (pixels.IsEmpty) return null;

@@ -17,8 +17,6 @@ public sealed partial class CampaignSession
         int scene = state.Script.Variables.GetValueOrDefault(TownMapSceneVariable);
         bool hidden = state.Script.Flags.GetValueOrDefault(TownMapHideFlag);
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], QuestItemRules.TownMapId);
-        if (!_content.TownMapEnabled)
-            return scene >= 2 || hidden || quantity != 0 ? "save_town_map_profile_missing" : null;
         bool dex = state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET");
         if (scene is < 0 or > 2 || (scene != 0) != dex || hidden != (scene == 2) || quantity != (scene == 2 ? 1 : 0))
             return "save_town_map_reward_mismatch";
@@ -37,7 +35,6 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> OpenTownMap(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.TownMapEnabled) return No("town_map_not_enabled");
         if (state.ItemMenu is not { Origin: "bag", View: "bag" } || command.Text != QuestItemRules.TownMapId.Value)
             return No("town_map_context_invalid");
         var error = ValidateCampaignInventory(state.Inventory) ?? ValidateTownMapProgress(state);
@@ -49,7 +46,7 @@ public sealed partial class CampaignSession
 
     private bool WallTownMapContext(CampaignState state)
     {
-        if (!_content.TownMapEnabled || !_content.SupportsRegionalFlavor(state.World.Player.MapId) ||
+        if (!_content.SupportsRegionalFlavor(state.World.Player.MapId) ||
             !state.Script.Locked || state.Script.Completed || state.ItemMenu is not null || state.FlyEffect is not null)
             return false;
         var p = state.World.Player; var (dx, dy) = Delta(p.Facing);
@@ -93,7 +90,7 @@ public sealed partial class CampaignSession
             var next = state with { TownMap = null, ScreenIsBlack = false, PresentationTicks = 0, PresentationEffects = [] };
             return new(CommandStatus.Accepted, Pump(Advance(next, StoryRules.Continue(next.Script, wait.CorrelationId, _content))));
         }
-        if (!_content.TownMapEnabled || state.TownMap?.Origin != "bag" || state.ItemMenu is not { Origin: "bag", View: "bag" })
+        if (state.TownMap?.Origin != "bag" || state.ItemMenu is not { Origin: "bag", View: "bag" })
             return new(CommandStatus.Fault, state, "town_map_callback_context_invalid");
         return new(CommandStatus.Accepted, state with { TownMap = null });
     }

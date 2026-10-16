@@ -12,25 +12,9 @@ ROOT=_PROJECT_ROOT
 spec=importlib.util.spec_from_file_location('lab_ui_inputs',ROOT/'scripts/imports/source/fetch-lab-battle-ui.py');inputs=importlib.util.module_from_spec(spec);spec.loader.exec_module(inputs)
 
 
-from ui_tiles import png, indexed_png, colors, palette, tile_list, rgba, canvas, blit, tile_rgba
+from ui_tiles import png, indexed_png, colors, palette, tile_list, rgba, canvas, blit, tile_rgba, render_map, require
 
-def render_map(tiles,tilemap,pals,w,h,top=0):
-    # Screenblock maps: source background 64x32 and textbox 32x64 share block offsets.
-    if len(tilemap)!=4096:raise ValueError('Unexpected 2-screen tilemap')
-    data=struct.unpack('<2048H',tilemap);out=canvas(w,h)
-    for y in range(h//8):
-        for x in range(w//8):
-            sy=y+top;entry=data[(sy//32)*1024+(sy%32)*32+x];tile=entry&1023;bank=entry>>12
-            if tile>=len(tiles):raise ValueError('Tile reference outside source')
-            pal=pals.get(bank)
-            if pal is None:
-                if set(tiles[tile])!={0}:raise ValueError('Missing palette bank')
-                continue
-            blit(out,w,tile_rgba(tiles[tile],pal,bool(entry&1024),bool(entry&2048)),8,8,x*8,y*8)
-    return bytes(out)
 
-def require(source,needle):
-    if needle not in source:raise ValueError('Unsupported source semantics: '+needle)
 def convert(lock,sources):
     for path,needle in [('src/battle_setup.c','case MAP_TYPE_INDOOR:\n    case MAP_TYPE_SECRET_BASE:\n        return BATTLE_TERRAIN_BUILDING;'),('src/battle_interface.c','x = 44, y = 30;'),('src/battle_interface.c','x = 158, y = 88;'),('src/battle_interface.c','gSprites[healthboxOtherSpriteId].oam.tileNum += 2 * TILE_SIZE_4BPP;'),('src/battle_bg.c','LoadUserWindowGfx(2, 0x012, BG_PLTT_ID(1));'),('graphics_file_rules.mk','$(GFX) $< $@ -num_tiles 77 -Wnum_tiles'),('tools/gbagfx/convert_png.c','% (1 << destBitDepth)')]:require(sources[path].decode(),needle)
     require(sources['src/blend_palette.c'].decode(), '((r + (((data2->r - r) * coeff) >> 4)) << 0)')

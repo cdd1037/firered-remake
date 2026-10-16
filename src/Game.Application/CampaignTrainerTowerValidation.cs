@@ -9,10 +9,6 @@ public sealed partial class CampaignSession
     // These retained field payloads still need their own source identity checks.
     private string? ValidateTrainerTowerFieldSave(CampaignState state)
     {
-        if (!_content.TrainerTowerEnabled)
-            return state.TrainerTower is not null || state.TrainerTowerHistory is not null ||
-                state.TrainerTowerElevator is not null || state.TrainerTowerMenu is not null ||
-                state.TrainerTowerRecordsVisible ? "save_trainer_tower_content" : null;
         if (state.TrainerTowerMenu is not null || state.TrainerTowerRecordsVisible)
             return "save_trainer_tower_menu_active";
         if (state.TrainerTower is null && (state.TrainerTowerHistory is not null || state.TrainerTowerElevator is not null))

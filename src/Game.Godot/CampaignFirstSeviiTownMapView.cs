@@ -17,7 +17,7 @@ public partial class CampaignView
     private TownMapPoint InitializeFirstSeviiTownMap(string mapId, int x, int y)
     {
         _townMapSwitchMenu = false; _townMapPage = _townMapPlayerPage = 0; _townMapPlayerKnown = true;
-        if (_catalog.FirstSeviiEnabled) LoadFirstSeviiTownMap();
+        LoadFirstSeviiTownMap();
         if (_firstSeviiTownMap is not null)
         {
             _townMapPage = _townMapPlayerPage = _firstSeviiTownMap.RegionForMap(mapId) ?? 0;

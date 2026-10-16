@@ -21,7 +21,7 @@ public static class PretRoute22Trainers
         return catalog;
     }
 
-    public static Route22TrainerCatalog Load(PretRoute22Region region, PretRoute22Pokemon pokemon)
+    public static Route22TrainerCatalog Load(PretRoute22Region region, PokemonPresentationPackage pokemon)
     {
         ArgumentNullException.ThrowIfNull(region);
         ArgumentNullException.ThrowIfNull(pokemon);

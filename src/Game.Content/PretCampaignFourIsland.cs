@@ -14,17 +14,13 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string FourIslandContentProfile = "firered-four-island-campaign-v1";
-    public PretFourIslandRegion? FourIslandRegion { get; }
-    public GamePokemonCatalog? FourIslandOwnership { get; }
-    public GameOpponentPokemonCatalog? FourIslandOpponents { get; }
+    public PretFourIslandRegion FourIslandRegion { get; }
     public FourIslandTrainerCatalog? FourIslandTrainers { get; }
     public FourIslandTrainerCatalog? FourIslandTrainerParties => FourIslandTrainers;
     public FourIslandItemContent? FourIslandItems { get; }
-    public MachineCatalog? FourIslandMachines => FourIslandItems?.Machines;
-    public FourIslandWaterEncounterCatalog? FourIslandWaterEncounters { get; }
+    public WaterEncounterCatalog? FourIslandWaterEncounters { get; }
     public ImmutableDictionary<string, FieldStatFlagUnlocks> StatFlagUnlocks { get; }
     public ImmutableDictionary<string, FieldMilestoneCollection> FieldMilestones => FourIslandRegion?.FieldMilestones ?? ImmutableDictionary<string, FieldMilestoneCollection>.Empty;
-    public bool FourIslandEnabled => FourIslandRegion is not null;
 
 
 

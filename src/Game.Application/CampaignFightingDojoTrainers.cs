@@ -6,7 +6,7 @@ public sealed partial class CampaignSession
 {
     private CampaignState CompleteFightingDojoMasterTurn(CampaignState before, CampaignState after)
     {
-        if (!_content.FightingDojoEnabled || before.World.Player.MapId.Value != FightingDojoMap ||
+        if (before.World.Player.MapId.Value != FightingDojoMap ||
             after.World.Player.MapId != before.World.Player.MapId || before.Script.Wait?.Kind != StoryWaitKind.Presentation ||
             before.Script.Stack.Length != 1 || !after.Script.Completed || after.Script.Wait is not null)
             return after;

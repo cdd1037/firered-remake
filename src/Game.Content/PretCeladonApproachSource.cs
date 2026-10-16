@@ -16,12 +16,7 @@ internal sealed class PretCeladonApproachSource
             StringComparer.Ordinal);
     }
 
-    internal static byte[] Read(string root, string relative)
-    {
-        Require(!string.IsNullOrWhiteSpace(relative) && !Path.IsPathRooted(relative) && !relative.Contains('\\') &&
-            !relative.Split('/').Any(part => part is "" or "." or ".."), "Unsafe Celadon path.");
-        return File.ReadAllBytes(Path.Combine(root, relative));
-    }
+    internal static byte[] Read(string root, string relative) => GeneratedResourceFile.Read(root, relative);
 
     internal static void Require(bool condition, string error)
     {

@@ -18,32 +18,11 @@ public partial class CampaignView
 
     private void LoadSafariPresentation()
     {
-        if (!_catalog.SafariEnabled) return;
         var art = _catalog.SafariArt ?? throw new InvalidDataException("Safari art catalog missing.");
-        foreach (var sprite in art.Sprites)
-        {
-            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var icon in art.Icons)
-        {
-            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
-            for (int i = 0; i < rgba.Length; i += 4)
-                if (rgba[i + 3] != 0)
-                    for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
-            _storageIcons.Add(new(icon.SpeciesId), SceneTextures.FromImage(image));
-        }
-        foreach (var footprint in art.Footprints)
-        {
-            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
-            _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
-        }
-        foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
-            _portraits.Add(sprite.SourceSpeciesId, _battleArt[(sprite.SourceSpeciesId, "front", false)].Texture);
+        RegisterPokemonArt(art.Sprites, art.Icons, art.Footprints, art.Files);
+
         LoadSafariItemPresentation();
-        Write("safariPresentation", new {             maps = _catalog.SafariRegion!.NewMaps.Count,             exactSafariHealthboxAndThrowAnimationsImplemented = false });
+
     }
 
     private void LoadSafariItemPresentation()
@@ -74,7 +53,7 @@ public partial class CampaignView
         get
         {
             var s = _session.State;
-            return _catalog.SafariEnabled && s.SafariVisit is { Active: true, Balls: > 0, Steps: > 0 } &&
+            return s.SafariVisit is { Active: true, Balls: > 0, Steps: > 0 } &&
                 s.Script.Flags.GetValueOrDefault("FLAG_SYS_SAFARI_MODE") && !s.SafariExitPending &&
                 s.Script.Completed && !s.Script.Locked && s.Script.Wait is null && s.Script.Stack.IsEmpty &&
                 s.Script.QuestLogState == 0 && s.EntryPrograms.IsEmpty && s.Dialogue is null && s.SignMessage is null &&
@@ -202,7 +181,7 @@ public partial class CampaignView
         if (battle.Capture?.Stage == CampaignCaptureStage.DexEntry) { DrawCaptureDexEntry(battle.State.Target.SourceSpeciesId); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
         if (battle.Capture?.Stage == CampaignCaptureStage.Naming) { DrawCaptureNamingPanel(); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
         DrawRect(new(0, 0, 240, 160), Colors.Black);
-        _battleSkin.DrawBackground(this); DrawTexture(_catalog.SurfEnabled && _session.State.IsSurfing ? _cityBattleScenes["water"] : _wildTerrain, Vector2.Zero);
+        _battleSkin.DrawBackground(this); DrawTexture(_session.State.IsSurfing ? _cityBattleScenes["water"] : _wildTerrain, Vector2.Zero);
         DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender == 0 ? "red-back" : "leaf-back"], new(48, 48));
         if (battle.Capture is null)
         {

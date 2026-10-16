@@ -59,7 +59,6 @@ public sealed partial class CampaignSession
 
     private string? FieldCutCommandError(CampaignState state,int partyIndex)
     {
-        if(!_content.VermilionGymEnabled)return "field_cut_not_enabled";
         if(!IsStableFieldForParty(state)||state.CutEffect is not null||state.Pc is not null||state.TownMap is not null||state.Repel is not null)
             return "field_cut_event_active";
         if(partyIndex<0||partyIndex>=state.Party.Length)return "field_cut_party_index_invalid";
@@ -89,7 +88,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFieldCutEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.VermilionGymEnabled||effect.Source.Path!=FieldCutSource||effect.Source.Symbol is not
+        if(effect.Source.Path!=FieldCutSource||effect.Source.Symbol is not
             ("EventScript_CutTree" or "EventScript_FldEffCut" or "EventScript_CutTreeDown" or "EventScript_CantCutTree" or "EventScript_DontCutTree"))return false;
         var a=effect.Args;
         int Value(string token)=>int.TryParse(token,out var literal)?literal:state.Script.Variables.TryGetValue(token,out var value)?value:
@@ -186,7 +185,6 @@ public sealed partial class CampaignSession
     private string? ValidateFieldCutState(CampaignState state)
     {
         if(state.CutEffect is not null||state.FieldEffectArguments is not null)return "save_field_cut_active";
-        if(!_content.VermilionGymEnabled&&state.GameStats?.ContainsKey(CutUsageStat)==true)return "save_field_cut_profile_missing";
         return null;
     }
 }

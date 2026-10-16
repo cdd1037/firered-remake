@@ -13,7 +13,6 @@ public partial class CampaignView
 
     private void LoadForestBattlePresentation()
     {
-        if (!_catalog.ForestEnabled) return;
         var source = _catalog.ForestPokemon ?? throw new InvalidDataException("Forest Pokemon content is missing.");
         foreach (var sprite in source.Sprites)
         {
@@ -119,7 +118,6 @@ public partial class CampaignView
     // in one queue and the outgoing page of a voluntary switch.
     private uint ForestDisplayedStatus(CampaignWildBattle battle, WildBattleSide side)
     {
-        if (!_catalog.ForestEnabled) return 0;
         if (side == WildBattleSide.Player && WildWithdrawing(battle))
             return ForestPresentationStatus(((WildBattlePlayerSwitchedEvent)WildCurrentEvent(battle)!).Previous.Status);
         var forced = side == WildBattleSide.Player ? SsAnnePendingPlayerForceOut(battle) : null;
@@ -134,7 +132,7 @@ public partial class CampaignView
                     case WildBattlePlayerReplacedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                 }
         status = ForestPresentationStatus(status);
-        if (!WildBattleStatus.IsSupported(status,_catalog.EarlyStarterEnabled,_catalog.Route11Enabled)) throw new InvalidDataException("Unsupported displayed forest status.");
+        if (!WildBattleStatus.IsSupported(status,true,true)) throw new InvalidDataException("Unsupported displayed forest status.");
         return status;
     }
 
@@ -184,8 +182,7 @@ public partial class CampaignView
                 throw new InvalidDataException("Forest status pixels differ: " + asset.Id);
             _forestStatusTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
-        if(_catalog.EarlyStarterEnabled)
-            foreach(var asset in PretEarlyStarterStatusUi.Load(_root).Assets)
+        foreach(var asset in PretEarlyStarterStatusUi.Load(_root).Assets)
             {
                 using var image=new Image();
                 if(image.LoadPngFromBuffer(PretEarlyStarterStatusUi.ReadTexture(_root,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8)
@@ -211,7 +208,7 @@ public partial class CampaignView
     // functional layout, while the indicator pixels are the distinct source party art.
     private void DrawForestPartyStatus(PartyPokemon owned, Vector2 origin)
     {
-        if (!_catalog.ForestEnabled || owned.IsEgg) return;
+        if (owned.IsEgg) return;
         var battle = PresentedWildBattle;
         uint status = battle is not null && owned.InstanceId == battle.OwnedBefore.InstanceId
             ? ForestDisplayedStatus(battle, WildBattleSide.Player) : owned.Status;

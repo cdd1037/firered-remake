@@ -22,7 +22,7 @@ public sealed partial class CampaignSession
     private const string SilphElevatorSource="data/maps/SilphCo_Elevator/scripts.inc";
     private const string SilphDoorSource="data/scripts/silphco_doors.inc";
 
-    private bool SilphMenuPending(CampaignState state)=>_content.SilphEnabled&&state.SilphElevator?.MenuDefault is not null;
+    private bool SilphMenuPending(CampaignState state)=>state.SilphElevator?.MenuDefault is not null;
 
     private Decision<CampaignState> DecideSilphElevatorChoice(CampaignState state,CampaignCommand command)
     {
@@ -63,7 +63,6 @@ public sealed partial class CampaignSession
 
     private IReadOnlyDictionary<MapId,IFieldMap> SilphMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        if(!_content.SilphEnabled)return maps;
         return maps.ToDictionary(x=>x.Key,x=>_content.SupportsTeleportPads(x.Key)?(IFieldMap)new SilphMovementMap(x.Value,
             x.Key==state.World.Player.MapId?state.MapEdits:null,_content):x.Value);
     }
@@ -90,8 +89,7 @@ public sealed partial class CampaignSession
 
     private bool TryApplySilphFieldEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
-        next=state;if(!_content.SilphEnabled)return false;
-        if(TryApplySilphElevatorEffect(state,effect,out next))return true;
+        next=state;        if(TryApplySilphElevatorEffect(state,effect,out next))return true;
         if(effect.Source.Path!=SilphDoorSource)return false;
         if(!SilphFieldRules.IsSilphMap(state.World.Player.MapId))throw new InvalidDataException("silph_door_map_context");
         var a=effect.Args;
@@ -141,7 +139,6 @@ public sealed partial class CampaignSession
     {
         if(state.SilphPad is not null)return "save_silph_pad_active";
         if(ValidateSilphElevatorProgress(state) is {} elevatorError)return elevatorError;
-        if(!_content.SilphEnabled)return state.Script.Flags.Any(f=>f.Value&&f.Key.StartsWith("FLAG_SILPH_",StringComparison.Ordinal))?"save_silph_profile_missing":null;
         bool key=state.Script.Flags.GetValueOrDefault(SilphFieldRules.CardKeyFlag);
         if(_content.SilphDoors.Any(d=>state.Script.Flags.GetValueOrDefault(d.Flag)&&!key))return "save_silph_door_without_card_key";
         if(!SilphFieldRules.IsSilphMap(state.World.Player.MapId))return null;
@@ -169,7 +166,6 @@ public sealed partial class CampaignSession
     private bool TryApplySilphElevatorEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;
-        if(!_content.SilphEnabled)return false;
         bool ownSource=effect.Source.Path==SilphElevatorSource;
         // The shared helper also serves Rocket Hideout. Claim it only in this exact map.
         bool sharedSource=state.World.Player.MapId.Value==SilphElevatorMap&&
@@ -230,7 +226,7 @@ public sealed partial class CampaignSession
 
     private CampaignState RecordSilphElevatorEntrance(CampaignState previous,CampaignState moved)
     {
-        if(!_content.SilphEnabled||moved.World.Player.MapId.Value!=SilphElevatorMap||
+        if(moved.World.Player.MapId.Value!=SilphElevatorMap||
             previous.World.Player.MapId==moved.World.Player.MapId)return moved;
         var p=previous.World.Player;var(dx,dy)=Delta(p.Facing);
         var entrance=_content.SilphElevatorEntrances.SingleOrDefault(e=>
@@ -250,7 +246,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState>? TrySilphDynamicExit(CampaignState state,CampaignCommand command)
     {
-        if(!_content.SilphEnabled||command.Kind!="move"||state.World.Player.MapId.Value!=SilphElevatorMap)return null;
+        if(command.Kind!="move"||state.World.Player.MapId.Value!=SilphElevatorMap)return null;
         var p=state.World.Player;var source=_content.Maps[p.MapId];
         if(command.Direction!=Direction.South||p.Facing!=Direction.South||source.SourceBehaviorAt(p.X,p.Y)!=0x65)return null;
         var exit=_content.SilphDynamicExits.SingleOrDefault(e=>e.X==p.X&&e.Y==p.Y&&
@@ -290,7 +286,6 @@ public sealed partial class CampaignSession
 
     private string? ValidateSilphElevatorProgress(CampaignState state)
     {
-        if(!_content.SilphEnabled)return state.SilphElevator is not null?"save_silph_profile_missing":null;
         bool inside=state.World.Player.MapId.Value==SilphElevatorMap;
         if(state.SilphElevator is not {} elevator)return inside?"save_silph_elevator_return_missing":null;
         if(elevator.FloorWindowVisible||elevator.MenuDefault is not null)return "save_silph_elevator_menu_active";

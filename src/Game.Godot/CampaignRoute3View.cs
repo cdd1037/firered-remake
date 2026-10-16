@@ -19,15 +19,12 @@ public partial class CampaignView
 
     // Source field_player_avatar.c:516 and bike.c:253. FR's IsFortreeBridge is always false.
     // The desktop Shift key represents the source GBA B button; desktop B keeps opening Bag.
-    private int FieldStepTicks(CampaignState state)
-        => FieldStepTicksForDirection(state,state.World.Player.Facing);
-
     private int FieldStepTicksForDirection(CampaignState state,Game.Domain.World.Direction direction)
     {
-        if (_catalog.SurfEnabled && state.IsSurfing) return 8;
-        if (_catalog.CityServicesEnabled && state.IsCycling)
+        if (state.IsSurfing) return 8;
+        if (state.IsCycling)
         {
-            if (_catalog.CyclingRoadEnabled && CyclingRoadRules.IsSlope(_catalog.SourceMaps[state.World.Player.MapId].SourceBehaviorAt(state.World.Player.X,state.World.Player.Y)))
+            if (CyclingRoadRules.IsSlope(_catalog.SourceMaps[state.World.Player.MapId].SourceBehaviorAt(state.World.Player.X,state.World.Player.Y)))
                 return CyclingRoadRules.Resolve(state.BicycleSlope,state.World.Player.Facing,direction,_runningShiftHeld).Ticks;
             var p=state.World.Player;int y=direction==Game.Domain.World.Direction.South?p.Y+1:p.Y;
             int? cyclingBehavior=state.MapEdits?.TryGetValue(p.X+":"+y,out var edit)==true
@@ -35,7 +32,7 @@ public partial class CampaignView
                 :_catalog.SourceMaps[p.MapId].SourceBehaviorAt(p.X,y);
             return direction is Game.Domain.World.Direction.North or Game.Domain.World.Direction.South&&cyclingBehavior==0x2a?8:6;
         }
-        if (!_catalog.Route3Enabled || !_runningShiftHeld || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_B_DASH")) return 16;
+        if (!_runningShiftHeld || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_B_DASH")) return 16;
         var source = _catalog.SourceMaps[state.World.Player.MapId];
         return source.Events.GetProperty("allow_running").GetBoolean() &&
             source.SourceBehaviorAt(state.World.Player.X, state.World.Player.Y) is { } behavior && behavior != 0x0a ? 8 : 16;
@@ -44,27 +41,8 @@ public partial class CampaignView
     private void LoadRoute3PokemonPresentation()
     {
         if (_catalog.Route3Pokemon is not { } source) return;
-        foreach (var sprite in source.Sprites)
-        {
-            using var image = new Image();
-            if (image.LoadPngFromBuffer(source.ReadSpriteTexture(new(sprite.SpeciesId), sprite.Side, sprite.PaletteVariant == "shiny")) != Error.Ok)
-                throw new InvalidDataException("Invalid Route3 sprite PNG.");
-            image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != 64 || image.GetHeight() != 64)
-                throw new InvalidDataException("Route3 sprite pixels differ.");
-            _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
-        }
-        foreach (var foot in source.Footprints)
-        {
-            using var image = new Image();
-            if (image.LoadPngFromBuffer(source.ReadFootprintTexture(foot.SourceSpeciesId)) != Error.Ok)
-                throw new InvalidDataException("Invalid Route3 footprint PNG.");
-            image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != 16 || image.GetHeight() != 16)
-                throw new InvalidDataException("Route3 footprint pixels differ.");
-            _route22Footprints.Add(foot.SourceSpeciesId, ImageTexture.CreateFromImage(image));
-        }
+        RegisterPokemonSprites(source);
+
     }
 
     private ForestMessage? Route3WildMessage(CampaignWildBattle battle, WildBattleEvent current) => current switch

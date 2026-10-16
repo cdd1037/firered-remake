@@ -104,22 +104,7 @@ public static class PretForestCaptureDex
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static byte[] ReadPinned(string root,string path)
     {
-        var bytes = File.ReadAllBytes(SafeFile(root, path));
+        var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, path));
         return bytes;
-    }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(s => s is "" or "." or ".."))
-            throw new InvalidDataException("Unsafe forest capture dex path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent)
-            if (cursor.LinkTarget is not null) throw new InvalidDataException("Forest capture dex directory symlink rejected.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null)
-                throw new InvalidDataException("Forest capture dex file symlink rejected: " + path);
-        }
-        return result;
     }
 }

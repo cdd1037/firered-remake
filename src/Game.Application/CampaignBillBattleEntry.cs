@@ -16,7 +16,6 @@ public sealed partial class CampaignSession
     // map headers. This rule terrain is independent from presentation background overrides.
     private WildBattleTerrain CampaignBattleTerrain(CampaignState state)
     {
-        if(!_content.BillEnabled)return WildBattleTerrain.Plain;
         var p=state.World.Player;
         int b=_content.Maps[p.MapId].SourceBehaviorAt(p.X,p.Y)??throw new InvalidDataException("battle_terrain_cell");
         if(b is 0x02 or 0xd1)return WildBattleTerrain.Grass;

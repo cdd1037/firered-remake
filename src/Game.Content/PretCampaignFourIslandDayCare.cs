@@ -10,7 +10,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretFourIslandDayCare FourIslandDayCare { get; }
-    public bool FourIslandDayCareEnabled => true;
     public PokemonBreedingData? BreedingMetadata => PokemonContent?.Catalog.BreedingData;
     public IReadOnlyDictionary<int, string> DayCareCompatibilityTextSymbols { get; } =
         new Dictionary<int, string> { [70] = "gDaycareText_GetAlongVeryWell",[50] = "gDaycareText_GetAlong",[20] = "gDaycareText_DontLikeOther",[0] = "gDaycareText_PlayOther" }.ToImmutableDictionary();

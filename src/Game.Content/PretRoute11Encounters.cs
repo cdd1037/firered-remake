@@ -24,7 +24,7 @@ public sealed class PretRoute11Encounters
 
     public static PretRoute11Encounters Load(string root)
     {
-        var bytes = File.ReadAllBytes(SafeFile(root, "content/generated/data/encounters/route11.json"));
+        var bytes = File.ReadAllBytes(GeneratedResourceFile.SafePath(root, "content/generated/data/encounters/route11.json"));
         var document = ContentJson.ParseStrict<Route11EncounterDocument>(
             Encoding.UTF8.GetString(bytes), ContentJson.CreateOptions());
         GeneratedLandEncounterValidation.Validate(document.SchemaVersion, document.Tables,
@@ -33,12 +33,4 @@ public sealed class PretRoute11Encounters
         return new(document);
     }
 
-    private static string SafeFile(string root,string relative)
-    {
-        if(Path.IsPathRooted(relative)||relative.Contains('\\')||relative.Split('/').Any(p=>p is "" or "." or "..")) throw new InvalidDataException("Unsafe Route11 encounter path.");
-        var f=new FileInfo(Path.GetFullPath(Path.Combine(root,relative)));
-        if(f.LinkTarget is not null) throw new InvalidDataException("Route11 encounter symlink rejected.");
-        for(var d=f.Directory;d is not null;d=d.Parent) if(d.LinkTarget is not null) throw new InvalidDataException("Route11 encounter parent symlink rejected.");
-        return f.FullName;
-    }
 }

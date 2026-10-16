@@ -9,12 +9,11 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretRocketHideoutRegion? RocketHideoutRegion { get; }
-    public PretRocketHideoutPokemon? RocketHideoutPokemon { get; }
+    public PretRocketHideoutRegion RocketHideoutRegion { get; }
+    public PokemonPresentationPackage? RocketHideoutPokemon { get; }
     public PretRocketHideoutItemsDocument? RocketHideoutItems { get; }
     public PretRocketHideoutPickupsDocument? RocketHideoutPickups { get; }
     public RocketHideoutTrainerCatalog? RocketHideoutTrainers { get; }
-    public bool RocketHideoutEnabled => RocketHideoutRegion is not null;
     public ImmutableArray<int> RocketHideoutInitiallySetFlags => RocketHideoutRegion?.InitiallySetFlags ?? [];
     public ImmutableArray<CampaignMapMetatilePatch> RocketHideoutMetatilePatches =>
         RocketHideoutRegion?.MetatilePatches.Select(CampaignRocketPatch).ToImmutableArray() ?? [];

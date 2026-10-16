@@ -39,8 +39,7 @@ public sealed partial class CampaignSession
             return "bag_toss_context_invalid";
         if (ValidateCampaignInventory(state.Inventory) is {} inventoryError) return inventoryError;
         if (ValidateCampaignMail(state) is {} mailError) return mailError;
-        if (state.ItemMenu.View == "berries" && (!_content.SsAnneEnabled ||
-            OpeningInventoryRules.Quantity(state.Inventory!.KeyItems ?? [], SsAnneItemRules.BerryPouchId) != 1))
+        if (state.ItemMenu.View == "berries" && (OpeningInventoryRules.Quantity(state.Inventory!.KeyItems ?? [], SsAnneItemRules.BerryPouchId) != 1))
             return "berry_pouch_context_invalid";
         return null;
     }

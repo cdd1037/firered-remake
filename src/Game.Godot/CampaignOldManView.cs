@@ -23,7 +23,6 @@ public partial class CampaignView
     private void LoadOldManPresentation()
     {
         DisposeOldManPresentation();
-        if (!_catalog.OldManTutorialEnabled) return;
         var directory = System.IO.Path.Combine(_root, "content/generated/sprites/pokemon/old-man");
         var document = PretOldManArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "old-man-art.json")));
         try
@@ -90,7 +89,7 @@ public partial class CampaignView
     {
         if (_session.State.OldManTutorial is not { } tutorial)
         { ResetOldManPresentation(); return; }
-        if (!_catalog.OldManTutorialEnabled || _oldManArt is null || _catalog.OldManTutorial is null)
+        if (_oldManArt is null || _catalog.OldManTutorial is null)
             throw new InvalidDataException("Old Man presentation profile is not loaded.");
         if (_oldManWaitId == tutorial.WaitId) return; // Save rejection, repeated sync and repeated input cannot restart a timer.
         _oldManWaitId = tutorial.WaitId; _oldManEvent = tutorial.CurrentEvent; _oldManElapsed = 0; _oldManCompletionSent = false; _oldManShakeCueSent = false;
